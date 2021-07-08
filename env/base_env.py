@@ -20,7 +20,16 @@ class BaseEnv:
         torch._C._jit_set_profiling_mode(False)
         torch._C._jit_set_profiling_executor(False)
 
-    def setup_up_axis(self, axis:str, gravity: Union[gymapi.Vec3, list, tuple]) -> int:
+        self.num_envs = 0
+
+    def cleanup(self):
+        # TODO: cleanup
+        if self.viewer is not None:
+            self.gym.destroy_viewer(self.viewer)
+        if self.sim is not None:
+            self.gym.destroy_sim(self.sim)
+
+    def setup_up_axis(self, axis:str = "z", gravity: Union[gymapi.Vec3, list, tuple] = (0.0, 0.0, -9.8)) -> int:
         """
         Setup up axis and gravity
         """
@@ -33,6 +42,11 @@ class BaseEnv:
         self.sim_params.up_axis = gymapi.UP_AXIS_Y
         return 1
     
+    def setup_env_grid(self, num_envs: int, spacing: float = 1.0) -> None:
+        self.num_envs = num_envs
+        self.env_lower = gymapi.Vec3(-spacing, 0.0, -spacing)
+        self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
+
     def setup_sim(self, cfg: dict) -> None:
         self.headless = cfg.get("headless", False)
 
@@ -132,8 +146,10 @@ class BaseEnv:
 
             # handle input actions from the viewer
             for event in self.gym.query_viewer_action_events(self.viewer):
+                # exit
                 if event.action == "quit" and event.value > 0:
                     sys.exit()
+                # toggle viewer sync  
                 elif event.action == "sync_viewer" and event.value > 0:
                     self._sync_viewer = not self._sync_viewer
 

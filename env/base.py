@@ -1,11 +1,11 @@
 import sys
 from typing import Union
 
-from isaacgym import gymapi
 import torch
+from isaacgym import gymapi
 
 
-class BaseEnv:
+class Environment:
     def __init__(self):
 
         # initialize gym
@@ -21,6 +21,10 @@ class BaseEnv:
         torch._C._jit_set_profiling_executor(False)
 
         self.num_envs = 0
+
+        self.states_buffer = None
+        self.rewards_buffer = None
+        self.dones_buffer = None
 
     def cleanup(self):
         # TODO: cleanup
@@ -75,6 +79,15 @@ class BaseEnv:
             self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_ESCAPE, "quit")
             self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_Q, "quit")
             self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_V, "sync_viewer")
+
+    def prepare_sim(self):
+        # prepare simulation with buffer allocations
+        self.gym.prepare_sim(self.sim)
+
+        # create buffers
+        self.states_buffer = torch.zeros(self.num_envs, *self.state_space.shape)
+        self.rewards_buffer = torch.zeros(self.num_envs, 1)
+        self.dones_buffer = torch.zeros(self.num_envs, 1)
 
     def add_ground_plane(self, normal: Union[gymapi.Vec3, list, tuple] = [0, 0, 1], distance: float = 0, static_friction: float = 1, dynamic_friction: float = 1, restitution: float = 0) -> None:
         """

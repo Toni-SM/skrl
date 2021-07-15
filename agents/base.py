@@ -1,6 +1,7 @@
 
 class Agent:
     def __init__(self, env, networks, memory=None, cfg: dict = {}) -> None:
+        # TODO: get device from cfg
         self.device = "cuda:0"
 
         self.env = env
@@ -10,6 +11,10 @@ class Agent:
 
     def act(self, states, inference=False):
         raise NotImplementedError
+
+    def set_mode(self, mode):
+        for k in self.networks:
+            self.networks[k].set_mode(mode)
 
     def pre_rollout(self):
         pass

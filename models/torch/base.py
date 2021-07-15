@@ -4,8 +4,9 @@ import torch.nn as nn
 
 
 class Model(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, device) -> None:
         super(Model, self).__init__()
+        self.device = device
         self.network = None
         
     def forward(self):
@@ -13,6 +14,21 @@ class Model(nn.Module):
 
     def act(self, state, inference=False):
         raise NotImplementedError
+
+    def to_tensor(self, var):
+        if not isinstance(var, torch.Tensor):
+            return torch.FloatTensor(var).to(self.device)
+        return var
+
+    def set_mode(self, mode):
+        if mode == "train":
+            self.train()
+            self.network.train()
+        elif mode == "eval":
+            self.eval()
+            self.network.eval()
+        else:
+            raise ValueError
 
     def save(self, path):
         torch.save(self.network.state_dict(), path)

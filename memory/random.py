@@ -30,9 +30,9 @@ class RandomMemory(Memory):
             Device on which a PyTorch tensor is or will be allocated
         preallocate: bool
             If true, preallocate memory for efficient use
-        state_space: Union[gym.spaces.Space, None]
+        state_space: gym.spaces.Space or None
             State/observation space
-        action_space: Union[gym.spaces.Space, None]
+        action_space: gym.spaces.Space or None
             Action space
         """
 

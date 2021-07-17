@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 
 import torch
 from gym import spaces
@@ -30,11 +30,6 @@ class Memory:
             State/observation space
         action_space: Union[gym.spaces.Space, None]
             Action space
-        
-        Returns
-        -------
-        bool
-            PASS
         """
         # TODO: handle dynamic memory
         # TODO: show memory consumption
@@ -128,7 +123,7 @@ class Memory:
             self.position_buffer = 0
             self.filled = True
 
-    def sample(self, batch_size: int):
+    def sample(self, batch_size: int) -> Tuple[torch.Tensor]:
         """
         Sample a batch from the memory
 
@@ -136,5 +131,10 @@ class Memory:
         ----------
         batch_size: int
             Number of element to sample
+
+        Returns
+        -------
+            tuple
+                Sampled tensors
         """
         raise NotImplementedError

@@ -75,7 +75,7 @@ class Trainer:
         else:
             self._agents.post_rollouts(timestep=timestep, timesteps=timesteps)
 
-    def train(self, agents: Union[Agent, List(Agent)], env: Union[Environment, gym.Env], cfg: dict = {}) -> None:
+    def train(self, agents: Union[Agent, List[Agent]], env: Union[Environment, gym.Env], cfg: dict = {}) -> None:
         """
         Train the agents
 

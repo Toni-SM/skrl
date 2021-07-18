@@ -7,7 +7,7 @@ from gym import spaces
 class Memory:
     def __init__(self, buffer_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True, state_space: Union[spaces.Space, None] = None, action_space: Union[spaces.Space, None] = None) -> None:
         """
-        Base class that represent memory with circular buffers
+        Base class that represent a memory with circular buffers
 
         The implementation creates the buffers with the following shapes if the preallocation flag is set to true
         - states (buffer_size, num_envs, *state_space.shape)
@@ -134,7 +134,7 @@ class Memory:
 
         Returns
         -------
-            tuple
-                Sampled tensors
+        tuple
+            Sampled tensors
         """
         raise NotImplementedError

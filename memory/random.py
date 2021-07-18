@@ -47,8 +47,8 @@ class RandomMemory(Memory):
 
         Returns
         -------
-            tuple
-                Sampled tensors (states, actions, rewards, next_states, dones)
+        tuple
+            Sampled tensors (states, actions, rewards, next_states, dones)
         """
         # get indexes
         max_value = len(self) * self.num_envs

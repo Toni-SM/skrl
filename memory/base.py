@@ -9,7 +9,7 @@ class Memory:
         """
         Base class that represent a memory with circular buffers
 
-        The implementation creates the buffers with the following shapes if the preallocation flag is set to true
+        The implementation creates the buffers with the following shapes if the preallocate flag is set to true
         - states (buffer_size, num_envs, *state_space.shape)
         - actions (buffer_size, num_envs, *action_space.shape
         - rewards (buffer_size, num_envs, 1)
@@ -62,10 +62,10 @@ class Memory:
 
     def __len__(self):
         """
-        Current (valid) size of the buffer according to the first dimension (buffer_size)
+        Current (valid) size of the buffer
         """
-        return self.buffer_size if self.filled else self.position_buffer
-
+        return self.buffer_size * self.num_envs if self.filled else self.position_buffer * self.num_envs + self.position_env
+        
     def reset(self) -> None:
         """
         Reset the memory

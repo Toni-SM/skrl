@@ -50,9 +50,8 @@ class RandomMemory(Memory):
         tuple
             Sampled tensors (states, actions, rewards, next_states, dones)
         """
-        # get indexes
-        max_value = len(self) * self.num_envs
-        indexes =  np.random.choice(max_value, size=batch_size, replace=True)
+        # get random indexes
+        indexes =  np.random.choice(len(self), size=batch_size, replace=True)
 
         # sample
         states = self.states.view(-1, self.states.size(-1))[indexes]

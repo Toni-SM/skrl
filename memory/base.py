@@ -63,6 +63,11 @@ class Memory:
     def __len__(self):
         """
         Current (valid) size of the buffer
+
+        Returns
+        -------
+        int
+            valid size
         """
         return self.buffer_size * self.num_envs if self.filled else self.position_buffer * self.num_envs + self.position_env
         
@@ -113,7 +118,7 @@ class Memory:
             self.dones[self.position_buffer].copy_(dones.view(-1, 1))
             self.position_buffer += 1
         else:
-            raise BufferError
+            raise BufferError("The first dimension of the transition tensors {} does not match the number of parallel environments {}".format(states.shape[0], self.num_envs))
         
         # update pointers
         if self.position_env >= self.num_envs:
@@ -137,4 +142,4 @@ class Memory:
         tuple
             Sampled tensors
         """
-        raise NotImplementedError
+        raise NotImplementedError("The sampling method (.sample()) is not implemented")

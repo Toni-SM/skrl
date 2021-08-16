@@ -96,7 +96,7 @@ class Trainer:
         self._agents = agents
         if type(self._agents) is list:
             if not hasattr(self._env, 'num_envs'):
-                raise AttributeError("The environment does not support parallelization")
+                raise AttributeError("The environment does not support parallelization (num_envs is not defined)")
             if len(self._agents) != self._env.num_envs:
                 raise AssertionError("The number of agents ({}) does not match the number of parallelizable environments ({})".format(len(self._agents), self._env.num_envs))
             self._multiagent = True
@@ -132,11 +132,11 @@ class Trainer:
                 # compute the action
                 # TODO: sample controlled random actions
                 if self._multiagent:
-                    with torch.no_grad():
+                    with torch.no_grad(): # TODO: verify use for single-agent
                         actions = torch.stack([self._agents[i].act(states[i,:], inference=False) for i in range(len(self._agents))])
                 else:
-                    actions = self._agents.act(states, inference=False)
-
+                    actions, _, _ = self._agents.act(states, inference=False)
+                    
                 # step the environment
                 next_states, rewards, dones, infos = self._env.step(actions)
 

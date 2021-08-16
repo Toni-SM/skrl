@@ -3,7 +3,6 @@ from typing import Union, Dict
 import gym
 import torch
 
-
 from ..env import Environment
 from ..memory import Memory
 from ..models.torch import Model
@@ -41,6 +40,8 @@ class Agent:
         ----------
         states: torch.Tensor
             Environments' states
+        inference: bool
+            Flag to indicate whether the network is making inference
 
         Returns
         -------

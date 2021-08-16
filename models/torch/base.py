@@ -1,76 +1,103 @@
+from typing import Union, Tuple
+
 import gym
+import numpy as np
 import torch
 import torch.nn as nn
 
+from ...env import Environment
+
 
 class Model(nn.Module):
-    def __init__(self, device) -> None:
+    def __init__(self, env: Union[Environment, gym.Env], device: str) -> None:
+        """
+        Base class that represent a neural network model
+
+        # TODO: describe internal properties and methods
+
+        Parameters
+        ----------
+        env: skrl.env.Environment or gym.Env
+            RL environment
+        device: str
+            Device on which a PyTorch tensor is or will be allocated
+        """
         super(Model, self).__init__()
+        self.env = env
         self.device = device
-        self.network = None
+
+        self.num_observation = np.prod(self.env.observation_space.shape)
+        self.num_action = np.prod(self.env.action_space.shape)
         
     def forward(self):
-        raise NotImplementedError 
+        raise NotImplementedError("Implement and call .act() and .compute() methods instead of this")
 
-    def act(self, state, inference=False):
-        raise NotImplementedError
+    def compute(self, states: torch.Tensor) -> Tuple[torch.Tensor]:
+        """
+        Defines the computation performed by all involved networks
 
-    def to_tensor(self, var):
-        if not isinstance(var, torch.Tensor):
-            return torch.FloatTensor(var).to(self.device)
-        return var
+        Parameters
+        ----------
+        states: torch.Tensor
+            States/observations of the environment used to make the decision
 
-    def set_mode(self, mode):
+        Returns
+        -------
+        torch.Tensor or tuple
+            Computation performed by all involved networks
+        """
+        raise NotImplementedError("The computation performed by all involved networks (.compute()) is not implemented")
+
+    def act(self, states: torch.Tensor, inference=False) -> Tuple[torch.Tensor]:
+        """
+        Act according to the specified behavior
+
+        Parameters
+        ----------
+        states: torch.Tensor
+            States/observations of the environment used to make the decision
+        inference: bool
+            Flag to indicate whether the network is making inference
+        
+        Returns
+        -------
+        tuple of torch.Tensor
+            Action performed by the agent.
+            The tuple's components are the actions, the log of the probability density function and mean actions.
+            Deterministic agents must ignore the last two components and must return empty tensors for them
+        """
+        raise NotImplementedError("The action performed by the agent (.act()) is not implemented")
+
+    def to_tensor(self, data):
+        if not isinstance(data, torch.Tensor):
+            return torch.FloatTensor(data).to(self.device)
+        return data
+
+    def set_mode(self, mode: str) -> None:
+        """
+        Set the network mode (training or evaluation)
+
+        Parameters
+        ----------
+        mode: str
+            Mode: "train" for training or "eval" for evaluation.
+            https://pytorch.org/docs/1.8.1/generated/torch.nn.Module.html#torch.nn.Module.train
+        """
+        # TODO: set mode for registered networks
         if mode == "train":
             self.train()
-            self.network.train()
         elif mode == "eval":
             self.eval()
-            self.network.eval()
         else:
-            raise ValueError
+            raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
     def save(self, path):
-        torch.save(self.network.state_dict(), path)
+        # TODO: implement load method according to involved networks
+        # torch.save(self.network.state_dict(), path)
+        pass
 
     def load(self, path):
-        self.network.load_state_dict(torch.load(path))
+        # TODO: implement load method according to involved networks
+        # self.network.load_state_dict(torch.load(path))
+        pass
     
-    def activation_funtion_by_name(self, name):
-        # TODO: increase the list
-        if name == "elu":
-            return nn.ELU()
-        elif name == "selu":
-            return nn.SELU()
-        elif name == "relu":
-            return nn.ReLU()
-        elif name == "lrelu":
-            return nn.LeakyReLU()
-        elif name == "tanh":
-            return nn.Tanh()
-        elif name == "sigmoid":
-            return nn.Sigmoid()
-        return None
-
-    def built_network_from_cfg(self, cfg: dict, state_space: gym.spaces.Space, action_space: gym.spaces.Space):
-        # TODO: add output activation function
-        layers = []
-        hidden_layers = cfg.get("hidden_layers", [256, 256])
-        activation = self.activation_funtion_by_name(cfg.get("hidden_activation", "relu"))
-
-        # first layer
-        layers.append(nn.Linear(*state_space.shape, hidden_layers[0]))
-        layers.append(activation)
-
-        # add remaining layers
-        for i in range(len(hidden_layers)):
-            # last layer
-            if i == len(hidden_layers) - 1:
-                layers.append(nn.Linear(hidden_layers[i], *action_space.shape))
-            # hidden layers
-            else:
-                layers.append(nn.Linear(hidden_layers[i], hidden_layers[i + 1]))
-                layers.append(activation)
-
-        # built network
-        self.network = nn.Sequential(*layers)

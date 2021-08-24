@@ -32,7 +32,7 @@ class Model(nn.Module):
     def forward(self):
         raise NotImplementedError("Implement and call .act() and .compute() methods instead of this")
 
-    def compute(self, states: torch.Tensor) -> Tuple[torch.Tensor]:
+    def compute(self, states: torch.Tensor, actions_taken: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
         """
         Defines the computation performed by all involved networks
 
@@ -40,6 +40,9 @@ class Model(nn.Module):
         ----------
         states: torch.Tensor
             States/observations of the environment used to make the decision
+        actions_taken: torch.Tensor or None
+            Actions performed by a policy.
+            Using these actions only makes sense in critic networks
 
         Returns
         -------
@@ -48,7 +51,7 @@ class Model(nn.Module):
         """
         raise NotImplementedError("The computation performed by all involved networks (.compute()) is not implemented")
 
-    def act(self, states: torch.Tensor, inference=False) -> Tuple[torch.Tensor]:
+    def act(self, states: torch.Tensor, actions_taken: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
         """
         Act according to the specified behavior
 
@@ -56,6 +59,9 @@ class Model(nn.Module):
         ----------
         states: torch.Tensor
             States/observations of the environment used to make the decision
+        actions_taken: torch.Tensor or None
+            Actions performed by a policy.
+            Using these actions only makes sense in critic networks
         inference: bool
             Flag to indicate whether the network is making inference
         
@@ -69,6 +75,7 @@ class Model(nn.Module):
         raise NotImplementedError("The action performed by the agent (.act()) is not implemented")
 
     def to_tensor(self, data):
+        # TODO: delete
         if not isinstance(data, torch.Tensor):
             return torch.FloatTensor(data).to(self.device)
         return data

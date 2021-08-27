@@ -2,6 +2,7 @@ from typing import Union, Dict
 
 import gym
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from ..env import Environment
 from ..memory import Memory
@@ -32,7 +33,9 @@ class Agent:
         self.memory = memory
         self.cfg = cfg
 
-    def act(self, states: torch.Tensor, inference: bool = False) -> torch.Tensor:
+        self.writer = None
+
+    def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy
 
@@ -42,6 +45,10 @@ class Agent:
             Environments' states
         inference: bool
             Flag to indicate whether the network is making inference
+        timestep: int or None
+            Current timestep
+        timesteps: int or None
+            Number of timesteps
 
         Returns
         -------
@@ -61,6 +68,17 @@ class Agent:
         """
         for k in self.networks:
             self.networks[k].set_mode(mode)
+
+    def set_writer(self, writer: SummaryWriter):
+        """
+        Set the main entry to log data for consumption and visualization by TensorBoard
+
+        Parameters
+        ----------
+        writer: torch.utils.tensorboard.writer.SummaryWriter
+            Main entry to log data for consumption and visualization by TensorBoard
+        """
+        self.writer = writer
 
     def pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """
@@ -105,7 +123,7 @@ class Agent:
         """
         pass
     
-    def update_target_network(self, network: Model, target_network:Model, polyak: float = 1) -> None:
+    def update_target_network(self, network: Model, target_network:Model, polyak: float = 0) -> None:
         """
         Update target network parameters by hard or soft (polyak averaging) update
 
@@ -120,10 +138,10 @@ class Agent:
             Target network to be updated
         polyak: float
             Polyak hyperparameter between 0 and 1 (usually close to 1).
-            A hard update is performed when the hyperparameter is 1
+            A hard update is performed when the hyperparameter is 0
         """
         # hard update
-        if polyak == 1:
+        if not polyak:
             for network_param, target_network_param in zip(network.parameters(), target_network.parameters()):
                 target_network_param.data.copy_(network_param.data)
         # soft update (use in-place operations to avoid creating new data)

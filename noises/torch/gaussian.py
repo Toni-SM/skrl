@@ -11,9 +11,11 @@ class GaussianNoise(Noise):
         Parameters
         ----------
         mean: float
-            Mean of each output element's normal distribution
+            Mean of the normal distribution
         std
-            Standard deviation of each output element's normal distribution
+            Standard deviation of the normal distribution
+        device: str
+            Device on which a PyTorch tensor is or will be allocated
         """
         super().__init__(device)
 

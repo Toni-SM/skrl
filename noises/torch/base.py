@@ -15,9 +15,9 @@ class Noise():
         """
         self.device = device
 
-    def sample(self, shape: Union[Tuple[int], torch.Size]) -> Tuple[torch.Tensor]:
+    def sample(self, shape: Union[Tuple[int], torch.Size]) -> torch.Tensor:
         """
-        Sample a batch from the memory
+        Sample noise
 
         Parameters
         ----------
@@ -27,6 +27,6 @@ class Noise():
         Returns
         -------
         tuple
-            Sampled tensors
+            Sampled tensor
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")

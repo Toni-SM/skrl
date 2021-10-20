@@ -19,13 +19,9 @@ class Memory:
         num_envs: int
             Number of parallel environments
         device: str
-            Device on which a PyTorch tensor is or will be allocated
+            Device on which a torch tensor is or will be allocated
         preallocate: bool
             If true, preallocate memory for efficient use
-        state_space: 
-            State/observation space
-        action_space: gym.Space or None
-            Action space
         """
         # TODO: handle dynamic memory
         # TODO: show memory consumption
@@ -206,5 +202,6 @@ class Memory:
         list of torch.Tensor
             Sampled data from tensors sorted according to their position in the list of names 
         """
-        tensors = [getattr(self, name) for name in names]
+        # TODO: skip invalid names
+        tensors = [getattr(self, name if name.startswith("_tensor_") else "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]

@@ -1,145 +1,210 @@
-from typing import Union, Tuple
+from typing import Union
 
+import gym
+import math
 import torch
-from gym import spaces
+import inspect
+import numpy as np
 
 
 class Memory:
-    def __init__(self, buffer_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True, state_space: Union[spaces.Space, None] = None, action_space: Union[spaces.Space, None] = None) -> None:
+    def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True) -> None:
         """
         Base class that represent a memory with circular buffers
 
-        The implementation creates the buffers with the following shapes if the preallocate flag is set to true
-        - states (buffer_size, num_envs, *state_space.shape)
-        - actions (buffer_size, num_envs, *action_space.shape
-        - rewards (buffer_size, num_envs, 1)
-        - next_states (buffer_size, num_envs, *state_space.shape)
-        - dones (buffer_size, num_envs, 1)
-
         Parameters
         ----------
-        buffer_size: int
-            Maximum number of items in the buffer 
+        memory_size: int
+            Maximum number of elements in the first dimension of each internal tensor
         num_envs: int
             Number of parallel environments
         device: str
             Device on which a PyTorch tensor is or will be allocated
         preallocate: bool
             If true, preallocate memory for efficient use
-        state_space: gym.spaces.Space or None
+        state_space: 
             State/observation space
-        action_space: gym.spaces.Space or None
+        action_space: gym.Space or None
             Action space
         """
         # TODO: handle dynamic memory
         # TODO: show memory consumption
+        # TODO: handle advanced gym spaces
 
-        if preallocate:
-            if not isinstance(state_space, spaces.Space):
-                raise TypeError("env.state_space must be a gym Space")
-            if not isinstance(action_space, spaces.Space):
-                raise TypeError("env.action_space must be a gym Space")
-            
         self.preallocate = preallocate
-        self.buffer_size = buffer_size
+        self.memory_size = memory_size
         self.num_envs = num_envs
         self.device = device
 
         self.filled = False
-        self.position_env = 0
-        self.position_buffer = 0
-
-        # buffers
-        self.states = torch.zeros(buffer_size, num_envs, *state_space.shape, device=self.device)
-        self.actions = torch.zeros(buffer_size, num_envs, *action_space.shape, device=self.device)
-        self.rewards = torch.zeros(buffer_size, num_envs, 1, device=self.device)
-        self.next_states = torch.zeros(buffer_size, num_envs, *state_space.shape, device=self.device)
-        self.dones = torch.zeros(buffer_size, num_envs, 1, device=self.device).byte()
+        self.pointer_env = 0
+        self.pointer_memory = 0
 
         # alternative names
-        self.push = self.add_transitions
-        self.add_transition = self.add_transitions
+        self.push = self.add_samples
+        self.add_sample = self.add_samples
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
-        Current (valid) size of the buffer
+        Compute and return the current (valid) size of the memory
+
+        The valid size is calculated as the memory size * number of environments if the memory is full (filled).
+        Otherwise, the memory pointer * number of environments + environment pointer is returned
 
         Returns
         -------
         int
             valid size
         """
-        return self.buffer_size * self.num_envs if self.filled else self.position_buffer * self.num_envs + self.position_env
+        return self.memory_size * self.num_envs if self.filled else self.pointer_memory * self.num_envs + self.pointer_env
         
-    def reset(self) -> None:
+    def get_tensor_names(self) -> list[str]:
         """
-        Reset the memory
-        """
-        self.filled = False
-        self.position_env = 0
-        self.position_buffer = 0
+        Get the name of the internal tensors in alphabetical order
 
-    def add_transitions(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+        Returns
+        -------
+        list of strings
+            Tensor names without internal prefix (_tensor_)
         """
-        Record a single transition or a transition batch in the memory
+        names = [member[0] for member in inspect.getmembers(self, lambda name: not(inspect.isroutine(name))) if member[0].startswith('_tensor_')]
+        return sorted([name for name in names])
 
-        Single transition:
-            Storage a single transition (tensors with one dimension) and increment the position of the environment pointer (second index)
-        Transition batch:
-            Store the transitions (where tensors' first dimension must be equal to the number of parallel environments) and increment the position of the buffer pointer (first index)
+    def create_tensor(self, name: str, size: Union[int, tuple[int], list[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
+        """
+        Create a new internal tensor in the memory with a 3-component shape (memory_size, num_envs, size)
 
         Parameters
         ----------
-        states: torch.Tensor
-            States/observations of the environment used to make the decision
-        actions: torch.Tensor
-            Actions taken by the agent
-        rewards: torch.Tensor
-            Instant rewards achieved by the current actions
-        next_states: torch.Tensor
-            Next states/observations of the environment
-        dones: torch.Tensor
-            Signals to indicate that episodes have ended
+        name: str:
+            Tensor name. 
+            The internal representation will use _tensor_<name>
+        size: int, tuple, list or gym.Space
+            Number of elements in the last dimension (effective data size)
+            The product of the elements will be computed for collections or gym spaces types
+        dtype: torch.dtype
+            Data type (torch.dtype)
+
+        Returns
+        -------
+        bool
+            True if the tensor was created, otherwise False
         """
-        # single env transition
-        if states.dim() == 1:
-            self.states[self.position_buffer, self.position_env].copy_(states)
-            self.actions[self.position_buffer, self.position_env].copy_(actions)
-            self.rewards[self.position_buffer, self.position_env].copy_(rewards.view(-1))
-            self.next_states[self.position_buffer, self.position_env].copy_(next_states)
-            self.dones[self.position_buffer, self.position_env].copy_(dones.view(-1))
-            self.position_env += 1
-        # multi envs transitions
-        elif states.dim() > 1 and states.shape[0] == self.num_envs:
-            self.states[self.position_buffer].copy_(states)
-            self.actions[self.position_buffer].copy_(actions)
-            self.rewards[self.position_buffer].copy_(rewards.view(-1, 1))
-            self.next_states[self.position_buffer].copy_(next_states)
-            self.dones[self.position_buffer].copy_(dones.view(-1, 1))
-            self.position_buffer += 1
-        else:
-            raise BufferError("The first dimension of the transition tensors {} does not match the number of parallel environments {}".format(states.shape[0], self.num_envs))
-        
+        # TODO: check memory availability
+        # format tensor name to _tensor_<name>
+        name = name if name.startswith("_tensor_") else "_tensor_{}".format(name)
+        # check if the tensor exists
+        if hasattr(self, name):
+            print("[WARNING] the tensor {} exists".format(name))
+            return
+        # compute data size
+        if type(size) in [tuple, list]:
+            size = math.prod(size)
+        elif issubclass(type(size), gym.Space):
+            size = math.prod(size.shape)
+        # create tensor
+        setattr(self, name, torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
+        return True
+
+    def reset(self) -> None:
+        """
+        Reset the memory by cleaning internal flags
+
+        Reset values of the flags
+        - filled: False
+        - pointer_env: 0
+        - pointer_memory: 0
+
+        The old data will be kept until they are overwritten, however their access through the available methods will not be guaranteed
+        """
+        self.filled = False
+        self.pointer_env = 0
+        self.pointer_memory = 0
+
+    def add_samples(self, **tensors: torch.Tensor) -> None:
+        """
+        Record samples with 2-component shape (num_envs, size) in the memory
+
+        According to the number of environments, the following classification is made:
+        - one environment:
+            Store a single sample (tensors with one dimension) and increment the environment pointer (second index) by one
+        - number of environments less than num_envs:
+            Store the samples and increment the environment pointer (second index) by the number of the environments
+        - number of environments equals num_envs:
+            Store the samples and increment the memory pointer (first index) by one
+
+        Parameters
+        ----------
+        tensors:
+            Sampled data where the keys are the names of the tensors to be modified.
+            Non-existing tensors will be skipped
+        """
+        if not tensors:
+            raise ValueError("No samples to be recorded in memory. Pass samples as named arguments (keyword containing the tensor name)")
+        tensor = list(tensors.values())[0]
+        # single environment
+        if tensor.dim() == 1:
+            for name, tensor in tensors.items():
+                name = name if name.startswith("_tensor_") else "_tensor_{}".format(name)
+                if hasattr(self, name):
+                    getattr(self, name)[self.pointer_memory, self.pointer_env].copy_(tensor)
+            self.pointer_env += 1
+        # multi environment (where the amount of environments is equal to num_envs)
+        elif tensor.dim() > 1 and tensor.shape[0] == self.num_envs:
+            for name, tensor in tensors.items():
+                name = name if name.startswith("_tensor_") else "_tensor_{}".format(name)
+                if hasattr(self, name):
+                    getattr(self, name)[self.pointer_memory].copy_(tensor)
+            self.pointer_memory += 1
+        # multi environment (where the amount of environments is less than the num_envs)
+        elif tensor.dim() > 1 and tensor.shape[0] < self.num_envs:
+            for name, tensor in tensors.items():
+                name = name if name.startswith("_tensor_") else "_tensor_{}".format(name)
+                if hasattr(self, name):
+                    getattr(self, name)[self.pointer_memory, self.pointer_env:self.pointer_env + tensor.shape[0]].copy_(tensor)
+            self.pointer_env += tensor.shape[0]
+
         # update pointers
-        if self.position_env >= self.num_envs:
-            self.position_env = 0
-            self.position_buffer += 1
-        if self.position_buffer >= self.buffer_size:
-            self.position_buffer = 0
+        if self.pointer_env >= self.num_envs:
+            self.pointer_env = 0
+            self.pointer_memory += 1
+        if self.pointer_memory >= self.memory_size:
+            self.pointer_memory = 0
             self.filled = True
 
-    def sample(self, batch_size: int) -> Tuple[torch.Tensor]:
+    def sample(self, batch_size: int, names: list[str] = []) -> list[torch.Tensor]:
         """
-        Sample a batch from the memory
+        Sample a batch of data from memory
 
         Parameters
         ----------
         batch_size: int
             Number of element to sample
+        names: list of strings
+            List of tensors names from which to obtain the samples
 
         Returns
         -------
-        tuple
-            Sampled tensors
+        list of torch.Tensor
+            Sampled data from tensors sorted according to their position in the list of names
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")
+
+    def sample_by_index(self, indexes: Union[list, np.ndarray, torch.Tensor], names: list[str]) -> list[torch.Tensor]:
+        """
+        Sample data from memory according to its indexes
+
+        Parameters
+        ----------
+        indexes: list, numpy.ndarray or torch.Tensor
+            Indexes
+        names: list of strings
+            List of tensors names from which to obtain the samples
+
+        Returns
+        -------
+        list of torch.Tensor
+            Sampled data from tensors sorted according to their position in the list of names 
+        """
+        tensors = [getattr(self, name) for name in names]
+        return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]

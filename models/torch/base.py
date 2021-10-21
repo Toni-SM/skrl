@@ -1,4 +1,5 @@
 from typing import Union, Tuple
+from __future__ import annotations
 
 import gym
 import numpy as np
@@ -20,9 +21,10 @@ class Model(nn.Module):
         env: skrl.env.Environment or gym.Env
             RL environment
         device: str
-            Device on which a PyTorch tensor is or will be allocated
+            Device on which a torch tensor is or will be allocated
         """
         super(Model, self).__init__()
+
         self.env = env
         self.device = device
 
@@ -30,7 +32,7 @@ class Model(nn.Module):
         self.num_action = np.prod(self.env.action_space.shape)
         
     def forward(self):
-        raise NotImplementedError("Implement and call .act() and .compute() methods instead of this")
+        raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
     def compute(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
         """
@@ -69,17 +71,11 @@ class Model(nn.Module):
         -------
         tuple of torch.Tensor
             Action performed by the agent.
-            The tuple's components are the actions, the log of the probability density function and mean actions.
-            Deterministic agents must ignore the last two components and must return empty tensors for them
+            The typical tuple's components are the actions, the log of the probability density function and mean actions.
+            Deterministic agents must ignore the last two components and return empty tensors for them
         """
         raise NotImplementedError("The action performed by the agent (.act()) is not implemented")
-
-    def to_tensor(self, data):
-        # TODO: delete
-        if not isinstance(data, torch.Tensor):
-            return torch.FloatTensor(data).to(self.device)
-        return data
-
+        
     def set_mode(self, mode: str) -> None:
         """
         Set the network mode (training or evaluation)
@@ -108,3 +104,27 @@ class Model(nn.Module):
         # self.network.load_state_dict(torch.load(path))
         pass
     
+    def update_parameters(self, network: Model, polyak: float = 0) -> None:
+        """
+        Update internal parameters by hard or soft (polyak averaging) update
+
+        - Hard update: `parameters = network.parameters`
+        - Soft (polyak averaging) update: `parameters = polyak * parameters + (1 - polyak) * network.parameters`
+
+        Parameters
+        ----------
+        network: skrl.models.torch.Model
+            Network used to update the internal parameters
+        polyak: float
+            Polyak hyperparameter between 0 and 1 (usually close to 1).
+            A hard update is performed when its value is 0
+        """
+        # hard update
+        if not polyak:
+            for parameters, network_parameters in zip(self.parameters(), network.parameters()):
+                parameters.data.copy_(network_parameters.data)
+        # soft update (use in-place operations to avoid creating new parameters)
+        else:
+            for parameters, network_parameters in zip(self.parameters(), network.parameters()):
+                parameters.data.mul_(polyak)
+                parameters.data.add_((1 - polyak) * network_parameters.data)

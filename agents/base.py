@@ -123,29 +123,3 @@ class Agent:
         """
         pass
     
-    def update_target_network(self, network: Model, target_network:Model, polyak: float = 0) -> None:
-        """
-        Update target network parameters by hard or soft (polyak averaging) update
-
-        - Hard update: `target_network_parameters = network_parameters`
-        - Soft (polyak averaging) update: `target_network_parameters = polyak * target_network_parameters + (1 - polyak) * network_parameters`
-
-        Parameters
-        ----------
-        network: skrl.models.torch.Model
-            Network used to update the target network
-        target_network: skrl.models.torch.Model
-            Target network to be updated
-        polyak: float
-            Polyak hyperparameter between 0 and 1 (usually close to 1).
-            A hard update is performed when the hyperparameter is 0
-        """
-        # hard update
-        if not polyak:
-            for network_param, target_network_param in zip(network.parameters(), target_network.parameters()):
-                target_network_param.data.copy_(network_param.data)
-        # soft update (use in-place operations to avoid creating new data)
-        else:
-            for network_param, target_network_param in zip(network.parameters(), target_network.parameters()):
-                target_network_param.data.mul_(polyak)
-                target_network_param.data.add_((1 - polyak) * network_param.data)

@@ -1,16 +1,13 @@
-from typing import Union, Tuple
 from __future__ import annotations
+from typing import Union, Tuple
 
 import gym
-import numpy as np
+import math
 import torch
-import torch.nn as nn
-
-from ...env import Environment
 
 
-class Model(nn.Module):
-    def __init__(self, env: Union[Environment, gym.Env], device: str) -> None:
+class Model(torch.nn.Module):
+    def __init__(self, observation_space: Union[int, tuple[int], gym.Space, None] = None, action_space: Union[int, tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
         """
         Base class that represent a neural network model
 
@@ -18,21 +15,65 @@ class Model(nn.Module):
 
         Parameters
         ----------
-        env: skrl.env.Environment or gym.Env
-            RL environment
-        device: str
-            Device on which a torch tensor is or will be allocated
+        observation_space: int, tuple, list, gym.Space or None, optional
+            Observation/state space or shape (default: None).
+            If it is not None, the num_observations property will contain the size of that space (number of elements)
+        action_space: int, tuple, list, gym.Space or None, optional
+            Action space or shape (default: None).
+            If it is not None, the num_actions property will contain the size of that space (number of elements)
+        device: str, optional
+            Device on which a torch tensor is or will be allocated (default: "cuda:0")
         """
         super(Model, self).__init__()
 
-        self.env = env
         self.device = device
 
-        self.num_observation = np.prod(self.env.observation_space.shape)
-        self.num_action = np.prod(self.env.action_space.shape)
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.num_observations = None if observation_space is None else self._get_space_size(observation_space)
+        self.num_actions = None if action_space is None else self._get_space_size(action_space)
         
+    def _get_space_size(self, space: Union[int, tuple[int], gym.Space]) -> int:
+        """
+        Get the size (number of elements) of a space
+
+        Parameters
+        ----------
+        space: int, tuple, list, gym.Space or None, optional
+           Space or form from which to obtain the number of elements
+        
+        Returns
+        -------
+        int
+            Space size (number of elements)
+        """
+        if type(space) in [tuple, list]:
+            return math.prod(space)
+        elif issubclass(type(space), gym.Space):
+            return math.prod(space.shape)
+        return space
+
     def forward(self):
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
+
+    def init_parameters(self, method_name: str = "uniform_", *args, **kwargs) -> None:
+        """
+        Initializes the parameters of the module according to the specified method
+
+        Method names are from the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) module. 
+        Allowed method names are "uniform_", "normal_", "constant_", etc.
+
+        Parameters
+        ----------
+        method_name: str, optional
+            Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: "uniform_")
+        args: tuple, optional
+            Positional arguments of the method to be called
+        kwargs: dict, optional
+            Key-value arguments of the method to be called
+        """
+        for parameters in self.parameters():
+            exec("torch.nn.init.{}(parameters, *args, **kwargs)".format(method_name))
 
     def compute(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
         """
@@ -42,8 +83,8 @@ class Model(nn.Module):
         ----------
         states: torch.Tensor
             States/observations of the environment used to make the decision
-        taken_actions: torch.Tensor or None
-            Actions performed by a policy.
+        taken_actions: torch.Tensor or None, optional
+            Actions performed by a policy (default: None).
             Using these actions only makes sense in critic networks
 
         Returns
@@ -61,11 +102,11 @@ class Model(nn.Module):
         ----------
         states: torch.Tensor
             States/observations of the environment used to make the decision
-        taken_actions: torch.Tensor or None
-            Actions performed by a policy.
+        taken_actions: torch.Tensor or None, optional
+            Actions performed by a policy (default: None).
             Using these actions only makes sense in critic networks
-        inference: bool
-            Flag to indicate whether the network is making inference
+        inference: bool, optional
+            Flag to indicate whether the network is making inference (default: False)
         
         Returns
         -------
@@ -115,9 +156,9 @@ class Model(nn.Module):
         ----------
         network: skrl.models.torch.Model
             Network used to update the internal parameters
-        polyak: float
+        polyak: float, optional
             Polyak hyperparameter between 0 and 1 (usually close to 1).
-            A hard update is performed when its value is 0
+            A hard update is performed when its value is 0 (default)
         """
         # hard update
         if not polyak:

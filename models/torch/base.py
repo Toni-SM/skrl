@@ -50,6 +50,8 @@ class Model(torch.nn.Module):
         if type(space) in [tuple, list]:
             return math.prod(space)
         elif issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return space.n
             return math.prod(space.shape)
         return space
 

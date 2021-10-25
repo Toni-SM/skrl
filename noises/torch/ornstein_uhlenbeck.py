@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 
 import torch
 from torch.distributions import Normal
@@ -9,12 +9,12 @@ from . import Noise
 class OrnsteinUhlenbeckNoise(Noise):
     def __init__(self, theta: float, sigma: float, base_scale: float, mean: float = 0, std: float = 1, device: str = "cuda:0") -> None:
         """
-        Ornstein Uhlenbeck noise
+        Class representing an Ornstein Uhlenbeck noise
 
         Parameters
         ----------
         theta: float
-            Factor to apply to internal state
+            Factor to apply to current internal state
         sigma: float
             Factor to apply to the normal distribution
         base_scale: float
@@ -36,8 +36,21 @@ class OrnsteinUhlenbeckNoise(Noise):
 
         self.distribution = Normal(mean, std)
         
-    def sample(self, shape: Union[tuple[int], list[int], torch.Size]) -> torch.Tensor:
-        gaussian_sample = self.distribution.sample(shape).to(self.device)
-        self.state += -self.state * self.theta + self.sigma * gaussian_sample
+    def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
+        """
+        Sample an Ornstein Uhlenbeck noise
+
+        Parameters
+        ----------
+        size: tuple or list of ints or torch.Size
+            Shape of the sampled tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Sampled noise
+        """
+        gaussian_noise = self.distribution.sample(size).to(self.device)
+        self.state += -self.state * self.theta + self.sigma * gaussian_noise
         
         return self.base_scale * self.state

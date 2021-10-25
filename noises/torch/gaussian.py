@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 
 import torch
 from torch.distributions import Normal
@@ -9,7 +9,7 @@ from . import Noise
 class GaussianNoise(Noise):
     def __init__(self, mean: float, std: float, device: str = "cuda:0") -> None:
         """
-        Gaussian noise
+        Class representing a Gaussian noise
 
         Parameters
         ----------
@@ -24,5 +24,18 @@ class GaussianNoise(Noise):
 
         self.distribution = Normal(mean, std)
         
-    def sample(self, shape: Union[tuple[int], list[int], torch.Size]) -> torch.Tensor:
-        return self.distribution.sample(shape).to(self.device)
+    def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
+        """
+        Sample a Gaussian noise
+
+        Parameters
+        ----------
+        size: tuple or list of ints or torch.Size
+            Shape of the sampled tensor
+
+        Returns
+        -------
+        torch.Tensor
+            Sampled noise
+        """
+        return self.distribution.sample(size).to(self.device)

@@ -1,3 +1,7 @@
+from __future__ import annotations
+from typing import Union, Tuple
+
+import gym
 import torch
 from torch.distributions import Categorical
 
@@ -5,7 +9,7 @@ from . import Model
 
 
 class CategoricalModel(Model):
-    def __init__(self, env, device) -> None:
+    def __init__(self, observation_space: Union[int, tuple[int], gym.Space, None] = None, action_space: Union[int, tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
         """
         Categorical model (Stochastic)
 
@@ -13,7 +17,7 @@ class CategoricalModel(Model):
 
         https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#stochastic-policies
         """
-        super().__init__(env, device)
+        super().__init__(observation_space=observation_space, action_space=action_space, device=device)
 
         self.use_unnormalized_log_probabilities = True
 

@@ -42,7 +42,7 @@ class OrnsteinUhlenbeckNoise(Noise):
 
         Parameters
         ----------
-        size: tuple or list of ints or torch.Size
+        size: tuple or list of integers or torch.Size
             Shape of the sampled tensor
 
         Returns

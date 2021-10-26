@@ -1,24 +1,23 @@
-from __future__ import annotations
 from typing import Union, Tuple
 
 import gym
-import math
 import torch
+import numpy as np
 
 
 class Model(torch.nn.Module):
-    def __init__(self, observation_space: Union[int, tuple[int], gym.Space, None] = None, action_space: Union[int, tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
         """
-        Base class that represent a neural network model
+        Base class representing a neural network model
 
         # TODO: describe internal properties and methods
 
         Parameters
         ----------
-        observation_space: int, tuple, list, gym.Space or None, optional
+        observation_space: int, tuple or list of integers, gym.Space or None, optional
             Observation/state space or shape (default: None).
             If it is not None, the num_observations property will contain the size of that space (number of elements)
-        action_space: int, tuple, list, gym.Space or None, optional
+        action_space: int, tuple or list of integers, gym.Space or None, optional
             Action space or shape (default: None).
             If it is not None, the num_actions property will contain the size of that space (number of elements)
         device: str, optional
@@ -33,14 +32,14 @@ class Model(torch.nn.Module):
         self.num_observations = None if observation_space is None else self._get_space_size(observation_space)
         self.num_actions = None if action_space is None else self._get_space_size(action_space)
         
-    def _get_space_size(self, space: Union[int, tuple[int], gym.Space]) -> int:
+    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
         """
         Get the size (number of elements) of a space
 
         Parameters
         ----------
-        space: int, tuple, list, gym.Space or None, optional
-           Space or form from which to obtain the number of elements
+        space: int, tuple or list of integers, gym.Space or None
+           Space or shape from which to obtain the number of elements
         
         Returns
         -------
@@ -48,19 +47,16 @@ class Model(torch.nn.Module):
             Space size (number of elements)
         """
         if type(space) in [tuple, list]:
-            return math.prod(space)
+            return np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
                 return space.n
-            return math.prod(space.shape)
+            return np.prod(space.shape)
         return space
-
-    def forward(self):
-        raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
     def init_parameters(self, method_name: str = "uniform_", *args, **kwargs) -> None:
         """
-        Initializes the parameters of the module according to the specified method
+        Initialize the model parameters according to the specified method name
 
         Method names are from the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) module. 
         Allowed method names are "uniform_", "normal_", "constant_", etc.
@@ -77,47 +73,54 @@ class Model(torch.nn.Module):
         for parameters in self.parameters():
             exec("torch.nn.init.{}(parameters, *args, **kwargs)".format(method_name))
 
-    def compute(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
+    def forward(self):
+        raise NotImplementedError("Implement .act() and .compute() methods instead of this")
+
+    def compute(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         """
-        Defines the computation performed by all involved networks
+        Define the computation performed (to be implemented by the inheriting classes) by all involved networks
 
         Parameters
         ----------
         states: torch.Tensor
-            States/observations of the environment used to make the decision
+            Observation/state of the environment used to make the decision
         taken_actions: torch.Tensor or None, optional
-            Actions performed by a policy (default: None).
-            Using these actions only makes sense in critic networks
+            Actions taken by a policy to the given states (default: None).
+            The use of these actions only makes sense in critical networks, e.g.
 
         Returns
         -------
-        torch.Tensor or tuple
+        torch.Tensor or tuple of torch.Tensor
             Computation performed by all involved networks
         """
         raise NotImplementedError("The computation performed by all involved networks (.compute()) is not implemented")
 
     def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
         """
-        Act according to the specified behavior
+        Act according to the specified behavior (to be implemented by the inheriting classes)
 
+        Agents will call this method, during training and evaluation, to obtain the decision to be taken given the state of the environment.
+        This method is currently implemented in the predefined models (GaussianModel, DeterministicModel, etc.).
+        The classes that inherit from the latter must only implement the .compute() method
+        
         Parameters
         ----------
         states: torch.Tensor
-            States/observations of the environment used to make the decision
+            Observation/state of the environment used to make the decision
         taken_actions: torch.Tensor or None, optional
-            Actions performed by a policy (default: None).
-            Using these actions only makes sense in critic networks
+            Actions taken by a policy to the given states (default: None).
+            The use of these actions only makes sense in critical networks, e.g.
         inference: bool, optional
             Flag to indicate whether the network is making inference (default: False)
         
         Returns
         -------
         tuple of torch.Tensor
-            Action performed by the agent.
+            Action to be taken by the agent given the state of the environment.
             The typical tuple's components are the actions, the log of the probability density function and mean actions.
-            Deterministic agents must ignore the last two components and return empty tensors for them
+            Deterministic agents must ignore the last two components and return empty tensors or None for them
         """
-        raise NotImplementedError("The action performed by the agent (.act()) is not implemented")
+        raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
         
     def set_mode(self, mode: str) -> None:
         """
@@ -127,13 +130,12 @@ class Model(torch.nn.Module):
         ----------
         mode: str
             Mode: "train" for training or "eval" for evaluation.
-            https://pytorch.org/docs/1.8.1/generated/torch.nn.Module.html#torch.nn.Module.train
+            https://pytorch.org/docs/stable/generated/torch.nn.Module.html?highlight=torch%20nn%20module%20train#torch.nn.Module.train
         """
-        # TODO: set mode for registered networks
         if mode == "train":
-            self.train()
+            self.train(True)
         elif mode == "eval":
-            self.eval()
+            self.train(False)
         else:
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
@@ -147,7 +149,7 @@ class Model(torch.nn.Module):
         # self.network.load_state_dict(torch.load(path))
         pass
     
-    def update_parameters(self, network: Model, polyak: float = 0) -> None:
+    def update_parameters(self, network: torch.nn.Module, polyak: float = 0) -> None:
         """
         Update internal parameters by hard or soft (polyak averaging) update
 
@@ -156,7 +158,7 @@ class Model(torch.nn.Module):
 
         Parameters
         ----------
-        network: skrl.models.torch.Model
+        network: torch.nn.Module (skrl.models.torch.Model)
             Network used to update the internal parameters
         polyak: float, optional
             Polyak hyperparameter between 0 and 1 (usually close to 1).

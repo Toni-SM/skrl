@@ -35,15 +35,15 @@ class DDPG(Agent):
         self.critic = self.networks.get("critic", self.networks.get("q", None))
         self.target_critic = self.networks.get("target_critic", self.networks.get("target_q", None))
         
-        # freeze target networks with respect to optimizers (update via .update_target_network())
+        # freeze target networks with respect to optimizers (update via .update_parameters())
         for param in self.target_policy.parameters():
             param.requires_grad = False
         for param in self.target_critic.parameters():
             param.requires_grad = False
 
         # update target networks (hard update)
-        self.update_target_network(self.policy, self.target_policy)
-        self.update_target_network(self.critic, self.target_critic)
+        self.target_policy.update_parameters(self.policy, polyak=0)
+        self.target_critic.update_parameters(self.critic, polyak=0)
 
         # configuration
         self._gradient_steps = self.cfg.get("gradient_steps", 1)
@@ -190,8 +190,8 @@ class DDPG(Agent):
             self.optimizer_policy.step()
 
             # update target networks
-            self.update_target_network(self.critic, self.target_critic, polyak=self._polyak)
-            self.update_target_network(self.policy, self.target_policy, polyak=self._polyak)
+            self.target_policy.update_parameters(self.policy, polyak=self._polyak)
+            self.target_critic.update_parameters(self.critic, polyak=self._polyak)
 
             # record data
             self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)

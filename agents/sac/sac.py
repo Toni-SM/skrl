@@ -40,15 +40,15 @@ class SAC(Agent):
         self.target_1 = self.networks["target_1"]
         self.target_2 = self.networks["target_2"]
 
-        # freeze target networks with respect to optimizers (update via .update_target_network())
+        # freeze target networks with respect to optimizers (update via .update_parameters())
         for param in self.target_1.parameters():
             param.requires_grad = False
         for param in self.target_2.parameters():
             param.requires_grad = False
 
         # update target networks (hard update)
-        self.update_target_network(self.critic_1, self.target_1)
-        self.update_target_network(self.critic_2, self.target_2)
+        self.target_1.update_parameters(self.critic_1, polyak=0)
+        self.target_2.update_parameters(self.critic_2, polyak=0)
 
         # configuration
         self._gradient_steps = self.cfg.get("gradient_steps", 1)
@@ -190,8 +190,8 @@ class SAC(Agent):
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
             # update target networks (soft update)
-            self.update_target_network(self.critic_1, self.target_1, polyak=self._polyak)
-            self.update_target_network(self.critic_2, self.target_2, polyak=self._polyak)
+            self.target_1.update_parameters(self.critic_1, polyak=self._polyak)
+            self.target_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
             self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)

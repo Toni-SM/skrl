@@ -42,7 +42,7 @@ class TD3(Agent):
         self.target_1 = self.networks["target_1"]
         self.target_2 = self.networks["target_2"]
         
-        # freeze target networks with respect to optimizers (update via .update_target_network())
+        # freeze target networks with respect to optimizers (update via .update_parameters())
         for param in self.target_policy.parameters():
             param.requires_grad = False
         for param in self.target_1.parameters():
@@ -51,9 +51,9 @@ class TD3(Agent):
             param.requires_grad = False
 
         # update target networks (hard update)
-        self.update_target_network(self.policy, self.target_policy)
-        self.update_target_network(self.critic_1, self.target_1)
-        self.update_target_network(self.critic_2, self.target_2)
+        self.target_1.update_parameters(self.critic_1, polyak=0)
+        self.target_2.update_parameters(self.critic_2, polyak=0)
+        self.target_policy.update_parameters(self.policy, polyak=0)
 
         # configuration
         self._gradient_steps = self.cfg.get("gradient_steps", 1)
@@ -218,9 +218,9 @@ class TD3(Agent):
                 self.optimizer_policy.step()
 
                 # update target networks
-                self.update_target_network(self.critic_1, self.target_1, polyak=self._polyak)
-                self.update_target_network(self.critic_2, self.target_2, polyak=self._polyak)
-                self.update_target_network(self.policy, self.target_policy, polyak=self._polyak)
+                self.target_1.update_parameters(self.critic_1, polyak=self._polyak)
+                self.target_2.update_parameters(self.critic_2, polyak=self._polyak)
+                self.target_policy.update_parameters(self.policy, polyak=self._polyak)
 
             # record data
             if not self.counter_q_function_updates % self._policy_delay:

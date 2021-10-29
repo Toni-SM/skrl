@@ -1,7 +1,6 @@
 from typing import Union, Tuple, List
 
 import gym
-import math
 import torch
 import inspect
 import numpy as np
@@ -148,6 +147,7 @@ class Memory:
             raise ValueError("No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)")
         tensor = list(tensors.values())[0]
         # single environment
+        # TODO: use number of environments to check one environment
         if tensor.dim() == 1:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
@@ -159,14 +159,14 @@ class Memory:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
+                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
             self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
         elif tensor.dim() > 1 and tensor.shape[0] == self.num_envs:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index].copy_(tensor)
+                    getattr(self, name)[self.memory_index].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
             self.memory_index += 1
 
         # update indexes and flags

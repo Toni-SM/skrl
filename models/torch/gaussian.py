@@ -55,7 +55,8 @@ class GaussianModel(Model):
             The tuple's components are the actions, the log of the probability density function and mean actions
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states, taken_actions)
+        actions_mean, log_std = self.compute(states.to(self.device), 
+                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # log standard deviations as standalone parameters
         if self.parameters_log_std is not None:

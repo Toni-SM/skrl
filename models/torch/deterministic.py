@@ -47,7 +47,8 @@ class DeterministicModel(Model):
             The tuple's components are the computed actions and None for the last two components
         """
         # map from observations/states to actions
-        actions = self.compute(states, taken_actions)
+        actions = self.compute(states.to(self.device), 
+                               taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # clip actions 
         # TODO: use tensor too for low and high

@@ -51,14 +51,15 @@ class CategoricalModel(Model):
             The tuple's components are the actions, the log of the probability density function and None for the last component
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities
+        output = self.compute(states.to(self.device), 
+                              taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+
         # unnormalized log probabilities
         if self.use_unnormalized_log_probabilities:
-            logits = self.compute(states, taken_actions)
-            distribution = Categorical(logits=logits)
+            distribution = Categorical(logits=output)
         # normalized probabilities
         else:
-            probs = self.compute(states, taken_actions)
-            distribution = Categorical(probs=probs)
+            distribution = Categorical(probs=output)
         
         # actions and log of the probability density function
         actions = distribution.sample()

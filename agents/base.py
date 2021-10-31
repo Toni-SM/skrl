@@ -34,7 +34,7 @@ class Agent:
         self.cfg = cfg
 
         self.writer = None
-
+    
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy
@@ -54,6 +54,27 @@ class Agent:
         -------
         torch.Tensor
             Actions
+        """
+        raise NotImplementedError
+
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+        """
+        Record an environment transition in memory (to be implemented by the inheriting classes)
+
+        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded
+        
+        Parameters
+        ----------
+        states: torch.Tensor
+            Observations/states of the environment used to make the decision
+        actions: torch.Tensor
+            Actions taken by the agent
+        rewards: torch.Tensor
+            Instant rewards achieved by the current actions
+        next_states: torch.Tensor
+            Next observations/states of the environment
+        dones: torch.Tensor
+            Signals to indicate that episodes have ended
         """
         raise NotImplementedError
 

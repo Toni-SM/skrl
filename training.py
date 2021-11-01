@@ -176,20 +176,23 @@ class Trainer:
         # reset env
         states = self._env.reset()
 
-        for t in range(self._current_learning_iteration, self._max_learning_iterations):
-            print("iteration:", t)
+        for timestep in range(self._current_learning_iteration, self._max_learning_iterations):
+            print("iteration:", timestep)
             
             # pre-rollout
-            self._pre_rollouts(timestep=t, timesteps=self._max_learning_iterations)
+            self._pre_rollouts(timestep=timestep, timesteps=self._max_learning_iterations)
             
             # rollouts
-            for r in range(rollouts):
+            for rollout in range(rollouts):
                 # compute actions
                 # TODO: sample controlled random actions
                 if self._is_multi_agent:
-                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], inference=True)[0] for agent, scope in zip(self._agents, self._agents_scope)])
+                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                                                      inference=True,
+                                                      timestep=timestep, 
+                                                      timesteps=self._max_learning_iterations)[0] for agent, scope in zip(self._agents, self._agents_scope)])
                 else:
-                    actions, _, _ = self._agents.act(states, inference=True)
+                    actions, _, _ = self._agents.act(states, inference=True, timestep=timestep, timesteps=self._max_learning_iterations)
                 
                 # step the environment
                 next_states, rewards, dones, infos = self._env.step(actions)
@@ -217,7 +220,7 @@ class Trainer:
                         states.copy_(next_states)
 
                 # inter-rollout
-                self._inter_rollouts(timestep=t, timesteps=self._max_learning_iterations, rollout=r, rollouts=rollouts)
+                self._inter_rollouts(timestep=timestep, timesteps=self._max_learning_iterations, rollout=rollout, rollouts=rollouts)
                 
             # post-rollout
-            self._post_rollouts(timestep=t, timesteps=self._max_learning_iterations)
+            self._post_rollouts(timestep=timestep, timesteps=self._max_learning_iterations)

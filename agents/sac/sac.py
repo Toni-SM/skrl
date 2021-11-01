@@ -24,15 +24,15 @@ class SAC(Agent):
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the policy network in 'policy' key. Use 'policy' key to define the policy network")
+            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
         if not "q_1" in self.networks.keys() and not "critic_1" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q1-network (critic 1) in 'critic_1' or 'q_1' keys. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
+            raise KeyError("Q1-network (critic 1) not found in networks. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
         if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q2-network (critic 2) in 'critic_2' or 'q_2' keys. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
+            raise KeyError("Q2-network (critic 2) not found in networks. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
         if not "target_1" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q1-target network (target 1) in 'target_1' key. Use 'target_1' key to define the Q1-target network (target 1)")
+            raise KeyError("Q1-target network (target 1) not found in networks. Use 'target_1' key to define the Q1-target network (target 1)")
         if not "target_2" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q2-target network (target 2) in 'target_2' key. Use 'target_2' key to define the Q2-target network (target 2)")
+            raise KeyError("Q2-target network (target 2) not found in networks. Use 'target_2' key to define the Q2-target network (target 2)")
         
         self.policy = self.networks["policy"]
         self.critic_1 = self.networks.get("critic_1", self.networks.get("q_1", None))
@@ -72,6 +72,15 @@ class SAC(Agent):
         self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
         self.optimizer_critic = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._learning_rate)
 
+        # create tensors in memory
+        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="next_states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
+
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy
@@ -92,7 +101,32 @@ class SAC(Agent):
         torch.Tensor
             Actions
         """
-        return self.policy.act(self.policy.to_tensor(states), inference=inference)
+        if inference:
+            with torch.no_grad():
+                return self.policy.act(states, inference=inference)
+        return self.policy.act(states, inference=inference)
+
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+        """
+        Record an environment transition in memory (to be implemented by the inheriting classes)
+
+        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded
+        
+        Parameters
+        ----------
+        states: torch.Tensor
+            Observations/states of the environment used to make the decision
+        actions: torch.Tensor
+            Actions taken by the agent
+        rewards: torch.Tensor
+            Instant rewards achieved by the current actions
+        next_states: torch.Tensor
+            Next observations/states of the environment
+        dones: torch.Tensor
+            Signals to indicate that episodes have ended
+        """
+        if self.memory is not None:
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
 
     def pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """
@@ -146,7 +180,7 @@ class SAC(Agent):
         for gradient_steps in range(self._gradient_steps):
             
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size)
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
             # compute targets for Q-functions
             with torch.no_grad():
@@ -155,7 +189,9 @@ class SAC(Agent):
                 target_1_values, _, _ = self.target_1.act(states=sampled_next_states, taken_actions=next_actions)
                 target_2_values, _, _ = self.target_2.act(states=sampled_next_states, taken_actions=next_actions)
                 target_values = torch.min(target_1_values, target_2_values) - self._entropy_coefficient * next_log_prob
-                target_values = sampled_rewards + self._discount_factor * (1 - sampled_dones) * target_values
+                target_values = sampled_rewards + self._discount_factor * (1 - sampled_dones.to(torch.int8)) * target_values
+                # Subtraction, the `-` operator, with a bool tensor is not supported. If you are trying to invert a mask, use the `~` or `logical_not()` operator instead
+                # target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
 
             # update critic (Q-functions)
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)

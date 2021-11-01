@@ -106,9 +106,7 @@ class SAC(Agent):
 
     def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
         """
-        Record an environment transition in memory (to be implemented by the inheriting classes)
-
-        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded
+        Record an environment transition in memory
         
         Parameters
         ----------

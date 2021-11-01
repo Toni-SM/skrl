@@ -187,7 +187,7 @@ class Trainer:
                 # compute actions
                 # TODO: sample controlled random actions
                 if self._is_multi_agent:
-                    actions = torch.stack([self._agents[i].act(states[i,:], inference=True) for i in range(len(self._agents))])
+                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], inference=True)[0] for agent, scope in zip(self._agents, self._agents_scope)])
                 else:
                     actions, _, _ = self._agents.act(states, inference=True)
                 

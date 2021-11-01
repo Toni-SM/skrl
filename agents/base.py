@@ -5,7 +5,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from ..env import Environment
-from ..memory import Memory
+from ..memories import Memory
 from ..models.torch import Model
 
 

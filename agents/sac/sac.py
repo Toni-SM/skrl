@@ -7,7 +7,7 @@ import itertools
 import numpy as np
 
 from ...env import Environment
-from ...memory import Memory
+from ...memories import Memory
 from ...models.torch import Model
 
 from .. import Agent
@@ -177,7 +177,7 @@ class SAC(Agent):
             return
         
         # update steps
-        for gradient_steps in range(self._gradient_steps):
+        for gradient_step in range(self._gradient_steps):
             
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)

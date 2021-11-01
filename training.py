@@ -2,6 +2,7 @@ from typing import Union, List
 
 import gym
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from .env import wrap_env
 from .env import Environment
@@ -21,6 +22,10 @@ class Trainer:
 
         self._agents = None
         self._agents_scope = None
+
+        # tensorboard
+        # TODO: modify writer's parameters
+        self._writer = SummaryWriter()
 
     def _pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """
@@ -140,6 +145,13 @@ class Trainer:
         else:
             self._agents.set_mode("train")
         
+        # set writer
+        if self._is_multi_agent:
+            for agent in self._agents:
+                agent.set_writer(self._writer)
+        else:
+            self._agents.set_writer(self._writer)
+
         # read configuration
         self._cfg = cfg
         self._max_learning_iterations = int(self._cfg.get("timesteps", 1e6))

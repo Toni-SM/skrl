@@ -53,7 +53,7 @@ class DeterministicModel(Model):
         # clip actions 
         # TODO: use tensor too for low and high
         if issubclass(type(self.action_space), gym.Space):
-            actions.clamp_(self.action_space.low[0], self.action_space.high[0])
+            actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
 
         return actions, None, None
         

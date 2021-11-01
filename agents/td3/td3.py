@@ -134,6 +134,26 @@ class TD3(Agent):
         
         return actions
 
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+        """
+        Record an environment transition in memory
+        
+        Parameters
+        ----------
+        states: torch.Tensor
+            Observations/states of the environment used to make the decision
+        actions: torch.Tensor
+            Actions taken by the agent
+        rewards: torch.Tensor
+            Instant rewards achieved by the current actions
+        next_states: torch.Tensor
+            Next observations/states of the environment
+        dones: torch.Tensor
+            Signals to indicate that episodes have ended
+        """
+        if self.memory is not None:
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+
     def pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """
         Callback called before all rollouts
@@ -200,7 +220,7 @@ class TD3(Agent):
                 target_1_values, _, _ = self.target_1.act(states=sampled_next_states, taken_actions=next_actions)
                 target_2_values, _, _ = self.target_2.act(states=sampled_next_states, taken_actions=next_actions)
                 target_values = torch.min(target_1_values, target_2_values)
-                target_values = sampled_rewards + self._discount_factor * (1 - sampled_dones) * target_values
+                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
 
             # update critic (Q-functions)
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)

@@ -119,6 +119,26 @@ class DDPG(Agent):
         
         return actions
 
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+        """
+        Record an environment transition in memory
+        
+        Parameters
+        ----------
+        states: torch.Tensor
+            Observations/states of the environment used to make the decision
+        actions: torch.Tensor
+            Actions taken by the agent
+        rewards: torch.Tensor
+            Instant rewards achieved by the current actions
+        next_states: torch.Tensor
+            Next observations/states of the environment
+        dones: torch.Tensor
+            Signals to indicate that episodes have ended
+        """
+        if self.memory is not None:
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+
     def pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """
         Callback called before all rollouts
@@ -178,7 +198,7 @@ class DDPG(Agent):
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
 
                 target_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
-                target_values = sampled_rewards + self._discount_factor * (1 - sampled_dones) * target_values
+                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
 
             # update critic (Q-function)
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)

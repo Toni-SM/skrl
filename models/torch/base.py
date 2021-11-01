@@ -149,6 +149,21 @@ class Model(torch.nn.Module):
         # self.network.load_state_dict(torch.load(path))
         pass
     
+    def freeze_parameters(self, freeze: bool = True) -> None:
+        """
+        Freeze or unfreeze internal parameters
+
+        - Freeze: disable gradient computation (`parameters.requires_grad = False`)
+        - Unfreeze: enable gradient computation (`parameters.requires_grad = True`) 
+        
+        Parameters
+        ----------
+        freeze: bool
+            Freeze the internal parameters if True, otherwise unfreeze them
+        """
+        for parameters in self.parameters():
+            parameters.requires_grad = not freeze
+
     def update_parameters(self, network: torch.nn.Module, polyak: float = 0) -> None:
         """
         Update internal parameters by hard or soft (polyak averaging) update

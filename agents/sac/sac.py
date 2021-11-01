@@ -41,10 +41,8 @@ class SAC(Agent):
         self.target_2 = self.networks["target_2"]
 
         # freeze target networks with respect to optimizers (update via .update_parameters())
-        for param in self.target_1.parameters():
-            param.requires_grad = False
-        for param in self.target_2.parameters():
-            param.requires_grad = False
+        self.target_1.freeze_parameters(True)
+        self.target_2.freeze_parameters(True)
 
         # update target networks (hard update)
         self.target_1.update_parameters(self.critic_1, polyak=0)

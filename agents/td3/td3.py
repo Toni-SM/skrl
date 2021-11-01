@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import itertools
 
 from ...env import Environment
-from ...memory import Memory
+from ...memories import Memory
 from ...models.torch import Model
 
 from .. import Agent
@@ -23,17 +23,17 @@ class TD3(Agent):
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the policy network in 'policy' key. Use 'policy' key to define the policy network")
+            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
         if not "target_policy" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the policy-target network in 'target_policy' key. Use 'target_policy' key to define the policy-target network")
+            raise KeyError("Policy-target network not found in networks. Use 'target_policy' key to define the policy-target network")
         if not "q_1" in self.networks.keys() and not "critic_1" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q1-network (critic 1) in 'critic_1' or 'q_1' keys. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
+            raise KeyError("Q1-network (critic 1) not found in networks. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
         if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q2-network (critic 2) in 'critic_2' or 'q_2' keys. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
+            raise KeyError("Q2-network (critic 2) not found in networks. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
         if not "target_1" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q1-target network (target 1) in 'target_1' key. Use 'target_1' key to define the Q1-target network (target 1)")
+            raise KeyError("Q1-target network (target 1) not found in networks. Use 'target_1' key to define the Q1-target network (target 1)")
         if not "target_2" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q2-target network (target 2) in 'target_2' key. Use 'target_2' key to define the Q2-target network (target 2)")
+            raise KeyError("Q2-target network (target 2) not found in networks. Use 'target_2' key to define the Q2-target network (target 2)")
         
         self.policy = self.networks["policy"]
         self.target_policy = self.networks["target_policy"]
@@ -43,12 +43,9 @@ class TD3(Agent):
         self.target_2 = self.networks["target_2"]
         
         # freeze target networks with respect to optimizers (update via .update_parameters())
-        for param in self.target_policy.parameters():
-            param.requires_grad = False
-        for param in self.target_1.parameters():
-            param.requires_grad = False
-        for param in self.target_2.parameters():
-            param.requires_grad = False
+        self.target_policy.freeze_parameters(True)
+        self.target_1.freeze_parameters(True)
+        self.target_2.freeze_parameters(True)
 
         # update target networks (hard update)
         self.target_1.update_parameters(self.critic_1, polyak=0)
@@ -77,6 +74,15 @@ class TD3(Agent):
         self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
         self.optimizer_critic = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._learning_rate)
 
+        # create tensors in memory
+        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="next_states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
+
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy
@@ -97,10 +103,14 @@ class TD3(Agent):
         torch.Tensor
             Actions
         """
-        actions = self.policy.act(self.policy.to_tensor(states), inference=inference)
-
+        if inference:
+            with torch.no_grad():
+                actions = self.policy.act(states, inference=inference)
+        else:
+            actions = self.policy.act(states, inference=inference)
+        
         # add noise
-        if not inference and self._noise is not None:
+        if self._noise is not None:
             # sample noises
             noises = self._noise.sample(actions[0].shape)
             
@@ -176,7 +186,7 @@ class TD3(Agent):
         for gradient_steps in range(self._gradient_steps):
             
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size)
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
             # compute targets for Q-function
             with torch.no_grad():

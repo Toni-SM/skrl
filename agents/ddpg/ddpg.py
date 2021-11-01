@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 
 from ...env import Environment
-from ...memory import Memory
+from ...memories import Memory
 from ...models.torch import Model
 
 from .. import Agent
@@ -22,13 +22,13 @@ class DDPG(Agent):
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the policy network in 'policy' key. Use 'policy' key to define the policy network")
+            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
         if not "target_policy" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the policy-target network in 'target_policy' key. Use 'target_policy' key to define the policy-target network")
+            raise KeyError("Policy-target network not found in networks. Use 'target_policy' key to define the policy-target network")
         if not "q" in self.networks.keys() and not "critic" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q-network (critic) in 'critic' or 'q' keys. Use 'critic' or 'q' keys to define the Q-network (critic)")
+            raise KeyError("Q-network (critic) not found in networks. Use 'critic' or 'q' keys to define the Q-network (critic)")
         if not "target_q" in self.networks.keys() and not "target_critic" in self.networks.keys():
-            raise KeyError("The network dictionary (networks) does not contain the Q-target-network (critic target) in 'target_critic' or 'target_q' keys. Use 'target_critic' or 'target_q' keys to define the Q-target-network (critic target)")
+            raise KeyError("Q-target-network (critic target) not found in networks. Use 'target_critic' or 'target_q' keys to define the Q-target-network (critic target)")
         
         self.policy = self.networks["policy"]
         self.target_policy = self.networks["target_policy"]
@@ -36,10 +36,8 @@ class DDPG(Agent):
         self.target_critic = self.networks.get("target_critic", self.networks.get("target_q", None))
         
         # freeze target networks with respect to optimizers (update via .update_parameters())
-        for param in self.target_policy.parameters():
-            param.requires_grad = False
-        for param in self.target_critic.parameters():
-            param.requires_grad = False
+        self.target_policy.freeze_parameters(True)
+        self.target_critic.freeze_parameters(True)
 
         # update target networks (hard update)
         self.target_policy.update_parameters(self.policy, polyak=0)
@@ -61,6 +59,15 @@ class DDPG(Agent):
         self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
         self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self._learning_rate)
 
+        # create tensors in memory
+        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="next_states", size=self.env.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
+
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy
@@ -81,10 +88,14 @@ class DDPG(Agent):
         torch.Tensor
             Actions
         """
-        actions = self.policy.act(self.policy.to_tensor(states), inference=inference)
-
+        if inference:
+            with torch.no_grad():
+                actions = self.policy.act(states, inference=inference)
+        else:
+            actions = self.policy.act(states, inference=inference)
+            
         # add noise
-        if not inference and self._noise is not None:
+        if self._noise is not None:
             # sample noises
             noises = self._noise.sample(actions[0].shape)
             
@@ -160,7 +171,7 @@ class DDPG(Agent):
         for gradient_steps in range(self._gradient_steps):
             
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size)
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
             # compute targets for Q-function
             with torch.no_grad():

@@ -13,7 +13,6 @@ class Noise():
         device: str, optional
             Device on which a torch tensor is or will be allocated (default: "cuda:0")
         """
-        # TODO: what about parameters noise
         self.device = device
 
     def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:

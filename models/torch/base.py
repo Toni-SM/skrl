@@ -54,6 +54,26 @@ class Model(torch.nn.Module):
             return np.prod(space.shape)
         return space
 
+    def random_act(self, states: torch.Tensor) -> Tuple[torch.Tensor]:
+        """
+        Act randomly
+
+        Parameters
+        ----------
+        states: torch.Tensor
+            Observation/state of the environment used to get the shape of the action space
+            
+        Returns
+        -------
+        tuple of torch.Tensor
+            Random action to be taken by the agent
+        """
+        # TODO: sample taking into account states' shape
+        # TODO: sample taking into account bounds
+        distribution = torch.distributions.uniform.Uniform(low=self.action_space.low[0], high=self.action_space.high[0])
+        actions = distribution.sample(sample_shape=(self.num_actions, ))
+        return actions.to(self.device), None, None
+
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """
         Initialize the model parameters according to the specified method name

@@ -11,6 +11,30 @@ from ...models.torch import Model
 from .. import Agent
 
 
+DEFAULT_CONFIG = {
+    "discount_factor": 0.99,        # discount factor
+    "gradient_steps": 1,            # gradient steps
+    
+    "polyak": 0.995,                # soft update of target parameters hyperparameter
+    
+    "batch_size": 64,               # size of minibatch
+    "actor_learning_rate": 1e-3,    # actor learning rate
+    "critic_learning_rate": 1e-3,   # critic learning rate
+
+    "random_timesteps": 1e3,        # random exploration steps
+    "learning_starts": 1e3,         # learning starts after this many steps
+
+    "exploration": {
+        "noise": None,              # exploration noise
+        "initial_scale": 1.0,       # initial scale for noise
+        "final_scale": 1e-3,        # final scale for noise
+        "timesteps": None,          # timesteps for noise decay
+    },
+
+    "device": None,                 # device to use
+}
+
+
 class DDPG(Agent):
     def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
         """
@@ -18,7 +42,8 @@ class DDPG(Agent):
 
         https://arxiv.org/abs/1509.02971
         """
-        super().__init__(env=env, networks=networks, memory=memory, cfg=cfg)
+        DEFAULT_CONFIG.update(cfg)
+        super().__init__(env=env, networks=networks, memory=memory, cfg=DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
@@ -44,20 +69,23 @@ class DDPG(Agent):
         self.target_critic.update_parameters(self.critic, polyak=0)
 
         # configuration
-        self._gradient_steps = self.cfg.get("gradient_steps", 1)
-        self._batch_size = self.cfg.get("batch_size", 64)
-        self._polyak = self.cfg.get("polyak", 0.995)
-        self._discount_factor = self.cfg.get("discount_factor", 0.99)
-        self._learning_rate = self.cfg.get("learning_rate", 3e-4)
+        self._gradient_steps = self.cfg["gradient_steps"]
+        self._batch_size = self.cfg["batch_size"]
+        self._polyak = self.cfg["polyak"]
+        self._discount_factor = self.cfg["discount_factor"]
+        self._actor_learning_rate = self.cfg["actor_learning_rate"]
+        self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        self._random_timesteps = self.cfg["random_timesteps"]
+        self._learning_starts = self.cfg["learning_starts"]
 
-        self._noise = self.cfg.get("noise", None)
-        self._noise_initial_scale = self.cfg.get("noise_initial_scale", 1.0)
-        self._noise_final_scale = self.cfg.get("noise_final_scale", 0.01)
-        self._noise_scale_timesteps = self.cfg.get("noise_scale_timesteps", 6000)
+        self._exploration_noise = self.cfg["exploration"]["noise"]
+        self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
+        self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
+        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
         
         # set up optimizers
-        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self._learning_rate)
+        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -88,23 +116,27 @@ class DDPG(Agent):
         torch.Tensor
             Actions
         """
+        # sample random actions
+        if timestep < self._random_timesteps:
+            return self.policy.random_act(states)
+
         if inference:
             with torch.no_grad():
                 actions = self.policy.act(states, inference=inference)
         else:
             actions = self.policy.act(states, inference=inference)
             
-        # add noise
-        if self._noise is not None:
+        # add exloration noise
+        if self._exploration_noise is not None:
             # sample noises
-            noises = self._noise.sample(actions[0].shape)
+            noises = self._exploration_noise.sample(actions[0].shape)
             
             # scale noises
-            scale = self._noise_final_scale
-            if self._noise_scale_timesteps is None:
-                self._noise_scale_timesteps = timesteps
-            if timestep <= self._noise_scale_timesteps:
-                scale = (1 - timestep / self._noise_scale_timesteps) * (self._noise_initial_scale - self._noise_final_scale) + self._noise_final_scale
+            scale = self._exploration_final_scale
+            if self._exploration_timesteps is None:
+                self._exploration_timesteps = timesteps
+            if timestep <= self._exploration_timesteps:
+                scale = (1 - timestep / self._exploration_timesteps) * (self._exploration_initial_scale - self._exploration_final_scale) + self._exploration_final_scale
             noises.mul_(scale)
 
             # modify actions
@@ -180,13 +212,10 @@ class DDPG(Agent):
         timesteps: int
             Number of timesteps
         """
-        self._update(timestep, timesteps)
+        if timestep >= self._learning_starts:
+            self._update(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
-        # check memory size
-        if len(self.memory) < self._batch_size:
-            return
-        
         # update steps
         for gradient_step in range(self._gradient_steps):
             

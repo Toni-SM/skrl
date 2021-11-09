@@ -12,6 +12,34 @@ from ...models.torch import Model
 from .. import Agent
 
 
+TD3_DEFAULT_CONFIG = {
+    "discount_factor": 0.99,        # discount factor
+    "gradient_steps": 1,            # gradient steps
+    
+    "polyak": 0.995,                # soft update of target parameters hyperparameter
+    
+    "batch_size": 64,               # size of minibatch
+    "actor_learning_rate": 1e-3,    # actor learning rate
+    "critic_learning_rate": 1e-3,   # critic learning rate
+
+    "random_timesteps": 1000,       # random exploration steps
+    "learning_starts": 1000,        # learning starts after this many steps
+
+    "exploration": {
+        "noise": None,              # exploration noise
+        "initial_scale": 1.0,       # initial scale for noise
+        "final_scale": 1e-3,        # final scale for noise
+        "timesteps": None,          # timesteps for noise decay
+    },
+
+    "policy_delay": 2,                      # policy delay update with respect to critic update
+    "smooth_regularization_noise": None,    # smooth noise for regularization
+    "smooth_regularization_clip": 0.5,      # clip for smooth regularization
+
+    "device": None,                 # device to use
+}
+
+
 class TD3(Agent):
     def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
         """
@@ -19,7 +47,8 @@ class TD3(Agent):
 
         https://arxiv.org/abs/1802.09477
         """
-        super().__init__(env=env, networks=networks, memory=memory, cfg=cfg)
+        TD3_DEFAULT_CONFIG.update(cfg)
+        super().__init__(env=env, networks=networks, memory=memory, cfg=TD3_DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
@@ -53,26 +82,30 @@ class TD3(Agent):
         self.target_policy.update_parameters(self.policy, polyak=0)
 
         # configuration
-        self._gradient_steps = self.cfg.get("gradient_steps", 1)
-        self._batch_size = self.cfg.get("batch_size", 64)
-        self._polyak = self.cfg.get("polyak", 0.995)
-        self._discount_factor = self.cfg.get("discount_factor", 0.99)
-        self._learning_rate = self.cfg.get("learning_rate", 3e-4)
-        self._policy_delay = self.cfg.get("policy_delay", 2)
+        self._gradient_steps = self.cfg["gradient_steps"]
+        self._batch_size = self.cfg["batch_size"]
+        self._polyak = self.cfg["polyak"]
+        self._discount_factor = self.cfg["discount_factor"]
+        self._actor_learning_rate = self.cfg["actor_learning_rate"]
+        self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        self._random_timesteps = self.cfg["random_timesteps"]
+        self._learning_starts = self.cfg["learning_starts"]
 
-        self._noise = self.cfg.get("noise", None)
-        self._noise_initial_scale = self.cfg.get("noise_initial_scale", 1.0)
-        self._noise_final_scale = self.cfg.get("noise_final_scale", 0.01)
-        self._noise_scale_timesteps = self.cfg.get("noise_scale_timesteps", 6000)
+        self._exploration_noise = self.cfg["exploration"]["noise"]
+        self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
+        self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
+        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
 
-        self._smooth_noise = self.cfg.get("smooth_noise", None)
-        self._smooth_noise_clip = self.cfg.get("smooth_noise_clip", 0.5)
+        self._policy_delay = self.cfg["policy_delay"]
 
-        self.counter_q_function_updates = 0
+        self._smooth_regularization_noise = self.cfg["smooth_regularization_noise"]
+        self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
+
+        self._critic_update_counter = 0
 
         # set up optimizers
-        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
-        self.optimizer_critic = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._learning_rate)
+        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+        self.optimizer_critic = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -103,6 +136,11 @@ class TD3(Agent):
         torch.Tensor
             Actions
         """
+        # sample random actions
+        if timestep < self._random_timesteps:
+            return self.policy.random_act(states)
+
+        # sample deterministic actions
         if inference:
             with torch.no_grad():
                 actions = self.policy.act(states, inference=inference)
@@ -110,16 +148,16 @@ class TD3(Agent):
             actions = self.policy.act(states, inference=inference)
         
         # add noise
-        if self._noise is not None:
+        if self._exploration_noise is not None:
             # sample noises
-            noises = self._noise.sample(actions[0].shape)
+            noises = self._exploration_noise.sample(actions[0].shape)
             
             # scale noises
-            scale = self._noise_final_scale
-            if self._noise_scale_timesteps is None:
-                self._noise_scale_timesteps = timesteps
-            if timestep <= self._noise_scale_timesteps:
-                scale = (1 - timestep / self._noise_scale_timesteps) * (self._noise_initial_scale - self._noise_final_scale) + self._noise_final_scale
+            scale = self._exploration_final_scale
+            if self._exploration_timesteps is None:
+                self._exploration_timesteps = timesteps
+            if timestep <= self._exploration_timesteps:
+                scale = (1 - timestep / self._exploration_timesteps) * (self._exploration_initial_scale - self._exploration_final_scale) + self._exploration_final_scale
             noises.mul_(scale)
 
             # modify actions
@@ -195,13 +233,10 @@ class TD3(Agent):
         timesteps: int
             Number of timesteps
         """
-        self._update(timestep, timesteps)
+        if timestep >= self._learning_starts:
+            self._update(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
-        # check memory size
-        if len(self.memory) < self._batch_size:
-            return
-        
         # update steps
         for gradient_step in range(self._gradient_steps):
             
@@ -213,7 +248,7 @@ class TD3(Agent):
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
 
                 # target policy smoothing
-                noises = torch.clamp(self._smooth_noise.sample(next_actions.shape), -self._smooth_noise_clip, self._smooth_noise_clip)
+                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), -self._smooth_regularization_clip, self._smooth_regularization_clip)
                 next_actions.add_(noises)
                 next_actions.clamp_(self.env.action_space.low[0], self.env.action_space.high[0])  # FIXME: use tensor too
 
@@ -233,8 +268,8 @@ class TD3(Agent):
             self.optimizer_critic.step()
 
             # delayed update
-            self.counter_q_function_updates += 1
-            if not self.counter_q_function_updates % self._policy_delay:
+            self._critic_update_counter += 1
+            if not self._critic_update_counter % self._policy_delay:
 
                 # update policy
                 actions, _, _ = self.policy.act(states=sampled_states)
@@ -253,7 +288,7 @@ class TD3(Agent):
                 self.target_policy.update_parameters(self.policy, polyak=self._polyak)
 
             # record data
-            if not self.counter_q_function_updates % self._policy_delay:
+            if not self._critic_update_counter % self._policy_delay:
                 self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)
             self.writer.add_scalar('Loss/critic', loss_critic.item(), timestep)
 

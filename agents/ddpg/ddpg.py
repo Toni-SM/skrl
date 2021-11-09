@@ -11,7 +11,7 @@ from ...models.torch import Model
 from .. import Agent
 
 
-DEFAULT_CONFIG = {
+DDPG_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor
     "gradient_steps": 1,            # gradient steps
     
@@ -21,8 +21,8 @@ DEFAULT_CONFIG = {
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
 
-    "random_timesteps": 1e3,        # random exploration steps
-    "learning_starts": 1e3,         # learning starts after this many steps
+    "random_timesteps": 1000,       # random exploration steps
+    "learning_starts": 1000,        # learning starts after this many steps
 
     "exploration": {
         "noise": None,              # exploration noise
@@ -42,8 +42,8 @@ class DDPG(Agent):
 
         https://arxiv.org/abs/1509.02971
         """
-        DEFAULT_CONFIG.update(cfg)
-        super().__init__(env=env, networks=networks, memory=memory, cfg=DEFAULT_CONFIG)
+        DDPG_DEFAULT_CONFIG.update(cfg)
+        super().__init__(env=env, networks=networks, memory=memory, cfg=DDPG_DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
@@ -120,12 +120,13 @@ class DDPG(Agent):
         if timestep < self._random_timesteps:
             return self.policy.random_act(states)
 
+        # sample deterministic actions
         if inference:
             with torch.no_grad():
                 actions = self.policy.act(states, inference=inference)
         else:
             actions = self.policy.act(states, inference=inference)
-            
+
         # add exloration noise
         if self._exploration_noise is not None:
             # sample noises

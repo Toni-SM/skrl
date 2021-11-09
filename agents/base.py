@@ -25,16 +25,34 @@ class Agent:
         cfg: dict
             Configuration dictionary
         """
-        # TODO: get device from cfg
-        self.device = "cuda:0"
-
         self.env = env
         self.networks = networks
         self.memory = memory
         self.cfg = cfg
 
+        self.device = self.cfg.get("device", "cuda:0" if torch.cuda.is_available() else "cpu")
+        
         self.writer = None
-    
+
+    def __str__(self) -> str:
+        """
+        Generate a representation of the agent as string
+
+        Returns
+        -------
+        str
+            Representation of the agent as string
+        """
+        string = "Agent: {}".format(repr(self))
+        for k, v in self.cfg.items():
+            if type(v) is dict:
+                string += "\n  |-- {}".format(k)
+                for k1, v1 in v.items():
+                    string += "\n  |     |-- {}: {}".format(k1, v1)
+            else:
+                string += "\n  |-- {}: {}".format(k, v)
+        return string
+
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
         Process the environments' states to make a decision (actions) using the main policy

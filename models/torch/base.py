@@ -179,12 +179,13 @@ class Model(torch.nn.Module):
             Polyak hyperparameter between 0 and 1 (usually close to 1).
             A hard update is performed when its value is 0 (default)
         """
-        # hard update
-        if not polyak:
-            for parameters, network_parameters in zip(self.parameters(), network.parameters()):
-                parameters.data.copy_(network_parameters.data)
-        # soft update (use in-place operations to avoid creating new parameters)
-        else:
-            for parameters, network_parameters in zip(self.parameters(), network.parameters()):
-                parameters.data.mul_(polyak)
-                parameters.data.add_((1 - polyak) * network_parameters.data)
+        with torch.no_grad():
+            # hard update
+            if not polyak:
+                for parameters, network_parameters in zip(self.parameters(), network.parameters()):
+                    parameters.data.copy_(network_parameters.data)
+            # soft update (use in-place operations to avoid creating new parameters)
+            else:
+                for parameters, network_parameters in zip(self.parameters(), network.parameters()):
+                    parameters.data.mul_(polyak)
+                    parameters.data.add_((1 - polyak) * network_parameters.data)

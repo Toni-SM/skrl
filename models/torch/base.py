@@ -54,7 +54,7 @@ class Model(torch.nn.Module):
             return np.prod(space.shape)
         return space
 
-    def init_parameters(self, method_name: str = "uniform_", *args, **kwargs) -> None:
+    def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """
         Initialize the model parameters according to the specified method name
 
@@ -64,7 +64,7 @@ class Model(torch.nn.Module):
         Parameters
         ----------
         method_name: str, optional
-            Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: "uniform_")
+            Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: "normal_")
         args: tuple, optional
             Positional arguments of the method to be called
         kwargs: dict, optional

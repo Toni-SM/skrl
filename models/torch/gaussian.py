@@ -30,7 +30,7 @@ class GaussianModel(Model):
         
         self.parameters_log_std = None
 
-        self.clamp_log_std = False
+        self.clamp_log_std = True
         self.log_std_min = -20.0
         self.log_std_max = 2.0
         

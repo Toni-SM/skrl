@@ -12,10 +12,10 @@ from .. import Agent
 
 
 DDPG_DEFAULT_CONFIG = {
-    "discount_factor": 0.99,        # discount factor
+    "discount_factor": 0.99,        # discount factor (gamma)
     "gradient_steps": 1,            # gradient steps
     
-    "polyak": 0.995,                # soft update of target parameters hyperparameter
+    "polyak": 0.995,                # soft update hyperparameter (tau)
     
     "batch_size": 64,               # size of minibatch
     "actor_learning_rate": 1e-3,    # actor learning rate
@@ -53,7 +53,7 @@ class DDPG(Agent):
         if not "q" in self.networks.keys() and not "critic" in self.networks.keys():
             raise KeyError("Q-network (critic) not found in networks. Use 'critic' or 'q' keys to define the Q-network (critic)")
         if not "target_q" in self.networks.keys() and not "target_critic" in self.networks.keys():
-            raise KeyError("Q-target-network (critic target) not found in networks. Use 'target_critic' or 'target_q' keys to define the Q-target-network (critic target)")
+            raise KeyError("Q-target network (critic target) not found in networks. Use 'target_critic' or 'target_q' keys to define the Q-target-network (critic target)")
         
         self.policy = self.networks["policy"]
         self.target_policy = self.networks["target_policy"]

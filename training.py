@@ -102,10 +102,8 @@ class Trainer:
 
         self._is_multi_agent = False
 
-        # wrap the environment to gym style
-        if issubclass(type(env), Environment):
-            self._env = wrap_env(env)
-        
+        # wrap the environment
+        self._env = wrap_env(env)
         if not hasattr(self._env, 'num_envs'):
             raise AttributeError("The environment does not support parallelization (num_envs property is not defined)")
 
@@ -155,6 +153,7 @@ class Trainer:
         # read configuration
         self._cfg = cfg
         self._max_learning_iterations = int(self._cfg.get("timesteps", 1e6))
+        self._render = self._cfg.get("render", True)
         
         # get rollouts
         # for off-policy algorithms the notion of rollout corresponds to the steps taken in the environment between two updates (https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html?highlight=Rollout#custom-callback)
@@ -171,6 +170,12 @@ class Trainer:
             for agent, scope in zip(self._agents, self._agents_scope):
                 print("  |     |-- agent:", type(agent))
                 print("  |     |     |-- scope: {} environments ({}:{})".format(scope[1] - scope[0], scope[0], scope[1]))
+        print("")
+        if self._is_multi_agent:
+            for agent in self._agents:
+                print(agent)
+        else:
+            print(self._agents)
         print("")
 
         # reset env
@@ -196,6 +201,10 @@ class Trainer:
                 
                 # step the environment
                 next_states, rewards, dones, infos = self._env.step(actions)
+                
+                # render scene
+                if self._render:
+                    self._env.render()
 
                 # record the transition 
                 if self._is_multi_agent:
@@ -209,15 +218,11 @@ class Trainer:
                     self._agents.record_transition(states, actions, rewards, next_states, dones)
                 
                 # reset environments
-                # check boolean (Gym compatibility)
-                if isinstance(dones, bool):
-                    states = self._env.reset() if dones else next_states
-                # check tensor
+                if dones.any():
+                    print("  |-- reset environments")
+                    states = self._env.reset()
                 else:
-                    if dones.any():
-                        states = self._env.reset()
-                    else:
-                        states.copy_(next_states)
+                    states.copy_(next_states)
 
                 # inter-rollout
                 self._inter_rollouts(timestep=timestep, timesteps=self._max_learning_iterations, rollout=rollout, rollouts=rollouts)

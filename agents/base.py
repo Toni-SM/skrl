@@ -30,7 +30,9 @@ class Agent:
         self.memory = memory
         self.cfg = cfg
 
-        self.device = self.cfg.get("device", "cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = self.cfg.get("device", None)
+        if self.device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.writer = None
 

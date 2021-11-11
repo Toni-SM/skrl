@@ -17,7 +17,14 @@ def _omegaconf_to_dict(config):
         d[k] = _omegaconf_to_dict(v) if isinstance(v, DictConfig) else v
     return d
 
-def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = ""):
+def _print_cfg(d, indent=0):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            _print_cfg(value, indent + 1)
+        else:
+            print('  |   ' * indent + "  |-- {}: {}".format(key, value))
+
+def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
     """
     Loads an Isaac Gym environment (preview 3)
 
@@ -72,10 +79,17 @@ def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = ""):
     hydra_object = Hydra.create_main_hydra2(task_name='load_isaacgymenv', config_search_path=search_path)
     config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
 
+    cfg = _omegaconf_to_dict(config.task)
+
+    # print config
+    if show_cfg:
+        print("\nIsaac Gym environment ({})".format(config.task.name))
+        _print_cfg(cfg)
+
     # load environment
     sys.path.append(isaacgymenvs_path)
     from tasks import isaacgym_task_map
-    env = isaacgym_task_map[config.task.name](cfg=_omegaconf_to_dict(config.task), 
+    env = isaacgym_task_map[config.task.name](cfg=cfg, 
                                               sim_device=config.sim_device,
                                               graphics_device_id=config.graphics_device_id,
                                               headless=config.headless)

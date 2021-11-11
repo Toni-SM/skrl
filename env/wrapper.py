@@ -47,14 +47,14 @@ class _IsaacWrapper(_Wrapper):
 
     def step(self, actions):
         self._env.step(actions)
-        return self._env.states_buffer, self._env.rewards_buffer, self._env.dones_buffer, None
+        return self._env.obs_buf, self._env.rew_buf, self._env.reset_buf, None
 
     def reset(self):
         # TODO: reset each env
-        return self._env.states_buffer
+        return self._env.obs_buf
 
     def render(self, mode='human'):
-        self._env.render(mode=mode)
+        self._env.render()
     
 
 class _GymWrapper(_Wrapper):

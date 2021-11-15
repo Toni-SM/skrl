@@ -33,6 +33,8 @@ class GaussianModel(Model):
         self.clamp_log_std = True
         self.log_std_min = -20.0
         self.log_std_max = 2.0
+
+        self._distribution = None
         
     def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
         """
@@ -70,11 +72,11 @@ class GaussianModel(Model):
         covariance = torch.diag(log_std.exp() * log_std.exp())
         if self.num_actions is not None and torch.numel(log_std) != self.num_actions:
             covariance = covariance.unsqueeze(-1)
-        distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
+        self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
 
         # actions # TODO: sample vs rsample
         # actions = distribution.sample()
-        actions = distribution.rsample()
+        actions = self._distribution.rsample()
 
         # clip actions 
         # TODO: use tensor too for low and high
@@ -82,8 +84,22 @@ class GaussianModel(Model):
             actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
         
         # log of the probability density function
-        log_prob = distribution.log_prob(actions)
+        log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
         return actions, log_prob, actions_mean
+
+    def get_entropy(self) -> torch.Tensor:
+        """
+        Compute the entropy of the model
+
+        Returns
+        -------
+        torch.Tensor
+            Entropy of the model
+        """
+        if self._distribution is None:
+            return torch.tensor(0.0, device=self.device)
+        return self._distribution.entropy().to(self.device)
+    

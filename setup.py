@@ -11,6 +11,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 INSTALL_REQUIRES = [
     "gym",
     "torch",
+    "tensorboard",
 ]
 
 # installation

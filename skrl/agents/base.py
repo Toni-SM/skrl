@@ -1,8 +1,10 @@
 from typing import Union, Dict
 
+import os
 import gym
 import torch
 from torch.utils.tensorboard import SummaryWriter
+import datetime
 
 from ..env import Environment
 from ..memories import Memory
@@ -34,7 +36,13 @@ class Agent:
         if self.device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        self.writer = None
+        # experiment directory
+        log_dir = self.cfg.get("log_dir", os.path.join(os.getcwd(), "runs"))
+        experiment_name = self.cfg.get("experiment_name", "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S"), self.__class__.__name__))
+        self.experiment_dir = os.path.join(log_dir, experiment_name)
+        
+        # main entry to log data for consumption and visualization by TensorBoard
+        self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
     def __str__(self) -> str:
         """
@@ -109,17 +117,6 @@ class Agent:
         """
         for k in self.networks:
             self.networks[k].set_mode(mode)
-
-    def set_writer(self, writer: SummaryWriter):
-        """
-        Set the main entry to log data for consumption and visualization by TensorBoard
-
-        Parameters
-        ----------
-        writer: torch.utils.tensorboard.writer.SummaryWriter
-            Main entry to log data for consumption and visualization by TensorBoard
-        """
-        self.writer = writer
 
     def pre_rollouts(self, timestep: int, timesteps: int) -> None:
         """

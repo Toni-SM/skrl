@@ -133,9 +133,6 @@ class SAC(Agent):
             return self.policy.random_act(states)
 
         # sample stochastic actions
-        if inference:
-            with torch.no_grad():
-                return self.policy.act(states, inference=inference)
         return self.policy.act(states, inference=inference)
 
     def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:

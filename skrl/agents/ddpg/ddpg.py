@@ -121,11 +121,7 @@ class DDPG(Agent):
             return self.policy.random_act(states)
 
         # sample deterministic actions
-        if inference:
-            with torch.no_grad():
-                actions = self.policy.act(states, inference=inference)
-        else:
-            actions = self.policy.act(states, inference=inference)
+        actions = self.policy.act(states, inference=inference)
 
         # add exloration noise
         if self._exploration_noise is not None:

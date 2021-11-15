@@ -152,21 +152,21 @@ class Memory:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index].copy_(tensor.detach())
+                    getattr(self, name)[self.memory_index, self.env_index].copy_(tensor)
             self.env_index += 1
         # multi environment (number of environments less than num_envs)
         elif tensor.dim() > 1 and tensor.shape[0] < self.num_envs:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor.detach() if tensor.dim() == 2 else tensor.view(-1, 1).detach())
+                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
             self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
         elif tensor.dim() > 1 and tensor.shape[0] == self.num_envs:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index].copy_(tensor.detach() if tensor.dim() == 2 else tensor.view(-1, 1).detach())
+                    getattr(self, name)[self.memory_index].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
             self.memory_index += 1
 
         # update indexes and flags
@@ -216,6 +216,25 @@ class Memory:
         # TODO: skip invalid names
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]
+
+    def sample_all(self, names: Tuple[str]) -> Tuple[torch.Tensor]:
+        """
+        Sample all data from memory
+        # TODO: Sample only valid data
+
+        Parameters
+        ----------
+        names: tuple or list of strings
+            Tensors names from which to obtain the samples
+
+        Returns
+        -------
+        tuple of torch.Tensor
+            Sampled data from memory.
+            The sampled tensors will have the following shape: (memory size * number of environments, data size)
+        """
+        tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
+        return [tensor.view(-1, tensor.size(-1)) for tensor in tensors]
 
     def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None) -> None:
         """

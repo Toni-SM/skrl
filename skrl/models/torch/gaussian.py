@@ -48,7 +48,8 @@ class GaussianModel(Model):
             Actions taken by a policy to the given states (default: None).
             The use of these actions only makes sense in critical networks, e.g.
         inference: bool, optional
-            Flag to indicate whether the network is making inference (default: False)
+            Flag to indicate whether the network is making inference (default: False).
+            If True, the returned tensors will be detached from the current graph
         
         Returns
         -------
@@ -88,6 +89,8 @@ class GaussianModel(Model):
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
+        if inference:
+            return actions.detach(), log_prob.detach(), actions_mean.detach()
         return actions, log_prob, actions_mean
 
     def get_entropy(self) -> torch.Tensor:

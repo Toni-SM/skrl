@@ -38,7 +38,8 @@ class DeterministicModel(Model):
             Actions taken by a policy to the given states (default: None).
             The use of these actions only makes sense in critical networks, e.g.
         inference: bool, optional
-            Flag to indicate whether the network is making inference (default: False)
+            Flag to indicate whether the network is making inference (default: False).
+            If True, the returned tensors will be detached from the current graph
         
         Returns
         -------
@@ -55,5 +56,7 @@ class DeterministicModel(Model):
         if issubclass(type(self.action_space), gym.Space):
             actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
 
+        if inference:
+            return actions.detach(), None, None
         return actions, None, None
         

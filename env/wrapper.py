@@ -46,12 +46,11 @@ class _IsaacWrapper(_Wrapper):
         super().__init__(env)
 
     def step(self, actions):
-        self._env.step(actions)
-        return self._env.obs_buf, self._env.rew_buf, self._env.reset_buf, None
+        obs_dict, rew_buf, reset_buf, extras = self._env.step(actions)
+        return obs_dict["obs"], rew_buf, reset_buf, None
 
     def reset(self):
-        # TODO: reset each env
-        return self._env.obs_buf
+        return self._env.reset()["obs"]
 
     def render(self, mode='human'):
         self._env.render()

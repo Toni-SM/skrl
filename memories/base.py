@@ -152,21 +152,21 @@ class Memory:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index].copy_(tensor)
+                    getattr(self, name)[self.memory_index, self.env_index].copy_(tensor.detach())
             self.env_index += 1
         # multi environment (number of environments less than num_envs)
         elif tensor.dim() > 1 and tensor.shape[0] < self.num_envs:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
+                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor.detach() if tensor.dim() == 2 else tensor.view(-1, 1).detach())
             self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
         elif tensor.dim() > 1 and tensor.shape[0] == self.num_envs:
             for name, tensor in tensors.items():
                 name = "_tensor_{}".format(name)
                 if hasattr(self, name):
-                    getattr(self, name)[self.memory_index].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
+                    getattr(self, name)[self.memory_index].copy_(tensor.detach() if tensor.dim() == 2 else tensor.view(-1, 1).detach())
             self.memory_index += 1
 
         # update indexes and flags
@@ -216,3 +216,72 @@ class Memory:
         # TODO: skip invalid names
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]
+
+    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None) -> None:
+        """
+        Compute the following functions for the given tensor names
+
+        # TODO: add documentation about the functions
+        Functions:
+        - returns:
+            (returns - values) + (advantages * gamma)
+        - advantages:
+            (returns - values)
+
+        Parameters
+        ----------
+        states_src: str, optional
+            Name of the tensor containing the states (default: "states")
+        actions_src: str, optional
+            Name of the tensor containing the actions (default: "actions")
+        rewards_src: str, optional
+            Name of the tensor containing the rewards (default: "rewards")
+        next_states_src: str, optional
+            Name of the tensor containing the next states (default: "next_states")
+        dones_src: str, optional
+            Name of the tensor containing the dones (default: "dones")
+        values_src: str, optional
+            Name of the tensor containing the values (default: "values")
+        returns_dst: str or None, optional
+            Name of the tensor where the returns will be stored (default: None)
+        advantages_dst: str or None, optional
+            Name of the tensor where the advantages will be stored (default: None)
+        """
+        # get source tensors
+        # states = getattr(self, "_tensor_{}".format(states_src))
+        # actions = getattr(self, "_tensor_{}".format(actions_src))
+        rewards = getattr(self, "_tensor_{}".format(rewards_src))
+        # next_states = getattr(self, "_tensor_{}".format(next_states_src))
+        dones = getattr(self, "_tensor_{}".format(dones_src))
+        values = getattr(self, "_tensor_{}".format(values_src))
+        
+        returns = getattr(self, "_tensor_{}".format(returns_dst)) if returns_dst is not None else torch.zeros_like(rewards)
+        advantages = getattr(self, "_tensor_{}".format(advantages_dst)) if advantages_dst is not None else torch.zeros_like(rewards)
+
+        # TODO: get variables from the config
+        gamma = 0.99
+        lam = 0.95
+
+        advantage = 0
+        last_values = values[-1]
+
+        # compute the returns
+        if returns_dst is not None or advantages_dst is not None:
+            for step in reversed(range(self.memory_size)):
+                if step == self.memory_size - 1:
+                    next_values = last_values
+                else:
+                    next_values = values[step + 1]
+
+                # not_dones = dones[step].logical_not()
+                # delta = rewards[step] + not_dones * gamma * next_values - values[step]
+                # advantage = delta + not_dones * gamma * lam * advantage
+                advantage = rewards[step] - values[step] + gamma * dones[step].logical_not() * (next_values + lam * advantage)
+                
+                returns[step].copy_(advantage + values[step])
+
+        # compute and normalize the advantages
+        if advantages_dst is not None:
+            advantages.copy_(returns - values)
+            advantages.copy_((advantages - advantages.mean()) / (advantages.std() + 1e-8))
+        

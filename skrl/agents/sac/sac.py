@@ -202,8 +202,6 @@ class SAC(Agent):
                 target_2_values, _, _ = self.target_2.act(states=sampled_next_states, taken_actions=next_actions)
                 target_values = torch.min(target_1_values, target_2_values) - self._entropy_coefficient * next_log_prob
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
-                # Subtraction, the `-` operator, with a bool tensor is not supported. 
-                # If you are trying to invert a mask, use the `~` or `logical_not()` operator instead
 
             # update critic (Q-functions)
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)

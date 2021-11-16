@@ -15,8 +15,10 @@ from .. import Agent
 
 PPO_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
-    "learning_epochs": 10,           # number of learning epochs
+    "learning_epochs": 10,          # number of learning epochs
     
+    "rollouts": 16,                 # number of rollouts before updating
+
     "polyak": 0.995,                # soft update hyperparameter (tau)
     
     "batch_size": 64,               # size of minibatch
@@ -65,6 +67,8 @@ class PPO(Agent):
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
+        self._rollouts = self.cfg["rollouts"]
+        self._rollout = 0
 
         self._ratio_clip = self.cfg["ratio_clip"]
         self._value_clip = self.cfg["value_clip"]
@@ -196,11 +200,14 @@ class PPO(Agent):
         timesteps: int
             Number of timesteps
         """
-        if timestep >= self._learning_starts:
-            self._update(timestep, timesteps)
+        self._rollout += 1
+        if not self._rollout % self._rollouts:
+            # update
+            if timestep >= self._learning_starts:
+                self._update(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int):
-        # print("Updating...")
+        print("Updating...")
         # sample a batch from memory
         self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages") #, gamma=self._gamma, lam=self._lam)
         sampled_states, sampled_actions, sampled_rewards, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample(self._batch_size, self.tensors_names)

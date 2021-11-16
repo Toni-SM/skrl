@@ -172,9 +172,9 @@ class PPO(Agent):
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
                                     log_prob=self._log_prob, values=values)
 
-    def pre_rollouts(self, timestep: int, timesteps: int) -> None:
+    def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """
-        Callback called before all rollouts
+        Callback called before the interaction with the environment
 
         Parameters
         ----------
@@ -185,26 +185,9 @@ class PPO(Agent):
         """
         pass
 
-    def inter_rollouts(self, timestep: int, timesteps: int, rollout: int, rollouts: int) -> None:
+    def post_interaction(self, timestep: int, timesteps: int) -> None:
         """
-        Callback called after each rollout
-
-        Parameters
-        ----------
-        timestep: int
-            Current timestep
-        timesteps: int
-            Number of timesteps
-        rollout: int
-            Current rollout
-        rollouts: int
-            Number of rollouts
-        """
-        pass
-
-    def post_rollouts(self, timestep: int, timesteps: int) -> None:
-        """
-        Callback called after all rollouts
+        Callback called after the interaction with the environment
 
         Parameters
         ----------

@@ -145,7 +145,7 @@ class PPO(Agent):
         self._log_prob = log_prob
         return actions, log_prob, actions_mean
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
         """
         Record an environment transition in memory
         
@@ -161,7 +161,12 @@ class PPO(Agent):
             Next observations/states of the environment
         dones: torch.Tensor
             Signals to indicate that episodes have ended
+        timestep: int
+            Current timestep
+        timesteps: int
+            Number of timesteps
         """
+        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
             values, _, _ = self.value.act(states=states)
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
@@ -270,22 +275,10 @@ class PPO(Agent):
             # torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.optimizer.step()
 
-            # # record data
-            # self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)
-            # self.writer.add_scalar('Loss/critic', loss_critic.item(), timestep)
+            # record data
+            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
+            self.writer.add_scalar('Loss/value', self._value_loss_scale * value_loss.item(), timestep)
+            self.writer.add_scalar('Loss/Total', loss, timestep)
 
-            # self.writer.add_scalar('Q-networks/q1_max', torch.max(critic_1_values).item(), timestep)
-            # self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_1_values).item(), timestep)
-            # self.writer.add_scalar('Q-networks/q1_mean', torch.mean(critic_1_values).item(), timestep)
+            self.writer.add_scalar('Entropy/loss', -self._entropy_scale * entropy_loss.item(), timestep)
 
-            # self.writer.add_scalar('Q-networks/q2_max', torch.max(critic_2_values).item(), timestep)
-            # self.writer.add_scalar('Q-networks/q2_min', torch.min(critic_2_values).item(), timestep)
-            # self.writer.add_scalar('Q-networks/q2_mean', torch.mean(critic_2_values).item(), timestep)
-            
-            # self.writer.add_scalar('Target/max', torch.max(target_values).item(), timestep)
-            # self.writer.add_scalar('Target/min', torch.min(target_values).item(), timestep)
-            # self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
-
-            # if self._learn_entropy:
-            #     self.writer.add_scalar('Entropy/loss', loss_entropy.item(), timestep)
-            #     self.writer.add_scalar('Entropy/coefficient', self._entropy_coefficient.item(), timestep)

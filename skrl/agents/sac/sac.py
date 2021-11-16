@@ -135,7 +135,7 @@ class SAC(Agent):
         # sample stochastic actions
         return self.policy.act(states, inference=inference)
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
         """
         Record an environment transition in memory
         
@@ -151,7 +151,12 @@ class SAC(Agent):
             Next observations/states of the environment
         dones: torch.Tensor
             Signals to indicate that episodes have ended
+        timestep: int
+            Current timestep
+        timesteps: int
+            Number of timesteps
         """
+        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
 

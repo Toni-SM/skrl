@@ -44,6 +44,9 @@ class Agent:
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
+        # self.track_rewards = 0
+        # self.track_ = 0
+
     def __str__(self) -> str:
         """
         Generate a representation of the agent as string
@@ -85,7 +88,7 @@ class Agent:
         """
         raise NotImplementedError
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor) -> None:
+    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
         """
         Record an environment transition in memory (to be implemented by the inheriting classes)
 
@@ -103,8 +106,15 @@ class Agent:
             Next observations/states of the environment
         dones: torch.Tensor
             Signals to indicate that episodes have ended
+        timestep: int
+            Current timestep
+        timesteps: int
+            Number of timesteps
         """
-        raise NotImplementedError
+        self.writer.add_scalar('Instantaneous reward/max', torch.max(rewards).item(), timestep)
+        self.writer.add_scalar('Instantaneous reward/min', torch.min(rewards).item(), timestep)
+        self.writer.add_scalar('Instantaneous reward/mean', torch.mean(rewards).item(), timestep)
+        # raise NotImplementedError
 
     def set_mode(self, mode: str) -> None:
         """

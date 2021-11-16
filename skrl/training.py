@@ -201,7 +201,9 @@ class Trainer:
                                                 actions=actions[scope[0]:scope[1]], 
                                                 rewards=rewards[scope[0]:scope[1]], 
                                                 next_states=next_states[scope[0]:scope[1]], 
-                                                dones=dones[scope[0]:scope[1]])
+                                                dones=dones[scope[0]:scope[1]],
+                                                timestep=timestep,
+                                                timesteps=self._max_learning_iterations)
                 else:
                     self._agents.record_transition(states, actions, rewards, next_states, dones)
                 

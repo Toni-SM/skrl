@@ -1,17 +1,12 @@
 import os
 import sys
 
-from hydra.types import RunMode
-from hydra._internal.hydra import Hydra
-from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
-
-from omegaconf import DictConfig, OmegaConf
-
 import isaacgym
-import isaacgymenvs
 
 
 def _omegaconf_to_dict(config):
+    from omegaconf import DictConfig
+
     d = {}
     for k, v in config.items():
         d[k] = _omegaconf_to_dict(v) if isinstance(v, DictConfig) else v
@@ -24,9 +19,96 @@ def _print_cfg(d, indent=0):
         else:
             print('  |   ' * indent + "  |-- {}: {}".format(key, value))
 
-def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
+
+def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
     """
-    Loads an Isaac Gym environment (preview 3)
+    Loads an Isaac Gym environment (preview 2)
+
+    Parameters
+    ----------
+        task_name: str, optional
+            The name of the task (default: "").
+            If not specified, the task name is taken from the command line argument (--task <task_name>).
+            Command line argument has priority over function parameter if both are specified
+        isaacgymenvs_path: str, optional 
+            The path to the `rlgpu` directory (default: "").
+            If empty, the path will obtained from isaacgym package metadata
+        show_cfg: bool, optional
+            Whether to print the configuration (default: True)
+    
+    Returns
+    -------
+    isaacgymenvs.tasks.base.vec_task.VecTask
+        Isaac Gym environment (preview 2)
+    """
+    # check task from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("--task"):
+            defined = True
+            break
+    # get task name from command line arguments
+    if defined:
+        arg_index = sys.argv.index("--task") + 1
+        if arg_index >= len(sys.argv):
+            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+        if task_name and task_name != sys.argv[arg_index]:
+            print("[WARNING] Overriding task ({}) with command line argument ({})".format(task_name, sys.argv[arg_index]))
+    # get task name from function arguments
+    else:
+        if task_name:
+            sys.argv.append("--task")
+            sys.argv.append(task_name)
+        else:
+            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+    
+    # get isaacgym envs path from isaacgym package metadata
+    if not isaacgymenvs_path:
+        if not hasattr(isaacgym, "__path__"):
+            raise RuntimeError("isaacgym package is not installed")
+        path = isaacgym.__path__
+        path = os.path.join(path[0], "..", "rlgpu")
+    else:
+        path = isaacgymenvs_path
+
+    # import required packages
+    sys.path.append(path)
+
+    status = True
+    try:
+        from utils.config import get_args, load_cfg, parse_sim_params
+        from utils.parse_task import parse_task
+    except Exception as e:
+        status = False
+        print("[ERROR] Failed to import required packages: {}".format(e))
+    if not status:
+        raise RuntimeError("The path ({}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)".format(path))
+
+    args = get_args()
+
+    # print config
+    if show_cfg:
+        print("\nIsaac Gym environment ({})".format(args.task))
+        _print_cfg(vars(args))
+   
+    # update task arguments
+    args.cfg_train = os.path.join(path, args.cfg_train)
+    args.cfg_env = os.path.join(path, args.cfg_env)
+
+    # load environment
+    cfg, cfg_train, _ = load_cfg(args)
+    sim_params = parse_sim_params(args, cfg, cfg_train)
+    task, env = parse_task(args, cfg, cfg_train, sim_params)
+
+    print(type(env))
+    print(env.__base__)
+    return env
+
+def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
+    """
+    Loads an Isaac Gym environment (preview 3) 
+    
+    Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
 
     Parameters
     ----------
@@ -35,13 +117,24 @@ def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = "", show_cfg:
             If not specified, the task name is taken from the command line argument (task=<task_name>).
             Command line argument has priority over function parameter if both are specified
         isaacgymenvs_path: str, optional 
-            The path to the isaacgymenvs directory (default: "").
+            The path to the `isaacgymenvs` directory (default: "").
             If empty, the path will obtained from isaacgymenvs package metadata
+        show_cfg: bool, optional
+            Whether to print the configuration (default: True)
+
     Returns
     -------
     isaacgymenvs.tasks.base.vec_task.VecTask
         Isaac Gym environment (preview 3)
     """
+    from hydra.types import RunMode
+    from hydra._internal.hydra import Hydra
+    from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
+
+    from omegaconf import OmegaConf
+
+    import isaacgymenvs
+    
     # check task from command line arguments
     defined = False
     for arg in sys.argv:
@@ -50,8 +143,8 @@ def load_isaacgymenv(task_name: str = "", isaacgymenvs_path: str = "", show_cfg:
             break
     # get task name from command line arguments
     if defined:
-        if task_name and task_name != arg.split("=")[1]:
-            print("[WARNING] Overriding task name ({}) with command line argument ({})".format(task_name, arg.split("=")[1]))
+        if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
+            print("[WARNING] Overriding task name ({}) with command line argument ({})".format(task_name, arg.split("task=")[1].split(" ")[0]))
     # get task name from function arguments
     else:
         if task_name:

@@ -99,9 +99,7 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     cfg, cfg_train, _ = load_cfg(args)
     sim_params = parse_sim_params(args, cfg, cfg_train)
     task, env = parse_task(args, cfg, cfg_train, sim_params)
-
-    print(type(env))
-    print(env.__base__)
+    
     return env
 
 def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):

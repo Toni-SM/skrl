@@ -41,7 +41,22 @@ class _Wrapper(object):
         return self._env.action_space
 
 
-class _IsaacWrapper(_Wrapper):
+class _IsaacGymPreview2Wrapper(_Wrapper):
+    def __init__(self, env) -> None:
+        super().__init__(env)
+
+    def step(self, actions):
+        obs_buf, rew_buf, reset_buf, extras = self._env.step(actions)
+        return obs_buf, rew_buf, reset_buf, None
+
+    def reset(self):
+        return self._env.reset()
+
+    def render(self, mode='human'):
+        pass
+
+
+class _IsaacGymWrapper(_Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
 
@@ -93,18 +108,28 @@ def wrap_env(env, wrapper="auto"):
     wrapper: str, optional
         The type of wrapper to use (default: "auto").
         If "auto", the wrapper will be automatically selected based on the environment class.
-        The specific wrappers supported are "gym" and "isaac"
+        The specific wrappers supported are "gym", "isaacgym-preview2" and "isaacgym"
     """
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__])
     
     if wrapper == "auto":
         # TODO: automatically select other wrappers
         if isinstance(env, gym.core.Wrapper):
+            print("[INFO] Wrapper: Gym")
             return _GymWrapper(env)
-        return _IsaacWrapper(env)
+        elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:
+            print("[INFO] Wrapper: Isaac Gym (preview 2)")
+            return _IsaacGymPreview2Wrapper(env)
+        print("[INFO] Wrapper: Isaac Gym (preview 3)")
+        return _IsaacGymWrapper(env)
     elif wrapper == "gym":
+        print("[INFO] Wrapper: Gym")
         return _GymWrapper(env)
-    elif wrapper == "isaac":
-        return _IsaacWrapper(env)
+    elif wrapper == "isaacgym-preview2":
+        print("[INFO] Wrapper: Isaac Gym (preview 2)")
+        return _IsaacGymPreview2Wrapper(env)
+    elif wrapper == "isaacgym":
+        print("[INFO] Wrapper: Isaac Gym (preview 3)")
+        return _IsaacGymWrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

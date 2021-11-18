@@ -15,7 +15,7 @@ from .. import Agent
 
 PPO_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
-    "learning_epochs": 10,          # number of learning epochs
+    "learning_epochs": 8,           # number of learning epochs
     
     "rollouts": 16,                 # number of rollouts before updating
 
@@ -37,7 +37,7 @@ PPO_DEFAULT_CONFIG = {
 
     "ratio_clip": 0.2,              # ratio clip parameter
     "value_clip": 0.2,              # value clip parameter
-    "clip_value_loss": True,        # clip value loss
+    "clip_value_loss": False,        # clip value loss
 
     "value_loss_scale": 1.0,        # value loss scale coefficient
     "entropy_scale": 0.0,           # entropy scale coefficient
@@ -94,9 +94,9 @@ class PPO(Agent):
         self._entropy_coefficient = self.cfg["initial_entropy_value"]
 
         # set up optimizers
-        # self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-        # self.optimizer_value = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
-        self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._policy_learning_rate)
+        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
+        self.optimizer_value = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+        # self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._policy_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -172,7 +172,7 @@ class PPO(Agent):
         """
         super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
-            values, _, _ = self.value.act(states=states)
+            values, _, _ = self.value.act(states=states, inference=True)
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
                                     log_prob=self._log_prob, values=values)
 
@@ -210,27 +210,38 @@ class PPO(Agent):
         print("Updating...")
         # sample a batch from memory
         self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages") #, gamma=self._gamma, lam=self._lam)
-        sampled_states, sampled_actions, sampled_rewards, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample(self._batch_size, self.tensors_names)
+        sampled_states, sampled_actions, sampled_rewards, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self._batch_size, self.tensors_names)
 
         # update steps
         for epoch in range(self._learning_epochs):
-
+            print(epoch)
             next_actions, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
             entropies = self.policy.get_entropy()
 
-            # surrogate loss
+            # entropy loss
+            entropy_loss = (-next_log_prob).mean() if entropies is None else entropies.mean()
+
+            # policy loss
             ratio = torch.exp(next_log_prob - sampled_log_prob)
             surrogate = sampled_advantages * ratio
             surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
             
-            policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
-            
+            policy_loss = -torch.min(surrogate, surrogate_clipped).mean() - self._entropy_scale * entropy_loss
+
+            self.optimizer_policy.zero_grad()
+            policy_loss.backward()
+            self.optimizer_policy.step()
+
             # value loss
             predicted_values, _, _ = self.value.act(states=sampled_states)
 
             if self._clip_value_loss:
                 predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, -self._value_clip, self._value_clip)
             value_loss = F.mse_loss(sampled_returns, predicted_values)
+
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            self.optimizer_value.step()
 
             # # TODO: check isaac-gym method
             # if self._clip_value_loss:
@@ -241,34 +252,32 @@ class PPO(Agent):
             # else:
             #     value_loss = F.mse_loss(sampled_returns, predicted_values)
 
-            # entropy loss
-            entropy_loss = (-next_log_prob).mean() if entropies is None else entropies.mean()
-
             # total loss
-            loss = policy_loss + self._value_loss_scale * value_loss - self._entropy_scale * entropy_loss
+            # loss = policy_loss + self._value_loss_scale * value_loss - self._entropy_scale * entropy_loss
             
-            # KL divergence
-            if self._kl_threshold is not None:
-                with torch.no_grad():
-                    ratio = next_log_prob - sampled_log_prob
-                    kl = ((torch.exp(ratio) - 1) - ratio).mean()
+            # # KL divergence
+            # if self._kl_threshold is not None:
+            #     with torch.no_grad():
+            #         ratio = next_log_prob - sampled_log_prob
+            #         kl = ((torch.exp(ratio) - 1) - ratio).mean()
                 
-                # TODO: 1.5 or 2.0?
-                if kl > 1.5 * self._kl_threshold:
-                    print("[INFO] Early stopping at step {} due to reaching maximum KL divergence {}".format(epoch, kl))
-                    break
+            #     # TODO: 1.5 or 2.0?
+            #     if kl > 1.5 * self._kl_threshold:
+            #         print("[INFO] Early stopping at step {} due to reaching maximum KL divergence {}".format(epoch, kl))
+            #         break
             
             # update 
-            self.optimizer.zero_grad()
-            loss.backward()
-            # TODO: clip grad norm
-            # torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-            self.optimizer.step()
+            # self.optimizer.zero_grad()
+            # loss.backward()
+            # # TODO: clip grad norm
+            # torch.nn.utils.clip_grad_norm_(self.policy.parameters(), 2.0)
+            # torch.nn.utils.clip_grad_norm_(self.value.parameters(), 2.0)
+            # self.optimizer.step()
 
             # record data
             self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
             self.writer.add_scalar('Loss/value', self._value_loss_scale * value_loss.item(), timestep)
-            self.writer.add_scalar('Loss/Total', loss, timestep)
+            # self.writer.add_scalar('Loss/Total', loss, timestep)
 
             self.writer.add_scalar('Entropy/loss', -self._entropy_scale * entropy_loss.item(), timestep)
 

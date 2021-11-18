@@ -93,6 +93,34 @@ class Model(torch.nn.Module):
         for parameters in self.parameters():
             exec("torch.nn.init.{}(parameters, *args, **kwargs)".format(method_name))
 
+    def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
+        """
+        Initialize the model weights according to the specified method name
+
+        Method names are from the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) module. 
+        Allowed method names are "uniform_", "normal_", "constant_", etc.
+
+        The following layers will be initialized:
+        - torch.nn.Linear
+
+        Parameters
+        ----------
+        method_name: str, optional
+            Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: "orthogonal_")
+        args: tuple, optional
+            Positional arguments of the method to be called
+        kwargs: dict, optional
+            Key-value arguments of the method to be called
+        """
+        def _update_weights(module, method_name, args, kwargs):
+            for layer in module:
+                if isinstance(layer, torch.nn.Sequential):
+                    _update_weights(layer)
+                elif isinstance(layer, torch.nn.Linear):
+                    exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
+        
+        _update_weights(self.children(), method_name, args, kwargs)
+
     def forward(self):
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 

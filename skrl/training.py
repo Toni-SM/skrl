@@ -122,7 +122,7 @@ class Trainer:
         self._max_learning_iterations = int(self._cfg.get("timesteps", 1e6))
         self._render = self._cfg.get("render", True)
         
-        # show information about RL system
+        # show information about the RL system
         print("")
         print("RL system")
         print("  |-- Number of parallelizable environments:", self._env.num_envs)
@@ -151,7 +151,6 @@ class Trainer:
             self._pre_interaction(timestep=timestep, timesteps=self._max_learning_iterations)
             
             # compute actions
-            # TODO: sample controlled random actions
             if self._is_multi_agent:
                 actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
                                                     inference=True,

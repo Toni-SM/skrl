@@ -3,8 +3,6 @@ from typing import Union, Dict
 import gym
 import torch
 import torch.nn.functional as F
-import itertools
-import numpy as np
 
 from ...env import Environment
 from ...memories import Memory
@@ -96,7 +94,6 @@ class PPO(Agent):
         # set up optimizers
         self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
         self.optimizer_value = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
-        # self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._policy_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -112,8 +109,11 @@ class PPO(Agent):
         self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
         self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-        # self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
         self.tensors_names = ["states", "actions", "rewards", "dones", "log_prob", "values", "returns", "advantages"]
+
+        # create temporary variables needed for storage and computation
+        self._current_log_prob = None
+        self._current_next_states = None
 
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """
@@ -141,12 +141,9 @@ class PPO(Agent):
             return self.policy.random_act(states)
 
         # sample stochastic actions
-        if inference:
-            with torch.no_grad():
-                actions, log_prob, actions_mean = self.policy.act(states, inference=inference)
-        else:
-            actions, log_prob, actions_mean = self.policy.act(states, inference=inference)
-        self._log_prob = log_prob
+        actions, log_prob, actions_mean = self.policy.act(states, inference=inference)
+        self._current_log_prob = log_prob
+        
         return actions, log_prob, actions_mean
 
     def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
@@ -171,10 +168,13 @@ class PPO(Agent):
             Number of timesteps
         """
         super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+
+        self._current_next_states = next_states
+
         if self.memory is not None:
             values, _, _ = self.value.act(states=states, inference=True)
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
-                                    log_prob=self._log_prob, values=values)
+                                    log_prob=self._current_log_prob, values=values)            
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """
@@ -207,12 +207,14 @@ class PPO(Agent):
                 self._update(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int):
-        print("Updating...")
-        # sample a batch from memory
-        self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages") #, gamma=self._gamma, lam=self._lam)
-        sampled_states, sampled_actions, sampled_rewards, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self._batch_size, self.tensors_names)
+        # compute returns and advantages
+        last_values, _, _ = self.value.act(states=self._current_next_states, inference=True)
+        self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages", last_values=last_values)
 
-        # update steps
+        # sample a batch from memory
+        sampled_states, sampled_actions, sampled_rewards, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self.tensors_names)
+
+        # learning epochs
         for epoch in range(self._learning_epochs):
             print(epoch)
             next_actions, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
@@ -277,7 +279,6 @@ class PPO(Agent):
             # record data
             self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
             self.writer.add_scalar('Loss/value', self._value_loss_scale * value_loss.item(), timestep)
-            # self.writer.add_scalar('Loss/Total', loss, timestep)
 
             self.writer.add_scalar('Entropy/loss', -self._entropy_scale * entropy_loss.item(), timestep)
 

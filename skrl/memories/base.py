@@ -236,7 +236,7 @@ class Memory:
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1)) for tensor in tensors]
 
-    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: Dict = {"discount_factor": 0.99, "lambda_parameter": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
+    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: Dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
         """
         Compute the following functions for the given tensor names
 
@@ -269,9 +269,9 @@ class Memory:
             Hyperparameters to control the computation of the functions
             The following hyperparameters are expected:
             - discount_factor: float
-                Discount factor (gamma) for the computation of the returns and the advantages (default: 0.99)
-            - lambda_parameter: float
-                Lambda parameter (lam) for the computation of the returns and the advantages (default: 0.95)
+                Discount factor (gamma) for computing returns and advantages (default: 0.99)
+            - lambda_coefficient: float
+                TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
             - normalize_returns: bool
                 If True, the returns will be normalized (default: False)
             - normalize_advantages: bool
@@ -290,7 +290,7 @@ class Memory:
 
         # hyperarameters
         discount_factor = hyperparameters.get("discount_factor", 0.99)
-        lambda_parameter = hyperparameters.get("lambda_parameter", 0.95)
+        lambda_coefficient = hyperparameters.get("lambda_coefficient", 0.95)
         normalize_returns = hyperparameters.get("normalize_returns", False)
         normalize_advantages = hyperparameters.get("normalize_advantages", True)
 
@@ -299,7 +299,7 @@ class Memory:
             advantage = 0
             for step in reversed(range(self.memory_size)):
                 next_values = values[step + 1] if step < self.memory_size - 1 else last_values
-                advantage = rewards[step] - values[step] + discount_factor * dones[step].logical_not() * (next_values + lambda_parameter * advantage)
+                advantage = rewards[step] - values[step] + discount_factor * dones[step].logical_not() * (next_values + lambda_coefficient * advantage)
                 returns[step].copy_(advantage + values[step])
 
             if normalize_returns:

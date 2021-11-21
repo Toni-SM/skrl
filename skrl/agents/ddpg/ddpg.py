@@ -12,12 +12,12 @@ from .. import Agent
 
 
 DDPG_DEFAULT_CONFIG = {
-    "discount_factor": 0.99,        # discount factor (gamma)
+    "batch_size": 64,               # size of minibatch
     "gradient_steps": 1,            # gradient steps
     
+    "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.995,                # soft update hyperparameter (tau)
     
-    "batch_size": 64,               # size of minibatch
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
 
@@ -26,12 +26,12 @@ DDPG_DEFAULT_CONFIG = {
 
     "exploration": {
         "noise": None,              # exploration noise
-        "initial_scale": 1.0,       # initial scale for noise
-        "final_scale": 1e-3,        # final scale for noise
-        "timesteps": None,          # timesteps for noise decay
+        "initial_scale": 1.0,       # initial scale for the noise
+        "final_scale": 1e-3,        # final scale for the noise
+        "timesteps": None,          # timesteps for the noise decay
     },
 
-    "device": None,                 # device to use
+    "device": None,                 # computing device
 }
 
 
@@ -49,11 +49,11 @@ class DDPG(Agent):
         if not "policy" in self.networks.keys():
             raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
         if not "target_policy" in self.networks.keys():
-            raise KeyError("Policy-target network not found in networks. Use 'target_policy' key to define the policy-target network")
+            raise KeyError("Target policy network not found in networks. Use 'target_policy' key to define the target policy network")
         if not "q" in self.networks.keys() and not "critic" in self.networks.keys():
             raise KeyError("Q-network (critic) not found in networks. Use 'critic' or 'q' keys to define the Q-network (critic)")
         if not "target_q" in self.networks.keys() and not "target_critic" in self.networks.keys():
-            raise KeyError("Q-target network (critic target) not found in networks. Use 'target_critic' or 'target_q' keys to define the Q-target-network (critic target)")
+            raise KeyError("Target Q-network (target critic) not found in networks. Use 'target_critic' or 'target_q' keys to define the target Q-network (target critic)")
         
         self.policy = self.networks["policy"]
         self.target_policy = self.networks["target_policy"]
@@ -71,10 +71,13 @@ class DDPG(Agent):
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
-        self._polyak = self.cfg["polyak"]
+        
         self._discount_factor = self.cfg["discount_factor"]
+        self._polyak = self.cfg["polyak"]
+
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -201,20 +204,19 @@ class DDPG(Agent):
             self._update(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
-        # update steps
+        # gradient steps
         for gradient_step in range(self._gradient_steps):
             
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
-            # compute targets for Q-function
+            # compute target values
             with torch.no_grad():
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
+                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
+                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-                target_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
-
-            # update critic (Q-function)
+            # critic loss
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)
             
             loss_critic = F.mse_loss(critic_values, target_values)
@@ -223,9 +225,8 @@ class DDPG(Agent):
             loss_critic.backward()
             self.optimizer_critic.step()
 
-            # update policy
+            # policy loss
             actions, _, _ = self.policy.act(states=sampled_states)
-
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions)
 
             loss_policy = -critic_values.mean()
@@ -246,6 +247,6 @@ class DDPG(Agent):
             self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_values).item(), timestep)
             self.writer.add_scalar('Q-networks/q1_mean', torch.mean(critic_values).item(), timestep)
             
-            self.writer.add_scalar('Target/max', torch.max(target_values).item(), timestep)
-            self.writer.add_scalar('Target/min', torch.min(target_values).item(), timestep)
-            self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
+            self.writer.add_scalar('Target/t1_max', torch.max(target_values).item(), timestep)
+            self.writer.add_scalar('Target/t1_min', torch.min(target_values).item(), timestep)
+            self.writer.add_scalar('Target/t1_mean', torch.mean(target_values).item(), timestep)

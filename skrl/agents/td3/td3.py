@@ -106,8 +106,8 @@ class TD3(Agent):
         self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
 
         # set up optimizers
-        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.optimizer_critic = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate)
+        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -249,9 +249,9 @@ class TD3(Agent):
             
             loss_critic = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
             
-            self.optimizer_critic.zero_grad()
+            self.critic_optimizer.zero_grad()
             loss_critic.backward()
-            self.optimizer_critic.step()
+            self.critic_optimizer.step()
 
             # delayed update
             self._critic_update_counter += 1
@@ -263,9 +263,9 @@ class TD3(Agent):
 
                 loss_policy = -critic_values.mean()
 
-                self.optimizer_policy.zero_grad()
+                self.policy_optimizer.zero_grad()
                 loss_policy.backward()
-                self.optimizer_policy.step()
+                self.policy_optimizer.step()
 
                 # update target networks
                 self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)

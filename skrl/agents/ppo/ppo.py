@@ -80,8 +80,8 @@ class PPO(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         # set up optimizers
-        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-        self.optimizer_value = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
+        self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -231,9 +231,9 @@ class PPO(Agent):
             
             policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
-            self.optimizer_policy.zero_grad()
+            self.policy_optimizer.zero_grad()
             (policy_loss + entropy_loss).backward()
-            self.optimizer_policy.step()
+            self.policy_optimizer.step()
 
             # value loss
             predicted_values, _, _ = self.value.act(states=sampled_states)
@@ -242,9 +242,9 @@ class PPO(Agent):
                 predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, -self._value_clip, self._value_clip)
             value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
-            self.optimizer_value.zero_grad()
+            self.value_optimizer.zero_grad()
             value_loss.backward()
-            self.optimizer_value.step()
+            self.value_optimizer.step()
 
             # update cumulative losses
             cumulative_policy_loss += policy_loss.item()

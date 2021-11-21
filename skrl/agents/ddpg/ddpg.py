@@ -87,8 +87,8 @@ class DDPG(Agent):
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
         
         # set up optimizers
-        self.optimizer_policy = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
+        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
 
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
@@ -222,9 +222,9 @@ class DDPG(Agent):
             
             loss_critic = F.mse_loss(critic_values, target_values)
             
-            self.optimizer_critic.zero_grad()
+            self.critic_optimizer.zero_grad()
             loss_critic.backward()
-            self.optimizer_critic.step()
+            self.critic_optimizer.step()
 
             # policy loss
             actions, _, _ = self.policy.act(states=sampled_states)
@@ -232,9 +232,9 @@ class DDPG(Agent):
 
             loss_policy = -critic_values.mean()
 
-            self.optimizer_policy.zero_grad()
+            self.policy_optimizer.zero_grad()
             loss_policy.backward()
-            self.optimizer_policy.step()
+            self.policy_optimizer.step()
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)

@@ -229,26 +229,26 @@ class TD3(Agent):
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
-            # compute target values
             with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
-
                 # target policy smoothing
+                next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
                 noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), -self._smooth_regularization_clip, self._smooth_regularization_clip)
                 next_actions.add_(noises)
                 next_actions.clamp_(self.env.action_space.low[0], self.env.action_space.high[0])  # FIXME: use tensor too
 
+                # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)
                 target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions)
                 target_q_values = torch.min(target_q1_values, target_q2_values)
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-            # critic loss
+            # compute critic loss
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
             
             critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
             
+            # optimize critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
@@ -257,12 +257,13 @@ class TD3(Agent):
             self._critic_update_counter += 1
             if not self._critic_update_counter % self._policy_delay:
 
-                # policy loss
+                # compute policy (actor) loss
                 actions, _, _ = self.policy.act(states=sampled_states)
                 critic_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
 
                 policy_loss = -critic_values.mean()
 
+                # optimize policy (actor)
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
                 self.policy_optimizer.step()

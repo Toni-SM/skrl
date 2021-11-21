@@ -206,35 +206,40 @@ class SAC(Agent):
                 target_q_values = torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-            # critic loss
+            # compute critic loss
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
             
             critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
             
+            # optimize critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
 
-            # policy loss
+            # compute policy (actor) loss
             actions, log_prob, _ = self.policy.act(states=sampled_states)
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=actions)
 
             policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
 
+            # optimize policy (actor)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
             self.policy_optimizer.step()
 
-            # entropy loss
+            # entropy learning
             if self._learn_entropy:
+                # compute entropy loss
                 entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
+                # optimize entropy
                 self.entropy_optimizer.zero_grad()
                 entropy_loss.backward()
                 self.entropy_optimizer.step()
 
+                # compute entropy coefficient
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
             # update target networks (soft update)

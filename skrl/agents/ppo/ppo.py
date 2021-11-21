@@ -197,7 +197,7 @@ class PPO(Agent):
                                      "normalize_advantages": True}
         self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages", last_values=last_values, hyperparameters=computing_hyperparameters)
 
-        # sample a batch from memory
+        # sample all data from memory
         sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self.tensors_names)
 
         cumulative_policy_loss = 0
@@ -218,30 +218,32 @@ class PPO(Agent):
                     print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})".format(epoch, kl, self._kl_threshold))
                     break
 
-            # entropy loss
+            # compute entropy loss
             if self._entropy_loss_scale:
                 entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy().mean()
             else:
                 entropy_loss = 0
             
-            # policy loss
+            # compute policy loss
             ratio = torch.exp(next_log_prob - sampled_log_prob)
             surrogate = sampled_advantages * ratio
             surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
             
             policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
+            # optimize policy
             self.policy_optimizer.zero_grad()
             (policy_loss + entropy_loss).backward()
             self.policy_optimizer.step()
 
-            # value loss
+            # compute value loss
             predicted_values, _, _ = self.value.act(states=sampled_states)
 
             if self._clip_predicted_values:
                 predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, -self._value_clip, self._value_clip)
             value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
+            # optimize value
             self.value_optimizer.zero_grad()
             value_loss.backward()
             self.value_optimizer.step()

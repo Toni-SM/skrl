@@ -217,21 +217,23 @@ class DDPG(Agent):
                 target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-            # critic loss
+            # compute critic loss
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)
             
             critic_loss = F.mse_loss(critic_values, target_values)
             
+            # optimize critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
 
-            # policy loss
+            # compute policy (actor) loss
             actions, _, _ = self.policy.act(states=sampled_states)
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions)
 
             policy_loss = -critic_values.mean()
 
+            # optimize policy (actor)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
             self.policy_optimizer.step()

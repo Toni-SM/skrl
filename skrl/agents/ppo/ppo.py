@@ -191,10 +191,18 @@ class PPO(Agent):
     def _update(self, timestep: int, timesteps: int):
         # compute returns and advantages
         last_values, _, _ = self.value.act(states=self._current_next_states, inference=True)
-        self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages", last_values=last_values)
+        computing_hyperparameters = {"discount_factor": self._discount_factor,
+                                     "lambda_coefficient": self._lambda,
+                                     "normalize_returns": False,
+                                     "normalize_advantages": True}
+        self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages", last_values=last_values, hyperparameters=computing_hyperparameters)
 
         # sample a batch from memory
         sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self.tensors_names)
+
+        cumulative_policy_loss = 0
+        cumulative_entropy_loss = 0
+        cumulative_value_loss = 0
 
         # learning epochs
         for epoch in range(self._learning_epochs):
@@ -238,10 +246,16 @@ class PPO(Agent):
             value_loss.backward()
             self.optimizer_value.step()
 
-            # record data
-            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
-            self.writer.add_scalar('Loss/value', value_loss.item(), timestep)
-
+            # update cumulative losses
+            cumulative_policy_loss += policy_loss.item()
+            cumulative_value_loss += value_loss.item()
             if self._entropy_loss_scale:
-                self.writer.add_scalar('Loss/entropy', entropy_loss.item(), timestep)
+                cumulative_entropy_loss += entropy_loss.item()
+
+        # record data
+        self.writer.add_scalar('Loss/policy', cumulative_policy_loss / self._learning_epochs, timestep)
+        self.writer.add_scalar('Loss/value', cumulative_value_loss / self._learning_epochs, timestep)
+
+        if self._entropy_loss_scale:
+            self.writer.add_scalar('Loss/entropy', cumulative_entropy_loss / self._learning_epochs, timestep)
 

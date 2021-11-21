@@ -12,8 +12,8 @@ from .. import Agent
 
 
 DDPG_DEFAULT_CONFIG = {
-    "batch_size": 64,               # size of minibatch
     "gradient_steps": 1,            # gradient steps
+    "batch_size": 64,               # training batch size
     
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.995,                # soft update hyperparameter (tau)
@@ -213,6 +213,7 @@ class DDPG(Agent):
             # compute target values
             with torch.no_grad():
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
+                
                 target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
@@ -247,6 +248,6 @@ class DDPG(Agent):
             self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_values).item(), timestep)
             self.writer.add_scalar('Q-networks/q1_mean', torch.mean(critic_values).item(), timestep)
             
-            self.writer.add_scalar('Target/t1_max', torch.max(target_values).item(), timestep)
-            self.writer.add_scalar('Target/t1_min', torch.min(target_values).item(), timestep)
-            self.writer.add_scalar('Target/t1_mean', torch.mean(target_values).item(), timestep)
+            self.writer.add_scalar('Target/max', torch.max(target_values).item(), timestep)
+            self.writer.add_scalar('Target/min', torch.min(target_values).item(), timestep)
+            self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)

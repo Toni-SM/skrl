@@ -14,12 +14,12 @@ from .. import Agent
 
 
 SAC_DEFAULT_CONFIG = {
-    "discount_factor": 0.99,        # discount factor (gamma)
     "gradient_steps": 1,            # gradient steps
+    "batch_size": 64,               # training batch size
     
+    "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.995,                # soft update hyperparameter (tau)
     
-    "batch_size": 64,               # size of minibatch
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
 
@@ -31,7 +31,7 @@ SAC_DEFAULT_CONFIG = {
     "initial_entropy_value": 0.1,   # initial entropy value
     "target_entropy": None,         # target entropy
 
-    "device": None,                 # device to use
+    "device": None,                 # computing device
 }
 
 
@@ -52,32 +52,35 @@ class SAC(Agent):
             raise KeyError("Q1-network (critic 1) not found in networks. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
         if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
             raise KeyError("Q2-network (critic 2) not found in networks. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
-        if not "target_1" in self.networks.keys():
-            raise KeyError("Q1-target network (target 1) not found in networks. Use 'target_1' key to define the Q1-target network (target 1)")
-        if not "target_2" in self.networks.keys():
-            raise KeyError("Q2-target network (target 2) not found in networks. Use 'target_2' key to define the Q2-target network (target 2)")
+        if not "target_q_1" in self.networks.keys() and not "target_critic_1" in self.networks.keys():
+            raise KeyError("Target Q1-network (target critic 1) not found in networks. Use 'target_critic_1' or 'target_q_1' keys to define the target Q1-network (target critic 1)")
+        if not "target_q_2" in self.networks.keys() and not "target_critic_2" in self.networks.keys():
+            raise KeyError("Target Q2-network (target critic 2) not found in networks. Use 'target_critic_2' or 'target_q_2' keys to define the target Q2-network (target critic 2)")
         
         self.policy = self.networks["policy"]
         self.critic_1 = self.networks.get("critic_1", self.networks.get("q_1", None))
         self.critic_2 = self.networks.get("critic_2", self.networks.get("q_2", None))
-        self.target_1 = self.networks["target_1"]
-        self.target_2 = self.networks["target_2"]
+        self.target_critic_1 = self.networks.get("target_critic_1", self.networks.get("target_q_1", None))
+        self.target_critic_2 = self.networks.get("target_critic_2", self.networks.get("target_q_2", None))
 
         # freeze target networks with respect to optimizers (update via .update_parameters())
-        self.target_1.freeze_parameters(True)
-        self.target_2.freeze_parameters(True)
+        self.target_critic_1.freeze_parameters(True)
+        self.target_critic_2.freeze_parameters(True)
 
         # update target networks (hard update)
-        self.target_1.update_parameters(self.critic_1, polyak=0)
-        self.target_2.update_parameters(self.critic_2, polyak=0)
+        self.target_critic_1.update_parameters(self.critic_1, polyak=0)
+        self.target_critic_2.update_parameters(self.critic_2, polyak=0)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
-        self._polyak = self.cfg["polyak"]
+
         self._discount_factor = self.cfg["discount_factor"]
+        self._polyak = self.cfg["polyak"]
+        
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -188,22 +191,22 @@ class SAC(Agent):
             self._update(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
-        # update steps
+        # gradient steps
         for gradient_step in range(self._gradient_steps):
             
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
 
-            # compute targets for Q-functions
+            # compute target values
             with torch.no_grad():
                 next_actions, next_log_prob, _ = self.policy.act(states=sampled_next_states)
 
-                target_1_values, _, _ = self.target_1.act(states=sampled_next_states, taken_actions=next_actions)
-                target_2_values, _, _ = self.target_2.act(states=sampled_next_states, taken_actions=next_actions)
-                target_values = torch.min(target_1_values, target_2_values) - self._entropy_coefficient * next_log_prob
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_values
+                target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q_values = torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
+                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-            # update critic (Q-functions)
+            # critic loss
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
             
@@ -213,9 +216,8 @@ class SAC(Agent):
             loss_critic.backward()
             self.optimizer_critic.step()
 
-            # update policy
+            # policy loss
             actions, log_prob, _ = self.policy.act(states=sampled_states)
-
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=actions)
 
@@ -225,7 +227,7 @@ class SAC(Agent):
             loss_policy.backward()
             self.optimizer_policy.step()
 
-            # update entropy
+            # entropy loss
             if self._learn_entropy:
                 loss_entropy = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
@@ -236,8 +238,8 @@ class SAC(Agent):
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
             # update target networks (soft update)
-            self.target_1.update_parameters(self.critic_1, polyak=self._polyak)
-            self.target_2.update_parameters(self.critic_2, polyak=self._polyak)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
             self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)
@@ -256,5 +258,5 @@ class SAC(Agent):
             self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
 
             if self._learn_entropy:
-                self.writer.add_scalar('Entropy/loss', loss_entropy.item(), timestep)
-                self.writer.add_scalar('Entropy/coefficient', self._entropy_coefficient.item(), timestep)
+                self.writer.add_scalar('Loss/entropy', loss_entropy.item(), timestep)
+                self.writer.add_scalar('Coefficient/entropy', self._entropy_coefficient.item(), timestep)

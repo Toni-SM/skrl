@@ -210,10 +210,10 @@ class SAC(Agent):
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
             
-            loss_critic = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
+            critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
             
             self.critic_optimizer.zero_grad()
-            loss_critic.backward()
+            critic_loss.backward()
             self.critic_optimizer.step()
 
             # policy loss
@@ -221,18 +221,18 @@ class SAC(Agent):
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=actions)
 
-            loss_policy = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
+            policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
 
             self.policy_optimizer.zero_grad()
-            loss_policy.backward()
+            policy_loss.backward()
             self.policy_optimizer.step()
 
             # entropy loss
             if self._learn_entropy:
-                loss_entropy = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
+                entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
                 self.entropy_optimizer.zero_grad()
-                loss_entropy.backward()
+                entropy_loss.backward()
                 self.entropy_optimizer.step()
 
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
@@ -242,8 +242,8 @@ class SAC(Agent):
             self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
-            self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)
-            self.writer.add_scalar('Loss/critic', loss_critic.item(), timestep)
+            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
+            self.writer.add_scalar('Loss/critic', critic_loss.item(), timestep)
 
             self.writer.add_scalar('Q-networks/q1_max', torch.max(critic_1_values).item(), timestep)
             self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_1_values).item(), timestep)
@@ -258,5 +258,5 @@ class SAC(Agent):
             self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
 
             if self._learn_entropy:
-                self.writer.add_scalar('Loss/entropy', loss_entropy.item(), timestep)
+                self.writer.add_scalar('Loss/entropy', entropy_loss.item(), timestep)
                 self.writer.add_scalar('Coefficient/entropy', self._entropy_coefficient.item(), timestep)

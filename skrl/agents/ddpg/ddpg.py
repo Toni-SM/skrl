@@ -220,20 +220,20 @@ class DDPG(Agent):
             # critic loss
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)
             
-            loss_critic = F.mse_loss(critic_values, target_values)
+            critic_loss = F.mse_loss(critic_values, target_values)
             
             self.critic_optimizer.zero_grad()
-            loss_critic.backward()
+            critic_loss.backward()
             self.critic_optimizer.step()
 
             # policy loss
             actions, _, _ = self.policy.act(states=sampled_states)
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions)
 
-            loss_policy = -critic_values.mean()
+            policy_loss = -critic_values.mean()
 
             self.policy_optimizer.zero_grad()
-            loss_policy.backward()
+            policy_loss.backward()
             self.policy_optimizer.step()
 
             # update target networks
@@ -241,8 +241,8 @@ class DDPG(Agent):
             self.target_critic.update_parameters(self.critic, polyak=self._polyak)
 
             # record data
-            self.writer.add_scalar('Loss/policy', loss_policy.item(), timestep)
-            self.writer.add_scalar('Loss/critic', loss_critic.item(), timestep)
+            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
+            self.writer.add_scalar('Loss/critic', critic_loss.item(), timestep)
 
             self.writer.add_scalar('Q-networks/q1_max', torch.max(critic_values).item(), timestep)
             self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_values).item(), timestep)

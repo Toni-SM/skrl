@@ -1,8 +1,5 @@
 ## Documentation
 
-This folder contains documentation for the RL baselines.
-
-
 ### Install Sphinx and Read the Docs Sphinx Theme
 
 ```bash
@@ -31,7 +28,7 @@ sphinx-autobuild ./source/ _build/html
 sphinx-apidoc ../skrl -o ./source/docstrings
 ```
 
-### Useful links
+## Useful links
 
 - [Sphinx directives](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html)
 - [Math support in Sphinx](https://www.sphinx-doc.org/en/1.0/ext/math.html)

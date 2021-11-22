@@ -23,6 +23,7 @@ Contents
   :maxdepth: 1
   :caption: Environments
 
+  modules/skrl.envs.isaac_gym
 
 .. toctree::
   :maxdepth: 1
@@ -36,6 +37,10 @@ Contents
 .. toctree::
   :maxdepth: 1
   :caption: Noises
+      
+  modules/skrl.noises.base_class
+  modules/skrl.noises.gaussian
+  modules/skrl.noises.ornstein_uhlenbeck
 
 .. toctree::
 

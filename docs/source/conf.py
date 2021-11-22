@@ -1,5 +1,13 @@
 # Configuration file for the Sphinx documentation builder.
 
+# Import isaacgym hee to solve the problem of the following error: 
+#   PyTorch was imported before isaacgym modules. 
+#   Please import torch after isaacgym modules.
+try:
+    import isaacgym
+except Exception as e:
+    print("Using Isaac Gym Failed: {}".format(e))
+
 # -- Project information
 
 project = 'skrl'

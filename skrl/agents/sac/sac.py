@@ -37,10 +37,18 @@ SAC_DEFAULT_CONFIG = {
 
 class SAC(Agent):
     def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
-        """
-        Soft Actor-Critic (SAC)
+        """Soft Actor-Critic (SAC)
 
         https://arxiv.org/abs/1801.01290
+        
+        :param env: RL environment
+        :type env: skrl.env.Environment or gym.Env
+        :param networks: Networks used by the agent
+        :type networks: dictionary of skrl.models.torch.Model
+        :param memory: Memory to storage the transitions
+        :type memory: skrl.memory.Memory or None
+        :param cfg: Configuration dictionary
+        :type cfg: dict
         """
         SAC_DEFAULT_CONFIG.update(cfg)
         super().__init__(env=env, networks=networks, memory=memory, cfg=SAC_DEFAULT_CONFIG)
@@ -111,24 +119,19 @@ class SAC(Agent):
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
-        """
-        Process the environments' states to make a decision (actions) using the main policy
+        """Process the environments' states to make a decision (actions) using the main policy
 
-        Parameters
-        ----------
-        states: torch.Tensor
-            Environments' states
-        inference: bool
-            Flag to indicate whether the network is making inference
-        timestep: int or None
-            Current timestep
-        timesteps: int or None
-            Number of timesteps
-            
-        Returns
-        -------
-        torch.Tensor
-            Actions
+        :param states: Environments' states
+        :type states: torch.Tensor
+        :param inference: Flag to indicate whether the network is making inference
+        :type inference: bool
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
+
+        :return: Actions
+        :rtype: torch.Tensor
         """
         # sample random actions
         # TODO, check for stochasticity
@@ -139,53 +142,44 @@ class SAC(Agent):
         return self.policy.act(states, inference=inference)
 
     def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
-        """
-        Record an environment transition in memory
+        """Record an environment transition in memory
         
-        Parameters
-        ----------
-        states: torch.Tensor
-            Observations/states of the environment used to make the decision
-        actions: torch.Tensor
-            Actions taken by the agent
-        rewards: torch.Tensor
-            Instant rewards achieved by the current actions
-        next_states: torch.Tensor
-            Next observations/states of the environment
-        dones: torch.Tensor
-            Signals to indicate that episodes have ended
-        timestep: int
-            Current timestep
-        timesteps: int
-            Number of timesteps
+        :param states: Observations/states of the environment used to make the decision
+        :type states: torch.Tensor
+        :param actions: Actions taken by the agent
+        :type actions: torch.Tensor
+        :param rewards: Instant rewards achieved by the current actions
+        :type rewards: torch.Tensor
+        :param next_states: Next observations/states of the environment
+        :type next_states: torch.Tensor
+        :param dones: Signals to indicate that episodes have ended
+        :type dones: torch.Tensor
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
         """
         super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """
-        Callback called before the interaction with the environment
+        """Callback called before the interaction with the environment
 
-        Parameters
-        ----------
-        timestep: int
-            Current timestep
-        timesteps: int
-            Number of timesteps
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
         """
         pass
 
     def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """
-        Callback called after the interaction with the environment
+        """Callback called after the interaction with the environment
 
-        Parameters
-        ----------
-        timestep: int
-            Current timestep
-        timesteps: int
-            Number of timesteps
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
         """
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)

@@ -21,25 +21,23 @@ def _print_cfg(d, indent=0):
 
 
 def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """
-    Loads an Isaac Gym environment (preview 2)
+    """Loads an Isaac Gym environment (preview 2)
 
-    Parameters
-    ----------
-        task_name: str, optional
-            The name of the task (default: "").
-            If not specified, the task name is taken from the command line argument (--task <task_name>).
-            Command line argument has priority over function parameter if both are specified
-        isaacgymenvs_path: str, optional 
-            The path to the `rlgpu` directory (default: "").
-            If empty, the path will obtained from isaacgym package metadata
-        show_cfg: bool, optional
-            Whether to print the configuration (default: True)
+    :param task_name: The name of the task (default: "").
+                      If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
+                      Command line argument has priority over function parameter if both are specified
+    :type task_name: str, optional
+    :param isaacgymenvs_path: The path to the ``rlgpu`` directory (default: "").
+                              If empty, the path will obtained from isaacgym package metadata
+    :type isaacgymenvs_path: str, optional
+    :param show_cfg: Whether to print the configuration (default: True)
+    :type show_cfg: bool, optional
     
-    Returns
-    -------
-    isaacgymenvs.tasks.base.vec_task.VecTask
-        Isaac Gym environment (preview 2)
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises RuntimeError: The isaacgym package is not installed or the path is wrong
+
+    :return: Isaac Gym environment (preview 2)
+    :rtype: tasks.base.vec_task.VecTask
     """
     # check task from command line arguments
     defined = False
@@ -103,27 +101,25 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     return env
 
 def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """
-    Loads an Isaac Gym environment (preview 3) 
+    """Loads an Isaac Gym environment (preview 3) 
     
     Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
 
-    Parameters
-    ----------
-        task_name: str, optional
-            The name of the task (default: "").
-            If not specified, the task name is taken from the command line argument (task=<task_name>).
-            Command line argument has priority over function parameter if both are specified
-        isaacgymenvs_path: str, optional 
-            The path to the `isaacgymenvs` directory (default: "").
-            If empty, the path will obtained from isaacgymenvs package metadata
-        show_cfg: bool, optional
-            Whether to print the configuration (default: True)
+    :param task_name: The name of the task (default: "").
+                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+                      Command line argument has priority over function parameter if both are specified
+    :type task_name: str, optional
+    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory (default: "").
+                              If empty, the path will obtained from isaacgymenvs package metadata
+    :type isaacgymenvs_path: str, optional
+    :param show_cfg: Whether to print the configuration (default: True)
+    :type show_cfg: bool, optional
+    
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
 
-    Returns
-    -------
-    isaacgymenvs.tasks.base.vec_task.VecTask
-        Isaac Gym environment (preview 3)
+    :return: Isaac Gym environment (preview 3)
+    :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
     """
     from hydra.types import RunMode
     from hydra._internal.hydra import Hydra

@@ -19,6 +19,7 @@ class Noise():
 
         :param tensor: Input tensor used to determine output tensor size (shape)
         :type tensor: torch.Tensor
+        
         :return: Sampled noise
         :rtype: torch.Tensor
         """
@@ -29,7 +30,9 @@ class Noise():
 
         :param size: Shape of the sampled tensor
         :type size: tuple or list of integers, or torch.Size
+        
         :raises NotImplementedError: The method is not implemented by the inheriting classes
+
         :return: Sampled noise
         :rtype: torch.Tensor
         """

@@ -8,7 +8,7 @@ Basic usage
       :linenos:
 
       import torch
-      from skrl.memories import RandomMemory
+      from skrl.memories.torch import RandomMemory
 
       # create a random memory object
       memory = RandomMemory(memory_size=1000, num_envs=1, replacement=False)
@@ -34,7 +34,7 @@ Basic usage
 API
 ^^^
 
-.. autoclass:: skrl.memories.random.RandomMemory
+.. autoclass:: skrl.memories.torch.random.RandomMemory
    :undoc-members:
    :show-inheritance:
    :inherited-members:

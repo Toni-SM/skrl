@@ -8,7 +8,7 @@ Basic usage
       :linenos:
 
       import torch
-      from skrl.memories import PrioritizedMemory
+      from skrl.memories.torch import PrioritizedMemory
 
       # create a random memory object
       memory = PrioritizedMemory(memory_size=1000, num_envs=1)
@@ -34,7 +34,7 @@ Basic usage
 API
 ^^^
 
-.. autoclass:: skrl.memories.prioritized.PrioritizedMemory
+.. autoclass:: skrl.memories.torch.prioritized.PrioritizedMemory
    :undoc-members:
    :show-inheritance:
    :inherited-members:

@@ -18,7 +18,7 @@ Basic inheritance usage
       from typing import Tuple
       
       import torch
-      from skrl.memories.base import Memory      # 'from .base import Memory' (in the memories directory)
+      from skrl.memories.torch import Memory      # 'from .base import Memory' (in the memories/torch directory)
 
       class CustomMemory(Memory):
           def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True, replacement=True) -> None:
@@ -33,7 +33,7 @@ Basic inheritance usage
 API
 ^^^
 
-.. autoclass:: skrl.memories.base.Memory
+.. autoclass:: skrl.memories.torch.base.Memory
    :undoc-members:
    :show-inheritance:
    :members:

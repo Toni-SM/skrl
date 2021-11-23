@@ -9,22 +9,18 @@ from . import Model
 
 class GaussianModel(Model):
     def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
-        """
-        Diagonal Gaussian model (stochastic model)
+        """Diagonal Gaussian model (stochastic model)
 
-        https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#stochastic-policies
         # TODO: describe internal properties
 
-        Parameters
-        ----------
-        observation_space: int, tuple or list of integers, gym.Space or None, optional
-            Observation/state space or shape (default: None).
-            If it is not None, the num_observations property will contain the size of that space (number of elements)
-        action_space: int, tuple or list of integers, gym.Space or None, optional
-            Action space or shape (default: None).
-            If it is not None, the num_actions property will contain the size of that space (number of elements)
-        device: str, optional
-            Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param observation_space: Observation/state space or shape (default: None).
+                                  If it is not None, the num_observations property will contain the size of that space (number of elements)
+        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :param action_space: Action space or shape (default: None).
+                             If it is not None, the num_actions property will contain the size of that space (number of elements)
+        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :type device: str, optional
         """
         super(GaussianModel, self).__init__(observation_space, action_space, device)
         
@@ -37,25 +33,20 @@ class GaussianModel(Model):
         self._distribution = None
         
     def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
-        """
-        Act stochastically in response to the state of the environment
+        """Act stochastically in response to the state of the environment
 
-        Parameters
-        ----------
-        states: torch.Tensor
-            Observation/state of the environment used to make the decision
-        taken_actions: torch.Tensor or None, optional
-            Actions taken by a policy to the given states (default: None).
-            The use of these actions only makes sense in critical networks, e.g.
-        inference: bool, optional
-            Flag to indicate whether the network is making inference (default: False).
-            If True, the returned tensors will be detached from the current graph
+        :param states: Observation/state of the environment used to make the decision
+        :type states: torch.Tensor
+        :param taken_actions: Actions taken by a policy to the given states (default: None).
+                              The use of these actions only makes sense in critical networks, e.g.
+        :type taken_actions: torch.Tensor or None, optional
+        :param inference: Flag to indicate whether the network is making inference (default: False).
+                          If True, the returned tensors will be detached from the current graph
+        :type inference: bool, optional
         
-        Returns
-        -------
-        tuple of torch.Tensor
-            Action to be taken by the agent given the state of the environment.
-            The tuple's components are the actions, the log of the probability density function and mean actions
+        :return: Action to be taken by the agent given the state of the environment.
+                 The tuple's components are the actions, the log of the probability density function and mean actions
+        :rtype: tuple of torch.Tensor
         """
         # map from states/observations to mean actions and log standard deviations
         actions_mean, log_std = self.compute(states.to(self.device), 
@@ -92,13 +83,10 @@ class GaussianModel(Model):
         return actions, log_prob, actions_mean
 
     def get_entropy(self) -> torch.Tensor:
-        """
-        Compute the entropy of the model
+        """Compute and return the entropy of the model
 
-        Returns
-        -------
-        torch.Tensor
-            Entropy of the model
+        :return: Entropy of the model
+        :rtype: torch.Tensor
         """
         if self._distribution is None:
             return torch.tensor(0.0, device=self.device)

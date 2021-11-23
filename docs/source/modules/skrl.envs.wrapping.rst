@@ -13,6 +13,7 @@ Basic usage
 * **Wrap an Isaac Gym environment:**
 
    .. code-block:: python
+      :linenos:
 
       # import the environment wrapper and loader
       from skrl.env import wrap_env
@@ -27,6 +28,7 @@ Basic usage
 * **Wrap an OpenAI Gym environment:**
    
    .. code-block:: python
+      :linenos:
 
       # import the environment wrapper and gym
       from skrl.env import wrap_env

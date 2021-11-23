@@ -21,6 +21,7 @@ Basic usage
 * **Load an environment from the function parameters:**
 
    .. code-block:: python
+      :linenos:
 
       # import the environment loader
       from skrl.utils.isaacgym_utils import load_isaacgym_env_preview3
@@ -33,6 +34,7 @@ Basic usage
    Include the following snippet
 
    .. code-block:: python
+      :linenos:
 
       # import the environment loader
       from skrl.utils.isaacgym_utils import load_isaacgym_env_preview3
@@ -69,6 +71,7 @@ Basic usage
 * **Load an environment from the function parameters:**
 
    .. code-block:: python
+      :linenos:
 
       # import the environment loader
       from skrl.utils.isaacgym_utils import load_isaacgym_env_preview2
@@ -81,6 +84,7 @@ Basic usage
    Include the following snippet
 
    .. code-block:: python
+      :linenos:
 
       # import the environment loader
       from skrl.utils.isaacgym_utils import load_isaacgym_env_preview2

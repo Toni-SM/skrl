@@ -12,6 +12,7 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
    .. code-block:: python
+      :linenos:
  
       from typing import Union, Tuple   # for function annotations
       
@@ -25,9 +26,9 @@ Basic inheritance usage
               super().__init__(device)
 
           def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
-              # =============================
-              # IMPLEMENT SAMPLING LOGIC HERE
-              # =============================
+              # ========================
+              # Implement sampling logic
+              # ========================
               pass
 
 API

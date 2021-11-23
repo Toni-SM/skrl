@@ -12,7 +12,8 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
    .. code-block:: python
- 
+      :linenos:
+      
       # function annotations
       from typing import Union, Dict   
       

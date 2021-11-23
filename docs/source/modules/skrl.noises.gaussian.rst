@@ -5,6 +5,7 @@ Basic usage
 ^^^^^^^^^^^
 
    .. code-block:: python
+      :linenos:
 
       # import the noise class
       from skrl.noises.torch import GaussianNoise

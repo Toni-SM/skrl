@@ -14,6 +14,7 @@ Contents
   :maxdepth: 1
   :caption: Agents
 
+  modules/skrl.agents.base_class
   modules/skrl.agents.ppo
   modules/skrl.agents.ddpg
   modules/skrl.agents.td3
@@ -23,6 +24,7 @@ Contents
   :maxdepth: 1
   :caption: Environments
 
+  modules/skrl.envs.wrapping
   modules/skrl.envs.isaac_gym
 
 .. toctree::

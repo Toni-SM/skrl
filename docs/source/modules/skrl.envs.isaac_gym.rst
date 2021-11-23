@@ -1,5 +1,5 @@
-Isaac Gym
-=========
+Isaac Gym environments
+======================
 
 .. raw:: html
 

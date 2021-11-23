@@ -1,4 +1,4 @@
-from typing import Dict, Union, Tuple
+from typing import Union, Tuple
 
 import gym
 import torch
@@ -8,22 +8,19 @@ import numpy as np
 
 class Memory:
     def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True) -> None:
-        """
-        Base class representing a memory with circular buffers
+        """Base class representing a memory with circular buffers
 
         Buffers are torch tensors with shape (memory size, number of environments, data size).
         Circular buffers are implemented with two integers: a memory index and an environment index
-
-        Parameters
-        ----------
-        memory_size: int
-            Maximum number of elements in the first dimension of each internal storage
-        num_envs: int
-            Number of parallel environments
-        device: str, optional
-            Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        preallocate: bool, optional
-            If true, preallocate memory for efficient use (default: True)
+        
+        :param memory_size: Maximum number of elements in the first dimension of each internal storage
+        :type memory_size: int
+        :param num_envs: Number of parallel environments (default: 1)
+        :type num_envs: int, optional
+        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :type device: str, optional
+        :param preallocate: If true, preallocate memory for efficient use (default: True)
+        :type preallocate: bool, optional
         """
         # TODO: handle dynamic memory
         # TODO: show memory consumption
@@ -39,53 +36,42 @@ class Memory:
         self.memory_index = 0
 
     def __len__(self) -> int:
-        """
-        Compute and return the current (valid) size of the memory
-
+        """Compute and return the current (valid) size of the memory
+        
         The valid size is calculated as the `memory_size * num_envs` if the memory is full (filled).
         Otherwise, the `memory_index * num_envs + env_index` is returned
 
-        Returns
-        -------
-        int
-            valid size
+        :return: Valid size
+        :rtype: int
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
         
     def get_tensor_names(self) -> Tuple[str]:
-        """
-        Get the name of the internal tensors in alphabetical order
+        """Get the name of the internal tensors in alphabetical order
 
-        Returns
-        -------
-        tuple of strings
-            Tensor names without internal prefix (_tensor_)
+        :return: Tensor names without internal prefix (_tensor_)
+        :rtype: tuple of strings
         """
         names = [m[0] for m in inspect.getmembers(self, lambda name: not(inspect.isroutine(name))) if m[0].startswith('_tensor_')]
         return tuple(sorted([name[8:] for name in names]))
 
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
-        """
-        Create a new internal tensor in memory
+        """Create a new internal tensor in memory
         
         The tensor will have a 3-components shape (memory size, number of environments, size).
         The internal representation will use _tensor_<name> as the name of the class property
 
-        Parameters
-        ----------
-        name: str
-            Tensor name (the name has to follow the python PEP 8 style)
-        size: int, tuple or list of integers or gym.Space
-            Number of elements in the last dimension (effective data size).
-            The product of the elements will be computed for collections or gym spaces types
-        dtype: torch.dtype or None, optional
-            Data type (torch.dtype).
-            If None, the global default torch data type will be used (default)
-
-        Returns
-        -------
-        bool
-            True if the tensor was created, otherwise False
+        :param name: Tensor name (the name has to follow the python PEP 8 style)
+        :type name: str
+        :param size: Number of elements in the last dimension (effective data size).
+                     The product of the elements will be computed for collections or gym spaces types
+        :type size: int, tuple or list of integers or gym.Space
+        :param dtype: Data type (torch.dtype).
+                      If None, the global default torch data type will be used (default)
+        :type dtype: torch.dtype or None, optional
+        
+        :return: True if the tensor was created, otherwise False
+        :rtype: bool
         """
         # TODO: check memory availability
         # TODO: check existing tensor and new tensor shape
@@ -108,8 +94,7 @@ class Memory:
         return True
 
     def reset(self) -> None:
-        """
-        Reset the memory by cleaning internal indexes and flags
+        """Reset the memory by cleaning internal indexes and flags
 
         Old data will be retained until overwritten, but access through the available methods will not be guaranteed
 
@@ -123,8 +108,7 @@ class Memory:
         self.memory_index = 0
 
     def add_samples(self, **tensors: torch.Tensor) -> None:
-        """
-        Record samples in memory
+        """Record samples in memory
 
         Samples should be a tensor with 2-components shape (number of environments, data size).
         All tensors must be of the same shape
@@ -137,11 +121,11 @@ class Memory:
         - number of environments equals num_envs:
             Store the samples and increment the memory index (first index) by one
 
-        Parameters
-        ----------
-        tensors:
-            Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
-            Non-existing tensors will be skipped
+        :param tensors: Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
+                        Non-existing tensors will be skipped
+        :type tensors: dict
+
+        :raises ValueError: No tensors were provided
         """
         if not tensors:
             raise ValueError("No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)")
@@ -178,104 +162,88 @@ class Memory:
             self.filled = True
 
     def sample(self, batch_size: int, names: Tuple[str]) -> Tuple[torch.Tensor]:
-        """
-        Data sampling method to be implemented by the inheriting classes
+        """Data sampling method to be implemented by the inheriting classes
 
-        Parameters
-        ----------
-        batch_size: int
-            Number of element to sample
-        names: tuple or list of strings
-            Tensors names from which to obtain the samples
-
-        Returns
-        -------
-        tuple of torch.Tensor
-            Sampled data from tensors sorted according to their position in the list of names.
-            The sampled tensors will have the following shape: (batch size, data size)
+        :param batch_size: Number of element to sample
+        :type batch_size: int
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
+        
+        :raises NotImplementedError: The method has not been implemented
+        
+        :return: Sampled data from tensors sorted according to their position in the list of names.
+                 The sampled tensors will have the following shape: (batch size, data size)
+        :rtype: tuple of torch.Tensor
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")
 
     def sample_by_index(self, indexes: Union[tuple, np.ndarray, torch.Tensor], names: Tuple[str]) -> Tuple[torch.Tensor]:
-        """
-        Sample data from memory according to their indexes
+        """Sample data from memory according to their indexes
 
-        Parameters
-        ----------
-        indexes: tuple or list, numpy.ndarray or torch.Tensor
-            Indexes used for sampling
-        names: tuple or list of strings
-            Tensors names from which to obtain the samples
+        :param indexes: Indexes used for sampling
+        :type indexes: tuple or list, numpy.ndarray or torch.Tensor
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
 
-        Returns
-        -------
-        list of torch.Tensor
-            Sampled data from tensors sorted according to their position in the list of names.
-            The sampled tensors will have the following shape: (number of indexes, data size)
-        """
+        :return: Sampled data from tensors sorted according to their position in the list of names.
+                 The sampled tensors will have the following shape: (number of indexes, data size)
+        :rtype: tuple of torch.Tensor
+        """        
         # TODO: skip invalid names
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]
 
     def sample_all(self, names: Tuple[str]) -> Tuple[torch.Tensor]:
-        """
-        Sample all data from memory
+        """Sample all data from memory
+        
         # TODO: Sample only valid data
 
-        Parameters
-        ----------
-        names: tuple or list of strings
-            Tensors names from which to obtain the samples
-
-        Returns
-        -------
-        tuple of torch.Tensor
-            Sampled data from memory.
-            The sampled tensors will have the following shape: (memory size * number of environments, data size)
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
+        :return: Sampled data from memory.
+                 The sampled tensors will have the following shape: (memory size * number of environments, data size)
+        :rtype: tuple of torch.Tensor
         """
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1)) for tensor in tensors]
 
-    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: Dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
-        """
-        Compute the following functions for the given tensor names
+    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
+        """Compute the following functions for the given tensor names
 
         Available functions:
         - Returns (total discounted reward)
         - Advantages (total discounted reward - baseline)
 
-        Parameters
-        ----------
-        states_src: str, optional
-            Name of the tensor containing the states (default: "states")
-        actions_src: str, optional
-            Name of the tensor containing the actions (default: "actions")
-        rewards_src: str, optional
-            Name of the tensor containing the rewards (default: "rewards")
-        next_states_src: str, optional
-            Name of the tensor containing the next states (default: "next_states")
-        dones_src: str, optional
-            Name of the tensor containing the dones (default: "dones")
-        values_src: str, optional
-            Name of the tensor containing the values (default: "values")
-        returns_dst: str or None, optional
-            Name of the tensor where the returns will be stored (default: None)
-        advantages_dst: str or None, optional
-            Name of the tensor where the advantages will be stored (default: None)
-        last_values: torch.Tensor or None, optional
-            Last values (default: None).
-            If None, the last values will be obtained from the tensor containing the values
-        hyperparameters: dict, optional
-            Hyperparameters to control the computation of the functions
-            The following hyperparameters are expected:
-            - discount_factor: float
-                Discount factor (gamma) for computing returns and advantages (default: 0.99)
-            - lambda_coefficient: float
-                TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
-            - normalize_returns: bool
-                If True, the returns will be normalized (default: False)
-            - normalize_advantages: bool
-                If True, the advantages will be normalized (default: True)
+        :param states_src: Name of the tensor containing the states (default: "states")
+        :type states_src: str, optional
+        :param actions_src: Name of the tensor containing the actions (default: "actions")
+        :type actions_src: str, optional
+        :param rewards_src: Name of the tensor containing the rewards (default: "rewards")
+        :type rewards_src: str, optional
+        :param next_states_src: Name of the tensor containing the next states (default: "next_states")
+        :type next_states_src: str, optional
+        :param dones_src: Name of the tensor containing the dones (default: "dones")
+        :type dones_src: str, optional
+        :param values_src: Name of the tensor containing the values (default: "values")
+        :type values_src: str, optional
+        :param returns_dst: Name of the tensor where the returns will be stored (default: None)
+        :type returns_dst: str or None, optional
+        :param advantages_dst: Name of the tensor where the advantages will be stored (default: None)
+        :type advantages_dst: str or None, optional
+        :param last_values: Last values (default: None).
+                            If None, the last values will be obtained from the tensor containing the values
+        :type last_values: torch.Tensor or None, optional
+        :param hyperparameters: Hyperparameters to control the computation of the functions
+                                The following hyperparameters are expected
+                                    - discount_factor: float
+                                        Discount factor (gamma) for computing returns and advantages (default: 0.99)
+                                    - lambda_coefficient: float
+                                        TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
+                                    - normalize_returns: bool
+                                        If True, the returns will be normalized (default: False)
+                                    - normalize_advantages: bool
+                                        If True, the advantages will be normalized (default: True)
+        :type hyperparameters: dict, optional
         """
         # TODO: compute functions attending the circular buffer logic
         # TODO: get last values from the last samples (if not provided) and ignore them in the computation

@@ -36,6 +36,11 @@ Contents
   :maxdepth: 1
   :caption: Models
 
+  modules/skrl.models.base_class
+  modules/skrl.models.categorical
+  modules/skrl.models.gaussian 
+  modules/skrl.models.deterministic 
+
 .. toctree::
   :maxdepth: 1
   :caption: Noises

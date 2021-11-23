@@ -20,24 +20,40 @@ class _Wrapper(object):
 
     @property
     def device(self):
+        """Computing device
+
+        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the availability of the device
+        """
         if hasattr(self._env, "device"):
             return self._env.device
         return "cuda:0" if torch.cuda.is_available() else "cpu" 
 
     @property
     def num_envs(self):
+        """Number of environments
+
+        If the wrapped environment does not have the ``num_envs`` property, this property will be set to 1
+        """
         return self._env.num_envs if hasattr(self._env, "num_envs") else 1
 
     @property
     def state_space(self):
+        """State space
+
+        If the wrapped environment does not have the ``state_space`` property, the value of the ``observation_space`` property will be used.
+        """
         return self._env.state_space if hasattr(self._env, "state_space") else self._env.observation_space
 
     @property
     def observation_space(self):
+        """Observation space
+        """
         return self._env.observation_space
 
     @property
     def action_space(self):
+        """Action space
+        """
         return self._env.action_space
 
 
@@ -56,7 +72,7 @@ class _IsaacGymPreview2Wrapper(_Wrapper):
         pass
 
 
-class _IsaacGymWrapper(_Wrapper):
+class _IsaacGymPreview3Wrapper(_Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
 
@@ -97,18 +113,20 @@ class _GymWrapper(_Wrapper):
         self._env.render(mode=mode)
 
 
-def wrap_env(env, wrapper="auto"):
-    """
-    Wrap an environment to use a common interface
+def wrap_env(env, wrapper="auto") -> _Wrapper:
+    """Wrap an environment to use a common interface
 
-    Parameters
-    ----------
-    env: gym.Env
-        The environment to wrap
-    wrapper: str, optional
-        The type of wrapper to use (default: "auto").
-        If "auto", the wrapper will be automatically selected based on the environment class.
-        The specific wrappers supported are "gym", "isaacgym-preview2" and "isaacgym"
+    :param env: The type of wrapper to use (default: "auto").
+                If "auto", the wrapper will be automatically selected based on the environment class.
+                The specific wrappers supported are "gym", "isaacgym-preview2" and "isaacgym-preview3"
+    :type env: gym.Env, rlgpu.tasks.base.vec_task.VecTask or isaacgymenvs.tasks.base.vec_task.VecTask
+    :param wrapper: The environment to be wrapped
+    :type wrapper: str, optional
+    
+    :raises ValueError: Unknow wrapper type
+    
+    :return: Wrapped environment
+    :rtype: _Wrapper
     """
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__])
     
@@ -121,15 +139,15 @@ def wrap_env(env, wrapper="auto"):
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return _IsaacGymPreview2Wrapper(env)
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return _IsaacGymWrapper(env)
+        return _IsaacGymPreview3Wrapper(env)
     elif wrapper == "gym":
         print("[INFO] Wrapper: Gym")
         return _GymWrapper(env)
     elif wrapper == "isaacgym-preview2":
         print("[INFO] Wrapper: Isaac Gym (preview 2)")
         return _IsaacGymPreview2Wrapper(env)
-    elif wrapper == "isaacgym":
+    elif wrapper == "isaacgym-preview3":
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return _IsaacGymWrapper(env)
+        return _IsaacGymPreview3Wrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

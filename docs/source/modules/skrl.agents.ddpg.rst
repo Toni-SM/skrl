@@ -27,6 +27,8 @@ Deep Deterministic Policy Gradient (DDPG)
 |        :math:`\theta_{target} = \tau \; \theta + (1 - \tau) \theta_{target}`
 |        :math:`\phi_{target} = \tau \; \phi + (1 - \tau) \phi_{target}`
 
+API
+^^^
 
 .. py:data:: skrl.agents.ddpg.ddpg.DDPG_DEFAULT_CONFIG
 

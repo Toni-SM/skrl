@@ -34,6 +34,9 @@ Proximal Policy Optimization (PPO)
 |     optimize value
 |        :math:`\nabla_{\phi} {Loss}_{value}`
 
+API
+^^^
+
 .. py:data:: skrl.agents.ppo.ppo.PPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/ppo/ppo.py

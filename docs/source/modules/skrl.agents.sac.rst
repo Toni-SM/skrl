@@ -37,6 +37,9 @@ Soft Actor-Critic (SAC)
 |        :math:`{\phi 1}_{target} = \tau {\phi 1} + (1 - \tau) {\phi 1}_{target}`
 |        :math:`{\phi 2}_{target} = \tau {\phi 2} + (1 - \tau) {\phi 2}_{target}`
 
+API
+^^^
+
 .. py:data:: skrl.agents.sac.sac.SAC_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/sac/sac.py

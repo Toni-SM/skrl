@@ -35,6 +35,9 @@ Twin Delayed TD3 (TD3)
 |           :math:`{\phi 1}_{target} = \tau \; {\phi 1} + (1 - \tau) {\phi 1}_{target}`
 |           :math:`{\phi 2}_{target} = \tau \; {\phi 2} + (1 - \tau) {\phi 2}_{target}`
 
+API
+^^^
+
 .. py:data:: skrl.agents.td3.td3.TD3_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/td3/td3.py

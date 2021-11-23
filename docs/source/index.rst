@@ -31,6 +31,9 @@ Contents
   :maxdepth: 1
   :caption: Memories
 
+  modules/skrl.memories.base_class
+  modules/skrl.memories.random
+  modules/skrl.memories.prioritized
 
 .. toctree::
   :maxdepth: 1
@@ -48,7 +51,3 @@ Contents
   modules/skrl.noises.base_class
   modules/skrl.noises.gaussian
   modules/skrl.noises.ornstein_uhlenbeck
-
-.. toctree::
-
-  modules/modules

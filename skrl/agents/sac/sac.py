@@ -7,7 +7,7 @@ import itertools
 import numpy as np
 
 from ...env import Environment
-from ...memories import Memory
+from ...memories.torch import Memory
 from ...models.torch import Model
 
 from .. import Agent

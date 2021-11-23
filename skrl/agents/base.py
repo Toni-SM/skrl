@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 
 from ..env import Environment
-from ..memories import Memory
+from ..memories.torch import Memory
 from ..models.torch import Model
 
 

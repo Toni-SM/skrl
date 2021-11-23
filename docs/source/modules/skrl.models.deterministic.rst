@@ -1,5 +1,5 @@
 Deterministic model
-=================
+===================
 
 Basic usage
 ^^^^^^^^^^^

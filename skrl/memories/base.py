@@ -99,8 +99,11 @@ class Memory:
         Old data will be retained until overwritten, but access through the available methods will not be guaranteed
 
         Default values of the internal indexes and flags
+
         - filled: False
+        
         - env_index: 0
+        
         - memory_index: 0
         """
         self.filled = False
@@ -114,12 +117,15 @@ class Memory:
         All tensors must be of the same shape
 
         According to the number of environments, the following classification is made:
-        - one environment:
-            Store a single sample (tensors with one dimension) and increment the environment index (second index) by one
-        - number of environments less than num_envs:
-            Store the samples and increment the environment index (second index) by the number of the environments
-        - number of environments equals num_envs:
-            Store the samples and increment the memory index (first index) by one
+
+        * one environment:
+          Store a single sample (tensors with one dimension) and increment the environment index (second index) by one
+
+        * number of environments less than num_envs:
+          Store the samples and increment the environment index (second index) by the number of the environments
+        
+        * number of environments equals num_envs:
+          Store the samples and increment the memory index (first index) by one
 
         :param tensors: Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
                         Non-existing tensors will be skipped
@@ -233,16 +239,16 @@ class Memory:
         :param last_values: Last values (default: None).
                             If None, the last values will be obtained from the tensor containing the values
         :type last_values: torch.Tensor or None, optional
-        :param hyperparameters: Hyperparameters to control the computation of the functions
-                                The following hyperparameters are expected
-                                    - discount_factor: float
-                                        Discount factor (gamma) for computing returns and advantages (default: 0.99)
-                                    - lambda_coefficient: float
-                                        TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
-                                    - normalize_returns: bool
-                                        If True, the returns will be normalized (default: False)
-                                    - normalize_advantages: bool
-                                        If True, the advantages will be normalized (default: True)
+        :param hyperparameters: Hyperparameters to control the computation of the functions.
+                                The following hyperparameters are expected:
+
+                                  * **discount_factor** (float) - Discount factor (gamma) for computing returns and advantages (default: 0.99)
+                                
+                                  * **lambda_coefficient** (float) - TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
+                                
+                                  * **normalize_returns** (bool) - If True, the returns will be normalized (default: False)
+                                
+                                  * **normalize_advantages** (bool) - If True, the advantages will be normalized (default: True)
         :type hyperparameters: dict, optional
         """
         # TODO: compute functions attending the circular buffer logic

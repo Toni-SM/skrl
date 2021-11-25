@@ -55,10 +55,9 @@ class Model(torch.nn.Module):
         :return: Random actions to be taken by the agent
         :rtype: tuple of torch.Tensor
         """
-        # TODO: sample taking into account states' shape
         # TODO: sample taking into account bounds
         distribution = torch.distributions.uniform.Uniform(low=self.action_space.low[0], high=self.action_space.high[0])
-        actions = distribution.sample(sample_shape=(self.num_actions, ))
+        actions = distribution.sample(sample_shape=(states.shape[0], self.num_actions))
         return actions.to(self.device), None, None
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:

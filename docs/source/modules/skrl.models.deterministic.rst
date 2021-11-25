@@ -1,6 +1,14 @@
 Deterministic model
 ===================
 
+Concept
+^^^^^^^
+
+.. image:: ../_static/imgs/model_deterministic.png
+      :width: 75%
+      :align: center
+      :alt: Deterministic model
+
 Basic usage
 ^^^^^^^^^^^
 
@@ -15,8 +23,8 @@ Basic usage
 
     
       class Critic(DeterministicModel):
-          def __init__(self, observation_space, action_space, device) -> None:
-              super().__init__(observation_space, action_space, device)
+          def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
+              super().__init__(observation_space, action_space, device, clip_actions)
 
               self.layer_linear1 = nn.Linear(self.num_observations + self.num_actions, 32)
               self.layer_linear2 = nn.Linear(32, 32)

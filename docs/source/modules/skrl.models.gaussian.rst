@@ -1,6 +1,14 @@
 Gaussian model
 ==============
 
+Concept
+^^^^^^^
+
+.. image:: ../_static/imgs/model_gaussian.png
+      :width: 100%
+      :align: center
+      :alt: Gaussian model
+
 Basic usage
 ^^^^^^^^^^^
 
@@ -15,8 +23,10 @@ Basic usage
 
     
       class Actor(GaussianModel):
-          def __init__(self, observation_space, action_space, device) -> None:
-              super().__init__(observation_space, action_space, device)
+          def __init__(self, observation_space, action_space, device="cuda:0", 
+                       clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
+              super().__init__(observation_space, action_space, device, 
+                               clip_actions, clip_log_std, min_log_std, max_log_std)
 
               self.layer_linear1 = nn.Linear(self.num_observations, 32)
               self.layer_linear2 = nn.Linear(32, 32)

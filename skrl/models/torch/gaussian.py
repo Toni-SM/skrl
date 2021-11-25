@@ -8,7 +8,7 @@ from . import Model
 
 
 class GaussianModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0", clip_actions: bool = False, clip_log_std: bool = True, min_log_std: float = -20, max_log_std: float = 2) -> None:
         """Diagonal Gaussian model (stochastic model)
 
         # TODO: describe internal properties
@@ -21,14 +21,22 @@ class GaussianModel(Model):
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str, optional
+        :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
+        :type clip_actions: bool, optional
+        :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: True)
+        :type clip_log_std: bool, optional
+        :param min_log_std: Minimum value of the log standard deviation if clip_log_std is True (default: -20)
+        :type min_log_std: float, optional
+        :param max_log_std: Maximum value of the log standard deviation if clip_log_std is True (default: 2)
+        :type max_log_std: float, optional
         """
         super(GaussianModel, self).__init__(observation_space, action_space, device)
         
-        self.parameters_log_std = None
+        self.clip_actions = clip_actions
 
-        self.clamp_log_std = True
-        self.log_std_min = -20.0
-        self.log_std_max = 2.0
+        self.clip_log_std = clip_log_std
+        self.log_std_min = min_log_std
+        self.log_std_max = max_log_std
 
         self._distribution = None
         
@@ -51,13 +59,9 @@ class GaussianModel(Model):
         # map from states/observations to mean actions and log standard deviations
         actions_mean, log_std = self.compute(states.to(self.device), 
                                              taken_actions.to(self.device) if taken_actions is not None else taken_actions)
-
-        # log standard deviations as standalone parameters
-        if self.parameters_log_std is not None:
-            log_std = self.parameters_log_std
         
         # clamp log standard deviations
-        if self.clamp_log_std:
+        if self.clip_log_std:
             log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
 
         # distribution
@@ -70,7 +74,7 @@ class GaussianModel(Model):
 
         # clip actions 
         # TODO: use tensor too for low and high
-        if issubclass(type(self.action_space), gym.Space):
+        if self.clip_actions and issubclass(type(self.action_space), gym.Space):
             actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
         
         # log of the probability density function

@@ -7,7 +7,7 @@ from . import Model
 
 
 class DeterministicModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0", clip_actions: bool = False) -> None:
         """Deterministic model (deterministic model)
 
         :param observation_space: Observation/state space or shape (default: None).
@@ -18,8 +18,12 @@ class DeterministicModel(Model):
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str, optional
+        :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
+        :type clip_actions: bool, optional
         """
         super(DeterministicModel, self).__init__(observation_space, action_space, device)
+
+        self.clip_actions = clip_actions
         
     def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
         """Act deterministically in response to the state of the environment
@@ -43,7 +47,7 @@ class DeterministicModel(Model):
 
         # clip actions 
         # TODO: use tensor too for low and high
-        if issubclass(type(self.action_space), gym.Space):
+        if self.clip_actions and issubclass(type(self.action_space), gym.Space):
             actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
 
         if inference:

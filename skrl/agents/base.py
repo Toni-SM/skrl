@@ -122,21 +122,21 @@ class Agent:
         self._cumulative_timesteps[finished_episodes] = 0
         
         # write data to the log
-        self.writer.add_scalar('Reward / Instantaneous reward (max)', torch.max(rewards).item(), timestep)
-        self.writer.add_scalar('Reward / Instantaneous reward (min)', torch.min(rewards).item(), timestep)
-        self.writer.add_scalar('Reward / Instantaneous reward (mean)', torch.mean(rewards).item(), timestep)
+        self.writer.add_scalar("Reward / Instantaneous reward (max)", torch.max(rewards).item(), timestep)
+        self.writer.add_scalar("Reward / Instantaneous reward (min)", torch.min(rewards).item(), timestep)
+        self.writer.add_scalar("Reward / Instantaneous reward (mean)", torch.mean(rewards).item(), timestep)
 
         if len(self._track_rewards):
             track_rewards = np.array(self._track_rewards)
             track_timesteps = np.array(self._track_timesteps)
 
-            self.writer.add_scalar('Reward / Total reward (max)', np.max(track_rewards), timestep)
-            self.writer.add_scalar('Reward / Total reward (min)', np.min(track_rewards), timestep)
-            self.writer.add_scalar('Reward / Total reward (mean)', np.mean(track_rewards), timestep)
+            self.writer.add_scalar("Reward / Total reward (max)", np.max(track_rewards), timestep)
+            self.writer.add_scalar("Reward / Total reward (min)", np.min(track_rewards), timestep)
+            self.writer.add_scalar("Reward / Total reward (mean)", np.mean(track_rewards), timestep)
 
-            self.writer.add_scalar('Episode / Total timesteps (max)', np.max(track_timesteps), timestep)
-            self.writer.add_scalar('Episode / Total timesteps (min)', np.min(track_timesteps), timestep)
-            self.writer.add_scalar('Episode / Total timesteps (mean)', np.mean(track_timesteps), timestep)
+            self.writer.add_scalar("Episode / Total timesteps (max)", np.max(track_timesteps), timestep)
+            self.writer.add_scalar("Episode / Total timesteps (min)", np.min(track_timesteps), timestep)
+            self.writer.add_scalar("Episode / Total timesteps (mean)", np.mean(track_timesteps), timestep)
 
     def set_mode(self, mode: str) -> None:
         """Set the network mode (training or evaluation)

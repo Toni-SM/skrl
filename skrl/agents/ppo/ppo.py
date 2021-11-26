@@ -249,9 +249,9 @@ class PPO(Agent):
                 cumulative_entropy_loss += entropy_loss.item()
 
         # record data
-        self.writer.add_scalar('Loss/policy', cumulative_policy_loss / self._learning_epochs, timestep)
-        self.writer.add_scalar('Loss/value', cumulative_value_loss / self._learning_epochs, timestep)
+        self.writer.add_scalar("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs, timestep)
+        self.writer.add_scalar("Loss / Value loss", cumulative_value_loss / self._learning_epochs, timestep)
 
         if self._entropy_loss_scale:
-            self.writer.add_scalar('Loss/entropy', cumulative_entropy_loss / self._learning_epochs, timestep)
+            self.writer.add_scalar("Loss / Entropy loss", cumulative_entropy_loss / self._learning_epochs, timestep)
 

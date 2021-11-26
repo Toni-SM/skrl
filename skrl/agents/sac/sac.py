@@ -241,21 +241,21 @@ class SAC(Agent):
             self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
-            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
-            self.writer.add_scalar('Loss/critic', critic_loss.item(), timestep)
+            self.writer.add_scalar("Loss / Policy loss", policy_loss.item(), timestep)
+            self.writer.add_scalar("Loss / Critic loss", critic_loss.item(), timestep)
 
-            self.writer.add_scalar('Q-networks/q1_max', torch.max(critic_1_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_1_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q1_mean', torch.mean(critic_1_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (max)", torch.max(critic_1_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (min)", torch.min(critic_1_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (mean)", torch.mean(critic_1_values).item(), timestep)
 
-            self.writer.add_scalar('Q-networks/q2_max', torch.max(critic_2_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q2_min', torch.min(critic_2_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q2_mean', torch.mean(critic_2_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q2 (max)", torch.max(critic_2_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q2 (min)", torch.min(critic_2_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q2 (mean)", torch.mean(critic_2_values).item(), timestep)
             
-            self.writer.add_scalar('Target/max', torch.max(target_values).item(), timestep)
-            self.writer.add_scalar('Target/min', torch.min(target_values).item(), timestep)
-            self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (max)", torch.max(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (min)", torch.min(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (mean)", torch.mean(target_values).item(), timestep)
 
             if self._learn_entropy:
-                self.writer.add_scalar('Loss/entropy', entropy_loss.item(), timestep)
-                self.writer.add_scalar('Coefficient/entropy', self._entropy_coefficient.item(), timestep)
+                self.writer.add_scalar("Loss / Entropy loss", entropy_loss.item(), timestep)
+                self.writer.add_scalar("Coefficient / Entropy coefficient", self._entropy_coefficient.item(), timestep)

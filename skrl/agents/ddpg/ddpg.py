@@ -148,9 +148,9 @@ class DDPG(Agent):
 
             # record noises
             if timestep is not None:
-                self.writer.add_scalar('Noise/max', torch.max(noises).item(), timestep)
-                self.writer.add_scalar('Noise/min', torch.min(noises).item(), timestep)
-                self.writer.add_scalar('Noise/mean', torch.mean(noises).item(), timestep)
+                self.writer.add_scalar("Noise / Exploration noise (max)", torch.max(noises).item(), timestep)
+                self.writer.add_scalar("Noise / Exploration noise (min)", torch.min(noises).item(), timestep)
+                self.writer.add_scalar("Noise / Exploration noise (mean)", torch.mean(noises).item(), timestep)
         
         return actions
 
@@ -237,13 +237,13 @@ class DDPG(Agent):
             self.target_critic.update_parameters(self.critic, polyak=self._polyak)
 
             # record data
-            self.writer.add_scalar('Loss/policy', policy_loss.item(), timestep)
-            self.writer.add_scalar('Loss/critic', critic_loss.item(), timestep)
+            self.writer.add_scalar("Loss / Policy loss", policy_loss.item(), timestep)
+            self.writer.add_scalar("Loss / Critic loss", critic_loss.item(), timestep)
 
-            self.writer.add_scalar('Q-networks/q1_max', torch.max(critic_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q1_min', torch.min(critic_values).item(), timestep)
-            self.writer.add_scalar('Q-networks/q1_mean', torch.mean(critic_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (max)", torch.max(critic_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (min)", torch.min(critic_values).item(), timestep)
+            self.writer.add_scalar("Q-network / Q1 (mean)", torch.mean(critic_values).item(), timestep)
             
-            self.writer.add_scalar('Target/max', torch.max(target_values).item(), timestep)
-            self.writer.add_scalar('Target/min', torch.min(target_values).item(), timestep)
-            self.writer.add_scalar('Target/mean', torch.mean(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (max)", torch.max(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (min)", torch.min(target_values).item(), timestep)
+            self.writer.add_scalar("Target / Target (mean)", torch.mean(target_values).item(), timestep)

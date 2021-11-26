@@ -5,6 +5,8 @@ import gym
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import datetime
+import collections
+import numpy as np
 
 from ..env import Environment
 from ..memories.torch import Memory
@@ -41,8 +43,10 @@ class Agent:
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
-        # self.track_rewards = 0
-        # self.track_ = 0
+        self._track_rewards = collections.deque(maxlen=50)
+        self._track_timesteps = collections.deque(maxlen=50)
+        self._cumulative_rewards = None
+        self._cumulative_timesteps = None
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -99,9 +103,32 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        # compute the cumulative sum of the rewards and timesteps
+        if self._cumulative_rewards is None:
+            self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
+            self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
+        
+        self._cumulative_rewards += rewards
+        self._cumulative_timesteps += 1
+        
+        # compute the average of the cumulative rewards and timesteps
+        finished_episodes = dones.nonzero(as_tuple=False)
+
+        self._track_rewards.extend(self._cumulative_rewards[finished_episodes].view(-1).tolist())
+        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].view(-1).tolist())
+
+        # reset the cumulative rewards and timesteps
+        self._cumulative_rewards[finished_episodes] = 0
+        self._cumulative_timesteps[finished_episodes] = 0
+        
+        # write data to the log
         self.writer.add_scalar('Instantaneous reward/max', torch.max(rewards).item(), timestep)
         self.writer.add_scalar('Instantaneous reward/min', torch.min(rewards).item(), timestep)
         self.writer.add_scalar('Instantaneous reward/mean', torch.mean(rewards).item(), timestep)
+
+        if len(self._track_rewards):
+            self.writer.add_scalar('Statistics/mean reward', np.array(self._track_rewards).mean(), timestep)
+            self.writer.add_scalar('Statistics/mean episode length', np.array(self._track_timesteps).mean(), timestep)
 
     def set_mode(self, mode: str) -> None:
         """Set the network mode (training or evaluation)

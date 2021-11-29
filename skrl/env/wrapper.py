@@ -97,17 +97,17 @@ class _GymWrapper(_Wrapper):
             actions = actions.cpu().numpy()
         observation, reward, done, info = self._env.step(actions)
         # convert response to torch
-        return torch.from_numpy(observation).to(self.device).view(-1), \
-               torch.tensor(reward).to(self.device).view(-1), \
-               torch.tensor(done).to(self.device).view(-1), \
+        return torch.from_numpy(observation).to(self.device).view(1, -1), \
+               torch.tensor(reward).to(self.device).view(1, -1), \
+               torch.tensor(done).to(self.device).view(1, -1), \
                info
         
     def reset(self):
         state = self._env.reset()
         # convert the state to torch if it is a numpy array
         if isinstance(state, np.ndarray):
-            return torch.from_numpy(state).to(self.device)
-        return state
+            return torch.from_numpy(state).to(self.device, dtype=torch.float32).view(1, -1)
+        return state.to(self.device, dtype=torch.float32).view(1, -1)
 
     def render(self, mode='human'):
         self._env.render(mode=mode)

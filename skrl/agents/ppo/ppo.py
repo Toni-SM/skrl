@@ -182,6 +182,10 @@ class PPO(Agent):
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
             self._update(timestep, timesteps)
 
+        # write to tensorboard
+        if self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
+
     def _update(self, timestep: int, timesteps: int):
         # compute returns and advantages
         last_values, _, _ = self.value.act(states=self._current_next_states, inference=True)
@@ -249,9 +253,8 @@ class PPO(Agent):
                 cumulative_entropy_loss += entropy_loss.item()
 
         # record data
-        self.writer.add_scalar("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs, timestep)
-        self.writer.add_scalar("Loss / Value loss", cumulative_value_loss / self._learning_epochs, timestep)
+        self.tracking_data["Loss / Policy loss"].append(cumulative_policy_loss / self._learning_epochs)
+        self.tracking_data["Loss / Critic loss"].append(cumulative_value_loss / self._learning_epochs)
 
         if self._entropy_loss_scale:
-            self.writer.add_scalar("Loss / Entropy loss", cumulative_entropy_loss / self._learning_epochs, timestep)
-
+            self.tracking_data["Loss / Entropy loss"].append(cumulative_entropy_loss / self._learning_epochs)

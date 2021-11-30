@@ -153,24 +153,31 @@ class TD3(Agent):
             # sample noises
             noises = self._exploration_noise.sample(actions[0].shape)
             
-            # scale noises
+            # define exploration timesteps
             scale = self._exploration_final_scale
             if self._exploration_timesteps is None:
                 self._exploration_timesteps = timesteps
+            
+            # apply exploration noise
             if timestep <= self._exploration_timesteps:
                 scale = (1 - timestep / self._exploration_timesteps) * (self._exploration_initial_scale - self._exploration_final_scale) + self._exploration_final_scale
-            noises.mul_(scale)
+                noises.mul_(scale)
 
-            # modify actions
-            actions[0].add_(noises)
-            actions[0].clamp_(self.env.action_space.low[0], self.env.action_space.high[0]) # FIXME: use tensor too
+                # modify actions
+                actions[0].add_(noises)
+                actions[0].clamp_(self.env.action_space.low[0], self.env.action_space.high[0]) # FIXME: use tensor too
 
-            # record noises
-            if timestep is not None:
-                self.writer.add_scalar("Noise / Exploration noise (max)", torch.max(noises).item(), timestep)
-                self.writer.add_scalar("Noise / Exploration noise (min)", torch.min(noises).item(), timestep)
-                self.writer.add_scalar("Noise / Exploration noise (mean)", torch.mean(noises).item(), timestep)
-        
+                # record noises
+                self.tracking_data["Noise / Exploration noise (max)"].append(torch.max(noises).item())
+                self.tracking_data["Noise / Exploration noise (min)"].append(torch.min(noises).item())
+                self.tracking_data["Noise / Exploration noise (mean)"].append(torch.mean(noises).item())
+            
+            else:
+                # record noises
+                self.tracking_data["Noise / Exploration noise (max)"].append(0)
+                self.tracking_data["Noise / Exploration noise (min)"].append(0)
+                self.tracking_data["Noise / Exploration noise (mean)"].append(0)
+
         return actions
 
     def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
@@ -215,6 +222,10 @@ class TD3(Agent):
         """
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
+        
+        # write to tensorboard
+        if self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
         # gradient steps
@@ -269,17 +280,17 @@ class TD3(Agent):
 
             # record data
             if not self._critic_update_counter % self._policy_delay:
-                self.writer.add_scalar("Loss / Policy loss", policy_loss.item(), timestep)
-            self.writer.add_scalar("Loss / Critic loss", critic_loss.item(), timestep)
+                self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
+            self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
 
-            self.writer.add_scalar("Q-network / Q1 (max)", torch.max(critic_1_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q1 (min)", torch.min(critic_1_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q1 (mean)", torch.mean(critic_1_values).item(), timestep)
+            self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_1_values).item())
+            self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_1_values).item())
+            self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_1_values).item())
 
-            self.writer.add_scalar("Q-network / Q2 (max)", torch.max(critic_2_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q2 (min)", torch.min(critic_2_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q2 (mean)", torch.mean(critic_2_values).item(), timestep)
+            self.tracking_data["Q-network / Q2 (max)"].append(torch.max(critic_2_values).item())
+            self.tracking_data["Q-network / Q2 (min)"].append(torch.min(critic_2_values).item())
+            self.tracking_data["Q-network / Q2 (mean)"].append(torch.mean(critic_2_values).item())
             
-            self.writer.add_scalar("Target / Target (max)", torch.max(target_values).item(), timestep)
-            self.writer.add_scalar("Target / Target (min)", torch.min(target_values).item(), timestep)
-            self.writer.add_scalar("Target / Target (mean)", torch.mean(target_values).item(), timestep)
+            self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
+            self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
+            self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())

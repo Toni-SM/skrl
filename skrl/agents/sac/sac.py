@@ -28,7 +28,7 @@ SAC_DEFAULT_CONFIG = {
 
     "learn_entropy": True,          # learn entropy
     "entropy_learning_rate": 1e-3,  # entropy learning rate
-    "initial_entropy_value": 0.1,   # initial entropy value
+    "initial_entropy_value": 0.2,   # initial entropy value
     "target_entropy": None,         # target entropy
 
     "device": None,                 # computing device
@@ -183,7 +183,11 @@ class SAC(Agent):
         """
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
-    
+        
+        # write to tensorboard
+        if self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
+             
     def _update(self, timestep: int, timesteps: int):
         # gradient steps
         for gradient_step in range(self._gradient_steps):
@@ -241,21 +245,21 @@ class SAC(Agent):
             self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
-            self.writer.add_scalar("Loss / Policy loss", policy_loss.item(), timestep)
-            self.writer.add_scalar("Loss / Critic loss", critic_loss.item(), timestep)
+            self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
+            self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
 
-            self.writer.add_scalar("Q-network / Q1 (max)", torch.max(critic_1_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q1 (min)", torch.min(critic_1_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q1 (mean)", torch.mean(critic_1_values).item(), timestep)
+            self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_1_values).item())
+            self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_1_values).item())
+            self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_1_values).item())
 
-            self.writer.add_scalar("Q-network / Q2 (max)", torch.max(critic_2_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q2 (min)", torch.min(critic_2_values).item(), timestep)
-            self.writer.add_scalar("Q-network / Q2 (mean)", torch.mean(critic_2_values).item(), timestep)
+            self.tracking_data["Q-network / Q2 (max)"].append(torch.max(critic_2_values).item())
+            self.tracking_data["Q-network / Q2 (min)"].append(torch.min(critic_2_values).item())
+            self.tracking_data["Q-network / Q2 (mean)"].append(torch.mean(critic_2_values).item())
             
-            self.writer.add_scalar("Target / Target (max)", torch.max(target_values).item(), timestep)
-            self.writer.add_scalar("Target / Target (min)", torch.min(target_values).item(), timestep)
-            self.writer.add_scalar("Target / Target (mean)", torch.mean(target_values).item(), timestep)
+            self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
+            self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
+            self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())
 
             if self._learn_entropy:
-                self.writer.add_scalar("Loss / Entropy loss", entropy_loss.item(), timestep)
-                self.writer.add_scalar("Coefficient / Entropy coefficient", self._entropy_coefficient.item(), timestep)
+                self.tracking_data["Loss / Entropy loss"].append(entropy_loss.item())
+                self.tracking_data["Coefficient / Entropy coefficient"].append(self._entropy_coefficient.item())

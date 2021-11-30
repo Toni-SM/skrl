@@ -36,12 +36,16 @@ class Agent:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # experiment directory
-        log_dir = self.cfg.get("log_dir", os.path.join(os.getcwd(), "runs"))
-        experiment_name = self.cfg.get("experiment_name", "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S"), self.__class__.__name__))
-        self.experiment_dir = os.path.join(log_dir, experiment_name)
+        base_directory = self.cfg.get("experiment", {}).get("base_directory", os.path.join(os.getcwd(), "runs"))
+        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not experiment_name:
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S"), self.__class__.__name__)
+        self.experiment_dir = os.path.join(base_directory, experiment_name)
         
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
+        self.tracking_data = collections.defaultdict(list)
+        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 250)
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -63,6 +67,18 @@ class Agent:
             else:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
+
+    def write_tracking_data(self, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> None:
+        """Write tracking data to TensorBoard
+
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
+        """
+        for k, v in self.tracking_data.items():
+            self.writer.add_scalar(k, np.mean(v), timestep)
+        self.tracking_data = collections.defaultdict(list)
 
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
@@ -121,22 +137,22 @@ class Agent:
         self._cumulative_rewards[finished_episodes] = 0
         self._cumulative_timesteps[finished_episodes] = 0
         
-        # write data to the log
-        self.writer.add_scalar("Reward / Instantaneous reward (max)", torch.max(rewards).item(), timestep)
-        self.writer.add_scalar("Reward / Instantaneous reward (min)", torch.min(rewards).item(), timestep)
-        self.writer.add_scalar("Reward / Instantaneous reward (mean)", torch.mean(rewards).item(), timestep)
+        # record data
+        self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
+        self.tracking_data["Reward / Instantaneous reward (min)"].append(torch.min(rewards).item())
+        self.tracking_data["Reward / Instantaneous reward (mean)"].append(torch.mean(rewards).item())
 
         if len(self._track_rewards):
             track_rewards = np.array(self._track_rewards)
             track_timesteps = np.array(self._track_timesteps)
 
-            self.writer.add_scalar("Reward / Total reward (max)", np.max(track_rewards), timestep)
-            self.writer.add_scalar("Reward / Total reward (min)", np.min(track_rewards), timestep)
-            self.writer.add_scalar("Reward / Total reward (mean)", np.mean(track_rewards), timestep)
+            self.tracking_data["Reward / Total reward (max)"].append(np.max(track_rewards))
+            self.tracking_data["Reward / Total reward (min)"].append(np.min(track_rewards))
+            self.tracking_data["Reward / Total reward (mean)"].append(np.mean(track_rewards))
 
-            self.writer.add_scalar("Episode / Total timesteps (max)", np.max(track_timesteps), timestep)
-            self.writer.add_scalar("Episode / Total timesteps (min)", np.min(track_timesteps), timestep)
-            self.writer.add_scalar("Episode / Total timesteps (mean)", np.mean(track_timesteps), timestep)
+            self.tracking_data["Episode / Total timesteps (max)"].append(np.max(track_timesteps))
+            self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
+            self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
     def set_mode(self, mode: str) -> None:
         """Set the network mode (training or evaluation)

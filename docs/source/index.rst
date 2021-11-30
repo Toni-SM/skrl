@@ -51,3 +51,11 @@ Contents
   modules/skrl.noises.base_class
   modules/skrl.noises.gaussian
   modules/skrl.noises.ornstein_uhlenbeck
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Trainers
+      
+  modules/skrl.trainers.base_class
+  modules/skrl.trainers.sequential
+  modules/skrl.trainers.concurrent

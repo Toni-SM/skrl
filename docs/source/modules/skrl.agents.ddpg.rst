@@ -34,7 +34,7 @@ API
 
 .. literalinclude:: ../../../skrl/agents/ddpg/ddpg.py
    :language: python
-   :lines: 14-35
+   :lines: 14-41
    :linenos:
 
 .. autoclass:: skrl.agents.ddpg.ddpg.DDPG

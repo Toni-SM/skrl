@@ -1,7 +1,6 @@
 from typing import Union, List
 
 import threading
-import multiprocessing
 
 from . import Trainer
 from ...agents import Agent
@@ -35,8 +34,7 @@ class ConcurrentTrainer(Trainer):
         """
         super().__init__(cfg, env, agents, agents_scope)
 
-        # self._barrier = threading.Barrier(self.num_agents + 1)
-        self._barrier = multiprocessing.Barrier(self.num_agents + 1)
+        self._barrier = threading.Barrier(self.num_agents + 1)
 
     def _pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Call pre_interaction method for each agent before all interactions

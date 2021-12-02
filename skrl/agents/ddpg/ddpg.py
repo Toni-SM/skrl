@@ -32,6 +32,12 @@ DDPG_DEFAULT_CONFIG = {
     },
 
     "device": None,                 # computing device
+
+    "experiment": {
+        "base_directory": "",       # base directory for the experiment
+        "experiment_name": "",      # experiment name
+        "write_interval": 100,      # write interval for the experiment
+    }
 }
 
 

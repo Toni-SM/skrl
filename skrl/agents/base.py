@@ -36,10 +36,12 @@ class Agent:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # experiment directory
-        base_directory = self.cfg.get("experiment", {}).get("base_directory", os.path.join(os.getcwd(), "runs"))
+        base_directory = self.cfg.get("experiment", {}).get("base_directory", "")
         experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not base_directory:
+            base_directory = os.path.join(os.getcwd(), "runs")
         if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S"), self.__class__.__name__)
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
         self.experiment_dir = os.path.join(base_directory, experiment_name)
         
         # main entry to log data for consumption and visualization by TensorBoard

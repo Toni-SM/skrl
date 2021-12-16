@@ -12,6 +12,13 @@ Contents
 
 .. toctree::
   :maxdepth: 1
+
+  intro/installation
+  intro/features
+  intro/examples
+
+.. toctree::
+  :maxdepth: 1
   :caption: Agents
 
   modules/skrl.agents.base_class

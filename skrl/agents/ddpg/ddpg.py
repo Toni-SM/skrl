@@ -36,7 +36,7 @@ DDPG_DEFAULT_CONFIG = {
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
-        "write_interval": 100,      # write interval for the experiment
+        "write_interval": 250,      # write interval for the experiment
     }
 }
 

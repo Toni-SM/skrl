@@ -37,6 +37,12 @@ TD3_DEFAULT_CONFIG = {
     "smooth_regularization_clip": 0.5,      # clip for smooth regularization
 
     "device": None,                 # computing device
+    
+    "experiment": {
+        "base_directory": "",       # base directory for the experiment
+        "experiment_name": "",      # experiment name
+        "write_interval": 250,      # write interval for the experiment
+    }
 }
 
 

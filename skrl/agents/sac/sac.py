@@ -32,6 +32,12 @@ SAC_DEFAULT_CONFIG = {
     "target_entropy": None,         # target entropy
 
     "device": None,                 # computing device
+
+    "experiment": {
+        "base_directory": "",       # base directory for the experiment
+        "experiment_name": "",      # experiment name
+        "write_interval": 250,      # write interval for the experiment
+    }
 }
 
 

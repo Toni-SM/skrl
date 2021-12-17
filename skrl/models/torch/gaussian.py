@@ -70,7 +70,8 @@ class GaussianModel(Model):
             covariance = covariance.unsqueeze(-1)
         self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
 
-        actions = self._distribution.sample()
+        # sample using the reparameterization trick
+        actions = self._distribution.rsample()
 
         # clip actions 
         # TODO: use tensor too for low and high

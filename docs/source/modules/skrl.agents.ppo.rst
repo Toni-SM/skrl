@@ -41,7 +41,7 @@ API
 
 .. literalinclude:: ../../../skrl/agents/ppo/ppo.py
    :language: python
-   :lines: 14-37
+   :lines: 14-43
    :linenos:
 
 .. autoclass:: skrl.agents.ppo.ppo.PPO

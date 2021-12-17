@@ -42,7 +42,7 @@ API
 
 .. literalinclude:: ../../../skrl/agents/td3/td3.py
    :language: python
-   :lines: 15-40
+   :lines: 15-46
    :linenos:
 
 .. autoclass:: skrl.agents.td3.td3.TD3

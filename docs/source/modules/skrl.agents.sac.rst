@@ -16,7 +16,7 @@ Soft Actor-Critic (SAC)
 |     compute critic loss
 |        :math:`Q_1 = Q_{\phi 1}(s, a)`
 |        :math:`Q_2 = Q_{\phi 2}(s, a)`
-|        :math:`{Loss}_{critic} = \frac{1}{N} \sum_{i=1}^N (Q_1 - y)^2 + \frac{1}{N} \sum_{i=1}^N (Q_2 - y)^2`
+|        :math:`{Loss}_{critic} = 0.5 \; (\frac{1}{N} \sum_{i=1}^N (Q_1 - y)^2 + \frac{1}{N} \sum_{i=1}^N (Q_2 - y)^2)`
 |     optimize critic
 |        :math:`\nabla_{\phi} {Loss}_{critic}`
 |     compute policy (actor) loss
@@ -44,7 +44,7 @@ API
 
 .. literalinclude:: ../../../skrl/agents/sac/sac.py
    :language: python
-   :lines: 16-35
+   :lines: 16-41
    :linenos:
 
 .. autoclass:: skrl.agents.sac.sac.SAC

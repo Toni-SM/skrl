@@ -140,21 +140,22 @@ class Agent:
         self._cumulative_timesteps[finished_episodes] = 0
         
         # record data
-        self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
-        self.tracking_data["Reward / Instantaneous reward (min)"].append(torch.min(rewards).item())
-        self.tracking_data["Reward / Instantaneous reward (mean)"].append(torch.mean(rewards).item())
+        if self.write_interval > 0:
+            self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
+            self.tracking_data["Reward / Instantaneous reward (min)"].append(torch.min(rewards).item())
+            self.tracking_data["Reward / Instantaneous reward (mean)"].append(torch.mean(rewards).item())
 
-        if len(self._track_rewards):
-            track_rewards = np.array(self._track_rewards)
-            track_timesteps = np.array(self._track_timesteps)
+            if len(self._track_rewards):
+                track_rewards = np.array(self._track_rewards)
+                track_timesteps = np.array(self._track_timesteps)
 
-            self.tracking_data["Reward / Total reward (max)"].append(np.max(track_rewards))
-            self.tracking_data["Reward / Total reward (min)"].append(np.min(track_rewards))
-            self.tracking_data["Reward / Total reward (mean)"].append(np.mean(track_rewards))
+                self.tracking_data["Reward / Total reward (max)"].append(np.max(track_rewards))
+                self.tracking_data["Reward / Total reward (min)"].append(np.min(track_rewards))
+                self.tracking_data["Reward / Total reward (mean)"].append(np.mean(track_rewards))
 
-            self.tracking_data["Episode / Total timesteps (max)"].append(np.max(track_timesteps))
-            self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
-            self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
+                self.tracking_data["Episode / Total timesteps (max)"].append(np.max(track_timesteps))
+                self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
+                self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
     def set_mode(self, mode: str) -> None:
         """Set the network mode (training or evaluation)

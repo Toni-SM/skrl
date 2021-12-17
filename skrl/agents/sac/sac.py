@@ -140,9 +140,9 @@ class SAC(Agent):
         :rtype: torch.Tensor
         """
         # sample random actions
-        # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+        # # TODO, check for stochasticity
+        # if timestep < self._random_timesteps:
+        #     return self.policy.random_act(states)
 
         # sample stochastic actions
         return self.policy.act(states, inference=inference)
@@ -214,7 +214,7 @@ class SAC(Agent):
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
             
-            critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
+            critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
             
             # optimize critic
             self.critic_optimizer.zero_grad()
@@ -251,21 +251,22 @@ class SAC(Agent):
             self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # record data
-            self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
-            self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
+            if self.write_interval > 0:
+                self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
+                self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
 
-            self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_1_values).item())
-            self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_1_values).item())
-            self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_1_values).item())
+                self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_1_values).item())
+                self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_1_values).item())
+                self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_1_values).item())
 
-            self.tracking_data["Q-network / Q2 (max)"].append(torch.max(critic_2_values).item())
-            self.tracking_data["Q-network / Q2 (min)"].append(torch.min(critic_2_values).item())
-            self.tracking_data["Q-network / Q2 (mean)"].append(torch.mean(critic_2_values).item())
-            
-            self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
-            self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
-            self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())
+                self.tracking_data["Q-network / Q2 (max)"].append(torch.max(critic_2_values).item())
+                self.tracking_data["Q-network / Q2 (min)"].append(torch.min(critic_2_values).item())
+                self.tracking_data["Q-network / Q2 (mean)"].append(torch.mean(critic_2_values).item())
+                
+                self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
+                self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
+                self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())
 
-            if self._learn_entropy:
-                self.tracking_data["Loss / Entropy loss"].append(entropy_loss.item())
-                self.tracking_data["Coefficient / Entropy coefficient"].append(self._entropy_coefficient.item())
+                if self._learn_entropy:
+                    self.tracking_data["Loss / Entropy loss"].append(entropy_loss.item())
+                    self.tracking_data["Coefficient / Entropy coefficient"].append(self._entropy_coefficient.item())

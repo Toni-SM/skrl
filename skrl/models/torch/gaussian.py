@@ -66,7 +66,7 @@ class GaussianModel(Model):
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        if self.num_actions is not None and torch.numel(log_std) != self.num_actions:
+        if covariance.dim() < actions_mean.dim():
             covariance = covariance.unsqueeze(-1)
         self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
 

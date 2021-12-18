@@ -35,11 +35,20 @@ intersphinx_disabled_domains = ['std']
 
 templates_path = ['_templates']
 
+rst_prolog = """
+ .. include:: <s5defs.txt>
+
+"""
+
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
 
 html_logo = "_static/data/skrl-up.png"
+
+html_static_path = ['_static']
+
+html_css_files = ['css/s5defs-roles.css']
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'

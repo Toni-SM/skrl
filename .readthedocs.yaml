@@ -11,10 +11,10 @@ build:
     python: "3.6"
 
 # Build documentation in the docs/ directory with Sphinx
-sphinx:
-  builder: html
-  configuration: docs/conf.py
-  fail_on_warning: true
+# sphinx:
+#   builder: html
+#   configuration: docs/conf.py
+#   fail_on_warning: false
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:

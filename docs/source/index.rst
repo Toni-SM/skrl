@@ -1,11 +1,13 @@
-skrl: Reinforcement Learning at your service
-============================================
+skrl: Reinforcement Learning ...
+================================
 
-**skrl** is a Python library for reinforcement learning lovers 
+**skrl** is a Python library for reinforcement learning... 
 
-.. note::
+:red:`More content is comming soon...`
 
-  This project is under active development
+.. important::
+
+  THIS PROJECT IS UNDER ACTIVE DEVELOPMENT
 
 Contents
 --------
@@ -40,7 +42,7 @@ Contents
 
   modules/skrl.memories.base_class
   modules/skrl.memories.random
-  modules/skrl.memories.prioritized
+  .. modules/skrl.memories.prioritized
 
 .. toctree::
   :maxdepth: 1
@@ -65,4 +67,4 @@ Contents
       
   modules/skrl.trainers.base_class
   modules/skrl.trainers.sequential
-  modules/skrl.trainers.concurrent
+  .. modules/skrl.trainers.concurrent

@@ -60,13 +60,18 @@ class _Wrapper(object):
 class _IsaacGymPreview2Wrapper(_Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
+        self._reset_once = True
+        self._obs_buf = None
 
     def step(self, actions):
-        obs_buf, rew_buf, reset_buf, extras = self._env.step(actions)
-        return obs_buf, rew_buf, reset_buf, None
+        self._obs_buf, rew_buf, reset_buf, extras = self._env.step(actions)
+        return self._obs_buf, rew_buf, reset_buf, None
 
     def reset(self):
-        return self._env.reset()
+        if self._reset_once:
+            self._obs_buf = self._env.reset()
+            self._reset_once = False
+        return self._obs_buf
 
     def render(self, mode='human'):
         pass
@@ -75,13 +80,18 @@ class _IsaacGymPreview2Wrapper(_Wrapper):
 class _IsaacGymPreview3Wrapper(_Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
+        self._reset_once = True
+        self._obs_dict = None
 
     def step(self, actions):
-        obs_dict, rew_buf, reset_buf, extras = self._env.step(actions)
-        return obs_dict["obs"], rew_buf, reset_buf, None
+        self._obs_dict, rew_buf, reset_buf, extras = self._env.step(actions)
+        return self._obs_dict["obs"], rew_buf, reset_buf, None
 
     def reset(self):
-        return self._env.reset()["obs"]
+        if self._reset_once:
+            self._obs_dict = self._env.reset()
+            self._reset_once = False
+        return self._obs_dict["obs"]
 
     def render(self, mode='human'):
         self._env.render()

@@ -1,28 +1,28 @@
 from typing import Union, Dict
 
 import os
-import gym
-import torch
-from torch.utils.tensorboard import SummaryWriter
 import datetime
 import collections
 import numpy as np
 
-from ..env import Environment
-from ..memories.torch import Memory
-from ..models.torch import Model
+import torch
+from torch.utils.tensorboard import SummaryWriter
+
+from ...env.torch import Wrapper
+from ...memories.torch import Memory
+from ...models.torch import Model
 
 
 class Agent:
-    def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
         """Base class that represent a RL agent
 
         :param env: RL environment
-        :type env: skrl.env.Environment or gym.Env
+        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.Memory or None
+        :type memory: skrl.memory.torch.Memory or None
         :param cfg: Configuration dictionary
         :type cfg: dict
         """

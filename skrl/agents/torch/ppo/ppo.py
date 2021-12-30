@@ -1,12 +1,11 @@
 from typing import Union, Dict
 
-import gym
 import torch
 import torch.nn.functional as F
 
-from ...env import Environment
-from ...memories.torch import Memory
-from ...models.torch import Model
+from ....env.torch import Wrapper
+from ....memories.torch import Memory
+from ....models.torch import Model
 
 from .. import Agent
 
@@ -44,17 +43,17 @@ PPO_DEFAULT_CONFIG = {
 
 
 class PPO(Agent):
-    def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
         """Proximal Policy Optimization (PPO)
 
         https://arxiv.org/abs/1707.06347
         
         :param env: RL environment
-        :type env: skrl.env.Environment or gym.Env
+        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.Memory or None
+        :type memory: skrl.memory.torch.Memory or None
         :param cfg: Configuration dictionary
         :type cfg: dict
         """

@@ -5,7 +5,7 @@ import numpy as np
 __all__ = ["wrap_env"]
 
 
-class _Wrapper(object):
+class Wrapper(object):
     def __init__(self, env):
         self._env = env
 
@@ -57,7 +57,7 @@ class _Wrapper(object):
         return self._env.action_space
 
 
-class _IsaacGymPreview2Wrapper(_Wrapper):
+class IsaacGymPreview2Wrapper(Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
         self._reset_once = True
@@ -77,7 +77,7 @@ class _IsaacGymPreview2Wrapper(_Wrapper):
         pass
 
 
-class _IsaacGymPreview3Wrapper(_Wrapper):
+class IsaacGymPreview3Wrapper(Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
         self._reset_once = True
@@ -97,7 +97,7 @@ class _IsaacGymPreview3Wrapper(_Wrapper):
         self._env.render()
     
 
-class _GymWrapper(_Wrapper):
+class GymWrapper(Wrapper):
     def __init__(self, env) -> None:
         super().__init__(env)
 
@@ -123,7 +123,7 @@ class _GymWrapper(_Wrapper):
         self._env.render(mode=mode)
 
 
-def wrap_env(env, wrapper="auto") -> _Wrapper:
+def wrap_env(env, wrapper="auto") -> Wrapper:
     """Wrap an environment to use a common interface
 
     :param env: The type of wrapper to use (default: "auto").
@@ -136,7 +136,7 @@ def wrap_env(env, wrapper="auto") -> _Wrapper:
     :raises ValueError: Unknow wrapper type
     
     :return: Wrapped environment
-    :rtype: _Wrapper
+    :rtype: Wrapper
     """
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__])
     
@@ -144,20 +144,20 @@ def wrap_env(env, wrapper="auto") -> _Wrapper:
         # TODO: automatically select other wrappers
         if isinstance(env, gym.core.Wrapper):
             print("[INFO] Wrapper: Gym")
-            return _GymWrapper(env)
+            return GymWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
-            return _IsaacGymPreview2Wrapper(env)
+            return IsaacGymPreview2Wrapper(env)
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return _IsaacGymPreview3Wrapper(env)
+        return IsaacGymPreview3Wrapper(env)
     elif wrapper == "gym":
         print("[INFO] Wrapper: Gym")
-        return _GymWrapper(env)
+        return GymWrapper(env)
     elif wrapper == "isaacgym-preview2":
         print("[INFO] Wrapper: Isaac Gym (preview 2)")
-        return _IsaacGymPreview2Wrapper(env)
+        return IsaacGymPreview2Wrapper(env)
     elif wrapper == "isaacgym-preview3":
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return _IsaacGymPreview3Wrapper(env)
+        return IsaacGymPreview3Wrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

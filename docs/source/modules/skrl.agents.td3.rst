@@ -38,14 +38,14 @@ Twin Delayed TD3 (TD3)
 API
 ^^^
 
-.. py:data:: skrl.agents.td3.td3.TD3_DEFAULT_CONFIG
+.. py:data:: skrl.agents.torch.td3.td3.TD3_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/td3/td3.py
+.. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
    :lines: 15-46
    :linenos:
 
-.. autoclass:: skrl.agents.td3.td3.TD3
+.. autoclass:: skrl.agents.torch.td3.td3.TD3
    :undoc-members:
    :show-inheritance:
    :private-members: _update

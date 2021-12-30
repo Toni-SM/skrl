@@ -40,14 +40,14 @@ Soft Actor-Critic (SAC)
 API
 ^^^
 
-.. py:data:: skrl.agents.sac.sac.SAC_DEFAULT_CONFIG
+.. py:data:: skrl.agents.torch.sac.sac.SAC_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/sac/sac.py
+.. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
    :lines: 16-41
    :linenos:
 
-.. autoclass:: skrl.agents.sac.sac.SAC
+.. autoclass:: skrl.agents.torch.sac.sac.SAC
    :undoc-members:
    :show-inheritance:
    :private-members: _update

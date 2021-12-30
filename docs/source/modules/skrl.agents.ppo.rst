@@ -37,14 +37,14 @@ Proximal Policy Optimization (PPO)
 API
 ^^^
 
-.. py:data:: skrl.agents.ppo.ppo.PPO_DEFAULT_CONFIG
+.. py:data:: skrl.agents.torch.ppo.ppo.PPO_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/ppo/ppo.py
+.. literalinclude:: ../../../skrl/agents/torch/ppo/ppo.py
    :language: python
-   :lines: 14-43
+   :lines: 13-42
    :linenos:
 
-.. autoclass:: skrl.agents.ppo.ppo.PPO
+.. autoclass:: skrl.agents.torch.ppo.ppo.PPO
    :undoc-members:
    :show-inheritance:
    :private-members: _update

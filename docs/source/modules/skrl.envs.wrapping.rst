@@ -16,7 +16,7 @@ Basic usage
       :linenos:
 
       # import the environment wrapper and loader
-      from skrl.env import wrap_env
+      from skrl.env.torch import wrap_env
       from skrl.utils.isaacgym_utils import load_isaacgym_env_preview3
 
       # load the environment
@@ -31,7 +31,7 @@ Basic usage
       :linenos:
 
       # import the environment wrapper and gym
-      from skrl.env import wrap_env
+      from skrl.env.torch import wrap_env
       import gym
 
       # load environment
@@ -43,30 +43,30 @@ Basic usage
 API
 ^^^
 
-.. autofunction:: skrl.env.wrapper.wrap_env
+.. autofunction:: skrl.env.torch.wrapper.wrap_env
 
-.. autoclass:: skrl.env.wrapper._Wrapper
+.. autoclass:: skrl.env.torch.wrapper._Wrapper
    :undoc-members:
    :show-inheritance:
    :members:
    
    .. automethod:: __init__
 
-.. autoclass:: skrl.env.wrapper._IsaacGymPreview2Wrapper
+.. autoclass:: skrl.env.torch.wrapper._IsaacGymPreview2Wrapper
    :undoc-members:
    :show-inheritance:
    :members:
    
    .. automethod:: __init__
 
-.. autoclass:: skrl.env.wrapper._IsaacGymPreview3Wrapper
+.. autoclass:: skrl.env.torch.wrapper._IsaacGymPreview3Wrapper
    :undoc-members:
    :show-inheritance:
    :members:
    
    .. automethod:: __init__
 
-.. autoclass:: skrl.env.wrapper._GymWrapper
+.. autoclass:: skrl.env.torch.wrapper._GymWrapper
    :undoc-members:
    :show-inheritance:
    :members:

@@ -17,13 +17,13 @@ Basic inheritance usage
       # function annotations
       from typing import Union, Dict   
       
-      import gym
-      from skrl.env import Environment      # 'from ...env import Environment' (in the agents/custom_agent directory)
-      from skrl.memories import Memory      # 'from ...memories import Memory' (in the agents/custom_agent directory)
-      from skrl.models.torch import Model   # 'from ...models.torch import Model' (in the agents/custom_agent directory)
-
       import torch
-      from skrl.agents.base import Agent    # 'from .. import Agent' (in the agents/custom_agent directory)
+      
+      from skrl.env.torch import Wrapper        # 'from ...env.torch import Wrapper' (in the agents/torch/custom_agent directory)
+      from skrl.memories.torch import Memory    # 'from ...memories.torch import Memory' (in the agents/torch/custom_agent directory)
+      from skrl.models.torch import Model       # 'from ...models.torch import Model' (in the agents/torch/custom_agent directory)
+
+      from skrl.agents.torch.base import Agent    # 'from .. import Agent' (in the agents/torch/custom_agent directory)
 
       # default agent configuration
       DEFAULT_CONFIG = {
@@ -32,7 +32,7 @@ Basic inheritance usage
 
 
       class CustomAgent(Agent):
-          def __init__(self, env: Union[Environment, gym.Env], networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+          def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
               DEFAULT_CONFIG.update(cfg)
               super().__init__(env=env, networks=networks, memory=memory, cfg=DEFAULT_CONFIG)
               # ===================================
@@ -78,7 +78,7 @@ Basic inheritance usage
 API
 ^^^
 
-.. autoclass:: skrl.agents.base.Agent
+.. autoclass:: skrl.agents.torch.base.Agent
    :undoc-members:
    :show-inheritance:
    :inherited-members:

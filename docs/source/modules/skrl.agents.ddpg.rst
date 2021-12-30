@@ -30,14 +30,14 @@ Deep Deterministic Policy Gradient (DDPG)
 API
 ^^^
 
-.. py:data:: skrl.agents.ddpg.ddpg.DDPG_DEFAULT_CONFIG
+.. py:data:: skrl.agents.torch.ddpg.ddpg.DDPG_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/ddpg/ddpg.py
+.. literalinclude:: ../../../skrl/agents/torch/ddpg/ddpg.py
    :language: python
-   :lines: 14-41
+   :lines: 13-40
    :linenos:
 
-.. autoclass:: skrl.agents.ddpg.ddpg.DDPG
+.. autoclass:: skrl.agents.torch.ddpg.ddpg.DDPG
    :undoc-members:
    :show-inheritance:
    :private-members: _update

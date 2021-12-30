@@ -1,6 +1,6 @@
 from typing import Union, List
 
-from ...env.torch import Wrapper
+from ...envs.torch import Wrapper
 from ...agents.torch import Agent
 
 from . import Trainer

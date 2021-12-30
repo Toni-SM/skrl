@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ...env.torch import Wrapper
+from ...envs.torch import Wrapper
 from ...memories.torch import Memory
 from ...models.torch import Model
 

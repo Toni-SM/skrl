@@ -3,7 +3,7 @@ from typing import Union, Dict
 import torch
 import torch.nn.functional as F
 
-from ....env.torch import Wrapper
+from ....envs.torch import Wrapper
 from ....memories.torch import Memory
 from ....models.torch import Model
 

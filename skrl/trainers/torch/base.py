@@ -2,7 +2,7 @@ from typing import Union, List
 
 import torch
 
-from ...env.torch import Wrapper
+from ...envs.torch import Wrapper
 from ...agents.torch import Agent
 
 

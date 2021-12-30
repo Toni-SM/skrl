@@ -24,7 +24,7 @@ Basic usage
       :linenos:
 
       # import the environment loader
-      from skrl.utils.isaacgym_utils import load_isaacgym_env_preview3
+      from skrl.envs.torch import load_isaacgym_env_preview3
 
       # load environment
       env = load_isaacgym_env_preview3(task_name="Cartpole")
@@ -37,7 +37,7 @@ Basic usage
       :linenos:
 
       # import the environment loader
-      from skrl.utils.isaacgym_utils import load_isaacgym_env_preview3
+      from skrl.envs.torch import load_isaacgym_env_preview3
 
       # load environment
       env = load_isaacgym_env_preview3()
@@ -51,7 +51,7 @@ Basic usage
 API
 ^^^
 
-.. autofunction:: skrl.utils.isaacgym_utils.load_isaacgym_env_preview3
+.. autofunction:: skrl.envs.torch.loaders.load_isaacgym_env_preview3
 
 .. raw:: html
 
@@ -74,7 +74,7 @@ Basic usage
       :linenos:
 
       # import the environment loader
-      from skrl.utils.isaacgym_utils import load_isaacgym_env_preview2
+      from skrl.envs.torch import load_isaacgym_env_preview2
 
       # load environment
       env = load_isaacgym_env_preview2(task_name="Cartpole")
@@ -87,7 +87,7 @@ Basic usage
       :linenos:
 
       # import the environment loader
-      from skrl.utils.isaacgym_utils import load_isaacgym_env_preview2
+      from skrl.envs.torch import load_isaacgym_env_preview2
 
       # load environment
       env = load_isaacgym_env_preview2()
@@ -101,4 +101,4 @@ Basic usage
 API
 ^^^
 
-.. autofunction:: skrl.utils.isaacgym_utils.load_isaacgym_env_preview2
+.. autofunction:: skrl.envs.torch.loaders.load_isaacgym_env_preview2

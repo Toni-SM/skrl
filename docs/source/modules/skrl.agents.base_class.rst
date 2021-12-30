@@ -19,7 +19,7 @@ Basic inheritance usage
       
       import torch
       
-      from skrl.env.torch import Wrapper        # 'from ...env.torch import Wrapper' (in the agents/torch/custom_agent directory)
+      from skrl.envs.torch import Wrapper       # 'from ...envs.torch import Wrapper' (in the agents/torch/custom_agent directory)
       from skrl.memories.torch import Memory    # 'from ...memories.torch import Memory' (in the agents/torch/custom_agent directory)
       from skrl.models.torch import Model       # 'from ...models.torch import Model' (in the agents/torch/custom_agent directory)
 

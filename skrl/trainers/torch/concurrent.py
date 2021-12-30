@@ -2,8 +2,10 @@ from typing import Union, List
 
 import threading
 
+from ...env.torch import Wrapper
+from ...agents.torch import Agent
+
 from . import Trainer
-from ...agents import Agent
 
 
 class _Thread(threading.Thread):
@@ -18,7 +20,7 @@ class _Thread(threading.Thread):
 
 
 class ConcurrentTrainer(Trainer):
-    def __init__(self, cfg: dict, env, agents: Union[Agent, List[Agent], List[List[Agent]]], agents_scope : List[int] = []) -> None:
+    def __init__(self, cfg: dict, env: Wrapper, agents: Union[Agent, List[Agent], List[List[Agent]]], agents_scope : List[int] = []) -> None:
         """Concurrent trainer
         
         Train multiple agents in parallel
@@ -26,7 +28,7 @@ class ConcurrentTrainer(Trainer):
         :param cfg: Configuration dictionary
         :type cfg: dict
         :param env: Environment to train on
-        :type env: # TODO: Environment
+        :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])

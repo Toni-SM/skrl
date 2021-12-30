@@ -1,8 +1,6 @@
 import os
 import sys
 
-import isaacgym
-
 
 def _omegaconf_to_dict(config):
     from omegaconf import DictConfig
@@ -39,6 +37,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     :return: Isaac Gym environment (preview 2)
     :rtype: tasks.base.vec_task.VecTask
     """
+    import isaacgym
+
     # check task from command line arguments
     defined = False
     for arg in sys.argv:
@@ -127,6 +127,7 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
 
     from omegaconf import OmegaConf
 
+    import isaacgym
     import isaacgymenvs
     
     # check task from command line arguments

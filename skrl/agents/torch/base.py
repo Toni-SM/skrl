@@ -54,6 +54,14 @@ class Agent:
         self._cumulative_rewards = None
         self._cumulative_timesteps = None
 
+        # checkpoint
+        self.checkpoint_networks = {}
+        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
+        self.only_checkpoint_policy = self.cfg.get("experiment", {}).get("only_checkpoint_policy", True)
+
+        if self.checkpoint_interval > 0:
+            os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
+
     def __str__(self) -> str:
         """Generate a representation of the agent as string
 
@@ -81,6 +89,21 @@ class Agent:
         for k, v in self.tracking_data.items():
             self.writer.add_scalar(k, np.mean(v), timestep)
         self.tracking_data = collections.defaultdict(list)
+
+    def write_checkpoint(self, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> None:
+        """Write checkpoint (networks) to disk
+
+        The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
+        The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
+
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
+        """
+        for k in self.checkpoint_networks:
+            name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
+            self.checkpoint_networks[k].save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
 
     def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
@@ -184,5 +207,10 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        pass
-    
+        # write to tensorboard
+        if self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
+
+        # write checkpoints
+        if timestep > 0 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+            self.write_checkpoint(timestep, timesteps)

@@ -1,8 +1,9 @@
 from typing import Union, Tuple
 
 import gym
-import torch
 import numpy as np
+
+import torch
 
 
 class Model(torch.nn.Module):
@@ -165,14 +166,21 @@ class Model(torch.nn.Module):
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
     def save(self, path):
-        # TODO: implement load method according to involved networks
-        # torch.save(self.network.state_dict(), path)
-        pass
+        """Save the model to the specified path
+            
+        :param path: Path to save the model to
+        :type path: str
+        """
+        torch.save(self.state_dict(), path)
 
     def load(self, path):
-        # TODO: implement load method according to involved networks
-        # self.network.load_state_dict(torch.load(path))
-        pass
+        """Load the model from the specified path
+                
+        :param path: Path to load the model from
+        :type path: str
+        """
+        self.load_state_dict(torch.load(path))
+        self.eval()
     
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters

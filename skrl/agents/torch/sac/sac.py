@@ -37,6 +37,9 @@ SAC_DEFAULT_CONFIG = {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
         "write_interval": 250,      # write interval for the experiment
+
+        "checkpoint_interval": 1000,        # checkpoint interval for the experiment
+        "only_checkpoint_policy": True,     # checkpoint only the policy
     }
 }
 
@@ -76,6 +79,9 @@ class SAC(Agent):
         self.critic_2 = self.networks.get("critic_2", self.networks.get("q_2", None))
         self.target_critic_1 = self.networks.get("target_critic_1", self.networks.get("target_q_1", None))
         self.target_critic_2 = self.networks.get("target_critic_2", self.networks.get("target_q_2", None))
+
+        # checkpoint networks
+        self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
 
         # freeze target networks with respect to optimizers (update via .update_parameters())
         self.target_critic_1.freeze_parameters(True)
@@ -190,9 +196,8 @@ class SAC(Agent):
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
         
-        # write to tensorboard
-        if self.write_interval > 0 and not timestep % self.write_interval:
-            self.write_tracking_data(timestep, timesteps)
+        # write tracking data and checkpoints
+        super().post_interaction(timestep, timesteps)
              
     def _update(self, timestep: int, timesteps: int):
         # gradient steps

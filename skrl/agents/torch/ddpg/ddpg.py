@@ -36,6 +36,9 @@ DDPG_DEFAULT_CONFIG = {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
         "write_interval": 250,      # write interval for the experiment
+
+        "checkpoint_interval": 1000,        # checkpoint interval for the experiment
+        "only_checkpoint_policy": True,     # checkpoint only the policy
     }
 }
 
@@ -72,6 +75,9 @@ class DDPG(Agent):
         self.target_policy = self.networks["target_policy"]
         self.critic = self.networks.get("critic", self.networks.get("q", None))
         self.target_critic = self.networks.get("target_critic", self.networks.get("target_q", None))
+
+        # checkpoint networks
+        self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
         
         # freeze target networks with respect to optimizers (update via .update_parameters())
         self.target_policy.freeze_parameters(True)
@@ -209,9 +215,8 @@ class DDPG(Agent):
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
 
-        # write to tensorboard
-        if self.write_interval > 0 and not timestep % self.write_interval:
-            self.write_tracking_data(timestep, timesteps)
+        # write tracking data and checkpoints
+        super().post_interaction(timestep, timesteps)
     
     def _update(self, timestep: int, timesteps: int):
         # gradient steps

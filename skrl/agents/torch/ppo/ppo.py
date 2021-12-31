@@ -38,6 +38,9 @@ PPO_DEFAULT_CONFIG = {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
         "write_interval": 250,      # write interval for the experiment
+
+        "checkpoint_interval": 1000,        # checkpoint interval for the experiment
+        "only_checkpoint_policy": True,     # checkpoint only the policy
     }
 }
 
@@ -68,6 +71,9 @@ class PPO(Agent):
         
         self.policy = self.networks["policy"]
         self.value = self.networks["value"]
+
+        # checkpoint networks
+        self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
@@ -187,9 +193,8 @@ class PPO(Agent):
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
             self._update(timestep, timesteps)
 
-        # write to tensorboard
-        if self.write_interval > 0 and not timestep % self.write_interval:
-            self.write_tracking_data(timestep, timesteps)
+        # write tracking data and checkpoints
+        super().post_interaction(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int):
         # compute returns and advantages

@@ -194,7 +194,7 @@ class Memory:
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (number of indexes, data size)
         :rtype: tuple of torch.Tensor
-        """        
+        """
         # TODO: skip invalid names
         tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
         return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]
@@ -285,3 +285,62 @@ class Memory:
             if normalize_advantages:
                 advantages.copy_((advantages - advantages.mean()) / (advantages.std() + 1e-8))
         
+    def save(self, path: str, format: str = "csv") -> None:
+        """Save the memory to a file
+
+        Supported formats:
+        - comma-separated values (csv)
+        - torch (pt)
+        - NumPy (npz)
+
+        :param path: Path to the file where the memory will be saved
+        :type path: str
+        :param format: Format of the file where the memory will be saved (default: "csv")
+        :type format: str, optional
+
+        :raises ValueError: If the format is not supported
+        """
+        # torch
+        if format == "pt":
+            torch.save({name: getattr(self, "_tensor_{}".format(name)) for name in self.get_tensor_names()}, path)
+        # comma-separated values
+        elif format == "csv":
+            # TODO: save the memory to a csv 
+            pass
+        # NumPy
+        elif format == "npz":
+            np.savez(path, **{name: getattr(self, "_tensor_{}".format(name)).cpu().numpy() for name in self.get_tensor_names()})
+        # unsupported format
+        else:
+            raise ValueError("Unsupported format: {}".format(format))
+
+    def load(self, path: str) -> None:
+        """Load the memory from a file
+
+        Supported formats:
+        - comma-separated values (csv)
+        - torch (pt)
+        - NumPy (npz)
+
+        :param path: Path to the file where the memory will be loaded
+        :type path: str
+
+        :raises ValueError: If the format is not supported
+        """
+        # torch
+        if path.endswith(".pt"):
+            data = torch.load(path)
+            for name in self.get_tensor_names():
+                setattr(self, "_tensor_{}".format(name), data[name])
+        # comma-separated values
+        elif path.endswith(".csv"):
+            # TODO: load the memory from a csv
+            pass
+        # NumPy
+        elif path.endswith(".npz"):
+            data = np.load(path)
+            for name in data:
+                setattr(self, "_tensor_{}".format(name), torch.from_numpy(data[name]))
+        # unsupported format
+        else:
+            raise ValueError("Unsupported format: {}".format(path))

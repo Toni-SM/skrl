@@ -10,8 +10,14 @@ class Model(torch.nn.Module):
     def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
         """Base class representing a function approximator
 
-        # TODO: describe internal properties and methods
+        The following properties are defined:
 
+        - ``device`` (str): Device to be used for the computations
+        - ``observation_space`` (int, tuple or list of integers, gym.Space or None): Observation/state space of the environment
+        - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space of the environment
+        - ``num_observations`` (int or None): Number of elements in the observation/state space
+        - ``num_actions`` (int or None): Number of elements in the action space
+        
         :param observation_space: Observation/state space or shape (default: None).
                                   If it is not None, the num_observations property will contain the size of that space (number of elements)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional

@@ -1,6 +1,7 @@
 from typing import Union, Tuple
 
 import gym
+
 import torch
 from torch.distributions import Categorical
 

@@ -21,6 +21,7 @@ class Model(torch.nn.Module):
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str, optional
         """
+        # TODO: export to onnx (https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html)
         super(Model, self).__init__()
 
         self.device = device
@@ -64,10 +65,10 @@ class Model(torch.nn.Module):
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 
-        Method names are from the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) module. 
-        Allowed method names are `uniform_`, `normal_`, `constant_`, etc.
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
-        :param method_name: Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: ``"normal_"``)
+        :param method_name: Name of the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method (default: "normal\_")
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -80,13 +81,13 @@ class Model(torch.nn.Module):
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
         
-        Method names are from the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) module. 
-        Allowed method names are `uniform_`, `normal_`, `constant_`, etc.
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         The following layers will be initialized:
         - torch.nn.Linear
         
-        :param method_name: Name of the [torch.nn.init](https://pytorch.org/docs/stable/nn.init.html) method (default: ``"orthogonal_"``)
+        :param method_name: Name of the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method (default: "orthogonal\_")
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -129,8 +130,8 @@ class Model(torch.nn.Module):
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method, during training and evaluation, to obtain the decision to be taken given the state of the environment.
-        This method is currently implemented in the predefined models (GaussianModel, DeterministicModel, etc.).
-        The classes that inherit from the latter must only implement the .compute() method
+        This method is currently implemented in the helper models (**GaussianModel**, **DeterministicModel**, etc.).
+        The classes that inherit from the latter must only implement the ``.compute()`` method
 
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
@@ -152,11 +153,11 @@ class Model(torch.nn.Module):
     def set_mode(self, mode: str) -> None:
         """Set the network mode (training or evaluation)
 
-        :param mode: Mode: "train" for training or "eval" for evaluation.
-                     https://pytorch.org/docs/stable/generated/torch.nn.Module.html?highlight=torch%20nn%20module%20train#torch.nn.Module.train
+        :param mode: Mode: "train" for training or "eval" for evaluation. 
+                     See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
-        :raises ValueError: Mode must be "train" or "eval"
+        :raises ValueError: Mode must be ``"train"`` or ``"eval"``
         """
         if mode == "train":
             self.train(True)
@@ -185,8 +186,8 @@ class Model(torch.nn.Module):
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
 
-        - Freeze: disable gradient computation (`parameters.requires_grad = False`)
-        - Unfreeze: enable gradient computation (`parameters.requires_grad = True`) 
+        - Freeze: disable gradient computation (``parameters.requires_grad = False``)
+        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``) 
         
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them
         :type freeze: bool, optional
@@ -194,25 +195,25 @@ class Model(torch.nn.Module):
         for parameters in self.parameters():
             parameters.requires_grad = not freeze
 
-    def update_parameters(self, network: torch.nn.Module, polyak: float = 0) -> None:
+    def update_parameters(self, network: torch.nn.Module, polyak: float = 1) -> None:
         """Update internal parameters by hard or soft (polyak averaging) update
 
-        - Hard update: `parameters = network.parameters`
-        - Soft (polyak averaging) update: `parameters = polyak * parameters + (1 - polyak) * network.parameters`
-
+        - Hard update: :math:`\\theta = \\theta_{net}`
+        - Soft (polyak averaging) update: :math:`\\theta = (1 - \\rho) \\theta + \\rho \\theta_{net}`
+        
         :param network: Network used to update the internal parameters
         :type network: torch.nn.Module (skrl.models.torch.Model)
-        :param polyak: Polyak hyperparameter between 0 and 1 (usually close to 1).
-                       A hard update is performed when its value is 0 (default)
+        :param polyak: Polyak hyperparameter between 0 and 1 (usually close to 0).
+                       A hard update is performed when its value is 1 (default)
         :type polyak: float, optional
         """
         with torch.no_grad():
             # hard update
-            if not polyak:
+            if polyak == 1:
                 for parameters, network_parameters in zip(self.parameters(), network.parameters()):
                     parameters.data.copy_(network_parameters.data)
             # soft update (use in-place operations to avoid creating new parameters)
             else:
                 for parameters, network_parameters in zip(self.parameters(), network.parameters()):
-                    parameters.data.mul_(polyak)
-                    parameters.data.add_((1 - polyak) * network_parameters.data)
+                    parameters.data.mul_(1 - polyak)
+                    parameters.data.add_(polyak * network_parameters.data)

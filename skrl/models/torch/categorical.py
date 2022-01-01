@@ -11,8 +11,6 @@ class CategoricalModel(Model):
     def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
         """Categorical model (stochastic model)
 
-        # TODO: describe internal properties
-
         :param observation_space: Observation/state space or shape (default: None).
                                   If it is not None, the num_observations property will contain the size of that space (number of elements)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
@@ -22,6 +20,7 @@ class CategoricalModel(Model):
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str, optional
         """
+        # TODO: check its implementation
         super(CategoricalModel, self).__init__(observation_space, action_space, device)
 
         self.use_unnormalized_log_probabilities = True

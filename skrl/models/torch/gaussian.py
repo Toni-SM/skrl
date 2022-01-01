@@ -11,8 +11,6 @@ class GaussianModel(Model):
     def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0", clip_actions: bool = False, clip_log_std: bool = True, min_log_std: float = -20, max_log_std: float = 2) -> None:
         """Diagonal Gaussian model (stochastic model)
 
-        # TODO: describe internal properties
-
         :param observation_space: Observation/state space or shape (default: None).
                                   If it is not None, the num_observations property will contain the size of that space (number of elements)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional

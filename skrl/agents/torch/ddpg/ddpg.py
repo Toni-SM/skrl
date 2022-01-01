@@ -15,7 +15,7 @@ DDPG_DEFAULT_CONFIG = {
     "batch_size": 64,               # training batch size
     
     "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.995,                # soft update hyperparameter (tau)
+    "polyak": 0.005,                # soft update hyperparameter (tau)
     
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
@@ -84,8 +84,8 @@ class DDPG(Agent):
         self.target_critic.freeze_parameters(True)
 
         # update target networks (hard update)
-        self.target_policy.update_parameters(self.policy, polyak=0)
-        self.target_critic.update_parameters(self.critic, polyak=0)
+        self.target_policy.update_parameters(self.policy, polyak=1)
+        self.target_critic.update_parameters(self.critic, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]

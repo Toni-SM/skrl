@@ -18,7 +18,7 @@ SAC_DEFAULT_CONFIG = {
     "batch_size": 64,               # training batch size
     
     "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.995,                # soft update hyperparameter (tau)
+    "polyak": 0.005,                # soft update hyperparameter (tau)
     
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
@@ -88,8 +88,8 @@ class SAC(Agent):
         self.target_critic_2.freeze_parameters(True)
 
         # update target networks (hard update)
-        self.target_critic_1.update_parameters(self.critic_1, polyak=0)
-        self.target_critic_2.update_parameters(self.critic_2, polyak=0)
+        self.target_critic_1.update_parameters(self.critic_1, polyak=1)
+        self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]

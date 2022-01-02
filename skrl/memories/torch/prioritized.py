@@ -1,13 +1,14 @@
-from typing import Tuple
+from typing import Union, Tuple
+
+import numpy as np
 
 import torch
-import numpy as np
 
 from .base import Memory
 
 
 class PrioritizedMemory(Memory):
-    def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True, alpha: float = 0.5, beta: float = 0.4, eps: float = 1e-6) -> None:
+    def __init__(self, memory_size: int, num_envs: int = 1, device: Union[str, torch.device] = "cuda:0", preallocate: bool = True, alpha: float = 0.5, beta: float = 0.4, eps: float = 1e-6) -> None:
         """Prioritized sampling memory
 
         Sample a batch from memory randomly
@@ -17,7 +18,7 @@ class PrioritizedMemory(Memory):
         :param num_envs: Number of parallel environments (default: 1)
         :type num_envs: int, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         :param preallocate: If true, preallocate memory for efficient use (default: True)
         :type preallocate: bool, optional
         :param replacement: Flag to indicate whether the sample is with or without replacement (default: True). 

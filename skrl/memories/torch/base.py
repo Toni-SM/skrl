@@ -1,13 +1,14 @@
 from typing import Union, Tuple
 
 import gym
-import torch
 import inspect
 import numpy as np
 
+import torch
+
 
 class Memory:
-    def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True) -> None:
+    def __init__(self, memory_size: int, num_envs: int = 1, device: Union[str, torch.device] = "cuda:0", preallocate: bool = True) -> None:
         """Base class representing a memory with circular buffers
 
         Buffers are torch tensors with shape (memory size, number of environments, data size).
@@ -18,7 +19,7 @@ class Memory:
         :param num_envs: Number of parallel environments (default: 1)
         :type num_envs: int, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         :param preallocate: If true, preallocate memory for efficient use (default: True)
         :type preallocate: bool, optional
         """
@@ -29,7 +30,7 @@ class Memory:
         self.preallocate = preallocate
         self.memory_size = memory_size
         self.num_envs = num_envs
-        self.device = device
+        self.device = torch.device(device)
 
         self.filled = False
         self.env_index = 0
@@ -38,8 +39,8 @@ class Memory:
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
         
-        The valid size is calculated as the `memory_size * num_envs` if the memory is full (filled).
-        Otherwise, the `memory_index * num_envs + env_index` is returned
+        The valid size is calculated as the ``memory_size * num_envs`` if the memory is full (filled).
+        Otherwise, the ``memory_index * num_envs + env_index`` is returned
 
         :return: Valid size
         :rtype: int

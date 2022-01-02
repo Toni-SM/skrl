@@ -25,13 +25,13 @@ class OrnsteinUhlenbeckNoise(Noise):
         """
         super().__init__(device)
 
+        self.state = 0
         self.theta = theta
         self.sigma = sigma
         self.base_scale = base_scale
 
-        self.state = 0
-
-        self.distribution = Normal(mean, std)
+        self.distribution = Normal(loc=torch.tensor(mean, device=self.device, dtype=torch.float32),
+                                   scale=torch.tensor(std, device=self.device, dtype=torch.float32))
         
     def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
         """Sample an Ornstein-Uhlenbeck noise
@@ -42,7 +42,6 @@ class OrnsteinUhlenbeckNoise(Noise):
         :return: Sampled noise
         :rtype: torch.Tensor
         """
-        gaussian_noise = self.distribution.sample(size).to(self.device)
-        self.state += -self.state * self.theta + self.sigma * gaussian_noise
+        self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
         
         return self.base_scale * self.state

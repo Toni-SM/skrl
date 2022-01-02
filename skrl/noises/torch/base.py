@@ -4,13 +4,13 @@ import torch
 
 
 class Noise():
-    def __init__(self, device: str = "cuda:0") -> None:
+    def __init__(self, device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a noise
 
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         """
-        self.device = device
+        self.device = torch.device(device)
 
     def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:
         """Sample a noise with the same size (shape) as the input tensor

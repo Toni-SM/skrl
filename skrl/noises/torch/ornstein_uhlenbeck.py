@@ -7,7 +7,7 @@ from . import Noise
 
 
 class OrnsteinUhlenbeckNoise(Noise):
-    def __init__(self, theta: float, sigma: float, base_scale: float, mean: float = 0, std: float = 1, device: str = "cuda:0") -> None:
+    def __init__(self, theta: float, sigma: float, base_scale: float, mean: float = 0, std: float = 1, device: Union[str, torch.device] = "cuda:0") -> None:
         """Class representing an Ornstein-Uhlenbeck noise
 
         :param theta: Factor to apply to current internal state
@@ -21,7 +21,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         :param std: Standard deviation of the normal distribution (default: 1.0)
         :type std: float, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         """
         super().__init__(device)
 

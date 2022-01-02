@@ -7,7 +7,7 @@ from . import Noise
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: str = "cuda:0") -> None:
+    def __init__(self, mean: float, std: float, device: Union[str, torch.device] = "cuda:0") -> None:
         """Class representing a Gaussian noise
 
         :param mean: Mean of the normal distribution
@@ -15,7 +15,7 @@ class GaussianNoise(Noise):
         :param std: Standard deviation of the normal distribution
         :type std: float
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         """
         super().__init__(device)
 

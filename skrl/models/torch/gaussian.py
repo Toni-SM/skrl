@@ -9,7 +9,7 @@ from . import Model
 
 
 class GaussianModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0", clip_actions: bool = False, clip_log_std: bool = True, min_log_std: float = -20, max_log_std: float = 2) -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0", clip_actions: bool = False, clip_log_std: bool = True, min_log_std: float = -20, max_log_std: float = 2) -> None:
         """Diagonal Gaussian model (stochastic model)
 
         :param observation_space: Observation/state space or shape (default: None).
@@ -19,7 +19,7 @@ class GaussianModel(Model):
                              If it is not None, the num_actions property will contain the size of that space (number of elements)
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
         :type clip_actions: bool, optional
         :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: True)

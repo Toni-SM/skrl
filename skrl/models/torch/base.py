@@ -7,12 +7,12 @@ import torch
 
 
 class Model(torch.nn.Module):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
-        - ``device`` (str): Device to be used for the computations
+        - ``device`` (torch.device): Device to be used for the computations
         - ``observation_space`` (int, tuple or list of integers, gym.Space or None): Observation/state space of the environment
         - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space of the environment
         - ``num_observations`` (int or None): Number of elements in the observation/state space
@@ -25,12 +25,12 @@ class Model(torch.nn.Module):
                              If it is not None, the num_actions property will contain the size of that space (number of elements)
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         """
         # TODO: export to onnx (https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html)
         super(Model, self).__init__()
 
-        self.device = device
+        self.device = torch.device(device)
 
         self.observation_space = observation_space
         self.action_space = action_space

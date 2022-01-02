@@ -9,7 +9,7 @@ from . import Model
 
 
 class CategoricalModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0") -> None:
         """Categorical model (stochastic model)
 
         :param observation_space: Observation/state space or shape (default: None).
@@ -19,7 +19,7 @@ class CategoricalModel(Model):
                              If it is not None, the num_actions property will contain the size of that space (number of elements)
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         """
         # TODO: check its implementation
         super(CategoricalModel, self).__init__(observation_space, action_space, device)

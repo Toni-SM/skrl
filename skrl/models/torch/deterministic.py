@@ -8,7 +8,7 @@ from . import Model
 
 
 class DeterministicModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0", clip_actions: bool = False) -> None:
+    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0", clip_actions: bool = False) -> None:
         """Deterministic model (deterministic model)
 
         :param observation_space: Observation/state space or shape (default: None).
@@ -18,7 +18,7 @@ class DeterministicModel(Model):
                              If it is not None, the num_actions property will contain the size of that space (number of elements)
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str, optional
+        :type device: str or torch.device, optional
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
         :type clip_actions: bool, optional
         """

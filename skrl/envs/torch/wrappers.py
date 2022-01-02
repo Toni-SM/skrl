@@ -1,6 +1,7 @@
 import gym
-import torch
 import numpy as np
+
+import torch
 
 __all__ = ["wrap_env"]
 
@@ -8,6 +9,12 @@ __all__ = ["wrap_env"]
 class Wrapper(object):
     def __init__(self, env):
         self._env = env
+
+        # device (faster than @property)
+        if hasattr(self._env, "device"):
+            self.device = torch.device(self._env.device)
+        else:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def reset(self):
         raise NotImplementedError
@@ -17,16 +24,6 @@ class Wrapper(object):
 
     def render(self, *args, **kwargs):
         raise NotImplementedError
-
-    @property
-    def device(self):
-        """Computing device
-
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the availability of the device
-        """
-        if hasattr(self._env, "device"):
-            return self._env.device
-        return "cuda:0" if torch.cuda.is_available() else "cpu" 
 
     @property
     def num_envs(self):
@@ -107,17 +104,16 @@ class GymWrapper(Wrapper):
             actions = actions.cpu().numpy()
         observation, reward, done, info = self._env.step(actions)
         # convert response to torch
-        return torch.from_numpy(observation).to(self.device).view(1, -1), \
-               torch.tensor(reward).to(self.device).view(1, -1), \
-               torch.tensor(done).to(self.device).view(1, -1), \
+        return torch.tensor(observation, device=self.device).view(1, -1), \
+               torch.tensor(reward, device=self.device).view(1, -1), \
+               torch.tensor(done, device=self.device).view(1, -1), \
                info
         
     def reset(self):
         state = self._env.reset()
-        # convert the state to torch if it is a numpy array
         if isinstance(state, np.ndarray):
-            return torch.from_numpy(state).to(self.device, dtype=torch.float32).view(1, -1)
-        return state.to(self.device, dtype=torch.float32).view(1, -1)
+            return torch.tensor(state, device=self.device, dtype=torch.float32).view(1, -1)
+        return state.to(self.device).view(1, -1)
 
     def render(self, mode='human'):
         self._env.render(mode=mode)

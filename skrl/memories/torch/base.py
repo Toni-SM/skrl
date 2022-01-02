@@ -36,6 +36,8 @@ class Memory:
         self.env_index = 0
         self.memory_index = 0
 
+        self.tensors = {}
+
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
         
@@ -53,8 +55,7 @@ class Memory:
         :return: Tensor names without internal prefix (_tensor_)
         :rtype: tuple of strings
         """
-        names = [m[0] for m in inspect.getmembers(self, lambda name: not(inspect.isroutine(name))) if m[0].startswith('_tensor_')]
-        return tuple(sorted([name[8:] for name in names]))
+        return sorted(self.tensors.keys())
 
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
         """Create a new internal tensor in memory
@@ -71,17 +72,11 @@ class Memory:
                       If None, the global default torch data type will be used (default)
         :type dtype: torch.dtype or None, optional
         
+        :raises ValueError: The tensor name exists already but the size or dtype are different
+
         :return: True if the tensor was created, otherwise False
         :rtype: bool
         """
-        # TODO: check memory availability
-        # TODO: check existing tensor and new tensor shape
-        # format tensor name to _tensor_<name>
-        name = "_tensor_{}".format(name)
-        # check if the tensor exists
-        if hasattr(self, name):
-            print("[WARNING] the tensor {} exists".format(name))
-            return
         # compute data size
         if type(size) in [tuple, list]:
             size = np.prod(size)
@@ -90,8 +85,17 @@ class Memory:
                 size = size.n
             else:
                 size = np.prod(size.shape)
-        # create tensor
-        setattr(self, name, torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
+        # check dtype and size if the tensor exists
+        if name in self.tensors:
+            tensor = self.tensors[name]
+            if tensor.size(-1) != size:
+                raise ValueError("The size of the tensor {} ({}) doesn't match the existing one ({})".format(name, size, tensor.size(-1)))
+            if dtype is not None and tensor.dtype != dtype:
+                raise ValueError("The dtype of the tensor {} ({}) doesn't match the existing one ({})".format(name, dtype, tensor.dtype))
+            return False
+        # create tensor (_tensor_<name>) and add it to the internal storage
+        setattr(self, "_tensor_{}".format(name), torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
+        self.tensors[name] = getattr(self, "_tensor_{}".format(name))
         return True
 
     def reset(self) -> None:
@@ -102,9 +106,7 @@ class Memory:
         Default values of the internal indexes and flags
 
         - filled: False
-        
         - env_index: 0
-        
         - memory_index: 0
         """
         self.filled = False
@@ -119,46 +121,45 @@ class Memory:
 
         According to the number of environments, the following classification is made:
 
-        * one environment:
+        - one environment:
           Store a single sample (tensors with one dimension) and increment the environment index (second index) by one
 
-        * number of environments less than num_envs:
+        - number of environments less than num_envs:
           Store the samples and increment the environment index (second index) by the number of the environments
         
-        * number of environments equals num_envs:
+        - number of environments equals num_envs:
           Store the samples and increment the memory index (first index) by one
 
         :param tensors: Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
                         Non-existing tensors will be skipped
         :type tensors: dict
 
-        :raises ValueError: No tensors were provided
+        :raises ValueError: No tensors were provided or the tensors have incompatible shapes
         """
         if not tensors:
             raise ValueError("No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)")
-        tensor = list(tensors.values())[0]
-        # single environment
-        # TODO: use number of environments to check one environment
-        if tensor.dim() == 1:
-            for name, tensor in tensors.items():
-                name = "_tensor_{}".format(name)
-                if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index].copy_(tensor)
-            self.env_index += 1
+
+        # dimensions and shapes of the tensors (assume all tensors have the dimensions of the first tensor)
+        tmp = tensors[next(iter(tensors))]
+        dim, shape = tmp.ndim, tmp.shape
+
         # multi environment (number of environments less than num_envs)
-        elif tensor.dim() > 1 and tensor.shape[0] < self.num_envs:
+        if dim == 2 and shape[0] < self.num_envs:
             for name, tensor in tensors.items():
-                name = "_tensor_{}".format(name)
-                if hasattr(self, name):
-                    getattr(self, name)[self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
+                self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
             self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
-        elif tensor.dim() > 1 and tensor.shape[0] == self.num_envs:
+        elif dim == 2 and shape[0] == self.num_envs:
             for name, tensor in tensors.items():
-                name = "_tensor_{}".format(name)
-                if hasattr(self, name):
-                    getattr(self, name)[self.memory_index].copy_(tensor if tensor.dim() == 2 else tensor.view(-1, 1))
+                self.tensors[name][self.memory_index].copy_(tensor)
             self.memory_index += 1
+        # single environment
+        elif dim == 1:
+            for name, tensor in tensors.items():
+                self.tensors[name][self.memory_index, self.env_index].copy_(tensor)
+            self.env_index += 1
+        else:
+            raise ValueError("Expected tensors with 2-components shape (number of environments, data size), got {}".format(shape))
 
         # update indexes and flags
         if self.env_index >= self.num_envs:
@@ -196,23 +197,18 @@ class Memory:
                  The sampled tensors will have the following shape: (number of indexes, data size)
         :rtype: tuple of torch.Tensor
         """
-        # TODO: skip invalid names
-        tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
-        return [tensor.view(-1, tensor.size(-1))[indexes] for tensor in tensors]
+        return [self.tensors[name].view(-1, self.tensors[name].size(-1))[indexes] for name in names]
 
     def sample_all(self, names: Tuple[str]) -> Tuple[torch.Tensor]:
         """Sample all data from memory
         
-        # TODO: Sample only valid data
-
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
         :return: Sampled data from memory.
                  The sampled tensors will have the following shape: (memory size * number of environments, data size)
         :rtype: tuple of torch.Tensor
         """
-        tensors = [getattr(self, "_tensor_{}".format(name)) for name in names]
-        return [tensor.view(-1, tensor.size(-1)) for tensor in tensors]
+        return [self.tensors[name].view(-1, self.tensors[name].size(-1)) for name in names]
 
     def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
         """Compute the following functions for the given tensor names
@@ -256,12 +252,12 @@ class Memory:
         # TODO: get last values from the last samples (if not provided) and ignore them in the computation
 
         # get source and destination tensors
-        rewards = getattr(self, "_tensor_{}".format(rewards_src))
-        dones = getattr(self, "_tensor_{}".format(dones_src))
-        values = getattr(self, "_tensor_{}".format(values_src))
+        rewards = self.tensors[rewards_src]
+        dones = self.tensors[dones_src]
+        values = self.tensors[values_src]
         
-        returns = getattr(self, "_tensor_{}".format(returns_dst)) if returns_dst is not None else torch.zeros_like(rewards)
-        advantages = getattr(self, "_tensor_{}".format(advantages_dst)) if advantages_dst is not None else torch.zeros_like(rewards)
+        returns = self.tensors[returns_dst] if returns_dst is not None else torch.zeros_like(rewards)
+        advantages = self.tensors[advantages_dst] if advantages_dst is not None else torch.zeros_like(rewards)
 
         # hyperarameters
         discount_factor = hyperparameters.get("discount_factor", 0.99)
@@ -303,14 +299,14 @@ class Memory:
         """
         # torch
         if format == "pt":
-            torch.save({name: getattr(self, "_tensor_{}".format(name)) for name in self.get_tensor_names()}, path)
+            torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, path)
         # comma-separated values
         elif format == "csv":
             # TODO: save the memory to a csv 
             pass
         # NumPy
         elif format == "npz":
-            np.savez(path, **{name: getattr(self, "_tensor_{}".format(name)).cpu().numpy() for name in self.get_tensor_names()})
+            np.savez(path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
         # unsupported format
         else:
             raise ValueError("Unsupported format: {}".format(format))

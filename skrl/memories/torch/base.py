@@ -37,6 +37,7 @@ class Memory:
         self.memory_index = 0
 
         self.tensors = {}
+        self.tensors_view = {}
 
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
@@ -96,6 +97,7 @@ class Memory:
         # create tensor (_tensor_<name>) and add it to the internal storage
         setattr(self, "_tensor_{}".format(name), torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
         self.tensors[name] = getattr(self, "_tensor_{}".format(name))
+        self.tensors_view[name] = self.tensors[name].view(-1, self.tensors[name].size(-1))
         return True
 
     def reset(self) -> None:
@@ -197,7 +199,7 @@ class Memory:
                  The sampled tensors will have the following shape: (number of indexes, data size)
         :rtype: tuple of torch.Tensor
         """
-        return [self.tensors[name].view(-1, self.tensors[name].size(-1))[indexes] for name in names]
+        return [self.tensors_view[name][indexes] for name in names]
 
     def sample_all(self, names: Tuple[str]) -> Tuple[torch.Tensor]:
         """Sample all data from memory
@@ -208,7 +210,7 @@ class Memory:
                  The sampled tensors will have the following shape: (memory size * number of environments, data size)
         :rtype: tuple of torch.Tensor
         """
-        return [self.tensors[name].view(-1, self.tensors[name].size(-1)) for name in names]
+        return [self.tensors_view[name] for name in names]
 
     def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
         """Compute the following functions for the given tensor names

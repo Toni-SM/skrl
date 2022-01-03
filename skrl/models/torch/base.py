@@ -36,6 +36,8 @@ class Model(torch.nn.Module):
         self.action_space = action_space
         self.num_observations = None if observation_space is None else self._get_space_size(observation_space)
         self.num_actions = None if action_space is None else self._get_space_size(action_space)
+
+        self._random_distribution = None
         
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
         """Get the size (number of elements) of a space
@@ -64,9 +66,10 @@ class Model(torch.nn.Module):
         :rtype: tuple of torch.Tensor
         """
         # TODO: sample taking into account bounds
-        distribution = torch.distributions.uniform.Uniform(low=self.action_space.low[0], high=self.action_space.high[0])
-        actions = distribution.sample(sample_shape=(states.shape[0], self.num_actions))
-        return actions.to(self.device), None, None
+        if self._random_distribution is None:
+            self._random_distribution = torch.distributions.uniform.Uniform(low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32), 
+                                                                            high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+        return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name

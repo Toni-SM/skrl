@@ -1,5 +1,7 @@
 from typing import Union, List
 
+import time
+
 import torch
 
 from ...envs.torch import Wrapper
@@ -30,6 +32,9 @@ class Trainer():
 
         self.timesteps = cfg.get('timesteps', 0)
         self.headless = cfg.get("headless", False)
+
+        self._timestamp = None
+        self._timestamp_elapsed = None
 
         self._setup_agents()
 
@@ -120,8 +125,18 @@ class Trainer():
         states = self.env.reset()
 
         for timestep in range(self.starting_timestep, self.timesteps):
+            # print progress
             if timestep % 1000 == 0:
-                print("timestep:", timestep)
+                if self._timestamp is None:
+                    self._timestamp = time.time()
+                    self._timestamp_elapsed = self._timestamp
+                delta = time.time() - self._timestamp
+                self._timestamp = time.time()
+
+                print("------------------------------------------------------")
+                print("| total timesteps:", timestep)
+                print("| timesteps per seconds:", round(1000 / delta, 2) if timestep else 0.0)
+                print("| elapsed time (seconds):", round(time.time() - self._timestamp_elapsed, 2) if timestep else 0.0)
             
             # pre-interaction
             self._pre_interaction(timestep=timestep, timesteps=self.timesteps)

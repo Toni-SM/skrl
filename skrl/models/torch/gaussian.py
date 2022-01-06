@@ -56,8 +56,8 @@ class GaussianModel(Model):
         :rtype: tuple of torch.Tensor
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states.to(self.device), 
-                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        actions_mean, log_std = self.compute(states.to(self.device) if states.device != self.device else states, 
+                                             taken_actions.to(self.device) if taken_actions is not None and taken_actions.device != self.device else taken_actions)
         
         # clamp log standard deviations
         if self.clip_log_std:
@@ -65,9 +65,12 @@ class GaussianModel(Model):
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        if covariance.dim() < actions_mean.dim():
-            covariance = covariance.unsqueeze(-1)
+        # covariance = torch.mean(log_std.exp() * log_std.exp(), dim=0, keepdim=True)
+        # if self._distribution is None:
         self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
+        # else:
+        #     self._distribution.loc = actions_mean
+        #     self._distribution._unbroadcasted_scale_tril = covariance
 
         # sample using the reparameterization trick
         actions = self._distribution.rsample()

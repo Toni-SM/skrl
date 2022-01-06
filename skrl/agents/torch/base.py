@@ -149,14 +149,14 @@ class Agent:
             self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
             self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
         
-        self._cumulative_rewards += rewards
-        self._cumulative_timesteps += 1
+        self._cumulative_rewards.add_(rewards)
+        self._cumulative_timesteps.add_(1)
         
         # compute the average of the cumulative rewards and timesteps
         finished_episodes = dones.nonzero(as_tuple=False)
 
-        self._track_rewards.extend(self._cumulative_rewards[finished_episodes].view(-1).tolist())
-        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].view(-1).tolist())
+        self._track_rewards.extend(self._cumulative_rewards[finished_episodes].reshape(-1).tolist())
+        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].reshape(-1).tolist())
 
         # reset the cumulative rewards and timesteps
         self._cumulative_rewards[finished_episodes] = 0

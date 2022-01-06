@@ -1,8 +1,18 @@
 import os
 import sys
+from contextlib import contextmanager
 
 __all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3"]
 
+
+@contextmanager
+def cwd(new_path):
+    current_path = os.getcwd()
+    os.chdir(new_path)
+    try:
+        yield
+    finally:
+        os.chdir(current_path)
 
 def _omegaconf_to_dict(config):
     from omegaconf import DictConfig
@@ -96,9 +106,10 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     args.cfg_env = os.path.join(path, args.cfg_env)
 
     # load environment
-    cfg, cfg_train, _ = load_cfg(args)
-    sim_params = parse_sim_params(args, cfg, cfg_train)
-    task, env = parse_task(args, cfg, cfg_train, sim_params)
+    with cwd(path):
+        cfg, cfg_train, _ = load_cfg(args)
+        sim_params = parse_sim_params(args, cfg, cfg_train)
+        task, env = parse_task(args, cfg, cfg_train, sim_params)
     
     return env
 

@@ -113,7 +113,11 @@ class Agent:
             name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
             self.checkpoint_networks[k].save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
 
-    def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
+    def act(self, 
+            states: torch.Tensor, 
+            inference: bool = False, 
+            timestep: Union[int, None] = None, 
+            timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
 
         :param states: Environments' states
@@ -223,7 +227,7 @@ class Agent:
         :type timesteps: int
         """
         # write to tensorboard
-        if self.write_interval > 0 and not timestep % self.write_interval:
+        if timestep > 0 and self.write_interval > 0 and not timestep % self.write_interval:
             self.write_tracking_data(timestep, timesteps)
 
         # write checkpoints

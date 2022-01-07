@@ -1,12 +1,12 @@
-from typing import Union, Dict
+from typing import Union, Tuple, Dict
 
+import gym
 import itertools
 import numpy as np
 
 import torch
 import torch.nn.functional as F
 
-from ....envs.torch import Wrapper
 from ....memories.torch import Memory
 from ....models.torch import Model
 
@@ -31,8 +31,6 @@ SAC_DEFAULT_CONFIG = {
     "initial_entropy_value": 0.2,   # initial entropy value
     "target_entropy": None,         # target entropy
 
-    "device": None,                 # computing device
-
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -45,40 +43,57 @@ SAC_DEFAULT_CONFIG = {
 
 
 class SAC(Agent):
-    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, 
+                 networks: Dict[str, Model], 
+                 memory: Union[Memory, None] = None, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 cfg: dict = {}) -> None:
         """Soft Actor-Critic (SAC)
 
         https://arxiv.org/abs/1801.01290
         
-        :param env: RL environment
-        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
         :type memory: skrl.memory.torch.Memory or None
+        :param observation_space: Observation/state space or shape (default: None)
+        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :param action_space: Action space or shape (default: None)
+        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :param device: Computing device (default: "cuda:0")
+        :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
+
+        :raises KeyError: If the networks dictionary is missing a required key
         """
         SAC_DEFAULT_CONFIG.update(cfg)
-        super().__init__(env=env, networks=networks, memory=memory, cfg=SAC_DEFAULT_CONFIG)
+        super().__init__(networks=networks, 
+                         memory=memory, 
+                         observation_space=observation_space, 
+                         action_space=action_space, 
+                         device=device, 
+                         cfg=SAC_DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
-        if not "q_1" in self.networks.keys() and not "critic_1" in self.networks.keys():
-            raise KeyError("Q1-network (critic 1) not found in networks. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
-        if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
-            raise KeyError("Q2-network (critic 2) not found in networks. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
-        if not "target_q_1" in self.networks.keys() and not "target_critic_1" in self.networks.keys():
-            raise KeyError("Target Q1-network (target critic 1) not found in networks. Use 'target_critic_1' or 'target_q_1' keys to define the target Q1-network (target critic 1)")
-        if not "target_q_2" in self.networks.keys() and not "target_critic_2" in self.networks.keys():
-            raise KeyError("Target Q2-network (target critic 2) not found in networks. Use 'target_critic_2' or 'target_q_2' keys to define the target Q2-network (target critic 2)")
+            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
+        if not "critic_1" in self.networks.keys():
+            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (networks['critic_1'])")
+        if not "critic_2" in self.networks.keys():
+            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (networks['critic_2'])")
+        if not "target_critic_1" in self.networks.keys():
+            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (networks['target_critic_1'])")
+        if not "target_critic_2" in self.networks.keys():
+            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (networks['target_critic_2'])")
         
         self.policy = self.networks["policy"]
-        self.critic_1 = self.networks.get("critic_1", self.networks.get("q_1", None))
-        self.critic_2 = self.networks.get("critic_2", self.networks.get("q_2", None))
-        self.target_critic_1 = self.networks.get("target_critic_1", self.networks.get("target_q_1", None))
-        self.target_critic_2 = self.networks.get("target_critic_2", self.networks.get("target_q_2", None))
+        self.critic_1 = self.networks["critic_1"]
+        self.critic_2 = self.networks["critic_2"]
+        self.target_critic_1 = self.networks["target_critic_1"]
+        self.target_critic_2 = self.networks["target_critic_2"]
 
         # checkpoint networks
         self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
@@ -112,25 +127,30 @@ class SAC(Agent):
         if self._learn_entropy:
             self._target_entropy = self.cfg["target_entropy"]
             if self._target_entropy is None:
-                self._target_entropy = -np.prod(self.env.action_space.shape).astype(np.float32)
+                self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
             
             self.log_entropy_coefficient = torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient).requires_grad_(True)
             self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
 
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate)
+        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
+                                                 lr=self._critic_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="next_states", size=self.env.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
         self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
         self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
+    def act(self, 
+            states: torch.Tensor, 
+            inference: bool = False, 
+            timestep: Union[int, None] = None, 
+            timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
 
         :param states: Environments' states
@@ -153,7 +173,14 @@ class SAC(Agent):
         # sample stochastic actions
         return self.policy.act(states, inference=inference)
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
+    def record_transition(self, 
+                          states: torch.Tensor, 
+                          actions: torch.Tensor, 
+                          rewards: torch.Tensor, 
+                          next_states: torch.Tensor, 
+                          dones: torch.Tensor, 
+                          timestep: int, 
+                          timesteps: int) -> None:
         """Record an environment transition in memory
         
         :param states: Observations/states of the environment used to make the decision
@@ -204,7 +231,8 @@ class SAC(Agent):
         for gradient_step in range(self._gradient_steps):
             
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(self._batch_size, self.tensors_names)
 
             # compute target values
             with torch.no_grad():

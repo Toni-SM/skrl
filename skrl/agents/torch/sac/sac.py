@@ -279,7 +279,7 @@ class SAC(Agent):
                 # compute entropy coefficient
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
-            # update target networks (soft update)
+            # update target networks
             self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
             self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 

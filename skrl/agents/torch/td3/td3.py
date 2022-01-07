@@ -71,6 +71,8 @@ class TD3(Agent):
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
+
+        :raises KeyError: If the networks dictionary is missing a required key
         """
         TD3_DEFAULT_CONFIG.update(cfg)
         super().__init__(networks=networks, 
@@ -82,16 +84,16 @@ class TD3(Agent):
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("The policy network is not defined under the 'policy' key (networks['policy'])")
+            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
         if not "target_policy" in self.networks.keys():
             raise KeyError("The target policy network is not defined under 'target_policy' key (networks['target_policy'])")
-        if not "q_1" in self.networks.keys() and not "critic_1" in self.networks.keys():
+        if not "critic_1" in self.networks.keys():
             raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (networks['critic_1'])")
-        if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
+        if not "critic_2" in self.networks.keys():
             raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (networks['critic_2'])")
-        if not "target_q_1" in self.networks.keys() and not "target_critic_1" in self.networks.keys():
+        if not "target_critic_1" in self.networks.keys():
             raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (networks['target_critic_1'])")
-        if not "target_q_2" in self.networks.keys() and not "target_critic_2" in self.networks.keys():
+        if not "target_critic_2" in self.networks.keys():
             raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (networks['target_critic_2'])")
         
         self.policy = self.networks["policy"]

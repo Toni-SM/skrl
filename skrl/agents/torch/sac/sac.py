@@ -148,19 +148,19 @@ class SAC(Agent):
 
     def act(self, 
             states: torch.Tensor, 
-            inference: bool = False, 
-            timestep: Union[int, None] = None, 
-            timesteps: Union[int, None] = None) -> torch.Tensor:
-        """Process the environments' states to make a decision (actions) using the main policy
+            timestep: int, 
+            timesteps: int, 
+            inference: bool = False) -> torch.Tensor:
+        """Process the environment's states to make a decision (actions) using the main policy
 
-        :param states: Environments' states
+        :param states: Environment's states
         :type states: torch.Tensor
-        :param inference: Flag to indicate whether the network is making inference
-        :type inference: bool
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
+        :param inference: Flag to indicate whether the network is making inference
+        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -226,7 +226,14 @@ class SAC(Agent):
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
              
-    def _update(self, timestep: int, timesteps: int):
+    def _update(self, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step
+
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
+        """
         # gradient steps
         for gradient_step in range(self._gradient_steps):
             

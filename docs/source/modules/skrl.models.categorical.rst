@@ -1,3 +1,5 @@
+.. _models_categorical:
+
 Categorical model
 =================
 

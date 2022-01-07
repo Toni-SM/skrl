@@ -1,3 +1,5 @@
+.. _models_deterministic:
+
 Deterministic model
 ===================
 

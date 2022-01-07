@@ -37,15 +37,18 @@ Proximal Policy Optimization (PPO)
 |     :green:`# optimize value`
 |     :math:`\nabla_{\phi} {Loss}_{value}`
 
-API
-^^^
+Configuration and hyperparameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. py:data:: skrl.agents.torch.ppo.ppo.PPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/ppo/ppo.py
    :language: python
-   :lines: 13-42
+   :lines: 14-44
    :linenos:
+
+API
+^^^
 
 .. autoclass:: skrl.agents.torch.ppo.ppo.PPO
    :undoc-members:

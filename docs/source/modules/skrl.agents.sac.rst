@@ -39,15 +39,18 @@ Soft Actor-Critic (SAC)
 |     :math:`{\phi 1}_{target} \leftarrow \tau {\phi 1} + (1 - \tau) {\phi 1}_{target}`
 |     :math:`{\phi 2}_{target} \leftarrow \tau {\phi 2} + (1 - \tau) {\phi 2}_{target}`
 
-API
-^^^
+Configuration and hyperparameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. py:data:: skrl.agents.torch.sac.sac.SAC_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 16-41
+   :lines: 16-42
    :linenos:
+
+API
+^^^
 
 .. autoclass:: skrl.agents.torch.sac.sac.SAC
    :undoc-members:

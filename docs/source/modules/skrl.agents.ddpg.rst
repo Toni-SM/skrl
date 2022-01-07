@@ -27,15 +27,18 @@ Deep Deterministic Policy Gradient (DDPG)
 |     :math:`\theta_{target} \leftarrow \tau \; \theta + (1 - \tau) \theta_{target}`
 |     :math:`\phi_{target} \leftarrow \tau \; \phi + (1 - \tau) \phi_{target}`
 
-API
-^^^
+Configuration and hyperparameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. py:data:: skrl.agents.torch.ddpg.ddpg.DDPG_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/ddpg/ddpg.py
    :language: python
-   :lines: 13-40
+   :lines: 14-42
    :linenos:
+
+API
+^^^
 
 .. autoclass:: skrl.agents.torch.ddpg.ddpg.DDPG
    :undoc-members:

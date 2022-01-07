@@ -37,15 +37,18 @@ Twin Delayed TD3 (TD3)
 |         :math:`{\phi 1}_{target} \leftarrow \tau \; {\phi 1} + (1 - \tau) {\phi 1}_{target}`
 |         :math:`{\phi 2}_{target} \leftarrow \tau \; {\phi 2} + (1 - \tau) {\phi 2}_{target}`
 
-API
-^^^
+Configuration and hyperparameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. py:data:: skrl.agents.torch.td3.td3.TD3_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 15-46
+   :lines: 15-47
    :linenos:
+
+API
+^^^
 
 .. autoclass:: skrl.agents.torch.td3.td3.TD3
    :undoc-members:

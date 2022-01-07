@@ -4,28 +4,28 @@ DDPG
 Deep Deterministic Policy Gradient (DDPG)
 -----------------------------------------
 
-
+| :green:`# gradient steps`
 | **FOR** each gradient step **DO**
-|     sample batch of transitions (states, actions, rewards, next_states, dones) from memory
-|        :math:`s, a, r, s', d`
-|     compute target values
-|        :math:`a' = \mu_{\theta_{target}}(s')`
-|        :math:`Q_{_{target}} = Q_{\phi_{target}}(s', a')`
-|        :math:`y = r + \gamma \; \neg d \; Q_{_{target}}`
-|     compute critic loss
-|        :math:`Q = Q_\phi(s, a)`
-|        :math:`{Loss}_{critic} = \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
-|     optimize critic
-|        :math:`\nabla_{\phi} {Loss}_{critic}`
-|     compute policy (actor) loss
-|        :math:`a = \mu_\theta(s)`
-|        :math:`Q = Q_\phi(s, a)`
-|        :math:`{Loss}_{policy} = - \frac{1}{N} \sum_{i=1}^N Q`
-|     optimize policy (actor)
-|        :math:`\nabla_{\theta} {Loss}_{policy}`
-|     update target networks
-|        :math:`\theta_{target} = \tau \; \theta + (1 - \tau) \theta_{target}`
-|        :math:`\phi_{target} = \tau \; \phi + (1 - \tau) \phi_{target}`
+|     :green:`# sample a batch from memory`
+|     :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
+|     :green:`# compute target values`
+|     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
+|     :math:`Q_{_{target}} \leftarrow Q_{\phi_{target}}(s', a')`
+|     :math:`y \leftarrow r + \gamma \; \neg d \; Q_{_{target}}`
+|     :green:`# compute critic loss`
+|     :math:`Q \leftarrow Q_\phi(s, a)`
+|     :math:`{Loss}_{critic} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
+|     :green:`# optimize critic`
+|     :math:`\nabla_{\phi} {Loss}_{critic}`
+|     :green:`# compute policy (actor) loss`
+|     :math:`a \leftarrow \mu_\theta(s)`
+|     :math:`Q \leftarrow Q_\phi(s, a)`
+|     :math:`{Loss}_{policy} \leftarrow - \frac{1}{N} \sum_{i=1}^N Q`
+|     :green:`# optimize policy (actor)`
+|     :math:`\nabla_{\theta} {Loss}_{policy}`
+|     :green:`# update target networks`
+|     :math:`\theta_{target} \leftarrow \tau \; \theta + (1 - \tau) \theta_{target}`
+|     :math:`\phi_{target} \leftarrow \tau \; \phi + (1 - \tau) \phi_{target}`
 
 API
 ^^^

@@ -1,6 +1,7 @@
-from typing import Union, Dict
+from typing import Union, Tuple, Dict
 
 import os
+import gym
 import datetime
 import collections
 import numpy as np
@@ -8,32 +9,39 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ...envs.torch import Wrapper
 from ...memories.torch import Memory
 from ...models.torch import Model
 
 
 class Agent:
-    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, 
+                 networks: Dict[str, Model], 
+                 memory: Union[Memory, None] = None, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 cfg: dict = {}) -> None:
         """Base class that represent a RL agent
 
-        :param env: RL environment
-        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
         :type memory: skrl.memory.torch.Memory or None
+        :param observation_space: Observation/state space or shape (default: None)
+        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :param action_space: Action space or shape (default: None)
+        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :param device: Computing device (default: "cuda:0")
+        :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
-        self.env = env
         self.networks = networks
         self.memory = memory
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.device = torch.device(device)
         self.cfg = cfg
-
-        self.device = self.cfg.get("device", None)
-        if self.device is None:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # experiment directory
         base_directory = self.cfg.get("experiment", {}).get("base_directory", "")
@@ -124,7 +132,14 @@ class Agent:
         """
         raise NotImplementedError
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
+    def record_transition(self, 
+                          states: torch.Tensor, 
+                          actions: torch.Tensor, 
+                          rewards: torch.Tensor, 
+                          next_states: torch.Tensor, 
+                          dones: torch.Tensor, 
+                          timestep: int, 
+                          timesteps: int) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded

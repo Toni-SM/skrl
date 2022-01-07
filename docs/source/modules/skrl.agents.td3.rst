@@ -4,6 +4,9 @@ TD3
 Twin Delayed TD3 (TD3)
 ----------------------
 
+Algorithm implementation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 | :green:`# gradient steps`
 | **FOR** each gradient step **DO**
 |     :green:`# sample a batch from memory`
@@ -46,6 +49,43 @@ Configuration and hyperparameters
    :language: python
    :lines: 15-47
    :linenos:
+
+Models (networks)
+^^^^^^^^^^^^^^^^^
+
+The implementation uses 6 deterministic approximation functions. These approximation functions (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+
+.. list-table::
+   :header-rows: 1
+
+   * - Notation
+     - Concept
+     - Key
+     - Type
+   * - :math:`\mu_\theta(s)`
+     - Policy (actor)
+     - :literal:`"policy"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`\mu_{\theta_{target}}(s)`
+     - Target policy
+     - :literal:`"target_policy"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_{\phi 1}(s, a)`
+     - Q1-network (critic 1)
+     - :literal:`"critic_1"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_{\phi 2}(s, a)`
+     - Q2-network (critic 2)
+     - :literal:`"critic_2"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_{{\phi 1}_{target}}(s, a)`
+     - Target Q1-network
+     - :literal:`"target_critic_1"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_{{\phi 2}_{target}}(s, a)`
+     - Target Q2-network
+     - :literal:`"target_critic_2"`
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

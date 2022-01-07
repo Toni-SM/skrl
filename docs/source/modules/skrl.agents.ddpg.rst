@@ -4,6 +4,9 @@ DDPG
 Deep Deterministic Policy Gradient (DDPG)
 -----------------------------------------
 
+Algorithm implementation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 | :green:`# gradient steps`
 | **FOR** each gradient step **DO**
 |     :green:`# sample a batch from memory`
@@ -36,6 +39,35 @@ Configuration and hyperparameters
    :language: python
    :lines: 14-42
    :linenos:
+
+Models (networks)
+^^^^^^^^^^^^^^^^^
+
+The implementation uses 4 deterministic approximation functions. These approximation functions (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+
+.. list-table::
+   :header-rows: 1
+
+   * - Notation
+     - Concept
+     - Key
+     - Type
+   * - :math:`\mu_\theta(s)`
+     - Policy (actor)
+     - :literal:`"policy"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`\mu_{\theta_{target}}(s)`
+     - Target policy
+     - :literal:`"target_policy"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_\phi(s, a)`
+     - Q-network (critic)
+     - :literal:`"critic"`
+     - :ref:`Deterministic <models_deterministic>`
+   * - :math:`Q_{\phi_{target}}(s, a)`
+     - Target Q-network
+     - :literal:`"target_critic"`
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

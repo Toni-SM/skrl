@@ -4,6 +4,9 @@ PPO
 Proximal Policy Optimization (PPO)
 ----------------------------------
 
+Algorithm implementation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 | :green:`# compute returns and advantages`
 | :math:`V \leftarrow V_\phi(s')`
 | :green:`# sample all data from memory`
@@ -46,6 +49,27 @@ Configuration and hyperparameters
    :language: python
    :lines: 14-44
    :linenos:
+
+Models (networks)
+^^^^^^^^^^^^^^^^^
+
+The implementation uses 1 stochastic and 1 deterministic approximation function. These approximation functions (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+
+.. list-table::
+   :header-rows: 1
+
+   * - Notation
+     - Concept
+     - Key
+     - Type
+   * - :math:`\pi_\theta(s)`
+     - Policy
+     - :literal:`"policy"`
+     - :ref:`Gaussian <models_gaussian>`
+   * - :math:`V_\phi(s)`
+     - Value network
+     - :literal:`"value"`
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

@@ -1,9 +1,10 @@
-from typing import Union, Dict
+from typing import Union, Tuple, Dict
+
+import gym
 
 import torch
 import torch.nn.functional as F
 
-from ....envs.torch import Wrapper
 from ....memories.torch import Memory
 from ....models.torch import Model
 
@@ -32,8 +33,6 @@ PPO_DEFAULT_CONFIG = {
 
     "kl_threshold": 0,              # KL divergence threshold
 
-    "device": None,                 # computing device
-
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -46,28 +45,45 @@ PPO_DEFAULT_CONFIG = {
 
 
 class PPO(Agent):
-    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, 
+                 networks: Dict[str, Model], 
+                 memory: Union[Memory, None] = None, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 cfg: dict = {}) -> None:
         """Proximal Policy Optimization (PPO)
 
         https://arxiv.org/abs/1707.06347
         
-        :param env: RL environment
-        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
         :type memory: skrl.memory.torch.Memory or None
+        :param observation_space: Observation/state space or shape (default: None)
+        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :param action_space: Action space or shape (default: None)
+        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :param device: Computing device (default: "cuda:0")
+        :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
+
+        :raises KeyError: If the networks dictionary is missing a required key
         """
         PPO_DEFAULT_CONFIG.update(cfg)
-        super().__init__(env=env, networks=networks, memory=memory, cfg=PPO_DEFAULT_CONFIG)
+        super().__init__(networks=networks, 
+                         memory=memory, 
+                         observation_space=observation_space, 
+                         action_space=action_space, 
+                         device=device, 
+                         cfg=PPO_DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
+            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
         if not "value" in self.networks.keys():
-            raise KeyError("Value-network not found in networks. Use 'value' key to define the Value-network")
+            raise KeyError("The value network is not defined under 'value' key (networks['value'])")
         
         self.policy = self.networks["policy"]
         self.value = self.networks["value"]
@@ -103,8 +119,8 @@ class PPO(Agent):
         self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
         self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
         self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
         self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
@@ -118,7 +134,11 @@ class PPO(Agent):
         self._current_log_prob = None
         self._current_next_states = None
 
-    def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
+    def act(self, 
+            states: torch.Tensor, 
+            inference: bool = False, 
+            timestep: Union[int, None] = None, 
+            timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
 
         :param states: Environments' states
@@ -144,7 +164,14 @@ class PPO(Agent):
 
         return actions, log_prob, actions_mean
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
+    def record_transition(self, 
+                          states: torch.Tensor, 
+                          actions: torch.Tensor, 
+                          rewards: torch.Tensor, 
+                          next_states: torch.Tensor, 
+                          dones: torch.Tensor, 
+                          timestep: int, 
+                          timesteps: int) -> None:
         """Record an environment transition in memory
         
         :param states: Observations/states of the environment used to make the decision
@@ -203,10 +230,14 @@ class PPO(Agent):
                                      "lambda_coefficient": self._lambda,
                                      "normalize_returns": False,
                                      "normalize_advantages": True}
-        self.memory.compute_functions(returns_dst="returns", advantages_dst="advantages", last_values=last_values, hyperparameters=computing_hyperparameters)
+        self.memory.compute_functions(returns_dst="returns", 
+                                      advantages_dst="advantages", 
+                                      last_values=last_values, 
+                                      hyperparameters=computing_hyperparameters)
 
         # sample all data from memory
-        sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = self.memory.sample_all(self.tensors_names)
+        sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = \
+            self.memory.sample_all(self.tensors_names)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -223,7 +254,8 @@ class PPO(Agent):
                     kl = ((torch.exp(ratio) - 1) - ratio).mean()
                 
                 if kl > self._kl_threshold:
-                    print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})".format(epoch, kl, self._kl_threshold))
+                    print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})". \
+                        format(epoch, kl, self._kl_threshold))
                     break
 
             # compute entropy loss
@@ -248,7 +280,9 @@ class PPO(Agent):
             predicted_values, _, _ = self.value.act(states=sampled_states)
 
             if self._clip_predicted_values:
-                predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, -self._value_clip, self._value_clip)
+                predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
+                                                               min=-self._value_clip, 
+                                                               max=self._value_clip)
             value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
             # optimize value

@@ -1,11 +1,11 @@
-from typing import Union, Dict
+from typing import Union, Tuple, Dict
 
+import gym
 import itertools
 
 import torch
 import torch.nn.functional as F
 
-from ....envs.torch import Wrapper
 from ....memories.torch import Memory
 from ....models.torch import Model
 
@@ -36,8 +36,6 @@ TD3_DEFAULT_CONFIG = {
     "smooth_regularization_noise": None,    # smooth noise for regularization
     "smooth_regularization_clip": 0.5,      # clip for smooth regularization
 
-    "device": None,                 # computing device
-    
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -50,43 +48,58 @@ TD3_DEFAULT_CONFIG = {
 
 
 class TD3(Agent):
-    def __init__(self, env: Wrapper, networks: Dict[str, Model], memory: Union[Memory, None] = None, cfg: dict = {}) -> None:
+    def __init__(self, 
+                 networks: Dict[str, Model], 
+                 memory: Union[Memory, None] = None, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 cfg: dict = {}) -> None:
         """Twin Delayed DDPG (TD3)
 
         https://arxiv.org/abs/1802.09477
         
-        :param env: RL environment
-        :type env: skrl.env.torch.Wrapper
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
         :type memory: skrl.memory.torch.Memory or None
+        :param observation_space: Observation/state space or shape (default: None)
+        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :param action_space: Action space or shape (default: None)
+        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :param device: Computing device (default: "cuda:0")
+        :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
         TD3_DEFAULT_CONFIG.update(cfg)
-        super().__init__(env=env, networks=networks, memory=memory, cfg=TD3_DEFAULT_CONFIG)
+        super().__init__(networks=networks, 
+                         memory=memory, 
+                         observation_space=observation_space, 
+                         action_space=action_space, 
+                         device=device, 
+                         cfg=TD3_DEFAULT_CONFIG)
 
         # networks
         if not "policy" in self.networks.keys():
-            raise KeyError("Policy network not found in networks. Use 'policy' key to define the policy network")
+            raise KeyError("The policy network is not defined under the 'policy' key (networks['policy'])")
         if not "target_policy" in self.networks.keys():
-            raise KeyError("Target policy network not found in networks. Use 'target_policy' key to define the target policy network")
+            raise KeyError("The target policy network is not defined under 'target_policy' key (networks['target_policy'])")
         if not "q_1" in self.networks.keys() and not "critic_1" in self.networks.keys():
-            raise KeyError("Q1-network (critic 1) not found in networks. Use 'critic_1' or 'q_1' keys to define the Q1-network (critic 1)")
+            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (networks['critic_1'])")
         if not "q_2" in self.networks.keys() and not "critic_2" in self.networks.keys():
-            raise KeyError("Q2-network (critic 2) not found in networks. Use 'critic_2' or 'q_2' keys to define the Q2-network (critic 2)")
+            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (networks['critic_2'])")
         if not "target_q_1" in self.networks.keys() and not "target_critic_1" in self.networks.keys():
-            raise KeyError("Target Q1-network (target critic 1) not found in networks. Use 'target_critic_1' or 'target_q_1' keys to define the target Q1-network (target critic 1)")
+            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (networks['target_critic_1'])")
         if not "target_q_2" in self.networks.keys() and not "target_critic_2" in self.networks.keys():
-            raise KeyError("Target Q2-network (target critic 2) not found in networks. Use 'target_critic_2' or 'target_q_2' keys to define the target Q2-network (target critic 2)")
+            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (networks['target_critic_2'])")
         
         self.policy = self.networks["policy"]
         self.target_policy = self.networks["target_policy"]
-        self.critic_1 = self.networks.get("critic_1", self.networks.get("q_1", None))
-        self.critic_2 = self.networks.get("critic_2", self.networks.get("q_2", None))
-        self.target_critic_1 = self.networks.get("target_critic_1", self.networks.get("target_q_1", None))
-        self.target_critic_2 = self.networks.get("target_critic_2", self.networks.get("target_q_2", None))
+        self.critic_1 = self.networks["critic_1"]
+        self.critic_2 = self.networks["critic_2"]
+        self.target_critic_1 = self.networks["target_critic_1"]
+        self.target_critic_2 = self.networks["target_critic_2"]
         
         # checkpoint networks
         self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
@@ -127,18 +140,23 @@ class TD3(Agent):
 
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate)
+        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
+                                                 lr=self._critic_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.env.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="next_states", size=self.env.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.env.action_space, dtype=torch.float32)
+        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
         self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
         self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, states: torch.Tensor, inference: bool = False, timestep: Union[int, None] = None, timesteps: Union[int, None] = None) -> torch.Tensor:
+    def act(self, 
+            states: torch.Tensor, 
+            inference: bool = False, 
+            timestep: Union[int, None] = None, 
+            timesteps: Union[int, None] = None) -> torch.Tensor:
         """Process the environments' states to make a decision (actions) using the main policy
 
         :param states: Environments' states
@@ -172,12 +190,14 @@ class TD3(Agent):
             
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) * (self._exploration_initial_scale - self._exploration_final_scale) + self._exploration_final_scale
+                scale = (1 - timestep / self._exploration_timesteps) \
+                      * (self._exploration_initial_scale - self._exploration_final_scale) \
+                      + self._exploration_final_scale
                 noises.mul_(scale)
 
                 # modify actions
                 actions[0].add_(noises)
-                actions[0].clamp_(self.env.action_space.low[0], self.env.action_space.high[0]) # FIXME: use tensor too
+                actions[0].clamp_(self.action_space.low[0], self.action_space.high[0]) # FIXME: use tensor too
 
                 # record noises
                 self.tracking_data["Noise / Exploration noise (max)"].append(torch.max(noises).item())
@@ -192,7 +212,14 @@ class TD3(Agent):
 
         return actions
 
-    def record_transition(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, timestep: int, timesteps: int) -> None:
+    def record_transition(self, 
+                          states: torch.Tensor, 
+                          actions: torch.Tensor, 
+                          rewards: torch.Tensor, 
+                          next_states: torch.Tensor, 
+                          dones: torch.Tensor, 
+                          timestep: int, 
+                          timesteps: int) -> None:
         """Record an environment transition in memory
         
         :param states: Observations/states of the environment used to make the decision
@@ -243,14 +270,17 @@ class TD3(Agent):
         for gradient_step in range(self._gradient_steps):
             
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(self._batch_size, self.tensors_names)
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(self._batch_size, self.tensors_names)
 
             with torch.no_grad():
                 # target policy smoothing
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
-                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), -self._smooth_regularization_clip, self._smooth_regularization_clip)
+                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), 
+                                     min=-self._smooth_regularization_clip, 
+                                     max=self._smooth_regularization_clip)
                 next_actions.add_(noises)
-                next_actions.clamp_(self.env.action_space.low[0], self.env.action_space.high[0])  # FIXME: use tensor too
+                next_actions.clamp_(self.action_space.low[0], self.action_space.high[0])  # FIXME: use tensor too
 
                 # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)

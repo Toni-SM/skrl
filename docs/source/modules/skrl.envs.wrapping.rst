@@ -1,9 +1,9 @@
 Wrapping
 ========
 
-This library works with a common API to interact with the RL environment. 
+This library works with a common API to interact with the RL environment
 
-In order to operate with complex or non-compatible interfaces and support interoperability between implementations a **wrapper mechanism is provided** which follows the following description:
+In order to operate with more complex or non-compatible interfaces and support interoperability between implementations a **wrapper mechanism is provided** which follows the following description:
 
 
 

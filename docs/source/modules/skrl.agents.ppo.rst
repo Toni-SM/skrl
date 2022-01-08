@@ -53,7 +53,7 @@ Configuration and hyperparameters
 Models (networks)
 ^^^^^^^^^^^^^^^^^
 
-The implementation uses 1 stochastic and 1 deterministic approximation function. These approximation functions (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+The implementation uses 1 stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
 
 .. list-table::
    :header-rows: 1

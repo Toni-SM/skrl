@@ -1,8 +1,8 @@
 TD3
 ===
 
-Twin Delayed TD3 (TD3)
-----------------------
+Twin-Delayed DDPG (TD3)
+-----------------------
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -53,7 +53,7 @@ Configuration and hyperparameters
 Models (networks)
 ^^^^^^^^^^^^^^^^^
 
-The implementation uses 6 deterministic approximation functions. These approximation functions (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+The implementation uses 6 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
 
 .. list-table::
    :header-rows: 1

@@ -3,13 +3,11 @@
     --link-color: #f27c03;
 }
 
-.wy-side-nav-search,
-.wy-nav-top {
+.wy-side-nav-search, .wy-nav-top {
     background-color: var(--main-bg-color) !important;
 }
 
-.wy-menu a,
-.wy-menu a:hover {
+.wy-menu a, .wy-menu a:hover, .wy-side-nav-search a, .wy-side-nav-search a:hover {
     color: #d9d9d9;
 }
 
@@ -25,9 +23,7 @@ p.caption, .version {
     color: #feaa0e !important;
 }
 
-.py.class > dt:first-of-type, 
-.py.function > dt:first-of-type,
-.py.data > dt:first-of-type {
+.py.class > dt:first-of-type, .py.function > dt:first-of-type, .py.data > dt:first-of-type {
     background: #ffeedc !important;
     color: #555 !important;
     border-top: 3px solid #feaa0e !important;

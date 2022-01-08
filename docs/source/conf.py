@@ -46,11 +46,12 @@ rst_prolog = """
 
 html_theme = 'sphinx_rtd_theme'
 
-html_logo = "_static/data/skrl-up.png"
+html_logo = '_static/data/skrl-up.png'
 
 html_static_path = ['_static']
 
-html_css_files = ['css/s5defs-roles.css']
+html_css_files = ['css/s5defs-roles.css',
+                  'css/skrl.css']
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'

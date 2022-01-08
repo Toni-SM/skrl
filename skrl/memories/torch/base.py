@@ -98,6 +98,10 @@ class Memory:
         setattr(self, "_tensor_{}".format(name), torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
         self.tensors[name] = getattr(self, "_tensor_{}".format(name))
         self.tensors_view[name] = self.tensors[name].view(-1, self.tensors[name].size(-1))
+        # fill the tensors (float tensors) with NaN
+        for tensor in self.tensors.values():
+            if torch.is_floating_point(tensor):
+                tensor.fill_(torch.nan)
         return True
 
     def reset(self) -> None:
@@ -148,17 +152,20 @@ class Memory:
         # multi environment (number of environments less than num_envs)
         if dim == 2 and shape[0] < self.num_envs:
             for name, tensor in tensors.items():
-                self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
+                if name in self.tensors:
+                    self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
             self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
         elif dim == 2 and shape[0] == self.num_envs:
             for name, tensor in tensors.items():
-                self.tensors[name][self.memory_index].copy_(tensor)
+                if name in self.tensors:
+                    self.tensors[name][self.memory_index].copy_(tensor)
             self.memory_index += 1
         # single environment
         elif dim == 1:
             for name, tensor in tensors.items():
-                self.tensors[name][self.memory_index, self.env_index].copy_(tensor)
+                if name in self.tensors:
+                    self.tensors[name][self.memory_index, self.env_index].copy_(tensor)
             self.env_index += 1
         else:
             raise ValueError("Expected tensors with 2-components shape (number of environments, data size), got {}".format(shape))

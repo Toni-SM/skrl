@@ -1,10 +1,10 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import gym
-import inspect
 import numpy as np
 
 import torch
+from torch.utils.data.sampler import BatchSampler
 
 
 class Memory:
@@ -178,46 +178,60 @@ class Memory:
             self.memory_index = 0
             self.filled = True
 
-    def sample(self, batch_size: int, names: Tuple[str]) -> Tuple[torch.Tensor]:
+    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Data sampling method to be implemented by the inheriting classes
 
-        :param batch_size: Number of element to sample
-        :type batch_size: int
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
+        :param batch_size: Number of element to sample
+        :type batch_size: int
+        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :type mini_batches: int, optional
         
         :raises NotImplementedError: The method has not been implemented
         
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
-        :rtype: tuple of torch.Tensor
+        :rtype: list of torch.Tensor list
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")
 
-    def sample_by_index(self, indexes: Union[tuple, np.ndarray, torch.Tensor], names: Tuple[str]) -> Tuple[torch.Tensor]:
+    def sample_by_index(names: Tuple[str], self, indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Sample data from memory according to their indexes
 
-        :param indexes: Indexes used for sampling
-        :type indexes: tuple or list, numpy.ndarray or torch.Tensor
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
+        :param indexes: Indexes used for sampling
+        :type indexes: tuple or list, numpy.ndarray or torch.Tensor
+        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :type mini_batches: int, optional
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (number of indexes, data size)
-        :rtype: tuple of torch.Tensor
+        :rtype: list of torch.Tensor list
         """
-        return [self.tensors_view[name][indexes] for name in names]
+        if mini_batches > 1:
+            batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
+            return [[self.tensors_view[name][batch] for name in names] for batch in batches]
+        return [[self.tensors_view[name][indexes] for name in names]]
 
-    def sample_all(self, names: Tuple[str]) -> Tuple[torch.Tensor]:
+    def sample_all(self, names: Tuple[str], mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Sample all data from memory
         
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
+        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :type mini_batches: int, optional
+
         :return: Sampled data from memory.
                  The sampled tensors will have the following shape: (memory size * number of environments, data size)
-        :rtype: tuple of torch.Tensor
+        :rtype: list of torch.Tensor list
         """
-        return [self.tensors_view[name] for name in names]
+        if mini_batches > 1:
+            indexes = np.arange(self.memory_size * self.num_envs)
+            batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
+            return [[self.tensors_view[name][batch] for name in names] for batch in batches]
+        return [[self.tensors_view[name] for name in names]]
 
     def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
         """Compute the following functions for the given tensor names

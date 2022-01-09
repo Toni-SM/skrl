@@ -44,7 +44,7 @@ TODO: :red:`Add package to PyPI (comming soon)`
 Troubleshooting
 ---------------
 
-Detection and/or correction of bugs, feature requests and more are more than welcome:
+Bug detection and/or correction, feature requests and everything else are more than welcome
 
 .. centered:: Come on, open a new issue!
 

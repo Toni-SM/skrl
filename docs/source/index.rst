@@ -5,9 +5,9 @@ skrl: Reinforcement Learning ...
 
 :red:`More content is comming soon...`
 
-.. important::
+.. warning::
 
-  THIS PROJECT IS UNDER ACTIVE DEVELOPMENT
+  This project is under **active continuous development**. Please make sure you always have the latest version 
 
 User guide
 ----------
@@ -16,8 +16,8 @@ User guide
   :maxdepth: 2
 
   intro/installation
-  intro/features
   intro/examples
+  intro/data
 
 ------------
 
@@ -27,7 +27,7 @@ Library components
 Agents
 ^^^^^^
 
-Definition of reinforcement learning algorithms that compute an optimal policy. The learning and optimization procedure is implemented in the class method _update. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` that defines a uniform interface and provides for common functionalities, but which are not tied to the implementation details of the algorithms
+Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
 * :doc:`DDPG <modules/skrl.agents.ddpg>` (Deep Deterministic Policy Gradient)
 * :doc:`TD3 <modules/skrl.agents.td3>` (Twin-Delayed DDPG)
@@ -80,7 +80,7 @@ Generic memory definitions. Such memories are not bound to any agent and can be 
 Models
 ^^^^^^
 
-Definition of helper classes for the construction of approximation functions using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the artificial neural networks. All models inherit from one and only one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
+Definition of helper classes for the construction of function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
 
 * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
 * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)

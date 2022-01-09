@@ -37,12 +37,12 @@ TD3_DEFAULT_CONFIG = {
     "smooth_regularization_clip": 0.5,      # clip for smooth regularization
 
     "experiment": {
-        "base_directory": "",       # base directory for the experiment
+        "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # write interval for the experiment
+        "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # checkpoint interval for the experiment
-        "only_checkpoint_policy": True,     # checkpoint only the policy
+        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_policy_only": True,     # checkpoint for policy only
     }
 }
 
@@ -104,7 +104,7 @@ class TD3(Agent):
         self.target_critic_2 = self.networks["target_critic_2"]
         
         # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
+        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
 
         # freeze target networks with respect to optimizers (update via .update_parameters())
         self.target_policy.freeze_parameters(True)

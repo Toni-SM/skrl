@@ -37,12 +37,12 @@ PPO_DEFAULT_CONFIG = {
     "kl_threshold": 0,              # KL divergence threshold
 
     "experiment": {
-        "base_directory": "",       # base directory for the experiment
+        "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # write interval for the experiment
+        "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # checkpoint interval for the experiment
-        "only_checkpoint_policy": True,     # checkpoint only the policy
+        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_policy_only": True,     # checkpoint for policy only
     }
 }
 
@@ -92,7 +92,7 @@ class PPO(Agent):
         self.value = self.networks["value"]
 
         # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.only_checkpoint_policy else self.networks
+        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]

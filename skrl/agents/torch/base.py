@@ -44,18 +44,18 @@ class Agent:
         self.cfg = cfg
         
         # experiment directory
-        base_directory = self.cfg.get("experiment", {}).get("base_directory", "")
+        directory = self.cfg.get("experiment", {}).get("directory", "")
         experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
-        if not base_directory:
-            base_directory = os.path.join(os.getcwd(), "runs")
+        if not directory:
+            directory = os.path.join(os.getcwd(), "runs")
         if not experiment_name:
             experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
-        self.experiment_dir = os.path.join(base_directory, experiment_name)
+        self.experiment_dir = os.path.join(directory, experiment_name)
         
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 250)
+        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -65,7 +65,7 @@ class Agent:
         # checkpoint
         self.checkpoint_networks = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
-        self.only_checkpoint_policy = self.cfg.get("experiment", {}).get("only_checkpoint_policy", True)
+        self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
 
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)

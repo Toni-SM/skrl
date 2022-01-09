@@ -14,6 +14,7 @@ from .. import Agent
 PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
+    "mini_batches": 2,              # number of mini batches during each learning epoch
     
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.99,                 # TD(lambda) coefficient (lam) for computing returns and advantages
@@ -93,6 +94,7 @@ class PPO(Agent):
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
+        self._mini_batches = self.cfg["mini_batches"]
         self._rollouts = self.cfg["rollouts"]
         self._rollout = 0
 
@@ -242,9 +244,8 @@ class PPO(Agent):
                                       last_values=last_values, 
                                       hyperparameters=computing_hyperparameters)
 
-        # sample all data from memory
-        sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages = \
-            self.memory.sample_all(self.tensors_names)
+        # sample mini-batches from memory
+        sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self._mini_batches)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -252,60 +253,67 @@ class PPO(Agent):
 
         # learning epochs
         for epoch in range(self._learning_epochs):
-            _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
-
-            # early stopping with KL divergence
-            if self._kl_threshold:
-                with torch.no_grad():
-                    ratio = next_log_prob - sampled_log_prob
-                    kl = ((torch.exp(ratio) - 1) - ratio).mean()
+            
+            # mini-batches loop
+            for sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages \
+                in sampled_batches:
                 
-                if kl > self._kl_threshold:
-                    print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})". \
-                        format(epoch, kl, self._kl_threshold))
-                    break
+                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
 
-            # compute entropy loss
-            if self._entropy_loss_scale:
-                entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy().mean()
-            else:
-                entropy_loss = 0
-            
-            # compute policy loss
-            ratio = torch.exp(next_log_prob - sampled_log_prob)
-            surrogate = sampled_advantages * ratio
-            surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
-            
-            policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
+                # early stopping with KL divergence
+                if self._kl_threshold:
+                    with torch.no_grad():
+                        ratio = next_log_prob - sampled_log_prob
+                        kl = ((torch.exp(ratio) - 1) - ratio).mean()
+                    
+                    if kl > self._kl_threshold:
+                        print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})". \
+                            format(epoch, kl, self._kl_threshold))
+                        break
 
-            # optimize policy
-            self.policy_optimizer.zero_grad()
-            (policy_loss + entropy_loss).backward()
-            self.policy_optimizer.step()
+                # compute entropy loss
+                if self._entropy_loss_scale:
+                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy().mean()
+                else:
+                    entropy_loss = 0
+                
+                # compute policy loss
+                ratio = torch.exp(next_log_prob - sampled_log_prob)
+                surrogate = sampled_advantages * ratio
+                surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
+                
+                policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
-            # compute value loss
-            predicted_values, _, _ = self.value.act(states=sampled_states)
+                # optimize policy
+                self.policy_optimizer.zero_grad()
+                (policy_loss + entropy_loss).backward()
+                self.policy_optimizer.step()
 
-            if self._clip_predicted_values:
-                predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
-                                                               min=-self._value_clip, 
-                                                               max=self._value_clip)
-            value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
+                # compute value loss
+                predicted_values, _, _ = self.value.act(states=sampled_states)
 
-            # optimize value
-            self.value_optimizer.zero_grad()
-            value_loss.backward()
-            self.value_optimizer.step()
+                if self._clip_predicted_values:
+                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
+                                                                min=-self._value_clip, 
+                                                                max=self._value_clip)
+                value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
-            # update cumulative losses
-            cumulative_policy_loss += policy_loss.item()
-            cumulative_value_loss += value_loss.item()
-            if self._entropy_loss_scale:
-                cumulative_entropy_loss += entropy_loss.item()
+                # optimize value
+                self.value_optimizer.zero_grad()
+                value_loss.backward()
+                self.value_optimizer.step()
+
+                # update cumulative losses
+                cumulative_policy_loss += policy_loss.item()
+                cumulative_value_loss += value_loss.item()
+                if self._entropy_loss_scale:
+                    cumulative_entropy_loss += entropy_loss.item()
 
         # record data
         self.tracking_data["Loss / Policy loss"].append(cumulative_policy_loss / self._learning_epochs)
-        self.tracking_data["Loss / Critic loss"].append(cumulative_value_loss / self._learning_epochs)
-
+        self.tracking_data["Loss / Value loss"].append(cumulative_value_loss / self._learning_epochs)
+        
         if self._entropy_loss_scale:
             self.tracking_data["Loss / Entropy loss"].append(cumulative_entropy_loss / self._learning_epochs)
+
+        self.tracking_data["Policy / Standard deviation"].append(self.policy.distribution().stddev.mean().item())

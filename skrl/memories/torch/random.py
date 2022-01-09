@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import numpy as np
 
@@ -30,22 +30,24 @@ class RandomMemory(Memory):
 
         self._replacement = replacement
 
-    def sample(self, batch_size: int, names: Tuple[str]) -> Tuple[torch.Tensor]:
+    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Sample a batch from memory randomly
 
-        :param batch_size: Number of element to sample
-        :type batch_size: int
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
+        :param batch_size: Number of element to sample
+        :type batch_size: int
+        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :type mini_batches: int, optional
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
-        :rtype: tuple of torch.Tensor
-        """        
+        :rtype: list of torch.Tensor list
+        """
         # generate random indexes
         if self._replacement:
             indexes = np.random.choice(len(self), size=batch_size, replace=True)
         else:
             indexes = np.random.choice(len(self), size=min([batch_size, len(self)]), replace=False)
         
-        return self.sample_by_index(indexes=indexes, names=names)
+        return self.sample_by_index(names=names, indexes=indexes, mini_batches=mini_batches)

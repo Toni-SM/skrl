@@ -3,6 +3,7 @@ from typing import Union, Tuple, Dict
 import gym
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from ....memories.torch import Memory
@@ -25,6 +26,7 @@ PPO_DEFAULT_CONFIG = {
     "random_timesteps": 1000,       # random exploration steps
     "learning_starts": 1000,        # learning starts after this many steps
 
+    "grad_norm_clip": 0.5,              # clipping coefficient for the norm of the gradients
     "ratio_clip": 0.2,                  # clipping coefficient for computing the clipped surrogate objective
     "value_clip": 0.2,                  # clipping coefficient for computing the value loss (if clip_predicted_values is True)
     "clip_predicted_values": False,     # clip predicted values during value loss computation
@@ -98,6 +100,7 @@ class PPO(Agent):
         self._rollouts = self.cfg["rollouts"]
         self._rollout = 0
 
+        self._grad_norm_clip = self.cfg["grad_norm_clip"]
         self._ratio_clip = self.cfg["ratio_clip"]
         self._value_clip = self.cfg["value_clip"]
         self._clip_predicted_values = self.cfg["clip_predicted_values"]
@@ -287,6 +290,8 @@ class PPO(Agent):
                 # optimize policy
                 self.policy_optimizer.zero_grad()
                 (policy_loss + entropy_loss).backward()
+                if self._grad_norm_clip > 0:
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 self.policy_optimizer.step()
 
                 # compute value loss
@@ -301,6 +306,8 @@ class PPO(Agent):
                 # optimize value
                 self.value_optimizer.zero_grad()
                 value_loss.backward()
+                if self._grad_norm_clip > 0:
+                    nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
                 self.value_optimizer.step()
 
                 # update cumulative losses

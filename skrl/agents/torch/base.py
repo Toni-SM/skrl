@@ -174,8 +174,8 @@ class Agent:
         # compute the average of the cumulative rewards and timesteps
         finished_episodes = dones.nonzero(as_tuple=False)
 
-        self._track_rewards.extend(self._cumulative_rewards[finished_episodes].reshape(-1).tolist())
-        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].reshape(-1).tolist())
+        self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
+        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
 
         # reset the cumulative rewards and timesteps
         self._cumulative_rewards[finished_episodes] = 0

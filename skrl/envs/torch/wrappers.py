@@ -82,7 +82,7 @@ class IsaacGymPreview3Wrapper(Wrapper):
 
     def step(self, actions):
         self._obs_dict, rew_buf, reset_buf, extras = self._env.step(actions)
-        return self._obs_dict["obs"], rew_buf, reset_buf, None
+        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), None
 
     def reset(self):
         if self._reset_once:

@@ -99,3 +99,10 @@ class GaussianModel(Model):
             return torch.tensor(0.0, device=self.device)
         return self._distribution.entropy().to(self.device)
     
+    def distribution(self) -> torch.distributions.MultivariateNormal:
+        """Get the current distribution of the model
+
+        :return: Distribution of the model
+        :rtype: torch.distributions.MultivariateNormal
+        """
+        return self._distribution

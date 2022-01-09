@@ -280,7 +280,7 @@ class TD3(Agent):
             
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-                self.memory.sample(self._batch_size, self.tensors_names)
+                self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
             with torch.no_grad():
                 # target policy smoothing

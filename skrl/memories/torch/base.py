@@ -196,7 +196,7 @@ class Memory:
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")
 
-    def sample_by_index(names: Tuple[str], self, indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1) -> List[List[torch.Tensor]]:
+    def sample_by_index(self, names: Tuple[str], indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Sample data from memory according to their indexes
 
         :param names: Tensors names from which to obtain the samples

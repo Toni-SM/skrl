@@ -4,7 +4,10 @@ Saving, loading and logging
 Tracking metrics (TensorBoard)
 ------------------------------
 
-`TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and values (coefficients, losses, etc.). The tracking and writing of metrics and values is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**)
+Configuration
+^^^^^^^^^^^^^
+
+`TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**)
 
 Each agent offers the following parameters under the :literal:`"experiment"` key
 
@@ -28,10 +31,53 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
 * **experiment_name**: name of the experiment (subdirectory). If no value is set, it will be the current date and time and the agent's name (e.g. :literal:`22-01-09_22-48-49-816281_DDPG`)
 
-* **write_interval**: interval for writing metrics and values to TensorBoard (default is 250 timesteps)
+* **write_interval**: interval for writing metrics and values to TensorBoard (default is 250 timesteps). A value equal to or less than 0 disables tracking and writing to TensorBoard
+
+Tracked metrics/scales
+^^^^^^^^^^^^^^^^^^^^^^
+
+The following table shows the metrics/scales tracked by each agent:
+
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Tag        |Metric / Scalar     |.. centered:: DDPG|.. centered:: TD3|.. centered:: SAC|.. centered:: PPO|
++===========+====================+==================+=================+=================+=================+
+|Coefficient|Entropy coefficient |                  |                 |.. centered:: +  |                 |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Episode    |Total timesteps     |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Loss       |Policy loss         |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++           +--------------------+------------------+-----------------+-----------------+-----------------+
+|           |Critic loss         |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++           +--------------------+------------------+-----------------+-----------------+-----------------+
+|           |Value loss          |                  |                 |                 |.. centered:: +  |
++           +--------------------+------------------+-----------------+-----------------+-----------------+
+|           |Entropy loss        |                  |                 |.. centered:: -- |.. centered:: -- |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Noise      |Exploration noise   |.. centered:: +   |.. centered:: +  |                 |                 |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Policy     |Standard deviation  |                  |                 |                 |.. centered:: +  |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Q-network  |Q1                  |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++           +--------------------+------------------+-----------------+-----------------+-----------------+
+|           |Q2                  |                  |.. centered:: +  |.. centered:: +  |                 |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Reward     |Instantaneous reward|.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++           +--------------------+------------------+-----------------+-----------------+-----------------+
+|           |Total reward        |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+|Target     |Target              |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++-----------+--------------------+------------------+-----------------+-----------------+-----------------+
+
+
+----------------
 
 Model checkpoint
 ----------------
+
+Saving checkpoints
+^^^^^^^^^^^^^^^^^^
+
+The checkpoints are saved in the :literal:`checkpoints` subdirectory of the experiment's directory (its path can be customized using the options described in the previous subsection). The checkpoint name is the current timestep and the key referring to the model (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt`)
 
 The checkpoint management, as in the previous case, is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**)
 
@@ -51,7 +97,19 @@ The checkpoint management, as in the previous case, is the responsibility of the
         }
     }
 
+* **checkpoint_interval**: interval for checkpoints (default is 1000 timesteps). A value equal to or less than 0 disables the checkpoint creation
+
+* **checkpoint_policy_only**: if set to :literal:`True`, only the policy will be saved (default behaviour), otherwise all the agent's models (policy, value function, critic, .etc) will be checkpointed
+
+Loading checkpoints
+^^^^^^^^^^^^^^^^^^^
+
+TODO :red:`(comming soon)`
+
+
+--------------------
+
 Memory export/import
 --------------------
 
-TODO: :red:`(comming soon)`
+TODO :red:`(comming soon)`

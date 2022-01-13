@@ -4,10 +4,11 @@ import sys
 try:
     import isaacgym
 except Exception as e:
-    print("Using Isaac Gym Failed: {}".format(e))
+    print("[DOCS] Using Isaac Gym Failed: {}".format(e))
 
 # skrl directory
-sys.path.insert(0, os.path.abspath("..", ".."))
+sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
+print("[DOCS] skrl path: {}".format(sys.path[0]))
 
 # -- Project information
 

@@ -7,10 +7,10 @@ Twin-Delayed DDPG (TD3)
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+| :green:`# sample a batch from memory`
+| :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones 
 | :green:`# gradient steps`
 | **FOR** each gradient step **DO**
-|     :green:`# sample a batch from memory`
-|     :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones 
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`noises \leftarrow a' + \text{clip}(\epsilon, -c, c)` for sampled noises (:math:`\epsilon`)

@@ -7,10 +7,10 @@ Deep Deterministic Policy Gradient (DDPG)
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+| :green:`# sample a batch from memory`
+| :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
 | :green:`# gradient steps`
 | **FOR** each gradient step **DO**
-|     :green:`# sample a batch from memory`
-|     :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
 |     :green:`# compute target values`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow Q_{\phi_{target}}(s', a')`

@@ -234,13 +234,13 @@ class SAC(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        # sample a batch from memory
+        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+            self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
+
         # gradient steps
         for gradient_step in range(self._gradient_steps):
             
-            # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-                self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
-
             # compute target values
             with torch.no_grad():
                 next_actions, next_log_prob, _ = self.policy.act(states=sampled_next_states)

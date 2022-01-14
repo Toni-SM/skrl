@@ -1,7 +1,5 @@
 from typing import Union, Tuple, List
 
-import numpy as np
-
 import torch
 
 from .base import Memory
@@ -46,8 +44,10 @@ class RandomMemory(Memory):
         """
         # generate random indexes
         if self._replacement:
-            indexes = np.random.choice(len(self), size=batch_size, replace=True)
+            indexes = torch.randint(0, len(self), (batch_size,), device=self.device)
         else:
-            indexes = np.random.choice(len(self), size=min([batch_size, len(self)]), replace=False)
-        
+            # details about the random sampling performance can be found here: 
+            # https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/19
+            indexes = torch.randperm(len(self), dtype=torch.long, device=self.device)[:batch_size]
+
         return self.sample_by_index(names=names, indexes=indexes, mini_batches=mini_batches)

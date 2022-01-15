@@ -33,8 +33,20 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
 * **write_interval**: interval for writing metrics and values to TensorBoard (default is 250 timesteps). A value equal to or less than 0 disables tracking and writing to TensorBoard
 
-Tracked metrics/scales
-^^^^^^^^^^^^^^^^^^^^^^
+Tracked metrics/scales visualization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To visualize the tracked metrics/scales, during or after the training, TensorBoard can be launched using the following command in a terminal 
+
+.. code-block:: bash
+
+    tensorboard --logdir=PATH_TO_RUNS_DIRECTORY
+
+.. image:: ../_static/imgs/data_tensorboard.jpg
+      :width: 100%
+      :align: center
+      :alt: TensorBoard panel
+|
 
 The following table shows the metrics/scales tracked by each agent ([**+**] all the time, [**-**] only when such a function is enabled in the agent's configuration):
 

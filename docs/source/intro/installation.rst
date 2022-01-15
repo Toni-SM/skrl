@@ -4,15 +4,14 @@ Installation
 Prerequisites
 -------------
 
-Python 3.6 or later is required.
+**skrl** requires Python 3.6 and the following libraries (they will be installed automatically):
 
-Also, this library requires (and installs if missing) the following Python packages to be installed:
-
+    * `gym <https://gym.openai.com/>`_
     * `torch <https://pytorch.org/>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
 
-Install
--------
+Library Installation
+--------------------
 
 GitHub repository
 ^^^^^^^^^^^^^^^^^
@@ -24,13 +23,13 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
         git clone https://github.com/Toni-SM/skrl.git
         cd skrl
 
-* Install in editable/development mode (links the package to its original location allowing any modifications to be reflected directly in its environment)
+* **Install in editable/development mode** (links the package to its original location allowing any modifications to be reflected directly in its Python environment)
 
     .. code-block:: bash
         
         pip install -e .
 
-* Install in the current site packages directory
+* **Install in the current Python site-packages directory** (modifications to the code downloaded from GitHub will not be reflected in your Python environment)
 
     .. code-block:: bash
         

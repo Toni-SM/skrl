@@ -317,10 +317,10 @@ class PPO(Agent):
                     cumulative_entropy_loss += entropy_loss.item()
 
         # record data
-        self.tracking_data["Loss / Policy loss"].append(cumulative_policy_loss / self._learning_epochs)
-        self.tracking_data["Loss / Value loss"].append(cumulative_value_loss / self._learning_epochs)
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs)
+        self.track_data("Loss / Value loss", cumulative_value_loss / self._learning_epochs)
         
         if self._entropy_loss_scale:
-            self.tracking_data["Loss / Entropy loss"].append(cumulative_entropy_loss / self._learning_epochs)
+            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / self._learning_epochs)
 
-        self.tracking_data["Policy / Standard deviation"].append(self.policy.distribution().stddev.mean().item())
+        self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())

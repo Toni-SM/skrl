@@ -86,6 +86,18 @@ class Agent:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
 
+    def track_data(self, tag: str, value: float) -> None:
+        """Track data to TenserBoard
+
+        Currently only scalar data is supported
+
+        :param tag: Data identifier (e.g. 'Loss / policy loss')
+        :type tag: str
+        :param value: Value to track
+        :type value: float
+        """
+        self.tracking_data[tag].append(value)
+
     def write_tracking_data(self, timestep: int, timesteps: int) -> None:
         """Write tracking data to TensorBoard
 

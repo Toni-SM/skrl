@@ -292,21 +292,21 @@ class SAC(Agent):
 
             # record data
             if self.write_interval > 0:
-                self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
-                self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
+                self.track_data("Loss / Policy loss", policy_loss.item())
+                self.track_data("Loss / Critic loss", critic_loss.item())
 
-                self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_1_values).item())
-                self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_1_values).item())
-                self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_1_values).item())
+                self.track_data("Q-network / Q1 (max)", torch.max(critic_1_values).item())
+                self.track_data("Q-network / Q1 (min)", torch.min(critic_1_values).item())
+                self.track_data("Q-network / Q1 (mean)", torch.mean(critic_1_values).item())
 
-                self.tracking_data["Q-network / Q2 (max)"].append(torch.max(critic_2_values).item())
-                self.tracking_data["Q-network / Q2 (min)"].append(torch.min(critic_2_values).item())
-                self.tracking_data["Q-network / Q2 (mean)"].append(torch.mean(critic_2_values).item())
+                self.track_data("Q-network / Q2 (max)", torch.max(critic_2_values).item())
+                self.track_data("Q-network / Q2 (min)", torch.min(critic_2_values).item())
+                self.track_data("Q-network / Q2 (mean)", torch.mean(critic_2_values).item())
                 
-                self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
-                self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
-                self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())
+                self.track_data("Target / Target (max)", torch.max(target_values).item())
+                self.track_data("Target / Target (min)", torch.min(target_values).item())
+                self.track_data("Target / Target (mean)", torch.mean(target_values).item())
 
                 if self._learn_entropy:
-                    self.tracking_data["Loss / Entropy loss"].append(entropy_loss.item())
-                    self.tracking_data["Coefficient / Entropy coefficient"].append(self._entropy_coefficient.item())
+                    self.track_data("Loss / Entropy loss", entropy_loss.item())
+                    self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())

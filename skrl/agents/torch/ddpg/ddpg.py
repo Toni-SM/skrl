@@ -182,15 +182,15 @@ class DDPG(Agent):
                 actions[0].clamp_(self.action_space.low[0], self.action_space.high[0]) # FIXME: use tensor too
 
                 # record noises
-                self.tracking_data["Noise / Exploration noise (max)"].append(torch.max(noises).item())
-                self.tracking_data["Noise / Exploration noise (min)"].append(torch.min(noises).item())
-                self.tracking_data["Noise / Exploration noise (mean)"].append(torch.mean(noises).item())
+                self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())
+                self.track_data("Noise / Exploration noise (min)", torch.min(noises).item())
+                self.track_data("Noise / Exploration noise (mean)", torch.mean(noises).item())
             
             else:
                 # record noises
-                self.tracking_data["Noise / Exploration noise (max)"].append(0)
-                self.tracking_data["Noise / Exploration noise (min)"].append(0)
-                self.tracking_data["Noise / Exploration noise (mean)"].append(0)
+                self.track_data("Noise / Exploration noise (max)", 0)
+                self.track_data("Noise / Exploration noise (min)", 0)
+                self.track_data("Noise / Exploration noise (mean)", 0)
         
         return actions
 
@@ -295,13 +295,13 @@ class DDPG(Agent):
             self.target_critic.update_parameters(self.critic, polyak=self._polyak)
 
             # record data
-            self.tracking_data["Loss / Policy loss"].append(policy_loss.item())
-            self.tracking_data["Loss / Critic loss"].append(critic_loss.item())
+            self.track_data("Loss / Policy loss", policy_loss.item())
+            self.track_data("Loss / Critic loss", critic_loss.item())
 
-            self.tracking_data["Q-network / Q1 (max)"].append(torch.max(critic_values).item())
-            self.tracking_data["Q-network / Q1 (min)"].append(torch.min(critic_values).item())
-            self.tracking_data["Q-network / Q1 (mean)"].append(torch.mean(critic_values).item())
+            self.track_data("Q-network / Q1 (max)", torch.max(critic_values).item())
+            self.track_data("Q-network / Q1 (min)", torch.min(critic_values).item())
+            self.track_data("Q-network / Q1 (mean)", torch.mean(critic_values).item())
 
-            self.tracking_data["Target / Target (max)"].append(torch.max(target_values).item())
-            self.tracking_data["Target / Target (min)"].append(torch.min(target_values).item())
-            self.tracking_data["Target / Target (mean)"].append(torch.mean(target_values).item())
+            self.track_data("Target / Target (max)", torch.max(target_values).item())
+            self.track_data("Target / Target (min)", torch.min(target_values).item())
+            self.track_data("Target / Target (mean)", torch.mean(target_values).item())

@@ -43,6 +43,10 @@ class Agent:
         self.device = torch.device(device)
         self.cfg = cfg
         
+        # convert the networks to their respective device
+        for network in self.networks.values():
+            network.to(network.device)
+
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")
         experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
@@ -87,9 +91,9 @@ class Agent:
         return string
 
     def track_data(self, tag: str, value: float) -> None:
-        """Track data to TenserBoard
+        """Track data to TensorBoard
 
-        Currently only scalar data is supported
+        Currently only scalar data are supported
 
         :param tag: Data identifier (e.g. 'Loss / policy loss')
         :type tag: str

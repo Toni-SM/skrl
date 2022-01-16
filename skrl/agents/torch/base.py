@@ -112,7 +112,10 @@ class Agent:
         """
         for k, v in self.tracking_data.items():
             self.writer.add_scalar(k, np.mean(v), timestep)
-        self.tracking_data = collections.defaultdict(list)
+        # reset data containers for next iteration
+        self._track_rewards.clear()
+        self._track_timesteps.clear()
+        self.tracking_data.clear()
 
     def write_checkpoint(self, timestep: int, timesteps: int) -> None:
         """Write checkpoint (networks) to disk

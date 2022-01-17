@@ -142,13 +142,14 @@ class Trainer():
             self._pre_interaction(timestep=timestep, timesteps=self.timesteps)
             
             # compute actions
-            if self.parallel_agents:
-                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
-                                                  inference=True,
-                                                  timestep=timestep, 
-                                                  timesteps=self.timesteps)[0] for agent, scope in zip(self.agents, self.agents_scope)])
-            else:
-                actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+            with torch.no_grad():
+                if self.parallel_agents:
+                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                                                    inference=True,
+                                                    timestep=timestep, 
+                                                    timesteps=self.timesteps)[0] for agent, scope in zip(self.agents, self.agents_scope)])
+                else:
+                    actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
             
             # step the environment
             next_states, rewards, dones, infos = self.env.step(actions)
@@ -158,23 +159,24 @@ class Trainer():
                 self.env.render()
 
             # record the transition 
-            if self.parallel_agents:
-                for agent, scope in zip(self.agents, self.agents_scope):
-                    agent.record_transition(states=states[scope[0]:scope[1]], 
-                                            actions=actions[scope[0]:scope[1]], 
-                                            rewards=rewards[scope[0]:scope[1]], 
-                                            next_states=next_states[scope[0]:scope[1]], 
-                                            dones=dones[scope[0]:scope[1]],
-                                            timestep=timestep,
-                                            timesteps=self.timesteps)
-            else:
-                self.agents.record_transition(states=states, 
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              dones=dones,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+            with torch.no_grad():
+                if self.parallel_agents:
+                    for agent, scope in zip(self.agents, self.agents_scope):
+                        agent.record_transition(states=states[scope[0]:scope[1]], 
+                                                actions=actions[scope[0]:scope[1]], 
+                                                rewards=rewards[scope[0]:scope[1]], 
+                                                next_states=next_states[scope[0]:scope[1]], 
+                                                dones=dones[scope[0]:scope[1]],
+                                                timestep=timestep,
+                                                timesteps=self.timesteps)
+                else:
+                    self.agents.record_transition(states=states, 
+                                                actions=actions,
+                                                rewards=rewards,
+                                                next_states=next_states,
+                                                dones=dones,
+                                                timestep=timestep,
+                                                timesteps=self.timesteps)
             
             # reset environments
             if dones.any():

@@ -7,29 +7,13 @@ Base class
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
 
-
 Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-   .. code-block:: python
-      :linenos:
- 
-      # function annotations
-      from typing import Tuple
-      
-      import torch
-      from skrl.memories.torch import Memory      # 'from .base import Memory' (in the memories/torch directory)
-
-      class CustomMemory(Memory):
-          def __init__(self, memory_size: int, num_envs: int = 1, device: str = "cuda:0", preallocate: bool = True, replacement=True) -> None:
-              super().__init__(memory_size, num_envs, device, preallocate)
-        
-          def sample(self, batch_size: int, names: Tuple[str]) -> Tuple[torch.Tensor]:
-              # ========================
-              # Implement sampling logic
-              # ========================
-              pass
-      
+.. literalinclude:: ../snippets/memory.py
+    :language: python
+    :linenos:
+    
 API
 ^^^
 

@@ -7,31 +7,13 @@ Base class
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
 
-
 Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-   .. code-block:: python
-      :linenos:
- 
-      # function annotations
-      from typing import Union, Tuple
-      
-      import gym
+.. literalinclude:: ../snippets/model.py
+    :language: python
+    :linenos:
 
-      import torch
-      from skrl.models.torch.base import Model      # 'from . import Model' (in the models directory)
-
-      class CustomModel(Model):
-          def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: str = "cuda:0") -> None:
-              super(CustomModel, self).__init__(observation_space, action_space, device)
-        
-          def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
-              # ==============================
-              # Implement the model's behavior
-              # ==============================
-              pass
-      
 API
 ^^^
 

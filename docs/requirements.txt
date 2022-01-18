@@ -1,4 +1,4 @@
 sphinx
 sphinx_rtd_theme
 sphinx-autobuild
-git+https://github.com/Toni-SM/skrl@develop#egg=skrl
+sphinx-tabs

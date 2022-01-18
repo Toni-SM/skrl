@@ -6,6 +6,7 @@
 pip install sphinx
 pip install sphinx_rtd_theme
 pip install sphinx-autobuild
+pip install sphinx-tabs
 ```
 
 ### Building the documentation
@@ -20,12 +21,6 @@ Building each time a file is changed:
 ```bash
 cd docs
 sphinx-autobuild ./source/ _build/html
-```
-
-### Generating documentation from docstrings
-
-```bash
-sphinx-apidoc ../skrl -o ./source/docstrings
 ```
 
 ## Useful links

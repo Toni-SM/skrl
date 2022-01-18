@@ -3,3 +3,4 @@ sphinx_rtd_theme
 sphinx-autobuild
 sphinx-tabs
 gym
+torch

@@ -43,7 +43,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
     
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises ValueError: The task name has not been defined, 
+                        neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The isaacgym package is not installed or the path is wrong
 
     :return: Isaac Gym environment (preview 2)
@@ -92,7 +93,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
         status = False
         print("[ERROR] Failed to import required packages: {}".format(e))
     if not status:
-        raise RuntimeError("The path ({}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)".format(path))
+        raise RuntimeError("The path ({}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)" \
+            .format(path))
 
     args = get_args()
 
@@ -152,7 +154,8 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     # get task name from command line arguments
     if defined:
         if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
-            print("[WARNING] Overriding task name ({}) with command line argument ({})".format(task_name, arg.split("task=")[1].split(" ")[0]))
+            print("[WARNING] Overriding task name ({}) with command line argument ({})" \
+                .format(task_name, arg.split("task=")[1].split(" ")[0]))
     # get task name from function arguments
     else:
         if task_name:

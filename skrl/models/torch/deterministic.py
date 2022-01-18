@@ -8,14 +8,18 @@ from . import Model
 
 
 class DeterministicModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0", clip_actions: bool = False) -> None:
+    def __init__(self, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 clip_actions: bool = False) -> None:
         """Deterministic model (deterministic model)
 
         :param observation_space: Observation/state space or shape (default: None).
-                                  If it is not None, the num_observations property will contain the size of that space (number of elements)
+                                  If it is not None, the num_observations property will contain the size of that space
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None).
-                             If it is not None, the num_actions property will contain the size of that space (number of elements)
+                             If it is not None, the num_actions property will contain the size of that space
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str or torch.device, optional
@@ -30,7 +34,10 @@ class DeterministicModel(Model):
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
         
-    def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
+    def act(self, 
+            states: torch.Tensor, 
+            taken_actions: Union[torch.Tensor, None] = None, 
+            inference=False) -> Tuple[torch.Tensor]:
         """Act deterministically in response to the state of the environment
 
         :param states: Observation/state of the environment used to make the decision

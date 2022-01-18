@@ -7,22 +7,25 @@ import torch
 
 
 class Model(torch.nn.Module):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
         - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, tuple or list of integers, gym.Space or None): Observation/state space of the environment
-        - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space of the environment
+        - ``observation_space`` (int, tuple or list of integers, gym.Space or None): Observation/state space
+        - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space
         - ``num_observations`` (int or None): Number of elements in the observation/state space
         - ``num_actions`` (int or None): Number of elements in the action space
         
         :param observation_space: Observation/state space or shape (default: None).
-                                  If it is not None, the num_observations property will contain the size of that space (number of elements)
+                                  If it is not None, the num_observations property will contain the size of that space
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None).
-                             If it is not None, the num_actions property will contain the size of that space (number of elements)
+                             If it is not None, the num_actions property will contain the size of that space
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str or torch.device, optional
@@ -67,8 +70,10 @@ class Model(torch.nn.Module):
         """
         # TODO: sample taking into account bounds
         if self._random_distribution is None:
-            self._random_distribution = torch.distributions.uniform.Uniform(low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32), 
-                                                                            high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+            self._random_distribution = torch.distributions.uniform.Uniform(
+                low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
+                high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+        
         return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
@@ -77,7 +82,7 @@ class Model(torch.nn.Module):
         Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
-        :param method_name: Name of the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method (default: "normal\_")
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "normal\_")
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -96,7 +101,7 @@ class Model(torch.nn.Module):
         The following layers will be initialized:
         - torch.nn.Linear
         
-        :param method_name: Name of the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method (default: "orthogonal\_")
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "orthogonal\_")
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -119,8 +124,10 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
-    def compute(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
-        """Define the computation performed (to be implemented by the inheriting classes) by all involved networks
+    def compute(self, 
+                states: torch.Tensor, 
+                taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+        """Define the computation performed (to be implemented by the inheriting classes) by the networks
 
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
@@ -130,16 +137,19 @@ class Model(torch.nn.Module):
 
         :raises NotImplementedError: Child class must implement this method
         
-        :return: Computation performed by all involved networks
+        :return: Computation performed by the networks
         :rtype: torch.Tensor or tuple of torch.Tensor
         """
-        raise NotImplementedError("The computation performed by all involved networks (.compute()) is not implemented")
+        raise NotImplementedError("The computation performed by the networks (.compute()) is not implemented")
 
-    def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
+    def act(self, 
+            states: torch.Tensor, 
+            taken_actions: Union[torch.Tensor, None] = None, 
+            inference=False) -> Tuple[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
-        Agents will call this method, during training and evaluation, to obtain the decision to be taken given the state of the environment.
-        This method is currently implemented in the helper models (**GaussianModel**, **DeterministicModel**, etc.).
+        Agents will call this method to obtain the decision to be taken given the state of the environment.
+        This method is currently implemented by the helper models (**GaussianModel**, etc.).
         The classes that inherit from the latter must only implement the ``.compute()`` method
 
         :param states: Observation/state of the environment used to make the decision
@@ -163,7 +173,7 @@ class Model(torch.nn.Module):
         """Set the network mode (training or evaluation)
 
         :param mode: Mode: "train" for training or "eval" for evaluation. 
-                     See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
+            See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
         :raises ValueError: Mode must be ``"train"`` or ``"eval"``

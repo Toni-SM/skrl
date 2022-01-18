@@ -1,14 +1,15 @@
 import os
 import sys
 
+# skrl library
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+print("[DOCS] skrl library path: {}".format(sys.path[0]))
+
 try:
     import isaacgym
 except Exception as e:
-    print("[DOCS] Using Isaac Gym Failed: {}".format(e))
-
-# skrl directory
-sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
-print("[DOCS] skrl path: {}".format(sys.path[0]))
+    print("[DOCS] Isaac Gym import failed: {}".format(e))
+import skrl
 
 # -- Project information
 
@@ -16,8 +17,8 @@ project = 'skrl'
 copyright = '2021, Toni-SM'
 author = 'Toni-SM'
 
-release = '0.1'
-version = '0.1.0'
+release = skrl.__version__
+version = skrl.__version__
 
 master_doc = 'index'
 

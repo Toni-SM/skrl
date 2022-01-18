@@ -46,6 +46,7 @@ To visualize the tracked metrics/scales, during or after the training, TensorBoa
       :width: 100%
       :align: center
       :alt: TensorBoard panel
+
 |
 
 The following table shows the metrics/scales tracked by each agent ([**+**] all the time, [**-**] only when such a function is enabled in the agent's configuration):

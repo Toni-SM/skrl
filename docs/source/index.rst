@@ -3,7 +3,7 @@ SKRL - Reinforcement Learning library
 
 **skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation
 
-In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' parallel training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **GitHub repository:** https://github.com/Toni-SM/skrl 
 
@@ -13,7 +13,7 @@ In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it all
     * Modularity and reusability
     * Documented library, code and implementations
     * Isaac Gym environment loading (preview 2 and 3)
-    * Parallel learning by scopes in Isaac Gym environments
+    * Simultaneous learning by scopes in Isaac Gym environments
 
 .. warning::
 

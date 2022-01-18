@@ -83,14 +83,14 @@ class Trainer():
                     if sum(self.agents_scope):
                         self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)
                     else:
-                        raise ValueError("The number of agents ({}) is greater than the number of parallelizable environments ({})". \
-                            format(len(self.agents), self.env.num_envs))
+                        raise ValueError("The number of agents ({}) is greater than the number of parallelizable environments ({})" \
+                            .format(len(self.agents), self.env.num_envs))
                 elif len(self.agents_scope) != len(self.agents):
-                    raise ValueError("The number of agents ({}) doesn't match the number of scopes ({})". \
-                        format(len(self.agents), len(self.agents_scope)))
+                    raise ValueError("The number of agents ({}) doesn't match the number of scopes ({})" \
+                        .format(len(self.agents), len(self.agents_scope)))
                 elif sum(self.agents_scope) != self.env.num_envs:
-                    raise ValueError("The scopes ({}) don't cover the number of parallelizable environments ({})". \
-                        format(sum(self.agents_scope), self.env.num_envs))
+                    raise ValueError("The scopes ({}) don't cover the number of parallelizable environments ({})" \
+                        .format(sum(self.agents_scope), self.env.num_envs))
                 # generate agents' scopes
                 index = 0 
                 for i in range(len(self.agents_scope)):
@@ -153,4 +153,5 @@ class Trainer():
 
         This method is deprecated in favour of the '.train()' method 
         """
+        # TODO: remove this method in future versions
         print("[WARNING] Trainer.start() method is deprecated in favour of the '.train()' method")

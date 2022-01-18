@@ -31,7 +31,11 @@ class GaussianModel(Model):
         """
         super(GaussianModel, self).__init__(observation_space, action_space, device)
         
-        self.clip_actions = clip_actions
+        self.clip_actions = clip_actions and issubclass(type(self.action_space), gym.Space)
+
+        if self.clip_actions:
+            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
         self.clip_log_std = clip_log_std
         self.log_std_min = min_log_std
@@ -65,20 +69,16 @@ class GaussianModel(Model):
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        # covariance = torch.mean(log_std.exp() * log_std.exp(), dim=0, keepdim=True)
-        # if self._distribution is None:
         self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
-        # else:
-        #     self._distribution.loc = actions_mean
-        #     self._distribution._unbroadcasted_scale_tril = covariance
+        # self._distribution.loc = actions_mean
+        # self._distribution._unbroadcasted_scale_tril = covariance
 
         # sample using the reparameterization trick
         actions = self._distribution.rsample()
 
-        # clip actions 
-        # TODO: use tensor too for low and high
-        if self.clip_actions and issubclass(type(self.action_space), gym.Space):
-            actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
+        # clip actions
+        if self.clip_actions:
+            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
         
         # log of the probability density function
         log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)

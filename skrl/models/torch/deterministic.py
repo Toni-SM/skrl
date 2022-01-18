@@ -24,7 +24,11 @@ class DeterministicModel(Model):
         """
         super(DeterministicModel, self).__init__(observation_space, action_space, device)
 
-        self.clip_actions = clip_actions
+        self.clip_actions = clip_actions and issubclass(type(self.action_space), gym.Space)
+
+        if self.clip_actions:
+            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
         
     def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
         """Act deterministically in response to the state of the environment
@@ -47,9 +51,8 @@ class DeterministicModel(Model):
                                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # clip actions 
-        # TODO: use tensor too for low and high
-        if self.clip_actions and issubclass(type(self.action_space), gym.Space):
-            actions = torch.clamp(actions, min=self.action_space.low[0], max=self.action_space.high[0])
+        if self.clip_actions:
+            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
         if inference:
             return actions.detach(), None, None

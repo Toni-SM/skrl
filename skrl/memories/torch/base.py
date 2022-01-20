@@ -1,6 +1,11 @@
 from typing import Union, Tuple, List
 
+import os
+import csv
 import gym
+import operator
+import datetime
+import functools
 import numpy as np
 
 import torch
@@ -305,7 +310,7 @@ class Memory:
             if normalize_advantages:
                 advantages.copy_((advantages - advantages.mean()) / (advantages.std() + 1e-8))
         
-    def save(self, path: str, format: str = "csv") -> None:
+    def save(self, directory: str, format: str = "pt") -> None:
         """Save the memory to a file
 
         Supported formats:
@@ -314,26 +319,36 @@ class Memory:
         - torch (pt)
         - NumPy (npz)
 
-        :param path: Path to the file where the memory will be saved
-        :type path: str
-        :param format: Format of the file where the memory will be saved (default: "csv")
+        :param directory: Path to the folder where the memory will be saved
+        :type directory: str
+        :param format: Format of the file where the memory will be saved (default: "pt")
         :type format: str, optional
 
         :raises ValueError: If the format is not supported
         """
+        os.makedirs(os.path.join(directory, "memories"), exist_ok=True)
+        memory_path = os.path.join(directory, "memories", \
+            "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format))
+        
         # torch
         if format == "pt":
-            torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, path)
+            torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, memory_path)
         # comma-separated values
         elif format == "csv":
-            # TODO: save the memory to a csv 
-            pass
+            # open csv writer
+            with open(memory_path, "a") as file:
+                writer = csv.writer(file)
+                names = self.get_tensor_names()
+                # write header and rows
+                writer.writerow(names)
+                for i in range(len(self)):
+                    writer.writerow(functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], []))
         # NumPy
         elif format == "npz":
-            np.savez(path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
+            np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
         # unsupported format
         else:
-            raise ValueError("Unsupported format: {}".format(format))
+            raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))
 
     def load(self, path: str) -> None:
         """Load the memory from a file

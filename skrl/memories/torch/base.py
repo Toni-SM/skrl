@@ -315,9 +315,9 @@ class Memory:
 
         Supported formats:
         
-        - comma-separated values (csv)
-        - torch (pt)
+        - PyTorch (pt)
         - NumPy (npz)
+        - Comma-separated values (csv)
 
         :param directory: Path to the folder where the memory will be saved
         :type directory: str
@@ -333,19 +333,24 @@ class Memory:
         # torch
         if format == "pt":
             torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, memory_path)
+        
+        # numpy
+        elif format == "npz":
+            np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
+
         # comma-separated values
         elif format == "csv":
             # open csv writer
             with open(memory_path, "a") as file:
                 writer = csv.writer(file)
                 names = self.get_tensor_names()
-                # write header and rows
-                writer.writerow(names)
+                # write headers
+                headers = [["{}.{}".format(name, i) for i in range(self.tensors_view[name].shape[-1])] for name in names]
+                writer.writerow([item for sublist in headers for item in sublist])
+                # write rows
                 for i in range(len(self)):
                     writer.writerow(functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], []))
-        # NumPy
-        elif format == "npz":
-            np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
+        
         # unsupported format
         else:
             raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))
@@ -354,9 +359,9 @@ class Memory:
         """Load the memory from a file
 
         Supported formats:
-        - comma-separated values (csv)
-        - torch (pt)
+        - PyTorch (pt)
         - NumPy (npz)
+        - Comma-separated values (csv)
 
         :param path: Path to the file where the memory will be loaded
         :type path: str
@@ -368,15 +373,18 @@ class Memory:
             data = torch.load(path)
             for name in self.get_tensor_names():
                 setattr(self, "_tensor_{}".format(name), data[name])
-        # comma-separated values
-        elif path.endswith(".csv"):
-            # TODO: load the memory from a csv
-            pass
-        # NumPy
+        
+        # numpy
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
                 setattr(self, "_tensor_{}".format(name), torch.from_numpy(data[name]))
+        
+        # comma-separated values
+        elif path.endswith(".csv"):
+            # TODO: load the memory from a csv
+            pass
+        
         # unsupported format
         else:
             raise ValueError("Unsupported format: {}".format(path))

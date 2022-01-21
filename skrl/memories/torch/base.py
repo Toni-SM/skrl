@@ -101,7 +101,7 @@ class Memory:
         # fill the tensors (float tensors) with NaN
         for tensor in self.tensors.values():
             if torch.is_floating_point(tensor):
-                tensor.fill_(torch.nan)
+                tensor.fill_(float("nan"))
         return True
 
     def reset(self) -> None:

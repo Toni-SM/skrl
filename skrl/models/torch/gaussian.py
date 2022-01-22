@@ -43,6 +43,9 @@ class GaussianModel(Model):
         if self.clip_actions:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+            
+            # backward compatibility: torch < 1.9 clamp method does not support tensors
+            self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
         self.clip_log_std = clip_log_std
         self.log_std_min = min_log_std
@@ -88,7 +91,10 @@ class GaussianModel(Model):
 
         # clip actions
         if self.clip_actions:
-            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+            if self._backward_compatibility:
+                actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
+            else:
+                actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
         
         # log of the probability density function
         log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)

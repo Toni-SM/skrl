@@ -138,6 +138,9 @@ class DDPG(Agent):
         self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
         self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
+        # backward compatibility: torch < 1.9 clamp method does not support tensors
+        self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
+
     def act(self, 
             states: torch.Tensor, 
             timestep: int, 
@@ -183,7 +186,12 @@ class DDPG(Agent):
 
                 # modify actions
                 actions[0].add_(noises)
-                actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                if self._backward_compatibility:
+                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min), 
+                               actions[1], 
+                               actions[2])
+                else:
+                    actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())

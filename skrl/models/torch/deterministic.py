@@ -33,6 +33,9 @@ class DeterministicModel(Model):
         if self.clip_actions:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+
+            # backward compatibility: torch < 1.9 clamp method does not support tensors
+            self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
         
     def act(self, 
             states: torch.Tensor, 
@@ -59,7 +62,10 @@ class DeterministicModel(Model):
 
         # clip actions 
         if self.clip_actions:
-            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+            if self._backward_compatibility:
+                actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
+            else:
+                actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
         if inference:
             return actions.detach(), None, None

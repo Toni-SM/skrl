@@ -154,6 +154,10 @@ class TD3(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
+        # clip noise bounds
+        self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+        self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+
     def act(self, 
             states: torch.Tensor, 
             timestep: int, 
@@ -199,7 +203,7 @@ class TD3(Agent):
 
                 # modify actions
                 actions[0].add_(noises)
-                actions[0].clamp_(self.action_space.low[0], self.action_space.high[0]) # FIXME: use tensor too
+                actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())
@@ -289,7 +293,7 @@ class TD3(Agent):
                                      min=-self._smooth_regularization_clip, 
                                      max=self._smooth_regularization_clip)
                 next_actions.add_(noises)
-                next_actions.clamp_(self.action_space.low[0], self.action_space.high[0])  # FIXME: use tensor too
+                next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)

@@ -134,6 +134,10 @@ class DDPG(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
+        # clip noise bounds
+        self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+        self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+
     def act(self, 
             states: torch.Tensor, 
             timestep: int, 
@@ -179,7 +183,7 @@ class DDPG(Agent):
 
                 # modify actions
                 actions[0].add_(noises)
-                actions[0].clamp_(self.action_space.low[0], self.action_space.high[0]) # FIXME: use tensor too
+                actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())

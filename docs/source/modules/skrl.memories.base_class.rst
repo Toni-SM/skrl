@@ -10,9 +10,15 @@ Base class
 Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../snippets/memory.py
-    :language: python
-    :linenos:
+.. tabs::
+            
+    .. tab:: Inheritance
+
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/memory.py>`_
+
+        .. literalinclude:: ../snippets/memory.py
+            :language: python
+            :linenos:
     
 API
 ^^^

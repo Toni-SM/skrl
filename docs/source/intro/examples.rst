@@ -11,20 +11,32 @@ Learning in a Gym environment (one agent, one environment)
 
 This example performs the training of an agent in OpenAI Gym's `inverted pendulum <https://gym.openai.com/envs/Pendulum-v0/>`_ (*Pendulum-v0*) environment, a classic problem in the continuous domain control literature
 
-.. literalinclude:: ../examples/gym_pendulum.py
-    :language: python
-    :linenos:
-    :emphasize-lines: 13, 49-50
+.. tabs::
+            
+    .. tab:: Gym (one agent)
+
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym_pendulum.py>`_
+
+        .. literalinclude:: ../examples/gym_pendulum.py
+            :language: python
+            :linenos:
+            :emphasize-lines: 13, 49-50
 
 Learning in a Isaac Gym environment (one agent, multiple environments)
 ----------------------------------------------------------------------
 
 This example performs the training of an agent in Isaac Gym's Cartpole environment. It tries to load the environment from preview 3, but if it fails, it will try to load the environment from preview 2
 
-.. literalinclude:: ../examples/isaacgym_single.py
-    :language: python
-    :linenos:
-    :emphasize-lines: 12-13,53-58
+.. tabs::
+            
+    .. tab:: Isaac Gym (one agent)
+
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_single.py>`_
+
+        .. literalinclude:: ../examples/isaacgym_single.py
+            :language: python
+            :linenos:
+            :emphasize-lines: 12-13,53-58
 
 Learning in a Isaac Gym environment (parallel agents, multiple environments)
 ----------------------------------------------------------------------------
@@ -46,12 +58,16 @@ Two versions are presented:
             
     .. tab:: Shared memory
 
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_parallel_shared_memory.py>`_
+
         .. literalinclude:: ../examples/isaacgym_parallel_shared_memory.py
             :language: python
             :linenos:
             :emphasize-lines: 81,149,156,163
 
     .. tab:: No shared memory
+
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_parallel_no_shared_memory.py>`_
 
         .. literalinclude:: ../examples/isaacgym_parallel_no_shared_memory.py
             :language: python

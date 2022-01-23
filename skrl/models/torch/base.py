@@ -41,7 +41,46 @@ class Model(torch.nn.Module):
         self.num_actions = None if action_space is None else self._get_space_size(action_space)
 
         self._random_distribution = None
+
+        # internal variables to be used by the model instantiators
+        self._instantiator_net = None
+        self._instantiator_input_type = 0
+        self._instantiator_parameter = None
+        self._instantiator_output_scale = 1.0
         
+    def _get_instantiator_output(self, 
+                                 states: torch.Tensor, 
+                                 taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
+        """Get the output of the instantiator network
+        
+        Input shape depends on the instantiator (see skrl.utils.model_instantiator.Shape) as follows:
+
+        - STATES / OBSERVATIONS = 0
+        - ACTIONS = -1
+        - STATES_ACTIONS = -2
+
+        :param states: Observation/state of the environment used to make the decision
+        :type states: torch.Tensor
+        :param taken_actions: Actions taken by a policy to the given states (default: None)
+        :type taken_actions: torch.Tensor, optional
+
+        :return: Output of the instantiator network
+        :rtype: tuple of torch.Tensor
+        """
+        if self._instantiator_input_type == 0:
+            output = self._instantiator_net(states)
+        elif self._instantiator_input_type == -1:
+            output = self._instantiator_net(taken_actions)
+        elif self._instantiator_input_type == -2:
+            output = self._instantiator_net(torch.cat((states, taken_actions), dim=1))
+        
+        # deterministic and categorical output
+        if self._instantiator_parameter is None:
+            return output * self._instantiator_output_scale
+        # gaussian output
+        else:
+            return output * self._instantiator_output_scale, self._instantiator_parameter
+
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
         """Get the size (number of elements) of a space
 

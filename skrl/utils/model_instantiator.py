@@ -180,14 +180,16 @@ def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = 
                           min_log_std=min_log_std,
                           max_log_std=max_log_std)
     
-    model._model = _generate_sequential(model=model,
-                                        input_shape=input_shape,
-                                        hiddens=hiddens,
-                                        hidden_activation=hidden_activation,
-                                        output_shape=output_shape,
-                                        output_activation=output_activation,
-                                        output_scale=output_scale)
-    model._model_output_scale = output_scale
+    model._instantiator_net = _generate_sequential(model=model,
+                                                   input_shape=input_shape,
+                                                   hiddens=hiddens,
+                                                   hidden_activation=hidden_activation,
+                                                   output_shape=output_shape,
+                                                   output_activation=output_activation,
+                                                   output_scale=output_scale)
+    model._instantiator_output_scale = output_scale
+    model._instantiator_input_type = input_shape.value
+    model._instantiator_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(model, output_shape)))
 
     return model
     
@@ -235,14 +237,15 @@ def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, Non
                                device=device, 
                                clip_actions=clip_actions)
     
-    model._model = _generate_sequential(model=model,
-                                        input_shape=input_shape,
-                                        hiddens=hiddens,
-                                        hidden_activation=hidden_activation,
-                                        output_shape=output_shape,
-                                        output_activation=output_activation,
-                                        output_scale=output_scale)
-    model._model_output_scale = output_scale
+    model._instantiator_net = _generate_sequential(model=model,
+                                                   input_shape=input_shape,
+                                                   hiddens=hiddens,
+                                                   hidden_activation=hidden_activation,
+                                                   output_shape=output_shape,
+                                                   output_activation=output_activation,
+                                                   output_scale=output_scale)
+    model._instantiator_output_scale = output_scale
+    model._instantiator_input_type = input_shape.value
 
     return model
     

@@ -49,8 +49,12 @@ class CategoricalModel(Model):
         :rtype: tuple of torch.Tensor
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities
-        output = self.compute(states.to(self.device), 
-                              taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        if self._instantiator_net is None:
+            output = self.compute(states.to(self.device), 
+                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        else:
+            output = self._get_instantiator_output(states.to(self.device), \
+                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # unnormalized log probabilities
         if self.use_unnormalized_log_probabilities:

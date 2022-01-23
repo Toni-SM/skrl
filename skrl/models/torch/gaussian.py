@@ -73,8 +73,12 @@ class GaussianModel(Model):
         :rtype: tuple of torch.Tensor
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states.to(self.device), 
-                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        if self._instantiator_net is None:
+            actions_mean, log_std = self.compute(states.to(self.device), 
+                                                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        else:
+            actions_mean, log_std = self._get_instantiator_output(states.to(self.device), \
+                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
         
         # clamp log standard deviations
         if self.clip_log_std:

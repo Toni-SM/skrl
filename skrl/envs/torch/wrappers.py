@@ -174,6 +174,22 @@ class GymWrapper(Wrapper):
         """
         super().__init__(env)
 
+    def _convert_action(self, actions: torch.Tensor) -> Any:
+        """Convert the action to the OpenAI Gym format
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: The action in the OpenAI Gym format
+        :rtype: Any
+        """
+        if isinstance(self._env.action_space, gym.spaces.Discrete):
+            return actions.item()
+        elif isinstance(self._env.action_space, gym.spaces.Box):
+            return actions.cpu().numpy()
+        else:
+            raise NotImplementedError
+
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
@@ -183,10 +199,7 @@ class GymWrapper(Wrapper):
         :return: The state, the reward, the done flag, and the info
         :rtype: tuple of torch.Tensor and any other info
         """
-        # convert the actions to numpy array if it is a torch tensor
-        if isinstance(actions, torch.Tensor):
-            actions = actions.cpu().numpy()
-        observation, reward, done, info = self._env.step(actions)
+        observation, reward, done, info = self._env.step(self._convert_action(actions))
         # convert response to torch
         return torch.tensor(observation, device=self.device).view(1, -1), \
                torch.tensor(reward, device=self.device).view(1, -1), \

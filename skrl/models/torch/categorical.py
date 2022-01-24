@@ -73,11 +73,11 @@ class CategoricalModel(Model):
         
         # actions and log of the probability density function
         actions = self._distribution.sample()
-        log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)
+        log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions.view(-1))
 
         if inference:
-            return actions.detach(), log_prob.detach(), torch.Tensor()
-        return actions, log_prob, torch.Tensor()
+            return actions.unsqueeze(-1).detach(), log_prob.unsqueeze(-1).detach(), torch.Tensor()
+        return actions.unsqueeze(-1), log_prob.unsqueeze(-1), torch.Tensor()
 
     def distribution(self) -> torch.distributions.Categorical:
         """Get the current distribution of the model

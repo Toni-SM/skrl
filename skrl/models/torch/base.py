@@ -94,7 +94,7 @@ class Model(torch.nn.Module):
             return np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
-                return space.n
+                return 1    # size.n
             return np.prod(space.shape)
         return space
 

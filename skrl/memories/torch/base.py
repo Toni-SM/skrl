@@ -88,7 +88,7 @@ class Memory:
             size = np.prod(size)
         elif issubclass(type(size), gym.Space):
             if issubclass(type(size), gym.spaces.Discrete):
-                size = size.n
+                size = 1
             else:
                 size = np.prod(size.shape)
         # check dtype and size if the tensor exists

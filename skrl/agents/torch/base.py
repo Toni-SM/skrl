@@ -111,7 +111,12 @@ class Agent:
         :type timesteps: int
         """
         for k, v in self.tracking_data.items():
-            self.writer.add_scalar(k, np.mean(v), timestep)
+            if k.endswith("(min)"):
+                self.writer.add_scalar(k, np.min(v), timestep)
+            elif k.endswith("(max)"):
+                self.writer.add_scalar(k, np.max(v), timestep)
+            else:
+                self.writer.add_scalar(k, np.mean(v), timestep)
         # reset data containers for next iteration
         self._track_rewards.clear()
         self._track_timesteps.clear()

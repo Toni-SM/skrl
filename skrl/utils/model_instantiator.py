@@ -249,3 +249,56 @@ def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, Non
 
     return model
     
+def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                      action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                      device: Union[str, torch.device] = "cuda:0", 
+                      unnormalized_log_prob: bool = False, 
+                      input_shape: Shape = Shape.STATES, 
+                      hiddens: list = [256, 256], 
+                      hidden_activation: list = ["relu", "relu"], 
+                      output_shape: Shape = Shape.ACTIONS, 
+                      output_activation: Union[str, None] = None) -> CategoricalModel:
+    """Instantiate a CategoricalModel model
+
+    :param observation_space: Observation/state space or shape (default: None).
+                              If it is not None, the num_observations property will contain the size of that space
+    :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+    :param action_space: Action space or shape (default: None).
+                            If it is not None, the num_actions property will contain the size of that space
+    :type action_space: int, tuple or list of integers, gym.Space or None, optional
+    :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+    :type device: str or torch.device, optional
+    :param unnormalized_log_prob: Flag to indicate how to be interpreted the network's output (default: True).
+                                  If True, the network's output is interpreted as unnormalized log probabilities 
+                                  (it can be any real number), otherwise as normalized probabilities 
+                                  (the output must be non-negative, finite and have a non-zero sum)
+    :type unnormalized_log_prob: bool, optional
+    :param input_shape: Shape of the input (default: Shape.STATES)
+    :type input_shape: Shape, optional
+    :param hiddens: Number of hidden units in each hidden layer
+    :type hiddens: int or list of ints
+    :param hidden_activation: Activation function for each hidden layer (default: "relu").
+    :type hidden_activation: list of strings
+    :param output_shape: Shape of the output (default: Shape.ACTIONS)
+    :type output_shape: Shape, optional
+    :param output_activation: Activation function for the output layer (default: None)
+    :type output_activation: str or None, optional
+
+    :return: CategoricalModel instance
+    :rtype: CategoricalModel
+    """
+    model = CategoricalModel(observation_space=observation_space,
+                             action_space=action_space, 
+                             device=device, 
+                             unnormalized_log_prob=unnormalized_log_prob)
+    
+    model._instantiator_net = _generate_sequential(model=model,
+                                                   input_shape=input_shape,
+                                                   hiddens=hiddens,
+                                                   hidden_activation=hidden_activation,
+                                                   output_shape=output_shape,
+                                                   output_activation=output_activation)
+    model._instantiator_input_type = input_shape.value
+
+    return model
+    

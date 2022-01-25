@@ -30,7 +30,6 @@ class CategoricalModel(Model):
                                       (the output must be non-negative, finite and have a non-zero sum)
         :type unnormalized_log_prob: bool, optional
         """
-        # TODO: check its implementation
         super(CategoricalModel, self).__init__(observation_space, action_space, device)
 
         self._unnormalized_log_prob = unnormalized_log_prob

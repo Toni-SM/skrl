@@ -66,7 +66,7 @@ class Wrapper(object):
         """State space
 
         If the wrapped environment does not have the ``state_space`` property, 
-            the value of the ``observation_space`` property will be used.
+        the value of the ``observation_space`` property will be used
         """
         return self._env.state_space if hasattr(self._env, "state_space") else self._env.observation_space
 
@@ -183,12 +183,12 @@ class GymWrapper(Wrapper):
         :return: The action in the OpenAI Gym format
         :rtype: Any
         """
-        if isinstance(self._env.action_space, gym.spaces.Discrete):
-            return actions.item()
-        elif isinstance(self._env.action_space, gym.spaces.Box):
+        if isinstance(self._env.action_space, gym.spaces.Box):
             return actions.cpu().numpy()
+        elif isinstance(self._env.action_space, gym.spaces.Discrete):
+            return actions.item()
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Action space type {} not supported".format(type(self._env.action_space)))
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -227,8 +227,8 @@ def wrap_env(env, wrapper="auto") -> Wrapper:
     """Wrap an environment to use a common interface
 
     :param env: The type of wrapper to use (default: "auto").
-                If "auto", the wrapper will be automatically selected based on the environment class.
-                The specific wrappers supported are "gym", "isaacgym-preview2" and "isaacgym-preview3"
+                If ``auto``, the wrapper will be automatically selected based on the environment class.
+                The specific wrappers supported are ``gym``, ``isaacgym-preview2`` and ``isaacgym-preview3``
     :type env: gym.Env, rlgpu.tasks.base.vec_task.VecTask or isaacgymenvs.tasks.base.vec_task.VecTask
     :param wrapper: The environment to be wrapped
     :type wrapper: str, optional
@@ -238,7 +238,6 @@ def wrap_env(env, wrapper="auto") -> Wrapper:
     :return: Wrapped environment
     :rtype: Wrapper
     """
-    # TODO: include other wrappers
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
         for base in env.__class__.__bases__])
     

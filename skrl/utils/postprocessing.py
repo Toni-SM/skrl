@@ -10,10 +10,10 @@ import collections
 
 
 class MemoryFileIterator():
-    def __init__(self, directory: str, format: str) -> None:
+    def __init__(self, pathname: str) -> None:
         """Python iterator for loading data from exported memories
         
-        The iterator will load the next memory file in the directory.
+        The iterator will load the next memory file in the list of path names.
         The output of the iterator is a tuple of the filename and the memory data 
         where the memory data is a dictionary of torch.Tensor (PyTorch), numpy.ndarray (NumPy)
         or lists (CSV) depending on the format and the keys of the dictionary are the names of the variables
@@ -24,19 +24,19 @@ class MemoryFileIterator():
         - NumPy (npz)
         - Comma-separated values (csv)
 
-        Expected data shapes:
+        Expected output shapes:
 
-        - PyTorch: (batch_size, num_channels, height, width)
+        - PyTorch: (memory_size, num_envs, data_size)
+        - NumPy: (memory_size, num_envs, data_size)
+        - Comma-separated values: (memory_size * num_envs, data_size)
 
-        :param directory: Directory containing the exported memories
-        :type directory: str
-        :param format: Format of the exported memory (csv, npz, pt)
-        :type format: str
+        :param pathname: String containing a path specification for the exported memories.
+                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method 
+                         is used to find all files matching the path specification
+        :type pathname: str
         """
         self.n = 0
-        self.format = format
-
-        self.file_paths = glob.glob(directory + '/*.' + format)
+        self.file_paths = glob.glob(pathname)
 
     def __iter__(self) -> 'MemoryFileIterator':
         """Return self to make iterable"""
@@ -51,11 +51,11 @@ class MemoryFileIterator():
         if self.n >= len(self.file_paths):
             raise StopIteration
         
-        if self.format == 'pt':
+        if self.file_paths[self.n].endswith(".pt"):
             return self._format_torch()
-        elif self.format == 'npz':
+        elif self.file_paths[self.n].endswith(".npz"):
             return self._format_numpy()
-        elif self.format == 'csv':
+        elif self.file_paths[self.n].endswith(".csv"):
             return self._format_csv()
         else:
             raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))

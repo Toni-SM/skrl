@@ -13,7 +13,13 @@ from torch.utils.data.sampler import BatchSampler
 
 
 class Memory:
-    def __init__(self, memory_size: int, num_envs: int = 1, device: Union[str, torch.device] = "cuda:0", preallocate: bool = True) -> None:
+    def __init__(self, 
+                 memory_size: int, 
+                 num_envs: int = 1, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 export: bool = False, 
+                 export_format: str = "pt", 
+                 export_directory: str = "") -> None:
         """Base class representing a memory with circular buffers
 
         Buffers are torch tensors with shape (memory size, number of environments, data size).
@@ -25,24 +31,37 @@ class Memory:
         :type num_envs: int, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str or torch.device, optional
-        :param preallocate: If true, preallocate memory for efficient use (default: True)
-        :type preallocate: bool, optional
-        """
-        # TODO: handle dynamic memory
-        # TODO: show memory consumption
-        # TODO: handle advanced gym spaces
+        :param export: Export the memory to a file (default: False).
+                       If True, the memory will be exported when the memory is filled
+        :type export: bool, optional
+        :param export_format: Export format (default: "pt").
+                              Supported formats: torch (pt), numpy (np), comma separated values (csv)
+        :type export_format: str, optional
+        :param export_directory: Directory where the memory will be exported (default: "").
+                                 If empty, the agent's experiment directory will be used
+        :type export_directory: str, optional
 
-        self.preallocate = preallocate
+        :raises ValueError: The export format is not supported
+        """
         self.memory_size = memory_size
         self.num_envs = num_envs
         self.device = torch.device(device)
 
+        # internal variables
         self.filled = False
         self.env_index = 0
         self.memory_index = 0
 
         self.tensors = {}
         self.tensors_view = {}
+
+        # exporting data
+        self.export = export
+        self.export_format = export_format
+        self.export_directory = export_directory
+
+        if not self.export_format in ["pt", "np", "csv"]:
+            raise ValueError("Export format not supported ({})".format(self.export_format))
 
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
@@ -183,6 +202,10 @@ class Memory:
             self.memory_index = 0
             self.filled = True
 
+            # export tensors to file
+            if self.export:
+                self.save(directory=self.export_directory, format=self.export_format)
+
     def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Data sampling method to be implemented by the inheriting classes
 
@@ -310,7 +333,7 @@ class Memory:
             if normalize_advantages:
                 advantages.copy_((advantages - advantages.mean()) / (advantages.std() + 1e-8))
         
-    def save(self, directory: str, format: str = "pt") -> None:
+    def save(self, directory: str = "", format: str = "pt") -> None:
         """Save the memory to a file
 
         Supported formats:
@@ -319,13 +342,16 @@ class Memory:
         - NumPy (npz)
         - Comma-separated values (csv)
 
-        :param directory: Path to the folder where the memory will be saved
+        :param directory: Path to the folder where the memory will be saved.
+                          If not provided, the directory defined in the constructor will be used
         :type directory: str
         :param format: Format of the file where the memory will be saved (default: "pt")
         :type format: str, optional
 
         :raises ValueError: If the format is not supported
         """
+        if not directory:
+            directory = self.export_directory
         os.makedirs(os.path.join(directory, "memories"), exist_ok=True)
         memory_path = os.path.join(directory, "memories", \
             "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format))
@@ -333,11 +359,9 @@ class Memory:
         # torch
         if format == "pt":
             torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, memory_path)
-        
         # numpy
         elif format == "npz":
             np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
-
         # comma-separated values
         elif format == "csv":
             # open csv writer
@@ -350,7 +374,6 @@ class Memory:
                 # write rows
                 for i in range(len(self)):
                     writer.writerow(functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], []))
-        
         # unsupported format
         else:
             raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))

@@ -6,7 +6,14 @@ from .base import Memory
 
 
 class RandomMemory(Memory):
-    def __init__(self, memory_size: int, num_envs: int = 1, device: Union[str, torch.device] = "cuda:0", preallocate: bool = True, replacement=True) -> None:
+    def __init__(self, 
+                 memory_size: int, 
+                 num_envs: int = 1, 
+                 device: Union[str, torch.device] = "cuda:0", 
+                 export: bool = False, 
+                 export_format: str = "pt", 
+                 export_directory: str = "", 
+                 replacement=True) -> None:
         """Random sampling memory
 
         Sample a batch from memory randomly
@@ -17,14 +24,23 @@ class RandomMemory(Memory):
         :type num_envs: int, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str or torch.device, optional
-        :param preallocate: If true, preallocate memory for efficient use (default: True)
-        :type preallocate: bool, optional
+        :param export: Export the memory to a file (default: False).
+                       If True, the memory will be exported when the memory is filled
+        :type export: bool, optional
+        :param export_format: Export format (default: "pt").
+                              Supported formats: torch (pt), numpy (np), comma separated values (csv)
+        :type export_format: str, optional
+        :param export_directory: Directory where the memory will be exported (default: "").
+                                 If empty, the agent's experiment directory will be used
+        :type export_directory: str, optional
         :param replacement: Flag to indicate whether the sample is with or without replacement (default: True). 
                             Replacement implies that a value can be selected multiple times (the batch size is always guaranteed).
                             Sampling without replacement will return a batch of maximum memory size if the memory size is less than the requested batch size
         :type replacement: bool, optional
+
+        :raises ValueError: The export format is not supported
         """
-        super().__init__(memory_size, num_envs, device, preallocate)
+        super().__init__(memory_size, num_envs, device, export, export_format, export_directory)
 
         self._replacement = replacement
 

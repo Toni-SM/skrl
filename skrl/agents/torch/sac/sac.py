@@ -45,7 +45,7 @@ SAC_DEFAULT_CONFIG = {
 class SAC(Agent):
     def __init__(self, 
                  networks: Dict[str, Model], 
-                 memory: Union[Memory, None] = None, 
+                 memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
@@ -56,8 +56,10 @@ class SAC(Agent):
         
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.torch.Memory or None
+        :param memory: Memory to storage the transitions.
+                       If it is a tuple, the first element will be used for training and 
+                       for the rest only the environment transitions will be added
+        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None)

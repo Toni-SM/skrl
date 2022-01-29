@@ -52,7 +52,7 @@ class DQN(Agent):
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
                  cfg: dict = {}) -> None:
-        """Deep Q Network (DQN)
+        """Deep Q-Network (DQN)
 
         https://arxiv.org/abs/1312.5602
         
@@ -246,8 +246,7 @@ class DQN(Agent):
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values, _, _ = self.q_network.act(states=sampled_states)
-            q_values = torch.gather(q_values, dim=1, index=sampled_actions.long())
+            q_values = torch.gather(self.q_network.act(states=sampled_states)[0], dim=1, index=sampled_actions.long())
 
             q_network_loss = F.mse_loss(q_values, target_values)
             

@@ -37,11 +37,17 @@ class Agent:
         :type cfg: dict
         """
         self.networks = networks
-        self.memory = memory
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(device)
         self.cfg = cfg
+
+        if type(memory) is list:
+            self.memory = memory[0]
+            self.secondary_memories = memory[1:]
+        else:
+            self.memory = memory
+            self.secondary_memories = []
         
         # convert the networks to their respective device
         for network in self.networks.values():

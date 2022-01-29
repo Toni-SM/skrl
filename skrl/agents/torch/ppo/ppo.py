@@ -201,7 +201,10 @@ class PPO(Agent):
         if self.memory is not None:
             values, _, _ = self.value.act(states=states, inference=True)
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
-                                    log_prob=self._current_log_prob, values=values)            
+                                    log_prob=self._current_log_prob, values=values)
+            for memory in self.secondary_memories:
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+                                   log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment

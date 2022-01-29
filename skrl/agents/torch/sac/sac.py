@@ -201,6 +201,8 @@ class SAC(Agent):
         super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+            for memory in self.secondary_memories:
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment

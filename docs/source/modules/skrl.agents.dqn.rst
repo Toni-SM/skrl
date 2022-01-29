@@ -1,8 +1,5 @@
-DQN
-===
-
 Deep Q-Network (DQN)
---------------------
+====================
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -21,7 +18,7 @@ Algorithm implementation
 | **FOR** each gradient step **DO**
 |     :green:`# compute target values`
 |     :math:`Q' \leftarrow Q_{\phi_{target}}(s')`
-|     :math:`Q_{_{target}} \leftarrow max_{a'} Q'`
+|     :math:`Q_{_{target}} \leftarrow \underset{a}{\max} \; Q'`
 |     :math:`y \leftarrow r + \gamma \; \neg d \; Q_{_{target}}`
 |     :green:`# compute Q-network loss`
 |     :math:`Q \leftarrow Q_\phi(s)[a]`

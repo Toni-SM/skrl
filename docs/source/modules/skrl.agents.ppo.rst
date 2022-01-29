@@ -1,11 +1,10 @@
-PPO
-===
-
 Proximal Policy Optimization (PPO)
-----------------------------------
+==================================
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# compute returns and advantages`
 | :math:`V \leftarrow V_\phi(s')`

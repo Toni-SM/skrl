@@ -1,11 +1,10 @@
-SAC
-===
-
 Soft Actor-Critic (SAC)
------------------------
+=======================
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# sample a batch from memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones 

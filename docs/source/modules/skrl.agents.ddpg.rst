@@ -1,11 +1,17 @@
-DDPG
-====
-
 Deep Deterministic Policy Gradient (DDPG)
------------------------------------------
+=========================================
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Decision making** (:literal:`act(...)`)
+
+| :math:`a \leftarrow \mu_\theta(s)`
+| :math:`noise \leftarrow OU(\theta, \mu, base\_scale)`
+| :math:`scale \leftarrow (1 - \frac{\text{timestep}}{scale_{timesteps}}) \; (scale_{initial} - scale_{final}) + scale_{final}`
+| :math:`a \leftarrow \text{clip}(a + noise * scale, {a}_{Low}, {a}_{High})`
+
+**Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# sample a batch from memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones

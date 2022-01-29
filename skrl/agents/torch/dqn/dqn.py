@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Dict
 
 import gym
+import math
 
 import torch
 import torch.nn.functional as F
@@ -29,7 +30,7 @@ DQN_DEFAULT_CONFIG = {
     "exploration": {
         "initial_epsilon": 1.0,       # initial epsilon for epsilon-greedy exploration
         "final_epsilon": 0.05,        # final epsilon for epsilon-greedy exploration
-        "fraction": 0.1,              # exploration fraction 
+        "timesteps": 1000,            # timesteps for epsilon-greedy decay 
     },
 
     "experiment": {
@@ -113,7 +114,7 @@ class DQN(Agent):
 
         self._exploration_initial_epsilon = self.cfg["exploration"]["initial_epsilon"]
         self._exploration_final_epsilon = self.cfg["exploration"]["final_epsilon"]
-        self._exploration_fraction = self.cfg["exploration"]["fraction"]
+        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
         
         # set up optimizers
         self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
@@ -152,15 +153,13 @@ class DQN(Agent):
 
         # sample actions
         actions = torch.randint(2, (states.shape[0], 1), device=self.device)
-        
-        slope = (self._exploration_final_epsilon - self._exploration_initial_epsilon) / self._exploration_fraction * timesteps
-        epsilon = max(self._exploration_final_epsilon, self._exploration_initial_epsilon + slope * timestep)
+
+        epsilon = self._exploration_final_epsilon + (self._exploration_initial_epsilon - self._exploration_final_epsilon) \
+                * math.exp(-1.0 * timestep / self._exploration_timesteps)
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], inference=inference)[0], 
-                                            dim=1,
-                                            keepdim=True)
+            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], inference=inference)[0], dim=1, keepdim=True)
         
         # record epsilon
         self.track_data("Noise / Exploration epsilon", epsilon)

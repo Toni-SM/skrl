@@ -164,7 +164,7 @@ class DQN(Agent):
             actions[indexes] = torch.argmax(self.q_network.act(states[indexes], inference=inference)[0], dim=1, keepdim=True)
         
         # record epsilon
-        self.track_data("Noise / Exploration epsilon", epsilon)
+        self.track_data("Exploration / Exploration epsilon", epsilon)
         
         return actions, None, None
 

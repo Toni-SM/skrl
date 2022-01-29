@@ -217,15 +217,15 @@ class TD3(Agent):
                     actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
-                self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())
-                self.track_data("Noise / Exploration noise (min)", torch.min(noises).item())
-                self.track_data("Noise / Exploration noise (mean)", torch.mean(noises).item())
+                self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
+                self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
+                self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
             
             else:
                 # record noises
-                self.track_data("Noise / Exploration noise (max)", 0)
-                self.track_data("Noise / Exploration noise (min)", 0)
-                self.track_data("Noise / Exploration noise (mean)", 0)
+                self.track_data("Exploration / Exploration noise (max)", 0)
+                self.track_data("Exploration / Exploration noise (min)", 0)
+                self.track_data("Exploration / Exploration noise (mean)", 0)
 
         return actions
 

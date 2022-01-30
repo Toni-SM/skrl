@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Dict
 
 import gym
+import copy
 import math
 
 import torch
@@ -73,13 +74,14 @@ class DQN(Agent):
 
         :raises KeyError: If the networks dictionary is missing a required key
         """
-        DQN_DEFAULT_CONFIG.update(cfg)
+        _cfg = copy.deepcopy(DQN_DEFAULT_CONFIG)
+        _cfg.update(cfg)
         super().__init__(networks=networks, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
-                         cfg=DQN_DEFAULT_CONFIG)
+                         cfg=_cfg)
 
         # networks
         if not "q_network" in self.networks.keys():

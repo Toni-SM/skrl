@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Dict
 
 import gym
+import copy
 import itertools
 
 import torch
@@ -76,13 +77,14 @@ class TD3(Agent):
 
         :raises KeyError: If the networks dictionary is missing a required key
         """
-        TD3_DEFAULT_CONFIG.update(cfg)
+        _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
+        _cfg.update(cfg)
         super().__init__(networks=networks, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
-                         cfg=TD3_DEFAULT_CONFIG)
+                         cfg=_cfg)
 
         # networks
         if not "policy" in self.networks.keys():

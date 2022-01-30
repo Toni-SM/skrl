@@ -43,7 +43,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/ddpg/ddpg.py
    :language: python
-   :lines: 14-42
+   :lines: 15-43
    :linenos:
 
 Models (networks)

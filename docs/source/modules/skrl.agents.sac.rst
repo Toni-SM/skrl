@@ -48,7 +48,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 16-42
+   :lines: 17-43
    :linenos:
 
 Models (networks)

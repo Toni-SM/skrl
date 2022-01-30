@@ -11,8 +11,13 @@ from ..models.torch import GaussianModel
 from ..models.torch import CategoricalModel
 from ..models.torch import DeterministicModel
 
+__all__ = ["categorical_model", "deterministic_model", "gaussian_model", "Shape"]
+
 
 class Shape(Enum):
+    """
+    Enum to select the shape of the model's inputs and outputs
+    """
     ONE = 1
     STATES = 0
     OBSERVATIONS = 0

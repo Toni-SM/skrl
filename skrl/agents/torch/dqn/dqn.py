@@ -150,12 +150,11 @@ class DQN(Agent):
         :rtype: torch.Tensor
         """
         # sample random actions
-        # if timestep < self._random_timesteps:
-        #     return self.q_network.random_act(states)
+        actions = self.q_network.random_act(states)[0]
+        if timestep < self._random_timesteps:
+            return actions, None, None
 
-        # sample actions
-        actions = torch.randint(2, (states.shape[0], 1), device=self.device)
-
+        # sample actions with epsilon-greedy policy
         epsilon = self._exploration_final_epsilon + (self._exploration_initial_epsilon - self._exploration_final_epsilon) \
                 * math.exp(-1.0 * timestep / self._exploration_timesteps)
 

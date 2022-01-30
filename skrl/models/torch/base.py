@@ -98,22 +98,38 @@ class Model(torch.nn.Module):
             return np.prod(space.shape)
         return space
 
-    def random_act(self, states: torch.Tensor) -> Tuple[torch.Tensor]:
-        """Act randomly
+    def random_act(self, 
+                   states: torch.Tensor, 
+                   taken_actions: Union[torch.Tensor, None] = None, 
+                   inference=False) -> Tuple[torch.Tensor]:
+        """Act randomly according to the action space
 
         :param states: Observation/state of the environment used to get the shape of the action space
         :type states: torch.Tensor
+        :param taken_actions: Actions taken by a policy to the given states (default: None).
+                              The use of these actions only makes sense in critical networks, e.g.
+        :type taken_actions: torch.Tensor or None, optional
+        :param inference: Flag to indicate whether the network is making inference (default: False)
+        :type inference: bool, optional
+
+        :raises NotImplementedError: Unsupported action space
 
         :return: Random actions to be taken by the agent
         :rtype: tuple of torch.Tensor
         """
-        # TODO: sample taking into account bounds
-        if self._random_distribution is None:
-            self._random_distribution = torch.distributions.uniform.Uniform(
-                low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
-                high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
-        
-        return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
+        # discrete action space (Discrete)
+        if issubclass(type(self.action_space), gym.spaces.Discrete):
+             return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
+        # continuous action space (Box)
+        elif issubclass(type(self.action_space), gym.spaces.Box):
+            if self._random_distribution is None:
+                self._random_distribution = torch.distributions.uniform.Uniform(
+                    low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
+                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+            
+            return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
+        else:
+            raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name

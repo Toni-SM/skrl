@@ -60,11 +60,11 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instanciate a RandomMemory as rollout buffer (any memory can be used for this)
+# Instantiate a RandomMemory as rollout buffer (any memory can be used for this)
 memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
-# Instanciate the agent's models (function approximators).
+# Instantiate the agent's models (function approximators).
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#models-networks
 networks_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
@@ -75,7 +75,7 @@ for network in networks_ppo.values():
     network.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
 
 
-# Configure and instanciate the agent.
+# Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
@@ -97,7 +97,7 @@ agent = PPO(networks=networks_ppo,
             device=device)
 
 
-# Configure and instanciate the RL trainer
+# Configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 8000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 

@@ -52,11 +52,11 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instanciate a RandomMemory (without replacement) as experience replay memory
+# Instantiate a RandomMemory (without replacement) as experience replay memory
 memory = RandomMemory(memory_size=1000000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# Instanciate the agent's models (function approximators).
+# Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
 networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
@@ -68,7 +68,7 @@ networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_
 for network in networks_ddpg.values():
     network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
-# Configure and instanciate the agent.
+# Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#configuration-and-hyperparameters
 cfg_ddpg = DDPG_DEFAULT_CONFIG.copy()
@@ -88,7 +88,7 @@ agent_ddpg = DDPG(networks=networks_ddpg,
                   device=device)
 
 
-# Configure and instanciate the RL trainer
+# Configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 40000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_ddpg)
 

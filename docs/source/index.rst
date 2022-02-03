@@ -40,6 +40,7 @@ Agents
     Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
     * :doc:`DDPG <modules/skrl.agents.ddpg>` (Deep Deterministic Policy Gradient)
+    * :doc:`DDQN <modules/skrl.agents.ddqn>` (Double Deep Q-Network)
     * :doc:`DQN <modules/skrl.agents.dqn>` (Deep Q-Network)
     * :doc:`PPO <modules/skrl.agents.ppo>` (Proximal Policy Optimization)
     * :doc:`SAC <modules/skrl.agents.sac>` (Soft Actor-Critic)
@@ -51,11 +52,12 @@ Agents
     :hidden:
 
     modules/skrl.agents.base_class
-    DQN <modules/skrl.agents.dqn>
     DDPG <modules/skrl.agents.ddpg>
-    TD3 <modules/skrl.agents.td3>
-    SAC <modules/skrl.agents.sac>
+    DDQN <modules/skrl.agents.ddqn>
+    DQN <modules/skrl.agents.dqn>
     PPO <modules/skrl.agents.ppo>
+    SAC <modules/skrl.agents.sac>
+    TD3 <modules/skrl.agents.td3>
 
 Environments
 ^^^^^^^^^^^^

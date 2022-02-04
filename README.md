@@ -1,4 +1,8 @@
-## SKRL - Reinforcement Learning library
+<p align="center">
+  <img width="300rem" src="docs/source/_static/data/skrl-up-transparent.png">
+</p>
+<h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
+<br>
 
 **skrl** is an open-source modular library for Reinforcement Learning written in Python (using [PyTorch](https://pytorch.org/)) and designed with a focus on readability, simplicity, and transparency of algorithm implementation
 

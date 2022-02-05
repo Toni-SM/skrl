@@ -45,8 +45,13 @@ class DeterministicCritic(DeterministicModel):
 
 
 # Load and wrap the Gym environment.
-# Note: the environment version (-V0) may change depending on the gym version
-env = gym.make("Pendulum-v0")
+# Note: the environment version may change depending on the gym version
+try:
+    env = gym.make("Pendulum-v1")
+except gym.error.DeprecatedEnv as e:
+    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
+    print("Pendulum-v1 not found. Trying {}".format(env_id))
+    env = gym.make(env_id)
 env = wrap_env(env)
 
 device = env.device
@@ -67,6 +72,7 @@ networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for network in networks_ddpg.values():
     network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+
 
 # Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options

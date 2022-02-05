@@ -184,6 +184,8 @@ class GymWrapper(Wrapper):
         :rtype: Any
         """
         if isinstance(self._env.action_space, gym.spaces.Box):
+            if actions.shape[0] == 1:
+                return actions.view(-1).cpu().numpy()
             return actions.cpu().numpy()
         elif isinstance(self._env.action_space, gym.spaces.Discrete):
             return actions.item()
@@ -242,7 +244,7 @@ def wrap_env(env, wrapper="auto") -> Wrapper:
         for base in env.__class__.__bases__])
     
     if wrapper == "auto":
-        if isinstance(env, gym.core.Wrapper):
+        if isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
             print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:

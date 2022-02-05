@@ -126,7 +126,7 @@ class DQN(Agent):
         # create tensors in memory
         self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
         self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int32)
+        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
         self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
         self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 

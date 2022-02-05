@@ -118,8 +118,8 @@ def _generate_sequential(model: Model,
     input_layer = [nn.Linear(_get_num_units_by_shape(model, input_shape), hiddens[0])]
     # hidden layers
     hidden_layers = []
-    for i in range(1, len(hiddens) - 1):
-        hidden_layers.append(_get_activation_function(hidden_activation[i - 1]))
+    for i in range(len(hiddens) - 1):
+        hidden_layers.append(_get_activation_function(hidden_activation[i]))
         hidden_layers.append(nn.Linear(hiddens[i], hiddens[i + 1]))
     hidden_layers.append(_get_activation_function(hidden_activation[-1]))
     # output layer

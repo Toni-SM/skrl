@@ -141,6 +141,28 @@ class SequentialTrainer(Trainer):
             if not self.headless:
                 self.env.render()
             
+            # write data to TensorBoard
+            with torch.no_grad():
+                if self.num_agents > 1:
+                    for agent, scope in zip(self.agents, self.agents_scope):
+                        super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]], 
+                                                                    actions=actions[scope[0]:scope[1]], 
+                                                                    rewards=rewards[scope[0]:scope[1]], 
+                                                                    next_states=next_states[scope[0]:scope[1]], 
+                                                                    dones=dones[scope[0]:scope[1]],
+                                                                    timestep=timestep,
+                                                                    timesteps=self.timesteps)
+                        super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                else:
+                    super(type(self.agents), self.agents).record_transition(states=states, 
+                                                                            actions=actions,
+                                                                            rewards=rewards,
+                                                                            next_states=next_states,
+                                                                            dones=dones,
+                                                                            timestep=timestep,
+                                                                            timesteps=self.timesteps)
+                    super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
             # reset environments
             with torch.no_grad():
                 if dones.any():

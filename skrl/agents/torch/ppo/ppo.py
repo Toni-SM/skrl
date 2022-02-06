@@ -128,14 +128,15 @@ class PPO(Agent):
         self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
-        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
-        self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
+        if self.memory is not None:
+            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
         self.tensors_names = ["states", "actions", "rewards", "dones", "log_prob", "values", "returns", "advantages"]
 

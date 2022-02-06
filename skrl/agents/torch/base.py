@@ -53,7 +53,8 @@ class Agent:
         
         # convert the networks to their respective device
         for network in self.networks.values():
-            network.to(network.device)
+            if network is not None:
+                network.to(network.device)
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")

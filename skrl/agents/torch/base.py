@@ -259,12 +259,14 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        timestep += 1
+
         # write to tensorboard
-        if timestep > 0 and self.write_interval > 0 and not timestep % self.write_interval:
+        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             self.write_tracking_data(timestep, timesteps)
 
         # write checkpoints
-        if timestep > 0 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             self.write_checkpoint(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int) -> None:

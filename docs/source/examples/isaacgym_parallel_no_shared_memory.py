@@ -16,8 +16,8 @@ from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
 
 
-# Define the models (stochastic and deterministic models) for the agents using the helper class 
-# and programming with two approaches (layer by layer and the Sequential class).
+# Define the models (stochastic and deterministic models) for the agents using helper classes 
+# and programming with two approaches (layer by layer and torch.nn.Sequential class).
 # - StochasticActor: takes as input the environment's observation/state and returns an action
 # - DeterministicActor: takes as input the environment's observation/state and returns an action
 # - Critic: takes the state and action as input and provides a value to guide the policy
@@ -78,9 +78,9 @@ device = env.device
 
 
 # Instantiate a RandomMemory (without replacement) as experience replay memory
-memory_ddpg = RandomMemory(memory_size=100000, num_envs=100, device=device, replacement=True)
-memory_td3 = RandomMemory(memory_size=100000, num_envs=200, device=device, replacement=True)
-memory_sac = RandomMemory(memory_size=100000, num_envs=212, device=device, replacement=True)
+memory_ddpg = RandomMemory(memory_size=8000, num_envs=100, device=device, replacement=True)
+memory_td3 = RandomMemory(memory_size=8000, num_envs=200, device=device, replacement=True)
+memory_sac = RandomMemory(memory_size=8000, num_envs=212, device=device, replacement=True)
 
 
 # Instantiate the agent's models (function approximators).
@@ -125,7 +125,7 @@ cfg_ddpg["batch_size"] = 512
 cfg_ddpg["random_timesteps"] = 0
 cfg_ddpg["learning_starts"] = 0
 cfg_ddpg["experiment"]["write_interval"] = 25
-cfg_ddpg["experiment"]["checkpoint_interval"] = 0
+cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#configuration-and-hyperparameters
 cfg_td3 = TD3_DEFAULT_CONFIG.copy()
 cfg_td3["exploration"]["noise"] = GaussianNoise(0, 0.2, device=device)
@@ -136,7 +136,7 @@ cfg_td3["batch_size"] = 512
 cfg_td3["random_timesteps"] = 0
 cfg_td3["learning_starts"] = 0
 cfg_td3["experiment"]["write_interval"] = 25
-cfg_td3["experiment"]["checkpoint_interval"] = 0
+cfg_td3["experiment"]["checkpoint_interval"] = 1000
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#configuration-and-hyperparameters
 cfg_sac = SAC_DEFAULT_CONFIG.copy()
 cfg_sac["gradient_steps"] = 1
@@ -145,7 +145,7 @@ cfg_sac["random_timesteps"] = 0
 cfg_sac["learning_starts"] = 0
 cfg_sac["learn_entropy"] = True
 cfg_sac["experiment"]["write_interval"] = 25
-cfg_sac["experiment"]["checkpoint_interval"] = 0
+cfg_sac["experiment"]["checkpoint_interval"] = 1000
 
 agent_ddpg = DDPG(networks=networks_ddpg, 
                   memory=memory_ddpg, 
@@ -177,4 +177,4 @@ trainer = SequentialTrainer(cfg=cfg,
                             agents_scope=[100, 200, 212])
 
 # start training
-trainer.start()
+trainer.train()

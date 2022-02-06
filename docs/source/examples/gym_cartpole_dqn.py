@@ -62,9 +62,9 @@ cfg_dqn["random_timesteps"] = 0
 cfg_dqn["learning_starts"] = 100
 cfg_dqn["exploration"]["final_epsilon"] = 0.04
 cfg_dqn["exploration"]["timesteps"] = 1500
-# logging to TensorBoard and write checkpoints each 1000 timesteps
+# logging to TensorBoard and write checkpoints each 1000 and 5000 timesteps respectively
 cfg_dqn["experiment"]["write_interval"] = 1000
-cfg_dqn["experiment"]["checkpoint_interval"] = 1000
+cfg_dqn["experiment"]["checkpoint_interval"] = 5000
 
 agent_dqn = DQN(networks=networks_dqn, 
                 memory=memory, 
@@ -79,4 +79,4 @@ cfg_trainer = {"timesteps": 50000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_dqn)
 
 # start training
-trainer.start()
+trainer.train()

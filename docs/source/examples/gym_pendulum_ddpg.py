@@ -13,8 +13,8 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define the models (deterministic models) for the DDPG agent using the helper class
-# and programming with two approaches (layer by layer and the torch.nn.Sequential class).
+# Define the models (deterministic models) for the DDPG agent using a helper class
+# and programming with two approaches (layer by layer and torch.nn.Sequential class).
 # - Actor (policy): takes as input the environment's observation/state and returns an action
 # - Critic: takes the state and action as input and provides a value to guide the policy 
 class DeterministicActor(DeterministicModel):
@@ -28,7 +28,7 @@ class DeterministicActor(DeterministicModel):
     def compute(self, states, taken_actions):
         x = F.relu(self.linear_layer_1(states))
         x = F.relu(self.linear_layer_2(x))
-        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v0 action_space is -2 to 2
+        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v1 action_space is -2 to 2
 
 class DeterministicCritic(DeterministicModel):
     def __init__(self, observation_space, action_space, device, clip_actions = False):
@@ -58,7 +58,7 @@ device = env.device
 
 
 # Instantiate a RandomMemory (without replacement) as experience replay memory
-memory = RandomMemory(memory_size=1000000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=40000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # Instantiate the agent's models (function approximators).
@@ -82,9 +82,9 @@ cfg_ddpg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1,
 cfg_ddpg["batch_size"] = 100
 cfg_ddpg["random_timesteps"] = 100
 cfg_ddpg["learning_starts"] = 100
-# logging to TensorBoard and write checkpoints each 1000 timesteps
+# logging to TensorBoard and write checkpoints each 1000 and 4000 timesteps respectively
 cfg_ddpg["experiment"]["write_interval"] = 1000
-cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
+cfg_ddpg["experiment"]["checkpoint_interval"] = 4000
 
 agent_ddpg = DDPG(networks=networks_ddpg, 
                   memory=memory, 
@@ -99,4 +99,4 @@ cfg_trainer = {"timesteps": 40000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_ddpg)
 
 # start training
-trainer.start()
+trainer.train()

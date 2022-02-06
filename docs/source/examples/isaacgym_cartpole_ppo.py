@@ -13,8 +13,8 @@ from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
 
 
-# Define the models (stochastic and deterministic models) for the agent using the helper class 
-# and programming with two approaches (layer by layer and the Sequential class).
+# Define the models (stochastic and deterministic models) for the agent using helper classes 
+# and programming with two approaches (layer by layer and torch.nn.Sequential class).
 # - Policy: takes as input the environment's observation/state and returns an action
 # - Value: takes the state as input and provides a value to guide the policy
 class Policy(GaussianModel):
@@ -85,9 +85,9 @@ cfg_ppo["rollouts"] = 16
 cfg_ppo["learning_epochs"] = 8
 cfg_ppo["grad_norm_clip"] = 2.0
 cfg_ppo["value_loss_scale"] = 2.0
-# logging to TensorBoard and write checkpoints each 16 and 160 timesteps respectively
+# logging to TensorBoard and write checkpoints each 16 and 1000 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 16
-cfg_ppo["experiment"]["checkpoint_interval"] = 160
+cfg_ppo["experiment"]["checkpoint_interval"] = 1000
 
 agent = PPO(networks=networks_ppo,
             memory=memory, 
@@ -102,4 +102,4 @@ cfg_trainer = {"timesteps": 8000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
-trainer.start()
+trainer.train()

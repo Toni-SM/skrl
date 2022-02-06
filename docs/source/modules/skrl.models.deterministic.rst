@@ -14,11 +14,23 @@ Concept
 Basic usage
 ^^^^^^^^^^^
 
-View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/deterministic_model.py>`_
+.. tabs::
+    
+    .. tab:: Multi-Layer Perceptron (MLP)
 
-.. literalinclude:: ../snippets/deterministic_model.py
-    :language: python
-    :linenos:
+        .. literalinclude:: ../snippets/deterministic_model.py
+            :language: python
+            :linenos:
+            :start-after: [start-mlp]
+            :end-before: [end-mlp]
+
+    .. tab:: Convolutional Neural Network (CNN)
+
+        .. literalinclude:: ../snippets/deterministic_model.py
+            :language: python
+            :linenos:
+            :start-after: [start-cnn]
+            :end-before: [end-cnn]
 
 API
 ^^^

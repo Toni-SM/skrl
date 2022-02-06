@@ -40,9 +40,10 @@ class Actor(GaussianModel):
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, states, taken_actions):
+        # view (samples, width * height * channels) -> (samples, width, height, channels) 
         # permute (samples, width, height, channels) -> (samples, channels, width, height) 
-        x = self.net(states.permute(0, 3, 1, 2))
-        return 10 * torch.tanh(x)   # JetBotEnv action_space is -10 to 10
+        x = self.net(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
+        return 10 * torch.tanh(x), self.log_std_parameter   # JetBotEnv action_space is -10 to 10
 
 class Critic(DeterministicModel):
     def __init__(self, observation_space, action_space, device, clip_actions = False):
@@ -66,8 +67,9 @@ class Critic(DeterministicModel):
                                  nn.Linear(32, 1))
 
     def compute(self, states, taken_actions):
+        # view (samples, width * height * channels) -> (samples, width, height, channels) 
         # permute (samples, width, height, channels) -> (samples, channels, width, height) 
-        x = self.features_extractor(states.permute(0, 3, 1, 2))
+        x = self.features_extractor(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
         return self.net(torch.cat([x, taken_actions], dim=1))
 
 
@@ -79,7 +81,7 @@ device = env.device
 
 
 # Instanciate a RandomMemory (without replacement) as experience replay memory
-memory = RandomMemory(memory_size=100000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=10000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # Instanciate the agent's models (function approximators).

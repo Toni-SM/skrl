@@ -77,7 +77,7 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instantiate a RandomMemory (without replacement) as experience replay memory
+# Instantiate a RandomMemory (without replacement) as shared experience replay memory
 memory = RandomMemory(memory_size=8000, num_envs=env.num_envs, device=device, replacement=True)
 
 
@@ -122,6 +122,7 @@ cfg_ddpg["gradient_steps"] = 1
 cfg_ddpg["batch_size"] = 512
 cfg_ddpg["random_timesteps"] = 0
 cfg_ddpg["learning_starts"] = 0
+# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
 cfg_ddpg["experiment"]["write_interval"] = 25
 cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#configuration-and-hyperparameters
@@ -133,6 +134,7 @@ cfg_td3["gradient_steps"] = 1
 cfg_td3["batch_size"] = 512
 cfg_td3["random_timesteps"] = 0
 cfg_td3["learning_starts"] = 0
+# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
 cfg_td3["experiment"]["write_interval"] = 25
 cfg_td3["experiment"]["checkpoint_interval"] = 1000
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#configuration-and-hyperparameters
@@ -142,6 +144,7 @@ cfg_sac["batch_size"] = 512
 cfg_sac["random_timesteps"] = 0
 cfg_sac["learning_starts"] = 0
 cfg_sac["learn_entropy"] = True
+# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
 cfg_sac["experiment"]["write_interval"] = 25
 cfg_sac["experiment"]["checkpoint_interval"] = 1000
 
@@ -168,10 +171,11 @@ agent_sac = SAC(networks=networks_sac,
 
 
 # Configure and instantiate the RL trainer
-cfg = {"timesteps": 8000, "headless": not True}
+cfg = {"timesteps": 8000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg, 
                             env=env, 
-                            agents=[agent_ddpg, agent_td3, agent_sac])
+                            agents=[agent_ddpg, agent_td3, agent_sac],
+                            agents_scope=[])
 
 # start training
 trainer.train()

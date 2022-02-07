@@ -2,16 +2,15 @@
 
 Record of notable changes in this project
 
-## [Unreleased]
+## [0.3.0] - 2021-02-07
 
-### Added 
+### Added
 
-- Add new agents: DQN
+- DQN and DDQN agents
 - Export memory to files
-- Add model instantiator utility to allow fast development
-- Add postprocessing utility to iterate over memory files
-
-### Changed
+- Postprocessing utility to iterate over memory files
+- Model instantiator utility to allow fast development
+- More examples and contents in the documentation
 
 ### Fixed
 

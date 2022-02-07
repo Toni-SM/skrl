@@ -18,7 +18,7 @@ INSTALL_REQUIRES = [
 setuptools.setup(
     name="skrl",
     author="Toni-SM",
-    version="0.1.0",
+    version=open(os.path.join(root_dir, "skrl", "version.txt")).read(),
     description="Another Reinforcement Learning library :)",
     long_description=open(os.path.join(root_dir, "README.md")).read(),
     long_description_content_type="text/markdown",

@@ -195,11 +195,11 @@ Memories can be automatically exported to files at each filling cycle (before da
 
     # Instantiate a memory and enable its export
     memory = RandomMemory(memory_size=16, 
-                        num_envs=env.num_envs, 
-                        device=device, 
-                        export=True,
-                        export_format="pt",
-                        export_directory="./memories")
+                          num_envs=env.num_envs, 
+                          device=device, 
+                          export=True,
+                          export_format="pt",
+                          export_directory="./memories")
 
 * **export**: enable or disable the memory export (default is disabled)
 

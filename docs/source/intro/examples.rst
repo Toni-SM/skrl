@@ -8,6 +8,10 @@ Examples
    :local:
    :backlinks: none
 
+.. raw:: html
+
+   <hr>
+
 Learning in a Gym environment (one agent, one environment)
 ----------------------------------------------------------
 
@@ -63,6 +67,10 @@ This example performs the training of one agent in an OpenAI Gym environment. Th
                     :linenos:
                     :emphasize-lines: 26-36, 39
 
+.. raw:: html
+
+   <hr>
+
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
@@ -94,6 +102,10 @@ This example performs the training of an agent in Isaac Gym's Cartpole environme
                     :language: python
                     :linenos:
                     :emphasize-lines: 49-50, 53
+
+.. raw:: html
+
+   <hr>
 
 Learning by scopes in an Isaac Gym environment (parallel agents, multiple environments)
 ---------------------------------------------------------------------------------------
@@ -164,20 +176,68 @@ The following components or practices are exemplified (highlighted):
                     :linenos:
                     :emphasize-lines: 64-67, 70-75, 78-82, 85-87
 
-Learning in the Isaac Sim (2021.2.1) environment (one agent, one environment)
------------------------------------------------------------------------------
+.. raw:: html
 
-This example performs the training of an agent in Isaac Sim's JetBot environment
+   <hr>
 
-.. code-block:: bash
+Learning in the Isaac Sim's (2021.2.1) JetBot environment (one agent, one environment)
+--------------------------------------------------------------------------------------
 
-    mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
-    cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
+This example performs the training of an agent in Isaac Sim's JetBot environment. The following components or practices are exemplified (highlighted):
 
-    /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+    - Define and instantiate Convolutional Neural Networks (CNN) to learn from 128 X 128 RGB images
 
-    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
+Use the steps described below (for a local workstation or a remote container) to setup and launch the experiment
 
-    cp ../stable_baselines_example/env.py .
+.. tabs::
 
-    /isaac-sim/python.sh isaacsim_jetbot.py
+    .. tab:: Local workstation (setup)
+        
+        .. code-block:: bash
+
+            # create a working directory and change to it
+            mkdir ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+            cd ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+
+            # install the skrl library in editable mode from the working directory
+            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+            # download the sample code from GitHub
+            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
+
+            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+            cp ../stable_baselines_example/env.py .
+
+            # run the experiment
+            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot.py
+
+    .. tab:: Remote container (setup)
+
+        .. code-block:: bash
+
+            # create a working directory and change to it
+            mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+            cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
+
+            # install the skrl library in editable mode from the working directory
+            /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+            # download the sample code from GitHub
+            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
+
+            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+            cp ../stable_baselines_example/env.py .
+
+            # run the experiment
+            /isaac-sim/python.sh isaacsim_jetbot.py
+
+.. tabs::
+            
+    .. tab:: Isaac Sim (JetBotEnv)
+        
+        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot_ppo.py>`_
+
+        .. literalinclude:: ../examples/isaacsim_jetbot_ppo.py
+            :language: python
+            :linenos:
+            :emphasize-lines: 19-47, 49-73

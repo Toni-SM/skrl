@@ -16,7 +16,7 @@ from ...models.torch import Model
 class Agent:
     def __init__(self, 
                  networks: Dict[str, Model], 
-                 memory: Union[Memory, None] = None, 
+                 memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
@@ -25,8 +25,10 @@ class Agent:
 
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.torch.Memory or None
+        :param memory: Memory to storage the transitions.
+                       If it is a tuple, the first element will be used for training and 
+                       for the rest only the environment transitions will be added
+        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None)
@@ -37,15 +39,22 @@ class Agent:
         :type cfg: dict
         """
         self.networks = networks
-        self.memory = memory
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(device)
         self.cfg = cfg
+
+        if type(memory) is list:
+            self.memory = memory[0]
+            self.secondary_memories = memory[1:]
+        else:
+            self.memory = memory
+            self.secondary_memories = []
         
         # convert the networks to their respective device
         for network in self.networks.values():
-            network.to(network.device)
+            if network is not None:
+                network.to(network.device)
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")
@@ -111,7 +120,12 @@ class Agent:
         :type timesteps: int
         """
         for k, v in self.tracking_data.items():
-            self.writer.add_scalar(k, np.mean(v), timestep)
+            if k.endswith("(min)"):
+                self.writer.add_scalar(k, np.min(v), timestep)
+            elif k.endswith("(max)"):
+                self.writer.add_scalar(k, np.max(v), timestep)
+            else:
+                self.writer.add_scalar(k, np.mean(v), timestep)
         # reset data containers for next iteration
         self._track_rewards.clear()
         self._track_timesteps.clear()
@@ -224,8 +238,9 @@ class Agent:
         :param mode: Mode: 'train' for training or 'eval' for evaluation
         :type mode: str
         """
-        for k in self.networks:
-            self.networks[k].set_mode(mode)
+        for network in self.networks.values():
+            if network is not None:
+                network.set_mode(mode)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -245,12 +260,14 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        timestep += 1
+
         # write to tensorboard
-        if timestep > 0 and self.write_interval > 0 and not timestep % self.write_interval:
+        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             self.write_tracking_data(timestep, timesteps)
 
         # write checkpoints
-        if timestep > 0 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             self.write_checkpoint(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int) -> None:

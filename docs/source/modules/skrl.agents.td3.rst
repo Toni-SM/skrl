@@ -1,11 +1,17 @@
-TD3
-===
-
 Twin-Delayed DDPG (TD3)
------------------------
+=======================
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Decision making** (:literal:`act(...)`)
+
+| :math:`a \leftarrow \mu_\theta(s)`
+| :math:`noise \leftarrow N(\mu, \sigma)`
+| :math:`scale \leftarrow (1 - \frac{\text{timestep}}{scale_{timesteps}}) \; (scale_{initial} - scale_{final}) + scale_{final}`
+| :math:`a \leftarrow \text{clip}(a + noise * scale, {a}_{Low}, {a}_{High})`
+
+**Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# sample a batch from memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones 
@@ -13,8 +19,8 @@ Algorithm implementation
 | **FOR** each gradient step **DO**
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
-|     :math:`noises \leftarrow a' + \text{clip}(\epsilon, -c, c)` for sampled noises (:math:`\epsilon`)
-|     :math:`a' \leftarrow a' + noises`
+|     :math:`noise \leftarrow \text{clip}(\epsilon, -c, c) \qquad` where :math:`\; \epsilon \leftarrow N(\mu, \sigma)`
+|     :math:`a' \leftarrow a' + noise`
 |     :math:`a' \leftarrow \text{clip}(a', {a'}_{Low}, {a'}_{High})`
 |     :green:`# compute target values`
 |     :math:`Q_{1_{target}} \leftarrow Q_{{\phi 1}_{target}}(s', a')`
@@ -47,7 +53,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 15-47
+   :lines: 16-48
    :linenos:
 
 Models (networks)

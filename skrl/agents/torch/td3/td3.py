@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Dict
 
 import gym
+import copy
 import itertools
 
 import torch
@@ -50,7 +51,7 @@ TD3_DEFAULT_CONFIG = {
 class TD3(Agent):
     def __init__(self, 
                  networks: Dict[str, Model], 
-                 memory: Union[Memory, None] = None, 
+                 memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
@@ -61,8 +62,10 @@ class TD3(Agent):
         
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.torch.Memory or None
+        :param memory: Memory to storage the transitions.
+                       If it is a tuple, the first element will be used for training and 
+                       for the rest only the environment transitions will be added
+        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None)
@@ -74,13 +77,14 @@ class TD3(Agent):
 
         :raises KeyError: If the networks dictionary is missing a required key
         """
-        TD3_DEFAULT_CONFIG.update(cfg)
+        _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
+        _cfg.update(cfg)
         super().__init__(networks=networks, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
-                         cfg=TD3_DEFAULT_CONFIG)
+                         cfg=_cfg)
 
         # networks
         if not "policy" in self.networks.keys():
@@ -106,15 +110,16 @@ class TD3(Agent):
         # checkpoint networks
         self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
 
-        # freeze target networks with respect to optimizers (update via .update_parameters())
-        self.target_policy.freeze_parameters(True)
-        self.target_critic_1.freeze_parameters(True)
-        self.target_critic_2.freeze_parameters(True)
+        if self.target_policy is not None:
+            # freeze target networks with respect to optimizers (update via .update_parameters())
+            self.target_policy.freeze_parameters(True)
+            self.target_critic_1.freeze_parameters(True)
+            self.target_critic_2.freeze_parameters(True)
 
-        # update target networks (hard update)
-        self.target_policy.update_parameters(self.policy, polyak=1)
-        self.target_critic_1.update_parameters(self.critic_1, polyak=1)
-        self.target_critic_2.update_parameters(self.critic_2, polyak=1)
+            # update target networks (hard update)
+            self.target_policy.update_parameters(self.policy, polyak=1)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=1)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -142,17 +147,26 @@ class TD3(Agent):
 
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
-                                                 lr=self._critic_learning_rate)
+        if self.critic_1 is not None:
+            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
+                                                     lr=self._critic_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
-        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+        if self.memory is not None:
+            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
+
+        # clip noise bounds
+        self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+        self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+
+        # backward compatibility: torch < 1.9 clamp method does not support tensors
+        self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
     def act(self, 
             states: torch.Tensor, 
@@ -199,18 +213,24 @@ class TD3(Agent):
 
                 # modify actions
                 actions[0].add_(noises)
-                actions[0].clamp_(self.action_space.low[0], self.action_space.high[0]) # FIXME: use tensor too
+
+                if self._backward_compatibility:
+                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min), 
+                               actions[1], 
+                               actions[2])
+                else:
+                    actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
-                self.track_data("Noise / Exploration noise (max)", torch.max(noises).item())
-                self.track_data("Noise / Exploration noise (min)", torch.min(noises).item())
-                self.track_data("Noise / Exploration noise (mean)", torch.mean(noises).item())
+                self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
+                self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
+                self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
             
             else:
                 # record noises
-                self.track_data("Noise / Exploration noise (max)", 0)
-                self.track_data("Noise / Exploration noise (min)", 0)
-                self.track_data("Noise / Exploration noise (mean)", 0)
+                self.track_data("Exploration / Exploration noise (max)", 0)
+                self.track_data("Exploration / Exploration noise (min)", 0)
+                self.track_data("Exploration / Exploration noise (mean)", 0)
 
         return actions
 
@@ -242,6 +262,8 @@ class TD3(Agent):
         super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+            for memory in self.secondary_memories:
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -289,7 +311,11 @@ class TD3(Agent):
                                      min=-self._smooth_regularization_clip, 
                                      max=self._smooth_regularization_clip)
                 next_actions.add_(noises)
-                next_actions.clamp_(self.action_space.low[0], self.action_space.high[0])  # FIXME: use tensor too
+
+                if self._backward_compatibility:
+                    next_actions = torch.max(torch.min(next_actions, self.clip_actions_max), self.clip_actions_min)
+                else:
+                    next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)

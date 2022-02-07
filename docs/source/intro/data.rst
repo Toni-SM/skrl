@@ -51,35 +51,39 @@ To visualize the tracked metrics/scales, during or after the training, TensorBoa
 
 The following table shows the metrics/scales tracked by each agent ([**+**] all the time, [**-**] only when such a function is enabled in the agent's configuration):
 
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Tag        |Metric / Scalar     |.. centered:: DDPG|.. centered:: TD3|.. centered:: SAC|.. centered:: PPO|
-+===========+====================+==================+=================+=================+=================+
-|Coefficient|Entropy coefficient |                  |                 |.. centered:: +  |                 |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Episode    |Total timesteps     |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Loss       |Policy loss         |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
-+           +--------------------+------------------+-----------------+-----------------+-----------------+
-|           |Critic loss         |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
-+           +--------------------+------------------+-----------------+-----------------+-----------------+
-|           |Value loss          |                  |                 |                 |.. centered:: +  |
-+           +--------------------+------------------+-----------------+-----------------+-----------------+
-|           |Entropy loss        |                  |                 |.. centered:: -- |.. centered:: -- |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Noise      |Exploration noise   |.. centered:: +   |.. centered:: +  |                 |                 |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Policy     |Standard deviation  |                  |                 |                 |.. centered:: +  |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Q-network  |Q1                  |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
-+           +--------------------+------------------+-----------------+-----------------+-----------------+
-|           |Q2                  |                  |.. centered:: +  |.. centered:: +  |                 |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Reward     |Instantaneous reward|.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
-+           +--------------------+------------------+-----------------+-----------------+-----------------+
-|           |Total reward        |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
-|Target     |Target              |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
-+-----------+--------------------+------------------+-----------------+-----------------+-----------------+
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Tag        |Metric / Scalar     |.. centered:: DQN|.. centered:: DDPG|.. centered:: TD3|.. centered:: SAC|.. centered:: PPO|
++===========+====================+=================+==================+=================+=================+=================+
+|Coefficient|Entropy coefficient |                 |                  |                 |.. centered:: +  |                 |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Episode    |Total timesteps     |.. centered:: +  |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Exploration|Exploration noise   |                 |.. centered:: +   |.. centered:: +  |                 |                 |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Exploration epsilon |.. centered:: +  |                  |                 |                 |                 |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Loss       |Policy loss         |                 |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Critic loss         |                 |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Value loss          |                 |                  |                 |                 |.. centered:: +  |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Entropy loss        |                 |                  |                 |.. centered:: -- |.. centered:: -- |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Q-network loss      |.. centered:: +  |                  |                 |                 |                 |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Policy     |Standard deviation  |                 |                  |                 |                 |.. centered:: +  |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Q-network  |Q1                  |                 |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Q2                  |                 |                  |.. centered:: +  |.. centered:: +  |                 |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Reward     |Instantaneous reward|.. centered:: +  |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++           +--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|           |Total reward        |.. centered:: +  |.. centered:: +   |.. centered:: +  |.. centered:: +  |.. centered:: +  |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
+|Target     |Target              |.. centered:: +  |.. centered:: +   |.. centered:: +  |.. centered:: +  |                 |
++-----------+--------------------+-----------------+------------------+-----------------+-----------------+-----------------+
 
 Tracking custom metrics/scales
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -141,12 +145,69 @@ The checkpoint management, as in the previous case, is the responsibility of the
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 
-TODO :red:`(comming soon)`
+Checkpoints can be loaded for each of the instantiated models independently via the :literal:`.load(...)` method (`Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument
 
+.. note::
+
+    The model instance must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's `state_dict <https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict>`_ directly
+
+The following code shows how to load the checkpoint (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt`) of an instantiated policy from a specific definition. See the section :ref:`Examples <examples>` for details about how to load control points and use them to evaluate experiments
+
+.. code-block:: python
+    :emphasize-lines: 21
+
+    from skrl.models.torch import DeterministicModel
+
+    # Define the model
+    class Policy(DeterministicModel):
+        def __init__(self, observation_space, action_space, device, clip_actions = False):
+            super().__init__(observation_space, action_space, device, clip_actions)
+
+            self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
+                                    nn.ReLU(),
+                                    nn.Linear(32, 32),
+                                    nn.ReLU(),
+                                    nn.Linear(32, self.num_actions))
+
+        def compute(self, states, taken_actions):
+            return self.net(states)
+
+    # Instantiate the agent's model
+    policy = Policy(env.observation_space, env.action_space, device, clip_actions=True)
+
+    # Load the checkpoint
+    policy.load("./runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt")
 
 --------------------
 
 Memory export/import
 --------------------
+
+Exporting memories
+^^^^^^^^^^^^^^^^^^
+
+Memories can be automatically exported to files at each filling cycle (before data overwriting is performed). Its activation, the output files' format and their path can be modified through the constructor parameters when an instance is created
+
+.. code-block:: python
+    :emphasize-lines: 7-9
+
+    from skrl.memories.torch import RandomMemory
+
+    # Instantiate a memory and enable its export
+    memory = RandomMemory(memory_size=16, 
+                          num_envs=env.num_envs, 
+                          device=device, 
+                          export=True,
+                          export_format="pt",
+                          export_directory="./memories")
+
+* **export**: enable or disable the memory export (default is disabled)
+
+* **export_format**: the format of the exported memory (default is :literal:`"pt"`). Supported formats are PyTorch (:literal:`"pt"`), NumPy (:literal:`"np"`) and Comma-separated values (:literal:`"csv"`)
+
+* **export_directory**: the directory where the memory will be exported (default is :literal:`"memory"`)
+
+Importing memories
+^^^^^^^^^^^^^^^^^^
 
 TODO :red:`(comming soon)`

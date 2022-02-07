@@ -13,8 +13,8 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define the models (deterministic models) for the DDPG agent using the helper class
-# and programming with two approaches (layer by layer and the torch.nn.Sequential class).
+# Define the models (deterministic models) for the DDPG agent using a helper class
+# and programming with two approaches (layer by layer and torch.nn.Sequential class).
 # - Actor (policy): takes as input the environment's observation/state and returns an action
 # - Critic: takes the state and action as input and provides a value to guide the policy 
 class DeterministicActor(DeterministicModel):
@@ -28,7 +28,7 @@ class DeterministicActor(DeterministicModel):
     def compute(self, states, taken_actions):
         x = F.relu(self.linear_layer_1(states))
         x = F.relu(self.linear_layer_2(x))
-        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v0 action_space is -2 to 2
+        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v1 action_space is -2 to 2
 
 class DeterministicCritic(DeterministicModel):
     def __init__(self, observation_space, action_space, device, clip_actions = False):
@@ -45,18 +45,23 @@ class DeterministicCritic(DeterministicModel):
 
 
 # Load and wrap the Gym environment.
-# Note: the environment version (-V0) may change depending on the gym version
-env = gym.make("Pendulum-v0")
+# Note: the environment version may change depending on the gym version
+try:
+    env = gym.make("Pendulum-v1")
+except gym.error.DeprecatedEnv as e:
+    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
+    print("Pendulum-v1 not found. Trying {}".format(env_id))
+    env = gym.make(env_id)
 env = wrap_env(env)
 
 device = env.device
 
 
-# Instanciate a RandomMemory (without replacement) as experience replay memory
-memory = RandomMemory(memory_size=1000000, num_envs=env.num_envs, device=device, replacement=False)
+# Instantiate a RandomMemory (without replacement) as experience replay memory
+memory = RandomMemory(memory_size=40000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# Instanciate the agent's models (function approximators).
+# Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
 networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
@@ -68,7 +73,8 @@ networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_
 for network in networks_ddpg.values():
     network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
-# Configure and instanciate the agent.
+
+# Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#configuration-and-hyperparameters
 cfg_ddpg = DDPG_DEFAULT_CONFIG.copy()
@@ -76,9 +82,9 @@ cfg_ddpg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1,
 cfg_ddpg["batch_size"] = 100
 cfg_ddpg["random_timesteps"] = 100
 cfg_ddpg["learning_starts"] = 100
-# logging to TensorBoard and write checkpoints each 1000 timesteps
+# logging to TensorBoard and write checkpoints each 1000 and 4000 timesteps respectively
 cfg_ddpg["experiment"]["write_interval"] = 1000
-cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
+cfg_ddpg["experiment"]["checkpoint_interval"] = 4000
 
 agent_ddpg = DDPG(networks=networks_ddpg, 
                   memory=memory, 
@@ -88,9 +94,9 @@ agent_ddpg = DDPG(networks=networks_ddpg,
                   device=device)
 
 
-# Configure and instanciate the RL trainer
+# Configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 40000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_ddpg)
 
 # start training
-trainer.start()
+trainer.train()

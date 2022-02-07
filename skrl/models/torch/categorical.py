@@ -9,24 +9,37 @@ from . import Model
 
 
 class CategoricalModel(Model):
-    def __init__(self, observation_space: Union[int, Tuple[int], gym.Space, None] = None, action_space: Union[int, Tuple[int], gym.Space, None] = None, device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self, 
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 device: Union[str, torch.device] = "cuda:0",
+                 unnormalized_log_prob: bool = True) -> None:
         """Categorical model (stochastic model)
 
         :param observation_space: Observation/state space or shape (default: None).
-                                  If it is not None, the num_observations property will contain the size of that space (number of elements)
+                                  If it is not None, the num_observations property will contain the size of that space
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None).
-                             If it is not None, the num_actions property will contain the size of that space (number of elements)
+                             If it is not None, the num_actions property will contain the size of that space
         :type action_space: int, tuple or list of integers, gym.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
         :type device: str or torch.device, optional
+        :param unnormalized_log_prob: Flag to indicate how to be interpreted the network's output (default: True).
+                                      If True, the network's output is interpreted as unnormalized log probabilities 
+                                      (it can be any real number), otherwise as normalized probabilities 
+                                      (the output must be non-negative, finite and have a non-zero sum)
+        :type unnormalized_log_prob: bool, optional
         """
-        # TODO: check its implementation
         super(CategoricalModel, self).__init__(observation_space, action_space, device)
 
-        self.use_unnormalized_log_probabilities = True
+        self._unnormalized_log_prob = unnormalized_log_prob
 
-    def act(self, states: torch.Tensor, taken_actions: Union[torch.Tensor, None] = None, inference=False) -> Tuple[torch.Tensor]:
+        self._distribution = None
+
+    def act(self, 
+            states: torch.Tensor, 
+            taken_actions: Union[torch.Tensor, None] = None, 
+            inference=False) -> Tuple[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
         :param states: Observation/state of the environment used to make the decision
@@ -39,24 +52,36 @@ class CategoricalModel(Model):
         :type inference: bool, optional
 
         :return: Action to be taken by the agent given the state of the environment.
-                 The tuple's components are the actions, the log of the probability density function and None for the last component
+                 The tuple's components are the actions, the log of the probability density function and None
         :rtype: tuple of torch.Tensor
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities
-        output = self.compute(states.to(self.device), 
-                              taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        if self._instantiator_net is None:
+            output = self.compute(states.to(self.device), 
+                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        else:
+            output = self._get_instantiator_output(states.to(self.device), \
+                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # unnormalized log probabilities
-        if self.use_unnormalized_log_probabilities:
-            distribution = Categorical(logits=output)
+        if self._unnormalized_log_prob:
+            self._distribution = Categorical(logits=output)
         # normalized probabilities
         else:
-            distribution = Categorical(probs=output)
+            self._distribution = Categorical(probs=output)
         
         # actions and log of the probability density function
-        actions = distribution.sample()
-        log_prob = distribution.log_prob(actions)
+        actions = self._distribution.sample()
+        log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions.view(-1))
 
         if inference:
-            return actions.detach(), log_prob.detach(), torch.Tensor()
-        return actions, log_prob, torch.Tensor()
+            return actions.unsqueeze(-1).detach(), log_prob.unsqueeze(-1).detach(), None
+        return actions.unsqueeze(-1), log_prob.unsqueeze(-1), None
+
+    def distribution(self) -> torch.distributions.Categorical:
+        """Get the current distribution of the model
+
+        :return: Distribution of the model
+        :rtype: torch.distributions.Categorical
+        """
+        return self._distribution

@@ -6,7 +6,14 @@ __all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3"]
 
 
 @contextmanager
-def cwd(new_path):
+def cwd(new_path: str) -> None:
+    """Context manager to change the current working directory
+
+    This function restores the current working directory after the context manager exits
+
+    :param new_path: The new path to change to
+    :type new_path: str
+    """
     current_path = os.getcwd()
     os.chdir(new_path)
     try:
@@ -14,7 +21,16 @@ def cwd(new_path):
     finally:
         os.chdir(current_path)
 
-def _omegaconf_to_dict(config):
+def _omegaconf_to_dict(config) -> dict:
+    """Converts OmegaConf config to dict
+    
+    :param config: The OmegaConf config
+    :type config: OmegaConf.Config
+
+    :return: The config as dict
+    :rtype: dict
+    """
+    # return config.to_container(dict)
     from omegaconf import DictConfig
 
     d = {}
@@ -22,7 +38,14 @@ def _omegaconf_to_dict(config):
         d[k] = _omegaconf_to_dict(v) if isinstance(v, DictConfig) else v
     return d
 
-def _print_cfg(d, indent=0):
+def _print_cfg(d, indent=0) -> None:
+    """Print an Isaac Gym environment configuration
+
+    :param d: The dictionary to print
+    :type d: dict
+    :param indent: The indentation level (default: 0)
+    :type indent: int, optional
+    """
     for key, value in d.items():
         if isinstance(value, dict):
             _print_cfg(value, indent + 1)
@@ -43,7 +66,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
     
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises ValueError: The task name has not been defined, 
+                        neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The isaacgym package is not installed or the path is wrong
 
     :return: Isaac Gym environment (preview 2)
@@ -75,7 +99,7 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     # get isaacgym envs path from isaacgym package metadata
     if not isaacgymenvs_path:
         if not hasattr(isaacgym, "__path__"):
-            raise RuntimeError("isaacgym package is not installed")
+            raise RuntimeError("isaacgym package is not installed or could not be accessed by the current Python environment")
         path = isaacgym.__path__
         path = os.path.join(path[0], "..", "rlgpu")
     else:
@@ -92,7 +116,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
         status = False
         print("[ERROR] Failed to import required packages: {}".format(e))
     if not status:
-        raise RuntimeError("The path ({}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)".format(path))
+        raise RuntimeError("The path ({}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)" \
+            .format(path))
 
     args = get_args()
 
@@ -152,7 +177,8 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     # get task name from command line arguments
     if defined:
         if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
-            print("[WARNING] Overriding task name ({}) with command line argument ({})".format(task_name, arg.split("task=")[1].split(" ")[0]))
+            print("[WARNING] Overriding task name ({}) with command line argument ({})" \
+                .format(task_name, arg.split("task=")[1].split(" ")[0]))
     # get task name from function arguments
     else:
         if task_name:
@@ -194,4 +220,5 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
                                               sim_device=config.sim_device,
                                               graphics_device_id=config.graphics_device_id,
                                               headless=config.headless)
+
     return env

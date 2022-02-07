@@ -5,8 +5,6 @@ This library works with a common API to interact with the RL environment
 
 In order to operate with more complex or non-compatible interfaces and support interoperability between implementations a **wrapper mechanism is provided** which follows the following description:
 
-
-
 Basic usage
 ^^^^^^^^^^^
 
@@ -45,6 +43,9 @@ API
 
 .. autofunction:: skrl.envs.torch.wrappers.wrap_env
 
+Internal API
+^^^^^^^^^^^^
+
 .. autoclass:: skrl.envs.torch.wrappers.Wrapper
    :undoc-members:
    :show-inheritance:
@@ -78,4 +79,3 @@ API
    :members:
    
    .. automethod:: __init__
-

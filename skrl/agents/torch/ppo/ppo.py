@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Dict
 
 import gym
+import copy
 
 import torch
 import torch.nn as nn
@@ -50,7 +51,7 @@ PPO_DEFAULT_CONFIG = {
 class PPO(Agent):
     def __init__(self, 
                  networks: Dict[str, Model], 
-                 memory: Union[Memory, None] = None, 
+                 memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
@@ -61,8 +62,10 @@ class PPO(Agent):
         
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.torch.Memory or None
+        :param memory: Memory to storage the transitions.
+                       If it is a tuple, the first element will be used for training and 
+                       for the rest only the environment transitions will be added
+        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
         :param action_space: Action space or shape (default: None)
@@ -74,13 +77,14 @@ class PPO(Agent):
 
         :raises KeyError: If the networks dictionary is missing a required key
         """
-        PPO_DEFAULT_CONFIG.update(cfg)
+        _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)
+        _cfg.update(cfg)
         super().__init__(networks=networks, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
-                         cfg=PPO_DEFAULT_CONFIG)
+                         cfg=_cfg)
 
         # networks
         if not "policy" in self.networks.keys():
@@ -121,17 +125,19 @@ class PPO(Agent):
 
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-        self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+        if self.value is not None:
+            self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
-        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
-        self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
+        if self.memory is not None:
+            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
         self.tensors_names = ["states", "actions", "rewards", "dones", "log_prob", "values", "returns", "advantages"]
 
@@ -201,7 +207,10 @@ class PPO(Agent):
         if self.memory is not None:
             values, _, _ = self.value.act(states=states, inference=True)
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
-                                    log_prob=self._current_log_prob, values=values)            
+                                    log_prob=self._current_log_prob, values=values)
+            for memory in self.secondary_memories:
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+                                   log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -237,7 +246,9 @@ class PPO(Agent):
         :type timesteps: int
         """
         # compute returns and advantages
-        last_values, _, _ = self.value.act(states=self._current_next_states, inference=True)
+        last_values, _, _ = self.value.act(states=self._current_next_states.float() \
+            if not torch.is_floating_point(self._current_next_states) else self._current_next_states, inference=True)
+        
         computing_hyperparameters = {"discount_factor": self._discount_factor,
                                      "lambda_coefficient": self._lambda,
                                      "normalize_returns": False,
@@ -270,8 +281,8 @@ class PPO(Agent):
                         kl = ((torch.exp(ratio) - 1) - ratio).mean()
                     
                     if kl > self._kl_threshold:
-                        print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})". \
-                            format(epoch, kl, self._kl_threshold))
+                        print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})" \
+                            .format(epoch, kl, self._kl_threshold))
                         break
 
                 # compute entropy loss

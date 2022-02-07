@@ -95,11 +95,12 @@ class DDQN(Agent):
         # checkpoint networks
         self.checkpoint_networks = {"q_network": self.q_network} if self.checkpoint_policy_only else self.networks
         
-        # freeze target networks with respect to optimizers (update via .update_parameters())
-        self.target_q_network.freeze_parameters(True)
+        if self.target_q_network is not None:
+            # freeze target networks with respect to optimizers (update via .update_parameters())
+            self.target_q_network.freeze_parameters(True)
 
-        # update target networks (hard update)
-        self.target_q_network.update_parameters(self.q_network, polyak=1)
+            # update target networks (hard update)
+            self.target_q_network.update_parameters(self.q_network, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -124,11 +125,12 @@ class DDQN(Agent):
         self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
-        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+        if self.memory is not None:
+            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
+            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
@@ -151,6 +153,9 @@ class DDQN(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        if not self._exploration_timesteps:
+            return torch.argmax(self.q_network.act(states, inference=inference)[0], dim=1, keepdim=True), None, None
+            
         # sample random actions
         actions = self.q_network.random_act(states)[0]
         if timestep < self._random_timesteps:

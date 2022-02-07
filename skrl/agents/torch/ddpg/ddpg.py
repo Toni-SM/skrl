@@ -99,13 +99,14 @@ class DDPG(Agent):
         # checkpoint networks
         self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
         
+        if self.target_policy is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
-        self.target_policy.freeze_parameters(True)
-        self.target_critic.freeze_parameters(True)
+            self.target_policy.freeze_parameters(True)
+            self.target_critic.freeze_parameters(True)
 
-        # update target networks (hard update)
-        self.target_policy.update_parameters(self.policy, polyak=1)
-        self.target_critic.update_parameters(self.critic, polyak=1)
+            # update target networks (hard update)
+            self.target_policy.update_parameters(self.policy, polyak=1)
+            self.target_critic.update_parameters(self.critic, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -127,14 +128,16 @@ class DDPG(Agent):
         
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
+        if self.critic is not None:
+            self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
 
         # create tensors in memory
-        self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
-        self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
-        self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-        self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+        if self.memory is not None:
+            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 

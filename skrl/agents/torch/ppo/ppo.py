@@ -125,7 +125,8 @@ class PPO(Agent):
 
         # set up optimizers
         self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-        self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+        if self.value is not None:
+            self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
         # create tensors in memory
         if self.memory is not None:

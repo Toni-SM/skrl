@@ -238,8 +238,9 @@ class Agent:
         :param mode: Mode: 'train' for training or 'eval' for evaluation
         :type mode: str
         """
-        for k in self.networks:
-            self.networks[k].set_mode(mode)
+        for network in self.networks.values():
+            if network is not None:
+                network.set_mode(mode)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment

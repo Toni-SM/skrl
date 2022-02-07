@@ -246,7 +246,9 @@ class PPO(Agent):
         :type timesteps: int
         """
         # compute returns and advantages
-        last_values, _, _ = self.value.act(states=self._current_next_states, inference=True)
+        last_values, _, _ = self.value.act(states=self._current_next_states.float() \
+            if not torch.is_floating_point(self._current_next_states) else self._current_next_states, inference=True)
+        
         computing_hyperparameters = {"discount_factor": self._discount_factor,
                                      "lambda_coefficient": self._lambda,
                                      "normalize_returns": False,

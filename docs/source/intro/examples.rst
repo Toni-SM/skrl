@@ -45,7 +45,7 @@ This example performs the training of one agent in an OpenAI Gym environment. Th
                 .. literalinclude:: ../examples/gym_pendulum_ddpg_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 45-48, 51
+                    :emphasize-lines: 45-48, 51, 76
 
     .. tab:: CartPole (DQN)
 
@@ -69,7 +69,7 @@ This example performs the training of one agent in an OpenAI Gym environment. Th
                 .. literalinclude:: ../examples/gym_cartpole_dqn_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 26-36, 39
+                    :emphasize-lines: 26-36, 39, 65
 
 .. raw:: html
 
@@ -107,7 +107,7 @@ This example performs the training of an agent in Isaac Gym's Cartpole environme
                 .. literalinclude:: ../examples/isaacgym_cartpole_ppo_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 49-50, 53
+                    :emphasize-lines: 49-50, 53, 77
 
 .. raw:: html
 
@@ -160,7 +160,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/isaacgym_parallel_shared_memory_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87
+                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87, 141
 
     .. tab:: No shared memory
 
@@ -184,7 +184,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/isaacgym_parallel_no_shared_memory_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87
+                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87, 141
 
 .. raw:: html
 

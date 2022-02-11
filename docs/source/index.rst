@@ -159,6 +159,7 @@ Utils
 
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
     * :doc:`File post-processing <modules/skrl.utils.postprocessing>`
+    * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
 
 .. toctree::
     :maxdepth: 1
@@ -167,3 +168,4 @@ Utils
         
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
+    modules/skrl.utils.isaacgym_utils

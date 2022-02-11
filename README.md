@@ -18,7 +18,7 @@ https://skrl.readthedocs.io/en/latest/
 
 <br>
 
-## Citing this library:
+### Citing this library
 
 To cite this library in publications, please use the following reference:
 

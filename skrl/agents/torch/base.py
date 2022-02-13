@@ -56,17 +56,6 @@ class Agent:
             if network is not None:
                 network.to(network.device)
 
-        # experiment directory
-        directory = self.cfg.get("experiment", {}).get("directory", "")
-        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
-        if not directory:
-            directory = os.path.join(os.getcwd(), "runs")
-        if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
-        self.experiment_dir = os.path.join(directory, experiment_name)
-        
-        # main entry to log data for consumption and visualization by TensorBoard
-        self.writer = SummaryWriter(log_dir=self.experiment_dir)
         self.tracking_data = collections.defaultdict(list)
         self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
 
@@ -79,9 +68,6 @@ class Agent:
         self.checkpoint_networks = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
-
-        if self.checkpoint_interval > 0:
-            os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -98,6 +84,27 @@ class Agent:
             else:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
+
+    def init(self) -> None:
+        """Initialize the agent
+
+        This method should be called before the agent is used.
+        It will initialize the TensoBoard writer and checkpoint directory
+        """
+        # experiment directory
+        directory = self.cfg.get("experiment", {}).get("directory", "")
+        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not directory:
+            directory = os.path.join(os.getcwd(), "runs")
+        if not experiment_name:
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
+        self.experiment_dir = os.path.join(directory, experiment_name)
+        
+        # main entry to log data for consumption and visualization by TensorBoard
+        self.writer = SummaryWriter(log_dir=self.experiment_dir)
+
+        if self.checkpoint_interval > 0:
+            os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
     def track_data(self, tag: str, value: float) -> None:
         """Track data to TensorBoard

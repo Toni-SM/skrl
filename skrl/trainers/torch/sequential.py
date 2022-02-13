@@ -39,7 +39,7 @@ class SequentialTrainer(Trainer):
     def train(self) -> None:
         """Train the agents sequentially
 
-        Execute the following steps in loop:
+        This method executes the following steps in loop:
         - Pre-interaction (sequentially)
         - Compute actions (sequentially)
         - Interact with the environments
@@ -48,6 +48,11 @@ class SequentialTrainer(Trainer):
         - Reset environments
         - Post-interaction (sequentially)
         """
+        # single agent
+        if self.num_agents == 1:
+            self.single_agent_train()
+            return
+
         # reset env
         states = self.env.reset()
 
@@ -56,22 +61,16 @@ class SequentialTrainer(Trainer):
             self.show_progress(timestep=timestep, timesteps=self.timesteps)
 
             # pre-interaction
-            if self.num_agents > 1:
-                for agent in self.agents:
-                    agent.pre_interaction(timestep=timestep, timesteps=self.timesteps)
-            else:
-                self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+            for agent in self.agents:
+                agent.pre_interaction(timestep=timestep, timesteps=self.timesteps)
             
             # compute actions
             with torch.no_grad():
-                if self.num_agents > 1:
-                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
-                                                      inference=True,
-                                                      timestep=timestep, 
-                                                      timesteps=self.timesteps)[0] \
-                                            for agent, scope in zip(self.agents, self.agents_scope)])
-                else:
-                    actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                                                  inference=True,
+                                                  timestep=timestep, 
+                                                  timesteps=self.timesteps)[0] \
+                                        for agent, scope in zip(self.agents, self.agents_scope)])
             
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
@@ -80,49 +79,41 @@ class SequentialTrainer(Trainer):
             if not self.headless:
                 self.env.render()
 
-            # record the environments' transitions
             with torch.no_grad():
-                if self.num_agents > 1:
-                    for agent, scope in zip(self.agents, self.agents_scope):
-                        agent.record_transition(states=states[scope[0]:scope[1]], 
-                                                actions=actions[scope[0]:scope[1]], 
-                                                rewards=rewards[scope[0]:scope[1]], 
-                                                next_states=next_states[scope[0]:scope[1]], 
-                                                dones=dones[scope[0]:scope[1]],
-                                                timestep=timestep,
-                                                timesteps=self.timesteps)
-                else:
-                    self.agents.record_transition(states=states, 
-                                                  actions=actions,
-                                                  rewards=rewards,
-                                                  next_states=next_states,
-                                                  dones=dones,
-                                                  timestep=timestep,
-                                                  timesteps=self.timesteps)
+                # record the environments' transitions
+                for agent, scope in zip(self.agents, self.agents_scope):
+                    agent.record_transition(states=states[scope[0]:scope[1]], 
+                                            actions=actions[scope[0]:scope[1]], 
+                                            rewards=rewards[scope[0]:scope[1]], 
+                                            next_states=next_states[scope[0]:scope[1]], 
+                                            dones=dones[scope[0]:scope[1]],
+                                            timestep=timestep,
+                                            timesteps=self.timesteps)
             
-            # reset environments
-            with torch.no_grad():
+                # reset environments
                 if dones.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
                 
             # post-interaction
-            if self.num_agents > 1:
-                for agent in self.agents:
-                    agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
-            else:
-                self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
-        
+            for agent in self.agents:
+                agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
+            
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
-        Execute the following steps in loop:
+        This method executes the following steps in loop:
         - Compute actions (sequentially)
         - Interact with the environments
         - Render scene
         - Reset environments
         """
+        # single agent
+        if self.num_agents == 1:
+            self.single_agent_eval()
+            return
+
         # reset env
         states = self.env.reset()
 
@@ -132,14 +123,11 @@ class SequentialTrainer(Trainer):
             
             # compute actions
             with torch.no_grad():
-                if self.num_agents > 1:
-                    actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
-                                                      inference=True,
-                                                      timestep=timestep, 
-                                                      timesteps=self.timesteps)[0] \
-                                            for agent, scope in zip(self.agents, self.agents_scope)])
-                else:
-                    actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                                                  inference=True,
+                                                  timestep=timestep, 
+                                                  timesteps=self.timesteps)[0] \
+                                        for agent, scope in zip(self.agents, self.agents_scope)])
             
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
@@ -148,30 +136,19 @@ class SequentialTrainer(Trainer):
             if not self.headless:
                 self.env.render()
             
-            # write data to TensorBoard
             with torch.no_grad():
-                if self.num_agents > 1:
-                    for agent, scope in zip(self.agents, self.agents_scope):
-                        super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]], 
-                                                                    actions=actions[scope[0]:scope[1]], 
-                                                                    rewards=rewards[scope[0]:scope[1]], 
-                                                                    next_states=next_states[scope[0]:scope[1]], 
-                                                                    dones=dones[scope[0]:scope[1]],
-                                                                    timestep=timestep,
-                                                                    timesteps=self.timesteps)
-                        super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
-                else:
-                    super(type(self.agents), self.agents).record_transition(states=states, 
-                                                                            actions=actions,
-                                                                            rewards=rewards,
-                                                                            next_states=next_states,
-                                                                            dones=dones,
-                                                                            timestep=timestep,
-                                                                            timesteps=self.timesteps)
-                    super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                # write data to TensorBoard
+                for agent, scope in zip(self.agents, self.agents_scope):
+                    super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]], 
+                                                                actions=actions[scope[0]:scope[1]], 
+                                                                rewards=rewards[scope[0]:scope[1]], 
+                                                                next_states=next_states[scope[0]:scope[1]], 
+                                                                dones=dones[scope[0]:scope[1]],
+                                                                timestep=timestep,
+                                                                timesteps=self.timesteps)
+                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
-            # reset environments
-            with torch.no_grad():
+                # reset environments
                 if dones.any():
                     states = self.env.reset()
                 else:

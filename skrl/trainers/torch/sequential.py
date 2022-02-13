@@ -29,6 +29,13 @@ class SequentialTrainer(Trainer):
         """
         super().__init__(cfg, env, agents, agents_scope)
 
+        # init agents
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.init()
+        else:
+            self.agents.init()
+
     def train(self) -> None:
         """Train the agents sequentially
 

@@ -100,6 +100,8 @@ class Trainer():
                     self.agents_scope[i] = (index - self.agents_scope[i], index)
             else:
                 raise ValueError("A list of agents is expected")
+        else:
+            self.num_agents = 1
         
         # enable train mode
         if self.num_agents > 1:

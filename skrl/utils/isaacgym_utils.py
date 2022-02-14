@@ -34,7 +34,9 @@ class WebViewer:
 
         self._image = None
         self._camera_id = 0
-        self._event = threading.Event()
+        self._wait_for_page = True
+        self._event_load = threading.Event()
+        self._event_stream = threading.Event()
 
         # start server
         self._thread = threading.Thread(target=lambda: self._app.run(host=host, port=port, debug=False, use_reloader=False), 
@@ -61,6 +63,7 @@ class WebViewer:
         </body>
         </html>
         """
+        self._event_load.set()
         return flask.render_template_string(template)
 
     def _route_stream(self) -> 'flask.Response':
@@ -79,9 +82,9 @@ class WebViewer:
         """
         while True:
             # prepare image
-            self._event.wait()
+            self._event_stream.wait()
             image = imageio.imwrite("<bytes>", self._image, format="JPEG")
-            self._event.clear()
+            self._event_stream.clear()
 
             # strem image
             yield (b'--frame\r\n'
@@ -107,7 +110,8 @@ class WebViewer:
     def render(self, 
                fetch_results: bool = True, 
                step_graphics: bool = True, 
-               render_all_camera_sensors: bool = True) -> None:
+               render_all_camera_sensors: bool = True,
+               wait_for_page_load: bool = True) -> None:
         """Render and get the image from the current camera
 
         This function must be called after the simulation is stepped (post_physics_step).
@@ -124,7 +128,18 @@ class WebViewer:
         :type step_graphics: bool
         :param render_all_camera_sensors: Call Gym.render_all_camera_sensors method (default: True)
         :type render_all_camera_sensors: bool
+        :param wait_for_page_load: Wait for the page to load (default: True)
+        :type wait_for_page_load: bool
         """
+        # wait for page to load
+        if self._wait_for_page:
+            if wait_for_page_load:
+                if not self._event_load.is_set():
+                    print("Waiting for web page to begin loading...")
+                self._event_load.wait()
+                self._event_load.clear()
+            self._wait_for_page = False
+
         # isaac gym API
         if fetch_results:
             self._gym.fetch_results(self._sim, True)
@@ -141,7 +156,7 @@ class WebViewer:
         self._image = image.reshape(image.shape[0], -1, 4)[..., :3]
         
         # notify stream thread
-        self._event.set()
+        self._event_stream.set()
 
 
 def ik(jacobian_end_effector: torch.Tensor, 

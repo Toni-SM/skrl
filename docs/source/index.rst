@@ -1,11 +1,7 @@
 SKRL - Reinforcement Learning library
 =====================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation
-
-In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
-
-**GitHub repository:** https://github.com/Toni-SM/skrl 
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
 
@@ -17,7 +13,20 @@ In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it all
 
 .. warning::
 
-    This project is under **active continuous development**. Please make sure you always have the latest version 
+    **skrl** is under **active continuous development**. Make sure you always have the latest version 
+
+**GitHub repository:** https://github.com/Toni-SM/skrl 
+
+**Citing skrl:** To cite this library in publications, please use the following reference:
+
+.. code-block:: bibtex
+
+    @article{serrano2022skrl,
+    title={skrl: Modular and Flexible Library for Reinforcement Learning},
+    author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
+    journal={arXiv preprint arXiv:2202.03825},
+    year={2022}
+    }
 
 User guide
 ----------

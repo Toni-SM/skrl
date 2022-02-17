@@ -82,7 +82,7 @@ class ParallelTrainer(Trainer):
                  agents_scope : List[int] = []) -> None:
         """Parallel trainer
         
-        Train agents in parallel
+        Train agents in parallel using multiple processes
 
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -100,7 +100,8 @@ class ParallelTrainer(Trainer):
     def train(self) -> None:
         """Train the agents in parallel
 
-        This method executes the following steps in loop: 
+        This method executes the following steps in loop:
+
         - Pre-interaction (parallel)
         - Compute actions (in parallel)
         - Interact with the environments

@@ -40,6 +40,7 @@ class SequentialTrainer(Trainer):
         """Train the agents sequentially
 
         This method executes the following steps in loop:
+
         - Pre-interaction (sequentially)
         - Compute actions (sequentially)
         - Interact with the environments
@@ -104,6 +105,7 @@ class SequentialTrainer(Trainer):
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
+        
         - Compute actions (sequentially)
         - Interact with the environments
         - Render scene

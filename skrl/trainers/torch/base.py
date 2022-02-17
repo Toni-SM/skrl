@@ -164,6 +164,7 @@ class Trainer():
         """Train a single agent
 
         This method executes the following steps in loop:
+
         - Pre-interaction
         - Compute actions
         - Interact with the environments
@@ -218,6 +219,7 @@ class Trainer():
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
+        
         - Compute actions (sequentially)
         - Interact with the environments
         - Render scene

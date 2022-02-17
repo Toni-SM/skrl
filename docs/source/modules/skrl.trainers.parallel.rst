@@ -1,5 +1,5 @@
-Concurrent trainer
-==================
+Parallel trainer
+================
 
 Basic usage
 ^^^^^^^^^^^
@@ -22,7 +22,7 @@ Basic usage
 API
 ^^^
 
-.. autoclass:: skrl.trainers.torch.concurrent.ConcurrentTrainer
+.. autoclass:: skrl.trainers.torch.parallel.ParallelTrainer
    :undoc-members:
    :show-inheritance:
    :inherited-members:
@@ -30,4 +30,3 @@ API
    :members:
    
    .. automethod:: __init__
-

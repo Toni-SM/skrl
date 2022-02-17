@@ -142,6 +142,7 @@ Trainers
     Definition of the procedures responsible for managing the agent's training and interaction with the environment. All trainers inherit from a :doc:`base class <modules/skrl.trainers.base_class>` that defines a uniform interface and provides for common functionalities
 
     * :doc:`Sequential trainer <modules/skrl.trainers.sequential>`
+    * :doc:`Parallel trainer <modules/skrl.trainers.parallel>`
 
 .. toctree::
     :maxdepth: 1
@@ -150,7 +151,7 @@ Trainers
         
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
-    .. modules/skrl.trainers.concurrent
+    modules/skrl.trainers.parallel
 
 Utils
 ^^^^^

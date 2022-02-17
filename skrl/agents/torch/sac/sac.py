@@ -143,6 +143,11 @@ class SAC(Agent):
             self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
                                                      lr=self._critic_learning_rate)
 
+    def init(self) -> None:
+        """Initialize the agent
+        """
+        super().init()
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)

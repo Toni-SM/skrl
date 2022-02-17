@@ -128,6 +128,11 @@ class PPO(Agent):
         if self.value is not None:
             self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
+    def init(self) -> None:
+        """Initialize the agent
+        """
+        super().init()
+        
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)

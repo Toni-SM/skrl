@@ -130,7 +130,7 @@ class ParallelTrainer(Trainer):
         # move tensors to shared memory
         for agent in self.agents:
             if agent.memory is not None:
-                agent.memory.share_memory_()
+                agent.memory.share_memory()
             for network in agent.networks.values():
                 network.share_memory()
 

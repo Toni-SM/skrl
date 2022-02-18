@@ -2,6 +2,19 @@
 
 Record of notable changes in this project
 
+## [Unreleased]
+
+### Added
+
+- Parallel training using multiprocessing
+- Isaac Gym utilities
+
+### Changed
+
+- Initialize agents in a separate method
+
+### Fixed
+
 ## [0.3.0] - 2021-02-07
 
 ### Added

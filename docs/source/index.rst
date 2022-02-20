@@ -48,12 +48,13 @@ Agents
 
     Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
-    * :doc:`DDPG <modules/skrl.agents.ddpg>` (Deep Deterministic Policy Gradient)
-    * :doc:`DDQN <modules/skrl.agents.ddqn>` (Double Deep Q-Network)
-    * :doc:`DQN <modules/skrl.agents.dqn>` (Deep Q-Network)
-    * :doc:`PPO <modules/skrl.agents.ppo>` (Proximal Policy Optimization)
-    * :doc:`SAC <modules/skrl.agents.sac>` (Soft Actor-Critic)
-    * :doc:`TD3 <modules/skrl.agents.td3>` (Twin-Delayed DDPG)
+    * :doc:`Cross-Entropy Method <modules/skrl.agents.cem>` (**CEM**)
+    * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
+    * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
+    * :doc:`Deep Q-Network <modules/skrl.agents.dqn>` (**DQN**)
+    * :doc:`Proximal Policy Optimization <modules/skrl.agents.ppo>` (**PPO**)
+    * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
+    * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
 
 .. toctree::
     :maxdepth: 1
@@ -61,6 +62,7 @@ Agents
     :hidden:
 
     modules/skrl.agents.base_class
+    CEM <modules/skrl.agents.cem>
     DDPG <modules/skrl.agents.ddpg>
     DDQN <modules/skrl.agents.ddqn>
     DQN <modules/skrl.agents.dqn>

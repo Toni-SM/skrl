@@ -52,7 +52,7 @@ class CategoricalModel(Model):
         :type inference: bool, optional
 
         :return: Action to be taken by the agent given the state of the environment.
-                 The tuple's components are the actions, the log of the probability density function and None
+                 The tuple's components are the actions, the log of the probability density function and the network's output
         :rtype: tuple of torch.Tensor
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities

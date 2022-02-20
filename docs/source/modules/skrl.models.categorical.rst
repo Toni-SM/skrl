@@ -6,7 +6,7 @@ Categorical model
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/model_categorical.png
+.. image:: ../_static/imgs/model_categorical.svg
       :width: 100%
       :align: center
       :alt: Categorical model
@@ -36,7 +36,6 @@ API
 ^^^
 
 .. autoclass:: skrl.models.torch.categorical.CategoricalModel
-   :undoc-members:
    :show-inheritance:
    :members:
    

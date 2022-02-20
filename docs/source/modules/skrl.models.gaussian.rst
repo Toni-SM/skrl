@@ -6,7 +6,7 @@ Gaussian model
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/model_gaussian.png
+.. image:: ../_static/imgs/model_gaussian.svg
       :width: 100%
       :align: center
       :alt: Gaussian model
@@ -36,7 +36,6 @@ API
 ^^^
 
 .. autoclass:: skrl.models.torch.gaussian.GaussianModel
-   :undoc-members:
    :show-inheritance:
    :members:
    

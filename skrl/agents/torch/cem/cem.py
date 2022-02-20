@@ -213,24 +213,25 @@ class CEM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
+        # sample all memory
         sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
             self.memory.sample_all(names=self.tensors_names)[0]
 
         with torch.no_grad():
-            # compute reward bound
+            # compute discounted return threshold
             limits = []
-            total_rewards = []
+            returns = []
             for e in range(sampled_rewards.size(-1)):
                 for i, j in zip(self._episode_tracking[e][:-1], self._episode_tracking[e][1:]):
-                    total_rewards.append(torch.sum(sampled_rewards[e + i: e + j]))
                     limits.append([e + i, e + j])
-            total_rewards = torch.tensor(total_rewards)
-            total_reward_bound = torch.quantile(total_rewards, self._percentile, dim=-1)
-            total_reward_mean = torch.mean(total_rewards, dim=-1)
+                    rewards = sampled_rewards[e + i: e + j]
+                    returns.append(torch.sum(rewards * self._discount_factor ** \
+                        torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())))
+            returns = torch.tensor(returns)
+            return_threshold = torch.quantile(returns, self._percentile, dim=-1)
             
             # get elite states and actions
-            indexes = torch.nonzero(total_rewards >= total_reward_bound)
+            indexes = torch.nonzero(returns >= return_threshold)
             elite_states = torch.cat([sampled_states[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
             elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
 
@@ -248,5 +249,5 @@ class CEM(Agent):
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
 
-        self.track_data("Coefficient / Reward bound", total_reward_bound.item())
-        self.track_data("Coefficient / Reward mean", total_reward_mean.item())
+        self.track_data("Coefficient / Return threshold", return_threshold.item())
+        self.track_data("Coefficient / Mean discounted returns", torch.mean(returns).item())

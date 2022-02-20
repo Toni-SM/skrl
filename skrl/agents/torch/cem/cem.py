@@ -14,7 +14,7 @@ from .. import Agent
 
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
-    "percentile": 0.70,             # percentile of the distribution to be used as reward bound [0, 1]
+    "percentile": 0.70,             # percentile to compute the reward bound [0, 1]
 
     "discount_factor": 0.99,        # discount factor (gamma)
     
@@ -44,7 +44,7 @@ class CEM(Agent):
                  cfg: dict = {}) -> None:
         """Cross-Entropy Method (CEM)
 
-        TODO: paper link
+        https://ieeexplore.ieee.org/abstract/document/6796865/
         
         :param networks: Networks used by the agent
         :type networks: dictionary of skrl.models.torch.Model
@@ -217,8 +217,8 @@ class CEM(Agent):
         sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
             self.memory.sample_all(names=self.tensors_names)[0]
 
-        # compute reward bound
         with torch.no_grad():
+            # compute reward bound
             limits = []
             total_rewards = []
             for e in range(sampled_rewards.size(-1)):
@@ -229,14 +229,16 @@ class CEM(Agent):
             total_reward_bound = torch.quantile(total_rewards, self._percentile, dim=-1)
             total_reward_mean = torch.mean(total_rewards, dim=-1)
             
+            # get elite states and actions
             indexes = torch.nonzero(total_rewards >= total_reward_bound)
-            concatenated_states = torch.cat([sampled_states[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
-            concatenated_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
+            elite_states = torch.cat([sampled_states[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
+            elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
 
-        action_scores_v = self.policy.act(concatenated_states)[2]
+        # compute scores for the elite states
+        scores = self.policy.act(elite_states)[2]
 
         # compute policy loss
-        policy_loss = F.cross_entropy(action_scores_v, concatenated_actions.view(-1))
+        policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
         # optimize policy
         self.policy_optimizer.zero_grad()

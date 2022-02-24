@@ -31,10 +31,12 @@ class WebViewer:
         self._app = flask.Flask(__name__)
         self._app.add_url_rule("/", view_func=self._route_index)
         self._app.add_url_rule("/_route_stream", view_func=self._route_stream)
+        self._app.add_url_rule("/_route_input_event", view_func=self._route_input_event, methods=["POST"])
 
         self._image = None
         self._camera_id = 0
         self._wait_for_page = True
+        self._pause_stream = False
         self._event_load = threading.Event()
         self._event_stream = threading.Event()
 
@@ -55,11 +57,68 @@ class WebViewer:
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <style>
+                html, body { 
+                    width: 100%; height: 100%; 
+                    margin: 0; overflow: hidden; display: block; 
+                    background-color: #000;
+                }
+            </style>
         </head>
         <body>
             <div>
-                <img src="{{ url_for('_route_stream') }}" width="100%">
+                <canvas id="canvas" tabindex='1'></canvas>
             </div>
+
+            <script>
+                var canvas, context, image;
+                var holding = false;
+                var mousePosition = {x:0, y:0};
+
+                window.onload = function(){
+                    canvas = document.getElementById("canvas");
+                    context = canvas.getContext('2d');
+                    image = new Image();
+                    image.src = "{{ url_for('_route_stream') }}";
+
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
+                    window.addEventListener('resize', function(){
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                    }, false);
+
+                    window.setInterval(function(){
+                        let ratio = image.naturalWidth / image.naturalHeight;
+                        context.drawImage(image, 0, 0, canvas.width, canvas.width / ratio);
+                    }, 50);
+
+                    canvas.addEventListener('keydown', function(event){
+                        let data = {key: event.keyCode, x: Infinity, y: Infinity};
+
+                        if(event.keyCode == 18 && holding){ // alt
+                            data.x = mousePosition.x;
+                            data.y = mousePosition.y;
+                        }
+
+                        xmlRequest = new XMLHttpRequest();
+                        xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
+                        xmlRequest.setRequestHeader("Content-Type", "application/json");
+                        xmlRequest.send(JSON.stringify(data));
+
+                    }, false);
+                    
+                    canvas.addEventListener('mousedown', function(event){ holding = true; }, false);
+                    canvas.addEventListener('mouseup', function(event){ holding = false; }, false);
+                    canvas.addEventListener('mousemove', function(event){
+                        if(holding){
+                            mousePosition.x = event.clientX;
+                            mousePosition.y = event.clientY;
+                        }
+                    }, false);
+                }
+            </script>
         </body>
         </html>
         """
@@ -74,6 +133,53 @@ class WebViewer:
         """
         return flask.Response(self._stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
         
+    def _route_input_event(self) -> 'flask.Response':
+        """Handle keyboard and mouse input
+
+        :return: Flask response
+        :rtype: flask.Response
+        """
+        # get keyboard input
+        data = flask.request.get_json()
+        key = data["key"]
+
+        transform = self._gym.get_camera_transform(self._sim, 
+                                                   self._envs[self._camera_id],
+                                                   self._cameras[self._camera_id])
+
+        # pause stream (V: 86)
+        if key == 86:
+            self._pause_stream = not self._pause_stream
+            return flask.Response(status=200)
+        
+        # move view using mouse (ALT: 18)
+        elif key == 18:
+            x, y = data["x"], data["y"]
+            print("x: {}, y: {}".format(x, y))
+            return flask.Response(status=200)
+
+        # move view (W: 87, A: 65, S: 83, D: 68, Q: 81, E: 69)
+        elif key == 87:
+            transform.p.y += 0.01
+        elif key == 65:
+            transform.p.x -= 0.01
+        elif key == 83:
+            transform.p.y -= 0.01
+        elif key == 68:
+            transform.p.x += 0.01
+        elif key == 81:
+            transform.p.z += 0.01
+        elif key == 69:
+            transform.p.z -= 0.01
+        else:
+            return flask.Response(status=200)
+
+        self._gym.set_camera_transform(self._cameras[self._camera_id], 
+                                       self._envs[self._camera_id], 
+                                       transform)
+
+        return flask.Response("", status=200)
+
     def _stream(self) -> bytes:
         """Format the image to be streamed
 
@@ -86,7 +192,7 @@ class WebViewer:
             image = imageio.imwrite("<bytes>", self._image, format="JPEG")
             self._event_stream.clear()
 
-            # strem image
+            # stream image
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
 
@@ -139,6 +245,10 @@ class WebViewer:
                 self._event_load.wait()
                 self._event_load.clear()
             self._wait_for_page = False
+
+        # pause stream
+        if self._pause_stream:
+            return
 
         # isaac gym API
         if fetch_results:

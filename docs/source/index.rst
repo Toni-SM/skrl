@@ -17,7 +17,7 @@ SKRL - Reinforcement Learning library
 
 **GitHub repository:** https://github.com/Toni-SM/skrl 
 
-**Citing skrl:** To cite this library in publications, please use the following reference:
+**Citing skrl:** To cite this library (created at `Mondragon Unibertsitatea <https://www.mondragon.edu/en/home>`_) use the following reference to its `article <https://arxiv.org/abs/2202.03825>`_: *"skrl: Modular and Flexible Library for Reinforcement Learning"*
 
 .. code-block:: bibtex
 

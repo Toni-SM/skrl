@@ -1,6 +1,7 @@
 from typing import Union, List
 
 import math
+import logging
 import threading
 import imageio
 import isaacgym
@@ -33,6 +34,10 @@ class WebViewer:
         self._app.add_url_rule("/", view_func=self._route_index)
         self._app.add_url_rule("/_route_stream", view_func=self._route_stream)
         self._app.add_url_rule("/_route_input_event", view_func=self._route_input_event, methods=["POST"])
+
+        self._log = logging.getLogger('werkzeug')
+        self._log.disabled = True
+        self._app.logger.disabled = True
 
         self._image = None
         self._camera_id = 0

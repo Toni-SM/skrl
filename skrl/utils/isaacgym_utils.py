@@ -1,5 +1,6 @@
 from typing import Union, List
 
+import math
 import threading
 import imageio
 import isaacgym
@@ -73,7 +74,8 @@ class WebViewer:
             <script>
                 var canvas, context, image;
                 var holding = false;
-                var mousePosition = {x:0, y:0};
+                var prevMousePos = {x: 0, y: 0};
+                var mousePos = {x: 0, y: 0};
 
                 window.onload = function(){
                     canvas = document.getElementById("canvas");
@@ -95,27 +97,31 @@ class WebViewer:
                     }, 50);
 
                     canvas.addEventListener('keydown', function(event){
-                        let data = {key: event.keyCode, x: Infinity, y: Infinity};
-
-                        if(event.keyCode == 18 && holding){ // alt
-                            data.x = mousePosition.x;
-                            data.y = mousePosition.y;
-                        }
-
-                        xmlRequest = new XMLHttpRequest();
+                        let data = {key: event.keyCode, dx: Infinity, dy: Infinity};
+                        let xmlRequest = new XMLHttpRequest();
                         xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
                         xmlRequest.setRequestHeader("Content-Type", "application/json");
-                        xmlRequest.send(JSON.stringify(data));
 
+                        if(event.keyCode == 18 && holding){ // alt
+                            data.dx = mousePos.x - prevMousePos.x;
+                            data.dy = mousePos.y - prevMousePos.y;
+                            prevMousePos.x = mousePos.x;
+                            prevMousePos.y = mousePos.y;
+                            xmlRequest.send(JSON.stringify(data));
+                        }
+                        else if(event.keyCode != 18){
+                            xmlRequest.send(JSON.stringify(data));
+                        }
                     }, false);
                     
-                    canvas.addEventListener('mousedown', function(event){ holding = true; }, false);
+                    canvas.addEventListener('mousedown', function(event){ 
+                        holding = true; 
+                        prevMousePos = {x: event.clientX, y: event.clientY};
+                    }, false);
                     canvas.addEventListener('mouseup', function(event){ holding = false; }, false);
                     canvas.addEventListener('mousemove', function(event){
-                        if(holding){
-                            mousePosition.x = event.clientX;
-                            mousePosition.y = event.clientY;
-                        }
+                        if(holding)
+                            mousePos = {x: event.clientX, y: event.clientY};
                     }, false);
                 }
             </script>
@@ -152,11 +158,44 @@ class WebViewer:
             self._pause_stream = not self._pause_stream
             return flask.Response(status=200)
         
-        # move view using mouse (ALT: 18)
+        # move view using ATL + mouse click (ALT: 18)
         elif key == 18:
-            x, y = data["x"], data["y"]
-            print("x: {}, y: {}".format(x, y))
-            return flask.Response(status=200)
+            dx, dy = data["dx"], data["dy"]
+            if not dx and not dy:
+                return flask.Response(status=200)
+
+            def q_mult(q1, q2):
+                return [q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
+                        q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
+                        q1[0] * q2[2] + q1[2] * q2[0] + q1[3] * q2[1] - q1[1] * q2[3],
+                        q1[0] * q2[3] + q1[3] * q2[0] + q1[1] * q2[2] - q1[2] * q2[1]]
+
+            def q_conj(q):
+                return [q[0], -q[1], -q[2], -q[3]]
+
+            def qv_mult(q, v):
+                q2 = [0] + v
+                return q_mult(q_mult(q, q2), q_conj(q))[1:]
+
+            def angle_axis2quat(angle, axis):
+                s = math.sin(angle / 2.0)
+                return [math.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
+
+            # convert mouse movement to rotation
+            dx *= 0.1 * math.pi / 180
+            dy *= 0.1 * math.pi / 180
+
+            # compute rotation (Z-up)
+            q = angle_axis2quat(dx, [0, 0, 1])
+            q = q_mult(q, angle_axis2quat(dy, [1, 0, 0]))
+
+            # apply rotation
+            p = qv_mult(q, [transform.p.x, transform.p.y, transform.p.z])
+
+            # update transform
+            transform.p.x = p[0]
+            transform.p.y = p[1]
+            transform.p.z = p[2]
 
         # move view (W: 87, A: 65, S: 83, D: 68, Q: 81, E: 69)
         elif key == 87:

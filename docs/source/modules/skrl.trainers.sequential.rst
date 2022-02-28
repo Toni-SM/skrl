@@ -1,33 +1,40 @@
 Sequential trainer
 ==================
 
+Concept
+^^^^^^^
+
+.. image:: ../_static/imgs/sequential_trainer.svg
+    :width: 100%
+    :align: center
+    :alt: Sequential trainer
+
 Basic usage
 ^^^^^^^^^^^
 
-   .. code-block:: python
-      :linenos:
- 
-      from skrl.trainers.torch import SequentialTrainer
+.. code-block:: python
+    :linenos:
 
-      # asuming there is an environment called 'env'
-      # and an agent or a list of agents called 'agents'
+    from skrl.trainers.torch import SequentialTrainer
 
-      # create a sequential trainer
-      cfg = {"timesteps": 50000, "headless": False}
-      trainer = SequentialTrainer(cfg=cfg, env=env, agents=agents)
-      
-      # train the agent(s)
-      trainer.start()
+    # asuming there is an environment called 'env'
+    # and an agent or a list of agents called 'agents'
+
+    # create a sequential trainer
+    cfg = {"timesteps": 50000, "headless": False}
+    trainer = SequentialTrainer(cfg=cfg, env=env, agents=agents)
+   
+    # train the agent(s)
+    trainer.start()
 
 API
 ^^^
 
 .. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _pre_interaction, _post_interaction
-   :members:
-   
-   .. automethod:: __init__
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _pre_interaction, _post_interaction
+    :members:
 
+    .. automethod:: __init__

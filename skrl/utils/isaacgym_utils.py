@@ -81,6 +81,7 @@ class WebViewer:
                 var holding = false;
                 var prevMousePos = {x: 0, y: 0};
                 var mousePos = {x: 0, y: 0};
+                var mouseWheel = 0;
 
                 window.onload = function(){
                     canvas = document.getElementById("canvas");
@@ -102,16 +103,21 @@ class WebViewer:
                     }, 50);
 
                     canvas.addEventListener('keydown', function(event){
-                        let data = {key: event.keyCode, dx: Infinity, dy: Infinity};
+                        let data = {key: event.keyCode, dx: Infinity, dy: Infinity, dz: Infinity};
                         let xmlRequest = new XMLHttpRequest();
                         xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
                         xmlRequest.setRequestHeader("Content-Type", "application/json");
 
-                        if(event.keyCode == 18 && holding){ // alt
+                        if(event.keyCode == 18 && holding){ // alt + left click
                             data.dx = mousePos.x - prevMousePos.x;
                             data.dy = mousePos.y - prevMousePos.y;
                             prevMousePos.x = mousePos.x;
                             prevMousePos.y = mousePos.y;
+                            xmlRequest.send(JSON.stringify(data));
+                        }
+                        else if(event.keyCode == 18 && (!holding && mouseWheel)){ // alt + scroll
+                            data.dz = mouseWheel;
+                            mouseWheel = 0;
                             xmlRequest.send(JSON.stringify(data));
                         }
                         else if(event.keyCode != 18){
@@ -128,6 +134,7 @@ class WebViewer:
                         if(holding)
                             mousePos = {x: event.clientX, y: event.clientY};
                     }, false);
+                    canvas.addEventListener('wheel', function(event){ mouseWheel = Math.sign(event.deltaY); }, false);
                 }
             </script>
         </body>
@@ -163,11 +170,9 @@ class WebViewer:
             self._pause_stream = not self._pause_stream
             return flask.Response(status=200)
         
-        # move view using ATL + mouse click (ALT: 18)
+        # move view (ALT: 18)
         elif key == 18:
-            dx, dy = data["dx"], data["dy"]
-            if not dx and not dy:
-                return flask.Response(status=200)
+            dx, dy, dz = data["dx"], data["dy"], data["dz"]
 
             def q_mult(q1, q2):
                 return [q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
@@ -186,21 +191,37 @@ class WebViewer:
                 s = math.sin(angle / 2.0)
                 return [math.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
 
-            # convert mouse movement to rotation
-            dx *= 0.1 * math.pi / 180
-            dy *= 0.1 * math.pi / 180
+            # zoom (ALT + scroll)
+            if dz:
+                # compute zoom vector
+                vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
+                                 [0.025 * dz, 0, 0])
 
-            # compute rotation (Z-up)
-            q = angle_axis2quat(dx, [0, 0, 1])
-            q = q_mult(q, angle_axis2quat(dy, [1, 0, 0]))
+                # update transform
+                transform.p.x += vector[0]
+                transform.p.y += vector[1]
+                transform.p.z += vector[2]
+            
+            # rotate (ALT + left click)
+            elif dx or dy:
+                # convert mouse movement to rotation
+                dx *= 0.1 * math.pi / 180
+                dy *= 0.1 * math.pi / 180
 
-            # apply rotation
-            p = qv_mult(q, [transform.p.x, transform.p.y, transform.p.z])
+                # compute rotation (Z-up)
+                q = angle_axis2quat(dx, [0, 0, 1])
+                q = q_mult(q, angle_axis2quat(dy, [1, 0, 0]))
 
-            # update transform
-            transform.p.x = p[0]
-            transform.p.y = p[1]
-            transform.p.z = p[2]
+                # apply rotation
+                p = qv_mult(q, [transform.p.x, transform.p.y, transform.p.z])
+
+                # update transform
+                transform.p.x = p[0]
+                transform.p.y = p[1]
+                transform.p.z = p[2]
+
+            else:
+                return flask.Response(status=200)
 
         # move view (W: 87, A: 65, S: 83, D: 68, Q: 81, E: 69)
         elif key == 87:
@@ -358,33 +379,25 @@ def print_arguments(args):
     for a in args.__dict__:
         print("  |-- {}: {}".format(a, args.__getattribute__(a)))
 
-def print_asset_option(option):
-    print("")
-    print("Asset option")
-    print("  |-- angular_damping:", option.angular_damping)
-    print("  |-- armature:", option.armature)
-    print("  |-- collapse_fixed_joints:", option.collapse_fixed_joints)
-    print("  |-- convex_decomposition_from_submeshes:", option.convex_decomposition_from_submeshes)
-    print("  |-- default_dof_drive_mode:", option.default_dof_drive_mode)
-    print("  |-- density:", option.density)
-    print("  |-- disable_gravity:", option.disable_gravity)
-    print("  |-- fix_base_link:", option.fix_base_link)
-    print("  |-- flip_visual_attachments:", option.flip_visual_attachments)
-    print("  |-- linear_damping:", option.linear_damping)
-    print("  |-- max_angular_velocity:", option.max_angular_velocity)
-    print("  |-- max_linear_velocity:", option.max_linear_velocity)
-    print("  |-- mesh_normal_mode:", option.mesh_normal_mode)
-    print("  |-- min_particle_mass:", option.min_particle_mass)
-    print("  |-- override_com:", option.override_com)
-    print("  |-- override_inertia:", option.override_inertia)
-    print("  |-- replace_cylinder_with_capsule:", option.replace_cylinder_with_capsule)
-    print("  |-- slices_per_cylinder:", option.slices_per_cylinder)
-    print("  |-- tendon_limit_stiffness:", option.tendon_limit_stiffness)
-    print("  |-- thickness:", option.thickness)
-    print("  |-- use_mesh_materials:", option.use_mesh_materials)
-    print("  |-- use_physx_armature:", option.use_physx_armature)
-    print("  |-- vhacd_enabled:", option.vhacd_enabled)
-    # print("  |-- vhacd_param:", option.vhacd_param)   # AttributeError: 'isaacgym._bindings.linux-x86_64.gym_36.AssetOption' object has no attribute 'vhacd_param'
+def print_asset_options(asset_options: 'isaacgym.gymapi.AssetOptions', asset_name: str = ""):
+    attrs = ["angular_damping", "armature", "collapse_fixed_joints", "convex_decomposition_from_submeshes", 
+             "default_dof_drive_mode", "density", "disable_gravity", "fix_base_link", "flip_visual_attachments", 
+             "linear_damping", "max_angular_velocity", "max_linear_velocity", "mesh_normal_mode", "min_particle_mass", 
+             "override_com", "override_inertia", "replace_cylinder_with_capsule", "tendon_limit_stiffness", "thickness", 
+             "use_mesh_materials", "use_physx_armature", "vhacd_enabled"]  # vhacd_params
+    print("\nAsset options{}".format(" ({})".format(asset_name) if asset_name else ""))
+    for attr in attrs:
+        print("  |-- {}: {}".format(attr, getattr(asset_options, attr) if hasattr(asset_options, attr) else "--"))
+        # vhacd attributes
+        if attr == "vhacd_enabled" and hasattr(asset_options, attr) and getattr(asset_options, attr):
+            vhacd_attrs = ["alpha", "beta", "concavity", "convex_hull_approximation", "convex_hull_downsampling", 
+                           "max_convex_hulls", "max_num_vertices_per_ch", "min_volume_per_ch", "mode", "ocl_acceleration", 
+                           "pca", "plane_downsampling", "project_hull_vertices", "resolution"]
+            print("  |-- vhacd_params:")
+            for vhacd_attr in vhacd_attrs:
+                print("  |   |-- {}: {}".format(vhacd_attr, getattr(asset_options.vhacd_params, vhacd_attr) \
+                    if hasattr(asset_options.vhacd_params, vhacd_attr) else "--"))
+
 
 def print_sim_components(gym, sim):
     print("")

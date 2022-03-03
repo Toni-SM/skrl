@@ -187,15 +187,24 @@ class WebViewer:
                 q2 = [0] + v
                 return q_mult(q_mult(q, q2), q_conj(q))[1:]
 
-            def angle_axis2quat(angle, axis):
+            def q_from_angle_axis(angle, axis):
                 s = math.sin(angle / 2.0)
                 return [math.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
+
+            def p_target(p, q, a=0, b=0, c=1, d=0):
+                v = qv_mult(q, [1, 0, 0])
+                p1 = [c0 + c1 for c0, c1 in zip(p, v)]
+                denominator = a * (p1[0] - p[0]) + b * (p1[1] - p[1]) + c * (p1[2] - p[2])
+                if denominator:
+                    t = -(a * p[0] + b * p[1] + c * p[2] + d) / denominator
+                    return [p[0] + t * (p1[0] - p[0]), p[1] + t * (p1[1] - p[1]), p[2] + t * (p1[2] - p[2])]
+                return v
 
             # zoom (ALT + scroll)
             if dz:
                 # compute zoom vector
                 vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
-                                 [0.025 * dz, 0, 0])
+                                 [-0.025 * dz, 0, 0])
 
                 # update transform
                 transform.p.x += vector[0]
@@ -209,16 +218,20 @@ class WebViewer:
                 dy *= 0.1 * math.pi / 180
 
                 # compute rotation (Z-up)
-                q = angle_axis2quat(dx, [0, 0, 1])
-                q = q_mult(q, angle_axis2quat(dy, [1, 0, 0]))
+                q = q_from_angle_axis(dx, [0, 0, 1])
+                q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
 
                 # apply rotation
-                p = qv_mult(q, [transform.p.x, transform.p.y, transform.p.z])
+                t = p_target([transform.p.x, transform.p.y, transform.p.z], 
+                             [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
+                p = qv_mult(q, [transform.p.x - t[0], transform.p.y - t[1], transform.p.z - t[2]])
+                q = q_mult(q, [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
 
                 # update transform
-                transform.p.x = p[0]
-                transform.p.y = p[1]
-                transform.p.z = p[2]
+                transform.p.x = p[0] + t[0]
+                transform.p.y = p[1] + t[1]
+                transform.p.z = p[2] + t[2]
+                transform.r.w, transform.r.x, transform.r.y, transform.r.z = q
 
             else:
                 return flask.Response(status=200)
@@ -243,7 +256,7 @@ class WebViewer:
                                        self._envs[self._camera_id], 
                                        transform)
 
-        return flask.Response("", status=200)
+        return flask.Response(status=200)
 
     def _stream(self) -> bytes:
         """Format the image to be streamed

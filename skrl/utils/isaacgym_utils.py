@@ -83,9 +83,6 @@ class WebViewer:
 
             <script>
                 var canvas, context, image;
-                var holding = false;
-                var prevMousePos = {x: 0, y: 0};
-                var mousePos = {x: 0, y: 0};
 
                 function sendInputRequest(data){
                     let xmlRequest = new XMLHttpRequest();
@@ -114,28 +111,27 @@ class WebViewer:
                     }, 50);
 
                     canvas.addEventListener('keydown', function(event){
-                        let data = {key: event.keyCode, dx: Infinity, dy: Infinity, dz: Infinity};
-
-                        if(event.keyCode == 18 && holding){ // alt + left click
-                            data.dx = mousePos.x - prevMousePos.x;
-                            data.dy = mousePos.y - prevMousePos.y;
-                            prevMousePos.x = mousePos.x;
-                            prevMousePos.y = mousePos.y;
-                            sendInputRequest(data);
-                        }
-                        else if(event.keyCode != 18)
-                            sendInputRequest(data);
+                        if(event.keyCode != 18)
+                            sendInputRequest({key: event.keyCode});
                     }, false);
                     
-                    canvas.addEventListener('mousedown', function(event){ 
-                        holding = true; 
-                        prevMousePos = {x: event.clientX, y: event.clientY};
-                    }, false);
-                    canvas.addEventListener('mouseup', function(event){ holding = false; }, false);
                     canvas.addEventListener('mousemove', function(event){
-                        if(holding)
-                            mousePos = {x: event.clientX, y: event.clientY};
+                        if(event.buttons){
+                            let data = {dx: event.movementX, dy: event.movementY};
+                            if(event.altKey && event.buttons == 1){
+                                data.key = 18;
+                                data.mouse = "left";
+                            }
+                            else if(event.buttons == 2)
+                                data.mouse = "right";
+                            else if(event.buttons == 4)
+                                data.mouse = "middle";
+                            else
+                                return;
+                            sendInputRequest(data);
+                        }
                     }, false);
+
                     canvas.addEventListener('wheel', function(event){ 
                         sendInputRequest({mouse: "wheel", dz: Math.sign(event.deltaY)});
                     }, false);
@@ -196,52 +192,53 @@ class WebViewer:
                                                    self._envs[self._camera_id],
                                                    self._cameras[self._camera_id])
 
-        # mouse input
+        # zoom in/out
         if mouse == "wheel":
-            # zoom in/out
-            if dz:
-                # compute zoom vector
-                vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
-                                 [-0.025 * dz, 0, 0])
-                
-                # update transform
-                transform.p.x += vector[0]
-                transform.p.y += vector[1]
-                transform.p.z += vector[2]
+            # compute zoom vector
+            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
+                                [-0.025 * dz, 0, 0])
+            
+            # update transform
+            transform.p.x += vector[0]
+            transform.p.y += vector[1]
+            transform.p.z += vector[2]
+
+        # orbit camera
+        elif mouse == "left":
+            # convert mouse movement to angle
+            dx *= 0.1 * math.pi / 180
+            dy *= 0.1 * math.pi / 180
+
+            # compute rotation (Z-up)
+            q = q_from_angle_axis(dx, [0, 0, -1])
+            q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
+
+            # apply rotation
+            t = p_target([transform.p.x, transform.p.y, transform.p.z], 
+                        [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
+            p = qv_mult(q, [transform.p.x - t[0], transform.p.y - t[1], transform.p.z - t[2]])
+            q = q_mult(q, [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
+
+            # update transform
+            transform.p.x = p[0] + t[0]
+            transform.p.y = p[1] + t[1]
+            transform.p.z = p[2] + t[2]
+            transform.r.w, transform.r.x, transform.r.y, transform.r.z = q
+
+        # pan camera
+        elif mouse == "right":
+            pass
+            # TODO: pan camera
+        
+        # walk camera
+        elif mouse == "middle":
+            pass
+            # TODO: walk camera
 
         # pause stream (V: 86)
         elif key == 86:
             self._pause_stream = not self._pause_stream
             return flask.Response(status=200)
-        
-        # move view (ALT: 18)
-        elif key == 18:
-            dx, dy, dz = data["dx"], data["dy"], data["dz"]
-            
-            # rotate (ALT + left click)
-            if dx or dy:
-                # convert mouse movement to rotation
-                dx *= 0.1 * math.pi / 180
-                dy *= 0.1 * math.pi / 180
-
-                # compute rotation (Z-up)
-                q = q_from_angle_axis(dx, [0, 0, -1])
-                q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
-
-                # apply rotation
-                t = p_target([transform.p.x, transform.p.y, transform.p.z], 
-                             [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
-                p = qv_mult(q, [transform.p.x - t[0], transform.p.y - t[1], transform.p.z - t[2]])
-                q = q_mult(q, [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
-
-                # update transform
-                transform.p.x = p[0] + t[0]
-                transform.p.y = p[1] + t[1]
-                transform.p.z = p[2] + t[2]
-                transform.r.w, transform.r.x, transform.r.y, transform.r.z = q
-
-            else:
-                return flask.Response(status=200)
 
         # move view (W: 87, A: 65, S: 83, D: 68, Q: 81, E: 69)
         elif key == 87:

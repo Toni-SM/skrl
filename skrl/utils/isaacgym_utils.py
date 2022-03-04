@@ -86,7 +86,13 @@ class WebViewer:
                 var holding = false;
                 var prevMousePos = {x: 0, y: 0};
                 var mousePos = {x: 0, y: 0};
-                var mouseWheel = 0;
+
+                function sendInputRequest(data){
+                    let xmlRequest = new XMLHttpRequest();
+                    xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
+                    xmlRequest.setRequestHeader("Content-Type", "application/json");
+                    xmlRequest.send(JSON.stringify(data));
+                }
 
                 window.onload = function(){
                     canvas = document.getElementById("canvas");
@@ -109,25 +115,16 @@ class WebViewer:
 
                     canvas.addEventListener('keydown', function(event){
                         let data = {key: event.keyCode, dx: Infinity, dy: Infinity, dz: Infinity};
-                        let xmlRequest = new XMLHttpRequest();
-                        xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
-                        xmlRequest.setRequestHeader("Content-Type", "application/json");
 
                         if(event.keyCode == 18 && holding){ // alt + left click
                             data.dx = mousePos.x - prevMousePos.x;
                             data.dy = mousePos.y - prevMousePos.y;
                             prevMousePos.x = mousePos.x;
                             prevMousePos.y = mousePos.y;
-                            xmlRequest.send(JSON.stringify(data));
+                            sendInputRequest(data);
                         }
-                        else if(event.keyCode == 18 && (!holding && mouseWheel)){ // alt + scroll
-                            data.dz = mouseWheel;
-                            mouseWheel = 0;
-                            xmlRequest.send(JSON.stringify(data));
-                        }
-                        else if(event.keyCode != 18){
-                            xmlRequest.send(JSON.stringify(data));
-                        }
+                        else if(event.keyCode != 18)
+                            sendInputRequest(data);
                     }, false);
                     
                     canvas.addEventListener('mousedown', function(event){ 
@@ -139,7 +136,9 @@ class WebViewer:
                         if(holding)
                             mousePos = {x: event.clientX, y: event.clientY};
                     }, false);
-                    canvas.addEventListener('wheel', function(event){ mouseWheel = Math.sign(event.deltaY); }, false);
+                    canvas.addEventListener('wheel', function(event){ 
+                        sendInputRequest({mouse: "wheel", dz: Math.sign(event.deltaY)});
+                    }, false);
                 }
             </script>
         </body>
@@ -162,62 +161,65 @@ class WebViewer:
         :return: Flask response
         :rtype: flask.Response
         """
-        # get keyboard input
+        def q_mult(q1, q2):
+            return [q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
+                    q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
+                    q1[0] * q2[2] + q1[2] * q2[0] + q1[3] * q2[1] - q1[1] * q2[3],
+                    q1[0] * q2[3] + q1[3] * q2[0] + q1[1] * q2[2] - q1[2] * q2[1]]
+
+        def q_conj(q):
+            return [q[0], -q[1], -q[2], -q[3]]
+
+        def qv_mult(q, v):
+            q2 = [0] + v
+            return q_mult(q_mult(q, q2), q_conj(q))[1:]
+
+        def q_from_angle_axis(angle, axis):
+            s = math.sin(angle / 2.0)
+            return [math.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
+
+        def p_target(p, q, a=0, b=0, c=1, d=0):
+            v = qv_mult(q, [1, 0, 0])
+            p1 = [c0 + c1 for c0, c1 in zip(p, v)]
+            denominator = a * (p1[0] - p[0]) + b * (p1[1] - p[1]) + c * (p1[2] - p[2])
+            if denominator:
+                t = -(a * p[0] + b * p[1] + c * p[2] + d) / denominator
+                return [p[0] + t * (p1[0] - p[0]), p[1] + t * (p1[1] - p[1]), p[2] + t * (p1[2] - p[2])]
+            return v
+        
+        # get keyboard and mouse inputs
         data = flask.request.get_json()
-        key = data["key"]
+        key, mouse = data.get("key", None), data.get("mouse", None)
+        dx, dy, dz = data.get("dx", None), data.get("dy", None), data.get("dz", None)
 
         transform = self._gym.get_camera_transform(self._sim, 
                                                    self._envs[self._camera_id],
                                                    self._cameras[self._camera_id])
 
+        # mouse input
+        if mouse == "wheel":
+            # zoom in/out
+            if dz:
+                # compute zoom vector
+                vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
+                                 [-0.025 * dz, 0, 0])
+                
+                # update transform
+                transform.p.x += vector[0]
+                transform.p.y += vector[1]
+                transform.p.z += vector[2]
+
         # pause stream (V: 86)
-        if key == 86:
+        elif key == 86:
             self._pause_stream = not self._pause_stream
             return flask.Response(status=200)
         
         # move view (ALT: 18)
         elif key == 18:
             dx, dy, dz = data["dx"], data["dy"], data["dz"]
-
-            def q_mult(q1, q2):
-                return [q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
-                        q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
-                        q1[0] * q2[2] + q1[2] * q2[0] + q1[3] * q2[1] - q1[1] * q2[3],
-                        q1[0] * q2[3] + q1[3] * q2[0] + q1[1] * q2[2] - q1[2] * q2[1]]
-
-            def q_conj(q):
-                return [q[0], -q[1], -q[2], -q[3]]
-
-            def qv_mult(q, v):
-                q2 = [0] + v
-                return q_mult(q_mult(q, q2), q_conj(q))[1:]
-
-            def q_from_angle_axis(angle, axis):
-                s = math.sin(angle / 2.0)
-                return [math.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
-
-            def p_target(p, q, a=0, b=0, c=1, d=0):
-                v = qv_mult(q, [1, 0, 0])
-                p1 = [c0 + c1 for c0, c1 in zip(p, v)]
-                denominator = a * (p1[0] - p[0]) + b * (p1[1] - p[1]) + c * (p1[2] - p[2])
-                if denominator:
-                    t = -(a * p[0] + b * p[1] + c * p[2] + d) / denominator
-                    return [p[0] + t * (p1[0] - p[0]), p[1] + t * (p1[1] - p[1]), p[2] + t * (p1[2] - p[2])]
-                return v
-
-            # zoom (ALT + scroll)
-            if dz:
-                # compute zoom vector
-                vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], 
-                                 [-0.025 * dz, 0, 0])
-
-                # update transform
-                transform.p.x += vector[0]
-                transform.p.y += vector[1]
-                transform.p.z += vector[2]
             
             # rotate (ALT + left click)
-            elif dx or dy:
+            if dx or dy:
                 # convert mouse movement to rotation
                 dx *= 0.1 * math.pi / 180
                 dy *= 0.1 * math.pi / 180

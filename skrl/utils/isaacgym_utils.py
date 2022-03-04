@@ -227,8 +227,19 @@ class WebViewer:
 
         # pan camera
         elif mouse == "right":
-            pass
-            # TODO: pan camera
+            # convert mouse movement to angle
+            dx *= 0.1 * math.pi / 180
+            dy *= 0.1 * math.pi / 180
+
+            # compute rotation (Z-up)
+            q = q_from_angle_axis(dx, [0, 0, -1])
+            q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
+
+            # apply rotation
+            q = q_mult(q, [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
+
+            # update transform
+            transform.r.w, transform.r.x, transform.r.y, transform.r.z = q
         
         # walk camera
         elif mouse == "middle":

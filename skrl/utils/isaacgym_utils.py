@@ -243,8 +243,14 @@ class WebViewer:
         
         # walk camera
         elif mouse == "middle":
-            pass
-            # TODO: walk camera
+            # compute displacement
+            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z],
+                             [0, 0.001 * dx, 0.001 * dy])
+
+            # update transform
+            transform.p.x += vector[0]
+            transform.p.y += vector[1]
+            transform.p.z += vector[2]
 
         # pause stream (V: 86)
         elif key == 86:

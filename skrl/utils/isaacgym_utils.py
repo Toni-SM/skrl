@@ -3,6 +3,7 @@ from typing import Union, List
 import math
 import logging
 import threading
+import numpy as np
 import imageio
 import isaacgym
 try:
@@ -46,6 +47,7 @@ class WebViewer:
 
         self._image = None
         self._camera_id = 0
+        self._camera_type = gymapi.IMAGE_COLOR
         self._wait_for_page = True
         self._pause_stream = False
         self._event_load = threading.Event()
@@ -257,19 +259,14 @@ class WebViewer:
             self._pause_stream = not self._pause_stream
             return flask.Response(status=200)
 
-        # move view (W: 87, A: 65, S: 83, D: 68, Q: 81, E: 69)
-        elif key == 87:
-            transform.p.y += 0.01
-        elif key == 65:
-            transform.p.x -= 0.01
-        elif key == 83:
-            transform.p.y -= 0.01
-        elif key == 68:
-            transform.p.x += 0.01
-        elif key == 81:
-            transform.p.z += 0.01
-        elif key == 69:
-            transform.p.z -= 0.01
+        # change image type (T: 84)
+        elif key == 84:
+            if self._camera_type == gymapi.IMAGE_COLOR:
+                self._camera_type = gymapi.IMAGE_DEPTH
+            elif self._camera_type == gymapi.IMAGE_DEPTH:
+                self._camera_type = gymapi.IMAGE_COLOR
+            return flask.Response(status=200)
+        
         else:
             return flask.Response(status=200)
 
@@ -361,8 +358,17 @@ class WebViewer:
         image = self._gym.get_camera_image(self._sim, 
                                            self._envs[self._camera_id],
                                            self._cameras[self._camera_id], 
-                                           gymapi.IMAGE_COLOR)
-        self._image = image.reshape(image.shape[0], -1, 4)[..., :3]
+                                           self._camera_type)
+        if self._camera_type == gymapi.IMAGE_COLOR:
+            self._image = image.reshape(image.shape[0], -1, 4)[..., :3]
+        elif self._camera_type == gymapi.IMAGE_DEPTH:
+            self._image = -image.reshape(image.shape[0], -1)          
+            minimum = 0 if np.isinf(np.min(self._image)) else np.min(self._image)
+            maximum = 5 if np.isinf(np.max(self._image)) else np.max(self._image)
+            self._image = np.clip(1 - (self._image - minimum) / (maximum - minimum), 0, 1)
+            self._image = np.uint8(255 * self._image)
+        else:
+            raise ValueError("Unsupported camera type")
         
         # notify stream thread
         self._event_stream.set()

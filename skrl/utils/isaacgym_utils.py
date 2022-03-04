@@ -23,12 +23,17 @@ class WebViewer:
         """
         Web viewer for Isaac Gym
 
+        Supported view gestures:
+        
+        - ALT + Left click: Orbit camera around the target point
+        - Scroll: Zoom in/out
+        - Scroll click: Walk mode
+        - Right click: Pan camera (orbit around itself)
+
         :param host: Host address (default: "127.0.0.1")
         :type host: str
         :param port: Port number (default: 5000)
         :type port: int
-        :param use_socket: Stream using socket.io (default: False)
-        :type use_socket: bool
         """
         self._app = flask.Flask(__name__)
         self._app.add_url_rule("/", view_func=self._route_index)
@@ -47,8 +52,8 @@ class WebViewer:
         self._event_stream = threading.Event()
 
         # start server
-        self._thread = threading.Thread(target=lambda: self._app.run(host=host, port=port, debug=False, use_reloader=False), 
-                                        daemon=True)
+        self._thread = threading.Thread(target=lambda: \
+            self._app.run(host=host, port=port, debug=False, use_reloader=False), daemon=True)
         self._thread.start()
         print("\nStarting web viewer on http://{}:{}/\n".format(host, port))
 
@@ -218,7 +223,7 @@ class WebViewer:
                 dy *= 0.1 * math.pi / 180
 
                 # compute rotation (Z-up)
-                q = q_from_angle_axis(dx, [0, 0, 1])
+                q = q_from_angle_axis(dx, [0, 0, -1])
                 q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
 
                 # apply rotation

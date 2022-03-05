@@ -107,8 +107,8 @@ class ParallelTrainer(Trainer):
         - Interact with the environments
         - Render scene
         - Record transitions (in parallel)
-        - Reset environments
         - Post-interaction (in parallel)
+        - Reset environments
         """
         # single agent
         if self.num_agents == 1:
@@ -179,8 +179,8 @@ class ParallelTrainer(Trainer):
             if not self.headless:
                 self.env.render()
 
+            # record the environments' transitions
             with torch.no_grad():
-                # record the environments' transitions
                 rewards.share_memory_()
                 next_states.share_memory_()
                 dones.share_memory_()
@@ -192,17 +192,18 @@ class ParallelTrainer(Trainer):
                     queue.put(dones)
                 barrier.wait()
 
-                # reset environments
+            # post-interaction
+            for pipe in producer_pipes:
+                pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.timesteps})
+            barrier.wait()
+
+            # reset environments
+            with torch.no_grad():
                 if dones.any():
                     states = self.env.reset()
                     states.share_memory_()
                 else:
                     states.copy_(next_states)
-                
-            # post-interaction
-            for pipe in producer_pipes:
-                pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.timesteps})
-            barrier.wait()
 
         # terminate processes
         for pipe in producer_pipes:

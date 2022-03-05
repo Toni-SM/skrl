@@ -46,8 +46,8 @@ class SequentialTrainer(Trainer):
         - Interact with the environments
         - Render scene
         - Record transitions (sequentially)
-        - Reset environments
         - Post-interaction (sequentially)
+        - Reset environments
         """
         # single agent
         if self.num_agents == 1:
@@ -80,8 +80,8 @@ class SequentialTrainer(Trainer):
             if not self.headless:
                 self.env.render()
 
+            # record the environments' transitions
             with torch.no_grad():
-                # record the environments' transitions
                 for agent, scope in zip(self.agents, self.agents_scope):
                     agent.record_transition(states=states[scope[0]:scope[1]], 
                                             actions=actions[scope[0]:scope[1]], 
@@ -91,15 +91,16 @@ class SequentialTrainer(Trainer):
                                             timestep=timestep,
                                             timesteps=self.timesteps)
             
-                # reset environments
+            # post-interaction
+            for agent in self.agents:
+                agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            with torch.no_grad():
                 if dones.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
-                
-            # post-interaction
-            for agent in self.agents:
-                agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
             
     def eval(self) -> None:
         """Evaluate the agents sequentially

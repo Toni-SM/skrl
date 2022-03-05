@@ -170,8 +170,8 @@ class Trainer():
         - Interact with the environments
         - Render scene
         - Record transitions
-        - Reset environments
         - Post-interaction
+        - Reset environments
         """
         assert self.num_agents == 1, "This method is only valid for a single agent"
 
@@ -196,8 +196,8 @@ class Trainer():
             if not self.headless:
                 self.env.render()
 
+            # record the environments' transitions
             with torch.no_grad():
-                # record the environments' transitions
                 self.agents.record_transition(states=states, 
                                               actions=actions,
                                               rewards=rewards,
@@ -206,14 +206,15 @@ class Trainer():
                                               timestep=timestep,
                                               timesteps=self.timesteps)
             
-                # reset environments
+            # post-interaction
+            self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
+            
+            # reset environments
+            with torch.no_grad():
                 if dones.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
-                
-            # post-interaction
-            self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
     def single_agent_eval(self) -> None:
         """Evaluate the agents sequentially

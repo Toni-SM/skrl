@@ -87,15 +87,15 @@ memory = RandomMemory(memory_size=10000, num_envs=env.num_envs, device=device, r
 # Instanciate the agent's models (function approximators).
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
-networks_sac = {"policy": Actor(env.observation_space, env.action_space, device, clip_actions=True),
+models_sac = {"policy": Actor(env.observation_space, env.action_space, device, clip_actions=True),
                 "critic_1": Critic(env.observation_space, env.action_space, device),
                 "critic_2": Critic(env.observation_space, env.action_space, device),
                 "target_critic_1": Critic(env.observation_space, env.action_space, device),
                 "target_critic_2": Critic(env.observation_space, env.action_space, device)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_sac.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_sac.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instanciate the agent.
@@ -111,17 +111,17 @@ cfg_sac["learn_entropy"] = True
 cfg_sac["experiment"]["write_interval"] = 1000
 cfg_sac["experiment"]["checkpoint_interval"] = 50000
 
-agent_sac = SAC(networks=networks_sac, 
-                 memory=memory, 
-                 cfg=cfg_sac, 
-                 observation_space=env.observation_space, 
-                 action_space=env.action_space,
-                 device=device)
+agent = SAC(models=models_sac, 
+            memory=memory, 
+            cfg=cfg_sac, 
+            observation_space=env.observation_space, 
+            action_space=env.action_space,
+            device=device)
 
 
 # Configure and instanciate the RL trainer
 cfg_trainer = {"timesteps": 500000, "headless": not True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_sac)
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()

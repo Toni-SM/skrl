@@ -46,11 +46,11 @@ device = env.device
 # Instantiate the agent's policy.
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#models-networks
-networks_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
-                "value": None}
+models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
+              "value": None}
 
 # load checkpoint
-networks_ppo["policy"].load("./runs/22-02-06_19-42-39-313520_PPO/checkpoints/8000_policy.pt")
+models_ppo["policy"].load("./runs/22-02-06_19-42-39-313520_PPO/checkpoints/8000_policy.pt")
 
 
 # Configure and instantiate the agent.
@@ -61,7 +61,7 @@ cfg_ppo["random_timesteps"] = 0
 cfg_ppo["experiment"]["write_interval"] = 16
 cfg_ppo["experiment"]["checkpoint_interval"] = 0
 
-agent = PPO(networks=networks_ppo,
+agent = PPO(models=models_ppo,
             memory=None, 
             cfg=cfg_ppo, 
             observation_space=env.observation_space, 

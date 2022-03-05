@@ -84,33 +84,33 @@ memory = RandomMemory(memory_size=8000, num_envs=env.num_envs, device=device, re
 # Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
-networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "critic": Critic(env.observation_space, env.action_space, device),
-                 "target_critic": Critic(env.observation_space, env.action_space, device)}
+models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "critic": Critic(env.observation_space, env.action_space, device),
+               "target_critic": Critic(env.observation_space, env.action_space, device)}
 # TD3 requires 6 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#models-networks
-networks_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "critic_1": Critic(env.observation_space, env.action_space, device),
-                "critic_2": Critic(env.observation_space, env.action_space, device),
-                "target_critic_1": Critic(env.observation_space, env.action_space, device),
-                "target_critic_2": Critic(env.observation_space, env.action_space, device)}
+models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+              "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+              "critic_1": Critic(env.observation_space, env.action_space, device),
+              "critic_2": Critic(env.observation_space, env.action_space, device),
+              "target_critic_1": Critic(env.observation_space, env.action_space, device),
+              "target_critic_2": Critic(env.observation_space, env.action_space, device)}
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
-networks_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "critic_1": Critic(env.observation_space, env.action_space, device),
-                "critic_2": Critic(env.observation_space, env.action_space, device),
-                "target_critic_1": Critic(env.observation_space, env.action_space, device),
-                "target_critic_2": Critic(env.observation_space, env.action_space, device)}
+models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
+              "critic_1": Critic(env.observation_space, env.action_space, device),
+              "critic_2": Critic(env.observation_space, env.action_space, device),
+              "target_critic_1": Critic(env.observation_space, env.action_space, device),
+              "target_critic_2": Critic(env.observation_space, env.action_space, device)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_ddpg.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-for network in networks_td3.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-for network in networks_sac.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_ddpg.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_td3.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_sac.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
     
 
 # Configure and instantiate the agent.
@@ -148,21 +148,21 @@ cfg_sac["learn_entropy"] = True
 cfg_sac["experiment"]["write_interval"] = 25
 cfg_sac["experiment"]["checkpoint_interval"] = 1000
 
-agent_ddpg = DDPG(networks=networks_ddpg, 
+agent_ddpg = DDPG(models=models_ddpg, 
                   memory=memory, 
                   cfg=cfg_ddpg, 
                   observation_space=env.observation_space, 
                   action_space=env.action_space,
                   device=device)
 
-agent_td3 = TD3(networks=networks_td3, 
+agent_td3 = TD3(models=models_td3, 
                 memory=memory, 
                 cfg=cfg_td3, 
                 observation_space=env.observation_space, 
                 action_space=env.action_space,
                 device=device)
 
-agent_sac = SAC(networks=networks_sac, 
+agent_sac = SAC(models=models_sac, 
                 memory=memory, 
                 cfg=cfg_sac, 
                 observation_space=env.observation_space, 

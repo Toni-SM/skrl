@@ -132,8 +132,8 @@ class ParallelTrainer(Trainer):
         for agent in self.agents:
             if agent.memory is not None:
                 agent.memory.share_memory()
-            for network in agent.networks.values():
-                network.share_memory()
+            for model in agent.models.values():
+                model.share_memory()
 
         # spawn and wait for all processes to start
         for i in range(self.num_agents):

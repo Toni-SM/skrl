@@ -50,7 +50,7 @@ TD3_DEFAULT_CONFIG = {
 
 class TD3(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -60,8 +60,8 @@ class TD3(Agent):
 
         https://arxiv.org/abs/1802.09477
         
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -75,40 +75,40 @@ class TD3(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
 
-        :raises KeyError: If the networks dictionary is missing a required key
+        :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=_cfg)
 
-        # networks
-        if not "policy" in self.networks.keys():
-            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
-        if not "target_policy" in self.networks.keys():
-            raise KeyError("The target policy network is not defined under 'target_policy' key (networks['target_policy'])")
-        if not "critic_1" in self.networks.keys():
-            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (networks['critic_1'])")
-        if not "critic_2" in self.networks.keys():
-            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (networks['critic_2'])")
-        if not "target_critic_1" in self.networks.keys():
-            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (networks['target_critic_1'])")
-        if not "target_critic_2" in self.networks.keys():
-            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (networks['target_critic_2'])")
+        # models
+        if not "policy" in self.models.keys():
+            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
+        if not "target_policy" in self.models.keys():
+            raise KeyError("The target policy model is not defined under 'target_policy' key (models['target_policy'])")
+        if not "critic_1" in self.models.keys():
+            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (models['critic_1'])")
+        if not "critic_2" in self.models.keys():
+            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (models['critic_2'])")
+        if not "target_critic_1" in self.models.keys():
+            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (models['target_critic_1'])")
+        if not "target_critic_2" in self.models.keys():
+            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (models['target_critic_2'])")
         
-        self.policy = self.networks["policy"]
-        self.target_policy = self.networks["target_policy"]
-        self.critic_1 = self.networks["critic_1"]
-        self.critic_2 = self.networks["critic_2"]
-        self.target_critic_1 = self.networks["target_critic_1"]
-        self.target_critic_2 = self.networks["target_critic_2"]
+        self.policy = self.models["policy"]
+        self.target_policy = self.models["target_policy"]
+        self.critic_1 = self.models["critic_1"]
+        self.critic_2 = self.models["critic_2"]
+        self.target_critic_1 = self.models["target_critic_1"]
+        self.target_critic_2 = self.models["target_critic_2"]
         
-        # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
+        # checkpoint models
+        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
 
         if self.target_policy is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -186,7 +186,7 @@ class TD3(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

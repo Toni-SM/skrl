@@ -15,7 +15,7 @@ from ...models.torch import Model
 
 class Agent:
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -23,8 +23,8 @@ class Agent:
                  cfg: dict = {}) -> None:
         """Base class that represent a RL agent
 
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -38,7 +38,7 @@ class Agent:
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
-        self.networks = networks
+        self.models = models
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(device)
@@ -51,10 +51,10 @@ class Agent:
             self.memory = memory
             self.secondary_memories = []
         
-        # convert the networks to their respective device
-        for network in self.networks.values():
-            if network is not None:
-                network.to(network.device)
+        # convert the models to their respective device
+        for model in self.models.values():
+            if model is not None:
+                model.to(model.device)
 
         self.tracking_data = collections.defaultdict(list)
         self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
@@ -65,7 +65,7 @@ class Agent:
         self._cumulative_timesteps = None
 
         # checkpoint
-        self.checkpoint_networks = {}
+        self.checkpoint_models = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
 
@@ -139,7 +139,7 @@ class Agent:
         self.tracking_data.clear()
 
     def write_checkpoint(self, timestep: int, timesteps: int) -> None:
-        """Write checkpoint (networks) to disk
+        """Write checkpoint (models) to disk
 
         The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
         The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
@@ -149,9 +149,9 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        for k in self.checkpoint_networks:
+        for k in self.checkpoint_models:
             name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
-            self.checkpoint_networks[k].save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
+            self.checkpoint_models[k].save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
 
     def act(self, 
             states: torch.Tensor, 
@@ -166,7 +166,7 @@ class Agent:
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :raises NotImplementedError: The method is not implemented by the inheriting classes
@@ -240,14 +240,14 @@ class Agent:
                 self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
     def set_mode(self, mode: str) -> None:
-        """Set the network mode (training or evaluation)
+        """Set the model mode (training or evaluation)
 
         :param mode: Mode: 'train' for training or 'eval' for evaluation
         :type mode: str
         """
-        for network in self.networks.values():
-            if network is not None:
-                network.set_mode(mode)
+        for model in self.models.values():
+            if model is not None:
+                model.set_mode(mode)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment

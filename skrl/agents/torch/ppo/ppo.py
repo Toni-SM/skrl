@@ -50,7 +50,7 @@ PPO_DEFAULT_CONFIG = {
 
 class PPO(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -60,8 +60,8 @@ class PPO(Agent):
 
         https://arxiv.org/abs/1707.06347
         
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -75,28 +75,28 @@ class PPO(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
 
-        :raises KeyError: If the networks dictionary is missing a required key
+        :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=_cfg)
 
-        # networks
-        if not "policy" in self.networks.keys():
-            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
-        if not "value" in self.networks.keys():
-            raise KeyError("The value network is not defined under 'value' key (networks['value'])")
+        # models
+        if not "policy" in self.models.keys():
+            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
+        if not "value" in self.models.keys():
+            raise KeyError("The value model is not defined under 'value' key (models['value'])")
         
-        self.policy = self.networks["policy"]
-        self.value = self.networks["value"]
+        self.policy = self.models["policy"]
+        self.value = self.models["value"]
 
-        # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
+        # checkpoint models
+        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
@@ -163,7 +163,7 @@ class PPO(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

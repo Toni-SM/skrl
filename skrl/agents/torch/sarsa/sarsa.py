@@ -62,7 +62,7 @@ class SARSA(Agent):
         """
         _cfg = copy.deepcopy(SARSA_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=models, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
@@ -70,13 +70,13 @@ class SARSA(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.networks.keys():
+        if not "policy" in self.models.keys():
             raise KeyError("The policy is not defined under 'policy' key (models['policy'])")
         
-        self.policy = self.networks["policy"]
+        self.policy = self.models["policy"]
 
-        # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
+        # checkpoint models
+        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
         
         # configuration
         self._discount_factor = self.cfg["discount_factor"]
@@ -112,7 +112,7 @@ class SARSA(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

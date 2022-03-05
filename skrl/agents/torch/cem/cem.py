@@ -36,7 +36,7 @@ CEM_DEFAULT_CONFIG = {
 
 class CEM(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -46,8 +46,8 @@ class CEM(Agent):
 
         https://ieeexplore.ieee.org/abstract/document/6796865/
         
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -61,25 +61,25 @@ class CEM(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
 
-        :raises KeyError: If the networks dictionary is missing a required key
+        :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=_cfg)
 
-        # networks
-        if not "policy" in self.networks.keys():
-            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
+        # models
+        if not "policy" in self.models.keys():
+            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
         
-        self.policy = self.networks["policy"]
+        self.policy = self.models["policy"]
 
-        # checkpoint networks
-        self.checkpoint_networks = self.networks
+        # checkpoint models
+        self.checkpoint_models = self.models
         
         # configuration:
         self._rollouts = self.cfg["rollouts"]
@@ -125,7 +125,7 @@ class CEM(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

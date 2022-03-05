@@ -45,7 +45,7 @@ DDPG_DEFAULT_CONFIG = {
 
 class DDPG(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -55,8 +55,8 @@ class DDPG(Agent):
 
         https://arxiv.org/abs/1509.02971
         
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -70,34 +70,34 @@ class DDPG(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
 
-        :raises KeyError: If the networks dictionary is missing a required key
+        :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(DDPG_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=_cfg)
 
-        # networks
-        if not "policy" in self.networks.keys():
-            raise KeyError("The policy network is not defined under 'policy' key (networks['policy'])")
-        if not "target_policy" in self.networks.keys():
-            raise KeyError("The target policy network is not defined under 'target_policy' key (networks['target_policy'])")
-        if not "critic" in self.networks.keys():
-            raise KeyError("The Q-network (critic) is not defined under 'critic' key (networks['critic'])")
-        if not "target_critic" in self.networks.keys():
-            raise KeyError("The target Q-network (target critic) is not defined under 'target_critic' key (networks['target_critic'])")
+        # models
+        if not "policy" in self.models.keys():
+            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
+        if not "target_policy" in self.models.keys():
+            raise KeyError("The target policy model is not defined under 'target_policy' key (models['target_policy'])")
+        if not "critic" in self.models.keys():
+            raise KeyError("The Q-network (critic) is not defined under 'critic' key (models['critic'])")
+        if not "target_critic" in self.models.keys():
+            raise KeyError("The target Q-network (target critic) is not defined under 'target_critic' key (models['target_critic'])")
         
-        self.policy = self.networks["policy"]
-        self.target_policy = self.networks["target_policy"]
-        self.critic = self.networks["critic"]
-        self.target_critic = self.networks["target_critic"]
+        self.policy = self.models["policy"]
+        self.target_policy = self.models["target_policy"]
+        self.critic = self.models["critic"]
+        self.target_critic = self.models["target_critic"]
 
-        # checkpoint networks
-        self.checkpoint_networks = {"policy": self.policy} if self.checkpoint_policy_only else self.networks
+        # checkpoint models
+        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
         
         if self.target_policy is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -166,7 +166,7 @@ class DDPG(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

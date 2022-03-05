@@ -54,7 +54,7 @@ Configuration and hyperparameters
 Models (networks)
 ^^^^^^^^^^^^^^^^^
 
-The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
    :header-rows: 1
@@ -68,7 +68,7 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
      - :literal:`"policy"`
      - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>`
    * - :math:`V_\phi(s)`
-     - Value network
+     - Value model
      - :literal:`"value"`
      - :ref:`Deterministic <models_deterministic>`
 

@@ -38,7 +38,7 @@ Configuration and hyperparameters
 Models (networks)
 ^^^^^^^^^^^^^^^^^
 
-The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
    :header-rows: 1

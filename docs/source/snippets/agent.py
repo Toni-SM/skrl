@@ -24,15 +24,15 @@ CUSTOM_DEFAULT_CONFIG = {
 
 class CUSTOM(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  device: Union[str, torch.device] = "cuda:0", 
                  cfg: dict = {}) -> None:
         """
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions
         :type memory: skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -45,15 +45,15 @@ class CUSTOM(Agent):
         :type cfg: dict
         """
         CUSTOM_DEFAULT_CONFIG.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=CUSTOM_DEFAULT_CONFIG)
         # ================================
-        # - get and process networks from self.networks
-        # - create self.checkpoint_networks dictionary for storing checkpoints
+        # - get and process models from self.models
+        # - create self.checkpoint_models dictionary for storing checkpoints
         # - parse configurations from self.cfg
         # - setup optimizers
         # - create tensors in memory if required
@@ -72,7 +72,7 @@ class CUSTOM(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

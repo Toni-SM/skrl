@@ -27,9 +27,9 @@ class CustomModel(Model):
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
         :param taken_actions: Actions taken by a policy to the given states (default: None).
-                              The use of these actions only makes sense in critical networks, e.g.
+                              The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the network is making inference (default: False).
+        :param inference: Flag to indicate whether the model is making inference (default: False).
                           If True, the returned tensors will be detached from the current graph
         :type inference: bool, optional
         

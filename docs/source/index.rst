@@ -54,6 +54,7 @@ Agents
     * :doc:`Deep Q-Network <modules/skrl.agents.dqn>` (**DQN**)
     * :doc:`Proximal Policy Optimization <modules/skrl.agents.ppo>` (**PPO**)
     * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
+    * :doc:`State Action Reward State Action <modules/skrl.agents.sarsa>` (**SARSA**)
     * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
 
 .. toctree::
@@ -68,6 +69,7 @@ Agents
     DQN <modules/skrl.agents.dqn>
     PPO <modules/skrl.agents.ppo>
     SAC <modules/skrl.agents.sac>
+    SARSA <modules/skrl.agents.sarsa>
     TD3 <modules/skrl.agents.td3>
 
 Environments

@@ -35,8 +35,23 @@ Configuration and hyperparameters
    :lines: 15-34
    :linenos:
 
-Models (networks)
+Spaces and models
 ^^^^^^^^^^^^^^^^^
+
+The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+
+.. list-table::
+   :header-rows: 1
+
+   * - Gym spaces
+     - .. centered:: Observation
+     - .. centered:: Action
+   * - Discrete
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\blacksquare`
+   * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
 
 The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

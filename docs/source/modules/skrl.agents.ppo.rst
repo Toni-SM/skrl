@@ -1,6 +1,10 @@
 Proximal Policy Optimization (PPO)
 ==================================
 
+PPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that alternates between sampling data through interaction with the environment, and optimizing a *surrogate* objective function while avoiding that the new policy does not move too far away from the old one
+
+Paper: `Proximal Policy Optimization Algorithms <https://arxiv.org/abs/1707.06347>`_
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -51,8 +55,23 @@ Configuration and hyperparameters
    :lines: 16-48
    :linenos:
 
-Models (networks)
+Spaces and models
 ^^^^^^^^^^^^^^^^^
+
+The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+
+.. list-table::
+   :header-rows: 1
+
+   * - Gym spaces
+     - .. centered:: Observation
+     - .. centered:: Action
+   * - Discrete
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\blacksquare`
+   * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\blacksquare`
 
 The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -68,7 +87,7 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
      - :literal:`"policy"`
      - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>`
    * - :math:`V_\phi(s)`
-     - Value model
+     - Value
      - :literal:`"value"`
      - :ref:`Deterministic <models_deterministic>`
 

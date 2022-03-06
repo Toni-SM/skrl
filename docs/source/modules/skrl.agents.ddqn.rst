@@ -1,6 +1,10 @@
 Double Deep Q-Network (DDQN)
 ============================
 
+DDQN is a **model-free**, **off-policy** algorithm that relies on double Q-learning to avoid the overestimation of action-values introduced by DQN
+
+Paper: `Deep Reinforcement Learning with Double Q-Learning <https://ojs.aaai.org/index.php/AAAI/article/view/10295>`_
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -39,8 +43,23 @@ Configuration and hyperparameters
    :lines: 16-45
    :linenos:
 
-Models (networks)
+Spaces and models
 ^^^^^^^^^^^^^^^^^
+
+The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+
+.. list-table::
+   :header-rows: 1
+
+   * - Gym spaces
+     - .. centered:: Observation
+     - .. centered:: Action
+   * - Discrete
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\blacksquare`
+   * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
 
 The implementation uses 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

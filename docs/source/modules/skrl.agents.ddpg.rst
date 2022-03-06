@@ -1,6 +1,10 @@
 Deep Deterministic Policy Gradient (DDPG)
 =========================================
 
+DDPG is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm that uses deep function approximators to learn a policy (and to estimate the action-value function) in high-dimensional, **continuous** action spaces
+
+Paper: `Continuous control with deep reinforcement learning <https://arxiv.org/abs/1509.02971>`_
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -46,8 +50,23 @@ Configuration and hyperparameters
    :lines: 15-43
    :linenos:
 
-Models (networks)
+Spaces and models
 ^^^^^^^^^^^^^^^^^
+
+The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+
+.. list-table::
+   :header-rows: 1
+
+   * - Gym spaces
+     - .. centered:: Observation
+     - .. centered:: Action
+   * - Discrete
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\square`
+   * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\blacksquare`
 
 The implementation uses 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

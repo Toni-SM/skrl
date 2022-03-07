@@ -107,8 +107,9 @@ Memories
 Models
 ^^^^^^
 
-    Definition of helper classes for the construction of function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
+    Definition of helper classes for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
 
+    * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
     * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
     * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)
     * :doc:`Deterministic model <modules/skrl.models.deterministic>` (continuous domain)
@@ -119,9 +120,10 @@ Models
     :hidden:
 
     modules/skrl.models.base_class
+    modules/skrl.models.tabular
     modules/skrl.models.categorical
-    modules/skrl.models.gaussian 
-    modules/skrl.models.deterministic 
+    modules/skrl.models.gaussian
+    modules/skrl.models.deterministic
 
 Noises
 ^^^^^^

@@ -11,8 +11,7 @@ Algorithm implementation
 **Decision making** (:literal:`act(...)`)
 
 | :math:`\epsilon \leftarrow \epsilon_{_{final}} + (\epsilon_{_{initial}} - \epsilon_{_{final}}) \; e^{-1 \; \frac{\text{timestep}}{\epsilon_{_{timesteps}}}}`
-| :math:`x \leftarrow U(0,1)`
-| :math:`a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q_\phi(s) & x \geq \epsilon \end{cases}`
+| :math:`a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q_\phi(s) & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
 **Learning algorithm** (:literal:`_update(...)`)
 
@@ -22,7 +21,7 @@ Algorithm implementation
 | **FOR** each gradient step **DO**
 |     :green:`# compute target values`
 |     :math:`Q' \leftarrow Q_{\phi_{target}}(s')`
-|     :math:`Q_{_{target}} \leftarrow Q'[\underset{a}{\arg\max} \; Q_\phi(s')] \qquad` :gray:`# the only difference with DQN` 
+|     :math:`Q_{_{target}} \leftarrow Q'[\underset{a}{\arg\max} \; Q_\phi(s')] \qquad` :gray:`# the only difference with DQN`
 |     :math:`y \leftarrow r + \gamma \; \neg d \; Q_{_{target}}`
 |     :green:`# compute Q-network loss`
 |     :math:`Q \leftarrow Q_\phi(s)[a]`

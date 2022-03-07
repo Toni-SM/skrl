@@ -17,8 +17,7 @@ SARSA_DEFAULT_CONFIG = {
     "random_timesteps": 1000,       # random exploration steps
     "learning_starts": 1000,        # learning starts after this many steps
 
-    "epsilon": 0.1,                 # epsilon-greedy exploration
-    "alpha": 0.5,                   # learning rate
+    "learning_rate": 0.5,           # learning rate (alpha)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -84,8 +83,7 @@ class SARSA(Agent):
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
-        self._epsilon = self.cfg["epsilon"]
-        self._alpha = self.cfg["alpha"]
+        self._learning_rate = self.cfg["learning_rate"]
 
         # create temporary variables needed for storage and computation
         self._current_states = None
@@ -119,16 +117,11 @@ class SARSA(Agent):
         :rtype: torch.Tensor
         """
         # sample random actions
-        actions = self.policy.random_act(states)[0]
         if timestep < self._random_timesteps:
-            return actions, None, None
+            return self.policy.random_act(states)
 
-        # sample actions with epsilon-greedy policy
-        indexes = (torch.rand(states.shape[0], device=self.device) >= self._epsilon).nonzero().view(-1)
-        if indexes.numel():
-            actions[indexes] = self.policy.act(states[indexes], inference=inference)[0]
-        
-        return actions, None, None
+        # sample actions from policy
+        return self.policy.act(states, inference=inference)
 
     def record_transition(self, 
                           states: torch.Tensor, 
@@ -200,15 +193,15 @@ class SARSA(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        q_table = self.policy.table()
+        env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
+        
         # compute next actions
         next_actions = self.policy.act(self._current_next_states)[0]
 
         # update Q-table
-        q_table = self.policy.table()
-        env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
-
-        q_table[env_ids, self._current_states, self._current_actions] += self._alpha * (self._current_rewards \
-            + self._discount_factor * self._current_dones.logical_not() \
+        q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate \
+            * (self._current_rewards + self._discount_factor * self._current_dones.logical_not() \
                 * q_table[env_ids, self._current_next_states, next_actions] \
                     - q_table[env_ids, self._current_states, self._current_actions])
         

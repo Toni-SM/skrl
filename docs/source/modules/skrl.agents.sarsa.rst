@@ -10,12 +10,12 @@ Algorithm implementation
 
 **Decision making** (:literal:`act(...)`)
 
-| :math:`a \leftarrow \underset{a}{\arg\max} \; Q[s]`
+| :math:`a \leftarrow \pi_{Q[s,a]}(s) \qquad` where :math:`\; a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q[s] & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
 **Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# compute next actions`
-| :math:`a' \leftarrow \underset{a}{\arg\max} \; Q[s']`
+| :math:`a' \leftarrow \pi_{Q[s,a]}(s') \qquad` :gray:`# the only difference with Q-learning`
 | :green:`# update Q-table`
 | :math:`Q[s,a] \leftarrow Q[s,a] + \alpha \; (r + \gamma \; \neg d \; Q[s',a'] - Q[s,a])`
 
@@ -26,7 +26,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sarsa/sarsa.py
    :language: python
-   :lines: 14-31
+   :lines: 14-30
    :linenos:
 
 Spaces and models
@@ -56,8 +56,8 @@ The implementation uses 1 table. This table (model) must be collected in a dicti
      - Concept
      - Key
      - Type
-   * - :math:`Q[s,a]`
-     - Q-table
+   * - :math:`\pi_{Q[s,a]}(s)`
+     - Policy (:math:`\epsilon`-greedy)
      - :literal:`"policy"`
      - :ref:`Tabular <models_tabular>`
 

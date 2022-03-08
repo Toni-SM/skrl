@@ -14,22 +14,13 @@ except ImportError:
 import torch
 
 import isaacgym.torch_utils as torch_utils
-from isaacgym import gymutil, gymtorch, gymapi
+from isaacgym import gymapi
 
-# Make sure graphics_device_id is not -1
-# pip install flask-socketio
 
 class WebViewer:
     def __init__(self, host: str = "127.0.0.1", port: int = 5000) -> None:
         """
         Web viewer for Isaac Gym
-
-        Supported view gestures:
-        
-        - ALT + Left click: Orbit camera around the target point
-        - Scroll: Zoom in/out
-        - Scroll click: Walk mode
-        - Right click: Pan camera (orbit around itself)
 
         :param host: Host address (default: "127.0.0.1")
         :type host: str
@@ -48,6 +39,7 @@ class WebViewer:
         self._image = None
         self._camera_id = 0
         self._camera_type = gymapi.IMAGE_COLOR
+        self._notified = False
         self._wait_for_page = True
         self._pause_stream = False
         self._event_load = threading.Event()
@@ -283,14 +275,17 @@ class WebViewer:
         :rtype: bytes
         """
         while True:
-            # prepare image
             self._event_stream.wait()
+
+            # prepare image
             image = imageio.imwrite("<bytes>", self._image, format="JPEG")
-            self._event_stream.clear()
 
             # stream image
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
+
+            self._event_stream.clear()
+            self._notified = False
 
     def setup(self, gym: 'isaacgym.gymapi.Gym', sim: 'Sim', envs: List[int], cameras: List[int]) -> None:
         """Setup the web viewer
@@ -346,6 +341,9 @@ class WebViewer:
         if self._pause_stream:
             return
 
+        if self._notified:
+            return
+
         # isaac gym API
         if fetch_results:
             self._gym.fetch_results(self._sim, True)
@@ -372,6 +370,7 @@ class WebViewer:
         
         # notify stream thread
         self._event_stream.set()
+        self._notified = True
 
 
 def ik(jacobian_end_effector: torch.Tensor, 

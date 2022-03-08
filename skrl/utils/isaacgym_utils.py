@@ -382,25 +382,26 @@ def ik(jacobian_end_effector: torch.Tensor,
     """
     Inverse kinematics using damped least squares method
 
-    :param jacobian_end_effector: Jacobian of end effector
+    :param jacobian_end_effector: End effector's jacobian
     :type jacobian_end_effector: torch.Tensor
-    :param current_position: Current position of end effector
+    :param current_position: End effector's current position
     :type current_position: torch.Tensor
-    :param current_orientation: Current orientation of end effector
+    :param current_orientation: End effector's current orientation
     :type current_orientation: torch.Tensor
-    :param goal_position: Goal position of end effector
+    :param goal_position: End effector's goal position
     :type goal_position: torch.Tensor
-    :param goal_orientation: Goal orientation of end effector (default: None)
+    :param goal_orientation: End effector's goal orientation (default: None)
     :type goal_orientation: torch.Tensor or None
     :param damping_factor: Damping factor (default: 0.05)
     :type damping_factor: float
 
-    :return: Joint angles delta
+    :return: Change in joint angles
     :rtype: torch.Tensor
     """
-    # compute errors
     if goal_orientation is None:
         goal_orientation = current_orientation
+
+    # compute error
     q = torch_utils.quat_mul(goal_orientation, torch_utils.quat_conjugate(current_orientation))
     error = torch.cat([goal_position - current_position,  # position error
                        q[:, 0:3] * torch.sign(q[:, 3]).unsqueeze(-1)],  # orientation error

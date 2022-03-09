@@ -63,15 +63,15 @@ memory = RandomMemory(memory_size=40000, num_envs=env.num_envs, device=device, r
 
 # Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
-networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "critic": DeterministicCritic(env.observation_space, env.action_space, device),
-                 "target_critic": DeterministicCritic(env.observation_space, env.action_space, device)}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
+models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "critic": DeterministicCritic(env.observation_space, env.action_space, device),
+               "target_critic": DeterministicCritic(env.observation_space, env.action_space, device)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_ddpg.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_ddpg.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -86,7 +86,7 @@ cfg_ddpg["learning_starts"] = 100
 cfg_ddpg["experiment"]["write_interval"] = 1000
 cfg_ddpg["experiment"]["checkpoint_interval"] = 4000
 
-agent_ddpg = DDPG(networks=networks_ddpg, 
+agent_ddpg = DDPG(models=models_ddpg, 
                   memory=memory, 
                   cfg=cfg_ddpg, 
                   observation_space=env.observation_space, 

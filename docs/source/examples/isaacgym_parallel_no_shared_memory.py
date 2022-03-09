@@ -11,7 +11,7 @@ from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
 from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
 from skrl.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
-from skrl.trainers.torch import SequentialTrainer
+from skrl.trainers.torch import ParallelTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
 
@@ -64,120 +64,122 @@ class Critic(DeterministicModel):
         return self.net(torch.cat([states, taken_actions], dim=1))
 
 
-# Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
-try:
-    env = load_isaacgym_env_preview3(task_name="Cartpole")
-except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
-    env = load_isaacgym_env_preview2("Cartpole")
-env = wrap_env(env)
+if __name__ == '__main__':
 
-device = env.device
+    # Load and wrap the Isaac Gym environment.
+    # The following lines are intended to support both versions (preview 2 and 3). 
+    # It tries to load from preview 3, but if it fails, it will try to load from preview 2
+    try:
+        env = load_isaacgym_env_preview3(task_name="Cartpole")
+    except Exception as e:
+        print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
+        env = load_isaacgym_env_preview2("Cartpole")
+    env = wrap_env(env)
 
-
-# Instantiate the RandomMemory (without replacement) as experience replay memories
-memory_ddpg = RandomMemory(memory_size=8000, num_envs=100, device=device, replacement=True)
-memory_td3 = RandomMemory(memory_size=8000, num_envs=200, device=device, replacement=True)
-memory_sac = RandomMemory(memory_size=8000, num_envs=212, device=device, replacement=True)
+    device = env.device
 
 
-# Instantiate the agent's models (function approximators).
-# DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
-networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "critic": Critic(env.observation_space, env.action_space, device),
-                 "target_critic": Critic(env.observation_space, env.action_space, device)}
-# TD3 requires 6 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#models-networks
-networks_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "critic_1": Critic(env.observation_space, env.action_space, device),
-                "critic_2": Critic(env.observation_space, env.action_space, device),
-                "target_critic_1": Critic(env.observation_space, env.action_space, device),
-                "target_critic_2": Critic(env.observation_space, env.action_space, device)}
-# SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
-networks_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "critic_1": Critic(env.observation_space, env.action_space, device),
-                "critic_2": Critic(env.observation_space, env.action_space, device),
-                "target_critic_1": Critic(env.observation_space, env.action_space, device),
-                "target_critic_2": Critic(env.observation_space, env.action_space, device)}
-
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_ddpg.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-for network in networks_td3.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-for network in networks_sac.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-    
-
-# Configure and instantiate the agent.
-# Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#configuration-and-hyperparameters
-cfg_ddpg = DDPG_DEFAULT_CONFIG.copy()
-cfg_ddpg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1, base_scale=0.5, device=device)
-cfg_ddpg["gradient_steps"] = 1
-cfg_ddpg["batch_size"] = 512
-cfg_ddpg["random_timesteps"] = 0
-cfg_ddpg["learning_starts"] = 0
-# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
-cfg_ddpg["experiment"]["write_interval"] = 25
-cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#configuration-and-hyperparameters
-cfg_td3 = TD3_DEFAULT_CONFIG.copy()
-cfg_td3["exploration"]["noise"] = GaussianNoise(0, 0.2, device=device)
-cfg_td3["smooth_regularization_noise"] = GaussianNoise(0, 0.1, device=device)
-cfg_td3["smooth_regularization_clip"] = 0.1
-cfg_td3["gradient_steps"] = 1
-cfg_td3["batch_size"] = 512
-cfg_td3["random_timesteps"] = 0
-cfg_td3["learning_starts"] = 0
-# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
-cfg_td3["experiment"]["write_interval"] = 25
-cfg_td3["experiment"]["checkpoint_interval"] = 1000
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#configuration-and-hyperparameters
-cfg_sac = SAC_DEFAULT_CONFIG.copy()
-cfg_sac["gradient_steps"] = 1
-cfg_sac["batch_size"] = 512
-cfg_sac["random_timesteps"] = 0
-cfg_sac["learning_starts"] = 0
-cfg_sac["learn_entropy"] = True
-# logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
-cfg_sac["experiment"]["write_interval"] = 25
-cfg_sac["experiment"]["checkpoint_interval"] = 1000
-
-agent_ddpg = DDPG(networks=networks_ddpg, 
-                  memory=memory_ddpg, 
-                  cfg=cfg_ddpg, 
-                  observation_space=env.observation_space, 
-                  action_space=env.action_space,
-                  device=device)
-
-agent_td3 = TD3(networks=networks_td3, 
-                memory=memory_td3, 
-                cfg=cfg_td3, 
-                observation_space=env.observation_space, 
-                action_space=env.action_space,
-                device=device)
-
-agent_sac = SAC(networks=networks_sac, 
-                memory=memory_sac, 
-                cfg=cfg_sac, 
-                observation_space=env.observation_space, 
-                action_space=env.action_space,
-                device=device)
+    # Instantiate the RandomMemory (without replacement) as experience replay memories
+    memory_ddpg = RandomMemory(memory_size=8000, num_envs=100, device=device, replacement=True)
+    memory_td3 = RandomMemory(memory_size=8000, num_envs=200, device=device, replacement=True)
+    memory_sac = RandomMemory(memory_size=8000, num_envs=212, device=device, replacement=True)
 
 
-# Configure and instantiate the RL trainer and define the agent scopes
-cfg = {"timesteps": 8000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg, 
-                            env=env, 
-                            agents=[agent_ddpg, agent_td3, agent_sac],
-                            agents_scope=[100, 200, 212])   # agent scopes
+    # Instantiate the agent's models (function approximators).
+    # DDPG requires 4 models, visit its documentation for more details
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
+    models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+                   "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+                   "critic": Critic(env.observation_space, env.action_space, device),
+                   "target_critic": Critic(env.observation_space, env.action_space, device)}
+    # TD3 requires 6 models, visit its documentation for more details
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
+    models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+                  "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+                  "critic_1": Critic(env.observation_space, env.action_space, device),
+                  "critic_2": Critic(env.observation_space, env.action_space, device),
+                  "target_critic_1": Critic(env.observation_space, env.action_space, device),
+                  "target_critic_2": Critic(env.observation_space, env.action_space, device)}
+    # SAC requires 5 models, visit its documentation for more details
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
+    models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
+                  "critic_1": Critic(env.observation_space, env.action_space, device),
+                  "critic_2": Critic(env.observation_space, env.action_space, device),
+                  "target_critic_1": Critic(env.observation_space, env.action_space, device),
+                  "target_critic_2": Critic(env.observation_space, env.action_space, device)}
 
-# start training
-trainer.train()
+    # Initialize the models' parameters (weights and biases) using a Gaussian distribution
+    for model in models_ddpg.values():
+        model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+    for model in models_td3.values():
+        model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+    for model in models_sac.values():
+        model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+        
+
+    # Configure and instantiate the agent.
+    # Only modify some of the default configuration, visit its documentation to see all the options
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#configuration-and-hyperparameters
+    cfg_ddpg = DDPG_DEFAULT_CONFIG.copy()
+    cfg_ddpg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1, base_scale=0.5, device=device)
+    cfg_ddpg["gradient_steps"] = 1
+    cfg_ddpg["batch_size"] = 512
+    cfg_ddpg["random_timesteps"] = 0
+    cfg_ddpg["learning_starts"] = 0
+    # logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
+    cfg_ddpg["experiment"]["write_interval"] = 25
+    cfg_ddpg["experiment"]["checkpoint_interval"] = 1000
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#configuration-and-hyperparameters
+    cfg_td3 = TD3_DEFAULT_CONFIG.copy()
+    cfg_td3["exploration"]["noise"] = GaussianNoise(0, 0.2, device=device)
+    cfg_td3["smooth_regularization_noise"] = GaussianNoise(0, 0.1, device=device)
+    cfg_td3["smooth_regularization_clip"] = 0.1
+    cfg_td3["gradient_steps"] = 1
+    cfg_td3["batch_size"] = 512
+    cfg_td3["random_timesteps"] = 0
+    cfg_td3["learning_starts"] = 0
+    # logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
+    cfg_td3["experiment"]["write_interval"] = 25
+    cfg_td3["experiment"]["checkpoint_interval"] = 1000
+    # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#configuration-and-hyperparameters
+    cfg_sac = SAC_DEFAULT_CONFIG.copy()
+    cfg_sac["gradient_steps"] = 1
+    cfg_sac["batch_size"] = 512
+    cfg_sac["random_timesteps"] = 0
+    cfg_sac["learning_starts"] = 0
+    cfg_sac["learn_entropy"] = True
+    # logging to TensorBoard and write checkpoints each 25 and 1000 timesteps respectively
+    cfg_sac["experiment"]["write_interval"] = 25
+    cfg_sac["experiment"]["checkpoint_interval"] = 1000
+
+    agent_ddpg = DDPG(models=models_ddpg, 
+                      memory=memory_ddpg, 
+                      cfg=cfg_ddpg, 
+                      observation_space=env.observation_space, 
+                      action_space=env.action_space,
+                      device=device)
+
+    agent_td3 = TD3(models=models_td3, 
+                    memory=memory_td3, 
+                    cfg=cfg_td3, 
+                    observation_space=env.observation_space, 
+                    action_space=env.action_space,
+                    device=device)
+
+    agent_sac = SAC(models=models_sac, 
+                    memory=memory_sac, 
+                    cfg=cfg_sac, 
+                    observation_space=env.observation_space, 
+                    action_space=env.action_space,
+                    device=device)
+
+
+    # Configure and instantiate the RL trainer and define the agent scopes
+    cfg = {"timesteps": 8000, "headless": True}
+    trainer = ParallelTrainer(cfg=cfg, 
+                              env=env, 
+                              agents=[agent_ddpg, agent_td3, agent_sac],
+                              agents_scope=[100, 200, 212])   # agent scopes
+
+    # start training
+    trainer.train()

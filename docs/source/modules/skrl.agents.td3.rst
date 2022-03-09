@@ -1,6 +1,10 @@
 Twin-Delayed DDPG (TD3)
 =======================
 
+TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms 
+
+Paper: `Addressing Function Approximation Error in Actor-Critic Methods <https://arxiv.org/abs/1802.09477>`_
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -56,10 +60,25 @@ Configuration and hyperparameters
    :lines: 16-48
    :linenos:
 
-Models (networks)
+Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation uses 6 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`networks`
+The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+
+.. list-table::
+   :header-rows: 1
+
+   * - Gym spaces
+     - .. centered:: Observation
+     - .. centered:: Action
+   * - Discrete
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\square`
+   * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\blacksquare`
+
+The implementation uses 6 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
    :header-rows: 1

@@ -74,6 +74,12 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
         
+    def share_memory(self) -> None:
+        """Share the tensors between processes
+        """
+        for tensor in self.tensors.values():
+            tensor.share_memory_()
+
     def get_tensor_names(self) -> Tuple[str]:
         """Get the name of the internal tensors in alphabetical order
 

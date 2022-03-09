@@ -6,8 +6,8 @@ Deterministic model
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/model_deterministic.png
-      :width: 75%
+.. image:: ../_static/imgs/model_deterministic.svg
+      :width: 65%
       :align: center
       :alt: Deterministic model
 
@@ -36,7 +36,6 @@ API
 ^^^
 
 .. autoclass:: skrl.models.torch.deterministic.DeterministicModel
-   :undoc-members:
    :show-inheritance:
    :members:
    

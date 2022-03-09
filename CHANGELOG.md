@@ -2,6 +2,24 @@
 
 Record of notable changes in this project
 
+## [0.4.0] - 2021-03-09
+
+### Added
+
+- CEM, SARSA and Q-learning agents
+- Tabular model
+- Parallel training using multiprocessing
+- Isaac Gym utilities
+
+### Changed
+
+- Initialize agents in a separate method
+- Change the name of the `networks` argument to `models`
+
+### Fixed
+
+- Reset environments after post-processing
+
 ## [0.3.0] - 2021-02-07
 
 ### Added

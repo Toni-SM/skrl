@@ -60,31 +60,31 @@ device = env.device
 
 # Instantiate the agent's policies.
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
-networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "target_policy": None,
-                 "critic": None,
-                 "target_critic": None}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
+models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "target_policy": None,
+               "critic": None,
+               "target_critic": None}
 # TD3 requires 6 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#models-networks
-networks_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "target_policy": None,
-                "critic_1": None,
-                "critic_2": None,
-                "target_critic_1": None,
-                "target_critic_2": None}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
+models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+              "target_policy": None,
+              "critic_1": None,
+              "critic_2": None,
+              "target_critic_1": None,
+              "target_critic_2": None}
 # SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
-networks_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
-                "critic_1": None,
-                "critic_2": None,
-                "target_critic_1": None,
-                "target_critic_2": None}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
+models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
+              "critic_1": None,
+              "critic_2": None,
+              "target_critic_1": None,
+              "target_critic_2": None}
 
 # load checkpoints
-networks_ddpg["policy"].load("./runs/22-02-06_19-37-44-874837_DDPG/checkpoints/8000_policy.pt")
-networks_td3["policy"].load("./runs/22-02-06_19-28-48-436345_TD3/checkpoints/5000_policy.pt")
-networks_sac["policy"].load("./runs/22-02-06_19-28-48-441161_SAC/checkpoints/3000_policy.pt")
+models_ddpg["policy"].load("./runs/22-02-06_19-37-44-874837_DDPG/checkpoints/8000_policy.pt")
+models_td3["policy"].load("./runs/22-02-06_19-28-48-436345_TD3/checkpoints/5000_policy.pt")
+models_sac["policy"].load("./runs/22-02-06_19-28-48-441161_SAC/checkpoints/3000_policy.pt")
 
 
 # Configure and instantiate the agents.
@@ -108,21 +108,21 @@ cfg_sac["random_timesteps"] = 0
 cfg_sac["experiment"]["write_interval"] = 25
 cfg_sac["experiment"]["checkpoint_interval"] = 0
 
-agent_ddpg = DDPG(networks=networks_ddpg, 
+agent_ddpg = DDPG(models=models_ddpg, 
                   memory=None, 
                   cfg=cfg_ddpg, 
                   observation_space=env.observation_space, 
                   action_space=env.action_space,
                   device=device)
 
-agent_td3 = TD3(networks=networks_td3, 
+agent_td3 = TD3(models=models_td3, 
                 memory=None, 
                 cfg=cfg_td3, 
                 observation_space=env.observation_space, 
                 action_space=env.action_space,
                 device=device)
 
-agent_sac = SAC(networks=networks_sac, 
+agent_sac = SAC(models=models_sac, 
                 memory=None, 
                 cfg=cfg_sac, 
                 observation_space=env.observation_space, 
@@ -135,7 +135,7 @@ cfg = {"timesteps": 8000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg, 
                             env=env, 
                             agents=[agent_ddpg, agent_td3, agent_sac],
-                            agents_scope=[])
+                            agents_scope=[100, 200, 212])
 
 # evaluate the agents
 trainer.eval()

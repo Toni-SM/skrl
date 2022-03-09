@@ -273,8 +273,8 @@ def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None]
     :type action_space: int, tuple or list of integers, gym.Space or None, optional
     :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
     :type device: str or torch.device, optional
-    :param unnormalized_log_prob: Flag to indicate how to be interpreted the network's output (default: True).
-                                  If True, the network's output is interpreted as unnormalized log probabilities 
+    :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).
+                                  If True, the model's output is interpreted as unnormalized log probabilities 
                                   (it can be any real number), otherwise as normalized probabilities 
                                   (the output must be non-negative, finite and have a non-zero sum)
     :type unnormalized_log_prob: bool, optional

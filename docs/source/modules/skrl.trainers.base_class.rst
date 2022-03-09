@@ -14,11 +14,11 @@ Basic inheritance usage
             
     .. tab:: Inheritance
 
-        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/trainer.py>`_
-
         .. literalinclude:: ../snippets/trainer.py
             :language: python
             :linenos:
+            :start-after: [start-base]
+            :end-before: [end-base]
 
 API
 ^^^
@@ -27,7 +27,7 @@ API
    :undoc-members:
    :show-inheritance:
    :inherited-members:
-   :private-members: _pre_interaction, _post_interaction, _setup_agents
+   :private-members: _setup_agents
    :members:
    
    .. automethod:: __init__

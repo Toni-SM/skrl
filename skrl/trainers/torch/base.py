@@ -2,6 +2,8 @@ from typing import Union, List
 
 import time
 
+import torch
+
 from ...envs.torch import Wrapper
 from ...agents.torch import Agent
 
@@ -98,6 +100,8 @@ class Trainer():
                     self.agents_scope[i] = (index - self.agents_scope[i], index)
             else:
                 raise ValueError("A list of agents is expected")
+        else:
+            self.num_agents = 1
         
         # enable train mode
         if self.num_agents > 1:
@@ -155,3 +159,106 @@ class Trainer():
         """
         # TODO: remove this method in future versions
         print("[WARNING] Trainer.start() method is deprecated in favour of the '.train()' method")
+
+    def single_agent_train(self) -> None:
+        """Train a single agent
+
+        This method executes the following steps in loop:
+
+        - Pre-interaction
+        - Compute actions
+        - Interact with the environments
+        - Render scene
+        - Record transitions
+        - Post-interaction
+        - Reset environments
+        """
+        assert self.num_agents == 1, "This method is only valid for a single agent"
+
+        # reset env
+        states = self.env.reset()
+
+        for timestep in range(self.initial_timestep, self.timesteps):
+            # show progress
+            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+            
+            # compute actions
+            with torch.no_grad():
+                actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+            
+            # step the environments
+            next_states, rewards, dones, infos = self.env.step(actions)
+            
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            # record the environments' transitions
+            with torch.no_grad():
+                self.agents.record_transition(states=states, 
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              dones=dones,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
+            
+            # post-interaction
+            self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
+            
+            # reset environments
+            with torch.no_grad():
+                if dones.any():
+                    states = self.env.reset()
+                else:
+                    states.copy_(next_states)
+
+    def single_agent_eval(self) -> None:
+        """Evaluate the agents sequentially
+
+        This method executes the following steps in loop:
+        
+        - Compute actions (sequentially)
+        - Interact with the environments
+        - Render scene
+        - Reset environments
+        """
+        assert self.num_agents == 1, "This method is only valid for a single agent"
+
+        # reset env
+        states = self.env.reset()
+
+        for timestep in range(self.initial_timestep, self.timesteps):
+            # show progress
+            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+            
+            # compute actions
+            with torch.no_grad():
+                actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+            
+            # step the environments
+            next_states, rewards, dones, infos = self.env.step(actions)
+            
+            # render scene
+            if not self.headless:
+                self.env.render()
+            
+            with torch.no_grad():
+                # write data to TensorBoard
+                super(type(self.agents), self.agents).record_transition(states=states, 
+                                                                        actions=actions,
+                                                                        rewards=rewards,
+                                                                        next_states=next_states,
+                                                                        dones=dones,
+                                                                        timestep=timestep,
+                                                                        timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # reset environments
+                if dones.any():
+                    states = self.env.reset()
+                else:
+                    states.copy_(next_states)

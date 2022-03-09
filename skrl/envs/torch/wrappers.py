@@ -204,8 +204,8 @@ class GymWrapper(Wrapper):
         observation, reward, done, info = self._env.step(self._convert_action(actions))
         # convert response to torch
         return torch.tensor(observation, device=self.device).view(1, -1), \
-               torch.tensor(reward, device=self.device).view(1, -1), \
-               torch.tensor(done, device=self.device).view(1, -1), \
+               torch.tensor(reward, device=self.device, dtype=torch.float32).view(1, -1), \
+               torch.tensor(done, device=self.device, dtype=torch.bool).view(1, -1), \
                info
         
     def reset(self) -> torch.Tensor:
@@ -217,6 +217,8 @@ class GymWrapper(Wrapper):
         state = self._env.reset()
         if isinstance(state, np.ndarray):
             return torch.tensor(state, device=self.device, dtype=torch.float32).view(1, -1)
+        elif isinstance(state, int):
+            return torch.tensor(state, device=self.device, dtype=torch.int64).view(1, -1)
         return state.to(self.device).view(1, -1)
 
     def render(self, *args, **kwargs) -> None:

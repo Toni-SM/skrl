@@ -66,13 +66,13 @@ memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 # Instantiate the agent's models (function approximators).
 # PPO requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#models-networks
-networks_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
-                "value": Value(env.observation_space, env.action_space, device)}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
+models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
+              "value": Value(env.observation_space, env.action_space, device)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_ppo.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+for model in models_ppo.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
 
 
 # Configure and instantiate the agent.
@@ -89,7 +89,7 @@ cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["experiment"]["write_interval"] = 16
 cfg_ppo["experiment"]["checkpoint_interval"] = 1000
 
-agent = PPO(networks=networks_ppo,
+agent = PPO(models=models_ppo,
             memory=memory, 
             cfg=cfg_ppo, 
             observation_space=env.observation_space, 

@@ -47,7 +47,7 @@ DDQN_DEFAULT_CONFIG = {
 
 class DDQN(Agent):
     def __init__(self, 
-                 networks: Dict[str, Model], 
+                 models: Dict[str, Model], 
                  memory: Union[Memory, Tuple[Memory], None] = None, 
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
                  action_space: Union[int, Tuple[int], gym.Space, None] = None, 
@@ -57,8 +57,8 @@ class DDQN(Agent):
 
         https://ojs.aaai.org/index.php/AAAI/article/view/10295
         
-        :param networks: Networks used by the agent
-        :type networks: dictionary of skrl.models.torch.Model
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
                        If it is a tuple, the first element will be used for training and 
                        for the rest only the environment transitions will be added
@@ -72,28 +72,28 @@ class DDQN(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
 
-        :raises KeyError: If the networks dictionary is missing a required key
+        :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(DDQN_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(networks=networks, 
+        super().__init__(models=models, 
                          memory=memory, 
                          observation_space=observation_space, 
                          action_space=action_space, 
                          device=device, 
                          cfg=_cfg)
 
-        # networks
-        if not "q_network" in self.networks.keys():
-            raise KeyError("The Q-network is not defined under 'q_network' key (networks['q_network'])")
-        if not "target_q_network" in self.networks.keys():
-            raise KeyError("The target Q-network is not defined under 'target_q_network' key (networks['target_q_network'])")
+        # models
+        if not "q_network" in self.models.keys():
+            raise KeyError("The Q-network is not defined under 'q_network' key (models['q_network'])")
+        if not "target_q_network" in self.models.keys():
+            raise KeyError("The target Q-network is not defined under 'target_q_network' key (models['target_q_network'])")
        
-        self.q_network = self.networks["q_network"]
-        self.target_q_network = self.networks["target_q_network"]
+        self.q_network = self.models["q_network"]
+        self.target_q_network = self.models["target_q_network"]
 
-        # checkpoint networks
-        self.checkpoint_networks = {"q_network": self.q_network} if self.checkpoint_policy_only else self.networks
+        # checkpoint models
+        self.checkpoint_models = {"q_network": self.q_network} if self.checkpoint_policy_only else self.models
         
         if self.target_q_network is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -124,6 +124,11 @@ class DDQN(Agent):
         # set up optimizers
         self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
 
+    def init(self) -> None:
+        """Initialize the agent
+        """
+        super().init()
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -147,7 +152,7 @@ class DDQN(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the network is making inference
+        :param inference: Flag to indicate whether the model is making inference
         :type inference: bool
 
         :return: Actions

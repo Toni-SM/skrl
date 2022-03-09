@@ -41,14 +41,14 @@ device = env.device
 
 # Instantiate the agent's policy.
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
-networks_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                 "target_policy": None,
-                 "critic": None,
-                 "target_critic": None}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
+models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
+               "target_policy": None,
+               "critic": None,
+               "target_critic": None}
 
 # load checkpoint
-networks_ddpg["policy"].load("./runs/22-02-06_19-23-31-556859_DDPG/checkpoints/36000_policy.pt")
+models_ddpg["policy"].load("./runs/22-02-06_19-23-31-556859_DDPG/checkpoints/36000_policy.pt")
 
 
 # Configure and instantiate the agent.
@@ -60,7 +60,7 @@ cfg_ddpg["random_timesteps"] = 0
 cfg_ddpg["experiment"]["write_interval"] = 1000
 cfg_ddpg["experiment"]["checkpoint_interval"] = 0
 
-agent_ddpg = DDPG(networks=networks_ddpg, 
+agent_ddpg = DDPG(models=models_ddpg, 
                   memory=None, 
                   cfg=cfg_ddpg, 
                   observation_space=env.observation_space, 

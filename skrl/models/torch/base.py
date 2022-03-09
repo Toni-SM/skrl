@@ -51,7 +51,7 @@ class Model(torch.nn.Module):
     def _get_instantiator_output(self, 
                                  states: torch.Tensor, 
                                  taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
-        """Get the output of the instantiator network
+        """Get the output of the instantiator model
         
         Input shape depends on the instantiator (see skrl.utils.model_instantiator.Shape) as follows:
 
@@ -64,7 +64,7 @@ class Model(torch.nn.Module):
         :param taken_actions: Actions taken by a policy to the given states (default: None)
         :type taken_actions: torch.Tensor, optional
 
-        :return: Output of the instantiator network
+        :return: Output of the instantiator model
         :rtype: tuple of torch.Tensor
         """
         if self._instantiator_input_type == 0:
@@ -107,9 +107,9 @@ class Model(torch.nn.Module):
         :param states: Observation/state of the environment used to get the shape of the action space
         :type states: torch.Tensor
         :param taken_actions: Actions taken by a policy to the given states (default: None).
-                              The use of these actions only makes sense in critical networks, e.g.
+                              The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the network is making inference (default: False)
+        :param inference: Flag to indicate whether the model is making inference (default: False)
         :type inference: bool, optional
 
         :raises NotImplementedError: Unsupported action space
@@ -182,20 +182,20 @@ class Model(torch.nn.Module):
     def compute(self, 
                 states: torch.Tensor, 
                 taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
-        """Define the computation performed (to be implemented by the inheriting classes) by the networks
+        """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
         :param taken_actions: Actions taken by a policy to the given states (default: None).
-                              The use of these actions only makes sense in critical networks, e.g.
+                              The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor or None, optional
 
         :raises NotImplementedError: Child class must implement this method
         
-        :return: Computation performed by the networks
+        :return: Computation performed by the models
         :rtype: torch.Tensor or tuple of torch.Tensor
         """
-        raise NotImplementedError("The computation performed by the networks (.compute()) is not implemented")
+        raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
     def act(self, 
             states: torch.Tensor, 
@@ -210,9 +210,9 @@ class Model(torch.nn.Module):
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
         :param taken_actions: Actions taken by a policy to the given states (default: None).
-                              The use of these actions only makes sense in critical networks, e.g.
+                              The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the network is making inference (default: False)
+        :param inference: Flag to indicate whether the model is making inference (default: False)
         :type inference: bool, optional
 
         :raises NotImplementedError: Child class must implement this method
@@ -225,7 +225,7 @@ class Model(torch.nn.Module):
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
         
     def set_mode(self, mode: str) -> None:
-        """Set the network mode (training or evaluation)
+        """Set the model mode (training or evaluation)
 
         :param mode: Mode: "train" for training or "eval" for evaluation. 
             See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
@@ -240,7 +240,7 @@ class Model(torch.nn.Module):
         else:
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         """Save the model to the specified path
             
         :param path: Path to save the model to
@@ -248,7 +248,7 @@ class Model(torch.nn.Module):
         """
         torch.save(self.state_dict(), path)
 
-    def load(self, path):
+    def load(self, path: str) -> None:
         """Load the model from the specified path
                 
         :param path: Path to load the model from
@@ -269,14 +269,14 @@ class Model(torch.nn.Module):
         for parameters in self.parameters():
             parameters.requires_grad = not freeze
 
-    def update_parameters(self, network: torch.nn.Module, polyak: float = 1) -> None:
+    def update_parameters(self, model: torch.nn.Module, polyak: float = 1) -> None:
         """Update internal parameters by hard or soft (polyak averaging) update
 
         - Hard update: :math:`\\theta = \\theta_{net}`
         - Soft (polyak averaging) update: :math:`\\theta = (1 - \\rho) \\theta + \\rho \\theta_{net}`
         
-        :param network: Network used to update the internal parameters
-        :type network: torch.nn.Module (skrl.models.torch.Model)
+        :param model: Model used to update the internal parameters
+        :type model: torch.nn.Module (skrl.models.torch.Model)
         :param polyak: Polyak hyperparameter between 0 and 1 (usually close to 0).
                        A hard update is performed when its value is 1 (default)
         :type polyak: float, optional
@@ -284,10 +284,10 @@ class Model(torch.nn.Module):
         with torch.no_grad():
             # hard update
             if polyak == 1:
-                for parameters, network_parameters in zip(self.parameters(), network.parameters()):
-                    parameters.data.copy_(network_parameters.data)
+                for parameters, model_parameters in zip(self.parameters(), model.parameters()):
+                    parameters.data.copy_(model_parameters.data)
             # soft update (use in-place operations to avoid creating new parameters)
             else:
-                for parameters, network_parameters in zip(self.parameters(), network.parameters()):
+                for parameters, model_parameters in zip(self.parameters(), model.parameters()):
                     parameters.data.mul_(1 - polyak)
-                    parameters.data.add_(polyak * network_parameters.data)
+                    parameters.data.add_(polyak * model_parameters.data)

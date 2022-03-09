@@ -48,6 +48,8 @@ class OrnsteinUhlenbeckNoise(Noise):
         :return: Sampled noise
         :rtype: torch.Tensor
         """
+        if isinstance(self.state, torch.Tensor) and self.state.size() != torch.Size(size):
+            self.state = 0
         self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
         
         return self.base_scale * self.state

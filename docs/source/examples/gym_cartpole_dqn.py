@@ -27,31 +27,31 @@ memory = RandomMemory(memory_size=100000, num_envs=env.num_envs, device=device, 
 
 # Instantiate the agent's models (function approximators) using the model instantiator utility
 # DQN requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#models-networks
-networks_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
-                                                 action_space=env.action_space,
-                                                 device=device,
-                                                 clip_actions=False, 
-                                                 input_shape=Shape.OBSERVATIONS,
-                                                 hiddens=[64, 64],
-                                                 hidden_activation=["relu", "relu"],
-                                                 output_shape=Shape.ACTIONS,
-                                                 output_activation=None,
-                                                 output_scale=1.0),
-                "target_q_network": deterministic_model(observation_space=env.observation_space,
-                                                        action_space=env.action_space,
-                                                        device=device,
-                                                        clip_actions=False,
-                                                        input_shape=Shape.OBSERVATIONS,
-                                                        hiddens=[64, 64],
-                                                        hidden_activation=["relu", "relu"],
-                                                        output_shape=Shape.ACTIONS,
-                                                        output_activation=None,
-                                                        output_scale=1.0)}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
+models_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
+                                               action_space=env.action_space,
+                                               device=device,
+                                               clip_actions=False, 
+                                               input_shape=Shape.OBSERVATIONS,
+                                               hiddens=[64, 64],
+                                               hidden_activation=["relu", "relu"],
+                                               output_shape=Shape.ACTIONS,
+                                               output_activation=None,
+                                               output_scale=1.0),
+              "target_q_network": deterministic_model(observation_space=env.observation_space,
+                                                      action_space=env.action_space,
+                                                      device=device,
+                                                      clip_actions=False,
+                                                      input_shape=Shape.OBSERVATIONS,
+                                                      hiddens=[64, 64],
+                                                      hidden_activation=["relu", "relu"],
+                                                      output_shape=Shape.ACTIONS,
+                                                      output_activation=None,
+                                                      output_scale=1.0)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for network in networks_dqn.values():
-    network.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+for model in models_dqn.values():
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -66,7 +66,7 @@ cfg_dqn["exploration"]["timesteps"] = 1500
 cfg_dqn["experiment"]["write_interval"] = 1000
 cfg_dqn["experiment"]["checkpoint_interval"] = 5000
 
-agent_dqn = DQN(networks=networks_dqn, 
+agent_dqn = DQN(models=models_dqn, 
                 memory=memory, 
                 cfg=cfg_dqn, 
                 observation_space=env.observation_space, 

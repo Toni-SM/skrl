@@ -22,21 +22,21 @@ device = env.device
 
 # Instantiate only the policy for evaluation.
 # DQN requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#models-networks
-networks_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
-                                                 action_space=env.action_space,
-                                                 device=device,
-                                                 clip_actions=False, 
-                                                 input_shape=Shape.OBSERVATIONS,
-                                                 hiddens=[64, 64],
-                                                 hidden_activation=["relu", "relu"],
-                                                 output_shape=Shape.ACTIONS,
-                                                 output_activation=None,
-                                                 output_scale=1.0),
-                "target_q_network": None}
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
+models_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
+                                               action_space=env.action_space,
+                                               device=device,
+                                               clip_actions=False, 
+                                               input_shape=Shape.OBSERVATIONS,
+                                               hiddens=[64, 64],
+                                               hidden_activation=["relu", "relu"],
+                                               output_shape=Shape.ACTIONS,
+                                               output_activation=None,
+                                               output_scale=1.0),
+              "target_q_network": None}
 
 # load checkpoint
-networks_dqn["q_network"].load("./runs/22-02-06_19-19-56-857355_DQN/checkpoints/15000_q_network.pt")
+models_dqn["q_network"].load("./runs/22-02-06_19-19-56-857355_DQN/checkpoints/15000_q_network.pt")
 
 
 # Configure and instantiate the agent.
@@ -49,7 +49,7 @@ cfg_dqn["exploration"]["timesteps"] = 0
 cfg_dqn["experiment"]["write_interval"] = 1000
 cfg_dqn["experiment"]["checkpoint_interval"] = 0
 
-agent_dqn = DQN(networks=networks_dqn, 
+agent_dqn = DQN(models=models_dqn, 
                 memory=None, 
                 cfg=cfg_dqn, 
                 observation_space=env.observation_space, 

@@ -2,7 +2,7 @@
 
 Record of notable changes in this project
 
-## [Unreleased]
+## [0.4.0] - 2021-03-09
 
 ### Added
 

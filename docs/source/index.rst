@@ -48,12 +48,15 @@ Agents
 
     Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
-    * :doc:`DDPG <modules/skrl.agents.ddpg>` (Deep Deterministic Policy Gradient)
-    * :doc:`DDQN <modules/skrl.agents.ddqn>` (Double Deep Q-Network)
-    * :doc:`DQN <modules/skrl.agents.dqn>` (Deep Q-Network)
-    * :doc:`PPO <modules/skrl.agents.ppo>` (Proximal Policy Optimization)
-    * :doc:`SAC <modules/skrl.agents.sac>` (Soft Actor-Critic)
-    * :doc:`TD3 <modules/skrl.agents.td3>` (Twin-Delayed DDPG)
+    * :doc:`Cross-Entropy Method <modules/skrl.agents.cem>` (**CEM**)
+    * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
+    * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
+    * :doc:`Deep Q-Network <modules/skrl.agents.dqn>` (**DQN**)
+    * :doc:`Proximal Policy Optimization <modules/skrl.agents.ppo>` (**PPO**)
+    * :doc:`Q-learning <modules/skrl.agents.q_learning>` (**Q-learning**)
+    * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
+    * :doc:`State Action Reward State Action <modules/skrl.agents.sarsa>` (**SARSA**)
+    * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
 
 .. toctree::
     :maxdepth: 1
@@ -61,11 +64,14 @@ Agents
     :hidden:
 
     modules/skrl.agents.base_class
+    CEM <modules/skrl.agents.cem>
     DDPG <modules/skrl.agents.ddpg>
     DDQN <modules/skrl.agents.ddqn>
     DQN <modules/skrl.agents.dqn>
     PPO <modules/skrl.agents.ppo>
+    Q-learning <modules/skrl.agents.q_learning>
     SAC <modules/skrl.agents.sac>
+    SARSA <modules/skrl.agents.sarsa>
     TD3 <modules/skrl.agents.td3>
 
 Environments
@@ -103,8 +109,9 @@ Memories
 Models
 ^^^^^^
 
-    Definition of helper classes for the construction of function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
+    Definition of helper classes for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
 
+    * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
     * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
     * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)
     * :doc:`Deterministic model <modules/skrl.models.deterministic>` (continuous domain)
@@ -115,9 +122,10 @@ Models
     :hidden:
 
     modules/skrl.models.base_class
+    modules/skrl.models.tabular
     modules/skrl.models.categorical
-    modules/skrl.models.gaussian 
-    modules/skrl.models.deterministic 
+    modules/skrl.models.gaussian
+    modules/skrl.models.deterministic
 
 Noises
 ^^^^^^
@@ -142,6 +150,7 @@ Trainers
     Definition of the procedures responsible for managing the agent's training and interaction with the environment. All trainers inherit from a :doc:`base class <modules/skrl.trainers.base_class>` that defines a uniform interface and provides for common functionalities
 
     * :doc:`Sequential trainer <modules/skrl.trainers.sequential>`
+    * :doc:`Parallel trainer <modules/skrl.trainers.parallel>`
 
 .. toctree::
     :maxdepth: 1
@@ -150,7 +159,7 @@ Trainers
         
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
-    .. modules/skrl.trainers.concurrent
+    modules/skrl.trainers.parallel
 
 Utils
 ^^^^^
@@ -159,6 +168,7 @@ Utils
 
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
     * :doc:`File post-processing <modules/skrl.utils.postprocessing>`
+    * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
 
 .. toctree::
     :maxdepth: 1
@@ -167,3 +177,4 @@ Utils
         
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
+    modules/skrl.utils.isaacgym_utils

@@ -22,7 +22,7 @@ device = env.device
 
 # Instantiate only the policy for evaluation.
 # DQN requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
 models_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
                                                action_space=env.action_space,
                                                device=device,

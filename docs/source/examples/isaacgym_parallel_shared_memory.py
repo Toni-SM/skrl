@@ -83,13 +83,13 @@ memory = RandomMemory(memory_size=8000, num_envs=env.num_envs, device=device, re
 
 # Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
 models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
                "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
                "critic": Critic(env.observation_space, env.action_space, device),
                "target_critic": Critic(env.observation_space, env.action_space, device)}
 # TD3 requires 6 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
 models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
               "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
               "critic_1": Critic(env.observation_space, env.action_space, device),
@@ -97,7 +97,7 @@ models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_spa
               "target_critic_1": Critic(env.observation_space, env.action_space, device),
               "target_critic_2": Critic(env.observation_space, env.action_space, device)}
 # SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
 models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
               "critic_1": Critic(env.observation_space, env.action_space, device),
               "critic_2": Critic(env.observation_space, env.action_space, device),

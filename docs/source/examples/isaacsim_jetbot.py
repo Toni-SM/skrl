@@ -86,7 +86,7 @@ memory = RandomMemory(memory_size=10000, num_envs=env.num_envs, device=device, r
 
 # Instanciate the agent's models (function approximators).
 # SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
 models_sac = {"policy": Actor(env.observation_space, env.action_space, device, clip_actions=True),
                 "critic_1": Critic(env.observation_space, env.action_space, device),
                 "critic_2": Critic(env.observation_space, env.action_space, device),

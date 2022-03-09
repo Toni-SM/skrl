@@ -63,7 +63,7 @@ memory = RandomMemory(memory_size=40000, num_envs=env.num_envs, device=device, r
 
 # Instantiate the agent's models (function approximators).
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
 models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
                "target_policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
                "critic": DeterministicCritic(env.observation_space, env.action_space, device),

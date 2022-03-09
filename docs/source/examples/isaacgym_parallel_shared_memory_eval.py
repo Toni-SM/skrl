@@ -60,13 +60,13 @@ device = env.device
 
 # Instantiate the agent's policies.
 # DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
 models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
                "target_policy": None,
                "critic": None,
                "target_critic": None}
 # TD3 requires 6 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
 models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
               "target_policy": None,
               "critic_1": None,
@@ -74,7 +74,7 @@ models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_spa
               "target_critic_1": None,
               "target_critic_2": None}
 # SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#models-networks
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
 models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
               "critic_1": None,
               "critic_2": None,

@@ -240,7 +240,7 @@ class Model(torch.nn.Module):
         else:
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         """Save the model to the specified path
             
         :param path: Path to save the model to
@@ -248,7 +248,7 @@ class Model(torch.nn.Module):
         """
         torch.save(self.state_dict(), path)
 
-    def load(self, path):
+    def load(self, path: str) -> None:
         """Load the model from the specified path
                 
         :param path: Path to load the model from

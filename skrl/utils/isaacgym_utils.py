@@ -4,17 +4,23 @@ import math
 import logging
 import threading
 import numpy as np
-import imageio
-import isaacgym
 try:
     import flask
 except ImportError:
     flask = None
 
-import torch
+try:
+    import imageio
+    import isaacgym
+    import isaacgym.torch_utils as torch_utils
+    from isaacgym import gymapi
+except ImportError:
+    imageio = None
+    isaacgym = None
+    torch_utils = None
+    gymapi = None
 
-import isaacgym.torch_utils as torch_utils
-from isaacgym import gymapi
+import torch
 
 
 class WebViewer:
@@ -287,13 +293,13 @@ class WebViewer:
             self._event_stream.clear()
             self._notified = False
 
-    def setup(self, gym: 'isaacgym.gymapi.Gym', sim: 'Sim', envs: List[int], cameras: List[int]) -> None:
+    def setup(self, gym: 'isaacgym.gymapi.Gym', sim: 'isaacgym.gymapi.Sim', envs: List[int], cameras: List[int]) -> None:
         """Setup the web viewer
 
         :param gym: The gym
         :type gym: isaacgym.gymapi.Gym
         :param sim: Simulation handle
-        :type sim: Sim
+        :type sim: isaacgym.gymapi.Sim
         :param envs: Environment handles
         :type envs: list of ints
         :param cameras: Camera handles

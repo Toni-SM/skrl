@@ -112,7 +112,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
-            self.single_agent_eval()
+            self.single_agent_train()
             return
 
         # initialize multiprocessing variables
@@ -138,8 +138,8 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                    args=(i, consumer_pipes, queues, barrier, self.agents_scope),
-                                    daemon=True)
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 daemon=True)
             processes.append(process)
             process.start()
         barrier.wait()
@@ -199,6 +199,108 @@ class ParallelTrainer(Trainer):
 
             # reset environments
             with torch.no_grad():
+                if dones.any():
+                    states = self.env.reset()
+                    states.share_memory_()
+                else:
+                    states.copy_(next_states)
+
+        # terminate processes
+        for pipe in producer_pipes:
+            pipe.send({"task": "terminate"})
+        
+        # join processes
+        for process in processes:
+            process.join()
+
+    def eval(self) -> None:
+        """Evaluate the agents sequentially
+
+        This method executes the following steps in loop:
+
+        - Compute actions (in parallel)
+        - Interact with the environments
+        - Render scene
+        - Reset environments
+        """
+        # single agent
+        if self.num_agents == 1:
+            self.single_agent_eval()
+            return
+
+        # initialize multiprocessing variables
+        queues = []
+        producer_pipes = []
+        consumer_pipes = []
+        barrier = mp.Barrier(self.num_agents + 1)
+        processes = []
+        
+        for i in range(self.num_agents):
+            pipe_read, pipe_write = mp.Pipe(duplex=False)
+            producer_pipes.append(pipe_write)
+            consumer_pipes.append(pipe_read)
+            queues.append(mp.Queue())
+
+        # move tensors to shared memory
+        for agent in self.agents:
+            if agent.memory is not None:
+                agent.memory.share_memory()
+            for model in agent.models.values():
+                model.share_memory()
+
+        # spawn and wait for all processes to start
+        for i in range(self.num_agents):
+            process = mp.Process(target=fn_processor,
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 daemon=True)
+            processes.append(process)
+            process.start()
+        barrier.wait()
+
+        # initialize agents
+        for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
+            pipe.send({'task': 'init'})
+            queue.put(agent)
+        barrier.wait()
+
+        # reset env
+        states = self.env.reset()
+        states.share_memory_()
+
+        for timestep in range(self.initial_timestep, self.timesteps):
+            # show progress
+            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+
+            # compute actions
+            with torch.no_grad():
+                for pipe, queue in zip(producer_pipes, queues):
+                    pipe.send({"task": "act", "timestep": timestep, "timesteps": self.timesteps})
+                    queue.put(states)
+
+                barrier.wait()
+                actions = torch.vstack([queue.get() for queue in queues])
+                
+            # step the environments
+            next_states, rewards, dones, infos = self.env.step(actions)
+            
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            with torch.no_grad():
+                # record the environments' transitions
+                rewards.share_memory_()
+                next_states.share_memory_()
+                dones.share_memory_()
+                
+                for pipe, queue in zip(producer_pipes, queues):
+                    pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
+                    queue.put(rewards)
+                    queue.put(next_states)
+                    queue.put(dones)
+                barrier.wait()
+
+                # reset environments
                 if dones.any():
                     states = self.env.reset()
                     states.share_memory_()

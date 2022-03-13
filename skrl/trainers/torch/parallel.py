@@ -112,6 +112,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
+            self.agents.init()
             self.single_agent_train()
             return
 
@@ -225,6 +226,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
+            self.agents.init()
             self.single_agent_eval()
             return
 

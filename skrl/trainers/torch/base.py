@@ -8,6 +8,28 @@ from ...envs.torch import Wrapper
 from ...agents.torch import Agent
 
 
+def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:
+    """Generate a list of equally spaced scopes for the agents
+
+    :param num_envs: Number of environments
+    :type num_envs: int
+    :param num_agents: Number of agents
+    :type num_agents: int
+
+    :raises ValueError: If the number of agents is greater than the number of environments
+
+    :return: List of equally spaced scopes
+    :rtype: List[int]
+    """
+    scopes = [int(num_envs / num_agents)] * num_agents
+    if sum(scopes):
+        scopes[-1] += num_envs - sum(scopes)
+    else:
+        raise ValueError("The number of agents ({}) is greater than the number of environments ({})" \
+            .format(num_agents, num_envs))
+    return scopes
+
+
 class Trainer():
     def __init__(self, 
                  cfg: dict, 

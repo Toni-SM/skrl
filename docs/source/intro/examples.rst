@@ -132,6 +132,10 @@ This example performs the training of an agent in Isaac Gym's Cartpole environme
     - Load and wrap an Isaac Gym environment
     - Load a checkpoint during evaluation
 
+.. note::
+
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.  In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+
 .. tabs::
             
     .. tab:: Isaac Gym (one agent)
@@ -185,6 +189,10 @@ The following components or practices are exemplified (highlighted):
     - Learning by scopes (manually defined): **No shared memory**
     - Load a checkpoint during evaluation: **Shared memory**, **No shared memory**
 
+.. note::
+
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.  In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    
 .. tabs::
             
     .. tab:: Shared memory

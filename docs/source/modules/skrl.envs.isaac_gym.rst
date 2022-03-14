@@ -1,6 +1,10 @@
 Isaac Gym environments
 ======================
 
+.. note::
+
+   Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.  In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+
 .. raw:: html
 
    <hr>
@@ -13,7 +17,8 @@ The repository https://github.com/NVIDIA-Omniverse/IsaacGymEnvs provides the exa
 These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see `configuration-and-command-line-arguments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters as a python dictionary.
 
 .. note::
-   Only the configuration related to the environment will be used. The configuration related to RL algorithms are discarded since they do not belong to this library.
+
+   Only the configuration related to the environment will be used. The configuration related to RL algorithms are discarded since they do not belong to this library
 
 Basic usage
 ^^^^^^^^^^^

@@ -73,6 +73,19 @@ def fn_processor(process_index, *args):
             agent.post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
             barrier.wait()
 
+        # write data to TensorBoard (evaluation)
+        elif task == "eval-record_transition-post_interaction":
+            with torch.no_grad():
+                super(type(agent), agent).record_transition(states=_states, 
+                                                            actions=_actions,
+                                                            rewards=queue.get()[scope[0]:scope[1]],
+                                                            next_states=queue.get()[scope[0]:scope[1]],
+                                                            dones=queue.get()[scope[0]:scope[1]],
+                                                            timestep=msg['timestep'],
+                                                            timesteps=msg['timesteps'])
+                super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
+                barrier.wait()
+
 
 class ParallelTrainer(Trainer):
     def __init__(self, 
@@ -248,7 +261,8 @@ class ParallelTrainer(Trainer):
             if agent.memory is not None:
                 agent.memory.share_memory()
             for model in agent.models.values():
-                model.share_memory()
+                if model is not None:
+                    model.share_memory()
 
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
@@ -290,13 +304,15 @@ class ParallelTrainer(Trainer):
                 self.env.render()
 
             with torch.no_grad():
-                # record the environments' transitions
+                # write data to TensorBoard
                 rewards.share_memory_()
                 next_states.share_memory_()
                 dones.share_memory_()
                 
                 for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
+                    pipe.send({"task": "eval-record_transition-post_interaction", 
+                               "timestep": timestep, 
+                               "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
                     queue.put(dones)

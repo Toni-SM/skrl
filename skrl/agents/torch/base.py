@@ -210,16 +210,18 @@ class Agent:
         
         self._cumulative_rewards.add_(rewards)
         self._cumulative_timesteps.add_(1)
-        
-        # compute the average of the cumulative rewards and timesteps
+
+        # check ended episodes
         finished_episodes = dones.nonzero(as_tuple=False)
+        if finished_episodes.numel():
 
-        self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-        self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+            # storage cumulative rewards and timesteps
+            self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
+            self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
 
-        # reset the cumulative rewards and timesteps
-        self._cumulative_rewards[finished_episodes] = 0
-        self._cumulative_timesteps[finished_episodes] = 0
+            # reset the cumulative rewards and timesteps
+            self._cumulative_rewards[finished_episodes] = 0
+            self._cumulative_timesteps[finished_episodes] = 0
         
         # record data
         if self.write_interval > 0:

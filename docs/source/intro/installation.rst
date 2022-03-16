@@ -43,8 +43,10 @@ TODO: :red:`Add package to PyPI (comming soon)`
 Troubleshooting
 ---------------
 
-Bug detection and/or correction, feature requests and everything else are more than welcome
-
-.. centered:: Come on, open a new issue!
+Bug detection and/or correction, feature requests and everything else are more than welcome. Come on, open a new issue!
 
 .. centered:: https://github.com/Toni-SM/skrl/issues
+
+To ask questions or discuss about the library visit skrl's GitHub discussions
+
+.. centered:: https://github.com/Toni-SM/skrl/discussions

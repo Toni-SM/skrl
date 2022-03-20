@@ -286,8 +286,6 @@ class PPO(Agent):
                         kl = ((torch.exp(ratio) - 1) - ratio).mean()
                     
                     if kl > self._kl_threshold:
-                        print("[INFO] Early stopping (learning epoch: {}). KL divergence ({}) > KL divergence threshold ({})" \
-                            .format(epoch, kl, self._kl_threshold))
                         break
 
                 # compute entropy loss

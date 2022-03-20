@@ -127,10 +127,31 @@ This example performs the training of one agent in an OpenAI Gym environment. Th
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
-This example performs the training of an agent in Isaac Gym's Cartpole environment. It tries to load the environment from preview 3, but if it fails, it will try to load the environment from preview 2. The following components or practices are exemplified (highlighted):
+These examples perform the training of an agent in all Isaac Gym environments. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2. The following components or practices are exemplified (highlighted):
 
     - Load and wrap an Isaac Gym environment
     - Load a checkpoint during evaluation
+
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO configuration for `Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+
+.. code-block:: bash
+
+    rollouts = horizon_length
+    learning_epochs = mini_epochs
+    mini_batches = horizon_length * num_actors / minibatch_size
+    discount_factor = gamma
+    lambda = 0.99
+    policy_learning_rate = learning_rate
+    value_learning_rate = learning_rate
+    random_timesteps = 0
+    learning_starts = 0
+    grad_norm_clip = grad_norm
+    ratio_clip = e_clip
+    value_clip = e_clip
+    clip_predicted_values = clip_value
+    entropy_loss_scale = entropy_coef
+    value_loss_scale = 0.5 * critic_coef
+    kl_threshold = kl_threshold
 
 .. note::
 
@@ -138,20 +159,123 @@ This example performs the training of an agent in Isaac Gym's Cartpole environme
 
 .. tabs::
             
-    .. tab:: Isaac Gym (one agent)
+    .. tab:: Isaac Gym environments (training)
 
         .. tabs::
             
-            .. tab:: Training
+            .. tab:: AllegroHand
                 
-                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_cartpole_ppo.py>`_
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_allegro_hand.py>`_
 
-                .. literalinclude:: ../examples/isaacgym_cartpole_ppo.py
+                .. literalinclude:: ../examples/isaacgym3/ppo_allegro_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 53-58, 102
+                    :emphasize-lines: 12-13, 56-61
 
-            .. tab:: Evaluation
+            .. tab:: Ant
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ant.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_ant.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: Anymal
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_anymal.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: AnymalTerrain
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal_terrain.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_anymal_terrain.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: BallBalance
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ball_balance.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_ball_balance.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: Cartpole
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_cartpole.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_cartpole.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 52-57
+
+            .. tab:: FrankaCabinet
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_franka_cabinet.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_franka_cabinet.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: Humanoid
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_humanoid.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_humanoid.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: Ingenuity
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ingenuity.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_ingenuity.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: Quadcopter
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_quadcopter.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_quadcopter.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 56-61
+
+            .. tab:: ShadowHand
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_shadow_hand.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_shadow_hand.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 60-65
+
+            .. tab:: Trifinger
+                
+                View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_trifinger.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/ppo_trifinger.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 12-13, 60-65
+
+    .. tab:: Isaac Gym environments (evaluation)
+
+        .. tabs::
+            
+            .. tab:: Cartpole
                 
                 View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_cartpole_ppo_eval.py>`_
                 

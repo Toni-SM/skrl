@@ -2,6 +2,16 @@
 
 Record of notable changes in this project
 
+## [0.4.1] - 2021-03-20
+
+### Added
+
+- Examples of all Isaac Gym environments (preview 3)
+
+### Fixed
+
+- Init and evaluate agents in ParallelTrainer
+
 ## [0.4.0] - 2021-03-09
 
 ### Added

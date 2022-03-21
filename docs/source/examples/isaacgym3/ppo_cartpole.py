@@ -94,9 +94,9 @@ cfg_ppo["clip_predicted_values"] = True
 cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0.008
-# logging to TensorBoard and write checkpoints each 16 and 320 timesteps respectively
+# logging to TensorBoard and write checkpoints each 16 and 400 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 16
-cfg_ppo["experiment"]["checkpoint_interval"] = 320
+cfg_ppo["experiment"]["checkpoint_interval"] = 400
 
 agent = PPO(models=models_ppo,
             memory=memory, 

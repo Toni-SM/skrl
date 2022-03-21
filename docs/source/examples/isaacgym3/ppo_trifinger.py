@@ -102,9 +102,9 @@ cfg_ppo["clip_predicted_values"] = True
 cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0.016
-# logging to TensorBoard and write checkpoints each 8 and 200 timesteps respectively
-cfg_ppo["experiment"]["write_interval"] = 8
-cfg_ppo["experiment"]["checkpoint_interval"] = 200 # TODO
+# logging to TensorBoard and write checkpoints each 240 and 6000 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 240
+cfg_ppo["experiment"]["checkpoint_interval"] = 6000
 
 agent = PPO(models=models_ppo,
             memory=memory, 
@@ -114,8 +114,8 @@ agent = PPO(models=models_ppo,
             device=device)
 
 
-# Configure and instantiate the RL trainer # TODO
-cfg_trainer = {"timesteps": 8000, "headless": True}
+# Configure and instantiate the RL trainer
+cfg_trainer = {"timesteps": 120000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

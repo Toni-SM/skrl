@@ -6,7 +6,7 @@
 pip install sphinx
 pip install sphinx_rtd_theme
 pip install sphinx-autobuild
-pip install sphinx-tabs
+pip install sphinx-tabs==3.2.0
 ```
 
 ### Building the documentation

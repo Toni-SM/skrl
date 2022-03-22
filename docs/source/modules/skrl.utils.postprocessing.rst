@@ -57,6 +57,15 @@ Tensorboard files
 
 This library provides an implementation for quickly loading Tensorboard files to inspect their contents in future post-processing steps. See the section :ref:`Examples <examples>` for a real use case
 
+Requirements
+^^^^^^^^^^^^
+
+This utility requires the `TensorFlow <https://www.tensorflow.org/>`_ package to be installed to load and parse Tensorboard files:
+
+.. code-block:: bash
+
+   pip install tensorflow
+
 Basic usage
 ^^^^^^^^^^^
 

@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Union, Tuple, List
 
 import os
 import csv
@@ -45,7 +45,7 @@ class MemoryFileIterator():
     def __next__(self) -> Tuple[str, dict]:
         """Return next batch
 
-        :return: Tuple of filename and data
+        :return: Tuple of file name and data
         :rtype: tuple
         """
         if self.n >= len(self.file_paths):
@@ -63,7 +63,7 @@ class MemoryFileIterator():
     def _format_numpy(self) -> Tuple[str, dict]:
         """Load numpy array from file
         
-        :return: Tuple of filename and data
+        :return: Tuple of file name and data
         :rtype: tuple
         """
         filename = os.path.basename(self.file_paths[self.n])
@@ -75,7 +75,7 @@ class MemoryFileIterator():
     def _format_torch(self) -> Tuple[str, dict]:
         """Load PyTorch tensor from file
 
-        :return: Tuple of filename and data
+        :return: Tuple of file name and data
         :rtype: tuple
         """
         filename = os.path.basename(self.file_paths[self.n])
@@ -87,7 +87,7 @@ class MemoryFileIterator():
     def _format_csv(self) -> Tuple[str, dict]:
         """Load CSV file from file
 
-        :return: Tuple of filename and data
+        :return: Tuple of file name and data
         :rtype: tuple
         """
         filename = os.path.basename(self.file_paths[self.n])
@@ -118,3 +118,58 @@ class MemoryFileIterator():
 
         self.n += 1
         return filename, data
+
+
+class TensorboardFileIterator():
+    def __init__(self, pathname: str, tags: Union[str, List[str]]) -> None:
+        """Python iterator for loading data from Tensorboard files
+        
+        The iterator will load the next Tensorboard file in the list of path names.
+        The iterator's output is a tuple of the directory name and the Tensorboard variables selected by the tags.
+        The Tensorboard data is returned as a dictionary with the tag as the key and a list of steps and values as the value
+
+        :param pathname: String containing a path specification for the Tensorboard files.
+                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method 
+                         is used to find all files matching the path specification
+        :type pathname: str
+        :param tags: String or list of strings containing the tags of the variables to load
+        :type tags: str or list of str
+        """
+        self.n = 0
+        self.file_paths = glob.glob(pathname)
+        self.tags = [tags] if isinstance(tags, str) else tags
+
+    def __iter__(self) -> 'TensorboardFileIterator':
+        """Return self to make iterable"""
+        return self
+
+    def __next__(self) -> Tuple[str, dict]:
+        """Return next batch
+
+        :return: Tuple of directory name and data
+        :rtype: tuple
+        """
+        from tensorflow.python.summary.summary_iterator import summary_iterator
+        
+        if self.n >= len(self.file_paths):
+            raise StopIteration
+
+        file_path = self.file_paths[self.n]
+        self.n += 1
+
+        data = {}
+        for event in summary_iterator(file_path):
+            try:
+                # get Tensorboard data
+                step = event.step
+                tag = event.summary.value[0].tag
+                value = event.summary.value[0].simple_value
+                # record data
+                if tag in self.tags:
+                    if not tag in data:
+                        data[tag] = []
+                    data[tag].append([step, value])
+            except Exception as e:
+                pass
+
+        return os.path.dirname(file_path).split(os.sep)[-1], data

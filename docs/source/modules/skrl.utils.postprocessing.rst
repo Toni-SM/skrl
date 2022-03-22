@@ -1,6 +1,9 @@
 File post-processing
 ====================
 
+Exported memories
+-----------------
+
 This library provides an implementation for quickly loading exported memory files to inspect their contents in future post-processing steps. See the section :ref:`Examples <examples>` for a real use case
 
 Basic usage
@@ -14,8 +17,8 @@ Basic usage
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
-            :start-after: [start-torch]
-            :end-before: [end-torch]
+            :start-after: [start-memory_file_iterator-torch]
+            :end-before: [end-memory_file_iterator-torch]
 
     .. tab:: NumPy (.npz)
 
@@ -23,8 +26,8 @@ Basic usage
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
-            :start-after: [start-numpy]
-            :end-before: [end-numpy]
+            :start-after: [start-memory_file_iterator-numpy]
+            :end-before: [end-memory_file_iterator-numpy]
 
     .. tab:: Comma-separated values (.csv)
 
@@ -32,8 +35,8 @@ Basic usage
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
-            :start-after: [start-csv]
-            :end-before: [end-csv]
+            :start-after: [start-memory_file_iterator-csv]
+            :end-before: [end-memory_file_iterator-csv]
 
 API
 ^^^
@@ -43,6 +46,38 @@ API
    :show-inheritance:
    :inherited-members:
    :private-members: _format_numpy, _format_torch, _format_csv
+   :members:
+   
+   .. automethod:: __init__
+   .. automethod:: __iter__
+   .. automethod:: __next__
+
+Tensorboard files
+-----------------
+
+This library provides an implementation for quickly loading Tensorboard files to inspect their contents in future post-processing steps. See the section :ref:`Examples <examples>` for a real use case
+
+Basic usage
+^^^^^^^^^^^
+
+.. tabs::
+            
+    .. tab:: Tensorboard (events.out.tfevents.*)
+
+        .. literalinclude:: ../snippets/utils_postprocessing.py
+            :language: python
+            :linenos:
+            :emphasize-lines: 1, 5-7
+            :start-after: [start-tensorboard_file_iterator-list]
+            :end-before: [end-tensorboard_file_iterator-list]
+
+API
+^^^
+
+.. autoclass:: skrl.utils.postprocessing.TensorboardFileIterator
+   :undoc-members:
+   :show-inheritance:
+   :inherited-members:
    :members:
    
    .. automethod:: __init__

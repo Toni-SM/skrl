@@ -2,11 +2,12 @@
 
 Record of notable changes in this project
 
-## [0.4.1] - 2021-03-20
+## [0.4.1] - 2021-03-22
 
 ### Added
 
 - Examples of all Isaac Gym environments (preview 3)
+- Tensorboard file iterator for data post-processing
 
 ### Fixed
 

@@ -4,7 +4,7 @@ File post-processing
 Exported memories
 -----------------
 
-This library provides an implementation for quickly loading exported memory files to inspect their contents in future post-processing steps. See the section :ref:`Examples <examples>` for a real use case
+This library provides an implementation for quickly loading exported memory files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
 
 Basic usage
 ^^^^^^^^^^^
@@ -55,7 +55,7 @@ API
 Tensorboard files
 -----------------
 
-This library provides an implementation for quickly loading Tensorboard files to inspect their contents in future post-processing steps. See the section :ref:`Examples <examples>` for a real use case
+This library provides an implementation for quickly loading Tensorboard files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
 
 Requirements
 ^^^^^^^^^^^^

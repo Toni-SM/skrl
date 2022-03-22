@@ -106,7 +106,6 @@ Memories
 
     modules/skrl.memories.base_class
     modules/skrl.memories.random
-    .. modules/skrl.memories.prioritized
 
 Models
 ^^^^^^

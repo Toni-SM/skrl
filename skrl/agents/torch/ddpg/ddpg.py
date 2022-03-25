@@ -82,24 +82,15 @@ class DDPG(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        if not "target_policy" in self.models.keys():
-            raise KeyError("The target policy model is not defined under 'target_policy' key (models['target_policy'])")
-        if not "critic" in self.models.keys():
-            raise KeyError("The Q-network (critic) is not defined under 'critic' key (models['critic'])")
-        if not "target_critic" in self.models.keys():
-            raise KeyError("The target Q-network (target critic) is not defined under 'target_critic' key (models['target_critic'])")
-        
-        self.policy = self.models["policy"]
-        self.target_policy = self.models["target_policy"]
-        self.critic = self.models["critic"]
-        self.target_critic = self.models["target_critic"]
+        self.policy = self.models.get("policy", None)
+        self.target_policy = self.models.get("target_policy", None)
+        self.critic = self.models.get("critic", None)
+        self.target_critic = self.models.get("target_critic", None)
 
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
         
-        if self.target_policy is not None:
+        if self.target_policy is not None and self.target_critic is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic.freeze_parameters(True)
@@ -127,8 +118,8 @@ class DDPG(Agent):
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
         
         # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        if self.critic is not None:
+        if self.policy is not None and self.critic is not None:
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
             self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
 
     def init(self) -> None:

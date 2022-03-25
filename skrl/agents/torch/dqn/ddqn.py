@@ -84,13 +84,8 @@ class DDQN(Agent):
                          cfg=_cfg)
 
         # models
-        if not "q_network" in self.models.keys():
-            raise KeyError("The Q-network is not defined under 'q_network' key (models['q_network'])")
-        if not "target_q_network" in self.models.keys():
-            raise KeyError("The target Q-network is not defined under 'target_q_network' key (models['target_q_network'])")
-       
-        self.q_network = self.models["q_network"]
-        self.target_q_network = self.models["target_q_network"]
+        self.q_network = self.models.get("q_network", None)
+        self.target_q_network = self.models.get("target_q_network", None)
 
         # checkpoint models
         self.checkpoint_models = {"q_network": self.q_network} if self.checkpoint_policy_only else self.models
@@ -122,7 +117,8 @@ class DDQN(Agent):
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
         
         # set up optimizers
-        self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
+        if self.q_network is not None:
+            self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
 
     def init(self) -> None:
         """Initialize the agent

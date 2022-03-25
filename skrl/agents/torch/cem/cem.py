@@ -73,10 +73,7 @@ class CEM(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        
-        self.policy = self.models["policy"]
+        self.policy = self.models.get("policy", None)
 
         # checkpoint models
         self.checkpoint_models = self.models
@@ -95,7 +92,8 @@ class CEM(Agent):
         self._episode_tracking = []
 
         # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+        if self.policy is not None:
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
 
     def init(self) -> None:
         """Initialize the agent

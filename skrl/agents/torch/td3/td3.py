@@ -87,30 +87,17 @@ class TD3(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        if not "target_policy" in self.models.keys():
-            raise KeyError("The target policy model is not defined under 'target_policy' key (models['target_policy'])")
-        if not "critic_1" in self.models.keys():
-            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (models['critic_1'])")
-        if not "critic_2" in self.models.keys():
-            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (models['critic_2'])")
-        if not "target_critic_1" in self.models.keys():
-            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (models['target_critic_1'])")
-        if not "target_critic_2" in self.models.keys():
-            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (models['target_critic_2'])")
-        
-        self.policy = self.models["policy"]
-        self.target_policy = self.models["target_policy"]
-        self.critic_1 = self.models["critic_1"]
-        self.critic_2 = self.models["critic_2"]
-        self.target_critic_1 = self.models["target_critic_1"]
-        self.target_critic_2 = self.models["target_critic_2"]
+        self.policy = self.models.get("policy", None)
+        self.target_policy = self.models.get("target_policy", None)
+        self.critic_1 = self.models.get("critic_1", None)
+        self.critic_2 = self.models.get("critic_2", None)
+        self.target_critic_1 = self.models.get("target_critic_1", None)
+        self.target_critic_2 = self.models.get("target_critic_2", None)
         
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
 
-        if self.target_policy is not None:
+        if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic_1.freeze_parameters(True)
@@ -146,8 +133,8 @@ class TD3(Agent):
         self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
 
         # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        if self.critic_1 is not None:
+        if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
             self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
                                                      lr=self._critic_learning_rate)
 

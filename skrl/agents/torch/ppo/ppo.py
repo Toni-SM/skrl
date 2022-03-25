@@ -87,13 +87,8 @@ class PPO(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        if not "value" in self.models.keys():
-            raise KeyError("The value model is not defined under 'value' key (models['value'])")
-        
-        self.policy = self.models["policy"]
-        self.value = self.models["value"]
+        self.policy = self.models.get("policy", None)
+        self.value = self.models.get("value", None)
 
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
@@ -124,8 +119,8 @@ class PPO(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-        if self.value is not None:
+        if self.policy is not None and self.value is not None:
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
             self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
 
     def init(self) -> None:

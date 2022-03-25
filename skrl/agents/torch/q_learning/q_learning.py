@@ -69,10 +69,7 @@ class Q_LEARNING(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy is not defined under 'policy' key (models['policy'])")
-        
-        self.policy = self.models["policy"]
+        self.policy = self.models.get("policy", None)
 
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models

@@ -407,7 +407,7 @@ class Memory:
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
-                setattr(self, "_tensor_{}".format(name), torch.from_numpy(data[name]))
+                setattr(self, "_tensor_{}".format(name), torch.tensor(data[name]))
         
         # comma-separated values
         elif path.endswith(".csv"):

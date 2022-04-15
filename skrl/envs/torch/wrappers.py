@@ -1,11 +1,14 @@
 from typing import Tuple, Any
 
 import gym
+import collections
 import numpy as np
 
 import torch
 
 __all__ = ["wrap_env"]
+
+ISSUES = "https://github.com/Toni-SM/skrl/issues"
 
 
 class Wrapper(object):
@@ -227,12 +230,145 @@ class GymWrapper(Wrapper):
         self._env.render(*args, **kwargs)
 
 
+class DeepMindWrapper(Wrapper):
+    def __init__(self, env: Any) -> None:
+        """DeepMind environment wrapper
+
+        :param env: The environment to wrap
+        :type env: Any supported DeepMind environment
+        """
+        super().__init__(env)
+
+        from dm_env import specs
+        self._specs = specs
+
+        # observation and action spaces
+        self._observation_space = self._spec_to_space(self._env.observation_spec())
+        self._action_space = self._spec_to_space(self._env.action_spec())
+
+    @property
+    def state_space(self) -> gym.Space:
+        """State space
+
+        An alias for the ``observation_space`` property
+        """
+        return self._observation_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        """Observation space
+        """
+        return self._observation_space
+
+    @property
+    def action_space(self) -> gym.Space:
+        """Action space
+        """
+        return self._action_space
+
+    def _spec_to_space(self, spec: Any) -> gym.Space:
+        """Convert the DeepMind spec to a Gym space
+
+        :param spec: The DeepMind spec to convert
+        :type spec: Any supported DeepMind spec
+
+        :raises: ValueError if the spec type is not supported
+
+        :return: The Gym space
+        :rtype: gym.Space
+        """
+        if isinstance(spec, self._specs.DiscreteArray):
+            return gym.spaces.Discrete(spec.num_values)
+        elif isinstance(spec, self._specs.BoundedArray):
+            return gym.spaces.Box(shape=spec.shape,
+                                  low=spec.minimum,
+                                  high=spec.maximum,
+                                  dtype=spec.dtype)
+        elif isinstance(spec, self._specs.Array):
+            return gym.spaces.Box(shape=spec.shape,
+                                  low=float("-inf"),
+                                  high=float("inf"),
+                                  dtype=spec.dtype)
+        elif isinstance(spec, collections.OrderedDict):
+            return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
+        else:
+            raise ValueError("Spec type {} not supported. Please report this issue ({})" \
+                .format(type(spec), ISSUES))
+
+    def observation_to_tensor(self, observation: Any, spec: Any = None) -> torch.Tensor:
+        """Convert the observation to a flat tensor
+
+        :param observation: The observation to convert
+        :type observation: Any
+
+        :raises: ValueError if the observation spec type is not supported
+
+        :return: The observation as a flat tensor
+        :rtype: torch.Tensor
+        """
+        spec = spec if spec is not None else self._env.observation_spec()
+
+        if isinstance(spec, self._specs.DiscreteArray):
+            return torch.tensor(observation, device=self.device).view(self.num_envs, -1)
+        elif isinstance(spec, self._specs.Array):  # includes BoundedArray
+            return torch.tensor(observation, device=self.device).view(self.num_envs, -1)
+        elif isinstance(spec, collections.OrderedDict):
+            keys = sorted(spec.keys())
+            return torch.cat([self.observation_to_tensor(observation[k], spec[k]) for k in keys], dim=-1).view(self.num_envs, -1)
+        else:
+            raise ValueError("Observation spec type {} not supported. Please report this issue ({})" \
+                .format(type(observation), ISSUES))
+
+    def tensor_to_action(self, actions: torch.Tensor) -> Any:
+        """Convert the action to the DeepMind expected format
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :raise ValueError: If the action space type is not supported
+
+        :return: The action in the DeepMind expected format
+        :rtype: Any
+        """
+        spec = self._env.action_spec()
+
+        if isinstance(spec, self._specs.DiscreteArray):
+            return np.array(actions.item(), dtype=spec.dtype)
+        elif isinstance(spec, self._specs.Array):  # includes BoundedArray
+            return np.array(actions.cpu().numpy(), dtype=spec.dtype).reshape(spec.shape)
+        else:
+            raise ValueError("Action spec type {} not supported. Please report this issue ({})" \
+                .format(type(spec), ISSUES))
+
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: The state, the reward, the done flag, and the info
+        :rtype: tuple of torch.Tensor and any other info
+        """
+        timestep = self._env.step(self.tensor_to_action(actions))
+
+        observation = timestep.observation
+        reward = timestep.reward
+        done = timestep.last()
+        info = {}
+        
+        # convert response to torch
+        return self.observation_to_tensor(observation), \
+               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
+               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               info
+
+
 def wrap_env(env, wrapper="auto") -> Wrapper:
     """Wrap an environment to use a common interface
 
     :param env: The type of wrapper to use (default: "auto").
                 If ``auto``, the wrapper will be automatically selected based on the environment class.
-                The specific wrappers supported are ``gym``, ``isaacgym-preview2`` and ``isaacgym-preview3``
+                The specific wrappers supported are ``gym``, ``dm``, ``isaacgym-preview2`` and ``isaacgym-preview3``
     :type env: gym.Env, rlgpu.tasks.base.vec_task.VecTask or isaacgymenvs.tasks.base.vec_task.VecTask
     :param wrapper: The environment to be wrapped
     :type wrapper: str, optional
@@ -249,6 +385,9 @@ def wrap_env(env, wrapper="auto") -> Wrapper:
         if isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
             print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
+        elif "<class 'dm_env._environment.Environment'>" in [str(base) for base in env.__class__.__bases__]:
+            print("[INFO] Wrapper: DeepMind")
+            return DeepMindWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
@@ -257,6 +396,9 @@ def wrap_env(env, wrapper="auto") -> Wrapper:
     elif wrapper == "gym":
         print("[INFO] Wrapper: Gym")
         return GymWrapper(env)
+    elif wrapper == "dm":
+        print("[INFO] Wrapper: DeepMind")
+        return DeepMindWrapper(env)
     elif wrapper == "isaacgym-preview2":
         print("[INFO] Wrapper: Isaac Gym (preview 2)")
         return IsaacGymPreview2Wrapper(env)

@@ -1,13 +1,13 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://gym.openai.com/>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Isaac Gym environment loading (preview 2 and 3)
+    * OpenAI Gym, DeepMind and Isaac Gym (preview 2 and 3) environments 
     * Simultaneous learning by scopes in Isaac Gym environments
 
 .. warning::
@@ -79,10 +79,10 @@ Agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym and Isaac Gym environments
+    Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym, DeepMind and Isaac Gym environments
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>`
-    * :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` OpenAI Gym, DeepMind and Isaac Gym environments
+    * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
 
 .. toctree::
     :maxdepth: 1

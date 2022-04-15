@@ -87,16 +87,23 @@ class Model(torch.nn.Module):
         :param space: Space or shape from which to obtain the number of elements
         :type space: int, tuple or list of integers, or gym.Space
 
-        :return: [description]
+        :raises ValueError: If the space is not supported
+
+        :return: Size of the space
         :rtype: Space size (number of elements)
         """
-        if type(space) in [tuple, list]:
+        if type(space) in [int, float]:
+            return int(space)
+        elif type(space) in [tuple, list]:
             return np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
                 return space.n
-            return np.prod(space.shape)
-        return space
+            elif issubclass(type(space), gym.spaces.Box):
+                return np.prod(space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        raise ValueError("Space type {} not supported".format(type(space)))
 
     def random_act(self, 
                    states: torch.Tensor, 

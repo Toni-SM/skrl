@@ -74,6 +74,30 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
         
+    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
+        """Get the size (number of elements) of a space
+
+        :param space: Space or shape from which to obtain the number of elements
+        :type space: int, tuple or list of integers, or gym.Space
+
+        :raises ValueError: If the space is not supported
+
+        :return: Size of the space data
+        :rtype: Space size (number of elements)
+        """
+        if type(space) in [int, float]:
+            return int(space)
+        elif type(space) in [tuple, list]:
+            return np.prod(space)
+        elif issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return 1
+            elif issubclass(type(space), gym.spaces.Box):
+                return np.prod(space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        raise ValueError("Space type {} not supported".format(type(space)))
+
     def share_memory(self) -> None:
         """Share the tensors between processes
         """
@@ -109,13 +133,7 @@ class Memory:
         :rtype: bool
         """
         # compute data size
-        if type(size) in [tuple, list]:
-            size = np.prod(size)
-        elif issubclass(type(size), gym.Space):
-            if issubclass(type(size), gym.spaces.Discrete):
-                size = 1
-            else:
-                size = np.prod(size.shape)
+        size = self._get_space_size(size)
         # check dtype and size if the tensor exists
         if name in self.tensors:
             tensor = self.tensors[name]

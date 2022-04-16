@@ -175,23 +175,54 @@ class GymWrapper(Wrapper):
         """
         super().__init__(env)
 
-    def _convert_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the OpenAI Gym format
+    def _observation_to_tensor(self, observation: Any, space: Union[gym.Space, None] = None) -> torch.Tensor:
+        """Convert the OpenAI Gym observation to a flat tensor
+
+        :param observation: The OpenAI Gym observation to convert to a tensor
+        :type observation: Any supported OpenAI Gym observation space
+
+        :raises: ValueError if the observation space type is not supported
+
+        :return: The observation as a flat tensor
+        :rtype: torch.Tensor
+        """
+        space = space if space is not None else self.observation_space
+
+        if isinstance(observation, int):
+            return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
+        elif isinstance(observation, np.ndarray):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gym.spaces.Discrete):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gym.spaces.Box):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gym.spaces.Dict):
+            tmp = torch.cat([self._observation_to_tensor(observation[k], space[k]) \
+                for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
+            print(observation, tmp)
+            return tmp
+        else:
+            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+
+    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
+        """Convert the action to the OpenAI Gym expected format
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
+        :raise ValueError: If the action space type is not supported
+
         :return: The action in the OpenAI Gym format
-        :rtype: Any
+        :rtype: Any supported OpenAI Gym action space
         """
-        if isinstance(self._env.action_space, gym.spaces.Box):
-            if actions.shape[0] == 1:
-                return actions.view(-1).cpu().numpy()
-            return actions.cpu().numpy()
-        elif isinstance(self._env.action_space, gym.spaces.Discrete):
+        space = self.action_space
+
+        if isinstance(space, gym.spaces.Discrete):
             return actions.item()
+        elif isinstance(space, gym.spaces.Box):
+            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         else:
-            raise NotImplementedError("Action space type {} not supported".format(type(self._env.action_space)))
+            raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -202,11 +233,11 @@ class GymWrapper(Wrapper):
         :return: The state, the reward, the done flag, and the info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observation, reward, done, info = self._env.step(self._convert_action(actions))
+        observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
         # convert response to torch
-        return torch.tensor(observation, device=self.device).view(1, -1), \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(1, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(1, -1), \
+        return self._observation_to_tensor(observation), \
+               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
+               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
         
     def reset(self) -> torch.Tensor:
@@ -215,12 +246,8 @@ class GymWrapper(Wrapper):
         :return: The state of the environment
         :rtype: torch.Tensor
         """
-        state = self._env.reset()
-        if isinstance(state, np.ndarray):
-            return torch.tensor(state, device=self.device, dtype=torch.float32).view(1, -1)
-        elif isinstance(state, int):
-            return torch.tensor(state, device=self.device, dtype=torch.int64).view(1, -1)
-        return state.to(self.device).view(1, -1)
+        observation = self._env.reset()
+        return self._observation_to_tensor(observation)
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

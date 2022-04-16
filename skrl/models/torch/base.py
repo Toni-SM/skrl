@@ -105,6 +105,41 @@ class Model(torch.nn.Module):
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         raise ValueError("Space type {} not supported".format(type(space)))
 
+    def tensor_to_space(self, tensor: torch.Tensor, space: gym.Space, start: int = 0) -> Union[torch.Tensor, dict]:
+        """Map a flat tensor to a Gym space
+
+        The mapping is done in the following way:
+
+        - Tensors belonging to Discrete spaces are returned without modification
+        - Tensors belonging to Box spaces are reshaped to the corresponding space shape 
+          keeping the first dimension (number of samples) as they are
+        - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
+
+        :param tensor: Tensor to map
+        :type tensor: torch.Tensor
+        :param space: Space to map the tensor to
+        :type space: gym.Space
+        :param start: Index of the first element of the tensor to map (default: 0)
+        :type start: int, optional
+
+        :raises ValueError: If the space is not supported
+
+        :return: Mapped tensor or dictionary
+        :rtype: torch.Tensor or dict
+        """
+        if issubclass(type(space), gym.spaces.Discrete):
+            return tensor
+        elif issubclass(type(space), gym.spaces.Box):
+            return tensor.view(tensor.shape[0], *space.shape)
+        elif issubclass(type(space), gym.spaces.Dict):
+            output = {}
+            for key in sorted(space.keys()):
+                end = start + self._get_space_size(space[key])
+                output[key] = self.tensor_to_space(tensor[:, start:start + end], space[key], start + end)
+                start += end
+            return output
+        raise ValueError("Space type {} not supported".format(type(space)))
+
     def random_act(self, 
                    states: torch.Tensor, 
                    taken_actions: Union[torch.Tensor, None] = None, 

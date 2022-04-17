@@ -133,10 +133,10 @@ class Model(torch.nn.Module):
             return tensor.view(tensor.shape[0], *space.shape)
         elif issubclass(type(space), gym.spaces.Dict):
             output = {}
-            for key in sorted(space.keys()):
-                end = start + self._get_space_size(space[key])
-                output[key] = self.tensor_to_space(tensor[:, start:start + end], space[key], start + end)
-                start += end
+            for k in sorted(space.keys()):
+                end = start + self._get_space_size(space[k])
+                output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                start = end
             return output
         raise ValueError("Space type {} not supported".format(type(space)))
 

@@ -46,6 +46,9 @@ The implementation supports the following `Gym spaces <https://gym.openai.com/do
    * - Box
      - .. centered:: :math:`\square`
      - .. centered:: :math:`\square`
+   * - Dict
+     - .. centered:: :math:`\square`
+     - .. centered:: :math:`\square`
 
 The implementation uses 1 table. This table (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

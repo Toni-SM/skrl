@@ -306,14 +306,14 @@ class DeepMindWrapper(Wrapper):
             return gym.spaces.Discrete(spec.num_values)
         elif isinstance(spec, self._specs.BoundedArray):
             return gym.spaces.Box(shape=spec.shape,
-                                  low=spec.minimum,
-                                  high=spec.maximum,
-                                  dtype=spec.dtype)
+                                  dtype=spec.dtype,
+                                  low=spec.minimum if spec.minimum.ndim else np.full(spec.shape, spec.minimum),
+                                  high=spec.maximum if spec.maximum.ndim else np.full(spec.shape, spec.maximum))
         elif isinstance(spec, self._specs.Array):
             return gym.spaces.Box(shape=spec.shape,
-                                  low=float("-inf"),
-                                  high=float("inf"),
-                                  dtype=spec.dtype)
+                                  dtype=spec.dtype,
+                                  low=np.full(spec.shape, float("-inf")),
+                                  high=np.full(spec.shape, float("inf")))
         elif isinstance(spec, collections.OrderedDict):
             return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
@@ -333,12 +333,12 @@ class DeepMindWrapper(Wrapper):
         spec = spec if spec is not None else self._env.observation_spec()
 
         if isinstance(spec, self._specs.DiscreteArray):
-            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
         elif isinstance(spec, self._specs.Array):  # includes BoundedArray
-            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
         elif isinstance(spec, collections.OrderedDict):
             return torch.cat([self._observation_to_tensor(observation[k], spec[k]) \
-                for k in sorted(spec.keys())], dim=-1).view(self.num_envs, -1)
+                for k in sorted(spec.keys())], dim=-1).reshape(self.num_envs, -1)
         else:
             raise ValueError("Observation spec type {} not supported. Please report this issue".format(type(spec)))
 
@@ -400,9 +400,10 @@ class DeepMindWrapper(Wrapper):
         Install OpenCV with ``pip install opencv-python``
         """
         frame = self._env.physics.render(480, 640, camera_id=0)
+
         # render the frame using OpenCV
         import cv2
-        cv2.imshow(str(self._env), cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         cv2.waitKey(1)
 
 

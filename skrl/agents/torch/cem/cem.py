@@ -225,6 +225,11 @@ class CEM(Agent):
                     rewards = sampled_rewards[e + i: e + j]
                     returns.append(torch.sum(rewards * self._discount_factor ** \
                         torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())))
+
+            if not len(returns):
+                print("[WARNING] No returns to update. Consider increasing the number of rollouts")
+                return
+            
             returns = torch.tensor(returns)
             return_threshold = torch.quantile(returns, self._percentile, dim=-1)
             

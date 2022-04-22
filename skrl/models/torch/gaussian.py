@@ -51,6 +51,8 @@ class GaussianModel(Model):
         self.log_std_min = min_log_std
         self.log_std_max = max_log_std
 
+        self._log_std = None
+        self._num_samples = None
         self._distribution = None
         
     def act(self, 
@@ -83,6 +85,9 @@ class GaussianModel(Model):
         # clamp log standard deviations
         if self.clip_log_std:
             log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
+
+        self._log_std = log_std
+        self._num_samples = actions_mean.shape[0]
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
@@ -118,6 +123,14 @@ class GaussianModel(Model):
         if self._distribution is None:
             return torch.tensor(0.0, device=self.device)
         return self._distribution.entropy().to(self.device)
+
+    def get_log_std(self) -> torch.Tensor:
+        """Return the log standard deviation of the model
+
+        :return: Log standard deviation of the model
+        :rtype: torch.Tensor
+        """
+        return self._log_std.repeat(self._num_samples, 1)
     
     def distribution(self) -> torch.distributions.MultivariateNormal:
         """Get the current distribution of the model

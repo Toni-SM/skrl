@@ -273,7 +273,7 @@ class TRPO(Agent):
 
         def conjugate_gradient(policy: Model, 
                                states: torch.Tensor, 
-                               gradient: torch.Tensor, 
+                               b: torch.Tensor, 
                                num_iterations: float = 10, 
                                residual_tolerance: float = 1e-10) -> torch.Tensor:
             """Conjugate gradient algorithm to solve Ax = b using the iterative method
@@ -284,8 +284,8 @@ class TRPO(Agent):
             :type policy: Model
             :param states: States
             :type states: torch.Tensor
-            :param gradient: Gradient vector
-            :type gradient: torch.Tensor
+            :param b: Vector b 
+            :type b: torch.Tensor
             :param num_iterations: Number of iterations (default: 10)
             :type num_iterations: float, optional
             :param residual_tolerance: Residual tolerance (default: 1e-10)
@@ -294,20 +294,20 @@ class TRPO(Agent):
             :return: Conjugate vector
             :rtype: torch.Tensor
             """
-            x = torch.zeros_like(gradient)
-            r = gradient.clone()
-            p = gradient.clone()
-            r_dot_r = torch.dot(r, r)
+            x = torch.zeros_like(b)
+            r = b.clone()
+            p = b.clone()
+            rr_old = torch.dot(r, r)
             for _ in range(num_iterations):
                 hv = fisher_vector_product(policy, states, p, damping=self._damping)
-                alpha = r_dot_r / torch.dot(p, hv)
+                alpha = rr_old / torch.dot(p, hv)
                 x += alpha * p
                 r -= alpha * hv
-                new_r_dot_r = torch.dot(r, r)
-                if new_r_dot_r < residual_tolerance:
+                rr_new = torch.dot(r, r)
+                if rr_new < residual_tolerance:
                     break
-                p = r + new_r_dot_r / r_dot_r * p
-                r_dot_r = new_r_dot_r
+                p = r + rr_new / rr_old * p
+                rr_old = rr_new
             return x
 
         def fisher_vector_product(policy: Model, 
@@ -393,14 +393,14 @@ class TRPO(Agent):
                 policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
                 flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
-                # compute step direction
+                # compute step direction using the conjugate gradient algorithm
                 step_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data, 
                                                     num_iterations=self._conjugate_gradient_steps)
 
                 # compute full step
-                shs = 0.5 * (step_direction * fisher_vector_product(self.policy, sampled_states, step_direction, self._damping)) \
+                shs = (step_direction * fisher_vector_product(self.policy, sampled_states, step_direction, self._damping)) \
                     .sum(0, keepdim=True)
-                step_size = 1 / torch.sqrt(shs / self._max_kl_divergence)[0]
+                step_size = torch.sqrt(2 * self._max_kl_divergence / shs)[0]
                 full_step = step_size * step_direction
 
                 # backtracking line search

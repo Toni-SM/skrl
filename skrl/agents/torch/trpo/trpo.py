@@ -96,7 +96,7 @@ class TRPO(Agent):
         self.policy = self.models.get("policy", None)
         self.value = self.models.get("value", None)
 
-        self._policy_copy = copy.deepcopy(self.policy)
+        self.backup_policy = copy.deepcopy(self.policy)
 
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
@@ -356,7 +356,7 @@ class TRPO(Agent):
             flat_fisher_vector_gradient = torch.cat([gradient.contiguous().view(-1) for gradient in fisher_vector_gradient])
             return flat_fisher_vector_gradient + damping * vector
 
-        def kl_divergence(policy_2: Model, policy_1: Model, states: torch.Tensor) -> torch.Tensor:
+        def kl_divergence(policy_1: Model, policy_2: Model, states: torch.Tensor) -> torch.Tensor:
             """Compute the KL divergence between two distributions
 
             :param policy_1: First policy
@@ -371,14 +371,13 @@ class TRPO(Agent):
             """
             _, _, mu_1 = policy_1.act(states)
             logstd_1 = policy_1.get_log_std()
-            mu_1,logstd_1 = mu_1.detach(), logstd_1.detach()
+            mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
             _, _, mu_2 = policy_2.act(states)
             logstd_2 = policy_2.get_log_std()
             
-            kl = logstd_1 - logstd_2 \
-               + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp()) \
-               - 0.5
+            kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
+               / torch.square(logstd_2.exp()) - 0.5
             return torch.sum(kl, dim=-1).mean()
 
         # compute returns and advantages
@@ -409,47 +408,42 @@ class TRPO(Agent):
 
                 max_kl = 0.01
 
-                # get gradient of loss and hessian of kl
-                loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
-                loss_grad = torch.autograd.grad(loss, self.policy.parameters())
-                loss_grad = torch.cat([gradient.view(-1) for gradient in loss_grad])
-                step_dir = conjugate_gradient(self.policy, sampled_states, loss_grad.data)                
+                # compute policy loss gradient
+                policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+                policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
+                flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
-                # step 4: get step direction and step size and full step
-                params = parameters_to_vector(self.policy.parameters())
-                shs = 0.5 * (step_dir * fisher_vector_product(self.policy, sampled_states, step_dir)).sum(0, keepdim=True)
+                # compute step direction
+                step_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data)
+
+                # compute full step
+                shs = 0.5 * (step_direction * fisher_vector_product(self.policy, sampled_states, step_direction)).sum(0, keepdim=True)
                 step_size = 1 / torch.sqrt(shs / max_kl)[0]
-                full_step = step_size * step_dir
+                full_step = step_size * step_direction
 
+                # backtracking line search
+                restore_policy_flag = True
+                self.backup_policy.update_parameters(self.policy)
+                params = parameters_to_vector(self.policy.parameters())
 
-                # step 5: do backtracking line search for n times
-                old_actor = self._policy_copy
-                old_actor.update_parameters(self.policy)
+                expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
 
-                expected_improve = (loss_grad * full_step).sum(0, keepdim=True)
-
-                flag = False
-                fraction = 1.0
-                for i in range(10):
+                step_fraction = 1.0
+                max_backtracks = 10
+                for fraction in [step_fraction * 0.5 ** i for i in range(max_backtracks)]:
                     new_params = params + fraction * full_step
                     vector_to_parameters(new_params, self.policy.parameters())
 
-                    new_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob.detach(), sampled_advantages)
+                    expected_improvement *= fraction
+                    kl = kl_divergence(self.backup_policy, self.policy, states=sampled_states)
+                    loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob.detach(), sampled_advantages)
 
-                    loss_improve = new_loss - loss
-                    expected_improve *= fraction
-                    kl = kl_divergence(self.policy, old_actor, states=sampled_states)
-
-                    if kl < max_kl and (loss_improve / expected_improve) > 0.5:
-                        flag = True
+                    if kl < max_kl and (loss - policy_loss) / expected_improvement > 0.5:
+                        restore_policy_flag = False
                         break
 
-                    fraction *= 0.5
-
-                if not flag:
-                    params = parameters_to_vector(old_actor.parameters())
-                    vector_to_parameters(params, self.policy.parameters())
-                    print('[INFO] There is no improvement in the loss function')
+                if restore_policy_flag:
+                    self.policy.update_parameters(self.backup_policy)
 
                 # compute value loss
                 predicted_values, _, _ = self.value.act(states=sampled_states)
@@ -464,18 +458,11 @@ class TRPO(Agent):
                 self.value_optimizer.step()
 
                 # update cumulative losses
-                # cumulative_policy_loss += surrogate_loss.item()
-                # cumulative_value_loss += value_loss.item()
+                cumulative_policy_loss += policy_loss.item()
+                cumulative_value_loss += value_loss.item()
 
-
-
-
-    #             # update cumulative losses
-    #             cumulative_policy_loss += surrogate_loss.item()
-    #             cumulative_value_loss += value_loss.item()
-
-    #     # record data
-    #     self.track_data("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs)
-    #     self.track_data("Loss / Value loss", cumulative_value_loss / self._learning_epochs)
+        # record data
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs)
+        self.track_data("Loss / Value loss", cumulative_value_loss / self._learning_epochs)
         
-    #     self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+        self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())

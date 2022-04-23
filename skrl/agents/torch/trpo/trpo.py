@@ -252,7 +252,7 @@ class TRPO(Agent):
                            actions: torch.Tensor, 
                            log_prob: torch.Tensor, 
                            advantages: torch.Tensor) -> torch.Tensor:
-            """Compute the surrogate policy loss
+            """Compute the surrogate objective (policy loss)
 
             :param policy: Policy
             :type policy: Model
@@ -327,15 +327,15 @@ class TRPO(Agent):
             :param damping: Damping (default: 0.1)
             :type damping: float, optional
 
-            :return: Fisher vector product
+            :return: Hessian vector product
             :rtype: torch.Tensor
             """
             kl = kl_divergence(policy, policy, states)
             kl_gradient = torch.autograd.grad(kl, policy.parameters(), create_graph=True)
             flat_kl_gradient = torch.cat([gradient.view(-1) for gradient in kl_gradient])
-            fisher_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
-            flat_fisher_vector_gradient = torch.cat([gradient.contiguous().view(-1) for gradient in fisher_vector_gradient])
-            return flat_fisher_vector_gradient + damping * vector
+            hessian_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
+            flat_hessian_vector_gradient = torch.cat([gradient.contiguous().view(-1) for gradient in hessian_vector_gradient])
+            return flat_hessian_vector_gradient + damping * vector
 
         def kl_divergence(policy_1: Model, policy_2: Model, states: torch.Tensor) -> torch.Tensor:
             """Compute the KL divergence between two distributions
@@ -393,15 +393,15 @@ class TRPO(Agent):
                 policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
                 flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
-                # compute step direction using the conjugate gradient algorithm
-                step_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data, 
-                                                    num_iterations=self._conjugate_gradient_steps)
+                # compute the search direction using the conjugate gradient algorithm
+                search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data, 
+                                                      num_iterations=self._conjugate_gradient_steps)
 
-                # compute full step
-                shs = (step_direction * fisher_vector_product(self.policy, sampled_states, step_direction, self._damping)) \
+                # compute step size and full step
+                xHx = (search_direction * fisher_vector_product(self.policy, sampled_states, search_direction, self._damping)) \
                     .sum(0, keepdim=True)
-                step_size = torch.sqrt(2 * self._max_kl_divergence / shs)[0]
-                full_step = step_size * step_direction
+                step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
+                full_step = step_size * search_direction
 
                 # backtracking line search
                 restore_policy_flag = True
@@ -410,11 +410,11 @@ class TRPO(Agent):
 
                 expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
 
-                for fraction in [self._step_fraction * 0.5 ** i for i in range(self._max_backtrack_steps)]:
-                    new_params = params + fraction * full_step
+                for alpha in [self._step_fraction * 0.5 ** i for i in range(self._max_backtrack_steps)]:
+                    new_params = params + alpha * full_step
                     vector_to_parameters(new_params, self.policy.parameters())
 
-                    expected_improvement *= fraction
+                    expected_improvement *= alpha
                     kl = kl_divergence(self.backup_policy, self.policy, sampled_states)
                     loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
 

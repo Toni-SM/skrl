@@ -59,6 +59,7 @@ Agents
     * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
     * :doc:`State Action Reward State Action <modules/skrl.agents.sarsa>` (**SARSA**)
     * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
+    * :doc:`Trust Region Policy Optimization <modules/skrl.agents.trpo>` (**TRPO**)
 
 .. toctree::
     :maxdepth: 1
@@ -75,6 +76,7 @@ Agents
     SAC <modules/skrl.agents.sac>
     SARSA <modules/skrl.agents.sarsa>
     TD3 <modules/skrl.agents.td3>
+    TRPO <modules/skrl.agents.trpo>
 
 Environments
 ^^^^^^^^^^^^

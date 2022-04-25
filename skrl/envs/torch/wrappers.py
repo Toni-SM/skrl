@@ -24,6 +24,22 @@ class Wrapper(object):
         else:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    def __getattr__(self, key: str) -> Any:
+        """Get an attribute from the wrapped environment
+
+        :param key: The attribute name
+        :type key: str
+
+        :raises AttributeError: If the attribute does not exist
+
+        :return: The attribute value
+        :rtype: Any
+        """
+        if hasattr(self._env, key):
+            return getattr(self._env, key)
+        raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
+            .format(self._env.__class__.__name__, key))
+
     def reset(self) -> torch.Tensor:
         """Reset the environment
 

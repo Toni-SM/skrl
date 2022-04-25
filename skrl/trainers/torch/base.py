@@ -225,6 +225,7 @@ class Trainer():
                                               rewards=rewards,
                                               next_states=next_states,
                                               dones=dones,
+                                              infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
             
@@ -275,6 +276,7 @@ class Trainer():
                                                                         rewards=rewards,
                                                                         next_states=next_states,
                                                                         dones=dones,
+                                                                        infos=infos,
                                                                         timestep=timestep,
                                                                         timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)

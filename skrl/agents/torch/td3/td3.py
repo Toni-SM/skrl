@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
@@ -232,6 +232,7 @@ class TD3(Agent):
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -246,6 +247,8 @@ class TD3(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps

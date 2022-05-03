@@ -203,7 +203,7 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
 
         self._current_next_states = next_states
 

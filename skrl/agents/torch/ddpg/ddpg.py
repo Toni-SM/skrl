@@ -237,7 +237,7 @@ class DDPG(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:

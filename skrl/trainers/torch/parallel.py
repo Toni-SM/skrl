@@ -64,6 +64,7 @@ def fn_processor(process_index, *args):
                                         rewards=queue.get()[scope[0]:scope[1]],
                                         next_states=queue.get()[scope[0]:scope[1]],
                                         dones=queue.get()[scope[0]:scope[1]],
+                                        infos=queue.get(),
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
                 barrier.wait()
@@ -81,6 +82,7 @@ def fn_processor(process_index, *args):
                                                             rewards=queue.get()[scope[0]:scope[1]],
                                                             next_states=queue.get()[scope[0]:scope[1]],
                                                             dones=queue.get()[scope[0]:scope[1]],
+                                                            infos=queue.get(),
                                                             timestep=msg['timestep'],
                                                             timesteps=msg['timesteps'])
                 super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
@@ -204,6 +206,7 @@ class ParallelTrainer(Trainer):
                     queue.put(rewards)
                     queue.put(next_states)
                     queue.put(dones)
+                    queue.put(infos)
                 barrier.wait()
 
             # post-interaction
@@ -316,6 +319,7 @@ class ParallelTrainer(Trainer):
                     queue.put(rewards)
                     queue.put(next_states)
                     queue.put(dones)
+                    queue.put(infos)
                 barrier.wait()
 
                 # reset environments

@@ -88,6 +88,7 @@ class SequentialTrainer(Trainer):
                                             rewards=rewards[scope[0]:scope[1]], 
                                             next_states=next_states[scope[0]:scope[1]], 
                                             dones=dones[scope[0]:scope[1]],
+                                            infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
             
@@ -147,6 +148,7 @@ class SequentialTrainer(Trainer):
                                                                 rewards=rewards[scope[0]:scope[1]], 
                                                                 next_states=next_states[scope[0]:scope[1]], 
                                                                 dones=dones[scope[0]:scope[1]],
+                                                                infos=infos,
                                                                 timestep=timestep,
                                                                 timesteps=self.timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)

@@ -112,6 +112,34 @@ class Memory:
         """
         return sorted(self.tensors.keys())
 
+    def get_tensor_by_name(self, name: str, keepdim: bool = True) -> torch.Tensor:
+        """Get a tensor by its name
+
+        :param name: Name of the tensor to retrieve
+        :type name: str
+        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: True)
+                        If False, the returned tensor will have a shape of (memory size * number of environments, size)
+        :type keepdim: bool, optional
+
+        :raises KeyError: The tensor does not exist
+
+        :return: Tensor
+        :rtype: torch.Tensor
+        """
+        return self.tensors[name] if keepdim else self.tensors_view[name]
+
+    def set_tensor_by_name(self, name: str, tensor: torch.Tensor) -> None:
+        """Set a tensor by its name
+
+        :param name: Name of the tensor to set
+        :type name: str
+        :param tensor: Tensor to set
+        :type tensor: torch.Tensor
+
+        :raises KeyError: The tensor does not exist
+        """
+        self.tensors[name].copy_(tensor)
+
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
         """Create a new internal tensor in memory
         

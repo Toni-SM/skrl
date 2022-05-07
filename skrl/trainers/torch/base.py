@@ -125,13 +125,6 @@ class Trainer():
         else:
             self.num_agents = 1
         
-        # enable train mode
-        if self.num_agents > 1:
-            for agent in self.agents:
-                agent.set_mode("train")
-        else:
-            self.agents.set_mode("train")
-        
     def show_progress(self, timestep: int, timesteps: int) -> None:
         """Show training progress
 

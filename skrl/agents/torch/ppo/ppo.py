@@ -38,6 +38,8 @@ PPO_DEFAULT_CONFIG = {
 
     "kl_threshold": 0,              # KL divergence threshold
 
+    "rewards_shaper": None,          # rewards shaper function: Callable(reward, timestep, timesteps) -> reward 
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -118,6 +120,8 @@ class PPO(Agent):
 
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # set up optimizers
         if self.policy is not None and self.value is not None:
@@ -206,6 +210,10 @@ class PPO(Agent):
         :type timesteps: int
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
         self._current_next_states = next_states
 

@@ -10,6 +10,7 @@ import torch.nn.functional as F
 
 from ....memories.torch import Memory
 from ....models.torch import Model
+from ....resources.schedulers.torch import KLAdaptiveRL
 
 from .. import Agent
 
@@ -20,13 +21,14 @@ PPO_DEFAULT_CONFIG = {
     "mini_batches": 2,              # number of mini batches during each learning epoch
     
     "discount_factor": 0.99,        # discount factor (gamma)
-    "lambda": 0.99,                 # TD(lambda) coefficient (lam) for computing returns and advantages
+    "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
     
-    "policy_learning_rate": 1e-3,   # policy learning rate
-    "value_learning_rate": 1e-3,    # value learning rate
+    "learning_rate": 1e-3,                  # learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "grad_norm_clip": 0.5,              # clipping coefficient for the norm of the gradients
     "ratio_clip": 0.2,                  # clipping coefficient for computing the clipped surrogate objective
@@ -36,9 +38,9 @@ PPO_DEFAULT_CONFIG = {
     "entropy_loss_scale": 0.0,      # entropy loss scaling factor
     "value_loss_scale": 1.0,        # value loss scaling factor
 
-    "kl_threshold": 0,              # KL divergence threshold
+    "kl_threshold": 0,              # KL divergence threshold for early stopping
 
-    "rewards_shaper": None,          # rewards shaper function: Callable(reward, timestep, timesteps) -> reward 
+    "rewards_shaper": None,          # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -112,8 +114,9 @@ class PPO(Agent):
 
         self._kl_threshold = self.cfg["kl_threshold"]
 
-        self._policy_learning_rate = self.cfg["policy_learning_rate"]
-        self._value_learning_rate = self.cfg["value_learning_rate"]
+        self._learning_rate = self.cfg["learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
 
         self._discount_factor = self.cfg["discount_factor"]
         self._lambda = self.cfg["lambda"]
@@ -123,10 +126,12 @@ class PPO(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
-        # set up optimizers
+        # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
             self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), 
-                                              lr=self._policy_learning_rate)
+                                              lr=self._learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -289,7 +294,7 @@ class PPO(Agent):
             not_dones = dones.logical_not()
             memory_size = rewards.shape[0]
 
-            # advantage computation
+            # advantages computation
             for i in reversed(range(memory_size)):
                 next_values = values[i + 1] if i < memory_size - 1 else last_values
                 advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
@@ -324,21 +329,23 @@ class PPO(Agent):
 
         # learning epochs
         for epoch in range(self._learning_epochs):
-            
+            kl_divergences = []
+
             # mini-batches loop
             for sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages \
                 in sampled_batches:
                 
                 _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
 
+                # compute aproximate KL divergence
+                with torch.no_grad():
+                    ratio = next_log_prob - sampled_log_prob
+                    kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                    kl_divergences.append(kl_divergence)
+
                 # early stopping with KL divergence
-                if self._kl_threshold:
-                    with torch.no_grad():
-                        ratio = next_log_prob - sampled_log_prob
-                        kl = ((torch.exp(ratio) - 1) - ratio).mean()
-                    
-                    if kl > self._kl_threshold:
-                        break
+                if self._kl_threshold and kl_divergence > self._kl_threshold:
+                    break
 
                 # compute entropy loss
                 if self._entropy_loss_scale:
@@ -358,8 +365,8 @@ class PPO(Agent):
 
                 if self._clip_predicted_values:
                     predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
-                                                                min=-self._value_clip, 
-                                                                max=self._value_clip)
+                                                                   min=-self._value_clip, 
+                                                                   max=self._value_clip)
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
                 # optimization step
@@ -375,12 +382,21 @@ class PPO(Agent):
                 cumulative_value_loss += value_loss.item()
                 if self._entropy_loss_scale:
                     cumulative_entropy_loss += entropy_loss.item()
+            
+            # update learning rate
+            if self._learning_rate_scheduler:
+                if isinstance(self.scheduler, KLAdaptiveRL):                
+                    self.scheduler.step(torch.tensor(kl_divergences).mean())
+                else:
+                    self.scheduler.step()
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
-        
         if self._entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
 
         self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

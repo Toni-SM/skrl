@@ -34,6 +34,8 @@ DQN_DEFAULT_CONFIG = {
         "timesteps": 1000,            # timesteps for epsilon-greedy decay 
     },
 
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -115,6 +117,8 @@ class DQN(Agent):
         self._exploration_initial_epsilon = self.cfg["exploration"]["initial_epsilon"]
         self._exploration_final_epsilon = self.cfg["exploration"]["final_epsilon"]
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
         
         # set up optimizers
         if self.q_network is not None:
@@ -204,6 +208,11 @@ class DQN(Agent):
         :type timesteps: int
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:

@@ -38,6 +38,8 @@ TRPO_DEFAULT_CONFIG = {
     "accept_ratio": 0.5,                # accept ratio for the line search loss improvement
     "step_fraction": 1.0,               # fraction of the step size for the line search
 
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -119,6 +121,8 @@ class TRPO(Agent):
 
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # set up optimizers
         if self.policy is not None and self.value is not None:
@@ -205,6 +209,10 @@ class TRPO(Agent):
         :type timesteps: int
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
         self._current_next_states = next_states
 

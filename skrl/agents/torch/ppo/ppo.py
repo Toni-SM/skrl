@@ -40,7 +40,7 @@ PPO_DEFAULT_CONFIG = {
 
     "kl_threshold": 0,              # KL divergence threshold for early stopping
 
-    "rewards_shaper": None,          # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory

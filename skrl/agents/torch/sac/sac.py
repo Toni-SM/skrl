@@ -32,6 +32,8 @@ SAC_DEFAULT_CONFIG = {
     "initial_entropy_value": 0.2,   # initial entropy value
     "target_entropy": None,         # target entropy
 
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -116,6 +118,8 @@ class SAC(Agent):
         self._entropy_learning_rate = self.cfg["entropy_learning_rate"]
         self._learn_entropy = self.cfg["learn_entropy"]
         self._entropy_coefficient = self.cfg["initial_entropy_value"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # entropy
         if self._learn_entropy:
@@ -203,6 +207,11 @@ class SAC(Agent):
         :type timesteps: int
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:

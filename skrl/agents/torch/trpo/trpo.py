@@ -25,8 +25,8 @@ TRPO_DEFAULT_CONFIG = {
     
     "value_learning_rate": 1e-3,    # value learning rate
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "grad_norm_clip": 0.5,          # clipping coefficient for the norm of the gradients
     "value_loss_scale": 1.0,        # value loss scaling factor

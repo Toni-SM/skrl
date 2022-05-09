@@ -14,8 +14,8 @@ from .. import Agent
 SARSA_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "learning_rate": 0.5,           # learning rate (alpha)
 

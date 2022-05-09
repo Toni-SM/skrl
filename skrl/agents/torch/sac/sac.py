@@ -24,8 +24,8 @@ SAC_DEFAULT_CONFIG = {
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "learn_entropy": True,          # learn entropy
     "entropy_learning_rate": 1e-3,  # entropy learning rate

@@ -20,8 +20,8 @@ CEM_DEFAULT_CONFIG = {
     
     "learning_rate": 1e-2,          # learning rate
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "experiment": {
         "directory": "",            # experiment's parent directory

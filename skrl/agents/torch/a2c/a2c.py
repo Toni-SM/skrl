@@ -23,8 +23,8 @@ A2C_DEFAULT_CONFIG = {
     "policy_learning_rate": 1e-3,   # policy learning rate
     "value_learning_rate": 1e-3,    # value learning rate
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "grad_norm_clip": 0.5,          # clipping coefficient for the norm of the gradients
 

@@ -22,8 +22,8 @@ DDQN_DEFAULT_CONFIG = {
     
     "learning_rate": 1e-3,          # learning rate
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "update_interval": 1,           # agent update interval
     "target_update_interval": 10,   # target network update interval

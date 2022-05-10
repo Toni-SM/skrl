@@ -83,7 +83,7 @@ Environments
 
     Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym, DeepMind and Isaac Gym environments
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>` OpenAI Gym, DeepMind and Isaac Gym environments
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **OpenAI Gym**, **DeepMind** and **Isaac Gym** environments
     * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
 
 .. toctree::
@@ -130,23 +130,6 @@ Models
     modules/skrl.models.gaussian
     modules/skrl.models.deterministic
 
-Noises
-^^^^^^
-
-    Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <modules/skrl.noises.base_class>` that defines a uniform interface
-
-    * :doc:`Gaussian <modules/skrl.noises.gaussian>` noise
-    * :doc:`Ornstein-Uhlenbeck <modules/skrl.noises.ornstein_uhlenbeck>` noise
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Noises
-    :hidden:
-        
-    modules/skrl.noises.base_class
-    modules/skrl.noises.gaussian
-    modules/skrl.noises.ornstein_uhlenbeck
-
 Trainers
 ^^^^^^^^
 
@@ -163,6 +146,28 @@ Trainers
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
+
+Resources
+^^^^^^^^^
+
+    Definition of resources used by the agents during training and/or evaluation, such as exploration noises or learning rate schedulers
+
+    **Noises:** Definition of the noises used by the agents during the exploration stage. All noises inherit from a :ref:`base class <base-class-noise>` that defines a uniform interface
+
+        * :ref:`Gaussian <gaussian-noise>` noise
+        * :ref:`Ornstein-Uhlenbeck <ornstein-uhlenbeck-noise>` noise
+
+    **Learning rate schedulers:** Definition of learning rate schedulers. All schedulers inherit from the PyTorch :literal:`_LRScheduler` class (see `how to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details)
+
+        * :ref:`KL Adaptive <kl-adaptive>`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Resources
+    :hidden:
+    
+    modules/skrl.resources.noises
+    modules/skrl.resources.schedulers
 
 Utils
 ^^^^^

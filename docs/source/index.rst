@@ -174,8 +174,9 @@ Utils
 
     Definition of helper functions and classes
 
+    * :doc:`Utilities <modules/skrl.utils.utilities>`, e.g. setting the random seed
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
-    * :doc:`File post-processing <modules/skrl.utils.postprocessing>`
+    * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
     * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
 
 .. toctree::
@@ -183,6 +184,7 @@ Utils
     :caption: Utils
     :hidden:
         
+    modules/skrl.utils.utilities
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
     modules/skrl.utils.isaacgym_utils

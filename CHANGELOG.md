@@ -4,8 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- A2C, and TRPO agents
 - DeepMind environment wrapper
-- Handle `gym.spaces.Dict` observation spaces
+- Handle `gym.spaces.Dict` observation spaces (OpenAI Gym and DeepMind Gym environments)
+- Forward environment info to agent `record_transition` method
+- Expose and document the random seeding mechanism
+- Define rewards shaping function in agents' config
+- Define learning rate scheduler in agents' config
+- Improve agent's algorithm description in documentation
+
+### Changed
+- Move GAE (Generalized Advantage Estimation) from memory to agent
+- Move noises definition to resources folder
+- Update the Isaac Gym examples
 
 ## [0.4.1] - 2021-03-22
 ### Added

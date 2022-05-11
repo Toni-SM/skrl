@@ -1,7 +1,7 @@
 Noises
 ======
 
-    .. Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <skrl.noises.base_class>` that defines a uniform interface
+    .. Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <skrl.resources.noises.base_class>` that defines a uniform interface
 
 Basic usage
 
@@ -21,7 +21,7 @@ Basic usage
             :linenos:
 
             # import the noise class
-            from skrl.noises.torch import GaussianNoise
+            from skrl.resources.noises.torch import GaussianNoise
 
             # instantiate the noise class
             noise = GaussianNoise(mean=0, std=0.2, device="cuda:0")
@@ -46,7 +46,7 @@ Basic usage
             :linenos:
 
             # import the noise class
-            from skrl.noises.torch import OrnsteinUhlenbeckNoise
+            from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 
             # instantiate the noise class
             noise = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device="cuda:0")
@@ -69,7 +69,7 @@ Gaussian noise
 API
 ^^^
 
-.. autoclass:: skrl.noises.torch.gaussian.GaussianNoise
+.. autoclass:: skrl.resources.noises.torch.gaussian.GaussianNoise
    :undoc-members:
    :show-inheritance:
    :inherited-members:
@@ -90,7 +90,7 @@ Ornstein-Uhlenbeck noise
 API
 ^^^
 
-.. autoclass:: skrl.noises.torch.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
+.. autoclass:: skrl.resources.noises.torch.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
    :undoc-members:
    :show-inheritance:
    :inherited-members:
@@ -130,7 +130,7 @@ Basic inheritance usage
 API
 ^^^
 
-.. autoclass:: skrl.noises.torch.base.Noise
+.. autoclass:: skrl.resources.noises.torch.base.Noise
    :undoc-members:
    :show-inheritance:
    :inherited-members:

@@ -32,7 +32,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/cem/cem.py
    :language: python
-   :lines: 15-34
+   :lines: 15-38
    :linenos:
 
 Spaces and models

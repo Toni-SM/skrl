@@ -26,7 +26,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/q_learning/q_learning.py
    :language: python
-   :lines: 14-30
+   :lines: 14-32
    :linenos:
 
 Spaces and models

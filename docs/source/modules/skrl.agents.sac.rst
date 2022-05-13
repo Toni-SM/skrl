@@ -52,7 +52,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 17-43
+   :lines: 17-47
    :linenos:
 
 Spaces and models

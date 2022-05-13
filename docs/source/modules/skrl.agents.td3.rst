@@ -57,7 +57,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 16-48
+   :lines: 16-52
    :linenos:
 
 Spaces and models

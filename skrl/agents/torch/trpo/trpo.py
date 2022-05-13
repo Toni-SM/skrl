@@ -24,6 +24,8 @@ TRPO_DEFAULT_CONFIG = {
     "lambda": 0.99,                 # TD(lambda) coefficient (lam) for computing returns and advantages
     
     "value_learning_rate": 1e-3,    # value learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -115,6 +117,8 @@ class TRPO(Agent):
         self._step_fraction = self.cfg["step_fraction"]
 
         self._value_learning_rate = self.cfg["value_learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
 
         self._discount_factor = self.cfg["discount_factor"]
         self._lambda = self.cfg["lambda"]
@@ -124,9 +128,11 @@ class TRPO(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
-        # set up optimizers
+        # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
             self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.value_scheduler = self._learning_rate_scheduler(self.value_optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -452,8 +458,15 @@ class TRPO(Agent):
                 cumulative_policy_loss += policy_loss.item()
                 cumulative_value_loss += value_loss.item()
 
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.value_scheduler.step()
+
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs)
         self.track_data("Loss / Value loss", cumulative_value_loss / self._learning_epochs)
         
         self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])

@@ -19,6 +19,8 @@ CEM_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     
     "learning_rate": 1e-2,          # learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -86,7 +88,10 @@ class CEM(Agent):
 
         self._percentile = self.cfg["percentile"]
         self._discount_factor = self.cfg["discount_factor"]
+
         self._learning_rate = self.cfg["learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
@@ -95,9 +100,11 @@ class CEM(Agent):
 
         self._episode_tracking = []
 
-        # set up optimizers
+        # set up optimizer and learning rate scheduler
         if self.policy is not None:
-            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -257,12 +264,19 @@ class CEM(Agent):
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
         # optimize policy
-        self.policy_optimizer.zero_grad()
+        self.optimizer.zero_grad()
         policy_loss.backward()
-        self.policy_optimizer.step()
+        self.optimizer.step()
+
+        # update learning rate
+        if self._learning_rate_scheduler:
+            self.scheduler.step()
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
 
         self.track_data("Coefficient / Return threshold", return_threshold.item())
         self.track_data("Coefficient / Mean discounted returns", torch.mean(returns).item())
+        
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

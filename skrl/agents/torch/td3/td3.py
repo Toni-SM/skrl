@@ -22,6 +22,8 @@ TD3_DEFAULT_CONFIG = {
     
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -119,6 +121,8 @@ class TD3(Agent):
         
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
@@ -136,11 +140,14 @@ class TD3(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
-        # set up optimizers
+        # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
             self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
                                                      lr=self._critic_learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self._learning_rate_scheduler_kwargs)
+                self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -358,6 +365,11 @@ class TD3(Agent):
                 self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
                 self.target_policy.update_parameters(self.policy, polyak=self._polyak)
 
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.policy_scheduler.step()
+                self.critic_scheduler.step()
+
             # record data
             if not self._critic_update_counter % self._policy_delay:
                 self.track_data("Loss / Policy loss", policy_loss.item())
@@ -374,3 +386,7 @@ class TD3(Agent):
             self.track_data("Target / Target (max)", torch.max(target_values).item())
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())
+
+            if self._learning_rate_scheduler:
+                self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+                self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])

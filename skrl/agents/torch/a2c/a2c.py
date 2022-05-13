@@ -22,6 +22,8 @@ A2C_DEFAULT_CONFIG = {
     
     "policy_learning_rate": 1e-3,   # policy learning rate
     "value_learning_rate": 1e-3,    # value learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -99,6 +101,8 @@ class A2C(Agent):
 
         self._policy_learning_rate = self.cfg["policy_learning_rate"]
         self._value_learning_rate = self.cfg["value_learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
 
         self._discount_factor = self.cfg["discount_factor"]
         self._lambda = self.cfg["lambda"]
@@ -108,10 +112,13 @@ class A2C(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
-        # set up optimizers
+        # set up optimizers and learning rate schedulers
         if self.policy is not None and self.value is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
             self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self._learning_rate_scheduler_kwargs)
+                self.value_scheduler = self._learning_rate_scheduler(self.value_optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -296,6 +303,11 @@ class A2C(Agent):
             if self._entropy_loss_scale:
                 cumulative_entropy_loss += entropy_loss.item()
 
+        # update learning rate
+        if self._learning_rate_scheduler:
+            self.policy_scheduler.step()
+            self.value_scheduler.step()
+
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / len(sampled_batches))
@@ -304,3 +316,7 @@ class A2C(Agent):
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
 
         self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+            self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])

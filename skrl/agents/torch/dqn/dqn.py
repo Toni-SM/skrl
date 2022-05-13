@@ -21,6 +21,8 @@ DQN_DEFAULT_CONFIG = {
     "polyak": 0.005,                # soft update hyperparameter (tau)
     
     "learning_rate": 1e-3,          # learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -107,6 +109,8 @@ class DQN(Agent):
         self._polyak = self.cfg["polyak"]
 
         self._learning_rate = self.cfg["learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
@@ -120,9 +124,11 @@ class DQN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         
-        # set up optimizers
+        # set up optimizer and learning rate scheduler
         if self.q_network is not None:
-            self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
+            self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -270,13 +276,17 @@ class DQN(Agent):
             q_network_loss = F.mse_loss(q_values, target_values)
             
             # optimize Q-network
-            self.q_network_optimizer.zero_grad()
+            self.optimizer.zero_grad()
             q_network_loss.backward()
-            self.q_network_optimizer.step()
+            self.optimizer.step()
 
             # update target network
             if not timestep % self._target_update_interval:
                 self.target_q_network.update_parameters(self.q_network, polyak=self._polyak)
+
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.scheduler.step()
 
             # record data
             self.track_data("Loss / Q-network loss", q_network_loss.item())
@@ -284,3 +294,6 @@ class DQN(Agent):
             self.track_data("Target / Target (max)", torch.max(target_values).item())
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())
+
+            if self._learning_rate_scheduler:
+                self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

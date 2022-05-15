@@ -70,6 +70,13 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
+    def close(self) -> None:
+        """Close the environment
+
+        :raises NotImplementedError: Not implemented
+        """
+        raise NotImplementedError
+
     @property
     def num_envs(self) -> int:
         """Number of environments
@@ -140,6 +147,11 @@ class IsaacGymPreview2Wrapper(Wrapper):
         """
         pass
 
+    def close(self) -> None:
+        """Close the environment
+        """
+        pass
+
 
 class IsaacGymPreview3Wrapper(Wrapper):
     def __init__(self, env: Any) -> None:
@@ -181,6 +193,11 @@ class IsaacGymPreview3Wrapper(Wrapper):
         """
         pass
     
+    def close(self) -> None:
+        """Close the environment
+        """
+        pass
+
 
 class GymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
@@ -269,6 +286,11 @@ class GymWrapper(Wrapper):
         """Render the environment
         """
         self._env.render(*args, **kwargs)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
 
 
 class DeepMindWrapper(Wrapper):
@@ -421,6 +443,11 @@ class DeepMindWrapper(Wrapper):
         import cv2
         cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         cv2.waitKey(1)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
 
 
 def wrap_env(env: Any, wrapper="auto") -> Wrapper:

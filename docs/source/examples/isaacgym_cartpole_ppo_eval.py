@@ -46,8 +46,7 @@ device = env.device
 # Instantiate the agent's policy.
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
-models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
-              "value": None}
+models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True)}
 
 # load checkpoint
 models_ppo["policy"].load("./runs/22-02-06_19-42-39-313520_PPO/checkpoints/8000_policy.pt")

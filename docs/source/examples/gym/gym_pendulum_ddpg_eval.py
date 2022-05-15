@@ -42,10 +42,7 @@ device = env.device
 # Instantiate the agent's policy.
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
-models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-               "target_policy": None,
-               "critic": None,
-               "target_critic": None}
+models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)}
 
 # load checkpoint
 models_ddpg["policy"].load("./runs/22-02-06_19-23-31-556859_DDPG/checkpoints/36000_policy.pt")

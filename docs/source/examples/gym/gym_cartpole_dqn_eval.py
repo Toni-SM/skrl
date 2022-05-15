@@ -32,8 +32,7 @@ models_dqn = {"q_network": deterministic_model(observation_space=env.observation
                                                hidden_activation=["relu", "relu"],
                                                output_shape=Shape.ACTIONS,
                                                output_activation=None,
-                                               output_scale=1.0),
-              "target_q_network": None}
+                                               output_scale=1.0)}
 
 # load checkpoint
 models_dqn["q_network"].load("./runs/22-02-06_19-19-56-857355_DQN/checkpoints/15000_q_network.pt")

@@ -82,25 +82,13 @@ if __name__ == '__main__':
     # Instantiate the agent's models (function approximators).
     # DDPG requires 4 models, visit its documentation for more details
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
-    models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                   "target_policy": None,
-                   "critic": None,
-                   "target_critic": None}
+    models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)}
     # TD3 requires 6 models, visit its documentation for more details
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
-    models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True),
-                  "target_policy": None,
-                  "critic_1": None,
-                  "critic_2": None,
-                  "target_critic_1": None,
-                  "target_critic_2": None}
+    models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)}
     # SAC requires 5 models, visit its documentation for more details
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
-    models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
-                  "critic_1": None,
-                  "critic_2": None,
-                  "target_critic_1": None,
-                  "target_critic_2": None}
+    models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True)}
 
     # load checkpoints
     models_ddpg["policy"].load("./runs/22-03-15_21-30-05-578065_DDPG/checkpoints/2000_policy.pt")

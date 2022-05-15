@@ -57,7 +57,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/gym/gym_pendulum_ddpg_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 45-48, 51, 76
+                    :emphasize-lines: 45, 48, 73
 
     .. tab:: CartPole (DQN)
 
@@ -81,7 +81,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/gym/gym_cartpole_dqn_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 26-36, 39, 65
+                    :emphasize-lines: 26-35, 38, 64
     
     .. tab:: Taxi (SARSA)
 
@@ -202,8 +202,11 @@ These examples perform the training of an agent in all Isaac Gym environments. T
 
 The following components or practices are exemplified (highlighted):
 
-    - Load and wrap an Isaac Gym environment
-    - Load a checkpoint during evaluation
+    - Load and wrap an Isaac Gym environment: **AllegroHand**, **Ant**, **Anymal**
+    - Set a random seed for reproducibility: **AnymalTerrain**, **BallBalance**, **Cartpole**
+    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**, **Ingenuity**
+    - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
+    - Load a checkpoint during evaluation: **Cartpole**
 
 The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO configuration for `Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
@@ -213,9 +216,10 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     learning_epochs = mini_epochs
     mini_batches = horizon_length * num_actors / minibatch_size
     discount_factor = gamma
-    lambda = 0.99
-    policy_learning_rate = learning_rate
-    value_learning_rate = learning_rate
+    lambda = tau
+    learning_rate = learning_rate
+    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
     random_timesteps = 0
     learning_starts = 0
     grad_norm_clip = grad_norm
@@ -224,7 +228,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     clip_predicted_values = clip_value
     entropy_loss_scale = entropy_coef
     value_loss_scale = 0.5 * critic_coef
-    kl_threshold = kl_threshold
+    kl_threshold = 0
+    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
 
 .. note::
 
@@ -243,7 +248,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_allegro_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 13-14, 62-67
 
             .. tab:: Ant
                 
@@ -252,7 +257,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_ant.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 13-14, 62-67
 
             .. tab:: Anymal
                 
@@ -261,7 +266,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_anymal.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 13-14, 62-67
 
             .. tab:: AnymalTerrain
                 
@@ -270,7 +275,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_anymal_terrain.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 15, 19
 
             .. tab:: BallBalance
                 
@@ -279,7 +284,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_ball_balance.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 15, 19
 
             .. tab:: Cartpole
                 
@@ -288,7 +293,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_cartpole.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 52-57
+                    :emphasize-lines: 15, 19
 
             .. tab:: FrankaCabinet
                 
@@ -297,7 +302,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_franka_cabinet.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 11, 97-98
 
             .. tab:: Humanoid
                 
@@ -306,7 +311,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_humanoid.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 11, 97-98
 
             .. tab:: Ingenuity
                 
@@ -315,7 +320,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_ingenuity.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 11, 97-98
 
             .. tab:: Quadcopter
                 
@@ -324,7 +329,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_quadcopter.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 56-61
+                    :emphasize-lines: 108
 
             .. tab:: ShadowHand
                 
@@ -333,7 +338,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_shadow_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 60-65
+                    :emphasize-lines: 112
 
             .. tab:: Trifinger
                 
@@ -342,7 +347,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym3/ppo_trifinger.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 12-13, 60-65
+                    :emphasize-lines: 112
 
     .. tab:: Isaac Gym environments (evaluation)
 
@@ -357,7 +362,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym_cartpole_ppo_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 49-50, 53, 77
+                    :emphasize-lines: 49, 52, 76
 
 .. raw:: html
 
@@ -418,7 +423,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/isaacgym_sequential_shared_memory_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87, 141
+                    :emphasize-lines: 64, 67, 70, 73-75, 129
 
     .. tab:: No shared memory
 
@@ -451,7 +456,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/isaacgym_sequential_no_shared_memory_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 64-67, 70-75, 78-82, 85-87, 141
+                    :emphasize-lines: 64, 67, 70, 73-75, 129
 
             .. tab:: Parallel eval...
                 
@@ -462,7 +467,7 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/isaacgym_parallel_no_shared_memory_eval.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 85-88, 91-96, 99-103, 162
+                    :emphasize-lines: 85, 88, 91, 94-96, 150
 
 .. raw:: html
 

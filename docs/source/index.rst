@@ -159,7 +159,7 @@ Resources
 
     **Learning rate schedulers:** Definition of learning rate schedulers. All schedulers inherit from the PyTorch :literal:`_LRScheduler` class (see `how to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details)
 
-        * :ref:`KL Adaptive <kl-adaptive>`
+        * :ref:`KL Adaptive <kl-adaptive-scheduler>`
 
 .. toctree::
     :maxdepth: 2

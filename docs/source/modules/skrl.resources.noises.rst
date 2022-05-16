@@ -1,16 +1,25 @@
 Noises
 ======
 
-    .. Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <skrl.resources.noises.base_class>` that defines a uniform interface
+Definition of the noises used by the agents during the exploration stage. All noises inherit from a :ref:`base class <base-class-noise>` that defines a uniform interface
+
+**Implemented noises**
+
+- :ref:`Gaussian noise <gaussian-noise>`
+- :ref:`Ornstein-Uhlenbeck noise <ornstein-uhlenbeck-noise>`
 
 Basic usage
+-----------
+
+The noise usage is defined in each agent's configuration dictionary. A noise instance is set under the :literal:`"noise"` sub-key. The following examples show how to set the noise for an agent:
 
 .. tabs::
             
-    .. tab:: Gaussian
+    .. tab:: Gaussian noise
 
         .. image:: ../_static/imgs/noise_gaussian.png
-            :width: 800
+            :width: 90%
+            :align: center
             :alt: Gaussian noise
 
         .. raw:: html
@@ -18,24 +27,18 @@ Basic usage
             <br>
 
         .. code-block:: python
-            :linenos:
+            :emphasize-lines: 4
 
-            # import the noise class
             from skrl.resources.noises.torch import GaussianNoise
 
-            # instantiate the noise class
-            noise = GaussianNoise(mean=0, std=0.2, device="cuda:0")
+            cfg = DEFAULT_CONFIG.copy()
+            cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2, device="cuda:0")
 
-            # get a noise by defining the noise shape
-            noise_tensor = noise.sample((100, 1))
-        
-            # get a noise with the same shape as a given tensor
-            noise_tensor = noise.sample_like(noise_tensor)
-
-    .. tab:: Ornstein-Uhlenbeck
+    .. tab:: Ornstein-Uhlenbeck noise
 
         .. image:: ../_static/imgs/noise_ornstein_uhlenbeck.png
-            :width: 800
+            :width: 90%
+            :align: center
             :alt: Ornstein-Uhlenbeck noise
 
         .. raw:: html
@@ -43,19 +46,12 @@ Basic usage
             <br>
 
         .. code-block:: python
-            :linenos:
+            :emphasize-lines: 4
 
-            # import the noise class
             from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 
-            # instantiate the noise class
-            noise = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device="cuda:0")
-
-            # get a noise by defining the noise shape
-            noise_tensor = noise.sample((100, 1))
-        
-            # get a noise with the same shape as a given tensor
-            noise_tensor = noise.sample_like(noise_tensor)
+            cfg = DEFAULT_CONFIG.copy()
+            cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device="cuda:0")
 
 .. raw:: html
 

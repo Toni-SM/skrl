@@ -244,19 +244,61 @@ class A2C(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        def compute_gae(rewards: torch.Tensor, 
+                        dones: torch.Tensor, 
+                        values: torch.Tensor, 
+                        next_values: torch.Tensor, 
+                        discount_factor: float = 0.99, 
+                        lambda_coefficient: float = 0.95) -> torch.Tensor:
+            """Compute the Generalized Advantage Estimator (GAE)
+
+            :param rewards: Rewards obtained by the agent
+            :type rewards: torch.Tensor
+            :param dones: Signals to indicate that episodes have ended
+            :type dones: torch.Tensor
+            :param values: Values obtained by the agent
+            :type values: torch.Tensor
+            :param next_values: Next values obtained by the agent
+            :type next_values: torch.Tensor
+            :param discount_factor: Discount factor
+            :type discount_factor: float
+            :param lambda_coefficient: Lambda coefficient
+            :type lambda_coefficient: float
+
+            :return: Generalized Advantage Estimator
+            :rtype: torch.Tensor
+            """
+            advantage = 0
+            advantages = torch.zeros_like(rewards)
+            not_dones = dones.logical_not()
+            memory_size = rewards.shape[0]
+
+            # advantages computation
+            for i in reversed(range(memory_size)):
+                next_values = values[i + 1] if i < memory_size - 1 else last_values
+                advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                advantages[i] = advantage
+            # returns computation
+            returns = advantages + values
+            # normalize advantages
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+            return returns, advantages
+
         # compute returns and advantages
         last_values, _, _ = self.value.act(states=self._current_next_states.float() \
             if not torch.is_floating_point(self._current_next_states) else self._current_next_states, inference=True)
         
-        computing_hyperparameters = {"discount_factor": self._discount_factor,
-                                     "lambda_coefficient": self._lambda,
-                                     "normalize_returns": False,
-                                     "normalize_advantages": True}
-        self.memory.compute_functions(returns_dst="returns", 
-                                      advantages_dst="advantages", 
-                                      last_values=last_values, 
-                                      hyperparameters=computing_hyperparameters)
+        returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
+                                          dones=self.memory.get_tensor_by_name("dones"),
+                                          values=self.memory.get_tensor_by_name("values"),
+                                          next_values=last_values,
+                                          discount_factor=self._discount_factor,
+                                          lambda_coefficient=self._lambda)
 
+        self.memory.set_tensor_by_name("advantages", advantages)
+        self.memory.set_tensor_by_name("returns", returns)
+        
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self._mini_batches)
 

@@ -295,6 +295,15 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                     :linenos:
                     :emphasize-lines: 15, 19
 
+            .. tab:: Cartpole (TRPO)
+                
+                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/trpo_cartpole.py>`_
+
+                .. literalinclude:: ../examples/isaacgym3/trpo_cartpole.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 14, 18
+
             .. tab:: FrankaCabinet
                 
                 View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_franka_cabinet.py>`_

@@ -488,7 +488,7 @@ class TRPO(Agent):
 
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
-                # optimize value
+                # optimization step (value)
                 self.value_optimizer.zero_grad()
                 value_loss.backward()
                 if self._grad_norm_clip > 0:
@@ -504,8 +504,8 @@ class TRPO(Agent):
                 self.value_scheduler.step()
 
         # record data
-        self.track_data("Loss / Policy loss", cumulative_policy_loss / self._learning_epochs)
-        self.track_data("Loss / Value loss", cumulative_value_loss / self._learning_epochs)
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
+        self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
         
         self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
 

@@ -10,7 +10,7 @@ from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
 from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
-from skrl.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
+from skrl.resources.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
 from skrl.trainers.torch import ParallelTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3

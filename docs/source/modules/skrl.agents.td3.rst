@@ -57,7 +57,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 16-48
+   :lines: 16-52
    :linenos:
 
 Spaces and models
@@ -77,6 +77,9 @@ The implementation supports the following `Gym spaces <https://gym.openai.com/do
    * - Box
      - .. centered:: :math:`\blacksquare`
      - .. centered:: :math:`\blacksquare`
+   * - Dict
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
 
 The implementation uses 6 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

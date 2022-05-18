@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import os
 import gym
@@ -182,11 +182,13 @@ class Agent:
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
-        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded
+        Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
+        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
         
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
@@ -198,6 +200,8 @@ class Agent:
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps

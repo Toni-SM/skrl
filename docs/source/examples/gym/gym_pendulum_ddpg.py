@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from skrl.models.torch import DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.noises.torch import OrnsteinUhlenbeckNoise
+from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 

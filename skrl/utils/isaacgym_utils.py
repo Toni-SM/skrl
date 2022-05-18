@@ -384,7 +384,8 @@ def ik(jacobian_end_effector: torch.Tensor,
        current_orientation: torch.Tensor,
        goal_position: torch.Tensor,
        goal_orientation: Union[torch.Tensor, None] = None,
-       damping_factor: float = 0.05) -> torch.Tensor:
+       damping_factor: float = 0.05,
+       squeeze_output: bool = True) -> torch.Tensor:
     """
     Inverse kinematics using damped least squares method
 
@@ -400,6 +401,8 @@ def ik(jacobian_end_effector: torch.Tensor,
     :type goal_orientation: torch.Tensor or None
     :param damping_factor: Damping factor (default: 0.05)
     :type damping_factor: float
+    :param squeeze_output: Squeeze output (default: True)
+    :type squeeze_output: bool
 
     :return: Change in joint angles
     :rtype: torch.Tensor
@@ -416,8 +419,10 @@ def ik(jacobian_end_effector: torch.Tensor,
     # solve damped least squares (dO = J.T * V)
     transpose = torch.transpose(jacobian_end_effector, 1, 2)
     lmbda = torch.eye(6, device=jacobian_end_effector.device) * (damping_factor ** 2)
-    return (transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error)
-
+    if squeeze_output:
+        return (transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(dim=2)
+    else:
+        return transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error
 
 def print_arguments(args):
     print("")

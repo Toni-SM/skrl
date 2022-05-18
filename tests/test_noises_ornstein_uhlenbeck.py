@@ -3,7 +3,7 @@ import math
 
 import torch
 
-from skrl.noises.torch import OrnsteinUhlenbeckNoise
+from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 
 
 class TestCase(unittest.TestCase):

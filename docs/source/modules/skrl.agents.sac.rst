@@ -52,7 +52,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 17-43
+   :lines: 17-47
    :linenos:
 
 Spaces and models
@@ -72,6 +72,9 @@ The implementation supports the following `Gym spaces <https://gym.openai.com/do
    * - Box
      - .. centered:: :math:`\blacksquare`
      - .. centered:: :math:`\blacksquare`
+   * - Dict
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
 
 The implementation uses 1 stochastic and 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 

@@ -8,9 +8,15 @@ import torch.nn.functional as F
 from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.utils import set_seed
+
+
+# set the seed for reproducibility
+set_seed(42)
 
 
 # Define the models (stochastic and deterministic models) for the agent using helper classes.
@@ -84,11 +90,12 @@ for model in models_ppo.values():
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 24
 cfg_ppo["learning_epochs"] = 5
-cfg_ppo["mini_batches"] = 6
+cfg_ppo["mini_batches"] = 6  # 24 * 4096 / 16384
 cfg_ppo["discount_factor"] = 0.99
-cfg_ppo["lambda"] = 0.99
-cfg_ppo["policy_learning_rate"] = 0.0003
-cfg_ppo["value_learning_rate"] = 0.0003
+cfg_ppo["lambda"] = 0.95
+cfg_ppo["learning_rate"] = 3e-4
+cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
+cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
 cfg_ppo["random_timesteps"] = 0
 cfg_ppo["learning_starts"] = 0
 cfg_ppo["grad_norm_clip"] = 1.0
@@ -97,10 +104,11 @@ cfg_ppo["value_clip"] = 0.2
 cfg_ppo["clip_predicted_values"] = True
 cfg_ppo["entropy_loss_scale"] = 0.001
 cfg_ppo["value_loss_scale"] = 1.0
-cfg_ppo["kl_threshold"] = 0.008
-# logging to TensorBoard and write checkpoints each 180 and 4500 timesteps respectively
+cfg_ppo["kl_threshold"] = 0
+cfg_ppo["rewards_shaper"] = None
+# logging to TensorBoard and write checkpoints each 180 and 1800 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 180
-cfg_ppo["experiment"]["checkpoint_interval"] = 4500
+cfg_ppo["experiment"]["checkpoint_interval"] = 1800
 
 agent = PPO(models=models_ppo,
             memory=memory, 
@@ -111,7 +119,7 @@ agent = PPO(models=models_ppo,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 90000, "headless": True}
+cfg_trainer = {"timesteps": 36000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

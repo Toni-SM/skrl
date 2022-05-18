@@ -1,13 +1,13 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `Gym <https://gym.openai.com/>`_ interface, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://gym.openai.com/>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Isaac Gym environment loading (preview 2 and 3)
+    * OpenAI Gym, DeepMind and Isaac Gym (preview 2 and 3) environments 
     * Simultaneous learning by scopes in Isaac Gym environments
 
 .. warning::
@@ -59,6 +59,7 @@ Agents
     * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
     * :doc:`State Action Reward State Action <modules/skrl.agents.sarsa>` (**SARSA**)
     * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
+    * :doc:`Trust Region Policy Optimization <modules/skrl.agents.trpo>` (**TRPO**)
 
 .. toctree::
     :maxdepth: 1
@@ -75,14 +76,15 @@ Agents
     SAC <modules/skrl.agents.sac>
     SARSA <modules/skrl.agents.sarsa>
     TD3 <modules/skrl.agents.td3>
+    TRPO <modules/skrl.agents.trpo>
 
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym and Isaac Gym environments
+    Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym, DeepMind and Isaac Gym environments
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>`
-    * :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **OpenAI Gym**, **DeepMind** and **Isaac Gym** environments
+    * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
 
 .. toctree::
     :maxdepth: 1
@@ -128,23 +130,6 @@ Models
     modules/skrl.models.gaussian
     modules/skrl.models.deterministic
 
-Noises
-^^^^^^
-
-    Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <modules/skrl.noises.base_class>` that defines a uniform interface
-
-    * :doc:`Gaussian <modules/skrl.noises.gaussian>` noise
-    * :doc:`Ornstein-Uhlenbeck <modules/skrl.noises.ornstein_uhlenbeck>` noise
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Noises
-    :hidden:
-        
-    modules/skrl.noises.base_class
-    modules/skrl.noises.gaussian
-    modules/skrl.noises.ornstein_uhlenbeck
-
 Trainers
 ^^^^^^^^
 
@@ -162,13 +147,36 @@ Trainers
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
 
+Resources
+^^^^^^^^^
+
+    Definition of resources used by the agents during training and/or evaluation, such as exploration noises or learning rate schedulers
+
+    **Noises:** Definition of the noises used by the agents during the exploration stage. All noises inherit from a :ref:`base class <base-class-noise>` that defines a uniform interface
+
+        * :ref:`Gaussian <gaussian-noise>` noise
+        * :ref:`Ornstein-Uhlenbeck <ornstein-uhlenbeck-noise>` noise
+
+    **Learning rate schedulers:** Definition of learning rate schedulers. All schedulers inherit from the PyTorch :literal:`_LRScheduler` class (see `how to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details)
+
+        * :ref:`KL Adaptive <kl-adaptive-scheduler>`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Resources
+    :hidden:
+    
+    modules/skrl.resources.noises
+    modules/skrl.resources.schedulers
+
 Utils
 ^^^^^
 
     Definition of helper functions and classes
 
+    * :doc:`Utilities <modules/skrl.utils.utilities>`, e.g. setting the random seed
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
-    * :doc:`File post-processing <modules/skrl.utils.postprocessing>`
+    * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
     * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
 
 .. toctree::
@@ -176,6 +184,7 @@ Utils
     :caption: Utils
     :hidden:
         
+    modules/skrl.utils.utilities
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
     modules/skrl.utils.isaacgym_utils

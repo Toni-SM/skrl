@@ -32,9 +32,13 @@ Note: Changes that are cosmetic in nature (code formatting, removing whitespace,
 Read the code a little bit and you will understand it at first glance... Also
 
 - Use 4 indentation spaces
-- Try to follow, as much as possible, the PEP8 Style Guide for Python code
+- Follow, as much as possible, the PEP8 Style Guide for Python code
 - Document each module, class, function or method using the reStructuredText format
 - Annotate all functions, both for the parameters and for the return value
+- Follow the commit message style guide for Git described in https://commit.style
+  - Capitalize (the first letter) and omit any trailing punctuation
+  - Write it in the imperative tense
+  - Aim for about 50 (or 72) characters
 
 <hr>
 

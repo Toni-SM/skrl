@@ -125,13 +125,6 @@ class Trainer():
         else:
             self.num_agents = 1
         
-        # enable train mode
-        if self.num_agents > 1:
-            for agent in self.agents:
-                agent.set_mode("train")
-        else:
-            self.agents.set_mode("train")
-        
     def show_progress(self, timestep: int, timesteps: int) -> None:
         """Show training progress
 
@@ -225,6 +218,7 @@ class Trainer():
                                               rewards=rewards,
                                               next_states=next_states,
                                               dones=dones,
+                                              infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
             
@@ -275,6 +269,7 @@ class Trainer():
                                                                         rewards=rewards,
                                                                         next_states=next_states,
                                                                         dones=dones,
+                                                                        infos=infos,
                                                                         timestep=timestep,
                                                                         timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)

@@ -3,7 +3,7 @@ import math
 
 import torch
 
-from skrl.noises.torch import GaussianNoise
+from skrl.resources.noises.torch import GaussianNoise
 
 
 class TestCase(unittest.TestCase):

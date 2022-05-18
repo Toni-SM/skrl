@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
@@ -19,9 +19,13 @@ CEM_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     
     "learning_rate": 1e-2,          # learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
+
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -73,10 +77,7 @@ class CEM(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        
-        self.policy = self.models["policy"]
+        self.policy = self.models.get("policy", None)
 
         # checkpoint models
         self.checkpoint_models = self.models
@@ -87,15 +88,23 @@ class CEM(Agent):
 
         self._percentile = self.cfg["percentile"]
         self._discount_factor = self.cfg["discount_factor"]
+
         self._learning_rate = self.cfg["learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
         
+        self._rewards_shaper = self.cfg["rewards_shaper"]
+
         self._episode_tracking = []
 
-        # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+        # set up optimizer and learning rate scheduler
+        if self.policy is not None:
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -145,6 +154,7 @@ class CEM(Agent):
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -159,12 +169,19 @@ class CEM(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -227,6 +244,11 @@ class CEM(Agent):
                     rewards = sampled_rewards[e + i: e + j]
                     returns.append(torch.sum(rewards * self._discount_factor ** \
                         torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())))
+
+            if not len(returns):
+                print("[WARNING] No returns to update. Consider increasing the number of rollouts")
+                return
+            
             returns = torch.tensor(returns)
             return_threshold = torch.quantile(returns, self._percentile, dim=-1)
             
@@ -242,12 +264,19 @@ class CEM(Agent):
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
         # optimize policy
-        self.policy_optimizer.zero_grad()
+        self.optimizer.zero_grad()
         policy_loss.backward()
-        self.policy_optimizer.step()
+        self.optimizer.step()
+
+        # update learning rate
+        if self._learning_rate_scheduler:
+            self.scheduler.step()
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
 
         self.track_data("Coefficient / Return threshold", return_threshold.item())
         self.track_data("Coefficient / Mean discounted returns", torch.mean(returns).item())
+        
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

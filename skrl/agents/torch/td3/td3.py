@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
@@ -22,9 +22,11 @@ TD3_DEFAULT_CONFIG = {
     
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "exploration": {
         "noise": None,              # exploration noise
@@ -36,6 +38,8 @@ TD3_DEFAULT_CONFIG = {
     "policy_delay": 2,                      # policy delay update with respect to critic update
     "smooth_regularization_noise": None,    # smooth noise for regularization
     "smooth_regularization_clip": 0.5,      # clip for smooth regularization
+
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -87,30 +91,17 @@ class TD3(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy model is not defined under 'policy' key (models['policy'])")
-        if not "target_policy" in self.models.keys():
-            raise KeyError("The target policy model is not defined under 'target_policy' key (models['target_policy'])")
-        if not "critic_1" in self.models.keys():
-            raise KeyError("The Q1-network (critic 1) is not defined under 'critic_1' key (models['critic_1'])")
-        if not "critic_2" in self.models.keys():
-            raise KeyError("The Q2-network (critic 2) is not defined under 'critic_2' key (models['critic_2'])")
-        if not "target_critic_1" in self.models.keys():
-            raise KeyError("The target Q1-network (target critic 1) is not defined under 'target_critic_1' key (models['target_critic_1'])")
-        if not "target_critic_2" in self.models.keys():
-            raise KeyError("The target Q2-network (target critic 2) is not defined under 'target_critic_2' key (models['target_critic_2'])")
-        
-        self.policy = self.models["policy"]
-        self.target_policy = self.models["target_policy"]
-        self.critic_1 = self.models["critic_1"]
-        self.critic_2 = self.models["critic_2"]
-        self.target_critic_1 = self.models["target_critic_1"]
-        self.target_critic_2 = self.models["target_critic_2"]
+        self.policy = self.models.get("policy", None)
+        self.target_policy = self.models.get("target_policy", None)
+        self.critic_1 = self.models.get("critic_1", None)
+        self.critic_2 = self.models.get("critic_2", None)
+        self.target_critic_1 = self.models.get("target_critic_1", None)
+        self.target_critic_2 = self.models.get("target_critic_2", None)
         
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
 
-        if self.target_policy is not None:
+        if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic_1.freeze_parameters(True)
@@ -130,6 +121,8 @@ class TD3(Agent):
         
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
@@ -145,11 +138,16 @@ class TD3(Agent):
         self._smooth_regularization_noise = self.cfg["smooth_regularization_noise"]
         self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
 
-        # set up optimizers
-        self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-        if self.critic_1 is not None:
+        self._rewards_shaper = self.cfg["rewards_shaper"]
+
+        # set up optimizers and learning rate schedulers
+        if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
             self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
                                                      lr=self._critic_learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self._learning_rate_scheduler_kwargs)
+                self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -245,6 +243,7 @@ class TD3(Agent):
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -259,12 +258,19 @@ class TD3(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -359,6 +365,11 @@ class TD3(Agent):
                 self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
                 self.target_policy.update_parameters(self.policy, polyak=self._polyak)
 
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.policy_scheduler.step()
+                self.critic_scheduler.step()
+
             # record data
             if not self._critic_update_counter % self._policy_delay:
                 self.track_data("Loss / Policy loss", policy_loss.item())
@@ -375,3 +386,7 @@ class TD3(Agent):
             self.track_data("Target / Target (max)", torch.max(target_values).item())
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())
+
+            if self._learning_rate_scheduler:
+                self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+                self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])

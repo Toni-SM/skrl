@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
@@ -14,10 +14,12 @@ from .. import Agent
 SARSA_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "learning_rate": 0.5,           # learning rate (alpha)
+
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -69,10 +71,7 @@ class SARSA(Agent):
                          cfg=_cfg)
 
         # models
-        if not "policy" in self.models.keys():
-            raise KeyError("The policy is not defined under 'policy' key (models['policy'])")
-        
-        self.policy = self.models["policy"]
+        self.policy = self.models.get("policy", None)
 
         # checkpoint models
         self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
@@ -84,6 +83,8 @@ class SARSA(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._learning_rate = self.cfg["learning_rate"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # create temporary variables needed for storage and computation
         self._current_states = None
@@ -129,6 +130,7 @@ class SARSA(Agent):
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -143,12 +145,18 @@ class SARSA(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
         self._current_states = states
         self._current_actions = actions

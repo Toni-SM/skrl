@@ -74,6 +74,30 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
         
+    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
+        """Get the size (number of elements) of a space
+
+        :param space: Space or shape from which to obtain the number of elements
+        :type space: int, tuple or list of integers, or gym.Space
+
+        :raises ValueError: If the space is not supported
+
+        :return: Size of the space data
+        :rtype: Space size (number of elements)
+        """
+        if type(space) in [int, float]:
+            return int(space)
+        elif type(space) in [tuple, list]:
+            return np.prod(space)
+        elif issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return 1
+            elif issubclass(type(space), gym.spaces.Box):
+                return np.prod(space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        raise ValueError("Space type {} not supported".format(type(space)))
+
     def share_memory(self) -> None:
         """Share the tensors between processes
         """
@@ -87,6 +111,34 @@ class Memory:
         :rtype: tuple of strings
         """
         return sorted(self.tensors.keys())
+
+    def get_tensor_by_name(self, name: str, keepdim: bool = True) -> torch.Tensor:
+        """Get a tensor by its name
+
+        :param name: Name of the tensor to retrieve
+        :type name: str
+        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: True)
+                        If False, the returned tensor will have a shape of (memory size * number of environments, size)
+        :type keepdim: bool, optional
+
+        :raises KeyError: The tensor does not exist
+
+        :return: Tensor
+        :rtype: torch.Tensor
+        """
+        return self.tensors[name] if keepdim else self.tensors_view[name]
+
+    def set_tensor_by_name(self, name: str, tensor: torch.Tensor) -> None:
+        """Set a tensor by its name
+
+        :param name: Name of the tensor to set
+        :type name: str
+        :param tensor: Tensor to set
+        :type tensor: torch.Tensor
+
+        :raises KeyError: The tensor does not exist
+        """
+        self.tensors[name].copy_(tensor)
 
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
         """Create a new internal tensor in memory
@@ -109,13 +161,7 @@ class Memory:
         :rtype: bool
         """
         # compute data size
-        if type(size) in [tuple, list]:
-            size = np.prod(size)
-        elif issubclass(type(size), gym.Space):
-            if issubclass(type(size), gym.spaces.Discrete):
-                size = 1
-            else:
-                size = np.prod(size.shape)
+        size = self._get_space_size(size)
         # check dtype and size if the tensor exists
         if name in self.tensors:
             tensor = self.tensors[name]
@@ -191,6 +237,19 @@ class Memory:
                 if name in self.tensors:
                     self.tensors[name][self.memory_index].copy_(tensor)
             self.memory_index += 1
+        # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
+        elif dim == 2 and self.num_envs == 1:
+            for name, tensor in tensors.items():
+                if name in self.tensors:
+                    num_samples = min(shape[0], self.memory_size - self.memory_index)
+                    remaining_samples = shape[0] - num_samples
+                    # copy the first n samples
+                    self.tensors[name][self.memory_index:self.memory_index + num_samples].copy_(tensor[:num_samples].unsqueeze(dim=1))
+                    self.memory_index += num_samples
+                    # storage remaining samples
+                    if remaining_samples > 0:
+                        self.tensors[name][:remaining_samples].copy_(tensor[num_samples:].unsqueeze(dim=1))
+                        self.memory_index = remaining_samples
         # single environment
         elif dim == 1:
             for name, tensor in tensors.items():
@@ -198,7 +257,7 @@ class Memory:
                     self.tensors[name][self.memory_index, self.env_index].copy_(tensor)
             self.env_index += 1
         else:
-            raise ValueError("Expected tensors with 2-components shape (number of environments, data size), got {}".format(shape))
+            raise ValueError("Expected tensors with 2-components shape (number of environments = {}, data size), got {}".format(self.num_envs, shape))
 
         # update indexes and flags
         if self.env_index >= self.num_envs:
@@ -266,78 +325,6 @@ class Memory:
             batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
             return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name] for name in names]]
-
-    def compute_functions(self, states_src: str = "states", actions_src: str = "actions", rewards_src: str = "rewards", next_states_src: str = "next_states", dones_src: str = "dones", values_src: str = "values", returns_dst: Union[str, None] = None, advantages_dst: Union[str, None] = None, last_values: Union[torch.Tensor, None] = None, hyperparameters: dict = {"discount_factor": 0.99, "lambda_coefficient": 0.95, "normalize_returns": False, "normalize_advantages": True}) -> None:
-        """Compute the following functions for the given tensor names
-
-        Available functions:
-        - Returns (total discounted reward)
-        - Advantages (total discounted reward - baseline)
-
-        :param states_src: Name of the tensor containing the states (default: "states")
-        :type states_src: str, optional
-        :param actions_src: Name of the tensor containing the actions (default: "actions")
-        :type actions_src: str, optional
-        :param rewards_src: Name of the tensor containing the rewards (default: "rewards")
-        :type rewards_src: str, optional
-        :param next_states_src: Name of the tensor containing the next states (default: "next_states")
-        :type next_states_src: str, optional
-        :param dones_src: Name of the tensor containing the dones (default: "dones")
-        :type dones_src: str, optional
-        :param values_src: Name of the tensor containing the values (default: "values")
-        :type values_src: str, optional
-        :param returns_dst: Name of the tensor where the returns will be stored (default: None)
-        :type returns_dst: str or None, optional
-        :param advantages_dst: Name of the tensor where the advantages will be stored (default: None)
-        :type advantages_dst: str or None, optional
-        :param last_values: Last values (default: None).
-                            If None, the last values will be obtained from the tensor containing the values
-        :type last_values: torch.Tensor or None, optional
-        :param hyperparameters: Hyperparameters to control the computation of the functions.
-                                The following hyperparameters are expected:
-
-                                  * **discount_factor** (float) - Discount factor (gamma) for computing returns and advantages (default: 0.99)
-                                
-                                  * **lambda_coefficient** (float) - TD(lambda) coefficient (lam) for computing returns and advantages (default: 0.95)
-                                
-                                  * **normalize_returns** (bool) - If True, the returns will be normalized (default: False)
-                                
-                                  * **normalize_advantages** (bool) - If True, the advantages will be normalized (default: True)
-        :type hyperparameters: dict, optional
-        """
-        # TODO: compute functions attending the circular buffer logic
-        # TODO: get last values from the last samples (if not provided) and ignore them in the computation
-
-        # get source and destination tensors
-        rewards = self.tensors[rewards_src]
-        dones = self.tensors[dones_src]
-        values = self.tensors[values_src]
-        
-        returns = self.tensors[returns_dst] if returns_dst is not None else torch.zeros_like(rewards)
-        advantages = self.tensors[advantages_dst] if advantages_dst is not None else torch.zeros_like(rewards)
-
-        # hyperarameters
-        discount_factor = hyperparameters.get("discount_factor", 0.99)
-        lambda_coefficient = hyperparameters.get("lambda_coefficient", 0.95)
-        normalize_returns = hyperparameters.get("normalize_returns", False)
-        normalize_advantages = hyperparameters.get("normalize_advantages", True)
-
-        # compute and normalize the returns
-        if returns_dst is not None or advantages_dst is not None:
-            advantage = 0
-            for step in reversed(range(self.memory_size)):
-                next_values = values[step + 1] if step < self.memory_size - 1 else last_values
-                advantage = rewards[step] - values[step] + discount_factor * dones[step].logical_not() * (next_values + lambda_coefficient * advantage)
-                returns[step].copy_(advantage + values[step])
-
-            if normalize_returns:
-                returns.copy_((returns - returns.mean()) / (returns.std() + 1e-8))
-
-        # compute and normalize the advantages
-        if advantages_dst is not None:
-            advantages.copy_(returns - values)
-            if normalize_advantages:
-                advantages.copy_((advantages - advantages.mean()) / (advantages.std() + 1e-8))
         
     def save(self, directory: str = "", format: str = "pt") -> None:
         """Save the memory to a file
@@ -407,7 +394,7 @@ class Memory:
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
-                setattr(self, "_tensor_{}".format(name), torch.from_numpy(data[name]))
+                setattr(self, "_tensor_{}".format(name), torch.tensor(data[name]))
         
         # comma-separated values
         elif path.endswith(".csv"):

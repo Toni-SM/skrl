@@ -5,9 +5,20 @@ import torch
 
 def set_seed(seed: int) -> None:
     """
-    Sets the seed for all random number generators
+    Set the seed for the random number generators
 
-    :param seed: The seed for all random number generators
+    Modified packages:
+
+    - random
+    - numpy
+    - torch
+
+    Example::
+
+        >>> from skrl.utils import set_seed
+        >>> set_seed(42)
+
+    :param seed: The seed to set
     :type seed: int
     """
     random.seed(seed)

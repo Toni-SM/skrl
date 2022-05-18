@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
@@ -21,9 +21,11 @@ DDQN_DEFAULT_CONFIG = {
     "polyak": 0.005,                # soft update hyperparameter (tau)
     
     "learning_rate": 1e-3,          # learning rate
+    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
-    "random_timesteps": 1000,       # random exploration steps
-    "learning_starts": 1000,        # learning starts after this many steps
+    "random_timesteps": 0,          # random exploration steps
+    "learning_starts": 0,           # learning starts after this many steps
 
     "update_interval": 1,           # agent update interval
     "target_update_interval": 10,   # target network update interval
@@ -33,6 +35,8 @@ DDQN_DEFAULT_CONFIG = {
         "final_epsilon": 0.05,        # final epsilon for epsilon-greedy exploration
         "timesteps": 1000,            # timesteps for epsilon-greedy decay 
     },
+
+    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -84,13 +88,8 @@ class DDQN(Agent):
                          cfg=_cfg)
 
         # models
-        if not "q_network" in self.models.keys():
-            raise KeyError("The Q-network is not defined under 'q_network' key (models['q_network'])")
-        if not "target_q_network" in self.models.keys():
-            raise KeyError("The target Q-network is not defined under 'target_q_network' key (models['target_q_network'])")
-       
-        self.q_network = self.models["q_network"]
-        self.target_q_network = self.models["target_q_network"]
+        self.q_network = self.models.get("q_network", None)
+        self.target_q_network = self.models.get("target_q_network", None)
 
         # checkpoint models
         self.checkpoint_models = {"q_network": self.q_network} if self.checkpoint_policy_only else self.models
@@ -110,6 +109,8 @@ class DDQN(Agent):
         self._polyak = self.cfg["polyak"]
 
         self._learning_rate = self.cfg["learning_rate"]
+        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
+        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
@@ -120,9 +121,14 @@ class DDQN(Agent):
         self._exploration_initial_epsilon = self.cfg["exploration"]["initial_epsilon"]
         self._exploration_final_epsilon = self.cfg["exploration"]["final_epsilon"]
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
+
+        self._rewards_shaper = self.cfg["rewards_shaper"]
         
-        # set up optimizers
-        self.q_network_optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
+        # set up optimizer and learning rate scheduler
+        if self.q_network is not None:
+            self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
+            if self._learning_rate_scheduler is not None:
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
 
     def init(self) -> None:
         """Initialize the agent
@@ -185,6 +191,7 @@ class DDQN(Agent):
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
                           dones: torch.Tensor, 
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -199,12 +206,19 @@ class DDQN(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+
+        # reward shaping
+        if self._rewards_shaper is not None:
+            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -263,13 +277,17 @@ class DDQN(Agent):
             q_network_loss = F.mse_loss(q_values, target_values)
             
             # optimize Q-network
-            self.q_network_optimizer.zero_grad()
+            self.optimizer.zero_grad()
             q_network_loss.backward()
-            self.q_network_optimizer.step()
+            self.optimizer.step()
 
             # update target network
             if not timestep % self._target_update_interval:
                 self.target_q_network.update_parameters(self.q_network, polyak=self._polyak)
+
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.scheduler.step()
 
             # record data
             self.track_data("Loss / Q-network loss", q_network_loss.item())
@@ -277,3 +295,6 @@ class DDQN(Agent):
             self.track_data("Target / Target (max)", torch.max(target_values).item())
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())
+
+            if self._learning_rate_scheduler:
+                self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

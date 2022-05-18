@@ -32,7 +32,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/cem/cem.py
    :language: python
-   :lines: 15-34
+   :lines: 15-38
    :linenos:
 
 Spaces and models
@@ -50,6 +50,9 @@ The implementation supports the following `Gym spaces <https://gym.openai.com/do
      - .. centered:: :math:`\square`
      - .. centered:: :math:`\blacksquare`
    * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
+   * - Dict
      - .. centered:: :math:`\blacksquare`
      - .. centered:: :math:`\square`
 

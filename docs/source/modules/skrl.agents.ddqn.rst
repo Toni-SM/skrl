@@ -39,7 +39,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/dqn/ddqn.py
    :language: python
-   :lines: 16-45
+   :lines: 16-49
    :linenos:
 
 Spaces and models
@@ -57,6 +57,9 @@ The implementation supports the following `Gym spaces <https://gym.openai.com/do
      - .. centered:: :math:`\square`
      - .. centered:: :math:`\blacksquare`
    * - Box
+     - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\square`
+   * - Dict
      - .. centered:: :math:`\blacksquare`
      - .. centered:: :math:`\square`
 

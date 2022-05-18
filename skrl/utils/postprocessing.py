@@ -36,7 +36,7 @@ class MemoryFileIterator():
         :type pathname: str
         """
         self.n = 0
-        self.file_paths = glob.glob(pathname)
+        self.file_paths = sorted(glob.glob(pathname))
 
     def __iter__(self) -> 'MemoryFileIterator':
         """Return self to make iterable"""
@@ -136,7 +136,7 @@ class TensorboardFileIterator():
         :type tags: str or list of str
         """
         self.n = 0
-        self.file_paths = glob.glob(pathname)
+        self.file_paths = sorted(glob.glob(pathname))
         self.tags = [tags] if isinstance(tags, str) else tags
 
     def __iter__(self) -> 'TensorboardFileIterator':

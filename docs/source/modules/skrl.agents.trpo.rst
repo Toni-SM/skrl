@@ -22,6 +22,23 @@ Algorithm implementation
 
 **Learning algorithm** (:literal:`_update(...)`)
 
+| :literal:`compute_gae(...)`
+| :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
+|     :math:`adv \leftarrow 0`
+|     :math:`A \leftarrow \text{zeros}(r)`
+|     :green:`# advantages computation`
+|     **FOR** each reverse iteration :math:`i` up to the number of rows in :math:`r` **DO**
+|         **IF** :math:`i` is not the last row of :math:`r` **THEN**
+|             :math:`V_i' = V_{i+1}`
+|         **ELSE**
+|             :math:`V_i' \leftarrow V_{_{last}}'`
+|         :math:`adv \leftarrow r_i - V_i \, +` :guilabel:`discount_factor` :math:`\neg d_i \; (V_i' \, -` :guilabel:`lambda` :math:`adv)`
+|         :math:`A_i \leftarrow adv`
+|     :green:`# returns computation`
+|     :math:`R \leftarrow A + V`
+|     :green:`# normalize advantages`
+|     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
+
 | :literal:`surrogate_loss(...)`
 | :blue:`def` :math:`\;f_{Loss} (\pi_\theta, s, a, logp, A) \;\rightarrow\; L_{\pi_\theta}:`
 |     :math:`logp' \leftarrow \pi_\theta(s, a)`
@@ -60,8 +77,8 @@ Algorithm implementation
 |     :math:`kl \leftarrow \frac{1}{N} \sum_{i=1}^N \, (\sum_{dim} kl)`
 
 | :green:`# compute returns and advantages`
-| :math:`V \leftarrow V_\phi(s')`
-| :math:`\text{GAE}(\lambda)`
+| :math:`V_{_{last}}' \leftarrow V_\phi(s')`
+| :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
 | :green:`# sample mini-batches from memory`
 | [[:math:`s, a, logp, R, A`]] :math:`\leftarrow` states, actions, log_prob, returns, advantages
 | :green:`# learning epochs`
@@ -97,10 +114,14 @@ Algorithm implementation
 |          :green:`# compute value loss`
 |          :math:`V' \leftarrow V_\phi(s)`
 |          :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V')^2`
-|          :green:`# optimize value`
+|          :green:`# optimization step (value)`
 |          reset :math:`\text{optimizer}(V_\phi)`
 |          :math:`\nabla_{\phi} L_{V_\phi}`
+|          :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip` 
 |          step :math:`\text{optimizer}(V_\phi)`
+|     :green:`# update learning rate`
+|     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
+|         step :math:`\text{scheduler}(\text{optimizer})`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

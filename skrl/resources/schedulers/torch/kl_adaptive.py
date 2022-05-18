@@ -15,9 +15,15 @@ class KLAdaptiveRL(_LRScheduler):
                  last_epoch: int = -1, 
                  verbose: bool = False) -> None:
         """Adaptive KL scheduler
+        
+        Adjusts the learning rate according to the KL divergence.
+        The implementation is adapted from the rl_games library 
+        (https://github.com/Denys88/rl_games/blob/master/rl_games/common/schedulers.py)
 
-        Adjusts the learning rate of the optimizer according to the KL divergence.
-        Adapted from: https://github.com/Denys88/rl_games/blob/master/rl_games/common/schedulers.py
+        .. note::
+
+            This scheduler is only available for PPO at the moment. 
+            Applying it to other agents will not change the learning rate
 
         Example::
 

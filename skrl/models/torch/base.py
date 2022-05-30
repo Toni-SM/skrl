@@ -282,13 +282,16 @@ class Model(torch.nn.Module):
         else:
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
-    def save(self, path: str) -> None:
+    def save(self, path: str, state_dict: Union[dict, None] = None) -> None:
         """Save the model to the specified path
             
         :param path: Path to save the model to
         :type path: str
+        :param state_dict: State dictionary to save (default: None).
+                           If None, the model's state_dict will be saved
+        :type state_dict: dict, optional
         """
-        torch.save(self.state_dict(), path)
+        torch.save(self.state_dict() if state_dict is None else state_dict, path)
 
     def load(self, path: str) -> None:
         """Load the model from the specified path

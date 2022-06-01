@@ -89,21 +89,24 @@ class Model(torch.nn.Module):
 
         :raises ValueError: If the space is not supported
 
-        :return: Size of the space
-        :rtype: Space size (number of elements)
+        :return: Size of the space (number of elements)
+        :rtype: int
         """
+        size = None
         if type(space) in [int, float]:
-            return int(space)
+            size = space
         elif type(space) in [tuple, list]:
-            return np.prod(space)
+            size = np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
-                return space.n
+                size = space.n
             elif issubclass(type(space), gym.spaces.Box):
-                return np.prod(space.shape)
+                size = np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError("Space type {} not supported".format(type(space)))
+                size = sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        if size is None:
+            raise ValueError("Space type {} not supported".format(type(space)))
+        return int(size)
 
     def tensor_to_space(self, tensor: torch.Tensor, space: gym.Space, start: int = 0) -> Union[torch.Tensor, dict]:
         """Map a flat tensor to a Gym space

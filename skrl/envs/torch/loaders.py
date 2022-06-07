@@ -22,7 +22,7 @@ def cwd(new_path: str) -> None:
         os.chdir(current_path)
 
 def _omegaconf_to_dict(config) -> dict:
-    """Converts OmegaConf config to dict
+    """Convert OmegaConf config to dict
     
     :param config: The OmegaConf config
     :type config: OmegaConf.Config
@@ -39,7 +39,7 @@ def _omegaconf_to_dict(config) -> dict:
     return d
 
 def _print_cfg(d, indent=0) -> None:
-    """Print an Isaac Gym environment configuration
+    """Print the environment configuration
 
     :param d: The dictionary to print
     :type d: dict
@@ -54,7 +54,7 @@ def _print_cfg(d, indent=0) -> None:
 
 
 def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """Loads an Isaac Gym environment (preview 2)
+    """Load an Isaac Gym environment (preview 2)
 
     :param task_name: The name of the task (default: "").
                       If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
@@ -139,7 +139,7 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     return env
 
 def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """Loads an Isaac Gym environment (preview 3) 
+    """Load an Isaac Gym environment (preview 3) 
     
     Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
 
@@ -220,5 +220,128 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
                                               sim_device=config.sim_device,
                                               graphics_device_id=config.graphics_device_id,
                                               headless=config.headless)
+
+    return env
+
+def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str = "", show_cfg: bool = True):
+    """Load an Omniverse Isaac Gym environment
+
+    Omniverse Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
+
+    :param task_name: The name of the task (default: "").
+                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+                      Command line argument has priority over function parameter if both are specified
+    :type task_name: str, optional
+    :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory (default: "").
+                              If empty, the path will obtained from omniisaacgymenvs package metadata
+    :type omniisaacgymenvs_path: str, optional
+    :param show_cfg: Whether to print the configuration (default: True)
+    :type show_cfg: bool, optional
+    
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises RuntimeError: The omniisaacgymenvs package is not installed or the path is wrong
+
+    :return: Omniverse Isaac Gym environment
+    :rtype: omni.isaac.gym.vec_env.vec_env_base.VecEnvBase
+    """
+    import torch
+    from hydra.types import RunMode
+    from hydra._internal.hydra import Hydra
+    from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
+
+    from omegaconf import OmegaConf
+    
+    from omni.isaac.gym.vec_env import VecEnvBase
+
+    import omniisaacgymenvs
+    
+    # check task from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("task="):
+            defined = True
+            break
+    # get task name from command line arguments
+    if defined:
+        if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
+            print("[WARNING] Overriding task name ({}) with command line argument ({})" \
+                .format(task_name, arg.split("task=")[1].split(" ")[0]))
+    # get task name from function arguments
+    else:
+        if task_name:
+            sys.argv.append("task={}".format(task_name))
+        else:
+            raise ValueError("No task name defined. Set task_name parameter or use task=<task_name> as command line argument")
+
+    # get omniisaacgymenvs path from omniisaacgymenvs package metadata
+    if omniisaacgymenvs_path == "":
+        if not hasattr(omniisaacgymenvs, "__path__"):
+            raise RuntimeError("omniisaacgymenvs package is not installed")
+        omniisaacgymenvs_path = list(omniisaacgymenvs.__path__)[0]
+    config_path = os.path.join(omniisaacgymenvs_path, "cfg")
+
+    # set omegaconf resolvers
+    OmegaConf.register_new_resolver('eq', lambda x, y: x.lower() == y.lower())
+    OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())
+    OmegaConf.register_new_resolver('if', lambda condition, a, b: a if condition else b)
+    OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
+
+    # get hydra config without use @hydra.main
+    config_file = "config"
+    args = get_args_parser().parse_args()
+    search_path = create_automatic_config_search_path(config_file, None, config_path)
+    hydra_object = Hydra.create_main_hydra2(task_name='load_omniisaacgymenv', config_search_path=search_path)
+    config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
+
+    cfg = {} 
+    cfg["task"] = _omegaconf_to_dict(config.task)
+    cfg["task_name"] = config.task_name
+    cfg["experiment"] = config.experiment
+    cfg["num_envs"] = config.num_envs
+    cfg["seed"] = config.seed
+    cfg["torch_deterministic"] = config.torch_deterministic
+    cfg["max_iterations"] = config.max_iterations
+    cfg["physics_engine"] = config.physics_engine
+    cfg["pipeline"] = config.pipeline
+    cfg["sim_device"] = config.sim_device
+    cfg["device_id"] = config.device_id
+    cfg["rl_device"] = config.rl_device
+    cfg["num_threads"] = config.num_threads
+    cfg["solver_type"] = config.solver_type
+    cfg["test"] = config.test
+    cfg["checkpoint"] = config.checkpoint
+    cfg["headless"] = config.headless
+
+    # print config
+    if show_cfg:
+        print("\nOmniverse Isaac Gym environment ({})".format(config.task.name))
+        _print_cfg(cfg)
+
+    # internal environment 
+    class _OmnyIsaacGymVecEnv(VecEnvBase):
+        def step(self, actions):
+            actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
+            self._task.pre_physics_step(actions)
+
+            for _ in range(self._task.control_frequency_inv):
+                self._world.step(render=self._render)
+                self.sim_frame_count += 1
+
+            observations, rewards, dones, info = self._task.post_physics_step()
+
+            return {"obs": torch.clamp(observations, -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()}, \
+                rewards.to(self._task.rl_device).clone(), dones.to(self._task.rl_device).clone(), info.copy()
+
+        def reset(self):
+            self._task.reset()
+            actions = torch.zeros((self.num_envs, self._task.num_actions), device=self._task.device)
+            return self.step(actions)[0]
+
+    # load environment
+    sys.path.append(omniisaacgymenvs_path)
+    from utils.task_util import initialize_task
+
+    env = _OmnyIsaacGymVecEnv(headless=config.headless)
+    task = initialize_task(cfg, env)
 
     return env

@@ -189,7 +189,7 @@ The following components or practices are exemplified (highlighted):
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
-These examples perform the training of an agent in all Isaac Gym environments. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
+These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_isaacgym.png
       :width: 100%
@@ -208,7 +208,7 @@ The following components or practices are exemplified (highlighted):
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
     - Load a checkpoint during evaluation: **Cartpole**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO configuration for `Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
 .. code-block:: bash
 
@@ -233,7 +233,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.  In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
 
 .. tabs::
             
@@ -477,6 +477,105 @@ The following components or practices are exemplified (highlighted):
                     :language: python
                     :linenos:
                     :emphasize-lines: 85, 88, 91, 94-96, 150
+
+.. raw:: html
+
+   <hr>
+
+Learning in an Omniverse Isaac Gym environment (one agent, multiple environments)
+---------------------------------------------------------------------------------
+
+These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_
+
+.. image:: ../_static/imgs/example_isaacgym.png
+      :width: 100%
+      :align: center
+      :alt: Isaac Gym environments
+
+.. raw:: html
+
+   <br>
+
+The following components or practices are exemplified (highlighted):
+
+    - Load and wrap an Omniverse Isaac Gym environment: **x**
+    - Set a random seed for reproducibility: **x**
+    - Set a learning rate scheduler: **x**
+    - Define a reward shaping function: **x**
+    - Load a checkpoint during evaluation: **x**
+
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+
+.. code-block:: bash
+
+    rollouts = horizon_length
+    learning_epochs = mini_epochs
+    mini_batches = horizon_length * num_actors / minibatch_size
+    discount_factor = gamma
+    lambda = tau
+    learning_rate = learning_rate
+    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+    random_timesteps = 0
+    learning_starts = 0
+    grad_norm_clip = grad_norm
+    ratio_clip = e_clip
+    value_clip = e_clip
+    clip_predicted_values = clip_value
+    entropy_loss_scale = entropy_coef
+    value_loss_scale = 0.5 * critic_coef
+    kl_threshold = 0
+    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+.. note::
+
+    Omniverse Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
+
+.. tabs::
+
+    .. tab:: Omniverse Isaac Gym environments (training)
+
+        .. tabs::
+
+            .. tab:: AllegroHand
+                
+                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_allegro_hand.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
+                    :language: python
+                    :linenos:
+            
+            .. tab:: Ant
+                
+                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
+                    :language: python
+                    :linenos:
+
+            .. tab:: Cartpole
+                
+                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
+                    :language: python
+                    :linenos:
+                    
+            .. tab:: Humanoid
+                
+                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_humanoid.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
+                    :language: python
+                    :linenos:
+                    
+            .. tab:: ShadowHand
+                
+                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_shadow_hand.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
+                    :language: python
+                    :linenos:
 
 .. raw:: html
 

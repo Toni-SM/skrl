@@ -232,6 +232,9 @@ class Trainer():
                 else:
                     states.copy_(next_states)
 
+        # close the environment
+        self.env.close()
+
     def single_agent_eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -279,3 +282,6 @@ class Trainer():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
+
+        # close the environment
+        self.env.close()

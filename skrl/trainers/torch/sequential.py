@@ -102,7 +102,10 @@ class SequentialTrainer(Trainer):
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
-            
+
+        # close the environment
+        self.env.close()
+
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -158,7 +161,10 @@ class SequentialTrainer(Trainer):
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
-        
+
+        # close the environment
+        self.env.close()
+
     def start(self) -> None:
         """Start training
 

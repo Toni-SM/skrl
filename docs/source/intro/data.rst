@@ -142,6 +142,12 @@ The checkpoint management, as in the previous case, is the responsibility of the
 
 * **checkpoint_policy_only**: if set to :literal:`True`, only the policy will be saved (default behaviour), otherwise all the agent's models (policy, value function, critic, .etc) will be checkpointed
 
+**Checkpointing the best models**
+
+The best models, attending the mean total reward, will be saved in the :literal:`checkpoints` subdirectory of the experiment's directory. The checkpoint name is the word :literal:`best` and the key referring to the model (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/best_policy.pt`)
+
+The best models are updated internally on each TensorBoard writing interval :literal:`"write_interval"` and they are saved on each checkpoint interval :literal:`"checkpoint_interval"`. The :literal:`"checkpoint_policy_only"` key specifies whether the best policy or the best models (policy, value function, critic, .etc) will be checkpointed
+
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 

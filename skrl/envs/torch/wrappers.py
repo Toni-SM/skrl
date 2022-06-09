@@ -211,6 +211,13 @@ class OmniverseIsaacGymWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
+    def run(self) -> None:
+        """Run the simulation in the main thread
+
+        This method is valid only for the Omniverse Isaac Gym multi-threaded environments 
+        """
+        self._env.run()
+
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 

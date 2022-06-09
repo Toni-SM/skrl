@@ -251,7 +251,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     :raises RuntimeError: The omniisaacgymenvs package is not installed or the path is wrong
 
     :return: Omniverse Isaac Gym environment
-    :rtype: omni.isaac.gym.vec_env.vec_env_base.VecEnvBase
+    :rtype: omni.isaac.gym.vec_env.vec_env_base.VecEnvBase or omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT
     """
     import torch
     from hydra.types import RunMode

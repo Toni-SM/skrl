@@ -230,6 +230,9 @@ class ParallelTrainer(Trainer):
         for process in processes:
             process.join()
 
+        # close the environment
+        self.env.close()
+
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -336,4 +339,7 @@ class ParallelTrainer(Trainer):
         # join processes
         for process in processes:
             process.join()
+
+        # close the environment
+        self.env.close()
         

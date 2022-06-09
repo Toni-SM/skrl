@@ -1,14 +1,14 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://gym.openai.com/>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://gym.openai.com/>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * OpenAI Gym, DeepMind and Isaac Gym (preview 2 and 3) environments 
-    * Simultaneous learning by scopes in Isaac Gym environments
+    * Support for OpenAI Gym, DeepMind, NVIDIA Isaac Gym (preview 2 and 3) and NVIDIA Omniverse Isaac Gym environments
+    * Simultaneous learning by scopes in Isaac Gym and Omniverse Isaac Gym
 
 .. warning::
 
@@ -28,7 +28,9 @@ SKRL - Reinforcement Learning library (|version|)
     year={2022}
     }
 
-------------
+.. raw:: html
+
+    <hr>
 
 User guide
 ----------
@@ -37,10 +39,13 @@ User guide
     :maxdepth: 2
 
     intro/installation
+    intro/getting_started
     intro/examples
     intro/data
 
-------------
+.. raw:: html
+
+    <hr>
 
 Library components (overview)
 -----------------------------
@@ -81,10 +86,11 @@ Agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym environment loaders (preview 2 and preview 3) and wrappers for the OpenAI Gym, DeepMind and Isaac Gym environments
+    Definition of the Isaac Gym (preview 2 and preview 3) and Omniverse Isaac Gym environment loaders, and wrappers for the OpenAI Gym, DeepMind, Isaac Gym and Omniverse Isaac Gym environments
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **OpenAI Gym**, **DeepMind** and **Isaac Gym** environments
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **OpenAI Gym**, **DeepMind**, **Isaac Gym** and **Omniverse Isaac Gym** environments
     * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
+    * Loading :doc:`Omniverse Isaac Gym environments <modules/skrl.envs.omniverse_isaac_gym>`
 
 .. toctree::
     :maxdepth: 1
@@ -93,6 +99,7 @@ Environments
 
     modules/skrl.envs.wrapping
     modules/skrl.envs.isaac_gym
+    modules/skrl.envs.omniverse_isaac_gym
 
 Memories
 ^^^^^^^^

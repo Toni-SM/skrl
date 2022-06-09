@@ -189,7 +189,7 @@ The following components or practices are exemplified (highlighted):
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
-These examples perform the training of an agent in all Isaac Gym environments. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
+These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_isaacgym.png
       :width: 100%
@@ -208,7 +208,7 @@ The following components or practices are exemplified (highlighted):
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
     - Load a checkpoint during evaluation: **Cartpole**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO configuration for `Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
 .. code-block:: bash
 
@@ -233,7 +233,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.  In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
 
 .. tabs::
             
@@ -482,64 +482,213 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
-Learning in the Isaac Sim's (2021.2.1) JetBot environment (one agent, one environment)
---------------------------------------------------------------------------------------
+Learning in an Omniverse Isaac Gym environment (one agent, multiple environments)
+---------------------------------------------------------------------------------
 
-This example performs the training of an agent in Isaac Sim's JetBot environment. The following components or practices are exemplified (highlighted):
+These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_
 
-    - Define and instantiate Convolutional Neural Networks (CNN) to learn from 128 X 128 RGB images
+.. image:: ../_static/imgs/example_omniverse_isaacgym.png
+      :width: 100%
+      :align: center
+      :alt: Isaac Gym environments
 
-Use the steps described below (for a local workstation or a remote container) to setup and launch the experiment
+.. raw:: html
 
-.. tabs::
+   <br>
 
-    .. tab:: Local workstation (setup)
-        
-        .. code-block:: bash
+The following components or practices are exemplified (highlighted):
 
-            # create a working directory and change to it
-            mkdir ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
-            cd ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+    - Load and wrap an Omniverse Isaac Gym environment: **AllegroHand**, **Ant**, **Cartpole**, **Humanoid**, **ShadowHand**
+    - Load and wrap an Omniverse Isaac Gym multi-threaded environment: **Ant (multi-threaded)**, **Cartpole (multi-threaded)**
 
-            # install the skrl library in editable mode from the working directory
-            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
-            # download the sample code from GitHub
-            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
+.. code-block:: bash
 
-            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
-            cp ../stable_baselines_example/env.py .
+    rollouts = horizon_length
+    learning_epochs = mini_epochs
+    mini_batches = horizon_length * num_actors / minibatch_size
+    discount_factor = gamma
+    lambda = tau
+    learning_rate = learning_rate
+    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+    random_timesteps = 0
+    learning_starts = 0
+    grad_norm_clip = grad_norm
+    ratio_clip = e_clip
+    value_clip = e_clip
+    clip_predicted_values = clip_value
+    entropy_loss_scale = entropy_coef
+    value_loss_scale = 0.5 * critic_coef
+    kl_threshold = 0
+    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
 
-            # run the experiment
-            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot.py
+.. note::
 
-    .. tab:: Remote container (setup)
-
-        .. code-block:: bash
-
-            # create a working directory and change to it
-            mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
-            cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
-
-            # install the skrl library in editable mode from the working directory
-            /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
-
-            # download the sample code from GitHub
-            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
-
-            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
-            cp ../stable_baselines_example/env.py .
-
-            # run the experiment
-            /isaac-sim/python.sh isaacsim_jetbot.py
+    Omniverse Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
 
 .. tabs::
+
+    .. tab:: Omniverse Isaac Gym (training)
+
+        .. tabs::
+
+            .. tab:: AllegroHand
+                
+                View the raw code: `omniverse\: ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_allegro_hand.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 10-11, 57-58
             
-    .. tab:: Isaac Sim (JetBotEnv)
-        
-        View the raw code: `isaacsim_jetbot_ppo.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot_ppo.py>`_
+            .. tab:: Ant
+                
+                View the raw code: `omniverse\: ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant.py>`_
 
-        .. literalinclude:: ../examples/isaacsim_jetbot_ppo.py
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 10-11, 57-58
+
+            .. tab:: Ant (multi-threaded)
+                
+                View the raw code: `omniverse\: ppo_ant_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant_mt.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 12-13, 59-60, 119, 123
+
+            .. tab:: Cartpole
+                
+                View the raw code: `omniverse\: ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 10-11, 53-54
+
+            .. tab:: Cartpole (multi-threaded)
+                
+                View the raw code: `omniverse\: ppo_cartpole_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole_mt.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 12-13, 55-56, 115, 119
+                    
+            .. tab:: Humanoid
+                
+                View the raw code: `omniverse\: ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_humanoid.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 10-11, 57-58
+                    
+            .. tab:: ShadowHand
+                
+                View the raw code: `omniverse\: ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_shadow_hand.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 10-11, 61-62
+
+.. raw:: html
+
+   <hr>
+
+Learning in an Omniverse Isaac Sim environment (one agent, one environment)
+---------------------------------------------------------------------------
+
+These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the OpenAI Gym interface (one environment)
+
+.. tabs::
+
+    .. tab:: Isaac Sim 2022.1.0 (Cartpole)
+
+        This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html>`_ tutorial
+
+        Use the steps described below to setup and launch the experiment after follow the tutorial
+
+        .. code-block:: bash
+            
+            # download the sample code from GitHub in the directory containing the cartpole_task.py script
+            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py
+
+            # run the experiment
+            PYTHON_PATH cartpole_example_skrl.py
+
+        .. raw:: html
+
+            <br>
+
+        View the raw code: `cartpole_example_skrl.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py>`_
+
+        .. literalinclude:: ../examples/isaacsim/cartpole_example_skrl.py
+            :language: python
+            :linenos:
+
+    .. tab:: Isaac Sim 2021.2.1 (JetBot)
+   
+        This example performs the training of an agent in the Isaac Sim's JetBot environment. The following components or practices are exemplified (highlighted):
+
+        - Define and instantiate Convolutional Neural Networks (CNN) to learn from 128 X 128 RGB images
+
+        Use the steps described below (for a local workstation or a remote container) to setup and launch the experiment
+
+        .. tabs::
+
+            .. tab:: Local workstation (setup)
+                
+                .. code-block:: bash
+
+                    # create a working directory and change to it
+                    mkdir ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+                    cd ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+
+                    # install the skrl library in editable mode from the working directory
+                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+                    # download the sample code from GitHub
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+
+                    # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+                    cp ../stable_baselines_example/env.py .
+
+                    # run the experiment
+                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot_ppo.py
+
+            .. tab:: Remote container (setup)
+
+                .. code-block:: bash
+
+                    # create a working directory and change to it
+                    mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+                    cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
+
+                    # install the skrl library in editable mode from the working directory
+                    /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+                    # download the sample code from GitHub
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+
+                    # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+                    cp ../stable_baselines_example/env.py .
+
+                    # run the experiment
+                    /isaac-sim/python.sh isaacsim_jetbot_ppo.py
+                
+        .. raw:: html
+
+            <br>
+
+        View the raw code: `isaacsim_jetbot_ppo.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py>`_
+
+        .. literalinclude:: ../examples/isaacsim/isaacsim_jetbot_ppo.py
             :language: python
             :linenos:
             :emphasize-lines: 19-47, 49-73
@@ -561,8 +710,7 @@ This example shows how to use the library utilities to carry out the post-proces
         
         .. raw:: html
 
-            <br>
-            <br>
+            <br><br>
 
         Example of a figure, generated by the code, showing the total reward (left) and the mean and standard deviation (right) of all experiments located in the runs folder
         

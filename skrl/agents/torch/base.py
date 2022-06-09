@@ -2,6 +2,7 @@ from typing import Union, Tuple, Dict, Any
 
 import os
 import gym
+import copy
 import datetime
 import collections
 import numpy as np
@@ -68,6 +69,7 @@ class Agent:
         self.checkpoint_models = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
+        self.checkpoint_best_models = {"timestep": 0, "reward": -2 ** 31, "saved": False, "models": {}}
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -149,9 +151,17 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        for k in self.checkpoint_models:
+        # current models
+        for k, model in self.checkpoint_models.items():
             name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
-            self.checkpoint_models[k].save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
+            model.save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
+
+        # best models
+        if self.checkpoint_best_models["models"] and not self.checkpoint_best_models["saved"]:
+            for k, model in self.checkpoint_models.items():
+                model.save(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(k)), 
+                           state_dict=self.checkpoint_best_models["models"][k])
+            self.checkpoint_best_models["saved"] = True
 
     def act(self, 
             states: torch.Tensor, 
@@ -275,8 +285,17 @@ class Agent:
         """
         timestep += 1
 
-        # write to tensorboard
+        # update best models and write data to tensorboard
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
+            # update best models
+            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
+            if reward > self.checkpoint_best_models["reward"]:
+                self.checkpoint_best_models["timestep"] = timestep
+                self.checkpoint_best_models["reward"] = reward
+                self.checkpoint_best_models["saved"] = False
+                self.checkpoint_best_models["models"] = {k: copy.deepcopy(model.state_dict()) for k, model in self.checkpoint_models.items()}
+
+            # write to tensorboard
             self.write_tracking_data(timestep, timesteps)
 
         # write checkpoints

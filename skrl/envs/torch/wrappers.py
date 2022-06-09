@@ -199,6 +199,59 @@ class IsaacGymPreview3Wrapper(Wrapper):
         pass
 
 
+class OmniverseIsaacGymWrapper(Wrapper):
+    def __init__(self, env: Any) -> None:
+        """Omniverse Isaac Gym environment wrapper
+
+        :param env: The environment to wrap
+        :type env: Any supported Omniverse Isaac Gym environment environment
+        """
+        super().__init__(env)
+
+        self._reset_once = True
+        self._obs_dict = None
+
+    def run(self) -> None:
+        """Run the simulation in the main thread
+
+        This method is valid only for the Omniverse Isaac Gym multi-threaded environments 
+        """
+        self._env.run()
+
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: The state, the reward, the done flag, and the info
+        :rtype: tuple of torch.Tensor and any other info
+        """
+        self._obs_dict, rew_buf, reset_buf, info = self._env.step(actions)
+        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+
+    def reset(self) -> torch.Tensor:
+        """Reset the environment
+
+        :return: The state of the environment
+        :rtype: torch.Tensor
+        """
+        if self._reset_once:
+            self._obs_dict = self._env.reset()
+            self._reset_once = False
+        return self._obs_dict["obs"]
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        pass
+    
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
+
+
 class GymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
         """OpenAI Gym environment wrapper
@@ -453,12 +506,36 @@ class DeepMindWrapper(Wrapper):
 def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     """Wrap an environment to use a common interface
 
-    :param env: The type of wrapper to use (default: "auto").
-                If ``auto``, the wrapper will be automatically selected based on the environment class.
-                The supported wrappers are OpenAI Gym (``gym``), DeepMind (``dm``) and 
-                Isaac Gym preview 2 (``isaacgym-preview2``) and preview 3 (``isaacgym-preview3``)
+    Example::
+
+        >>> from skrl.envs.torch import wrap_env
+        >>>
+        >>> # assuming that there is an environment called "env"
+        >>> env = wrap_env(env)
+
+    :param env: The environment to be wrapped
     :type env: gym.Env, dm_env.Environment or VecTask
-    :param wrapper: The environment to be wrapped
+    :param wrapper: The type of wrapper to use (default: "auto").
+                    If ``"auto"``, the wrapper will be automatically selected based on the environment class.
+                    The supported wrappers are described in the following table:
+
+                    .. raw:: html
+
+                        <br>
+                    
+                    +--------------------+-------------------------+
+                    |Environment         |Wrapper tag              |
+                    +====================+=========================+
+                    |OpenAI Gym          |``"gym"``                |
+                    +--------------------+-------------------------+
+                    |DeepMind            |``"dm"``                 |
+                    +--------------------+-------------------------+
+                    |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
+                    +--------------------+-------------------------+
+                    |Isaac Gym preview 3 |``"isaacgym-preview3"``  |
+                    +--------------------+-------------------------+
+                    |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
+                    +--------------------+-------------------------+
     :type wrapper: str, optional
     
     :raises ValueError: Unknow wrapper type
@@ -468,15 +545,19 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     """
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
         for base in env.__class__.__bases__])
-    
     if wrapper == "auto":
-        if isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
+        base_classes = [str(base) for base in env.__class__.__bases__]
+        if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in base_classes or \
+            "<class 'omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT'>" in base_classes:
+            print("[INFO] Wrapper: Omniverse Isaac Gym")
+            return OmniverseIsaacGymWrapper(env)
+        elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
             print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
-        elif "<class 'dm_env._environment.Environment'>" in [str(base) for base in env.__class__.__bases__]:
+        elif "<class 'dm_env._environment.Environment'>" in base_classes:
             print("[INFO] Wrapper: DeepMind")
             return DeepMindWrapper(env)
-        elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:
+        elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
@@ -493,5 +574,8 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     elif wrapper == "isaacgym-preview3":
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
         return IsaacGymPreview3Wrapper(env)
+    elif wrapper == "omniverse-isaacgym":
+        print("[INFO] Wrapper: Omniverse Isaac Gym")
+        return OmniverseIsaacGymWrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

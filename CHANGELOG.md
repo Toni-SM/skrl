@@ -2,12 +2,18 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.0] - 2022-06-09
+### Added
+- Omniverse Isaac Gym environment loader
+- Wrap an Omniverse Isaac Gym environment
+- Save best models during training
+
 ## [0.5.0] - 2022-05-18
 ### Added
 - TRPO agent
 - DeepMind environment wrapper
 - KL Adaptive learning rate scheduler
-- Handle `gym.spaces.Dict` observation spaces (OpenAI Gym and DeepMind Gym environments)
+- Handle `gym.spaces.Dict` observation spaces (OpenAI Gym and DeepMind environments)
 - Forward environment info to agent `record_transition` method
 - Expose and document the random seeding mechanism
 - Define rewards shaping function in agents' config

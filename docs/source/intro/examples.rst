@@ -601,64 +601,94 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
    <hr>
 
-Learning in the Isaac Sim's (2021.2.1) JetBot environment (one agent, one environment)
---------------------------------------------------------------------------------------
+Learning in an Omniverse Isaac Sim environment (one agent, one environment)
+---------------------------------------------------------------------------
 
-This example performs the training of an agent in Isaac Sim's JetBot environment. The following components or practices are exemplified (highlighted):
-
-    - Define and instantiate Convolutional Neural Networks (CNN) to learn from 128 X 128 RGB images
-
-Use the steps described below (for a local workstation or a remote container) to setup and launch the experiment
+These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the OpenAI Gym interface (one environment)
 
 .. tabs::
 
-    .. tab:: Local workstation (setup)
-        
-        .. code-block:: bash
+    .. tab:: Isaac Sim 2022.1.0 (Cartpole)
 
-            # create a working directory and change to it
-            mkdir ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
-            cd ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+        This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html>`_ tutorial
 
-            # install the skrl library in editable mode from the working directory
-            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
-
-            # download the sample code from GitHub
-            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
-
-            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
-            cp ../stable_baselines_example/env.py .
-
-            # run the experiment
-            ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot.py
-
-    .. tab:: Remote container (setup)
+        Use the steps described below to setup and launch the experiment after follow the tutorial
 
         .. code-block:: bash
-
-            # create a working directory and change to it
-            mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
-            cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
-
-            # install the skrl library in editable mode from the working directory
-            /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
-
-            # download the sample code from GitHub
-            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot.py
-
-            # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
-            cp ../stable_baselines_example/env.py .
-
-            # run the experiment
-            /isaac-sim/python.sh isaacsim_jetbot.py
-
-.. tabs::
             
-    .. tab:: Isaac Sim (JetBotEnv)
-        
-        View the raw code: `isaacsim_jetbot_ppo.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim_jetbot_ppo.py>`_
+            # download the sample code from GitHub in the directory containing the cartpole_task.py script
+            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py
 
-        .. literalinclude:: ../examples/isaacsim_jetbot_ppo.py
+            # run the experiment
+            PYTHON_PATH cartpole_example_skrl.py
+
+        .. raw:: html
+
+            <br>
+
+        View the raw code: `cartpole_example_skrl.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py>`_
+
+        .. literalinclude:: ../examples/isaacsim/cartpole_example_skrl.py
+            :language: python
+            :linenos:
+
+    .. tab:: Isaac Sim 2021.2.1 (JetBot)
+   
+        This example performs the training of an agent in the Isaac Sim's JetBot environment. The following components or practices are exemplified (highlighted):
+
+        - Define and instantiate Convolutional Neural Networks (CNN) to learn from 128 X 128 RGB images
+
+        Use the steps described below (for a local workstation or a remote container) to setup and launch the experiment
+
+        .. tabs::
+
+            .. tab:: Local workstation (setup)
+                
+                .. code-block:: bash
+
+                    # create a working directory and change to it
+                    mkdir ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+                    cd ~/.local/share/ov/pkg/isaac_sim-2021.2.1/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+
+                    # install the skrl library in editable mode from the working directory
+                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+                    # download the sample code from GitHub
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+
+                    # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+                    cp ../stable_baselines_example/env.py .
+
+                    # run the experiment
+                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot_ppo.py
+
+            .. tab:: Remote container (setup)
+
+                .. code-block:: bash
+
+                    # create a working directory and change to it
+                    mkdir /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example 
+                    cd /isaac-sim/standalone_examples/api/omni.isaac.jetbot/skrl_example
+
+                    # install the skrl library in editable mode from the working directory
+                    /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
+
+                    # download the sample code from GitHub
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+
+                    # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
+                    cp ../stable_baselines_example/env.py .
+
+                    # run the experiment
+                    /isaac-sim/python.sh isaacsim_jetbot_ppo.py
+                
+        .. raw:: html
+
+            <br>
+
+        View the raw code: `isaacsim_jetbot_ppo.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py>`_
+
+        .. literalinclude:: ../examples/isaacsim/isaacsim_jetbot_ppo.py
             :language: python
             :linenos:
             :emphasize-lines: 19-47, 49-73
@@ -680,8 +710,7 @@ This example shows how to use the library utilities to carry out the post-proces
         
         .. raw:: html
 
-            <br>
-            <br>
+            <br><br>
 
         Example of a figure, generated by the code, showing the total reward (left) and the mean and standard deviation (right) of all experiments located in the runs folder
         

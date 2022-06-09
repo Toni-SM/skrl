@@ -1,8 +1,9 @@
 import os
 import sys
+import queue
 from contextlib import contextmanager
 
-__all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3"]
+__all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3", "load_omniverse_isaacgym_env"]
 
 
 @contextmanager
@@ -223,7 +224,11 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
 
     return env
 
-def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str = "", show_cfg: bool = True):
+def load_omniverse_isaacgym_env(task_name: str = "", 
+                                omniisaacgymenvs_path: str = "", 
+                                show_cfg: bool = True, 
+                                multi_threaded: bool = False, 
+                                timeout: int = 30):
     """Load an Omniverse Isaac Gym environment
 
     Omniverse Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
@@ -237,6 +242,10 @@ def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str 
     :type omniisaacgymenvs_path: str, optional
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
+    :param multi_threaded: Whether to use multi-threaded environment (default: False)
+    :type multi_threaded: bool, optional
+    :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment (default: 30)
+    :type timeout: int, optional
     
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The omniisaacgymenvs package is not installed or the path is wrong
@@ -251,7 +260,8 @@ def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str 
 
     from omegaconf import OmegaConf
     
-    from omni.isaac.gym.vec_env import VecEnvBase
+    from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException
+    from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT
 
     import omniisaacgymenvs
     
@@ -317,8 +327,8 @@ def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str 
         print("\nOmniverse Isaac Gym environment ({})".format(config.task.name))
         _print_cfg(cfg)
 
-    # internal environment 
-    class _OmnyIsaacGymVecEnv(VecEnvBase):
+    # internal classes 
+    class _OmniIsaacGymVecEnv(VecEnvBase):
         def step(self, actions):
             actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
             self._task.pre_physics_step(actions)
@@ -337,11 +347,60 @@ def load_omniverse_isaacgym_env(task_name: str = "", omniisaacgymenvs_path: str 
             actions = torch.zeros((self.num_envs, self._task.num_actions), device=self._task.device)
             return self.step(actions)[0]
 
+    class _OmniIsaacGymTrainerMT(TrainerMT):
+        def run(self):
+            pass
+
+        def stop(self):
+            pass
+
+    class _OmniIsaacGymVecEnvMT(VecEnvMT):
+        def __init__(self, headless):
+            super().__init__(headless)
+            
+            self.action_queue = queue.Queue(1)
+            self.data_queue = queue.Queue(1)
+
+        def run(self):
+            super().run(_OmniIsaacGymTrainerMT())
+
+        def _parse_data(self, data):
+            self._observations = torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()
+            self._rewards = data["rew"].to(self._task.rl_device).clone()
+            self._dones = data["reset"].to(self._task.rl_device).clone()
+            self._info = data["extras"].copy()
+
+        def step(self, actions):
+            if self._stop:
+                raise TaskStopException()
+
+            actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).clone()
+
+            self.send_actions(actions)
+            data = self.get_data()
+
+            return {"obs": self._observations}, self._rewards, self._dones, self._info
+
+        def reset(self):
+            self._task.reset()
+            actions = torch.zeros((self.num_envs, self._task.num_actions), device=self._task.device)
+            return self.step(actions)[0]
+
+        def close(self):
+            # end stop signal to main thread
+            self.send_actions(None)
+            self.stop = True
+
     # load environment
     sys.path.append(omniisaacgymenvs_path)
     from utils.task_util import initialize_task
 
-    env = _OmnyIsaacGymVecEnv(headless=config.headless)
-    task = initialize_task(cfg, env)
+    if multi_threaded:
+        env = _OmniIsaacGymVecEnvMT(headless=config.headless)
+        task = initialize_task(cfg, env, init_sim=False)
+        env.initialize(env.action_queue, env.data_queue, timeout=timeout)
+    else:
+        env = _OmniIsaacGymVecEnv(headless=config.headless)
+        task = initialize_task(cfg, env, init_sim=True)
 
     return env

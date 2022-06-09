@@ -487,7 +487,7 @@ Learning in an Omniverse Isaac Gym environment (one agent, multiple environments
 
 These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_
 
-.. image:: ../_static/imgs/example_isaacgym.png
+.. image:: ../_static/imgs/example_omniverse_isaacgym.png
       :width: 100%
       :align: center
       :alt: Isaac Gym environments
@@ -498,11 +498,8 @@ These examples perform the training of an agent in the `Omniverse Isaac Gym envi
 
 The following components or practices are exemplified (highlighted):
 
-    - Load and wrap an Omniverse Isaac Gym environment: **x**
-    - Set a random seed for reproducibility: **x**
-    - Set a learning rate scheduler: **x**
-    - Define a reward shaping function: **x**
-    - Load a checkpoint during evaluation: **x**
+    - Load and wrap an Omniverse Isaac Gym environment: **AllegroHand**, **Ant**, **Cartpole**, **Humanoid**, **ShadowHand**
+    - Load and wrap an Omniverse Isaac Gym multi-threaded environment: **Ant (multi-threaded)**, **Cartpole (multi-threaded)**
 
 The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
@@ -533,49 +530,72 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. tabs::
 
-    .. tab:: Omniverse Isaac Gym environments (training)
+    .. tab:: Omniverse Isaac Gym (training)
 
         .. tabs::
 
             .. tab:: AllegroHand
                 
-                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_allegro_hand.py>`_
+                View the raw code: `omniverse\: ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_allegro_hand.py>`_
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
                     :language: python
                     :linenos:
+                    :emphasize-lines: 10-11, 57-58
             
             .. tab:: Ant
                 
-                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant.py>`_
+                View the raw code: `omniverse\: ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant.py>`_
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
                     :language: python
                     :linenos:
+                    :emphasize-lines: 10-11, 57-58
+
+            .. tab:: Ant (multi-threaded)
+                
+                View the raw code: `omniverse\: ppo_ant_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant_mt.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 12-13, 59-60, 119, 123
 
             .. tab:: Cartpole
                 
-                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole.py>`_
+                View the raw code: `omniverse\: ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole.py>`_
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
                     :language: python
                     :linenos:
+                    :emphasize-lines: 10-11, 53-54
+
+            .. tab:: Cartpole (multi-threaded)
+                
+                View the raw code: `omniverse\: ppo_cartpole_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole_mt.py>`_
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 12-13, 55-56, 115, 119
                     
             .. tab:: Humanoid
                 
-                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_humanoid.py>`_
+                View the raw code: `omniverse\: ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_humanoid.py>`_
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
                     :language: python
                     :linenos:
+                    :emphasize-lines: 10-11, 57-58
                     
             .. tab:: ShadowHand
                 
-                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_shadow_hand.py>`_
+                View the raw code: `omniverse\: ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_shadow_hand.py>`_
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
                     :language: python
                     :linenos:
+                    :emphasize-lines: 10-11, 61-62
 
 .. raw:: html
 

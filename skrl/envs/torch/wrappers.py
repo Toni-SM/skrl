@@ -499,13 +499,36 @@ class DeepMindWrapper(Wrapper):
 def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     """Wrap an environment to use a common interface
 
-    :param env: The type of wrapper to use (default: "auto").
-                If ``auto``, the wrapper will be automatically selected based on the environment class.
-                The supported wrappers are OpenAI Gym (``gym``), DeepMind (``dm``), 
-                Isaac Gym preview 2 (``isaacgym-preview2``) and preview 3 (``isaacgym-preview3``)
-                and Omniverse Isaac Gym (``omniverse-isaacgym``).
+    Example::
+
+        >>> from skrl.envs.torch import wrap_env
+        >>>
+        >>> # assuming that there is an environment called "env"
+        >>> env = wrap_env(env)
+
+    :param env: The environment to be wrapped
     :type env: gym.Env, dm_env.Environment or VecTask
-    :param wrapper: The environment to be wrapped
+    :param wrapper: The type of wrapper to use (default: "auto").
+                    If ``"auto"``, the wrapper will be automatically selected based on the environment class.
+                    The supported wrappers are described in the following table:
+
+                    .. raw:: html
+
+                        <br>
+                    
+                    +--------------------+-------------------------+
+                    |Environment         |Wrapper tag              |
+                    +====================+=========================+
+                    |OpenAI Gym          |``"gym"``                |
+                    +--------------------+-------------------------+
+                    |DeepMind            |``"dm"``                 |
+                    +--------------------+-------------------------+
+                    |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
+                    +--------------------+-------------------------+
+                    |Isaac Gym preview 3 |``"isaacgym-preview3"``  |
+                    +--------------------+-------------------------+
+                    |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
+                    +--------------------+-------------------------+
     :type wrapper: str, optional
     
     :raises ValueError: Unknow wrapper type

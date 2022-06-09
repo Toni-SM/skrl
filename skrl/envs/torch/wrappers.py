@@ -516,16 +516,18 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
         for base in env.__class__.__bases__])
     if wrapper == "auto":
-        if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in [str(base) for base in env.__class__.__bases__]:
+        base_classes = [str(base) for base in env.__class__.__bases__]
+        if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in base_classes or \
+            "<class 'omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT'>" in base_classes:
             print("[INFO] Wrapper: Omniverse Isaac Gym")
             return OmniverseIsaacGymWrapper(env)
         elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
             print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
-        elif "<class 'dm_env._environment.Environment'>" in [str(base) for base in env.__class__.__bases__]:
+        elif "<class 'dm_env._environment.Environment'>" in base_classes:
             print("[INFO] Wrapper: DeepMind")
             return DeepMindWrapper(env)
-        elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in [str(base) for base in env.__class__.__bases__]:
+        elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
         print("[INFO] Wrapper: Isaac Gym (preview 3)")

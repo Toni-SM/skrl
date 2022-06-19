@@ -361,8 +361,8 @@ def load_omniverse_isaacgym_env(task_name: str = "",
             self.action_queue = queue.Queue(1)
             self.data_queue = queue.Queue(1)
 
-        def run(self):
-            super().run(_OmniIsaacGymTrainerMT())
+        def run(self, trainer=None):
+            super().run(_OmniIsaacGymTrainerMT() if trainer is None else trainer)
 
         def _parse_data(self, data):
             self._observations = torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()

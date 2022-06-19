@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Any
+from typing import Union, Tuple, Any, Optional
 
 import gym
 import collections
@@ -211,12 +211,15 @@ class OmniverseIsaacGymWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
-    def run(self) -> None:
+    def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
         """Run the simulation in the main thread
 
-        This method is valid only for the Omniverse Isaac Gym multi-threaded environments 
+        This method is valid only for the Omniverse Isaac Gym multi-threaded environments
+
+        :param trainer: Trainer which should implement a ``run`` method that initiates the RL loop on a new thread
+        :type trainer: omni.isaac.gym.vec_env.vec_env_mt.TrainerMT, optional
         """
-        self._env.run()
+        self._env.run(trainer)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

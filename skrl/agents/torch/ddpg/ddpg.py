@@ -310,7 +310,7 @@ class DDPG(Agent):
             
             critic_loss = F.mse_loss(critic_values, target_values)
             
-            # optimize critic
+            # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
@@ -321,7 +321,7 @@ class DDPG(Agent):
 
             policy_loss = -critic_values.mean()
 
-            # optimize policy (actor)
+            # optimization step (policy)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
             self.policy_optimizer.step()

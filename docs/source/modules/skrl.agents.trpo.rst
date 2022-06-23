@@ -115,13 +115,13 @@ Algorithm implementation
 |          :math:`V' \leftarrow V_\phi(s)`
 |          :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V')^2`
 |          :green:`# optimization step (value)`
-|          reset :math:`\text{optimizer}(V_\phi)`
+|          reset :math:`\text{optimizer}_\phi`
 |          :math:`\nabla_{\phi} L_{V_\phi}`
 |          :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip` 
-|          step :math:`\text{optimizer}(V_\phi)`
+|          step :math:`\text{optimizer}_\phi`
 |     :green:`# update learning rate`
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
-|         step :math:`\text{scheduler}(\text{optimizer})`
+|         step :math:`\text{scheduler}_\phi(\text{optimizer}_\phi)`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

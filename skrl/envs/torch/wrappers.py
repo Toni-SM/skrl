@@ -264,6 +264,39 @@ class GymWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._vectorized = False
+        try:
+            if isinstance(env, gym.vector.SyncVectorEnv) or isinstance(env, gym.vector.AsyncVectorEnv):
+                self._vectorized = True
+        except Exception as e:
+            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+
+    @property
+    def state_space(self) -> gym.Space:
+        """State space
+
+        An alias for the ``observation_space`` property
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        """Observation space
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def action_space(self) -> gym.Space:
+        """Action space
+        """
+        if self._vectorized:
+            return self._env.single_action_space
+        return self._env.action_space
+
     def _observation_to_tensor(self, observation: Any, space: Union[gym.Space, None] = None) -> torch.Tensor:
         """Convert the OpenAI Gym observation to a flat tensor
 
@@ -275,9 +308,12 @@ class GymWrapper(Wrapper):
         :return: The observation as a flat tensor
         :rtype: torch.Tensor
         """
-        space = space if space is not None else self.observation_space
+        observation_space = self._env.observation_space if self._vectorized else self.observation_space
+        space = space if space is not None else observation_space
 
-        if isinstance(observation, int):
+        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
+            return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
+        elif isinstance(observation, int):
             return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
         elif isinstance(observation, np.ndarray):
             return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
@@ -288,7 +324,6 @@ class GymWrapper(Wrapper):
         elif isinstance(space, gym.spaces.Dict):
             tmp = torch.cat([self._observation_to_tensor(observation[k], space[k]) \
                 for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
-            print(observation, tmp)
             return tmp
         else:
             raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
@@ -304,9 +339,11 @@ class GymWrapper(Wrapper):
         :return: The action in the OpenAI Gym format
         :rtype: Any supported OpenAI Gym action space
         """
-        space = self.action_space
+        space = self._env.action_space if self._vectorized else self.action_space
 
-        if isinstance(space, gym.spaces.Discrete):
+        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
+            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+        elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)

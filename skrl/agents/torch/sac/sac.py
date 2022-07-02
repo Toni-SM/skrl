@@ -278,7 +278,7 @@ class SAC(Agent):
             
             critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
             
-            # optimize critic
+            # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
             self.critic_optimizer.step()
@@ -290,7 +290,7 @@ class SAC(Agent):
 
             policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
 
-            # optimize policy (actor)
+            # optimization step (policy)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
             self.policy_optimizer.step()
@@ -300,7 +300,7 @@ class SAC(Agent):
                 # compute entropy loss
                 entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
-                # optimize entropy
+                # optimization step (entropy)
                 self.entropy_optimizer.zero_grad()
                 entropy_loss.backward()
                 self.entropy_optimizer.step()

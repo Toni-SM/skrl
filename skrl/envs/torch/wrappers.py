@@ -574,6 +574,8 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
                     +--------------------+-------------------------+
                     |Isaac Gym preview 3 |``"isaacgym-preview3"``  |
                     +--------------------+-------------------------+
+                    |Isaac Gym preview 4 |``"isaacgym-preview4"``  |
+                    +--------------------+-------------------------+
                     |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
                     +--------------------+-------------------------+
     :type wrapper: str, optional
@@ -600,8 +602,8 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
-        print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return IsaacGymPreview3Wrapper(env)
+        print("[INFO] Wrapper: Isaac Gym (preview 3/4)")
+        return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "gym":
         print("[INFO] Wrapper: Gym")
         return GymWrapper(env)
@@ -614,6 +616,9 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
     elif wrapper == "isaacgym-preview3":
         print("[INFO] Wrapper: Isaac Gym (preview 3)")
         return IsaacGymPreview3Wrapper(env)
+    elif wrapper == "isaacgym-preview4":
+        print("[INFO] Wrapper: Isaac Gym (preview 4)")
+        return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "omniverse-isaacgym":
         print("[INFO] Wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)

@@ -135,6 +135,71 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
+Learning in a Gym vectorized environment (one agent, multiple environments)
+---------------------------------------------------------------------------
+
+This example performs the training of one agent in an OpenAI Gym vectorized environment (multiple independent copies of the same environment in parallel). The following components or practices are exemplified (highlighted):
+
+    - Load and wrap an OpenAI Gym vectorized environment: **Pendulum (DDPG)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
+
+.. tabs::
+            
+    .. tab:: Pendulum (DDPG)
+
+        .. tabs::
+            
+            .. tab:: Training
+
+                View the raw code: `gym_vector_pendulum_ddpg.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_pendulum_ddpg.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_pendulum_ddpg.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 13, 49-55
+
+    .. tab:: CartPole (DQN)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_cartpole_dqn.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_cartpole_dqn.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_cartpole_dqn.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 8, 13-19
+    
+    .. tab:: Taxi (SARSA)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_taxi_sarsa.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_taxi_sarsa.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_taxi_sarsa.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 9, 33-39
+    
+    .. tab:: FrozenLake (Q-learning)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_frozen_lake_q_learning.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_frozen_lake_q_learning.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_frozen_lake_q_learning.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 9, 33-39
+
+.. raw:: html
+
+   <hr>
+
 Learning in a DeepMind environment (one agent, one environment)
 ---------------------------------------------------------------
 

@@ -3,7 +3,7 @@ Wrapping
 
 This library works with a common API to interact with the following RL environments:
 
-* `OpenAI Gym <https://gym.openai.com/>`_ 
+* `OpenAI Gym <https://www.gymlibrary.ml>`_ (single and vectorized environments)
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
@@ -131,18 +131,39 @@ Basic usage
 
     .. tab:: OpenAI Gym
    
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and gym
-            from skrl.envs.torch import wrap_env
-            import gym
+            .. tab:: Single environment
 
-            # load environment
-            env = gym.make('Pendulum-v1')
+                .. code-block:: python
+                    :linenos:
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                    # import the environment wrapper and gym
+                    from skrl.envs.torch import wrap_env
+                    import gym
+
+                    # load environment
+                    env = gym.make('Pendulum-v1')
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+
+            .. tab:: Vectorized environment
+
+                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.ml/content/vector_api>`_) for more information about the creation and usage of vectorized environments
+
+                .. code-block:: python
+                    :linenos:
+
+                    # import the environment wrapper and gym
+                    from skrl.envs.torch import wrap_env
+                    import gym
+
+                    # load a vectorized environment
+                    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
     .. tab:: DeepMind
    

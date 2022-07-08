@@ -1,0 +1,38 @@
+name: Upload Python Package (manually triggered workflow)
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Upload Python Package to PyPI/TestPyPI'
+        required: true
+        default: 'test-pypi'
+
+permissions:
+  contents: read
+
+jobs:
+  pypi:
+    name: Publish package to PyPI
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.job == 'dev-deploy'}}
+    steps:
+    - name: Publish package to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true
+
+  test-pypi:
+    name: Publish package to TestPyPI
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.job == 'prod-deploy'}}
+    steps:
+    - name: Publish package to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+        verbose: true

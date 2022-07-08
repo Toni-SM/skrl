@@ -168,6 +168,10 @@ Resources
 
         * :ref:`KL Adaptive <kl-adaptive-scheduler>`
 
+    **Preprocessors:** Definition of preprocessors
+
+        * :ref:`Running standard scaler <running-standard-scaler-preprocessor>`
+
 .. toctree::
     :maxdepth: 2
     :caption: Resources
@@ -175,6 +179,7 @@ Resources
     
     modules/skrl.resources.noises
     modules/skrl.resources.schedulers
+    modules/skrl.resources.preprocessors
 
 Utils
 ^^^^^

@@ -90,7 +90,29 @@ class RunningStandardScaler(nn.Module):
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def forward(self, x: torch.Tensor, train: bool = False, inverse: bool = False) -> torch.Tensor:
+    def _compute(self, x: torch.Tensor, train: bool = False, inverse: bool = False) -> torch.Tensor:
+        """Compute the standardization of the input data
+
+        :param x: Input tensor
+        :type x: torch.Tensor
+        :param train: Whether to train the standardizer (default: False)
+        :type train: bool, optional
+        :param inverse: Whether to inverse the standardizer to scale back the data (default: False)
+        :type inverse: bool, optional
+        """
+        if train:
+            self._parallel_variance(torch.mean(x, dim=0), torch.var(x, dim=0), x.shape[0])
+
+        # scale back the data to the original representation
+        if inverse:
+            return torch.sqrt(self.running_variance.float()) \
+                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
+        # standardization by centering and scaling
+        else:
+            return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon), 
+                                min=-self.clip_threshold, max=self.clip_threshold)
+
+    def forward(self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True) -> torch.Tensor:
         """Forward pass of the standardizer
 
         Example::
@@ -117,15 +139,11 @@ class RunningStandardScaler(nn.Module):
         :type train: bool, optional
         :param inverse: Whether to inverse the standardizer to scale back the data (default: False)
         :type inverse: bool, optional
+        :param no_grad: Whether to disable the gradient computation (default: True)
+        :type no_grad: bool, optional
         """
-        if train:
-            self._parallel_variance(torch.mean(x, dim=0), torch.var(x, dim=0), x.shape[0])
-
-        # scale back the data to the original representation
-        if inverse:
-            return torch.sqrt(self.running_variance.float()) \
-                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
-        # standardization by centering and scaling
+        if no_grad:
+            with torch.no_grad():
+                return self._compute(x, train, inverse)
         else:
-            return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon), 
-                                min=-self.clip_threshold, max=self.clip_threshold)
+            return self._compute(x, train, inverse)

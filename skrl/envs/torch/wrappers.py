@@ -543,7 +543,7 @@ class DeepMindWrapper(Wrapper):
         self._env.close()
 
 
-def wrap_env(env: Any, wrapper="auto") -> Wrapper:
+def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     """Wrap an environment to use a common interface
 
     Example::
@@ -579,48 +579,62 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
                     |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
                     +--------------------+-------------------------+
     :type wrapper: str, optional
+    :param verbose: Whether to print the wrapper type (default: True)
+    :type verbose: bool, optional
     
     :raises ValueError: Unknow wrapper type
     
     :return: Wrapped environment
     :rtype: Wrapper
     """
-    print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
-        for base in env.__class__.__bases__])
+    if verbose:
+        print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
+            for base in env.__class__.__bases__])
     if wrapper == "auto":
         base_classes = [str(base) for base in env.__class__.__bases__]
         if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in base_classes or \
             "<class 'omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT'>" in base_classes:
-            print("[INFO] Wrapper: Omniverse Isaac Gym")
+            if verbose:
+                print("[INFO] Wrapper: Omniverse Isaac Gym")
             return OmniverseIsaacGymWrapper(env)
         elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
-            print("[INFO] Wrapper: Gym")
+            if verbose:
+                print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
         elif "<class 'dm_env._environment.Environment'>" in base_classes:
-            print("[INFO] Wrapper: DeepMind")
+            if verbose:
+                print("[INFO] Wrapper: DeepMind")
             return DeepMindWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
-            print("[INFO] Wrapper: Isaac Gym (preview 2)")
+            if verbose:
+                print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
-        print("[INFO] Wrapper: Isaac Gym (preview 3/4)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 3/4)")
         return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "gym":
-        print("[INFO] Wrapper: Gym")
+        if verbose:
+            print("[INFO] Wrapper: Gym")
         return GymWrapper(env)
     elif wrapper == "dm":
-        print("[INFO] Wrapper: DeepMind")
+        if verbose:
+            print("[INFO] Wrapper: DeepMind")
         return DeepMindWrapper(env)
     elif wrapper == "isaacgym-preview2":
-        print("[INFO] Wrapper: Isaac Gym (preview 2)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 2)")
         return IsaacGymPreview2Wrapper(env)
     elif wrapper == "isaacgym-preview3":
-        print("[INFO] Wrapper: Isaac Gym (preview 3)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 3)")
         return IsaacGymPreview3Wrapper(env)
     elif wrapper == "isaacgym-preview4":
-        print("[INFO] Wrapper: Isaac Gym (preview 4)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 4)")
         return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "omniverse-isaacgym":
-        print("[INFO] Wrapper: Omniverse Isaac Gym")
+        if verbose:
+            print("[INFO] Wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

@@ -9,6 +9,7 @@ from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
@@ -106,6 +107,10 @@ cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0
 cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+cfg_ppo["state_preprocessor"] = RunningStandardScaler
+cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_ppo["value_preprocessor"] = RunningStandardScaler
+cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints each 160 and 1600 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 160
 cfg_ppo["experiment"]["checkpoint_interval"] = 1600

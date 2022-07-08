@@ -9,9 +9,10 @@ from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3, load_isaacgym_env_preview4
 from skrl.utils import set_seed
 
 
@@ -32,7 +33,7 @@ class Policy(GaussianModel):
                                  nn.ELU(),
                                  nn.Linear(32, 32),
                                  nn.ELU(),
-                                 nn.Linear(32, 1))
+                                 nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, states, taken_actions):
@@ -53,13 +54,18 @@ class Value(DeterministicModel):
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
+# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# It tries to load from preview 4, but if it fails, it will try to load from preview 3 and 2
+task_name = "Cartpole"
 try:
-    env = load_isaacgym_env_preview3(task_name="Cartpole")
+    env = load_isaacgym_env_preview4(task_name)
 except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
-    env = load_isaacgym_env_preview2("Cartpole")
+    try:
+        print("Isaac Gym (preview 4) failed: {}\nTrying preview 3...".format(e))
+        env = load_isaacgym_env_preview3(task_name)
+    except Exception as e:
+        print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
+        env = load_isaacgym_env_preview2(task_name)
 env = wrap_env(env)
 
 device = env.device
@@ -102,6 +108,10 @@ cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0
 cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.1
+cfg_ppo["state_preprocessor"] = RunningStandardScaler
+cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_ppo["value_preprocessor"] = RunningStandardScaler
+cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints each 16 and 80 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 16
 cfg_ppo["experiment"]["checkpoint_interval"] = 80

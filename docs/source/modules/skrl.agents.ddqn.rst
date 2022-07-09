@@ -39,7 +39,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/dqn/ddqn.py
    :language: python
-   :lines: 16-49
+   :lines: 16-52
    :linenos:
 
 Spaces and models

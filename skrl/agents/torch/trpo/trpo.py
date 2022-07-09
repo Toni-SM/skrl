@@ -27,6 +27,11 @@ TRPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
+    "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
+
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
 
@@ -118,7 +123,9 @@ class TRPO(Agent):
 
         self._value_learning_rate = self.cfg["value_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
+
+        self._state_preprocessor = self.cfg["state_preprocessor"]
+        self._value_preprocessor = self.cfg["value_preprocessor"]
 
         self._discount_factor = self.cfg["discount_factor"]
         self._lambda = self.cfg["lambda"]
@@ -132,7 +139,13 @@ class TRPO(Agent):
         if self.policy is not None and self.value is not None:
             self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.value_scheduler = self._learning_rate_scheduler(self.value_optimizer, **self._learning_rate_scheduler_kwargs)
+                self.value_scheduler = self._learning_rate_scheduler(self.value_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+
+        # set up preprocessors
+        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
+            else lambda states, **kwargs: states
+        self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"]) if self._value_preprocessor \
+            else lambda values, **kwargs: values
 
     def init(self) -> None:
         """Initialize the agent
@@ -175,6 +188,8 @@ class TRPO(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        states = self._state_preprocessor(states)
+
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
@@ -223,7 +238,9 @@ class TRPO(Agent):
         self._current_next_states = next_states
 
         if self.memory is not None:
-            values, _, _ = self.value.act(states=states, inference=True)
+            values, _, _ = self.value.act(states=self._state_preprocessor(states), inference=True)
+            values = self._value_preprocessor(values, inverse=True)
+
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
                                     log_prob=self._current_log_prob, values=values)
             for memory in self.secondary_memories:
@@ -421,18 +438,21 @@ class TRPO(Agent):
             return torch.sum(kl, dim=-1).mean()
 
         # compute returns and advantages
-        last_values, _, _ = self.value.act(states=self._current_next_states.float() \
-            if not torch.is_floating_point(self._current_next_states) else self._current_next_states, inference=True)
+        last_values, _, _ = self.value.act(states=self._state_preprocessor(self._current_next_states.float() \
+            if not torch.is_floating_point(self._current_next_states) else self._current_next_states), inference=True)
+        last_values = self._value_preprocessor(last_values, inverse=True)
         
+        values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
                                           dones=self.memory.get_tensor_by_name("dones"),
-                                          values=self.memory.get_tensor_by_name("values"),
+                                          values=values,
                                           next_values=last_values,
                                           discount_factor=self._discount_factor,
                                           lambda_coefficient=self._lambda)
 
+        self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
+        self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
-        self.memory.set_tensor_by_name("returns", returns)
 
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self._mini_batches)
@@ -445,6 +465,8 @@ class TRPO(Agent):
             
             # mini-batches loop
             for sampled_states, sampled_actions, sampled_log_prob, sampled_returns, sampled_advantages in sampled_batches:
+
+                sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 # compute policy loss gradient
                 policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)

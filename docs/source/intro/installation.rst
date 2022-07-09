@@ -10,8 +10,8 @@ Prerequisites
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://gym.openai.com/>`_
-    * `torch <https://pytorch.org/>`_ 1.8.0 or higher
+    * `gym <https://www.gymlibrary.ml>`_
+    * `torch <https://pytorch.org>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
 
 .. raw:: html

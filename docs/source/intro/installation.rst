@@ -1,6 +1,10 @@
 Installation
 ============
 
+.. raw:: html
+
+    <hr>
+    
 Prerequisites
 -------------
 
@@ -10,8 +14,21 @@ Prerequisites
     * `torch <https://pytorch.org/>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
 
+.. raw:: html
+
+    <hr>
+
 Library Installation
 --------------------
+
+Python Package Index (PyPI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To install **skrl** with pip, execute:
+
+    .. code-block:: bash
+        
+        pip install skrl
 
 GitHub repository
 ^^^^^^^^^^^^^^^^^
@@ -35,18 +52,17 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
         
         pip install .
 
-Python Package Index (PyPI)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. raw:: html
 
-TODO: :red:`Add package to PyPI (comming soon)`
+    <hr>
 
 Troubleshooting
 ---------------
 
-Bug detection and/or correction, feature requests and everything else are more than welcome. Come on, open a new issue!
-
-.. centered:: https://github.com/Toni-SM/skrl/issues
-
 To ask questions or discuss about the library visit skrl's GitHub discussions
 
 .. centered:: https://github.com/Toni-SM/skrl/discussions
+
+Bug detection and/or correction, feature requests and everything else are more than welcome. Come on, open a new issue!
+
+.. centered:: https://github.com/Toni-SM/skrl/issues

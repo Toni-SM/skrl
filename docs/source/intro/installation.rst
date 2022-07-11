@@ -66,3 +66,14 @@ To ask questions or discuss about the library visit skrl's GitHub discussions
 Bug detection and/or correction, feature requests and everything else are more than welcome. Come on, open a new issue!
 
 .. centered:: https://github.com/Toni-SM/skrl/issues
+
+Known issues
+------------
+
+1. When using the parallel trainer with PyTorch 1.12
+
+    See PyTorch issue `#80831 <https://github.com/pytorch/pytorch/issues/80831>`_
+
+    .. code-block:: text
+        
+        AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'

@@ -11,7 +11,7 @@ from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview4
 
 
 # Define only the policies for evaluation 
@@ -46,12 +46,12 @@ class DeterministicActor(DeterministicModel):
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
+# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
 try:
-    env = load_isaacgym_env_preview3(task_name="Cartpole")
+    env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
 except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
+    print("Isaac Gym (preview 3/4) failed: {}\nTrying preview 2...".format(e))
     env = load_isaacgym_env_preview2("Cartpole")
 env = wrap_env(env)
 
@@ -123,7 +123,7 @@ cfg = {"timesteps": 8000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg, 
                             env=env, 
                             agents=[agent_ddpg, agent_td3, agent_sac],
-                            agents_scope=[100, 200, 212])
+                            agents_scope=[])
 
 # evaluate the agents
 trainer.eval()

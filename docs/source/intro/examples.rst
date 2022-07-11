@@ -254,7 +254,7 @@ The following components or practices are exemplified (highlighted):
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
-These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
+These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. Some scripts try to load the environment from preview 4 (or preview 3), but if they fail, they will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_isaacgym.png
       :width: 100%
@@ -267,9 +267,11 @@ These examples perform the training of an agent in the `Isaac Gym environments <
 
 The following components or practices are exemplified (highlighted):
 
-    - Load and wrap an Isaac Gym environment: **AllegroHand**, **Ant**, **Anymal**
-    - Set a random seed for reproducibility: **AnymalTerrain**, **BallBalance**, **Cartpole**
-    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**, **Ingenuity**
+    - Load an Isaac Gym environment (easy-to-use API from NVIDIA): **AllegroHand**, **Ingenuity**
+    - Load and wrap an Isaac Gym environment: **Ant**, **Anymal**
+    - Set an input preprocessor: **AnymalTerrain**, **BallBalance**
+    - Set a random seed for reproducibility: **Cartpole**
+    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
     - Load a checkpoint during evaluation: **Cartpole**
 
@@ -313,7 +315,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 13-14, 62-67
+                    :emphasize-lines: 2, 60-66
 
             .. tab:: Ant
                 
@@ -340,7 +342,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 15, 19
+                    :emphasize-lines: 11, 109-112
 
             .. tab:: BallBalance
                 
@@ -349,7 +351,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 15, 19
+                    :emphasize-lines: 11, 108-111
 
             .. tab:: Cartpole
                 
@@ -376,7 +378,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 10, 97-98
 
             .. tab:: Humanoid
                 
@@ -385,7 +387,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 10, 97-98
 
             .. tab:: Ingenuity
                 
@@ -394,7 +396,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 2, 60-66
 
             .. tab:: Quadcopter
                 
@@ -445,7 +447,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 Learning by scopes in an Isaac Gym environment (multiple agents and environments)
 ---------------------------------------------------------------------------------
 
-This example performs the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run. It tries to load the environment from preview 3, but if it fails, it will try to load the environment from preview 2
+This example performs the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run. It tries to load the environment from preview 4 (or preview 3), but if it fails, it will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_parallel.jpg
       :width: 100%

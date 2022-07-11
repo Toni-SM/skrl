@@ -2,6 +2,15 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2022-07-11
+### Added
+- A2C agent
+- Isaac Gym (preview 4) environment loader
+- Wrap an Isaac Gym (preview 4) environment
+- Support for OpenAI Gym vectorized environments
+- Running standard scaler for input preprocessing
+- Installation from PyPI (`pip install skrl`)
+
 ## [0.6.0] - 2022-06-09
 ### Added
 - Omniverse Isaac Gym environment loader

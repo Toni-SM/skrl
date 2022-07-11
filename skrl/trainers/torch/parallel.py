@@ -52,7 +52,8 @@ def fn_processor(process_index, *args):
                                      inference=True,
                                      timestep=msg['timestep'], 
                                      timesteps=msg['timesteps'])[0]
-                _actions.share_memory_()
+                if not _actions.is_cuda:
+                    _actions.share_memory_()
                 queue.put(_actions)
                 barrier.wait()
 
@@ -149,7 +150,10 @@ class ParallelTrainer(Trainer):
             if agent.memory is not None:
                 agent.memory.share_memory()
             for model in agent.models.values():
-                model.share_memory()
+                try:
+                    model.share_memory()
+                except RuntimeError:
+                    pass
 
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
@@ -168,7 +172,8 @@ class ParallelTrainer(Trainer):
 
         # reset env
         states = self.env.reset()
-        states.share_memory_()
+        if not states.is_cuda:
+            states.share_memory_()
 
         for timestep in range(self.initial_timestep, self.timesteps):
             # show progress
@@ -197,9 +202,12 @@ class ParallelTrainer(Trainer):
 
             # record the environments' transitions
             with torch.no_grad():
-                rewards.share_memory_()
-                next_states.share_memory_()
-                dones.share_memory_()
+                if not rewards.is_cuda:
+                    rewards.share_memory_()
+                if not next_states.is_cuda:
+                    next_states.share_memory_()
+                if not dones.is_cuda:
+                    dones.share_memory_()
                 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
@@ -218,7 +226,8 @@ class ParallelTrainer(Trainer):
             with torch.no_grad():
                 if dones.any():
                     states = self.env.reset()
-                    states.share_memory_()
+                    if not states.is_cuda:
+                        states.share_memory_()
                 else:
                     states.copy_(next_states)
 
@@ -268,7 +277,10 @@ class ParallelTrainer(Trainer):
                 agent.memory.share_memory()
             for model in agent.models.values():
                 if model is not None:
-                    model.share_memory()
+                    try:
+                        model.share_memory()
+                    except RuntimeError:
+                        pass
 
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
@@ -287,7 +299,8 @@ class ParallelTrainer(Trainer):
 
         # reset env
         states = self.env.reset()
-        states.share_memory_()
+        if not states.is_cuda:
+            states.share_memory_()
 
         for timestep in range(self.initial_timestep, self.timesteps):
             # show progress
@@ -311,9 +324,12 @@ class ParallelTrainer(Trainer):
 
             with torch.no_grad():
                 # write data to TensorBoard
-                rewards.share_memory_()
-                next_states.share_memory_()
-                dones.share_memory_()
+                if not rewards.is_cuda:
+                    rewards.share_memory_()
+                if not next_states.is_cuda:
+                    next_states.share_memory_()
+                if not dones.is_cuda:
+                    dones.share_memory_()
                 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "eval-record_transition-post_interaction", 
@@ -328,7 +344,8 @@ class ParallelTrainer(Trainer):
                 # reset environments
                 if dones.any():
                     states = self.env.reset()
-                    states.share_memory_()
+                    if not states.is_cuda:
+                        states.share_memory_()
                 else:
                     states.copy_(next_states)
 

@@ -87,6 +87,19 @@ class Agent:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
 
+    def _empty_preprocessor(self, _input, *args, **kwargs) -> Any:
+        """Empty preprocess method
+
+        This method is defined because PyTorch multiprocessing can't pickle lambdas
+
+        :param _input: Input to preprocess
+        :type _input: Any
+
+        :return: Preprocessed input
+        :rtype: Any
+        """
+        return _input
+
     def init(self) -> None:
         """Initialize the agent
 

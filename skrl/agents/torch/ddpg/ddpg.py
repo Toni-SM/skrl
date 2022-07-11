@@ -139,7 +139,7 @@ class DDPG(Agent):
 
         # set up preprocessors
         self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else lambda states, **kwargs: states
+            else self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent

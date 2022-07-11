@@ -77,13 +77,13 @@ Algorithm implementation
 |             :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
 |         :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
 |         :green:`# optimization step`
-|         reset :math:`\text{optimizer}(\pi_\theta, V_\phi)`
+|         reset :math:`\text{optimizer}_{\theta, \phi}`
 |         :math:`\nabla_{\theta, \, \phi} (L^{clip}_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`
 |         :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip` 
-|         step :math:`\text{optimizer}(\pi_\theta, V_\phi)`
+|         step :math:`\text{optimizer}_{\theta, \phi}`
 |     :green:`# update learning rate`
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
-|         step :math:`\text{scheduler}(\text{optimizer})`
+|         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -92,13 +92,13 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/ppo/ppo.py
    :language: python
-   :lines: 18-53
+   :lines: 18-58
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
 
 .. list-table::
    :header-rows: 1

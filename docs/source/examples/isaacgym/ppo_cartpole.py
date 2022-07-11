@@ -2,15 +2,16 @@ import isaacgym
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # Import the skrl components to build the RL system
 from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
-from skrl.agents.torch.trpo import TRPO, TRPO_DEFAULT_CONFIG
+from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview4
 from skrl.utils import set_seed
 
 
@@ -52,12 +53,12 @@ class Value(DeterministicModel):
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
+# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
 try:
-    env = load_isaacgym_env_preview3(task_name="Cartpole")
+    env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
 except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
+    print("Isaac Gym (preview 3/4) failed: {}\nTrying preview 2...".format(e))
     env = load_isaacgym_env_preview2("Cartpole")
 env = wrap_env(env)
 
@@ -69,40 +70,56 @@ memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
 # Instantiate the agent's models (function approximators).
-# TRPO requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.trpo.html#spaces-and-models
-models_trpo = {"policy": Policy(env.observation_space, env.action_space, device),
-               "value": Value(env.observation_space, env.action_space, device)}
+# PPO requires 2 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
+models_ppo = {"policy": Policy(env.observation_space, env.action_space, device),
+              "value": Value(env.observation_space, env.action_space, device)}
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_trpo.values():
+for model in models_ppo.values():
     model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
 
 
 # Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.trpo.html#configuration-and-hyperparameters
-cfg_trpo = TRPO_DEFAULT_CONFIG.copy()
-cfg_trpo["rollouts"] = 16
-cfg_trpo["learning_epochs"] = 6
-cfg_trpo["mini_batches"] = 2
-cfg_trpo["grad_norm_clip"] = 0.5
-cfg_trpo["value_loss_scale"] = 2.0
-cfg_trpo["lambda"] = 0.95
-# logging to TensorBoard and write checkpoints each 16 and 125 timesteps respectively
-cfg_trpo["experiment"]["write_interval"] = 16
-cfg_trpo["experiment"]["checkpoint_interval"] = 125
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
+cfg_ppo = PPO_DEFAULT_CONFIG.copy()
+cfg_ppo["rollouts"] = 16
+cfg_ppo["learning_epochs"] = 8
+cfg_ppo["mini_batches"] = 1  # 16 * 512 / 8192
+cfg_ppo["discount_factor"] = 0.99
+cfg_ppo["lambda"] = 0.95
+cfg_ppo["learning_rate"] = 3e-4
+cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
+cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg_ppo["random_timesteps"] = 0
+cfg_ppo["learning_starts"] = 0
+cfg_ppo["grad_norm_clip"] = 1.0
+cfg_ppo["ratio_clip"] = 0.2
+cfg_ppo["value_clip"] = 0.2
+cfg_ppo["clip_predicted_values"] = True
+cfg_ppo["entropy_loss_scale"] = 0.0
+cfg_ppo["value_loss_scale"] = 2.0
+cfg_ppo["kl_threshold"] = 0
+cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.1
+cfg_ppo["state_preprocessor"] = RunningStandardScaler
+cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_ppo["value_preprocessor"] = RunningStandardScaler
+cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
+# logging to TensorBoard and write checkpoints each 16 and 80 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 16
+cfg_ppo["experiment"]["checkpoint_interval"] = 80
 
-agent = TRPO(models=models_trpo,
+agent = PPO(models=models_ppo,
             memory=memory, 
-            cfg=cfg_trpo, 
+            cfg=cfg_ppo, 
             observation_space=env.observation_space, 
             action_space=env.action_space,
             device=device)
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 2500, "headless": True, "progress_interval": 250}
+cfg_trainer = {"timesteps": 1600, "headless": True, "progress_interval": 160}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

@@ -22,6 +22,9 @@ CEM_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
 
@@ -91,8 +94,9 @@ class CEM(Agent):
 
         self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
-        
+
+        self._state_preprocessor = self.cfg["state_preprocessor"]
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
         
@@ -104,7 +108,11 @@ class CEM(Agent):
         if self.policy is not None:
             self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+
+        # set up preprocessors
+        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
+            else self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -140,6 +148,8 @@ class CEM(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        states = self._state_preprocessor(states)
+
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
@@ -231,8 +241,9 @@ class CEM(Agent):
         :type timesteps: int
         """
         # sample all memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample_all(names=self.tensors_names)[0]
+        sampled_states, sampled_actions, sampled_rewards, _, _ = self.memory.sample_all(names=self.tensors_names)[0]
+
+        sampled_states = self._state_preprocessor(sampled_states, train=True)
 
         with torch.no_grad():
             # compute discounted return threshold

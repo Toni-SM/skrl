@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Any
+from typing import Union, Tuple, Any, Optional
 
 import gym
 import collections
@@ -211,12 +211,15 @@ class OmniverseIsaacGymWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
-    def run(self) -> None:
+    def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
         """Run the simulation in the main thread
 
-        This method is valid only for the Omniverse Isaac Gym multi-threaded environments 
+        This method is valid only for the Omniverse Isaac Gym multi-threaded environments
+
+        :param trainer: Trainer which should implement a ``run`` method that initiates the RL loop on a new thread
+        :type trainer: omni.isaac.gym.vec_env.vec_env_mt.TrainerMT, optional
         """
-        self._env.run()
+        self._env.run(trainer)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -261,6 +264,39 @@ class GymWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._vectorized = False
+        try:
+            if isinstance(env, gym.vector.SyncVectorEnv) or isinstance(env, gym.vector.AsyncVectorEnv):
+                self._vectorized = True
+        except Exception as e:
+            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+
+    @property
+    def state_space(self) -> gym.Space:
+        """State space
+
+        An alias for the ``observation_space`` property
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        """Observation space
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def action_space(self) -> gym.Space:
+        """Action space
+        """
+        if self._vectorized:
+            return self._env.single_action_space
+        return self._env.action_space
+
     def _observation_to_tensor(self, observation: Any, space: Union[gym.Space, None] = None) -> torch.Tensor:
         """Convert the OpenAI Gym observation to a flat tensor
 
@@ -272,9 +308,12 @@ class GymWrapper(Wrapper):
         :return: The observation as a flat tensor
         :rtype: torch.Tensor
         """
-        space = space if space is not None else self.observation_space
+        observation_space = self._env.observation_space if self._vectorized else self.observation_space
+        space = space if space is not None else observation_space
 
-        if isinstance(observation, int):
+        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
+            return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
+        elif isinstance(observation, int):
             return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
         elif isinstance(observation, np.ndarray):
             return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
@@ -285,7 +324,6 @@ class GymWrapper(Wrapper):
         elif isinstance(space, gym.spaces.Dict):
             tmp = torch.cat([self._observation_to_tensor(observation[k], space[k]) \
                 for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
-            print(observation, tmp)
             return tmp
         else:
             raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
@@ -301,9 +339,11 @@ class GymWrapper(Wrapper):
         :return: The action in the OpenAI Gym format
         :rtype: Any supported OpenAI Gym action space
         """
-        space = self.action_space
+        space = self._env.action_space if self._vectorized else self.action_space
 
-        if isinstance(space, gym.spaces.Discrete):
+        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
+            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+        elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
@@ -503,7 +543,7 @@ class DeepMindWrapper(Wrapper):
         self._env.close()
 
 
-def wrap_env(env: Any, wrapper="auto") -> Wrapper:
+def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     """Wrap an environment to use a common interface
 
     Example::
@@ -534,48 +574,67 @@ def wrap_env(env: Any, wrapper="auto") -> Wrapper:
                     +--------------------+-------------------------+
                     |Isaac Gym preview 3 |``"isaacgym-preview3"``  |
                     +--------------------+-------------------------+
+                    |Isaac Gym preview 4 |``"isaacgym-preview4"``  |
+                    +--------------------+-------------------------+
                     |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
                     +--------------------+-------------------------+
     :type wrapper: str, optional
+    :param verbose: Whether to print the wrapper type (default: True)
+    :type verbose: bool, optional
     
     :raises ValueError: Unknow wrapper type
     
     :return: Wrapped environment
     :rtype: Wrapper
     """
-    print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
-        for base in env.__class__.__bases__])
+    if verbose:
+        print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
+            for base in env.__class__.__bases__])
     if wrapper == "auto":
         base_classes = [str(base) for base in env.__class__.__bases__]
         if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in base_classes or \
             "<class 'omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT'>" in base_classes:
-            print("[INFO] Wrapper: Omniverse Isaac Gym")
+            if verbose:
+                print("[INFO] Wrapper: Omniverse Isaac Gym")
             return OmniverseIsaacGymWrapper(env)
         elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
-            print("[INFO] Wrapper: Gym")
+            if verbose:
+                print("[INFO] Wrapper: Gym")
             return GymWrapper(env)
         elif "<class 'dm_env._environment.Environment'>" in base_classes:
-            print("[INFO] Wrapper: DeepMind")
+            if verbose:
+                print("[INFO] Wrapper: DeepMind")
             return DeepMindWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
-            print("[INFO] Wrapper: Isaac Gym (preview 2)")
+            if verbose:
+                print("[INFO] Wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
-        print("[INFO] Wrapper: Isaac Gym (preview 3)")
-        return IsaacGymPreview3Wrapper(env)
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 3/4)")
+        return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "gym":
-        print("[INFO] Wrapper: Gym")
+        if verbose:
+            print("[INFO] Wrapper: Gym")
         return GymWrapper(env)
     elif wrapper == "dm":
-        print("[INFO] Wrapper: DeepMind")
+        if verbose:
+            print("[INFO] Wrapper: DeepMind")
         return DeepMindWrapper(env)
     elif wrapper == "isaacgym-preview2":
-        print("[INFO] Wrapper: Isaac Gym (preview 2)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 2)")
         return IsaacGymPreview2Wrapper(env)
     elif wrapper == "isaacgym-preview3":
-        print("[INFO] Wrapper: Isaac Gym (preview 3)")
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 3)")
         return IsaacGymPreview3Wrapper(env)
+    elif wrapper == "isaacgym-preview4":
+        if verbose:
+            print("[INFO] Wrapper: Isaac Gym (preview 4)")
+        return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "omniverse-isaacgym":
-        print("[INFO] Wrapper: Omniverse Isaac Gym")
+        if verbose:
+            print("[INFO] Wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

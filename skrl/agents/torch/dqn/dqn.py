@@ -24,6 +24,9 @@ DQN_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
 
@@ -110,8 +113,9 @@ class DQN(Agent):
 
         self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-        self._learning_rate_scheduler_kwargs = self.cfg["learning_rate_scheduler_kwargs"]
         
+        self._state_preprocessor = self.cfg["state_preprocessor"]
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -128,7 +132,11 @@ class DQN(Agent):
         if self.q_network is not None:
             self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self._learning_rate_scheduler_kwargs)
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+
+        # set up preprocessors
+        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
+            else self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -164,6 +172,8 @@ class DQN(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        states = self._state_preprocessor(states)
+
         if not self._exploration_timesteps:
             return torch.argmax(self.q_network.act(states, inference=inference)[0], dim=1, keepdim=True), None, None
 
@@ -262,6 +272,9 @@ class DQN(Agent):
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+
+            sampled_states = self._state_preprocessor(sampled_states, train=not gradient_step)
+            sampled_next_states = self._state_preprocessor(sampled_next_states)
 
             # compute target values
             with torch.no_grad():

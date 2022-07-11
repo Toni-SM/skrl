@@ -8,6 +8,10 @@ Paper: `Learning from delayed rewards <https://www.academia.edu/3294050/Learning
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+| Main notation/symbols:
+|   - action-value function (:math:`Q`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+
 **Decision making** (:literal:`act(...)`)
 
 | :math:`a \leftarrow \pi_{Q[s,a]}(s) \qquad` where :math:`\; a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q[s] & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
@@ -17,7 +21,7 @@ Algorithm implementation
 | :green:`# compute next actions`
 | :math:`a' \leftarrow \underset{a}{\arg\max} \; Q[s'] \qquad` :gray:`# the only difference with SARSA`
 | :green:`# update Q-table`
-| :math:`Q[s,a] \leftarrow Q[s,a] + \alpha \; (r + \gamma \; \neg d \; Q[s',a'] - Q[s,a])`
+| :math:`Q[s,a] \leftarrow Q[s,a] \;+` :guilabel:`learning_rate` :math:`(r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q[s',a'] - Q[s,a])`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -32,7 +36,7 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
 
 .. list-table::
    :header-rows: 1

@@ -102,7 +102,8 @@ class Memory:
         """Share the tensors between processes
         """
         for tensor in self.tensors.values():
-            tensor.share_memory_()
+            if not tensor.is_cuda:
+                tensor.share_memory_()
 
     def get_tensor_names(self) -> Tuple[str]:
         """Get the name of the internal tensors in alphabetical order

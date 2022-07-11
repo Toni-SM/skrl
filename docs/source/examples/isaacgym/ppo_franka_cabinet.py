@@ -2,16 +2,16 @@ import isaacgym
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # Import the skrl components to build the RL system
 from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview4
 from skrl.utils import set_seed
 
 
@@ -28,13 +28,13 @@ class Policy(GaussianModel):
         super().__init__(observation_space, action_space, device, clip_actions,
                          clip_log_std, min_log_std, max_log_std)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
-                                 nn.ELU(),
-                                 nn.Linear(512, 256),
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
                                  nn.ELU(),
                                  nn.Linear(256, 128),
                                  nn.ELU(),
-                                 nn.Linear(128, self.num_actions))
+                                 nn.Linear(128, 64),
+                                 nn.ELU(),
+                                 nn.Linear(64, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, states, taken_actions):
@@ -44,33 +44,33 @@ class Value(DeterministicModel):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
         super().__init__(observation_space, action_space, device, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
-                                 nn.ELU(),
-                                 nn.Linear(512, 256),
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
                                  nn.ELU(),
                                  nn.Linear(256, 128),
                                  nn.ELU(),
-                                 nn.Linear(128, 1))
+                                 nn.Linear(128, 64),
+                                 nn.ELU(),
+                                 nn.Linear(64, 1))
 
     def compute(self, states, taken_actions):
         return self.net(states)
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
+# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
 try:
-    env = load_isaacgym_env_preview3(task_name="AnymalTerrain")
+    env = load_isaacgym_env_preview4(task_name="FrankaCabinet")   # preview 3 and 4 use the same loader
 except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
-    env = load_isaacgym_env_preview2("AnymalTerrain")
+    print("Isaac Gym (preview 3/4) failed: {}\nTrying preview 2...".format(e))
+    env = load_isaacgym_env_preview2("FrankaCabinet")
 env = wrap_env(env)
 
 device = env.device
 
 
 # Instantiate a RandomMemory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=24, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
 # Instantiate the agent's models (function approximators).
@@ -88,12 +88,12 @@ for model in models_ppo.values():
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
-cfg_ppo["rollouts"] = 24
-cfg_ppo["learning_epochs"] = 5
-cfg_ppo["mini_batches"] = 6  # 24 * 4096 / 16384
+cfg_ppo["rollouts"] = 16
+cfg_ppo["learning_epochs"] = 8
+cfg_ppo["mini_batches"] = 8  # 16 * 4096 / 8192    
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
-cfg_ppo["learning_rate"] = 3e-4
+cfg_ppo["learning_rate"] = 5e-4
 cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
 cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
 cfg_ppo["random_timesteps"] = 0
@@ -102,13 +102,17 @@ cfg_ppo["grad_norm_clip"] = 1.0
 cfg_ppo["ratio_clip"] = 0.2
 cfg_ppo["value_clip"] = 0.2
 cfg_ppo["clip_predicted_values"] = True
-cfg_ppo["entropy_loss_scale"] = 0.001
-cfg_ppo["value_loss_scale"] = 1.0
+cfg_ppo["entropy_loss_scale"] = 0.0
+cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0
-cfg_ppo["rewards_shaper"] = None
-# logging to TensorBoard and write checkpoints each 180 and 1800 timesteps respectively
-cfg_ppo["experiment"]["write_interval"] = 180
-cfg_ppo["experiment"]["checkpoint_interval"] = 1800
+cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+cfg_ppo["state_preprocessor"] = RunningStandardScaler
+cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_ppo["value_preprocessor"] = RunningStandardScaler
+cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
+# logging to TensorBoard and write checkpoints each 120 and 1200 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 120
+cfg_ppo["experiment"]["checkpoint_interval"] = 1200
 
 agent = PPO(models=models_ppo,
             memory=memory, 
@@ -119,7 +123,7 @@ agent = PPO(models=models_ppo,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 36000, "headless": True}
+cfg_trainer = {"timesteps": 24000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

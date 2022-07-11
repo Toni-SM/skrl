@@ -135,6 +135,71 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
+Learning in a Gym vectorized environment (one agent, multiple environments)
+---------------------------------------------------------------------------
+
+This example performs the training of one agent in an OpenAI Gym vectorized environment (multiple independent copies of the same environment in parallel). The following components or practices are exemplified (highlighted):
+
+    - Load and wrap an OpenAI Gym vectorized environment: **Pendulum (DDPG)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
+
+.. tabs::
+            
+    .. tab:: Pendulum (DDPG)
+
+        .. tabs::
+            
+            .. tab:: Training
+
+                View the raw code: `gym_vector_pendulum_ddpg.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_pendulum_ddpg.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_pendulum_ddpg.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 13, 49-55
+
+    .. tab:: CartPole (DQN)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_cartpole_dqn.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_cartpole_dqn.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_cartpole_dqn.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 8, 13-19
+    
+    .. tab:: Taxi (SARSA)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_taxi_sarsa.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_taxi_sarsa.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_taxi_sarsa.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 9, 33-39
+    
+    .. tab:: FrozenLake (Q-learning)
+
+        .. tabs::
+            
+            .. tab:: Training
+                
+                View the raw code: `gym_vector_frozen_lake_q_learning.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/gym/gym_vector_frozen_lake_q_learning.py>`_
+
+                .. literalinclude:: ../examples/gym/gym_vector_frozen_lake_q_learning.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 1, 9, 33-39
+
+.. raw:: html
+
+   <hr>
+
 Learning in a DeepMind environment (one agent, one environment)
 ---------------------------------------------------------------
 
@@ -189,7 +254,7 @@ The following components or practices are exemplified (highlighted):
 Learning in an Isaac Gym environment (one agent, multiple environments)
 -----------------------------------------------------------------------
 
-These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. The scripts try to load the environment from preview 3, but if they fail, they will try to load the environment from preview 2
+These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. Some scripts try to load the environment from preview 4 (or preview 3), but if they fail, they will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_isaacgym.png
       :width: 100%
@@ -202,13 +267,15 @@ These examples perform the training of an agent in the `Isaac Gym environments <
 
 The following components or practices are exemplified (highlighted):
 
-    - Load and wrap an Isaac Gym environment: **AllegroHand**, **Ant**, **Anymal**
-    - Set a random seed for reproducibility: **AnymalTerrain**, **BallBalance**, **Cartpole**
-    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**, **Ingenuity**
+    - Load an Isaac Gym environment (easy-to-use API from NVIDIA): **AllegroHand**, **Ingenuity**
+    - Load and wrap an Isaac Gym environment: **Ant**, **Anymal**
+    - Set an input preprocessor: **AnymalTerrain**, **BallBalance**
+    - Set a random seed for reproducibility: **Cartpole**
+    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
     - Load a checkpoint during evaluation: **Cartpole**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
 .. code-block:: bash
 
@@ -233,7 +300,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3 and preview 4) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
 
 .. tabs::
             
@@ -243,117 +310,117 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
             
             .. tab:: AllegroHand
                 
-                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_allegro_hand.py>`_
+                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_allegro_hand.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_allegro_hand.py
+                .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 13-14, 62-67
+                    :emphasize-lines: 2, 60-66
 
             .. tab:: Ant
                 
-                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ant.py>`_
+                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ant.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ant.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ant.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 13-14, 62-67
 
             .. tab:: Anymal
                 
-                View the raw code: `ppo_anymal.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal.py>`_
+                View the raw code: `ppo_anymal.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_anymal.py
+                .. literalinclude:: ../examples/isaacgym/ppo_anymal.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 13-14, 62-67
 
             .. tab:: AnymalTerrain
                 
-                View the raw code: `ppo_anymal_terrain.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal_terrain.py>`_
+                View the raw code: `ppo_anymal_terrain.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal_terrain.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_anymal_terrain.py
+                .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 15, 19
+                    :emphasize-lines: 11, 109-112
 
             .. tab:: BallBalance
                 
-                View the raw code: `ppo_ball_balance.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ball_balance.py>`_
+                View the raw code: `ppo_ball_balance.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ball_balance.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ball_balance.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 15, 19
+                    :emphasize-lines: 11, 108-111
 
             .. tab:: Cartpole
                 
-                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_cartpole.py>`_
+                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_cartpole.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_cartpole.py
+                .. literalinclude:: ../examples/isaacgym/ppo_cartpole.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 15, 19
 
             .. tab:: Cartpole (TRPO)
                 
-                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/trpo_cartpole.py>`_
+                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/trpo_cartpole.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/trpo_cartpole.py
+                .. literalinclude:: ../examples/isaacgym/trpo_cartpole.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 14, 18
 
             .. tab:: FrankaCabinet
                 
-                View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_franka_cabinet.py>`_
+                View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_franka_cabinet.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_franka_cabinet.py
+                .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 10, 97-98
 
             .. tab:: Humanoid
                 
-                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_humanoid.py>`_
+                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_humanoid.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_humanoid.py
+                .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 10, 97-98
 
             .. tab:: Ingenuity
                 
-                View the raw code: `ppo_ingenuity.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ingenuity.py>`_
+                View the raw code: `ppo_ingenuity.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ingenuity.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ingenuity.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 11, 97-98
+                    :emphasize-lines: 2, 60-66
 
             .. tab:: Quadcopter
                 
-                View the raw code: `ppo_quadcopter.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_quadcopter.py>`_
+                View the raw code: `ppo_quadcopter.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_quadcopter.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_quadcopter.py
+                .. literalinclude:: ../examples/isaacgym/ppo_quadcopter.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 108
 
             .. tab:: ShadowHand
                 
-                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_shadow_hand.py>`_
+                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_shadow_hand.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_shadow_hand.py
+                .. literalinclude:: ../examples/isaacgym/ppo_shadow_hand.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 112
 
             .. tab:: Trifinger
                 
-                View the raw code: `ppo_trifinger.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_trifinger.py>`_
+                View the raw code: `ppo_trifinger.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_trifinger.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_trifinger.py
+                .. literalinclude:: ../examples/isaacgym/ppo_trifinger.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 112
@@ -364,11 +431,11 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
             
             .. tab:: Cartpole
                 
-                View the raw code: `isaacgym_cartpole_ppo_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_cartpole_ppo_eval.py>`_
+                View the raw code: `ppo_cartpole_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_cartpole_eval.py>`_
                 
                 **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
 
-                .. literalinclude:: ../examples/isaacgym_cartpole_ppo_eval.py
+                .. literalinclude:: ../examples/isaacgym/ppo_cartpole_eval.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 49, 52, 76
@@ -380,7 +447,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 Learning by scopes in an Isaac Gym environment (multiple agents and environments)
 ---------------------------------------------------------------------------------
 
-This example performs the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run. It tries to load the environment from preview 3, but if it fails, it will try to load the environment from preview 2
+This example performs the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run. It tries to load the environment from preview 4 (or preview 3), but if it fails, it will try to load the environment from preview 2
 
 .. image:: ../_static/imgs/example_parallel.jpg
       :width: 100%
@@ -406,7 +473,7 @@ The following components or practices are exemplified (highlighted):
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3 and preview 4) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
     
 .. tabs::
             
@@ -416,20 +483,20 @@ The following components or practices are exemplified (highlighted):
             
             .. tab:: Sequential training
                 
-                View the raw code: `isaacgym_sequential_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_sequential_shared_memory.py>`_
+                View the raw code: `isaacgym_sequential_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_sequential_shared_memory.py>`_
 
-                .. literalinclude:: ../examples/isaacgym_sequential_shared_memory.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_sequential_shared_memory.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 81, 152, 159, 166, 177-178
 
             .. tab:: Sequential evaluation
                 
-                View the raw code: `isaacgym_sequential_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_sequential_shared_memory_eval.py>`_
+                View the raw code: `isaacgym_sequential_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_sequential_shared_memory_eval.py>`_
                 
                 **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
 
-                .. literalinclude:: ../examples/isaacgym_sequential_shared_memory_eval.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_sequential_shared_memory_eval.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 64, 67, 70, 73-75, 129
@@ -440,40 +507,40 @@ The following components or practices are exemplified (highlighted):
             
             .. tab:: Sequential training
                 
-                View the raw code: `isaacgym_sequential_no_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_sequential_no_shared_memory.py>`_
+                View the raw code: `isaacgym_sequential_no_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_sequential_no_shared_memory.py>`_
 
-                .. literalinclude:: ../examples/isaacgym_sequential_no_shared_memory.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_sequential_no_shared_memory.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 81-83, 154, 161, 168, 179-180
 
             .. tab:: Parallel training
                 
-                View the raw code: `isaacgym_parallel_no_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_parallel_no_shared_memory.py>`_
+                View the raw code: `isaacgym_parallel_no_shared_memory.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_parallel_no_shared_memory.py>`_
 
-                .. literalinclude:: ../examples/isaacgym_parallel_no_shared_memory.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_parallel_no_shared_memory.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 14, 67, 179-182
 
             .. tab:: Sequential eval...
                 
-                View the raw code: `isaacgym_sequential_no_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_sequential_no_shared_memory_eval.py>`_
+                View the raw code: `isaacgym_sequential_no_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_sequential_no_shared_memory_eval.py>`_
                 
                 **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
 
-                .. literalinclude:: ../examples/isaacgym_sequential_no_shared_memory_eval.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_sequential_no_shared_memory_eval.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 64, 67, 70, 73-75, 129
 
             .. tab:: Parallel eval...
                 
-                View the raw code: `isaacgym_parallel_no_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym_parallel_no_shared_memory_eval.py>`_
+                View the raw code: `isaacgym_parallel_no_shared_memory_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/isaacgym_parallel_no_shared_memory_eval.py>`_
                 
                 **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
 
-                .. literalinclude:: ../examples/isaacgym_parallel_no_shared_memory_eval.py
+                .. literalinclude:: ../examples/isaacgym/isaacgym_parallel_no_shared_memory_eval.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 85, 88, 91, 94-96, 150

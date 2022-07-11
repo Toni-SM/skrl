@@ -3,9 +3,9 @@ Wrapping
 
 This library works with a common API to interact with the following RL environments:
 
-* `OpenAI Gym <https://gym.openai.com/>`_ 
+* `OpenAI Gym <https://www.gymlibrary.ml>`_ (single and vectorized environments)
 * `DeepMind <https://github.com/deepmind/dm_env>`_
-* `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2 and 3)
+* `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
@@ -62,6 +62,43 @@ Basic usage
 
         .. tabs::
 
+            .. tab:: Preview 4 (isaacgymenvs.make)
+            
+                .. code-block:: python
+                    :linenos:
+
+                    import isaacgymenvs
+
+                    # import the environment wrapper
+                    from skrl.envs.torch import wrap_env
+
+                    # create/load the environment using the easy-to-use API from NVIDIA
+                    env = isaacgymenvs.make(seed=0, 
+                                            task="Cartpole", 
+                                            num_envs=512, 
+                                            sim_device="cuda:0",
+                                            rl_device="cuda:0",
+                                            graphics_device_id=0,
+                                            headless=False)
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+
+            .. tab:: Preview 4
+            
+                .. code-block:: python
+                    :linenos:
+
+                    # import the environment wrapper and loader
+                    from skrl.envs.torch import wrap_env
+                    from skrl.envs.torch import load_isaacgym_env_preview4
+
+                    # load the environment
+                    env = load_isaacgym_env_preview4(task_name="Cartpole")
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+
             .. tab:: Preview 3
             
                 .. code-block:: python
@@ -94,18 +131,39 @@ Basic usage
 
     .. tab:: OpenAI Gym
    
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and gym
-            from skrl.envs.torch import wrap_env
-            import gym
+            .. tab:: Single environment
 
-            # load environment
-            env = gym.make('Pendulum-v1')
+                .. code-block:: python
+                    :linenos:
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                    # import the environment wrapper and gym
+                    from skrl.envs.torch import wrap_env
+                    import gym
+
+                    # load environment
+                    env = gym.make('Pendulum-v1')
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+
+            .. tab:: Vectorized environment
+
+                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.ml/content/vector_api>`_) for more information about the creation and usage of vectorized environments
+
+                .. code-block:: python
+                    :linenos:
+
+                    # import the environment wrapper and gym
+                    from skrl.envs.torch import wrap_env
+                    import gym
+
+                    # load a vectorized environment
+                    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                    # wrap the environment
+                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
     .. tab:: DeepMind
    

@@ -39,13 +39,13 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/dqn/dqn.py
    :language: python
-   :lines: 16-49
+   :lines: 16-52
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
 
 .. list-table::
    :header-rows: 1

@@ -7,6 +7,9 @@ Paper: `On-Line Q-Learning Using Connectionist Systems <https://citeseerx.ist.ps
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+| Main notation/symbols:
+|   - action-value function (:math:`Q`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
 
 **Decision making** (:literal:`act(...)`)
 
@@ -17,7 +20,7 @@ Algorithm implementation
 | :green:`# compute next actions`
 | :math:`a' \leftarrow \pi_{Q[s,a]}(s') \qquad` :gray:`# the only difference with Q-learning`
 | :green:`# update Q-table`
-| :math:`Q[s,a] \leftarrow Q[s,a] + \alpha \; (r + \gamma \; \neg d \; Q[s',a'] - Q[s,a])`
+| :math:`Q[s,a] \leftarrow Q[s,a] \;+` :guilabel:`learning_rate` :math:`(r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q[s',a'] - Q[s,a])`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -32,7 +35,7 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
 
 .. list-table::
    :header-rows: 1

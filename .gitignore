@@ -2,6 +2,14 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,c,c++,visualstudiocode,cmake
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c,c++,visualstudiocode,cmake
 
+### Library experiments ###
+*.pt
+*.npz
+*.npy
+*.csv
+events.out.tfevents.*
+runs
+
 ### C ###
 # Prerequisites
 *.d

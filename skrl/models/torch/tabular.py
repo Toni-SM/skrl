@@ -88,11 +88,14 @@ class TabularModel(Model):
             setattr(self, name, getattr(self, name).to(*args, **kwargs))
         return self
 
-    def save(self, path: str) -> None:
+    def save(self, path: str, state_dict: Union[dict, None] = None) -> None:
         """Save the model to the specified path
             
         :param path: Path to save the model to
         :type path: str
+        :param state_dict: State dictionary to save (default: None).
+                           If None, the model's state_dict will be saved
+        :type state_dict: dict, optional
         """
         torch.save({name: getattr(self, name) for name in self._get_tensor_names()}, path)
 

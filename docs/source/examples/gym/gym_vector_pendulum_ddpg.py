@@ -47,11 +47,11 @@ class DeterministicCritic(DeterministicModel):
 # Load and wrap the Gym environment.
 # Note: the environment version may change depending on the gym version
 try:
-    env = gym.make("Pendulum-v1")
+    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
 except gym.error.DeprecatedEnv as e:
     env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
     print("Pendulum-v1 not found. Trying {}".format(env_id))
-    env = gym.make(env_id)
+    env = gym.vector.make(env_id, num_envs=10, asynchronous=False)
 env = wrap_env(env)
 
 device = env.device

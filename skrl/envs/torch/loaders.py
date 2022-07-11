@@ -3,7 +3,10 @@ import sys
 import queue
 from contextlib import contextmanager
 
-__all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3", "load_omniverse_isaacgym_env"]
+__all__ = ["load_isaacgym_env_preview2", 
+           "load_isaacgym_env_preview3", 
+           "load_isaacgym_env_preview4", 
+           "load_omniverse_isaacgym_env"]
 
 
 @contextmanager
@@ -195,10 +198,22 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     config_path = os.path.join(isaacgymenvs_path, "cfg")
 
     # set omegaconf resolvers
-    OmegaConf.register_new_resolver('eq', lambda x, y: x.lower() == y.lower())
-    OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())
-    OmegaConf.register_new_resolver('if', lambda condition, a, b: a if condition else b)
-    OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
+    try:
+        OmegaConf.register_new_resolver('eq', lambda x, y: x.lower() == y.lower())
+    except Exception as e:
+        pass
+    try:
+        OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())
+    except Exception as e:
+        pass
+    try:
+        OmegaConf.register_new_resolver('if', lambda condition, a, b: a if condition else b)
+    except Exception as e:
+        pass
+    try:
+        OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
+    except Exception as e:
+        pass
 
     # get hydra config without use @hydra.main
     config_file = "config"
@@ -217,12 +232,44 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     # load environment
     sys.path.append(isaacgymenvs_path)
     from tasks import isaacgym_task_map
-    env = isaacgym_task_map[config.task.name](cfg=cfg, 
-                                              sim_device=config.sim_device,
-                                              graphics_device_id=config.graphics_device_id,
-                                              headless=config.headless)
+    try:
+        env = isaacgym_task_map[config.task.name](cfg=cfg, 
+                                                  sim_device=config.sim_device,
+                                                  graphics_device_id=config.graphics_device_id,
+                                                  headless=config.headless)
+    except TypeError as e:
+        env = isaacgym_task_map[config.task.name](cfg=cfg, 
+                                                  rl_device=config.rl_device,
+                                                  sim_device=config.sim_device,
+                                                  graphics_device_id=config.graphics_device_id,
+                                                  headless=config.headless,
+                                                  virtual_screen_capture=config.capture_video,  # TODO: check
+                                                  force_render=config.force_render)
 
     return env
+
+def load_isaacgym_env_preview4(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
+    """Load an Isaac Gym environment (preview 4) 
+    
+    Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
+
+    :param task_name: The name of the task (default: "").
+                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+                      Command line argument has priority over function parameter if both are specified
+    :type task_name: str, optional
+    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory (default: "").
+                              If empty, the path will obtained from isaacgymenvs package metadata
+    :type isaacgymenvs_path: str, optional
+    :param show_cfg: Whether to print the configuration (default: True)
+    :type show_cfg: bool, optional
+    
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
+
+    :return: Isaac Gym environment (preview 4)
+    :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
+    """
+    return load_isaacgym_env_preview3(task_name, isaacgymenvs_path, show_cfg)
 
 def load_omniverse_isaacgym_env(task_name: str = "", 
                                 omniisaacgymenvs_path: str = "", 
@@ -361,8 +408,8 @@ def load_omniverse_isaacgym_env(task_name: str = "",
             self.action_queue = queue.Queue(1)
             self.data_queue = queue.Queue(1)
 
-        def run(self):
-            super().run(_OmniIsaacGymTrainerMT())
+        def run(self, trainer=None):
+            super().run(_OmniIsaacGymTrainerMT() if trainer is None else trainer)
 
         def _parse_data(self, data):
             self._observations = torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()

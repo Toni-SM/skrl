@@ -66,7 +66,7 @@ agent_ddpg = DDPG(models=models_ddpg,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 40000, "headless": True}
+cfg_trainer = {"timesteps": 15000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_ddpg)
 
 # evaluate the agent

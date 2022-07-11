@@ -32,13 +32,13 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/cem/cem.py
    :language: python
-   :lines: 15-38
+   :lines: 15-41
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://gym.openai.com/docs/#spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
 
 .. list-table::
    :header-rows: 1

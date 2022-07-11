@@ -9,7 +9,7 @@ from skrl.models.torch import GaussianModel
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
+from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview4
 
 
 # Define only the policy for evaluation 
@@ -31,12 +31,12 @@ class Policy(GaussianModel):
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support both versions (preview 2 and 3). 
-# It tries to load from preview 3, but if it fails, it will try to load from preview 2
+# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
 try:
-    env = load_isaacgym_env_preview3(task_name="Cartpole")
+    env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
 except Exception as e:
-    print("Isaac Gym (preview 3) failed: {}\nTrying preview 2...".format(e))
+    print("Isaac Gym (preview 3/4) failed: {}\nTrying preview 2...".format(e))
     env = load_isaacgym_env_preview2("Cartpole")
 env = wrap_env(env)
 

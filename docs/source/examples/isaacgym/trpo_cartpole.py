@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from skrl.models.torch import GaussianModel, DeterministicModel
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.trpo import TRPO, TRPO_DEFAULT_CONFIG
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview3
@@ -89,6 +90,10 @@ cfg_trpo["mini_batches"] = 2
 cfg_trpo["grad_norm_clip"] = 0.5
 cfg_trpo["value_loss_scale"] = 2.0
 cfg_trpo["lambda"] = 0.95
+cfg_trpo["state_preprocessor"] = RunningStandardScaler
+cfg_trpo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_trpo["value_preprocessor"] = RunningStandardScaler
+cfg_trpo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints each 16 and 125 timesteps respectively
 cfg_trpo["experiment"]["write_interval"] = 16
 cfg_trpo["experiment"]["checkpoint_interval"] = 125

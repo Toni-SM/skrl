@@ -273,7 +273,7 @@ The following components or practices are exemplified (highlighted):
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
     - Load a checkpoint during evaluation: **Cartpole**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview 3 environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
 .. code-block:: bash
 
@@ -298,7 +298,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3 and preview 4) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
 
 .. tabs::
             
@@ -308,117 +308,117 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
             
             .. tab:: AllegroHand
                 
-                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_allegro_hand.py>`_
+                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_allegro_hand.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_allegro_hand.py
+                .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 13-14, 62-67
 
             .. tab:: Ant
                 
-                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ant.py>`_
+                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ant.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ant.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ant.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 13-14, 62-67
 
             .. tab:: Anymal
                 
-                View the raw code: `ppo_anymal.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal.py>`_
+                View the raw code: `ppo_anymal.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_anymal.py
+                .. literalinclude:: ../examples/isaacgym/ppo_anymal.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 13-14, 62-67
 
             .. tab:: AnymalTerrain
                 
-                View the raw code: `ppo_anymal_terrain.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_anymal_terrain.py>`_
+                View the raw code: `ppo_anymal_terrain.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal_terrain.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_anymal_terrain.py
+                .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 15, 19
 
             .. tab:: BallBalance
                 
-                View the raw code: `ppo_ball_balance.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ball_balance.py>`_
+                View the raw code: `ppo_ball_balance.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ball_balance.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ball_balance.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 15, 19
 
             .. tab:: Cartpole
                 
-                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_cartpole.py>`_
+                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_cartpole.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_cartpole.py
+                .. literalinclude:: ../examples/isaacgym/ppo_cartpole.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 15, 19
 
             .. tab:: Cartpole (TRPO)
                 
-                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/trpo_cartpole.py>`_
+                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/trpo_cartpole.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/trpo_cartpole.py
+                .. literalinclude:: ../examples/isaacgym/trpo_cartpole.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 14, 18
 
             .. tab:: FrankaCabinet
                 
-                View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_franka_cabinet.py>`_
+                View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_franka_cabinet.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_franka_cabinet.py
+                .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 11, 97-98
 
             .. tab:: Humanoid
                 
-                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_humanoid.py>`_
+                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_humanoid.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_humanoid.py
+                .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 11, 97-98
 
             .. tab:: Ingenuity
                 
-                View the raw code: `ppo_ingenuity.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_ingenuity.py>`_
+                View the raw code: `ppo_ingenuity.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ingenuity.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_ingenuity.py
+                .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 11, 97-98
 
             .. tab:: Quadcopter
                 
-                View the raw code: `ppo_quadcopter.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_quadcopter.py>`_
+                View the raw code: `ppo_quadcopter.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_quadcopter.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_quadcopter.py
+                .. literalinclude:: ../examples/isaacgym/ppo_quadcopter.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 108
 
             .. tab:: ShadowHand
                 
-                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_shadow_hand.py>`_
+                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_shadow_hand.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_shadow_hand.py
+                .. literalinclude:: ../examples/isaacgym/ppo_shadow_hand.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 112
 
             .. tab:: Trifinger
                 
-                View the raw code: `ppo_trifinger.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym3/ppo_trifinger.py>`_
+                View the raw code: `ppo_trifinger.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_trifinger.py>`_
 
-                .. literalinclude:: ../examples/isaacgym3/ppo_trifinger.py
+                .. literalinclude:: ../examples/isaacgym/ppo_trifinger.py
                     :language: python
                     :linenos:
                     :emphasize-lines: 112
@@ -471,7 +471,7 @@ The following components or practices are exemplified (highlighted):
 
 .. note::
 
-    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
+    Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3 and preview 4) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
     
 .. tabs::
             

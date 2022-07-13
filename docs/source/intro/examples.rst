@@ -608,7 +608,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 10-11, 57-58
+                    :emphasize-lines: 11-12, 58-59
             
             .. tab:: Ant
                 
@@ -617,7 +617,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 10-11, 57-58
+                    :emphasize-lines: 11-12, 58-59
 
             .. tab:: Ant (multi-threaded)
                 
@@ -626,7 +626,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 1, 12-13, 59-60, 119, 123
+                    :emphasize-lines: 1, 13-14, 60-61, 124, 128
 
             .. tab:: Cartpole
                 
@@ -635,7 +635,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 10-11, 53-54
+                    :emphasize-lines: 11-12, 54-55
 
             .. tab:: Cartpole (multi-threaded)
                 
@@ -644,7 +644,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 1, 12-13, 55-56, 115, 119
+                    :emphasize-lines: 1, 13-14, 56-57, 120, 124
                     
             .. tab:: Humanoid
                 
@@ -653,7 +653,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 10-11, 57-58
+                    :emphasize-lines: 11-12, 58-59
                     
             .. tab:: ShadowHand
                 
@@ -662,7 +662,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                 .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
                     :language: python
                     :linenos:
-                    :emphasize-lines: 10-11, 61-62
+                    :emphasize-lines: 11-12, 62-63
 
 .. raw:: html
 

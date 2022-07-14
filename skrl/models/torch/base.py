@@ -166,13 +166,18 @@ class Model(torch.nn.Module):
         if issubclass(type(self.action_space), gym.spaces.Discrete):
              return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
         # continuous action space (Box)
-        elif issubclass(type(self.action_space), gym.spaces.Box):
+               elif issubclass(type(self.action_space), gym.spaces.Box):
             if self._random_distribution is None:
-                self._random_distribution = torch.distributions.uniform.Uniform(
-                    low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
-                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
-            
-            return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
+                if min(self.action_space.low) != -np.inf and max(self.action_space.high) != np.inf:
+                    self._random_distribution = torch.distributions.uniform.Uniform(
+                        low=torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32),
+                        high=torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32))
+                else:
+                    self._random_distribution = torch.distributions.normal.Normal(
+                        loc=torch.zeros(self.action_space.shape, device=self.device, dtype=torch.float32),
+                        scale=torch.ones(self.action_space.shape, device=self.device, dtype=torch.float32))
+
+            return self._random_distribution.sample(), None, None
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
 

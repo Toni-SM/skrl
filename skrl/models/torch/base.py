@@ -7,9 +7,9 @@ import torch
 
 
 class Model(torch.nn.Module):
-    def __init__(self, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+    def __init__(self,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
@@ -20,7 +20,7 @@ class Model(torch.nn.Module):
         - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space
         - ``num_observations`` (int or None): Number of elements in the observation/state space
         - ``num_actions`` (int or None): Number of elements in the action space
-        
+
         :param observation_space: Observation/state space or shape (default: None).
                                   If it is not None, the num_observations property will contain the size of that space
         :type observation_space: int, tuple or list of integers, gym.Space or None, optional
@@ -47,12 +47,12 @@ class Model(torch.nn.Module):
         self._instantiator_input_type = 0
         self._instantiator_parameter = None
         self._instantiator_output_scale = 1.0
-        
-    def _get_instantiator_output(self, 
-                                 states: torch.Tensor, 
+
+    def _get_instantiator_output(self,
+                                 states: torch.Tensor,
                                  taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
         """Get the output of the instantiator model
-        
+
         Input shape depends on the instantiator (see skrl.utils.model_instantiator.Shape) as follows:
 
         - STATES / OBSERVATIONS = 0
@@ -73,7 +73,7 @@ class Model(torch.nn.Module):
             output = self._instantiator_net(taken_actions)
         elif self._instantiator_input_type == -2:
             output = self._instantiator_net(torch.cat((states, taken_actions), dim=1))
-        
+
         # deterministic and categorical output
         if self._instantiator_parameter is None:
             return output * self._instantiator_output_scale
@@ -114,7 +114,7 @@ class Model(torch.nn.Module):
         The mapping is done in the following way:
 
         - Tensors belonging to Discrete spaces are returned without modification
-        - Tensors belonging to Box spaces are reshaped to the corresponding space shape 
+        - Tensors belonging to Box spaces are reshaped to the corresponding space shape
           keeping the first dimension (number of samples) as they are
         - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
 
@@ -143,9 +143,9 @@ class Model(torch.nn.Module):
             return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
-    def random_act(self, 
-                   states: torch.Tensor, 
-                   taken_actions: Union[torch.Tensor, None] = None, 
+    def random_act(self,
+                   states: torch.Tensor,
+                   taken_actions: Union[torch.Tensor, None] = None,
                    inference=False) -> Tuple[torch.Tensor]:
         """Act randomly according to the action space
 
@@ -166,7 +166,7 @@ class Model(torch.nn.Module):
         if issubclass(type(self.action_space), gym.spaces.Discrete):
              return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
         # continuous action space (Box)
-               elif issubclass(type(self.action_space), gym.spaces.Box):
+        elif issubclass(type(self.action_space), gym.spaces.Box):
             if self._random_distribution is None:
                 if min(self.action_space.low) != -np.inf and max(self.action_space.high) != np.inf:
                     self._random_distribution = torch.distributions.uniform.Uniform(
@@ -184,7 +184,7 @@ class Model(torch.nn.Module):
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "normal\_")
@@ -199,13 +199,13 @@ class Model(torch.nn.Module):
 
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
-        
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         The following layers will be initialized:
         - torch.nn.Linear
-        
+
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "orthogonal\_")
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
@@ -219,7 +219,7 @@ class Model(torch.nn.Module):
                     _update_weights(layer)
                 elif isinstance(layer, torch.nn.Linear):
                     exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
-        
+
         _update_weights(self.children(), method_name, args, kwargs)
 
     def forward(self):
@@ -229,8 +229,8 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
-    def compute(self, 
-                states: torch.Tensor, 
+    def compute(self,
+                states: torch.Tensor,
                 taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
@@ -241,15 +241,15 @@ class Model(torch.nn.Module):
         :type taken_actions: torch.Tensor or None, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Computation performed by the models
         :rtype: torch.Tensor or tuple of torch.Tensor
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Union[torch.Tensor, None] = None, 
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Union[torch.Tensor, None] = None,
             inference=False) -> Tuple[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
@@ -266,18 +266,18 @@ class Model(torch.nn.Module):
         :type inference: bool, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Action to be taken by the agent given the state of the environment.
                  The typical tuple's components are the actions, the log of the probability density function and mean actions.
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
         :rtype: tuple of torch.Tensor
         """
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
-        
+
     def set_mode(self, mode: str) -> None:
         """Set the model mode (training or evaluation)
 
-        :param mode: Mode: "train" for training or "eval" for evaluation. 
+        :param mode: Mode: "train" for training or "eval" for evaluation.
             See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
@@ -292,7 +292,7 @@ class Model(torch.nn.Module):
 
     def save(self, path: str, state_dict: Union[dict, None] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
         :param state_dict: State dictionary to save (default: None).
@@ -303,19 +303,19 @@ class Model(torch.nn.Module):
 
     def load(self, path: str) -> None:
         """Load the model from the specified path
-                
+
         :param path: Path to load the model from
         :type path: str
         """
         self.load_state_dict(torch.load(path))
         self.eval()
-    
+
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
 
         - Freeze: disable gradient computation (``parameters.requires_grad = False``)
-        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``) 
-        
+        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``)
+
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them
         :type freeze: bool, optional
         """
@@ -327,7 +327,7 @@ class Model(torch.nn.Module):
 
         - Hard update: :math:`\\theta = \\theta_{net}`
         - Soft (polyak averaging) update: :math:`\\theta = (1 - \\rho) \\theta + \\rho \\theta_{net}`
-        
+
         :param model: Model used to update the internal parameters
         :type model: torch.nn.Module (skrl.models.torch.Model)
         :param polyak: Polyak hyperparameter between 0 and 1 (usually close to 0).

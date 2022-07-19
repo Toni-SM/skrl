@@ -168,7 +168,7 @@ class Model(torch.nn.Module):
         # continuous action space (Box)
         elif issubclass(type(self.action_space), gym.spaces.Box):
             if self._random_distribution is None:
-                if min(self.action_space.low) != -np.inf and max(self.action_space.high) != np.inf:
+                if not np.isinf(self.action_space.low).any() and not np.isinf(self.action_space.high).any():
                     self._random_distribution = torch.distributions.uniform.Uniform(
                         low=torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32),
                         high=torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32))

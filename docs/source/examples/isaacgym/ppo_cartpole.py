@@ -53,7 +53,7 @@ class Value(DeterministicModel):
 
 
 # Load and wrap the Isaac Gym environment.
-# The following lines are intended to support all versions (preview 2, 3 and 4). 
+# The following lines are intended to support all versions (preview 2, 3 and 4).
 # It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
 try:
     env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
@@ -77,7 +77,7 @@ models_ppo = {"policy": Policy(env.observation_space, env.action_space, device),
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -111,15 +111,15 @@ cfg_ppo["experiment"]["write_interval"] = 16
 cfg_ppo["experiment"]["checkpoint_interval"] = 80
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 1600, "headless": True, "progress_interval": 160}
+cfg_trainer = {"timesteps": 1600, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

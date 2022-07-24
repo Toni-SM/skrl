@@ -1,6 +1,7 @@
 from typing import Union, List
 
 import torch
+from tqdm import tqdm
 
 from ...envs.torch import Wrapper
 from ...agents.torch import Agent
@@ -9,13 +10,13 @@ from . import Trainer
 
 
 class SequentialTrainer(Trainer):
-    def __init__(self, 
-                 cfg: dict, 
-                 env: Wrapper, 
-                 agents: Union[Agent, List[Agent], List[List[Agent]]], 
+    def __init__(self,
+                 cfg: dict,
+                 env: Wrapper,
+                 agents: Union[Agent, List[Agent], List[List[Agent]]],
                  agents_scope : List[int] = []) -> None:
         """Sequential trainer
-        
+
         Train agents sequentially (i.e., one after the other in each interaction with the environment)
 
         :param cfg: Configuration dictionary
@@ -57,25 +58,23 @@ class SequentialTrainer(Trainer):
         # reset env
         states = self.env.reset()
 
-        for timestep in range(self.initial_timestep, self.timesteps):
-            # show progress
-            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
 
             # pre-interaction
             for agent in self.agents:
                 agent.pre_interaction(timestep=timestep, timesteps=self.timesteps)
-            
+
             # compute actions
             with torch.no_grad():
-                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]],
                                                   inference=True,
-                                                  timestep=timestep, 
+                                                  timestep=timestep,
                                                   timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
-            
+
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
-            
+
             # render scene
             if not self.headless:
                 self.env.render()
@@ -83,15 +82,15 @@ class SequentialTrainer(Trainer):
             # record the environments' transitions
             with torch.no_grad():
                 for agent, scope in zip(self.agents, self.agents_scope):
-                    agent.record_transition(states=states[scope[0]:scope[1]], 
-                                            actions=actions[scope[0]:scope[1]], 
-                                            rewards=rewards[scope[0]:scope[1]], 
-                                            next_states=next_states[scope[0]:scope[1]], 
+                    agent.record_transition(states=states[scope[0]:scope[1]],
+                                            actions=actions[scope[0]:scope[1]],
+                                            rewards=rewards[scope[0]:scope[1]],
+                                            next_states=next_states[scope[0]:scope[1]],
                                             dones=dones[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
-            
+
             # post-interaction
             for agent in self.agents:
                 agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -110,7 +109,7 @@ class SequentialTrainer(Trainer):
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
-        
+
         - Compute actions (sequentially)
         - Interact with the environments
         - Render scene
@@ -124,32 +123,30 @@ class SequentialTrainer(Trainer):
         # reset env
         states = self.env.reset()
 
-        for timestep in range(self.initial_timestep, self.timesteps):
-            # show progress
-            self.show_progress(timestep=timestep, timesteps=self.timesteps)
-            
+        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
+
             # compute actions
             with torch.no_grad():
-                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], 
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]],
                                                   inference=True,
-                                                  timestep=timestep, 
+                                                  timestep=timestep,
                                                   timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
-            
+
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
-            
+
             # render scene
             if not self.headless:
                 self.env.render()
-            
+
             with torch.no_grad():
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
-                    super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]], 
-                                                                actions=actions[scope[0]:scope[1]], 
-                                                                rewards=rewards[scope[0]:scope[1]], 
-                                                                next_states=next_states[scope[0]:scope[1]], 
+                    super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]],
+                                                                actions=actions[scope[0]:scope[1]],
+                                                                rewards=rewards[scope[0]:scope[1]],
+                                                                next_states=next_states[scope[0]:scope[1]],
                                                                 dones=dones[scope[0]:scope[1]],
                                                                 infos=infos,
                                                                 timestep=timestep,
@@ -168,7 +165,7 @@ class SequentialTrainer(Trainer):
     def start(self) -> None:
         """Start training
 
-        This method is deprecated in favour of the '.train()' method 
+        This method is deprecated in favour of the '.train()' method
         """
         super().start()
         self.train()

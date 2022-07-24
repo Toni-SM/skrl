@@ -12,7 +12,7 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define the models (stochastic and deterministic models) for the agent using helper classes 
+# Define the models (stochastic and deterministic models) for the agent using helper classes
 # and programming with two approaches (layer by layer and torch.nn.Sequential class).
 # - Policy: takes as input the environment's observation/state and returns an action
 # - Value: takes the state as input and provides a value to guide the policy
@@ -41,8 +41,8 @@ class Policy(GaussianModel):
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, states, taken_actions):
-        # view (samples, width * height * channels) -> (samples, width, height, channels) 
-        # permute (samples, width, height, channels) -> (samples, channels, width, height) 
+        # view (samples, width * height * channels) -> (samples, width, height, channels)
+        # permute (samples, width, height, channels) -> (samples, channels, width, height)
         x = self.net(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
         return 10 * torch.tanh(x), self.log_std_parameter   # JetBotEnv action_space is -10 to 10
 
@@ -66,10 +66,10 @@ class Value(DeterministicModel):
                                  nn.Linear(64, 32),
                                  nn.Tanh(),
                                  nn.Linear(32, 1))
-    
+
     def compute(self, states, taken_actions):
-        # view (samples, width * height * channels) -> (samples, width, height, channels) 
-        # permute (samples, width, height, channels) -> (samples, channels, width, height) 
+        # view (samples, width * height * channels) -> (samples, width, height, channels)
+        # permute (samples, width, height, channels) -> (samples, channels, width, height)
         return self.net(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
 
 
@@ -92,7 +92,7 @@ models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, 
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -120,15 +120,15 @@ cfg_ppo["experiment"]["write_interval"] = 10000
 cfg_ppo["experiment"]["checkpoint_interval"] = 10000
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 
 
 # Configure and instanciate the RL trainer
-cfg_trainer = {"timesteps": 500000, "headless": True, "progress_interval": 10000}
+cfg_trainer = {"timesteps": 500000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

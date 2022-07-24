@@ -56,6 +56,7 @@ Agents
     Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
     * :doc:`Advantage Actor Critic <modules/skrl.agents.a2c>` (**A2C**)
+    * :doc:`Adversarial Motion Priors <modules/skrl.agents.amp>` (**AMP**)
     * :doc:`Cross-Entropy Method <modules/skrl.agents.cem>` (**CEM**)
     * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
     * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
@@ -74,6 +75,7 @@ Agents
 
     modules/skrl.agents.base_class
     A2C <modules/skrl.agents.a2c>
+    AMP <modules/skrl.agents.amp>
     CEM <modules/skrl.agents.cem>
     DDPG <modules/skrl.agents.ddpg>
     DDQN <modules/skrl.agents.ddqn>

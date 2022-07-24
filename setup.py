@@ -12,6 +12,7 @@ INSTALL_REQUIRES = [
     "gym",
     "torch",
     "tensorboard",
+    "tqdm",
 ]
 
 # installation

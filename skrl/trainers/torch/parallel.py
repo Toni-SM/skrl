@@ -38,7 +38,7 @@ def fn_processor(process_index, *args):
             agent.init()
             print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
             barrier.wait()
-        
+
         # execute agent's pre-interaction step
         elif task == "pre_interaction":
             agent.pre_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
@@ -48,9 +48,9 @@ def fn_processor(process_index, *args):
         elif task == "act":
             _states = queue.get()[scope[0]:scope[1]]
             with torch.no_grad():
-                _actions = agent.act(_states, 
+                _actions = agent.act(_states,
                                      inference=True,
-                                     timestep=msg['timestep'], 
+                                     timestep=msg['timestep'],
                                      timesteps=msg['timesteps'])[0]
                 if not _actions.is_cuda:
                     _actions.share_memory_()
@@ -60,7 +60,7 @@ def fn_processor(process_index, *args):
         # record agent's experience
         elif task == "record_transition":
             with torch.no_grad():
-                agent.record_transition(states=_states, 
+                agent.record_transition(states=_states,
                                         actions=_actions,
                                         rewards=queue.get()[scope[0]:scope[1]],
                                         next_states=queue.get()[scope[0]:scope[1]],
@@ -69,7 +69,7 @@ def fn_processor(process_index, *args):
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
                 barrier.wait()
-        
+
         # execute agent's post-interaction step
         elif task == "post_interaction":
             agent.post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
@@ -78,7 +78,7 @@ def fn_processor(process_index, *args):
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
-                super(type(agent), agent).record_transition(states=_states, 
+                super(type(agent), agent).record_transition(states=_states,
                                                             actions=_actions,
                                                             rewards=queue.get()[scope[0]:scope[1]],
                                                             next_states=queue.get()[scope[0]:scope[1]],
@@ -91,13 +91,13 @@ def fn_processor(process_index, *args):
 
 
 class ParallelTrainer(Trainer):
-    def __init__(self, 
-                 cfg: dict, 
-                 env: Wrapper, 
-                 agents: Union[Agent, List[Agent], List[List[Agent]]], 
+    def __init__(self,
+                 cfg: dict,
+                 env: Wrapper,
+                 agents: Union[Agent, List[Agent], List[List[Agent]]],
                  agents_scope : List[int] = []) -> None:
         """Parallel trainer
-        
+
         Train agents in parallel using multiple processes
 
         :param cfg: Configuration dictionary
@@ -138,7 +138,7 @@ class ParallelTrainer(Trainer):
         consumer_pipes = []
         barrier = mp.Barrier(self.num_agents + 1)
         processes = []
-        
+
         for i in range(self.num_agents):
             pipe_read, pipe_write = mp.Pipe(duplex=False)
             producer_pipes.append(pipe_write)
@@ -175,9 +175,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in range(self.initial_timestep, self.timesteps):
-            # show progress
-            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -192,10 +190,10 @@ class ParallelTrainer(Trainer):
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
-                
+
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
-            
+
             # render scene
             if not self.headless:
                 self.env.render()
@@ -208,7 +206,7 @@ class ParallelTrainer(Trainer):
                     next_states.share_memory_()
                 if not dones.is_cuda:
                     dones.share_memory_()
-                
+
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
                     queue.put(rewards)
@@ -234,7 +232,7 @@ class ParallelTrainer(Trainer):
         # terminate processes
         for pipe in producer_pipes:
             pipe.send({"task": "terminate"})
-        
+
         # join processes
         for process in processes:
             process.join()
@@ -264,7 +262,7 @@ class ParallelTrainer(Trainer):
         consumer_pipes = []
         barrier = mp.Barrier(self.num_agents + 1)
         processes = []
-        
+
         for i in range(self.num_agents):
             pipe_read, pipe_write = mp.Pipe(duplex=False)
             producer_pipes.append(pipe_write)
@@ -302,9 +300,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in range(self.initial_timestep, self.timesteps):
-            # show progress
-            self.show_progress(timestep=timestep, timesteps=self.timesteps)
+        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
 
             # compute actions
             with torch.no_grad():
@@ -314,10 +310,10 @@ class ParallelTrainer(Trainer):
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
-                
+
             # step the environments
             next_states, rewards, dones, infos = self.env.step(actions)
-            
+
             # render scene
             if not self.headless:
                 self.env.render()
@@ -330,10 +326,10 @@ class ParallelTrainer(Trainer):
                     next_states.share_memory_()
                 if not dones.is_cuda:
                     dones.share_memory_()
-                
+
                 for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "eval-record_transition-post_interaction", 
-                               "timestep": timestep, 
+                    pipe.send({"task": "eval-record_transition-post_interaction",
+                               "timestep": timestep,
                                "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
@@ -352,11 +348,10 @@ class ParallelTrainer(Trainer):
         # terminate processes
         for pipe in producer_pipes:
             pipe.send({"task": "terminate"})
-        
+
         # join processes
         for process in processes:
             process.join()
 
         # close the environment
         self.env.close()
-        

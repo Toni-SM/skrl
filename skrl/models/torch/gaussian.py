@@ -3,7 +3,7 @@ from typing import Union, Tuple
 import gym
 
 import torch
-from torch.distributions import MultivariateNormal
+from torch.distributions import Normal
 
 from . import Model
 
@@ -17,7 +17,7 @@ class GaussianModel(Model):
                  clip_log_std: bool = True, 
                  min_log_std: float = -20, 
                  max_log_std: float = 2) -> None:
-        """Diagonal Gaussian model (stochastic model)
+        """Gaussian model (stochastic model)
 
         :param observation_space: Observation/state space or shape (default: None).
                                   If it is not None, the num_observations property will contain the size of that space
@@ -90,10 +90,7 @@ class GaussianModel(Model):
         self._num_samples = actions_mean.shape[0]
 
         # distribution
-        covariance = torch.diag(log_std.exp() * log_std.exp())
-        self._distribution = MultivariateNormal(actions_mean, scale_tril=covariance)
-        # self._distribution.loc = actions_mean
-        # self._distribution._unbroadcasted_scale_tril = covariance
+        self._distribution = Normal(actions_mean, log_std.exp())
 
         # sample using the reparameterization trick
         actions = self._distribution.rsample()
@@ -107,8 +104,6 @@ class GaussianModel(Model):
         
         # log of the probability density function
         log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)
-        if log_prob.dim() != actions.dim():
-            log_prob = log_prob.unsqueeze(-1)
 
         if inference:
             return actions.detach(), log_prob.detach(), actions_mean.detach()
@@ -132,10 +127,10 @@ class GaussianModel(Model):
         """
         return self._log_std.repeat(self._num_samples, 1)
     
-    def distribution(self) -> torch.distributions.MultivariateNormal:
+    def distribution(self) -> torch.distributions.Normal:
         """Get the current distribution of the model
 
         :return: Distribution of the model
-        :rtype: torch.distributions.MultivariateNormal
+        :rtype: torch.distributions.Normal
         """
         return self._distribution

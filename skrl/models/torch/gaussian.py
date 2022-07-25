@@ -16,7 +16,8 @@ class GaussianModel(Model):
                  clip_actions: bool = False, 
                  clip_log_std: bool = True, 
                  min_log_std: float = -20, 
-                 max_log_std: float = 2) -> None:
+                 max_log_std: float = 2,
+                 reduction: str = "sum") -> None:
         """Gaussian model (stochastic model)
 
         :param observation_space: Observation/state space or shape (default: None).
@@ -35,6 +36,12 @@ class GaussianModel(Model):
         :type min_log_std: float, optional
         :param max_log_std: Maximum value of the log standard deviation if clip_log_std is True (default: 2)
         :type max_log_std: float, optional
+        :param reduction: Reduction method for returning the log probability density function: (default: "sum").
+                          Supported values are "mean", "sum", "prod" and "none". If "none", the log probability density 
+                          function is returned as a tensor of shape (num_samples, num_actions) instead of (num_samples, 1)
+        :type reduction: str, optional
+
+        :raises ValueError: If the reduction method is not valid
         """
         super(GaussianModel, self).__init__(observation_space, action_space, device)
         
@@ -55,6 +62,11 @@ class GaussianModel(Model):
         self._num_samples = None
         self._distribution = None
         
+        if reduction not in ["mean", "sum", "prod", "none"]:
+            raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
+        self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
+            else torch.prod if reduction == "prod" else None
+
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Union[torch.Tensor, None] = None, 
@@ -104,6 +116,10 @@ class GaussianModel(Model):
         
         # log of the probability density function
         log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions)
+        if self._reduction is not None:
+            log_prob = self._reduction(log_prob, dim=-1)
+        if log_prob.dim() != actions.dim():
+            log_prob = log_prob.unsqueeze(-1)
 
         if inference:
             return actions.detach(), log_prob.detach(), actions_mean.detach()

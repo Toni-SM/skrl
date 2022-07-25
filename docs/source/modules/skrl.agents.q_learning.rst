@@ -63,10 +63,14 @@ The implementation uses 1 table. This table (model) must be collected in a dicti
      - Concept
      - Key
      - Type
+     - Input shape
+     - Output shape
    * - :math:`\pi_{Q[s,a]}(s)`
      - Policy (:math:`\epsilon`-greedy)
      - :literal:`"policy"`
      - :ref:`Tabular <models_tabular>`
+     - observation
+     - action
 
 API
 ^^^

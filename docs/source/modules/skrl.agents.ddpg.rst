@@ -93,22 +93,32 @@ The implementation uses 4 deterministic function approximators. These function a
      - Concept
      - Key
      - Type
+     - Input shape
+     - Output shape
    * - :math:`\mu_\theta(s)`
      - Policy (actor)
      - :literal:`"policy"`
      - :ref:`Deterministic <models_deterministic>`
+     - observation
+     - action
    * - :math:`\mu_{\theta_{target}}(s)`
      - Target policy
      - :literal:`"target_policy"`
      - :ref:`Deterministic <models_deterministic>`
+     - observation
+     - action
    * - :math:`Q_\phi(s, a)`
      - Q-network (critic)
      - :literal:`"critic"`
      - :ref:`Deterministic <models_deterministic>`
+     - observation + action
+     - 1
    * - :math:`Q_{\phi_{target}}(s, a)`
      - Target Q-network
      - :literal:`"target_critic"`
      - :ref:`Deterministic <models_deterministic>`
+     - observation + action
+     - 1
 
 API
 ^^^

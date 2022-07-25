@@ -109,15 +109,19 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.ml
    :header-rows: 1
 
    * - Gym spaces
+     - .. centered:: AMP observation
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete
      - .. centered:: :math:`\square`
      - .. centered:: :math:`\square`
+     - .. centered:: :math:`\square`
    * - Box
      - .. centered:: :math:`\blacksquare`
      - .. centered:: :math:`\blacksquare`
+     - .. centered:: :math:`\blacksquare`
    * - Dict
+     - .. centered:: :math:`\square`
      - .. centered:: :math:`\square`
      - .. centered:: :math:`\square`
 
@@ -130,18 +134,26 @@ The implementation uses 1 stochastic (continuous) and 2 deterministic function a
      - Concept
      - Key
      - Type
+     - Input shape
+     - Output shape
    * - :math:`\pi_\theta(s)`
      - Policy
      - :literal:`"policy"`
      - :ref:`Gaussian <models_gaussian>`
+     - observation
+     - action
    * - :math:`V_\phi(s)`
      - Value
      - :literal:`"value"`
      - :ref:`Deterministic <models_deterministic>`
-   * - :math:`D_\psi(s)`
+     - observation
+     - 1
+   * - :math:`D_\psi(s_{_{AMP}})`
      - Discriminator
      - :literal:`"discriminator"`
      - :ref:`Deterministic <models_deterministic>`
+     - AMP observation
+     - 1
 
 API
 ^^^

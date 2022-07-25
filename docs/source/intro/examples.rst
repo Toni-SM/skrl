@@ -273,6 +273,7 @@ The following components or practices are exemplified (highlighted):
     - Set a random seed for reproducibility: **Cartpole**
     - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
     - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
+    - Access to environment-specific properties and methods: **Humanoid (AMP)**
     - Load a checkpoint during evaluation: **Cartpole**
 
 The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
@@ -388,6 +389,15 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
                     :language: python
                     :linenos:
                     :emphasize-lines: 10, 97-98
+
+            .. tab:: Humanoid (AMP)
+                
+                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/amp_humanoid.py>`_
+
+                .. literalinclude:: ../examples/isaacgym/amp_humanoid.py
+                    :language: python
+                    :linenos:
+                    :emphasize-lines: 86, 120, 131, 134-135
 
             .. tab:: Ingenuity
                 

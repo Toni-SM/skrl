@@ -392,7 +392,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
             .. tab:: Humanoid (AMP)
                 
-                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/amp_humanoid.py>`_
+                View the raw code: `amp_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/amp_humanoid.py>`_
 
                 .. literalinclude:: ../examples/isaacgym/amp_humanoid.py
                     :language: python

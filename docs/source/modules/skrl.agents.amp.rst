@@ -33,7 +33,7 @@ Algorithm implementation
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
 | :green:`# update dataset of reference motions`
-| :math:`\text{collect reference motions of}` :guilabel:`amp_batch_size` :math:`\rightarrow\;` :math:`\text{append}(M)`
+| collect reference motions of size :guilabel:`amp_batch_size` :math:`\rightarrow\;` :math:`\text{append}(M)`
 | :green:`# compute combined rewards`
 | :math:`r_D \leftarrow -log(\text{max}( 1 - \hat{y}(D_\psi(s_{_{AMP}})), \, 10^{-4})) \qquad` with :math:`\; \hat{y}(x) = \dfrac{1}{1 + e^{-x}}`
 | :math:`r' \leftarrow` :guilabel:`task_reward_weight` :math:`r \, +` :guilabel:`style_reward_weight` :guilabel:`discriminator_reward_scale` :math:`r_D`
@@ -67,9 +67,9 @@ Algorithm implementation
 |             :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
 |         :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
 |         :green:`# compute discriminator loss`
-|         :math:`{logit}_{_{AMP}} \leftarrow D_\psi(s_{_{AMP}})`
-|         :math:`{logit}_{_{AMP}}^{^B} \leftarrow D_\psi(s_{_{AMP}}^{^B})`
-|         :math:`{logit}_{_{AMP}}^{^M} \leftarrow D_\psi(s_{_{AMP}}^{^M})`
+|         :math:`{logit}_{_{AMP}} \leftarrow D_\psi(s_{_{AMP}}) \qquad` with :math:`s_{_{AMP}}` of size :guilabel:`discriminator_batch_size`
+|         :math:`{logit}_{_{AMP}}^{^B} \leftarrow D_\psi(s_{_{AMP}}^{^B}) \qquad` with :math:`s_{_{AMP}}^{^B}` of size :guilabel:`discriminator_batch_size`
+|         :math:`{logit}_{_{AMP}}^{^M} \leftarrow D_\psi(s_{_{AMP}}^{^M}) \qquad` with :math:`s_{_{AMP}}^{^M}` of size :guilabel:`discriminator_batch_size`
 |         :green:`# discriminator prediction loss`
 |         :math:`L_{D_\psi} \leftarrow \dfrac{1}{2}(BCE({logit}_{_{AMP}}` ++ :math:`{logit}_{_{AMP}}^{^B}, \, 0) + BCE({logit}_{_{AMP}}^{^M}, \, 1))` 
 |              with :math:`\; BCE(x,y)=-\frac{1}{N} \sum_{i=1}^N [y \; log(\hat{y}) + (1-y) \, log(1-\hat{y})] \;` and :math:`\; \hat{y} = \dfrac{1}{1 + e^{-x}}`
@@ -97,7 +97,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/amp/amp.py
    :language: python
-   :lines: 18-67
+   :lines: 18-68
    :linenos:
 
 Spaces and models

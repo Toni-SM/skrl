@@ -24,9 +24,9 @@ set_seed(42)
 # - Discriminator: differentiate between police-generated behaviors and behaviors from the motion dataset
 class Policy(GaussianModel):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std)
+                         clip_log_std, min_log_std, max_log_std, reduction)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 1024),
                                  nn.ReLU(),
@@ -108,6 +108,7 @@ cfg_amp["discriminator_loss_scale"] = 5.0
 cfg_amp["amp_batch_size"] = 512
 cfg_amp["task_reward_weight"] = 0.0
 cfg_amp["style_reward_weight"] = 1.0
+cfg_amp["discriminator_batch_size"] = 4096
 cfg_amp["discriminator_reward_scale"] = 2
 cfg_amp["discriminator_logit_regularization_scale"] = 0.05
 cfg_amp["discriminator_gradient_penalty_scale"] = 5

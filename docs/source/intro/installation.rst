@@ -77,3 +77,9 @@ Known issues
     .. code-block:: text
         
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
+
+Changelog
+---------
+
+.. literalinclude:: ../../../CHANGELOG.md
+    :language: markdown

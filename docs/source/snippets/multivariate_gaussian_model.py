@@ -12,15 +12,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import GaussianModel
+from skrl.models.torch import MultivariateGaussianModel
 
 
 # define the model
-class MLP(GaussianModel):
+class MLP(MultivariateGaussianModel):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2):
         super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std, reduction)
+                         clip_log_std, min_log_std, max_log_std)
 
         self.linear_layer_1 = nn.Linear(self.num_observations, 128)
         self.linear_layer_2 = nn.Linear(128, 64)
@@ -42,8 +42,7 @@ policy = MLP(observation_space=env.observation_space,
              clip_actions=True,
              clip_log_std=True,
              min_log_std=-20,
-             max_log_std=2,
-             reduction="sum")
+             max_log_std=2)
 # [end-mlp]
 
 import torch
@@ -67,15 +66,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import GaussianModel
+from skrl.models.torch import MultivariateGaussianModel
 
 
 # define the model
-class CNN(GaussianModel):
+class CNN(MultivariateGaussianModel):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2):
         super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std, reduction)
+                         clip_log_std, min_log_std, max_log_std)
 
         self.net = nn.Sequential(nn.Conv2d(1, 64, kernel_size=4, stride=2),
                                  nn.ReLU(),
@@ -108,8 +107,7 @@ policy = CNN(observation_space=env.observation_space,
              clip_actions=True,
              clip_log_std=True,
              min_log_std=-20,
-             max_log_std=2,
-             reduction="sum")
+             max_log_std=2)
 # [end-cnn]
 
 import torch

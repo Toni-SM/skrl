@@ -128,6 +128,7 @@ Models
     * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
     * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
     * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)
+    * :doc:`Multivariate Gaussian model <modules/skrl.models.multivariate_gaussian>` (continuous domain)
     * :doc:`Deterministic model <modules/skrl.models.deterministic>` (continuous domain)
 
 .. toctree::
@@ -139,6 +140,7 @@ Models
     modules/skrl.models.tabular
     modules/skrl.models.categorical
     modules/skrl.models.gaussian
+    modules/skrl.models.multivariate_gaussian
     modules/skrl.models.deterministic
 
 Trainers

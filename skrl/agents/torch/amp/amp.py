@@ -24,7 +24,6 @@ AMP_DEFAULT_CONFIG = {
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
     
     "learning_rate": 5e-5,                  # learning rate
-    "discriminator_learning_rate": 5e-5,    # discriminator learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
@@ -50,6 +49,7 @@ AMP_DEFAULT_CONFIG = {
     "amp_batch_size": 512,                  # batch size for updating the reference motion dataset
     "task_reward_weight": 0.0,              # task-reward weight (wG)
     "style_reward_weight": 1.0,             # style-reward weight (wS)
+    "discriminator_batch_size": 0,          # batch size for computing the discriminator loss (all samples if 0)
     "discriminator_reward_scale": 2,                    # discriminator reward scaling factor
     "discriminator_logit_regularization_scale": 0.05,   # logit regularization scale factor for the discriminator loss
     "discriminator_gradient_penalty_scale": 5,          # gradient penalty scaling factor for the discriminator loss
@@ -154,7 +154,6 @@ class AMP(Agent):
         self._discriminator_loss_scale = self.cfg["discriminator_loss_scale"]
 
         self._learning_rate = self.cfg["learning_rate"]
-        self._discriminator_learning_rate = self.cfg["discriminator_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
@@ -171,6 +170,7 @@ class AMP(Agent):
         self._task_reward_weight = self.cfg["task_reward_weight"] 
         self._style_reward_weight = self.cfg["style_reward_weight"]
 
+        self._discriminator_batch_size = self.cfg["discriminator_batch_size"]
         self._discriminator_reward_scale = self.cfg["discriminator_reward_scale"]
         self._discriminator_logit_regularization_scale = self.cfg["discriminator_logit_regularization_scale"]
         self._discriminator_gradient_penalty_scale = self.cfg["discriminator_gradient_penalty_scale"]
@@ -208,7 +208,7 @@ class AMP(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="log_prob", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
@@ -477,12 +477,20 @@ class AMP(Agent):
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
                 # compute discriminator loss
-                amp_logits, _, _ = self.discriminator.act(states=self._amp_state_preprocessor(sampled_amp_states[0:4096], train=True))
+                if self._discriminator_batch_size:
+                    sampled_amp_states = self._amp_state_preprocessor(sampled_amp_states[0:self._discriminator_batch_size], train=True)
+                    sampled_amp_replay_states = self._amp_state_preprocessor(
+                        sampled_replay_batches[batch_index][0][0:self._discriminator_batch_size], train=True)
+                    sampled_amp_motion_states = self._amp_state_preprocessor(
+                        sampled_motion_batches[batch_index][0][0:self._discriminator_batch_size], train=True)
+                else:
+                    sampled_amp_states = self._amp_state_preprocessor(sampled_amp_states, train=True)
+                    sampled_amp_replay_states = self._amp_state_preprocessor(sampled_replay_batches[batch_index][0], train=True)
+                    sampled_amp_motion_states = self._amp_state_preprocessor(sampled_motion_batches[batch_index][0], train=True)
 
-                amp_replay_logits, _, _ = self.discriminator.act(states=self._amp_state_preprocessor(sampled_replay_batches[batch_index][0][0:4096], train=True))
-
-                sampled_amp_motion_states = self._amp_state_preprocessor(sampled_motion_batches[batch_index][0][0:4096], train=True)
                 sampled_amp_motion_states.requires_grad_(True)
+                amp_logits, _, _ = self.discriminator.act(states=sampled_amp_states)
+                amp_replay_logits, _, _ = self.discriminator.act(states=sampled_amp_replay_states)
                 amp_motion_logits, _, _ = self.discriminator.act(states=sampled_amp_motion_states)
 
                 amp_cat_logits = torch.cat([amp_logits, amp_replay_logits], dim=0)
@@ -538,7 +546,7 @@ class AMP(Agent):
                 self.scheduler.step()
 
         # update AMP repaly buffer
-        self.reply_buffer.add_samples(states=amp_states)
+        self.reply_buffer.add_samples(states=amp_states.view(-1, amp_states.shape[-1]))
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))

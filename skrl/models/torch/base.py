@@ -302,7 +302,7 @@ class Model(torch.nn.Module):
         :param path: Path to load the model from
         :type path: str
         """
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path, map_location=self.device))
         self.eval()
     
     def freeze_parameters(self, freeze: bool = True) -> None:

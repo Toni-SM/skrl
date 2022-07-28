@@ -1,9 +1,9 @@
 from typing import Union, List
 
 import time
+from tqdm import tqdm
 
 import torch
-from tqdm import tqdm
 
 from ...envs.torch import Wrapper
 from ...agents.torch import Agent

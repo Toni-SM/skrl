@@ -1,7 +1,8 @@
 from typing import Union, List
 
-import torch
 from tqdm import tqdm
+
+import torch
 
 from ...envs.torch import Wrapper
 from ...agents.torch import Agent

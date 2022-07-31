@@ -1,29 +1,39 @@
 # [start-base]
 from typing import Union, List
 
+import copy
+
 from skrl.envs.torch import Wrapper   # from ...envs.torch import Wrapper
 from skrl.agents.torch import Agent   # from ...agents.torch import Agent
 
 from skrl.trainers.torch import Trainer       # from . import Trainer
 
 
+CUSTOM_DEFAULT_CONFIG = {
+    "timesteps": 100000,        # number of timesteps to train for
+    "headless": False,          # whether to use headless mode (no rendering)
+}
+
+
 class CustomTrainer(Trainer):
     def __init__(self, 
-                 cfg: dict, 
                  env: Wrapper, 
                  agents: Union[Agent, List[Agent], List[List[Agent]]], 
-                 agents_scope : List[int] = []) -> None:
+                 agents_scope : List[int] = [],
+                 cfg: dict = {}) -> None:
         """
-        :param cfg: Configuration dictionary
-        :type cfg: dict
         :param env: Environment to train on
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])
         :type agents_scope: tuple or list of integers
+        :param cfg: Configuration dictionary
+        :type cfg: dict, optional
         """
-        super().__init__(cfg, env, agents, agents_scope)
+        _cfg = copy.deepcopy(CUSTOM_DEFAULT_CONFIG)
+        _cfg.update(cfg)
+        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # ================================
         # - init agents
@@ -66,7 +76,7 @@ from skrl.trainers.torch import SequentialTrainer
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = SequentialTrainer(cfg=cfg, env=env, agents=agents)
+trainer = SequentialTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 trainer.train()
@@ -85,7 +95,7 @@ from skrl.trainers.torch import ParallelTrainer
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = ParallelTrainer(cfg=cfg, env=env, agents=agents)
+trainer = ParallelTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 trainer.train()
@@ -93,3 +103,24 @@ trainer.train()
 # evaluate the agent(s)
 trainer.eval()
 # [end-parallel]
+
+# =============================================================================
+
+# [start-manual]
+from skrl.trainers.torch import ManualTrainer
+
+# asuming there is an environment called 'env'
+# and an agent or a list of agents called 'agents'
+
+# create a sequential trainer
+cfg = {"timesteps": 50000, "headless": False}
+trainer = ManualTrainer(env=env, agents=agents, cfg=cfg)
+
+# train the agent(s)
+for timestep in range(cfg["timesteps"]):
+    trainer.train(timestep=timestep)
+
+# evaluate the agent(s)
+for timestep in range(cfg["timesteps"]):
+    trainer.eval(timestep=timestep)
+# [end-manual]

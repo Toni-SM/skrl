@@ -150,6 +150,7 @@ Trainers
 
     * :doc:`Sequential trainer <modules/skrl.trainers.sequential>`
     * :doc:`Parallel trainer <modules/skrl.trainers.parallel>`
+    * :doc:`Manual trainer <modules/skrl.trainers.manual>`
 
 .. toctree::
     :maxdepth: 1
@@ -159,6 +160,7 @@ Trainers
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
+    modules/skrl.trainers.manual
 
 Resources
 ^^^^^^^^^

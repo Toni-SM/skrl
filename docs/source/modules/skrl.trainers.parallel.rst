@@ -30,6 +30,16 @@ Basic usage
             :start-after: [start-parallel]
             :end-before: [end-parallel]
 
+Configuration
+^^^^^^^^^^^^^
+
+.. py:data:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
+
+.. literalinclude:: ../../../skrl/trainers/torch/parallel.py
+    :language: python
+    :lines: 15-18
+    :linenos:
+
 API
 ^^^
 

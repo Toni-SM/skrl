@@ -1,5 +1,6 @@
 from typing import Union, List, Optional
 
+import copy
 import tqdm
 
 import torch
@@ -10,27 +11,35 @@ from ...agents.torch import Agent
 from . import Trainer
 
 
+MANUAL_TRAINER_DEFAULT_CONFIG = {
+    "timesteps": 100000,        # number of timesteps to train for
+    "headless": False,          # whether to use headless mode (no rendering)
+}
+
+
 class ManualTrainer(Trainer):
     def __init__(self,
-                 cfg: dict,
                  env: Wrapper,
-                 agents: Union[Agent, List[Agent], List[List[Agent]]],
-                 agents_scope : List[int] = []) -> None:
+                 agents: Union[Agent, List[Agent]],
+                 agents_scope : List[int] = [],
+                 cfg: dict = {}) -> None:
         """Manual trainer
 
         Train agents by manually controlling the training/evaluation loop
 
-        :param cfg: Configuration dictionary
-        :type cfg: dict
         :param env: Environment to train on
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])
         :type agents_scope: tuple or list of integers
+        :param cfg: Configuration dictionary (default: {}).
+                    See MANUAL_TRAINER_DEFAULT_CONFIG for default values
+        :type cfg: dict, optional
         """
-        # TODO: close the environment
-        super().__init__(cfg, env, agents, agents_scope)
+        _cfg = copy.deepcopy(MANUAL_TRAINER_DEFAULT_CONFIG)
+        _cfg.update(cfg)
+        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
         if self.num_agents > 1:

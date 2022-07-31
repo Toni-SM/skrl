@@ -1,5 +1,8 @@
 from typing import Union, List
 
+import copy
+import tqdm
+
 import torch
 import torch.multiprocessing as mp
 
@@ -7,6 +10,12 @@ from ...envs.torch import Wrapper
 from ...agents.torch import Agent
 
 from . import Trainer
+
+
+PARALLEL_TRAINER_DEFAULT_CONFIG = {
+    "timesteps": 100000,        # number of timesteps to train for
+    "headless": False,          # whether to use headless mode (no rendering)
+}
 
 
 def fn_processor(process_index, *args):
@@ -92,24 +101,27 @@ def fn_processor(process_index, *args):
 
 class ParallelTrainer(Trainer):
     def __init__(self,
-                 cfg: dict,
                  env: Wrapper,
-                 agents: Union[Agent, List[Agent], List[List[Agent]]],
-                 agents_scope : List[int] = []) -> None:
+                 agents: Union[Agent, List[Agent]],
+                 agents_scope : List[int] = [],
+                 cfg: dict = {}) -> None:
         """Parallel trainer
 
         Train agents in parallel using multiple processes
 
-        :param cfg: Configuration dictionary
-        :type cfg: dict
         :param env: Environment to train on
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])
         :type agents_scope: tuple or list of integers
+        :param cfg: Configuration dictionary (default: {}).
+                    See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
+        :type cfg: dict, optional
         """
-        super().__init__(cfg, env, agents, agents_scope)
+        _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
+        _cfg.update(cfg)
+        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         mp.set_start_method(method='spawn', force=True)
 
@@ -175,7 +187,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -300,7 +312,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
             # compute actions
             with torch.no_grad():

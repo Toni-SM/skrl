@@ -1,7 +1,6 @@
 from typing import Union, List
 
-import time
-from tqdm import tqdm
+import tqdm
 
 import torch
 
@@ -33,20 +32,20 @@ def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:
 
 class Trainer():
     def __init__(self,
-                 cfg: dict,
                  env: Wrapper,
-                 agents: Union[Agent, List[Agent], List[List[Agent]]],
-                 agents_scope : List[int] = []) -> None:
+                 agents: Union[Agent, List[Agent]],
+                 agents_scope : List[int] = [],
+                 cfg: dict = {}) -> None:
         """Base class for trainers
 
-        :param cfg: Configuration dictionary
-        :type cfg: dict
         :param env: Environment to train on
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])
         :type agents_scope: tuple or list of integers
+        :param cfg: Configuration dictionary (default: {})
+        :type cfg: dict, optional
         """
         self.cfg = cfg
         self.env = env
@@ -58,9 +57,6 @@ class Trainer():
         self.headless = self.cfg.get("headless", False)
 
         self.initial_timestep = 0
-
-        self._timestamp = None
-        self._timestamp_elapsed = None
 
         # setup agents
         self.num_agents = 0
@@ -165,7 +161,7 @@ class Trainer():
         # reset env
         states = self.env.reset()
 
-        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -220,7 +216,7 @@ class Trainer():
         # reset env
         states = self.env.reset()
 
-        for timestep in tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
             # compute actions
             with torch.no_grad():

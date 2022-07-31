@@ -3,13 +3,15 @@ First of all, **thank you**... For what? Because you are dedicating some time to
 
 <hr>
 
-### I don't want to contribute (for now), I just want to ask a question!
+### I just want to ask a question!
 
 If you have a question, please do not open an issue for this. Instead, use the following resources for it (you will get a faster response):
 
 - [skrl's GitHub discussions](https://github.com/Toni-SM/skrl/discussions), a place to ask questions and discuss about the project
 
-- [Isaac Gym's forum](https://forums.developer.nvidia.com/c/agx-autonomous-machines/isaac/isaac-gym/322), , a place to post your questions, find past answers, or just chat with other members of the community about Isaac Gym topics
+- [Isaac Gym's forum](https://forums.developer.nvidia.com/c/agx-autonomous-machines/isaac/isaac-gym/322), a place to post your questions, find past answers, or just chat with other members of the community about Isaac Gym topics
+
+- [Omniverse Isaac Sim's forum](https://forums.developer.nvidia.com/c/agx-autonomous-machines/isaac/simulation/69), a place to post your questions, find past answers, or just chat with other members of the community about Omniverse Isaac Sim/Gym topics
 
 ### I have found a (good) bug. What can I do?
 
@@ -21,9 +23,15 @@ Open an issue on [skrl's GitHub issues](https://github.com/Toni-SM/skrl/issues) 
 - A link to the source code of the library that you are using (some problems may be due to the use of older versions. If possible, always use the latest version)
 - Any other information that you think may be useful or help to reproduce/describe the problem
 
-Note: Changes that are cosmetic in nature (code formatting, removing whitespace, etc.) or that correct grammatical, spelling or typo errors, and that do not add anything substantial to the functionality of the library will generally not be accepted as a pull request
-
 ### I want to contribute, but I don't know how
+
+There is a [board](https://github.com/users/Toni-SM/projects/2/views/8) containing relevant future implementations which can be a good starting place to identify contributions. Please consider the following points
+
+#### Notes about contributing
+
+- Try to **communicate your change first** to [discuss](https://github.com/Toni-SM/skrl/discussions) the implementation if you want to add a new feature or change an existing one
+- Modify only the minimum amount of code required and the files needed to make the change
+- Changes that are cosmetic in nature (code formatting, removing whitespace, etc.) or that correct grammatical, spelling or typo errors, and that do not add anything substantial to the functionality of the library will generally not be accepted as a pull request
 
 #### Coding conventions
 
@@ -39,6 +47,17 @@ Read the code a little bit and you will understand it at first glance... Also
   - Capitalize (the first letter) and omit any trailing punctuation
   - Write it in the imperative tense
   - Aim for about 50 (or 72) characters
+- Add import statements at the top of each module as follows:
+
+  ```ini
+  function annotation (e.g. typing)
+  # insert an empty line 
+  python libraries and other libraries (e.g. gym, numpy, time, etc.)
+  # insert an empty line
+  machine learning framework modules (e.g. torch, torch.nn)
+  # insert an empty line
+  skrl components
+  ```
 
 <hr>
 

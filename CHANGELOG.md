@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - AMP agent for physics-based character animation
 - Gaussian model
+- Manual trainer
 
 ### Changed
 - Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianModel`
+- Trainer's `cfg` parameter position and default values
 
 ## [0.7.0] - 2022-07-11
 ### Added

@@ -5,3 +5,4 @@ sphinx-tabs==3.2.0
 gym
 torch
 tensorboard
+tqdm

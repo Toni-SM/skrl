@@ -89,7 +89,7 @@ class Wrapper(object):
     def state_space(self) -> gym.Space:
         """State space
 
-        If the wrapped environment does not have the ``state_space`` property, 
+        If the wrapped environment does not have the ``state_space`` property,
         the value of the ``observation_space`` property will be used
         """
         return self._env.state_space if hasattr(self._env, "state_space") else self._env.observation_space
@@ -115,7 +115,7 @@ class IsaacGymPreview2Wrapper(Wrapper):
         :type env: Any supported Isaac Gym environment (preview 2) environment
         """
         super().__init__(env)
-        
+
         self._reset_once = True
         self._obs_buf = None
 
@@ -192,7 +192,7 @@ class IsaacGymPreview3Wrapper(Wrapper):
         """Render the environment
         """
         pass
-    
+
     def close(self) -> None:
         """Close the environment
         """
@@ -248,7 +248,7 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """Render the environment
         """
         pass
-    
+
     def close(self) -> None:
         """Close the environment
         """
@@ -270,6 +270,11 @@ class GymWrapper(Wrapper):
                 self._vectorized = True
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+
+        if hasattr(self, "new_step_api"):
+            self._new_step_api = self._env.new_step_api
+        else:
+            self._new_step_api = False
 
     @property
     def state_space(self) -> gym.Space:
@@ -359,13 +364,17 @@ class GymWrapper(Wrapper):
         :return: The state, the reward, the done flag, and the info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
+        if self._new_step_api:
+            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
+            done = termination or truncation
+        else:
+            observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
                torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
-        
+
     def reset(self) -> torch.Tensor:
         """Reset the environment
 
@@ -508,7 +517,7 @@ class DeepMindWrapper(Wrapper):
         reward = timestep.reward if timestep.reward is not None else 0
         done = timestep.last()
         info = {}
-        
+
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
@@ -562,7 +571,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
                     .. raw:: html
 
                         <br>
-                    
+
                     +--------------------+-------------------------+
                     |Environment         |Wrapper tag              |
                     +====================+=========================+
@@ -581,9 +590,9 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     :type wrapper: str, optional
     :param verbose: Whether to print the wrapper type (default: True)
     :type verbose: bool, optional
-    
+
     :raises ValueError: Unknow wrapper type
-    
+
     :return: Wrapped environment
     :rtype: Wrapper
     """

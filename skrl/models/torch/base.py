@@ -1,6 +1,7 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Mapping, Tuple
 
 import gym
+import collections
 import numpy as np
 
 import torch
@@ -304,6 +305,94 @@ class Model(torch.nn.Module):
         """
         self.load_state_dict(torch.load(path, map_location=self.device))
         self.eval()
+
+    def migrate(self,
+                state_dict: Mapping[str, torch.Tensor],
+                name_map: Optional[Mapping[str, str]] = {},
+                auto_mapping: Optional[bool] = True,
+                show_names: Optional[bool] = False) -> bool:
+        """Migrate the specified extrernal model's state dict to the current model
+
+        :param state_dict: External model's state dict to migrate from
+        :type state_dict: Mapping[str, torch.Tensor]
+        :param name_map: Name map to use for the migration (default: {}).
+                         Keys are the current parameter names and values are the external parameter names
+        :type name_map: Mapping[str, str], optional
+        :param auto_mapping: Automatically map the external state dict to the current state dict (default: True)
+        :type auto_mapping: bool, optional
+        :param show_names: Show the names of both, current and external state dicts parameters (default: False)
+        :type show_names: bool, optional
+
+        :return: True if the migration was successful, False otherwise.
+                 Migration is successful if all parameters of the current model are found in the external model
+        :rtype: bool
+        """
+        # Show state_dict
+        if show_names:
+            print("Model migration")
+            print("Current state_dict:")
+            for name, tensor in self.state_dict().items():
+                print("  |-- {} : {}".format(name, tensor.shape))
+            print("Source state_dict:")
+            for name, tensor in state_dict.items():
+                print("  |-- {} : {}".format(name, tensor.shape))
+
+        # migrate the state dict to current model
+        new_state_dict = collections.OrderedDict()
+        match_counter = collections.defaultdict(list)
+        used_counter = collections.defaultdict(list)
+        for name, tensor in self.state_dict().items():
+            for external_name, external_tensor in state_dict.items():
+                # mapped names
+                if name_map.get(name, "") == external_name:
+                    if tensor.shape == external_tensor.shape:
+                        new_state_dict[name] = external_tensor
+                        match_counter[name].append(external_name)
+                        used_counter[external_name].append(name)
+                        break
+                    else:
+                        print("Shape mismatch for {} <- {} : {} != {}".format(name, external_name, tensor.shape, external_tensor.shape))
+                # auto-mapped names
+                if auto_mapping:
+                    if tensor.shape == external_tensor.shape:
+                        if name.endswith(".weight"):
+                            if external_name.endswith(".weight"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+                        elif name.endswith(".bias"):
+                            if external_name.endswith(".bias"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+                        else:
+                            if not external_name.endswith(".weight") and not external_name.endswith(".bias"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+
+        # show ambiguous matches
+        status = True
+        for name, tensor in self.state_dict().items():
+            if len(match_counter.get(name, [])) > 1:
+                print("Ambiguous match for {} <- {}".format(name, match_counter.get(name, [])))
+                status = False
+        # show missing matches
+        for name, tensor in self.state_dict().items():
+            if not match_counter.get(name, []):
+                print("Missing match for {}".format(name))
+                status = False
+        # show duplicated uses
+        for name, tensor in state_dict.items():
+            if len(used_counter.get(name, [])) > 1:
+                print("Duplicated use of {} -> {}".format(name, used_counter.get(name, [])))
+                status = False
+
+        # load new state dict
+        self.load_state_dict(new_state_dict, strict=False)
+        self.eval()
+
+        return status
     
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters

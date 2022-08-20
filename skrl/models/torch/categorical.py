@@ -39,7 +39,8 @@ class CategoricalModel(Model):
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Union[torch.Tensor, None] = None, 
-            inference=False) -> Tuple[torch.Tensor]:
+            inference=False,
+            role: str = "") -> Tuple[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
         :param states: Observation/state of the environment used to make the decision
@@ -50,6 +51,8 @@ class CategoricalModel(Model):
         :param inference: Flag to indicate whether the model is making inference (default: False).
                           If True, the returned tensors will be detached from the current graph
         :type inference: bool, optional
+        :param role: Role of the agent (default: "")
+        :type role: str, optional
 
         :return: Action to be taken by the agent given the state of the environment.
                  The tuple's components are the actions, the log of the probability density function and the model's output
@@ -58,7 +61,8 @@ class CategoricalModel(Model):
         # map from states/observations to normalized probabilities or unnormalized log probabilities
         if self._instantiator_net is None:
             output = self.compute(states.to(self.device), 
-                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions,
+                                  role)
         else:
             output = self._get_instantiator_output(states.to(self.device), \
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)

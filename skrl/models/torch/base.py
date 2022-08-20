@@ -227,7 +227,8 @@ class Model(torch.nn.Module):
 
     def compute(self, 
                 states: torch.Tensor, 
-                taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+                taken_actions: Union[torch.Tensor, None] = None,
+                role: str = "") -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param states: Observation/state of the environment used to make the decision
@@ -235,6 +236,8 @@ class Model(torch.nn.Module):
         :param taken_actions: Actions taken by a policy to the given states (default: None).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor or None, optional
+        :param role: Role of the agent (default: "")
+        :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
         
@@ -246,7 +249,8 @@ class Model(torch.nn.Module):
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Union[torch.Tensor, None] = None, 
-            inference=False) -> Tuple[torch.Tensor]:
+            inference=False,
+            role: str = "") -> Tuple[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -260,6 +264,8 @@ class Model(torch.nn.Module):
         :type taken_actions: torch.Tensor or None, optional
         :param inference: Flag to indicate whether the model is making inference (default: False)
         :type inference: bool, optional
+        :param role: Role of the agent (default: "")
+        :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
         

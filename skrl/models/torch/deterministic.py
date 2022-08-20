@@ -40,7 +40,8 @@ class DeterministicModel(Model):
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Union[torch.Tensor, None] = None, 
-            inference=False) -> Tuple[torch.Tensor]:
+            inference=False,
+            role: str = "") -> Tuple[torch.Tensor]:
         """Act deterministically in response to the state of the environment
 
         :param states: Observation/state of the environment used to make the decision
@@ -51,6 +52,8 @@ class DeterministicModel(Model):
         :param inference: Flag to indicate whether the model is making inference (default: False).
                           If True, the returned tensors will be detached from the current graph
         :type inference: bool, optional
+        :param role: Role of the agent (default: "")
+        :type role: str, optional
 
         :return: Action to be taken by the agent given the state of the environment.
                  The tuple's components are the computed actions and None for the last two components
@@ -59,7 +62,8 @@ class DeterministicModel(Model):
         # map from observations/states to actions
         if self._instantiator_net is None:
             actions = self.compute(states.to(self.device), 
-                                   taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+                                   taken_actions.to(self.device) if taken_actions is not None else taken_actions,
+                                   role)
         else:
             actions = self._get_instantiator_output(states.to(self.device), \
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)

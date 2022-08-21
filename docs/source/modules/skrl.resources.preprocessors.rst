@@ -28,7 +28,6 @@ The preprocessor class is set under the :literal:`"<variable>_preprocessor"` key
             cfg["value_preprocessor"] = RunningStandardScaler
             cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 
-
 .. raw:: html
 
     <hr>

@@ -24,9 +24,29 @@ API
 ^^^
 
 .. autoclass:: skrl.models.torch.base.Model
-   :undoc-members:
-   :show-inheritance:
-   :private-members: _get_space_size
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _get_space_size, _get_instantiator_output
+    :members:
    
-   .. automethod:: __init__
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        Device to be used for the computations
+
+    .. py:property:: observation_space
+
+        Observation/state space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: action_space
+
+        Action space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: num_observations
+
+        Number of elements in the observation/state space
+
+    .. py:property:: num_actions
+
+        Number of elements in the action space

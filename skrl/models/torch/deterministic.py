@@ -103,8 +103,7 @@ class DeterministicModel(Model):
         # map from observations/states to actions
         if self._instantiator_net is None:
             actions = self.compute(states.to(self.device), 
-                                   taken_actions.to(self.device) if taken_actions is not None else taken_actions,
-                                   role)
+                                   taken_actions.to(self.device) if taken_actions is not None else taken_actions)
         else:
             actions = self._get_instantiator_output(states.to(self.device), \
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)

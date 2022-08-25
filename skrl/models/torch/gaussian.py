@@ -136,8 +136,7 @@ class GaussianModel(Model):
         # map from states/observations to mean actions and log standard deviations
         if self._instantiator_net is None:
             actions_mean, log_std = self.compute(states.to(self.device), 
-                                                 taken_actions.to(self.device) if taken_actions is not None else taken_actions,
-                                                 role)
+                                                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)
         else:
             actions_mean, log_std = self._get_instantiator_output(states.to(self.device), \
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)

@@ -6,6 +6,8 @@ import numpy as np
 
 import torch
 
+from skrl import logger
+
 
 class Model(torch.nn.Module):
     def __init__(self, 
@@ -38,7 +40,7 @@ class Model(torch.nn.Module):
 
             class CustomModel(Model):
                 def __init__(self, observation_space, action_space, device="cuda:0"):
-                    super().__init__(observation_space, action_space, device)
+                    Model.__init__(self, observation_space, action_space, device)
 
                     self.layer_1 = nn.Linear(self.num_observations, 64)
                     self.layer_2 = nn.Linear(64, self.num_actions)
@@ -226,7 +228,7 @@ class Model(torch.nn.Module):
         :type taken_actions: torch.Tensor, optional
         :param inference: Flag to indicate whether the model is making inference (default: ``False``)
         :type inference: bool, optional
-        :param role: Role of the model (default: ``""``)
+        :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Unsupported action space
@@ -348,7 +350,7 @@ class Model(torch.nn.Module):
         :type taken_actions: torch.Tensor, optional
         :param inference: Flag to indicate whether the model is making inference (default: ``False``)
         :type inference: bool, optional
-        :param role: Role of the model (default: ``""``)
+        :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
@@ -358,6 +360,7 @@ class Model(torch.nn.Module):
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
         :rtype: sequence of torch.Tensor
         """
+        logger.warn("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
         
     def set_mode(self, mode: str) -> None:

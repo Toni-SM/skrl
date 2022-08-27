@@ -1,41 +1,30 @@
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence
 
 import gym
 
 import torch
 
-from . import Model
 
+class DeterministicMixin:
+    def __init__(self, clip_actions: bool = False, role: str = "") -> None:
+        """Deterministic mixin model (deterministic model)
 
-class DeterministicModel(Model):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 clip_actions: bool = False) -> None:
-        """Deterministic model (deterministic model)
-
-        :param observation_space: Observation/state space or shape.
-                                  The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space
-        :param action_space: Action space or shape.
-                             The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space
-        :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
-        :type device: str or torch.device, optional
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
         :type clip_actions: bool, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         Example::
 
             # define the model
             >>> import torch
             >>> import torch.nn as nn
-            >>> from skrl.models.torch import DeterministicModel
+            >>> from skrl.models.torch import Model, DeterministicMixin
             >>> 
-            >>> class Value(DeterministicModel):
-            ...     def __init__(self, observation_space, action_space, device, clip_actions=False):
-            ...         super().__init__(observation_space, action_space, device, clip_actions)
+            >>> class Value(DeterministicMixin, Model):
+            ...     def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
+            ...         Model.__init__(self, observation_space, action_space, device)
+            ...         DeterministicMixin.__init__(self, clip_actions)
             ...
             ...         self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
             ...                                  nn.ELU(),
@@ -61,11 +50,11 @@ class DeterministicModel(Model):
               )
             )
         """
-        super(DeterministicModel, self).__init__(observation_space, action_space, device)
+        if not hasattr(self, "_d_clip_actions"):
+            self._d_clip_actions = {}
+        self._d_clip_actions[role] = clip_actions and issubclass(type(self.action_space), gym.Space)
 
-        self.clip_actions = clip_actions and issubclass(type(self.action_space), gym.Space)
-
-        if self.clip_actions:
+        if self._d_clip_actions[role]:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
@@ -86,7 +75,7 @@ class DeterministicModel(Model):
         :type taken_actions: torch.Tensor, optional
         :param inference: Flag to indicate whether the model is making inference (default: ``False``)
         :type inference: bool, optional
-        :param role: Role of the model (default: ``""``)
+        :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :return: Action to be taken by the agent given the state of the environment.
@@ -109,7 +98,7 @@ class DeterministicModel(Model):
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # clip actions 
-        if self.clip_actions:
+        if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:
             if self._backward_compatibility:
                 actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
             else:

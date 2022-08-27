@@ -1,45 +1,32 @@
-from typing import Optional, Union, Sequence
-
-import gym
+from typing import Optional, Sequence
 
 import torch
 from torch.distributions import Categorical
 
-from . import Model
 
+class CategoricalMixin:
+    def __init__(self, unnormalized_log_prob: bool = True, role: str = "") -> None:
+        """Categorical mixin model (stochastic model)
 
-class CategoricalModel(Model):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
-                 device: Union[str, torch.device] = "cuda:0",
-                 unnormalized_log_prob: bool = True) -> None:
-        """Categorical model (stochastic model)
-
-        :param observation_space: Observation/state space or shape.
-                                  The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space
-        :param action_space: Action space or shape.
-                             The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space
-        :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
-        :type device: str or torch.device, optional
         :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: ``True``).
                                       If True, the model's output is interpreted as unnormalized log probabilities 
                                       (it can be any real number), otherwise as normalized probabilities 
                                       (the output must be non-negative, finite and have a non-zero sum)
         :type unnormalized_log_prob: bool, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         Example::
 
             # define the model
             >>> import torch
             >>> import torch.nn as nn
-            >>> from skrl.models.torch import CategoricalModel
+            >>> from skrl.models.torch import Model, CategoricalMixin
             >>> 
-            >>> class Policy(CategoricalModel):
-            ...     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-            ...         super().__init__(observation_space, action_space, device, unnormalized_log_prob)
+            >>> class Policy(CategoricalMixin, Model):
+            ...     def __init__(self, observation_space, action_space, device="cuda:0", unnormalized_log_prob=True):
+            ...         Model.__init__(self, observation_space, action_space, device)
+            ...         CategoricalMixin.__init__(self, unnormalized_log_prob)
             ...
             ...         self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
             ...                                  nn.ELU(),
@@ -65,11 +52,13 @@ class CategoricalModel(Model):
               )
             )
         """
-        super(CategoricalModel, self).__init__(observation_space, action_space, device)
+        if not hasattr(self, "_c_unnormalized_log_prob"):
+            self._c_unnormalized_log_prob = {}
+        self._c_unnormalized_log_prob[role] = unnormalized_log_prob
 
-        self._unnormalized_log_prob = unnormalized_log_prob
-
-        self._distribution = None
+        if not hasattr(self, "_c_distribution"):
+            self._c_distribution = {}
+        self._c_distribution[role] = None
 
     def act(self, 
             states: torch.Tensor, 
@@ -85,7 +74,7 @@ class CategoricalModel(Model):
         :type taken_actions: torch.Tensor, optional
         :param inference: Flag to indicate whether the model is making inference (default: ``False``)
         :type inference: bool, optional
-        :param role: Role of the model (default: ``""``)
+        :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :return: Action to be taken by the agent given the state of the environment.
@@ -108,25 +97,27 @@ class CategoricalModel(Model):
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)
 
         # unnormalized log probabilities
-        if self._unnormalized_log_prob:
-            self._distribution = Categorical(logits=output)
+        if self._c_unnormalized_log_prob[role] if role in self._c_unnormalized_log_prob else self._c_unnormalized_log_prob[""]:
+            self._c_distribution[role] = Categorical(logits=output)
         # normalized probabilities
         else:
-            self._distribution = Categorical(probs=output)
+            self._c_distribution[role] = Categorical(probs=output)
         
         # actions and log of the probability density function
-        actions = self._distribution.sample()
-        log_prob = self._distribution.log_prob(actions if taken_actions is None else taken_actions.view(-1))
+        actions = self._c_distribution[role].sample()
+        log_prob = self._c_distribution[role].log_prob(actions if taken_actions is None else taken_actions.view(-1))
 
         if inference:
             return actions.unsqueeze(-1).detach(), log_prob.unsqueeze(-1).detach(), output.detach()
         return actions.unsqueeze(-1), log_prob.unsqueeze(-1), output
 
-    def distribution(self) -> torch.distributions.Categorical:
+    def distribution(self, role: str = "") -> torch.distributions.Categorical:
         """Get the current distribution of the model
 
         :return: Distribution of the model
         :rtype: torch.distributions.Categorical
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         Example::
 
@@ -134,4 +125,4 @@ class CategoricalModel(Model):
             >>> print(distribution)
             Categorical(probs: torch.Size([4096, 2]), logits: torch.Size([4096, 2]))
         """
-        return self._distribution
+        return self._c_distribution if role in self._c_distribution else self._c_distribution[""]

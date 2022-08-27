@@ -301,7 +301,7 @@ class Model(torch.nn.Module):
         def _update_weights(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
-                    _update_weights(layer)
+                    _update_weights(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
                     exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
         
@@ -316,7 +316,8 @@ class Model(torch.nn.Module):
 
     def compute(self, 
                 states: torch.Tensor, 
-                taken_actions: Optional[torch.Tensor] = None) -> Union[torch.Tensor, Sequence[torch.Tensor]]:
+                taken_actions: Optional[torch.Tensor] = None,
+                role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param states: Observation/state of the environment used to make the decision
@@ -324,6 +325,8 @@ class Model(torch.nn.Module):
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
         

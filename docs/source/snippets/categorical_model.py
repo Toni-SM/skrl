@@ -1,29 +1,21 @@
-import gym
-
-class DummyEnv:
-    observation_space = gym.spaces.Box(low=-1, high=1, shape=(4,))
-    action_space = gym.spaces.Discrete(2)
-    device = "cuda:0"
-
-env = DummyEnv()
-
 # [start-mlp]
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import CategoricalModel
+from skrl.models.torch import Model, CategoricalMixin
 
 
 # define the model
-class MLP(CategoricalModel):
+class MLP(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        super().__init__(observation_space, action_space, device, unnormalized_log_prob)
+        Model.__init__(self, observation_space, action_space, device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
 
         self.linear_layer_1 = nn.Linear(self.num_observations, 64)
         self.linear_layer_2 = nn.Linear(64, 32)
         self.output_layer = nn.Linear(32, self.num_actions)
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         x = F.relu(self.linear_layer_1(states))
         x = F.relu(self.linear_layer_2(x))
         return self.output_layer(x)
@@ -36,32 +28,19 @@ policy = MLP(observation_space=env.observation_space,
              unnormalized_log_prob=True)
 # [end-mlp]
 
-import torch
-policy.to(env.device)
-actions = policy.act(torch.randn(10, 4, device=env.device))
-assert actions[0].shape == torch.Size([10, 1])
-
 # =============================================================================
-
-import gym
-
-class DummyEnv:
-    observation_space = gym.spaces.Box(low=0, high=255, shape=(128, 128, 3))
-    action_space = gym.spaces.Discrete(3)
-    device = "cuda:0"
-
-env = DummyEnv()
 
 # [start-cnn]
 import torch.nn as nn
 
-from skrl.models.torch import CategoricalModel
+from skrl.models.torch import Model, CategoricalMixin
 
 
 # define the model
-class CNN(CategoricalModel):
+class CNN(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        super().__init__(observation_space, action_space, device, unnormalized_log_prob)
+        Model.__init__(self, observation_space, action_space, device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
 
         self.net = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=4),
                                  nn.ReLU(),
@@ -80,7 +59,7 @@ class CNN(CategoricalModel):
                                  nn.Tanh(),
                                  nn.Linear(32, self.num_actions))
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         # permute (samples, width, height, channels) -> (samples, channels, width, height) 
         return self.net(states.permute(0, 3, 1, 2))
 
@@ -91,8 +70,3 @@ policy = CNN(observation_space=env.observation_space,
              device=env.device, 
              unnormalized_log_prob=True)
 # [end-cnn]
-
-import torch
-policy.to(env.device)
-actions = policy.act(torch.randn(10, 128, 128, 3, device=env.device))
-assert actions[0].shape == torch.Size([10, 1])

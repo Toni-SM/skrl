@@ -4,7 +4,7 @@ Multivariate Gaussian model
 ===========================
 
 Concept
-^^^^^^^
+-------
 
 .. image:: ../_static/imgs/model_multivariate_gaussian.svg
       :width: 100%
@@ -12,7 +12,7 @@ Concept
       :alt: Multivariate Gaussian model
 
 Basic usage
-^^^^^^^^^^^
+-----------
 
 .. tabs::
     
@@ -33,11 +33,10 @@ Basic usage
             :end-before: [end-cnn]
 
 API
-^^^
+---
 
-.. autoclass:: skrl.models.torch.multivariate_gaussian.MultivariateGaussianModel
-   :show-inheritance:
-   :members:
-   
-   .. automethod:: __init__
-   .. automethod:: compute
+.. autoclass:: skrl.models.torch.multivariate_gaussian.MultivariateGaussianMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__

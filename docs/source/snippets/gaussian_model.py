@@ -1,26 +1,17 @@
-import gym
-
-class DummyEnv:
-    observation_space = gym.spaces.Box(low=-1, high=1, shape=(5,))
-    action_space = gym.spaces.Box(low=-1, high=1, shape=(3,))
-    device = "cuda:0"
-
-env = DummyEnv()
-
 # [start-mlp]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import GaussianModel
+from skrl.models.torch import Model, GaussianMixin
 
 
 # define the model
-class MLP(GaussianModel):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std, reduction)
+class MLP(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device, 
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
         self.linear_layer_1 = nn.Linear(self.num_observations, 128)
         self.linear_layer_2 = nn.Linear(128, 64)
@@ -29,7 +20,7 @@ class MLP(GaussianModel):
 
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         x = F.relu(self.linear_layer_1(states))
         x = F.relu(self.linear_layer_2(x))
         x = F.relu(self.linear_layer_3(x))
@@ -46,36 +37,22 @@ policy = MLP(observation_space=env.observation_space,
              reduction="sum")
 # [end-mlp]
 
-import torch
-policy.to(env.device)
-actions = policy.act(torch.randn(10, 5, device=env.device), torch.randn(10, 3, device=env.device))
-assert actions[0].shape == torch.Size([10, env.action_space.shape[0]])
-
 # =============================================================================
-
-import gym
-
-class DummyEnv:
-    observation_space = gym.spaces.Box(low=0, high=255, shape=(256, 256, 1))
-    action_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
-    device = "cuda:0"
-
-env = DummyEnv()
 
 # [start-cnn]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import GaussianModel
+from skrl.models.torch import Model, GaussianMixin
 
 
 # define the model
-class CNN(GaussianModel):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std, reduction)
+class CNN(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device, 
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
         self.net = nn.Sequential(nn.Conv2d(1, 64, kernel_size=4, stride=2),
                                  nn.ReLU(),
@@ -96,7 +73,7 @@ class CNN(GaussianModel):
         
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         # permute (samples, width, height, channels) -> (samples, channels, width, height) 
         return self.net(states.permute(0, 3, 1, 2)), self.log_std_parameter
 
@@ -111,8 +88,3 @@ policy = CNN(observation_space=env.observation_space,
              max_log_std=2,
              reduction="sum")
 # [end-cnn]
-
-import torch
-policy.to(env.device)
-actions = policy.act(torch.randn(10, 256, 256, 1, device=env.device), torch.randn(10, 2, device=env.device))
-assert actions[0].shape == torch.Size([10, env.action_space.shape[0]])

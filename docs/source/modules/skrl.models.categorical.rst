@@ -4,15 +4,15 @@ Categorical model
 =================
 
 Concept
-^^^^^^^
+-------
 
 .. image:: ../_static/imgs/model_categorical.svg
-      :width: 100%
-      :align: center
-      :alt: Categorical model
+    :width: 100%
+    :align: center
+    :alt: Categorical model
 
 Basic usage
-^^^^^^^^^^^
+-----------
 
 .. tabs::
     
@@ -33,11 +33,10 @@ Basic usage
             :end-before: [end-cnn]
 
 API
-^^^
+---
 
-.. autoclass:: skrl.models.torch.categorical.CategoricalModel
-   :show-inheritance:
-   :members:
-   
-   .. automethod:: __init__
-   .. automethod:: compute
+.. autoclass:: skrl.models.torch.categorical.CategoricalMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__

@@ -4,15 +4,15 @@ Deterministic model
 ===================
 
 Concept
-^^^^^^^
+-------
 
 .. image:: ../_static/imgs/model_deterministic.svg
-      :width: 65%
-      :align: center
-      :alt: Deterministic model
+    :width: 65%
+    :align: center
+    :alt: Deterministic model
 
 Basic usage
-^^^^^^^^^^^
+-----------
 
 .. tabs::
     
@@ -33,11 +33,10 @@ Basic usage
             :end-before: [end-cnn]
 
 API
-^^^
+---
 
-.. autoclass:: skrl.models.torch.deterministic.DeterministicModel
-   :show-inheritance:
-   :members:
-   
-   .. automethod:: __init__
-   .. automethod:: compute
+.. autoclass:: skrl.models.torch.deterministic.DeterministicMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__

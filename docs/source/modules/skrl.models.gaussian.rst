@@ -4,15 +4,15 @@ Gaussian model
 ==============
 
 Concept
-^^^^^^^
+-------
 
 .. image:: ../_static/imgs/model_gaussian.svg
-      :width: 100%
-      :align: center
-      :alt: Gaussian model
+    :width: 100%
+    :align: center
+    :alt: Gaussian model
 
 Basic usage
-^^^^^^^^^^^
+-----------
 
 .. tabs::
     
@@ -33,11 +33,10 @@ Basic usage
             :end-before: [end-cnn]
 
 API
-^^^
+---
 
-.. autoclass:: skrl.models.torch.gaussian.GaussianModel
-   :show-inheritance:
-   :members:
-   
-   .. automethod:: __init__
-   .. automethod:: compute
+.. autoclass:: skrl.models.torch.gaussian.GaussianMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__

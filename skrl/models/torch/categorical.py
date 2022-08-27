@@ -91,7 +91,7 @@ class CategoricalMixin:
         # map from states/observations to normalized probabilities or unnormalized log probabilities
         if self._instantiator_net is None:
             output = self.compute(states.to(self.device), 
-                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+                                  taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
         else:
             output = self._get_instantiator_output(states.to(self.device), \
                 taken_actions.to(self.device) if taken_actions is not None else taken_actions)

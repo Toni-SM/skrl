@@ -155,10 +155,7 @@ class A2C(Agent):
         # create temporary variables needed for storage and computation
         self._current_next_states = None
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -354,7 +351,7 @@ class A2C(Agent):
             (policy_loss + entropy_loss + value_loss).backward()
             if self._grad_norm_clip > 0:
                 if self.policy is self.value:
-                    nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=self._grad_norm_clip)
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 else:
                     nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
             self.optimizer.step()

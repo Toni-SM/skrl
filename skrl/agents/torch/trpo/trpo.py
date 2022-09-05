@@ -169,11 +169,7 @@ class TRPO(Agent):
         self._current_log_prob = None
         self._current_next_states = None
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -182,8 +178,6 @@ class TRPO(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -193,10 +187,10 @@ class TRPO(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, inference=inference)
+        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
         self._current_log_prob = log_prob
 
         return actions, log_prob, actions_mean
@@ -238,7 +232,8 @@ class TRPO(Agent):
         self._current_next_states = next_states
 
         if self.memory is not None:
-            values, _, _ = self.value.act(states=self._state_preprocessor(states), inference=True)
+            with torch.no_grad():
+                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
@@ -342,7 +337,7 @@ class TRPO(Agent):
             :return: Surrogate loss
             :rtype: torch.Tensor
             """
-            _, new_log_prob, _ = policy.act(states, actions)
+            _, new_log_prob, _ = policy.act(states, taken_actions=actions, role="policy")
             return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
         def conjugate_gradient(policy: Model, 
@@ -426,11 +421,11 @@ class TRPO(Agent):
             :return: KL divergence
             :rtype: torch.Tensor
             """
-            _, _, mu_1 = policy_1.act(states)
+            _, _, mu_1 = policy_1.act(states, taken_actions=None, role="policy")
             logstd_1 = policy_1.get_log_std()
             mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
-            _, _, mu_2 = policy_2.act(states)
+            _, _, mu_2 = policy_2.act(states, taken_actions=None, role="policy")
             logstd_2 = policy_2.get_log_std()
             
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
@@ -438,8 +433,8 @@ class TRPO(Agent):
             return torch.sum(kl, dim=-1).mean()
 
         # compute returns and advantages
-        last_values, _, _ = self.value.act(states=self._state_preprocessor(self._current_next_states.float() \
-            if not torch.is_floating_point(self._current_next_states) else self._current_next_states), inference=True)
+        with torch.no_grad():
+            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
         
         values = self.memory.get_tensor_by_name("values")
@@ -506,7 +501,7 @@ class TRPO(Agent):
                     self.policy.update_parameters(self.backup_policy)
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(sampled_states)
+                predicted_values, _, _ = self.value.act(sampled_states, taken_actions=None, role="value")
 
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
@@ -529,7 +524,7 @@ class TRPO(Agent):
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
         
-        self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+        self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
         if self._learning_rate_scheduler:
             self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])

@@ -163,11 +163,7 @@ class DDPG(Agent):
         # backward compatibility: torch < 1.9 clamp method does not support tensors
         self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -176,8 +172,6 @@ class DDPG(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -186,10 +180,10 @@ class DDPG(Agent):
 
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample deterministic actions
-        actions = self.policy.act(states, inference=inference)
+        actions = self.policy.act(states, taken_actions=None, role="policy")
 
         # add exloration noise
         if self._exploration_noise is not None:
@@ -313,13 +307,13 @@ class DDPG(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
+                next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
                 
-                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic")
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)
+            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions, role="critic")
             
             critic_loss = F.mse_loss(critic_values, target_values)
             
@@ -329,8 +323,8 @@ class DDPG(Agent):
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
-            actions, _, _ = self.policy.act(states=sampled_states)
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions)
+            actions, _, _ = self.policy.act(states=sampled_states, taken_actions=None, role="policy")
+            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions, role="critic")
 
             policy_loss = -critic_values.mean()
 

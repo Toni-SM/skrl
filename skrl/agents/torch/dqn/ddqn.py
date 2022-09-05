@@ -153,11 +153,7 @@ class DDQN(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -166,8 +162,6 @@ class DDQN(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -175,10 +169,10 @@ class DDQN(Agent):
         states = self._state_preprocessor(states)
 
         if not self._exploration_timesteps:
-            return torch.argmax(self.q_network.act(states, inference=inference)[0], dim=1, keepdim=True), None, None
+            return torch.argmax(self.q_network.act(states, taken_actions=None, role="q_network")[0], dim=1, keepdim=True), None, None
             
         # sample random actions
-        actions = self.q_network.random_act(states)[0]
+        actions = self.q_network.random_act(states, taken_actions=None, role="q_network")[0]
         if timestep < self._random_timesteps:
             return actions, None, None
 
@@ -188,7 +182,7 @@ class DDQN(Agent):
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], inference=inference)[0], dim=1, keepdim=True)
+            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], taken_actions=None, role="q_network")[0], dim=1, keepdim=True)
         
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
@@ -278,14 +272,15 @@ class DDQN(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states)
+                next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states, taken_actions=None, role="target_q_network")
                 
-                target_q_values = torch.gather(next_q_values, dim=1, \
-                    index=torch.argmax(self.q_network.act(states=sampled_next_states)[0], dim=1, keepdim=True))
+                target_q_values = torch.gather(next_q_values, dim=1, index=torch.argmax(self.q_network.act(states=sampled_next_states, \
+                    taken_actions=None, role="q_network")[0], dim=1, keepdim=True))
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values = torch.gather(self.q_network.act(states=sampled_states)[0], dim=1, index=sampled_actions.long())
+            q_values = torch.gather(self.q_network.act(states=sampled_states, taken_actions=None, role="q_network")[0], 
+                                    dim=1, index=sampled_actions.long())
 
             q_network_loss = F.mse_loss(q_values, target_values)
             

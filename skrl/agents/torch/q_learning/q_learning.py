@@ -98,11 +98,7 @@ class Q_LEARNING(Agent):
         """
         super().init()
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -111,18 +107,16 @@ class Q_LEARNING(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
         """
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample actions from policy
-        return self.policy.act(states, inference=inference)
+        return self.policy.act(states, taken_actions=None, role="policy")
 
     def record_transition(self, 
                           states: torch.Tensor, 

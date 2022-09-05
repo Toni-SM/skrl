@@ -231,11 +231,7 @@ class AMP(Agent):
         self._current_log_prob = None
         self._current_states = None
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -244,8 +240,6 @@ class AMP(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -259,10 +253,10 @@ class AMP(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, inference=inference)
+        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
         self._current_log_prob = log_prob
 
         return actions, log_prob, actions_mean
@@ -308,10 +302,12 @@ class AMP(Agent):
         amp_states = infos["amp_obs"]
 
         if self.memory is not None:
-            values, _, _ = self.value.act(states=self._state_preprocessor(states), inference=True)
+            with torch.no_grad():
+                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            next_values, _, _ = self.value.act(states=self._state_preprocessor(next_states), inference=True)
+            with torch.no_grad():
+                next_values, _, _ = self.value.act(states=self._state_preprocessor(next_states), taken_actions=None, role="value")
             next_values = self._value_preprocessor(next_values, inverse=True)
             next_values *= infos['terminate'].view(-1, 1).logical_not()
 
@@ -405,7 +401,7 @@ class AMP(Agent):
         amp_states = self.memory.get_tensor_by_name("amp_states")
 
         with torch.no_grad():
-            amp_logits, _, _ = self.discriminator.act(self._amp_state_preprocessor(amp_states))
+            amp_logits, _, _ = self.discriminator.act(self._amp_state_preprocessor(amp_states), taken_actions=None, role="discriminator")
             style_reward = -torch.log(torch.maximum(1 - 1 / (1 + torch.exp(-amp_logits)), torch.tensor(0.0001, device=self.device)))
             style_reward *= self._discriminator_reward_scale
         
@@ -452,11 +448,11 @@ class AMP(Agent):
 
                 sampled_states = self._state_preprocessor(sampled_states, train=True)
                 
-                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
+                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
 
                 # compute entropy loss
                 if self._entropy_loss_scale:
-                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy().mean()
+                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
                 else:
                     entropy_loss = 0
                 
@@ -468,7 +464,7 @@ class AMP(Agent):
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(states=sampled_states)
+                predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
 
                 if self._clip_predicted_values:
                     predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
@@ -489,9 +485,9 @@ class AMP(Agent):
                     sampled_amp_motion_states = self._amp_state_preprocessor(sampled_motion_batches[batch_index][0], train=True)
 
                 sampled_amp_motion_states.requires_grad_(True)
-                amp_logits, _, _ = self.discriminator.act(states=sampled_amp_states)
-                amp_replay_logits, _, _ = self.discriminator.act(states=sampled_amp_replay_states)
-                amp_motion_logits, _, _ = self.discriminator.act(states=sampled_amp_motion_states)
+                amp_logits, _, _ = self.discriminator.act(states=sampled_amp_states, taken_actions=None, role="discriminator")
+                amp_replay_logits, _, _ = self.discriminator.act(states=sampled_amp_replay_states, taken_actions=None, role="discriminator")
+                amp_motion_logits, _, _ = self.discriminator.act(states=sampled_amp_motion_states, taken_actions=None, role="discriminator")
 
                 amp_cat_logits = torch.cat([amp_logits, amp_replay_logits], dim=0)
 
@@ -530,8 +526,7 @@ class AMP(Agent):
                 if self._grad_norm_clip > 0:
                     nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), 
                                                              self.value.parameters(), 
-                                                             self.discriminator.parameters()), 
-                                             max_norm=self._grad_norm_clip)
+                                                             self.discriminator.parameters()), self._grad_norm_clip)
                 self.optimizer.step()
 
                 # update cumulative losses
@@ -555,7 +550,7 @@ class AMP(Agent):
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Discriminator loss", cumulative_discriminator_loss / (self._learning_epochs * self._mini_batches))
 
-        self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+        self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
         if self._learning_rate_scheduler:
             self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

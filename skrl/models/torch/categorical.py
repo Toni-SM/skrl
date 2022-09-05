@@ -63,7 +63,6 @@ class CategoricalMixin:
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Optional[torch.Tensor] = None, 
-            inference: bool = False,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
@@ -72,8 +71,6 @@ class CategoricalMixin:
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
-        :param inference: Flag to indicate whether the model is making inference (default: ``False``)
-        :type inference: bool, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -107,8 +104,6 @@ class CategoricalMixin:
         actions = self._c_distribution[role].sample()
         log_prob = self._c_distribution[role].log_prob(actions if taken_actions is None else taken_actions.view(-1))
 
-        if inference:
-            return actions.unsqueeze(-1).detach(), log_prob.unsqueeze(-1).detach(), output.detach()
         return actions.unsqueeze(-1), log_prob.unsqueeze(-1), output
 
     def distribution(self, role: str = "") -> torch.distributions.Categorical:

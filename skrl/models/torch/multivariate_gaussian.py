@@ -98,7 +98,6 @@ class MultivariateGaussianMixin:
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Optional[torch.Tensor] = None, 
-            inference: bool = False,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
@@ -107,8 +106,6 @@ class MultivariateGaussianMixin:
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
-        :param inference: Flag to indicate whether the model is making inference (default: ``False``)
-        :type inference: bool, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
         
@@ -160,8 +157,6 @@ class MultivariateGaussianMixin:
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
-        if inference:
-            return actions.detach(), log_prob.detach(), actions_mean.detach()
         return actions, log_prob, actions_mean
 
     def get_entropy(self, role: str = "") -> torch.Tensor:

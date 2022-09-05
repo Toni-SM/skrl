@@ -64,7 +64,6 @@ class DeterministicMixin:
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Optional[torch.Tensor] = None, 
-            inference: bool = False,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act deterministically in response to the state of the environment
 
@@ -73,8 +72,6 @@ class DeterministicMixin:
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
-        :param inference: Flag to indicate whether the model is making inference (default: ``False``)
-        :type inference: bool, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -104,7 +101,5 @@ class DeterministicMixin:
             else:
                 actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
-        if inference:
-            return actions.detach(), None, None
         return actions, None, None
         

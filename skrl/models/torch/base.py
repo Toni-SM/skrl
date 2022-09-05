@@ -45,7 +45,7 @@ class Model(torch.nn.Module):
                     self.layer_1 = nn.Linear(self.num_observations, 64)
                     self.layer_2 = nn.Linear(64, self.num_actions)
 
-                def act(self, states, taken_actions=None, inference=False, role=""):
+                def act(self, states, taken_actions=None, role=""):
                     x = F.relu(self.layer_1(states))
                     x = F.relu(self.layer_2(x))
                     return x
@@ -217,7 +217,6 @@ class Model(torch.nn.Module):
     def random_act(self, 
                    states: torch.Tensor, 
                    taken_actions: Optional[torch.Tensor] = None, 
-                   inference: bool = False,
                    role: str = "") -> Sequence[torch.Tensor]:
         """Act randomly according to the action space
 
@@ -226,8 +225,6 @@ class Model(torch.nn.Module):
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
-        :param inference: Flag to indicate whether the model is making inference (default: ``False``)
-        :type inference: bool, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -338,7 +335,6 @@ class Model(torch.nn.Module):
     def act(self, 
             states: torch.Tensor, 
             taken_actions: Optional[torch.Tensor] = None, 
-            inference: bool = False,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
@@ -351,8 +347,6 @@ class Model(torch.nn.Module):
         :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
         :type taken_actions: torch.Tensor, optional
-        :param inference: Flag to indicate whether the model is making inference (default: ``False``)
-        :type inference: bool, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 

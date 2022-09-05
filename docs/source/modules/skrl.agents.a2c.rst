@@ -8,6 +8,10 @@ Paper: `Asynchronous Methods for Deep Reinforcement Learning <https://arxiv.org/
 Algorithm
 ^^^^^^^^^
 
+.. note::
+
+  This algorithm implementation relies on the existence of parallel environments instead of parallel actor-learners
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -52,19 +56,14 @@ Algorithm implementation
 |         :math:`{L}_{entropy} \leftarrow 0`
 |     :green:`# compute policy loss`
 |     :math:`L_{\pi_\theta} \leftarrow -\frac{1}{N} \sum_{i=1}^N A \; ratio`
-|     :green:`# optimization step (policy)`
-|     reset :math:`\text{optimizer}_{\theta}`
-|     :math:`\nabla_{\theta} (L_{\pi_\theta} + {L}_{entropy})`
-|     :math:`\text{clip}(\lVert \nabla_{\theta} \rVert)` with :guilabel:`grad_norm_clip` 
-|     step :math:`\text{optimizer}_{\theta}`
 |     :green:`# compute value loss`
 |     :math:`V_{_{predicted}} \leftarrow V_\phi(s)`
 |     :math:`L_{V_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
-|     :green:`# optimization step (value)`
-|     reset :math:`\text{optimizer}_{\phi}`
-|     :math:`\nabla_{\phi} L_{V_\phi}`
-|     :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip` 
-|     step :math:`\text{optimizer}_{\phi}`
+|     :green:`# optimization step`
+|     reset :math:`\text{optimizer}_{\theta, \phi}`
+|     :math:`\nabla_{\theta, \, \phi} (L_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`
+|     :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip` 
+|     step :math:`\text{optimizer}_{\theta, \phi}`
 | :green:`# update learning rate`
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |     step :math:`\text{scheduler}_{\theta} (\text{optimizer}_{\theta})`
@@ -77,7 +76,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/a2c/a2c.py
    :language: python
-   :lines: 16-50
+   :lines: 17-50
    :linenos:
 
 Spaces and models

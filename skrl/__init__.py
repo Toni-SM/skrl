@@ -12,7 +12,7 @@ with open(path, "r") as file:
 
 # logger with format
 class _Formatter(logging.Formatter):
-    _format = "%(name)s:%(levelname)s - %(message)s (%(module)s:%(funcName)s:%(lineno)d)"
+    _format = "[%(name)s:%(levelname)s] %(message)s"
     _formats = {logging.DEBUG: f"\x1b[38;20m{_format}\x1b[0m",
                 logging.INFO: f"\x1b[38;20m{_format}\x1b[0m",
                 logging.WARNING: f"\x1b[33;20m{_format}\x1b[0m",

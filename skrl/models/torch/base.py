@@ -357,7 +357,7 @@ class Model(torch.nn.Module):
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
         :rtype: sequence of torch.Tensor
         """
-        logger.warn("Make sure to place Mixins before Model during model definition")
+        logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
         
     def set_mode(self, mode: str) -> None:
@@ -394,7 +394,6 @@ class Model(torch.nn.Module):
             >>> old_state_dict = copy.deepcopy(model.state_dict())
             >>> # ...
             >>> model.save("/tmp/model.pt", old_state_dict)
-
         """
         torch.save(self.state_dict() if state_dict is None else state_dict, path)
 
@@ -420,37 +419,143 @@ class Model(torch.nn.Module):
         self.eval()
 
     def migrate(self,
-                state_dict: Mapping[str, torch.Tensor],
+                state_dict: Optional[Mapping[str, torch.Tensor]] = None,
+                path: Optional[str] = None,
                 name_map: Mapping[str, str] = {},
                 auto_mapping: bool = True,
-                show_names: bool = False) -> bool:
+                verbose: bool = False) -> bool:
         """Migrate the specified extrernal model's state dict to the current model
 
-        :param state_dict: External model's state dict to migrate from
-        :type state_dict: Mapping[str, torch.Tensor]
+        The final storage device is determined by the constructor of the model
+
+        Only one of ``state_dict`` or ``path`` can be specified.
+        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated 
+        by the *rl_games* and *stable-baselines3* libraries at the moment
+
+        For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
+        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully
+
+        :param state_dict: External model's state dict to migrate from (default: ``None``)
+        :type state_dict: Mapping[str, torch.Tensor], optional
+        :param path: Path to the external checkpoint to migrate from (default: ``None``)
+        :type path: str, optional
         :param name_map: Name map to use for the migration (default: ``{}``).
                          Keys are the current parameter names and values are the external parameter names
         :type name_map: Mapping[str, str], optional
         :param auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``)
         :type auto_mapping: bool, optional
-        :param show_names: Show the names of both, current and external state dicts parameters (default: ``False``)
-        :type show_names: bool, optional
+        :param verbose: Show model names and migration (default: ``False``)
+        :type verbose: bool, optional
+
+        :raises ValueError: If neither or both of ``state_dict`` and ``path`` parameters have been set
+        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter
 
         :return: True if the migration was successful, False otherwise.
                  Migration is successful if all parameters of the current model are found in the external model
         :rtype: bool
-        """
-        # Show state_dict
-        if show_names:
-            print("Model migration")
-            print("Current state_dict:")
-            for name, tensor in self.state_dict().items():
-                print("  |-- {} : {}".format(name, tensor.shape))
-            print("Source state_dict:")
-            for name, tensor in state_dict.items():
-                print("  |-- {} : {}".format(name, tensor.shape))
 
-        # migrate the state dict to current model
+        Example::
+
+            # migrate a rl_games checkpoint with unambiguous state_dict
+            >>> model.migrate(path="./runs/Ant/nn/Ant.pth")
+            True
+
+            # migrate a rl_games checkpoint with ambiguous state_dict
+            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", verbose=False)
+            [skrl:WARNING] Ambiguous match for log_std_parameter <- [value_mean_std.running_mean, value_mean_std.running_var, a2c_network.sigma]
+            [skrl:WARNING] Ambiguous match for net.0.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.2.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.4.weight <- [a2c_network.value.weight, a2c_network.mu.weight]
+            [skrl:WARNING] Ambiguous match for net.4.bias <- [a2c_network.value.bias, a2c_network.mu.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.0.bias -> [net.0.bias, net.2.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.2.bias -> [net.0.bias, net.2.bias]
+            False
+            >>> name_map = {"log_std_parameter": "a2c_network.sigma",
+            ...             "net.0.bias": "a2c_network.actor_mlp.0.bias",
+            ...             "net.2.bias": "a2c_network.actor_mlp.2.bias",
+            ...             "net.4.weight": "a2c_network.mu.weight",
+            ...             "net.4.bias": "a2c_network.mu.bias"}
+            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", name_map=name_map, verbose=True)
+            [skrl:INFO] Models
+            [skrl:INFO]   |-- current: 7 items
+            [skrl:INFO]   |    |-- log_std_parameter : torch.Size([1])
+            [skrl:INFO]   |    |-- net.0.weight : torch.Size([32, 4])
+            [skrl:INFO]   |    |-- net.0.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- net.2.weight : torch.Size([32, 32])
+            [skrl:INFO]   |    |-- net.2.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- net.4.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- net.4.bias : torch.Size([1])
+            [skrl:INFO]   |-- source: 15 items
+            [skrl:INFO]   |    |-- value_mean_std.running_mean : torch.Size([1])
+            [skrl:INFO]   |    |-- value_mean_std.running_var : torch.Size([1])
+            [skrl:INFO]   |    |-- value_mean_std.count : torch.Size([])
+            [skrl:INFO]   |    |-- running_mean_std.running_mean : torch.Size([4])
+            [skrl:INFO]   |    |-- running_mean_std.running_var : torch.Size([4])
+            [skrl:INFO]   |    |-- running_mean_std.count : torch.Size([])
+            [skrl:INFO]   |    |-- a2c_network.sigma : torch.Size([1])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.weight : torch.Size([32, 4])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.weight : torch.Size([32, 32])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- a2c_network.value.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- a2c_network.value.bias : torch.Size([1])
+            [skrl:INFO]   |    |-- a2c_network.mu.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- a2c_network.mu.bias : torch.Size([1])
+            [skrl:INFO] Migration
+            [skrl:INFO]   |-- map:  log_std_parameter <- a2c_network.sigma
+            [skrl:INFO]   |-- auto: net.0.weight <- a2c_network.actor_mlp.0.weight
+            [skrl:INFO]   |-- map:  net.0.bias <- a2c_network.actor_mlp.0.bias
+            [skrl:INFO]   |-- auto: net.2.weight <- a2c_network.actor_mlp.2.weight
+            [skrl:INFO]   |-- map:  net.2.bias <- a2c_network.actor_mlp.2.bias
+            [skrl:INFO]   |-- map:  net.4.weight <- a2c_network.mu.weight
+            [skrl:INFO]   |-- map:  net.4.bias <- a2c_network.mu.bias
+            False
+
+            # migrate a stable-baselines3 checkpoint with unambiguous state_dict
+            >>> model.migrate(path="./ddpg_pendulum.zip")
+            True
+
+            # migrate from any exported model by loading its state_dict (unambiguous state_dict)
+            >>> state_dict = torch.load("./external_model.pt")
+            >>> model.migrate(state_dict=state_dict)
+            True
+        """
+        if (state_dict is not None) + (path is not None) != 1:
+            raise ValueError("Exactly one of state_dict or path may be specified")
+
+        # load state_dict from path
+        if path is not None:
+            state_dict = {}
+            # rl_games checkpoint
+            if path.endswith(".pt") or path.endswith(".pth"):
+                checkpoint = torch.load(path, map_location=self.device)
+                if type(checkpoint) is dict:
+                    state_dict = checkpoint.get("model", {})
+            # stable-baselines3
+            elif path.endswith(".zip"):
+                import zipfile
+                try:
+                    archive = zipfile.ZipFile(path, 'r')
+                    with archive.open('policy.pth', mode="r") as file:
+                        state_dict = torch.load(file, map_location=self.device)
+                except KeyError as e:
+                    logger.warning(str(e))
+                    state_dict = {}
+            else:
+                raise ValueError("Cannot identify file type")
+
+        # show state_dict
+        if verbose:
+            logger.info("Models")
+            logger.info("  |-- current: {} items".format(len(self.state_dict().keys())))
+            for name, tensor in self.state_dict().items():
+                logger.info("  |    |-- {} : {}".format(name, tensor.shape))
+            logger.info("  |-- source: {} items".format(len(state_dict.keys())))
+            for name, tensor in state_dict.items():
+                logger.info("  |    |-- {} : {}".format(name, tensor.shape))
+            logger.info("Migration")
+
+        # migrate the state_dict to current model
         new_state_dict = collections.OrderedDict()
         match_counter = collections.defaultdict(list)
         used_counter = collections.defaultdict(list)
@@ -462,43 +567,51 @@ class Model(torch.nn.Module):
                         new_state_dict[name] = external_tensor
                         match_counter[name].append(external_name)
                         used_counter[external_name].append(name)
+                        if verbose:
+                            logger.info("  |-- map:  {} <- {}".format(name, external_name))
                         break
                     else:
-                        print("Shape mismatch for {} <- {} : {} != {}".format(name, external_name, tensor.shape, external_tensor.shape))
+                        logger.warning("Shape mismatch for {} <- {} : {} != {}".format(name, external_name, tensor.shape, external_tensor.shape))
                 # auto-mapped names
-                if auto_mapping:
+                if auto_mapping and name not in name_map:
                     if tensor.shape == external_tensor.shape:
                         if name.endswith(".weight"):
                             if external_name.endswith(".weight"):
                                 new_state_dict[name] = external_tensor
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
                         elif name.endswith(".bias"):
                             if external_name.endswith(".bias"):
                                 new_state_dict[name] = external_tensor
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
                         else:
                             if not external_name.endswith(".weight") and not external_name.endswith(".bias"):
                                 new_state_dict[name] = external_tensor
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
 
         # show ambiguous matches
         status = True
         for name, tensor in self.state_dict().items():
             if len(match_counter.get(name, [])) > 1:
-                print("Ambiguous match for {} <- {}".format(name, match_counter.get(name, [])))
+                logger.warning("Ambiguous match for {} <- [{}]".format(name, ", ".join(match_counter.get(name, []))))
                 status = False
         # show missing matches
         for name, tensor in self.state_dict().items():
             if not match_counter.get(name, []):
-                print("Missing match for {}".format(name))
+                logger.warning("Missing match for {}".format(name))
                 status = False
-        # show duplicated uses
+        # show multiple uses
         for name, tensor in state_dict.items():
             if len(used_counter.get(name, [])) > 1:
-                print("Duplicated use of {} -> {}".format(name, used_counter.get(name, [])))
+                logger.warning("Multiple use of {} -> [{}]".format(name, ", ".join(used_counter.get(name, []))))
                 status = False
 
         # load new state dict
@@ -515,6 +628,14 @@ class Model(torch.nn.Module):
         
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
         :type freeze: bool, optional
+
+        Example::
+
+            # freeze model parameters
+            >>> model.freeze_parameters(True)
+
+            # unfreeze model parameters
+            >>> model.freeze_parameters(False)
         """
         for parameters in self.parameters():
             parameters.requires_grad = not freeze

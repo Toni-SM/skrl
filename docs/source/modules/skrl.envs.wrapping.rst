@@ -3,7 +3,7 @@ Wrapping
 
 This library works with a common API to interact with the following RL environments:
 
-* `OpenAI Gym <https://www.gymlibrary.ml>`_ (single and vectorized environments)
+* `OpenAI Gym <https://www.gymlibrary.dev>`_ (single and vectorized environments)
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
@@ -150,7 +150,7 @@ Basic usage
 
             .. tab:: Vectorized environment
 
-                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.ml/content/vector_api>`_) for more information about the creation and usage of vectorized environments
+                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.dev/content/vector_api>`_) for more information about the creation and usage of vectorized environments
 
                 .. code-block:: python
                     :linenos:

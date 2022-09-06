@@ -10,7 +10,7 @@ Prerequisites
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://www.gymlibrary.ml>`_
+    * `gym <https://www.gymlibrary.dev>`_
     * `tqdm <https://tqdm.github.io>`_
     * `torch <https://pytorch.org>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_

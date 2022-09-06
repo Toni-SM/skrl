@@ -27,7 +27,7 @@ SARSA_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "store_separately": True,           # whether to store checkpoints separately
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 

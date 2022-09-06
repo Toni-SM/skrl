@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+from skrl import logger
 from ...memories.torch import Memory
 from ...models.torch import Model
 
@@ -87,7 +88,7 @@ class Agent:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
 
-    def _empty_preprocessor(self, _input, *args, **kwargs) -> Any:
+    def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
         """Empty preprocess method
 
         This method is defined because PyTorch multiprocessing can't pickle lambdas
@@ -99,6 +100,17 @@ class Agent:
         :rtype: Any
         """
         return _input
+
+    def _get_internal_value(self, _module: Any) -> Any:
+        """Get internal module/variable state/value
+
+        :param _input: Module or variable
+        :type _input: Any
+
+        :return: Module/variable state/value
+        :rtype: Any
+        """
+        return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
     def init(self) -> None:
         """Initialize the agent
@@ -154,7 +166,7 @@ class Agent:
         self.tracking_data.clear()
 
     def write_checkpoint(self, timestep: int, timesteps: int) -> None:
-        """Write checkpoint (models) to disk
+        """Write checkpoint (modules) to disk
 
         The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
         The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
@@ -168,15 +180,15 @@ class Agent:
         # separated modules
         if self.checkpoint_store_separately:
             for name, module in self.checkpoint_modules.items():
-                torch.save(module.state_dict(), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+                torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
         # whole agent
         else:
             modules = {}
             for name, module in self.checkpoint_modules.items():
-                modules[name] = module.state_dict()
+                modules[name] = self._get_internal_value(module)
             torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
 
-        # best models
+        # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
             # separated modules
             if self.checkpoint_store_separately:
@@ -290,6 +302,39 @@ class Agent:
             if model is not None:
                 model.set_mode(mode)
 
+    def save(self, path: str) -> None:
+        """Save the agent to the specified path
+
+        :param path: Path to save the model to
+        :type path: str
+        """
+        modules = {}
+        for name, module in self.checkpoint_modules.items():
+            modules[name] = self._get_internal_value(module)
+        torch.save(modules, path)
+
+    def load(self, path: str) -> None:
+        """Load the model from the specified path
+
+        The final storage device is determined by the constructor of the model
+
+        :param path: Path to load the model from
+        :type path: str
+        """
+        modules = torch.load(path, map_location=self.device)
+        if type(modules) is dict:
+            for name, data in modules.items():
+                module = self.checkpoint_modules.get(name, None)
+                if module is not None:
+                    if hasattr(module, "load_state_dict"):
+                        module.load_state_dict(data)
+                        if hasattr(module, "eval"):
+                            module.eval()
+                    else:
+                        raise NotImplementedError
+                else:
+                    logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
+
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
 
@@ -318,7 +363,7 @@ class Agent:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(v.state_dict()) for k, v in self.checkpoint_modules.items()}
+                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
 
             # write to tensorboard
             self.write_tracking_data(timestep, timesteps)

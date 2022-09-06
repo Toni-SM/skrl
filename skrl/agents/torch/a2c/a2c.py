@@ -45,7 +45,7 @@ A2C_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": True,           # whether to store checkpoints separately
     }
 }
 
@@ -93,7 +93,8 @@ class A2C(Agent):
         self.value = self.models.get("value", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["value"] = self.value
 
         # configuration
         self._mini_batches = self.cfg["mini_batches"]
@@ -128,11 +129,20 @@ class A2C(Agent):
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["optimizer"] = self.optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
-        self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"]) if self._value_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
+
+        if self._value_preprocessor:
+            self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
+            self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
+        else:
+            self._value_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent

@@ -47,7 +47,7 @@ DDQN_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": True,           # whether to store checkpoints separately
     }
 }
 
@@ -95,8 +95,9 @@ class DDQN(Agent):
         self.target_q_network = self.models.get("target_q_network", None)
 
         # checkpoint models
-        self.checkpoint_models = {"q_network": self.q_network} if self.checkpoint_policy_only else self.models
-        
+        self.checkpoint_modules["q_network"] = self.q_network
+        self.checkpoint_modules["target_q_network"] = self.target_q_network
+
         if self.target_q_network is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_q_network.freeze_parameters(True)
@@ -134,9 +135,14 @@ class DDQN(Agent):
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+        self.checkpoint_modules["optimizer"] = self.optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent

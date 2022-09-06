@@ -66,10 +66,10 @@ class Agent:
         self._cumulative_timesteps = None
 
         # checkpoint
-        self.checkpoint_models = {}
+        self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
-        self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
-        self.checkpoint_best_models = {"timestep": 0, "reward": -2 ** 31, "saved": False, "models": {}}
+        self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -164,23 +164,37 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # current models
-        for k, model in self.checkpoint_models.items():
-            name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
-            model.save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
+        tag = str(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"))
+        # separated modules
+        if self.checkpoint_store_separately:
+            for name, module in self.checkpoint_modules.items():
+                torch.save(module.state_dict(), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+        # whole agent
+        else:
+            modules = {}
+            for name, module in self.checkpoint_modules.items():
+                modules[name] = module.state_dict()
+            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
 
         # best models
-        if self.checkpoint_best_models["models"] and not self.checkpoint_best_models["saved"]:
-            for k, model in self.checkpoint_models.items():
-                model.save(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(k)), 
-                           state_dict=self.checkpoint_best_models["models"][k])
-            self.checkpoint_best_models["saved"] = True
+        if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
+            # separated modules
+            if self.checkpoint_store_separately:
+                for name, module in self.checkpoint_modules.items():
+                    torch.save(self.checkpoint_best_modules["modules"][name], 
+                               os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
+            # whole agent
+            else:
+                modules = {}
+                for name, module in self.checkpoint_modules.items():
+                    modules[name] = self.checkpoint_best_modules["modules"][name]
+                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+            self.checkpoint_best_modules["saved"] = True
 
     def act(self, 
             states: torch.Tensor, 
             timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+            timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -189,8 +203,6 @@ class Agent:
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :raises NotImplementedError: The method is not implemented by the inheriting classes
 
@@ -302,11 +314,11 @@ class Agent:
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
-            if reward > self.checkpoint_best_models["reward"]:
-                self.checkpoint_best_models["timestep"] = timestep
-                self.checkpoint_best_models["reward"] = reward
-                self.checkpoint_best_models["saved"] = False
-                self.checkpoint_best_models["models"] = {k: copy.deepcopy(model.state_dict()) for k, model in self.checkpoint_models.items()}
+            if reward > self.checkpoint_best_modules["reward"]:
+                self.checkpoint_best_modules["timestep"] = timestep
+                self.checkpoint_best_modules["reward"] = reward
+                self.checkpoint_best_modules["saved"] = False
+                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(v.state_dict()) for k, v in self.checkpoint_modules.items()}
 
             # write to tensorboard
             self.write_tracking_data(timestep, timesteps)

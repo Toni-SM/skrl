@@ -45,7 +45,7 @@ DDPG_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": True,           # whether to store checkpoints separately
     }
 }
 
@@ -95,7 +95,10 @@ class DDPG(Agent):
         self.target_critic = self.models.get("target_critic", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["target_policy"] = self.target_policy
+        self.checkpoint_modules["critic"] = self.critic
+        self.checkpoint_modules["target_critic"] = self.target_critic
         
         if self.target_policy is not None and self.target_critic is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -137,9 +140,15 @@ class DDPG(Agent):
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
+            self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent

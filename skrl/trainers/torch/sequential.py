@@ -77,10 +77,7 @@ class SequentialTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions = torch.vstack([agent.act(states[scope[0]:scope[1]],
-                                                  inference=True,
-                                                  timestep=timestep,
-                                                  timesteps=self.timesteps)[0] \
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], timestep=timestep, timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
             # step the environments
@@ -138,10 +135,7 @@ class SequentialTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions = torch.vstack([agent.act(states[scope[0]:scope[1]],
-                                                  inference=True,
-                                                  timestep=timestep,
-                                                  timesteps=self.timesteps)[0] \
+                actions = torch.vstack([agent.act(states[scope[0]:scope[1]], timestep=timestep, timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
             # step the environments

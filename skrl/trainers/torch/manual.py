@@ -87,7 +87,7 @@ class ManualTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions, _, _ = self.agents.act(self.states, inference=True, timestep=timestep, timesteps=timesteps)
+                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
 
         else:
             # pre-interaction
@@ -96,10 +96,7 @@ class ManualTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]],
-                                                  inference=True,
-                                                  timestep=timestep,
-                                                  timesteps=timesteps)[0] \
+                actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments
@@ -178,14 +175,11 @@ class ManualTrainer(Trainer):
         with torch.no_grad():
             if self.num_agents == 1:
                 # compute actions
-                actions, _, _ = self.agents.act(self.states, inference=True, timestep=timestep, timesteps=timesteps)
+                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
 
             else:
                 # compute actions
-                actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]],
-                                                  inference=True,
-                                                  timestep=timestep,
-                                                  timesteps=timesteps)[0] \
+                actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments

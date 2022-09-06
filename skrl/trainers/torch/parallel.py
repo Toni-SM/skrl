@@ -57,10 +57,7 @@ def fn_processor(process_index, *args):
         elif task == "act":
             _states = queue.get()[scope[0]:scope[1]]
             with torch.no_grad():
-                _actions = agent.act(_states,
-                                     inference=True,
-                                     timestep=msg['timestep'],
-                                     timesteps=msg['timesteps'])[0]
+                _actions = agent.act(_states, timestep=msg['timestep'], timesteps=msg['timesteps'])[0]
                 if not _actions.is_cuda:
                     _actions.share_memory_()
                 queue.put(_actions)

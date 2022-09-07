@@ -135,14 +135,9 @@ class GaussianMixin:
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
         # map from states/observations to mean actions and log standard deviations
-        if self._instantiator_net is None:
-            actions_mean, log_std = self.compute(states.to(self.device), 
-                                                 taken_actions.to(self.device) if taken_actions is not None else taken_actions,
-                                                 role)
-        else:
-            actions_mean, log_std = self._get_instantiator_output(states.to(self.device), \
-                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
-        
+        actions_mean, log_std = self.compute(states.to(self.device), 
+                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+
         # clamp log standard deviations
         if self._g_clip_log_std[role] if role in self._g_clip_log_std else self._g_clip_log_std[""]:
             log_std = torch.clamp(log_std, 

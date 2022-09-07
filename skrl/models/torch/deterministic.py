@@ -87,12 +87,8 @@ class DeterministicMixin:
             torch.Size([4096, 1]) None None
         """
         # map from observations/states to actions
-        if self._instantiator_net is None:
-            actions = self.compute(states.to(self.device), 
-                                   taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
-        else:
-            actions = self._get_instantiator_output(states.to(self.device), \
-                taken_actions.to(self.device) if taken_actions is not None else taken_actions)
+        actions = self.compute(states.to(self.device), 
+                               taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
 
         # clip actions 
         if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:

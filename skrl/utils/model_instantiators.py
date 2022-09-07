@@ -12,7 +12,7 @@ from ..models.torch import CategoricalMixin
 from ..models.torch import DeterministicMixin
 from ..models.torch import MultivariateGaussianMixin
 
-__all__ = ["categorical_model", "deterministic_model", "gaussian_model", "Shape"]
+__all__ = ["categorical_model", "deterministic_model", "gaussian_model", "multivariate_gaussian_model", "Shape"]
 
 
 class Shape(Enum):

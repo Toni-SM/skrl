@@ -549,10 +549,10 @@ class Model(torch.nn.Module):
             logger.info("Models")
             logger.info("  |-- current: {} items".format(len(self.state_dict().keys())))
             for name, tensor in self.state_dict().items():
-                logger.info("  |    |-- {} : {}".format(name, tensor.shape))
+                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
             logger.info("  |-- source: {} items".format(len(state_dict.keys())))
             for name, tensor in state_dict.items():
-                logger.info("  |    |-- {} : {}".format(name, tensor.shape))
+                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
             logger.info("Migration")
 
         # migrate the state_dict to current model

@@ -3,8 +3,11 @@ from typing import Union, Tuple, Any, Optional
 import gym
 import collections
 import numpy as np
+from packaging import version
 
 import torch
+
+from skrl import logger
 
 __all__ = ["wrap_env"]
 
@@ -271,10 +274,9 @@ class GymWrapper(Wrapper):
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
 
-        if hasattr(self, "new_step_api"):
-            self._new_step_api = self._env.new_step_api
-        else:
-            self._new_step_api = False
+        self._drepecated_api = version.parse(gym.__version__) < version.parse(" 0.25.0")
+        if self._drepecated_api:
+            logger.warning("Using a deprecated version of OpenAI Gym's API: {}".format(gym.__version__))
 
     @property
     def state_space(self) -> gym.Space:
@@ -346,8 +348,11 @@ class GymWrapper(Wrapper):
         """
         space = self._env.action_space if self._vectorized else self.action_space
 
-        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
-            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+        if self._vectorized:
+            if isinstance(space, gym.spaces.MultiDiscrete):
+                return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+            elif isinstance(space, gym.spaces.Tuple):
+                return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
         elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
@@ -364,11 +369,14 @@ class GymWrapper(Wrapper):
         :return: The state, the reward, the done flag, and the info
         :rtype: tuple of torch.Tensor and any other info
         """
-        if self._new_step_api:
-            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
-            done = termination or truncation
-        else:
+        if self._drepecated_api:
             observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
+        else:
+            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
+            if type(termination) is bool:
+                done = termination or truncation
+            else:
+                done = np.logical_or(termination, truncation)
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
@@ -381,7 +389,10 @@ class GymWrapper(Wrapper):
         :return: The state of the environment
         :rtype: torch.Tensor
         """
-        observation = self._env.reset()
+        if self._drepecated_api:
+            observation = self._env.reset()
+        else:
+            observation, info = self._env.reset()
         return self._observation_to_tensor(observation)
 
     def render(self, *args, **kwargs) -> None:

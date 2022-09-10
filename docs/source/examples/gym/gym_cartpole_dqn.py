@@ -22,32 +22,33 @@ device = env.device
 
 
 # Instantiate a RandomMemory (without replacement) as experience replay memory
-memory = RandomMemory(memory_size=100000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # Instantiate the agent's models (function approximators) using the model instantiator utility
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
-models_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
-                                               action_space=env.action_space,
-                                               device=device,
-                                               clip_actions=False, 
-                                               input_shape=Shape.OBSERVATIONS,
-                                               hiddens=[64, 64],
-                                               hidden_activation=["relu", "relu"],
-                                               output_shape=Shape.ACTIONS,
-                                               output_activation=None,
-                                               output_scale=1.0),
-              "target_q_network": deterministic_model(observation_space=env.observation_space,
-                                                      action_space=env.action_space,
-                                                      device=device,
-                                                      clip_actions=False,
-                                                      input_shape=Shape.OBSERVATIONS,
-                                                      hiddens=[64, 64],
-                                                      hidden_activation=["relu", "relu"],
-                                                      output_shape=Shape.ACTIONS,
-                                                      output_activation=None,
-                                                      output_scale=1.0)}
+models_dqn = {}
+models_dqn["q_network"] = deterministic_model(observation_space=env.observation_space, 
+                                              action_space=env.action_space,
+                                              device=device,
+                                              clip_actions=False, 
+                                              input_shape=Shape.OBSERVATIONS,
+                                              hiddens=[64, 64],
+                                              hidden_activation=["relu", "relu"],
+                                              output_shape=Shape.ACTIONS,
+                                              output_activation=None,
+                                              output_scale=1.0)
+models_dqn["target_q_network"] = deterministic_model(observation_space=env.observation_space,
+                                                     action_space=env.action_space,
+                                                     device=device,
+                                                     clip_actions=False,
+                                                     input_shape=Shape.OBSERVATIONS,
+                                                     hiddens=[64, 64],
+                                                     hidden_activation=["relu", "relu"],
+                                                     output_shape=Shape.ACTIONS,
+                                                     output_activation=None,
+                                                     output_scale=1.0)
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_dqn.values():
@@ -58,7 +59,6 @@ for model in models_dqn.values():
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#configuration-and-hyperparameters
 cfg_dqn = DQN_DEFAULT_CONFIG.copy()
-cfg_dqn["random_timesteps"] = 0
 cfg_dqn["learning_starts"] = 100
 cfg_dqn["exploration"]["final_epsilon"] = 0.04
 cfg_dqn["exploration"]["timesteps"] = 1500

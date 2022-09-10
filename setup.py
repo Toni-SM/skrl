@@ -13,6 +13,7 @@ INSTALL_REQUIRES = [
     "torch",
     "tensorboard",
     "tqdm",
+    "packaging",
 ]
 
 # installation

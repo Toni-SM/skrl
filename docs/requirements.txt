@@ -6,3 +6,4 @@ gym
 torch
 tensorboard
 tqdm
+packaging

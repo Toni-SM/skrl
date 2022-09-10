@@ -12,6 +12,7 @@ Prerequisites
 
     * `gym <https://www.gymlibrary.dev>`_
     * `tqdm <https://tqdm.github.io>`_
+    * `packaging <https://packaging.pypa.io>`_
     * `torch <https://pytorch.org>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
 

@@ -352,13 +352,15 @@ class GymWrapper(Wrapper):
             if isinstance(space, gym.spaces.MultiDiscrete):
                 return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
             elif isinstance(space, gym.spaces.Tuple):
-                return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
+                if isinstance(space[0], gym.spaces.Box):
+                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
+                elif isinstance(space[0], gym.spaces.Discrete):
+                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(-1)
         elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        else:
-            raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -608,53 +610,53 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     :rtype: Wrapper
     """
     if verbose:
-        print("[INFO] Environment:", [str(base).replace("<class '", "").replace("'>", "") \
-            for base in env.__class__.__bases__])
+        logger.info("Environment class: {}".format(", ".join([str(base).replace("<class '", "").replace("'>", "") \
+            for base in env.__class__.__bases__])))
     if wrapper == "auto":
         base_classes = [str(base) for base in env.__class__.__bases__]
         if "<class 'omni.isaac.gym.vec_env.vec_env_base.VecEnvBase'>" in base_classes or \
             "<class 'omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT'>" in base_classes:
             if verbose:
-                print("[INFO] Wrapper: Omniverse Isaac Gym")
+                logger.info("Environment wrapper: Omniverse Isaac Gym")
             return OmniverseIsaacGymWrapper(env)
         elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
             if verbose:
-                print("[INFO] Wrapper: Gym")
+                logger.info("Environment wrapper: Gym")
             return GymWrapper(env)
         elif "<class 'dm_env._environment.Environment'>" in base_classes:
             if verbose:
-                print("[INFO] Wrapper: DeepMind")
+                logger.info("Environment wrapper: DeepMind")
             return DeepMindWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             if verbose:
-                print("[INFO] Wrapper: Isaac Gym (preview 2)")
+                logger.info("Environment wrapper: Isaac Gym (preview 2)")
             return IsaacGymPreview2Wrapper(env)
         if verbose:
-            print("[INFO] Wrapper: Isaac Gym (preview 3/4)")
+            logger.info("Environment wrapper: Isaac Gym (preview 3/4)")
         return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "gym":
         if verbose:
-            print("[INFO] Wrapper: Gym")
+            logger.info("Environment wrapper: Gym")
         return GymWrapper(env)
     elif wrapper == "dm":
         if verbose:
-            print("[INFO] Wrapper: DeepMind")
+            logger.info("Environment wrapper: DeepMind")
         return DeepMindWrapper(env)
     elif wrapper == "isaacgym-preview2":
         if verbose:
-            print("[INFO] Wrapper: Isaac Gym (preview 2)")
+            logger.info("Environment wrapper: Isaac Gym (preview 2)")
         return IsaacGymPreview2Wrapper(env)
     elif wrapper == "isaacgym-preview3":
         if verbose:
-            print("[INFO] Wrapper: Isaac Gym (preview 3)")
+            logger.info("Environment wrapper: Isaac Gym (preview 3)")
         return IsaacGymPreview3Wrapper(env)
     elif wrapper == "isaacgym-preview4":
         if verbose:
-            print("[INFO] Wrapper: Isaac Gym (preview 4)")
+            logger.info("Environment wrapper: Isaac Gym (preview 4)")
         return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
     elif wrapper == "omniverse-isaacgym":
         if verbose:
-            print("[INFO] Wrapper: Omniverse Isaac Gym")
+            logger.info("Environment wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
     else:
         raise ValueError("Unknown {} wrapper type".format(wrapper))

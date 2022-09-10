@@ -4,7 +4,7 @@ Tabular model
 =============
 
 Basic usage
-^^^^^^^^^^^
+-----------
 
 .. tabs::
     
@@ -17,11 +17,11 @@ Basic usage
             :end-before: [end-epsilon-greedy]
 
 API
-^^^
+---
 
-.. autoclass:: skrl.models.torch.tabular.TabularModel
-   :show-inheritance:
-   :members:
-   
-   .. automethod:: __init__
-   .. automethod:: compute
+.. autoclass:: skrl.models.torch.tabular.TabularMixin
+    :show-inheritance:
+    :exclude-members: to, state_dict, load_state_dict, load, save
+    :members:
+
+    .. automethod:: __init__

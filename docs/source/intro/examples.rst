@@ -273,10 +273,10 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
-Learning in an Isaac Gym environment (one agent, multiple environments)
------------------------------------------------------------------------
+Learning in an Isaac Gym environment
+------------------------------------
 
-These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_. Some scripts try to load the environment from preview 4 (or preview 3), but if they fail, they will try to load the environment from preview 2
+These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaacgym.png
       :width: 100%
@@ -333,129 +333,115 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
             
             .. tab:: AllegroHand
                 
-                View the raw code: `ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_allegro_hand.py>`_
+                :download:`ppo_allegro_hand.py <../examples/isaacgym/ppo_allegro_hand.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 2, 60-66
+                    :emphasize-lines: 2, 61-67
 
             .. tab:: Ant
                 
-                View the raw code: `ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ant.py>`_
+                :download:`ppo_ant.py <../examples/isaacgym/ppo_ant.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ant.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 13-14, 62-67
+                    :emphasize-lines: 13-14, 61-62
 
             .. tab:: Anymal
                 
-                View the raw code: `ppo_anymal.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal.py>`_
+                :download:`ppo_anymal.py <../examples/isaacgym/ppo_anymal.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_anymal.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 13-14, 62-67
+                    :emphasize-lines: 13-14, 61-62
 
             .. tab:: AnymalTerrain
                 
-                View the raw code: `ppo_anymal_terrain.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_anymal_terrain.py>`_
+                :download:`ppo_anymal_terrain.py <../examples/isaacgym/ppo_anymal_terrain.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11, 109-112
+                    :emphasize-lines: 11, 105-108
 
             .. tab:: BallBalance
                 
-                View the raw code: `ppo_ball_balance.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ball_balance.py>`_
+                :download:`ppo_ball_balance.py <../examples/isaacgym/ppo_ball_balance.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11, 108-111
+                    :emphasize-lines: 11, 104-107
 
             .. tab:: Cartpole
                 
-                View the raw code: `ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_cartpole.py>`_
+                :download:`ppo_cartpole.py <../examples/isaacgym/ppo_cartpole.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_cartpole.py
                     :language: python
-                    :linenos:
                     :emphasize-lines: 15, 19
 
             .. tab:: Cartpole (TRPO)
                 
-                View the raw code: `trpo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/trpo_cartpole.py>`_
+                :download:`trpo_cartpole.py <../examples/isaacgym/trpo_cartpole.py>`
 
                 .. literalinclude:: ../examples/isaacgym/trpo_cartpole.py
                     :language: python
-                    :linenos:
                     :emphasize-lines: 14, 18
 
             .. tab:: FrankaCabinet
                 
-                View the raw code: `ppo_franka_cabinet.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_franka_cabinet.py>`_
+                :download:`ppo_franka_cabinet.py <../examples/isaacgym/ppo_franka_cabinet.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 10, 97-98
+                    :emphasize-lines: 10, 93-94
 
             .. tab:: Humanoid
                 
-                View the raw code: `ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_humanoid.py>`_
+                :download:`ppo_humanoid.py <../examples/isaacgym/ppo_humanoid.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 10, 97-98
+                    :emphasize-lines: 10, 93-94
 
             .. tab:: Humanoid (AMP)
                 
-                View the raw code: `amp_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/amp_humanoid.py>`_
+                :download:`amp_humanoid.py <../examples/isaacgym/amp_humanoid.py>`
 
                 .. literalinclude:: ../examples/isaacgym/amp_humanoid.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 86, 120, 131, 134-135
+                    :emphasize-lines: 89, 124, 135, 138-139
 
             .. tab:: Ingenuity
                 
-                View the raw code: `ppo_ingenuity.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_ingenuity.py>`_
+                :download:`ppo_ingenuity.py <../examples/isaacgym/ppo_ingenuity.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 2, 60-66
+                    :emphasize-lines: 2, 61-67
 
             .. tab:: Quadcopter
                 
-                View the raw code: `ppo_quadcopter.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_quadcopter.py>`_
+                :download:`ppo_quadcopter.py <../examples/isaacgym/ppo_quadcopter.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_quadcopter.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 108
+                    :emphasize-lines: 104
 
             .. tab:: ShadowHand
                 
-                View the raw code: `ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_shadow_hand.py>`_
+                :download:`ppo_shadow_hand.py <../examples/isaacgym/ppo_shadow_hand.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_shadow_hand.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 112
+                    :emphasize-lines: 108
 
             .. tab:: Trifinger
                 
-                View the raw code: `ppo_trifinger.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_trifinger.py>`_
+                :download:`ppo_trifinger.py <../examples/isaacgym/ppo_trifinger.py>`
 
                 .. literalinclude:: ../examples/isaacgym/ppo_trifinger.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 112
+                    :emphasize-lines: 108
 
     .. tab:: Isaac Gym environments (evaluation)
 
@@ -463,7 +449,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
             
             .. tab:: Cartpole
                 
-                View the raw code: `ppo_cartpole_eval.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacgym/ppo_cartpole_eval.py>`_
+                :download:`ppo_cartpole_eval.py <../examples/isaacgym/ppo_cartpole_eval.py>`
                 
                 **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
 
@@ -471,8 +457,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_cartpole_eval.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 49, 52, 76
+                    :emphasize-lines: 65
 
 .. raw:: html
 
@@ -589,10 +574,10 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
-Learning in an Omniverse Isaac Gym environment (one agent, multiple environments)
----------------------------------------------------------------------------------
+Learning in an Omniverse Isaac Gym environment
+----------------------------------------------
 
-These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_
+These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_omniverse_isaacgym.png
       :width: 100%
@@ -643,66 +628,59 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
             .. tab:: AllegroHand
                 
-                View the raw code: `omniverse\: ppo_allegro_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_allegro_hand.py>`_
+                :download:`ppo_allegro_hand.py <../examples/omniisaacgym/ppo_allegro_hand.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11-12, 58-59
+                    :emphasize-lines: 11-12, 59-60
             
             .. tab:: Ant
                 
-                View the raw code: `omniverse\: ppo_ant.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant.py>`_
+                :download:`ppo_ant.py <../examples/omniisaacgym/ppo_ant.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11-12, 58-59
+                    :emphasize-lines: 11-12, 59-60
 
             .. tab:: Ant (multi-threaded)
                 
-                View the raw code: `omniverse\: ppo_ant_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_ant_mt.py>`_
+                :download:`ppo_ant_mt.py <../examples/omniisaacgym/ppo_ant_mt.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 1, 13-14, 60-61, 124, 128
+                    :emphasize-lines: 1, 13-14, 61-62, 126, 130
 
             .. tab:: Cartpole
                 
-                View the raw code: `omniverse\: ppo_cartpole.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole.py>`_
+                :download:`ppo_cartpole.py <../examples/omniisaacgym/ppo_cartpole.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11-12, 54-55
+                    :emphasize-lines: 11-12, 55-56
 
             .. tab:: Cartpole (multi-threaded)
                 
-                View the raw code: `omniverse\: ppo_cartpole_mt.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_cartpole_mt.py>`_
+                :download:`ppo_cartpole_mt.py <../examples/omniisaacgym/ppo_cartpole_mt.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 1, 13-14, 56-57, 120, 124
+                    :emphasize-lines: 1, 13-14, 57-58, 122, 126
                     
             .. tab:: Humanoid
                 
-                View the raw code: `omniverse\: ppo_humanoid.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_humanoid.py>`_
+                :download:`ppo_humanoid.py <../examples/omniisaacgym/ppo_humanoid.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11-12, 58-59
+                    :emphasize-lines: 11-12, 59-60
                     
             .. tab:: ShadowHand
                 
-                View the raw code: `omniverse\: ppo_shadow_hand.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/omniisaacgym/ppo_shadow_hand.py>`_
+                :download:`ppo_shadow_hand.py <../examples/omniisaacgym/ppo_shadow_hand.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
                     :language: python
-                    :linenos:
-                    :emphasize-lines: 11-12, 62-63
+                    :emphasize-lines: 11-12, 63-64
 
 .. raw:: html
 

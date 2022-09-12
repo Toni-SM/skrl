@@ -5,12 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.8.0] - Unreleased
 ### Added
 - AMP agent for physics-based character animation
-- Gaussian model
 - Manual trainer
+- Gaussian model mixin
+- Support for creating shared models
+- Parameter `role` to model methods
+- Wrapper compatibility with the new OpenAI Gym environment API (by @JohannLange)
+- Internal library colored logger
+- Migrate checkpoints/models from other RL libraries to skrl models/agents
+- Configuration parameter `store_separately` to agent configuration dict
+- Save/load agent modules (models, optimizers, preprocessors)
 
 ### Changed
-- Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianModel`
+- Models implementation as Python mixin [**breaking change**]
+- Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
+- Show training/evaluadion display progress using `tqdm` (by @JohannLange)
+
+### Fixed
+- Missing recursive arguments during model weights initialization
+- Tensor dimension when computing preprocessor parallel variance
+
+### Removed
+- Parameter `inference` from model methods
+- Configuration parameter `checkpoint_policy_only` from agent configuration dict
 
 ## [0.7.0] - 2022-07-11
 ### Added

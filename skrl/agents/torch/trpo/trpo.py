@@ -432,11 +432,11 @@ class TRPO(Agent):
             :rtype: torch.Tensor
             """
             _, _, mu_1 = policy_1.act(states, taken_actions=None, role="policy")
-            logstd_1 = policy_1.get_log_std()
+            logstd_1 = policy_1.get_log_std(role="policy")
             mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
             _, _, mu_2 = policy_2.act(states, taken_actions=None, role="policy")
-            logstd_2 = policy_2.get_log_std()
+            logstd_2 = policy_2.get_log_std(role="policy")
             
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
                / torch.square(logstd_2.exp()) - 0.5

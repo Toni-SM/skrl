@@ -23,7 +23,7 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
             "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
             "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-            "checkpoint_policy_only": True,     # checkpoint for policy only
+            "store_separately": False,          # whether to store checkpoints separately
         }
     }
 
@@ -126,13 +126,13 @@ Tracking custom metrics/scales
 
 ----------------
 
-Model checkpoint
-----------------
+Checkpoints
+-----------
 
 Saving checkpoints
 ^^^^^^^^^^^^^^^^^^
 
-The checkpoints are saved in the :literal:`checkpoints` subdirectory of the experiment's directory (its path can be customized using the options described in the previous subsection). The checkpoint name is the current timestep and the key referring to the model (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt`)
+The checkpoints are saved in the :literal:`checkpoints` subdirectory of the experiment's directory (its path can be customized using the options described in the previous subsection). The checkpoint name is the key referring to the agent (or models, optimizers and preprocessors) and the current timestep (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/agent_2500.pt`)
 
 The checkpoint management, as in the previous case, is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**)
 
@@ -148,30 +148,30 @@ The checkpoint management, as in the previous case, is the responsibility of the
             "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
             "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-            "checkpoint_policy_only": True,     # checkpoint for policy only
+            "store_separately": False,          # whether to store checkpoints separately
         }
     }
 
 * **checkpoint_interval**: interval for checkpoints (default is 1000 timesteps). A value equal to or less than 0 disables the checkpoint creation
 
-* **checkpoint_policy_only**: if set to :literal:`True`, only the policy will be saved (default behaviour), otherwise all the agent's models (policy, value function, critic, .etc) will be checkpointed
+* **store_separately**: if set to :literal:`True`, all the modules that an agent contains (models, optimizers, preprocessors, etc.) will be saved each one in a separate file. By default (:literal:`False`) the modules are grouped in a dictionary and stored in the same file
 
 **Checkpointing the best models**
 
-The best models, attending the mean total reward, will be saved in the :literal:`checkpoints` subdirectory of the experiment's directory. The checkpoint name is the word :literal:`best` and the key referring to the model (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/best_policy.pt`)
+The best models, attending the mean total reward, will be saved in the :literal:`checkpoints` subdirectory of the experiment's directory. The checkpoint name is the word :literal:`best` and the key referring to the model (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/best_agent.pt`)
 
-The best models are updated internally on each TensorBoard writing interval :literal:`"write_interval"` and they are saved on each checkpoint interval :literal:`"checkpoint_interval"`. The :literal:`"checkpoint_policy_only"` key specifies whether the best policy or the best models (policy, value function, critic, .etc) will be checkpointed
+The best models are updated internally on each TensorBoard writing interval :literal:`"write_interval"` and they are saved on each checkpoint interval :literal:`"checkpoint_interval"`. The :literal:`"store_separately"` key specifies whether the best modules are grouped and stored together or separately
 
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 
-Checkpoints can be loaded for each of the instantiated models independently via the :literal:`.load(...)` method (`Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading)
+Checkpoints can be loaded for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading)
 
 .. note::
 
-    The model instance must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's `state_dict <https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict>`_ directly
+    The agents or models instances must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's `state_dict <https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict>`_ directly
 
-The following code shows how to load the checkpoint (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt`) of an instantiated policy from a specific definition. See the section :ref:`Examples <examples>` for details about how to load control points and use them to evaluate experiments
+The following code shows how to load the checkpoint (e.g. :literal:`runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt`) of an instantiated policy from a specific definition. See the :ref:`Examples <examples>` section for showcases about how to load control points and use them to continue the training or evaluate experiments
 
 .. code-block:: python
     :emphasize-lines: 21
@@ -197,6 +197,11 @@ The following code shows how to load the checkpoint (e.g. :literal:`runs/22-01-0
 
     # Load the checkpoint
     policy.load("./runs/22-01-09_22-48-49-816281_DDPG/checkpoints/2500_policy.pt")
+
+Migrating external checkpoints
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to load checkpoints generated with external reinforcement learning libraries into skrl agents (or models) via the :literal:`.migrate(...)` method (`Agent.migrate <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.migrate>`_ or `Model.migrate <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.migrate>`_).
 
 --------------------
 

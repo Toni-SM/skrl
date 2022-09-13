@@ -678,14 +678,14 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
    <hr>
 
-Learning in an Omniverse Isaac Sim environment (one agent, one environment)
----------------------------------------------------------------------------
+Learning in an Omniverse Isaac Sim environment
+----------------------------------------------
 
-These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the OpenAI Gym interface (one environment)
+These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the OpenAI Gym interface (**one agent, one environment**)
 
 .. tabs::
 
-    .. tab:: Isaac Sim 2022.1.0 (Cartpole)
+    .. tab:: Isaac Sim 2022.1.X (Cartpole)
 
         This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html>`_ tutorial
 
@@ -703,11 +703,10 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
 
             <br>
 
-        View the raw code: `cartpole_example_skrl.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py>`_
+        :download:`cartpole_example_skrl.py <../examples/isaacsim/cartpole_example_skrl.py>`
 
         .. literalinclude:: ../examples/isaacsim/cartpole_example_skrl.py
             :language: python
-            :linenos:
 
     .. tab:: Isaac Sim 2021.2.1 (JetBot)
    
@@ -763,12 +762,11 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
 
             <br>
 
-        View the raw code: `isaacsim_jetbot_ppo.py <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py>`_
+        :download:`isaacsim_jetbot_ppo.py <../examples/isaacsim/isaacsim_jetbot_ppo.py>`
 
         .. literalinclude:: ../examples/isaacsim/isaacsim_jetbot_ppo.py
             :language: python
-            :linenos:
-            :emphasize-lines: 19-47, 49-73
+            :emphasize-lines: 24-39, 45, 53-68, 73
 
 .. _library_utilities:
 

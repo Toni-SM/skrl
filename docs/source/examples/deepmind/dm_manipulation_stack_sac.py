@@ -4,21 +4,21 @@ import torch
 import torch.nn as nn
 
 # Import the skrl components to build the RL system
-from skrl.models.torch import GaussianModel, DeterministicModel
+from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define the models (stochastic and deterministic models) for the SAC agent using the helper classes
+# Define the models (stochastic and deterministic models) for the SAC agent using the mixins.
 # - StochasticActor (policy): takes as input the environment's observation/state and returns an action
 # - Critic: takes the state and action as input and provides a value to guide the policy
-class StochasticActor(GaussianModel):
+class StochasticActor(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std)
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
         self.features_extractor = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=3),
                                                 nn.ReLU(),
@@ -40,7 +40,7 @@ class StochasticActor(GaussianModel):
 
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         # The dm_control.manipulation tasks have as observation/state spec a `collections.OrderedDict` object as follows:
         # OrderedDict([('front_close', BoundedArray(shape=(1, 84, 84, 3), dtype=dtype('uint8'), name='front_close', minimum=0, maximum=255)), 
         #              ('jaco_arm/joints_pos', Array(shape=(1, 6, 2), dtype=dtype('float64'), name='jaco_arm/joints_pos')), 
@@ -83,9 +83,10 @@ class StochasticActor(GaussianModel):
                                               input["jaco_arm/joints_pos"].view(states.shape[0], -1), 
                                               input["jaco_arm/joints_vel"].view(states.shape[0], -1)], dim=-1))), self.log_std_parameter
         
-class Critic(DeterministicModel):
-    def __init__(self, observation_space, action_space, device, clip_actions = False):
-        super().__init__(observation_space, action_space, device, clip_actions)
+class Critic(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions=False):
+        Model.__init__(self, observation_space, action_space, device)
+        DeterministicMixin.__init__(self, clip_actions)
 
         self.features_extractor = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=3),
                                                 nn.ReLU(),
@@ -105,7 +106,7 @@ class Critic(DeterministicModel):
                                  nn.ReLU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions):
+    def compute(self, states, taken_actions, role):
         # map the observations/states to the original space. 
         # See the explanation above (StochasticActor.compute)
         input = self.tensor_to_space(states, self.observation_space)
@@ -133,11 +134,12 @@ memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, r
 # Instantiate the agent's models (function approximators).
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
-models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True),
-              "critic_1": Critic(env.observation_space, env.action_space, device),
-              "critic_2": Critic(env.observation_space, env.action_space, device),
-              "target_critic_1": Critic(env.observation_space, env.action_space, device),
-              "target_critic_2": Critic(env.observation_space, env.action_space, device)}
+models_sac = {}
+models_sac["policy"] = StochasticActor(env.observation_space, env.action_space, device, clip_actions=True)
+models_sac["critic_1"] = Critic(env.observation_space, env.action_space, device)
+models_sac["critic_2"] = Critic(env.observation_space, env.action_space, device)
+models_sac["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
+models_sac["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_sac.values():

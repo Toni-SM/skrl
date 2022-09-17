@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Any
 
 import gym
 
@@ -17,7 +17,7 @@ CUSTOM_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -51,19 +51,25 @@ class CUSTOM(Agent):
                          action_space=action_space, 
                          device=device, 
                          cfg=CUSTOM_DEFAULT_CONFIG)
-        # ================================
+        # =====================================================================
         # - get and process models from self.models
-        # - create self.checkpoint_models dictionary for storing checkpoints
+        # - populate self.checkpoint_modules dictionary for storing checkpoints
         # - parse configurations from self.cfg
-        # - setup optimizers
-        # - create tensors in memory if required
-        # ================================
+        # - setup optimizers and learning rate scheduler
+        # - set up preprocessors
+        # =====================================================================
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def init(self) -> None:
+        """Initialize the agent
+        """
+        super().init()
+        self.set_mode("eval")
+        # =================================================================
+        # - create tensors in memory if required
+        # - # create temporary variables needed for storage and computation
+        # =================================================================
+
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -78,17 +84,18 @@ class CUSTOM(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
-        # ================================
+        # ======================================
         # - sample random actions if required or
         #   sample and return agent's actions
-        # ================================
+        # ======================================
 
     def record_transition(self, 
                           states: torch.Tensor, 
                           actions: torch.Tensor, 
                           rewards: torch.Tensor, 
                           next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
+                          dones: torch.Tensor,  
+                          infos: Any, 
                           timestep: int, 
                           timesteps: int) -> None:
         """Record an environment transition in memory
@@ -103,15 +110,17 @@ class CUSTOM(Agent):
         :type next_states: torch.Tensor
         :param dones: Signals to indicate that episodes have ended
         :type dones: torch.Tensor
+        :param infos: Additional information about the environment
+        :type infos: Any type supported by the environment
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, timestep, timesteps)
-        # ================================
+        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+        # ========================================
         # - record agent's specific data in memory
-        # ================================
+        # ========================================
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -121,9 +130,9 @@ class CUSTOM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # ================================
+        # ===================================
         # - call self.update(...) if required
-        # ================================
+        # ===================================
 
     def post_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called after the interaction with the environment
@@ -133,9 +142,9 @@ class CUSTOM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # ================================
+        # ===================================
         # - call self.update(...) if required
-        # ================================
+        # ===================================
         # call parent's method for checkpointing and TensorBoard writing
         super().post_interaction(timestep, timesteps)
 
@@ -147,7 +156,7 @@ class CUSTOM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # ================================
+        # =================================================
         # - implement algorithm's update step
         # - record tracking data using self.track_data(...)
-        # ================================
+        # =================================================

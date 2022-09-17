@@ -1,12 +1,3 @@
-import gym
-
-class DummyEnv:
-    observation_space = gym.spaces.Box(low=-1, high=1, shape=(5,))
-    action_space = gym.spaces.Box(low=-1, high=1, shape=(3,))
-    device = "cuda:0"
-
-env = DummyEnv()
-
 # [start-mlp]
 import torch
 import torch.nn as nn

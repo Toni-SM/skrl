@@ -14,11 +14,8 @@ Basic inheritance usage
             
     .. tab:: Inheritance
 
-        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/agent.py>`_
-
         .. literalinclude:: ../snippets/agent.py
             :language: python
-            :linenos:
 
 API
 ^^^
@@ -27,7 +24,7 @@ API
    :undoc-members:
    :show-inheritance:
    :inherited-members:
-   :private-members: _update
+   :private-members: _update, _empty_preprocessor, _get_internal_value
    :members:
    
    .. automethod:: __init__

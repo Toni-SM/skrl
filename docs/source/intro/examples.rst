@@ -849,6 +849,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
                 * Environment: :download:`reaching_franka_sim_env.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_env.py>`
                 * Training script: :download:`reaching_franka_sim_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_skrl_train.py>`
                 * Evaluation script: :download:`reaching_franka_sim_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
 
                 **Training and evaluation:**
 
@@ -904,6 +905,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                 * Environment: :download:`reaching_franka_real_env.py <../examples/real_world/franka_emika_panda/reaching_franka_real_env.py>`
                 * Evaluation script: :download:`reaching_franka_real_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_real_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
 
                 **Evaluation:**
 

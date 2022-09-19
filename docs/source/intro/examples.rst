@@ -777,7 +777,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
     .. tab:: Franka Emika Panda
 
-        **3D reaching task (Franka's gripper must reach a certain target point in space)**. The training was done in Omniverse Isaac Gym. The real robot control is performed through the Python API of a modified version of frankx (see `frankx's pull request #42 <link>`_), a high-level motion library around libfranka. Training and evaluation is performed for both Cartesian and joint control space
+        **3D reaching task (Franka's gripper must reach a certain target point in space)**. The training was done in Omniverse Isaac Gym. The real robot control is performed through the Python API of a modified version of frankx (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_), a high-level motion library around libfranka. Training and evaluation is performed for both Cartesian and joint control space
 
         .. raw:: html
 
@@ -787,7 +787,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         * The observation space is composed of the episode's normalized progress, the robot joints' normalized positions (:math:`q`) in the interval -1 to 1, the robot joints' velocities (:math:`\dot{q}`) affected by a random uniform scale for generalization, and the target's position in space (:math:`target_{_{XYZ}}`) with respect to the robot's base
         
-        * The action space, bounded in the range -1 to 1, consists of the following. For the Cartesian control it's the end-effector's position (:math:`ee_{_{XYZ}}`) scaled change. For the joint control it's robot joints' position scaled change. The end-effector's position corresponds to the gripper fingers, which remain closed all the time
+        * The action space, bounded in the range -1 to 1, consists of the following. For the joint control it's robot joints' position scaled change. For the Cartesian control it's the end-effector's position (:math:`ee_{_{XYZ}}`) scaled change. The end-effector position frame corresponds to the point where the left finger connects to the gripper base in simulation, whereas in the real world it corresponds to the end of the fingers. The gripper fingers remain closed all the time in both cases
         
         * The instantaneous reward is the negative value of the Euclidean distance (:math:`\text{d}`) between the robot end-effector and the target point position. The episode terminates when this distance is less than 0.035 meters in simulation (0.075 meters in real-world) or when the defined maximum timestep is reached
 
@@ -825,6 +825,52 @@ These examples show basic real-world use cases to guide and support advanced RL 
         **Workflows**
 
         .. tabs::
+
+            .. tab:: Real-world
+
+                .. warning::
+
+                    Make sure you have the e-stop on hand in case something goes wrong in the run. **Control via RL can be dangerous and unsafe for both the operator and the robot**
+
+                .. raw:: html
+
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/190899202-6b80c48d-fc49-48e9-b277-24814d0adab1.mp4" type="video/mp4">
+                    </video>
+                    <strong>Target position entered via the command prompt or generated randomly</strong>
+                    <br><br>
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/190899205-752f654e-9310-4696-a6b2-bfa57d5325f2.mp4" type="video/mp4">
+                    </video>
+                    <strong>Target position in X and Y obtained with a USB-camera (position in Z fixed at 0.2 m)</strong>
+
+                |
+
+                **Prerequisites:**
+
+                A physical Franka robot with `Franka Control Interface (FCI) <https://frankaemika.github.io/docs/index.html>`_ is required. Additionally, the frankx library must be available in the python environment (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_ for the RL-compatible version installation)
+
+                **Files**
+
+                * Environment: :download:`reaching_franka_real_env.py <../examples/real_world/franka_emika_panda/reaching_franka_real_env.py>`
+                * Evaluation script: :download:`reaching_franka_real_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_real_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
+
+                **Evaluation:**
+
+                .. code-block:: bash
+
+                    python3 reaching_franka_real_skrl_eval.py
+
+                **Main environment configuration:**
+
+                The control space (Cartesian or joint), the robot motion type (waypoint or impedance) and the target position acquisition (command prompt / automatically generated or USB-camera) can be specified in the environment class constructor (from :literal:`reaching_franka_real_skrl_eval.py`) as follow:
+
+                .. code-block:: python
+
+                    control_space = "joint"   # joint or cartesian
+                    motion_type = "waypoint"  # waypoint or impedance
+                    camera_tracking = False   # True for USB-camera tracking
 
             .. tab:: Simulation
 
@@ -876,52 +922,6 @@ These examples show basic real-world use cases to guide and support advanced RL 
                 .. code-block:: python
 
                     TASK_CFG["task"]["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
-
-            .. tab:: Real-world
-
-                .. warning::
-
-                    Make sure you have the e-stop on hand in case something goes wrong in the run. **Control via RL can be dangerous and unsafe for both the operator and the robot**
-
-                .. raw:: html
-
-                    <video width="100%" controls autoplay>
-                        <source src="https://user-images.githubusercontent.com/22400377/190899202-6b80c48d-fc49-48e9-b277-24814d0adab1.mp4" type="video/mp4">
-                    </video>
-                    <strong>Target position entered via the command prompt or generated randomly</strong>
-                    <br><br>
-                    <video width="100%" controls autoplay>
-                        <source src="https://user-images.githubusercontent.com/22400377/190899205-752f654e-9310-4696-a6b2-bfa57d5325f2.mp4" type="video/mp4">
-                    </video>
-                    <strong>Target position in X and Y obtained with a USB-camera (position in Z fixed at 0.2 m)</strong>
-
-                |
-
-                **Prerequisites:**
-
-                A physical Franka robot with `Franka Control Interface (FCI) <https://frankaemika.github.io/docs/index.html>`_ is required. Additionally, the frankx library must be available in the python environment (see `frankx's pull request #42 <link>`_ for the RL-compatible version installation)
-
-                **Files**
-
-                * Environment: :download:`reaching_franka_real_env.py <../examples/real_world/franka_emika_panda/reaching_franka_real_env.py>`
-                * Evaluation script: :download:`reaching_franka_real_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_real_skrl_eval.py>`
-                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
-
-                **Evaluation:**
-
-                .. code-block:: bash
-
-                    python3 reaching_franka_real_skrl_eval.py
-
-                **Main environment configuration:**
-
-                The control space (Cartesian or joint), the robot motion type (waypoint or impedance) and the target position acquisition (command prompt / automatically generated or USB-camera) can be specified in the environment class constructor (from :literal:`reaching_franka_real_skrl_eval.py`) as follow:
-
-                .. code-block:: python
-
-                    control_space = "joint"   # joint or cartesian
-                    motion_type = "waypoint"  # waypoint or impedance
-                    camera_tracking = False   # True for USB-camera tracking 
 
 .. _library_utilities:
 

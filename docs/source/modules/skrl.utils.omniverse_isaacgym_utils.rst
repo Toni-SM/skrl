@@ -2,13 +2,13 @@ Omniverse Isaac Gym utils
 =========================
 
 .. contents:: Table of Contents
-   :depth: 2
-   :local:
-   :backlinks: none
+    :depth: 2
+    :local:
+    :backlinks: none
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 Control of robotic manipulators
 -------------------------------
@@ -31,3 +31,15 @@ API
 """
 
 .. autofunction:: skrl.utils.omniverse_isaacgym_utils.ik
+
+.. raw:: html
+
+    <hr>
+
+OmniIsaacGymEnvs-like environment instance
+------------------------------------------
+
+API
+"""
+
+.. autofunction:: skrl.utils.omniverse_isaacgym_utils.get_env_instance

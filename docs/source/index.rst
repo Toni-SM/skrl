@@ -198,6 +198,7 @@ Utils
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
     * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
     * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
+    * :doc:`Omniverse Isaac Gym utils <modules/skrl.utils.omniverse_isaacgym_utils>`
 
 .. toctree::
     :maxdepth: 1
@@ -208,3 +209,4 @@ Utils
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
     modules/skrl.utils.isaacgym_utils
+    modules/skrl.utils.omniverse_isaacgym_utils

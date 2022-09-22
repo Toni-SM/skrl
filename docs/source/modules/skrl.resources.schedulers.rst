@@ -1,3 +1,5 @@
+.. _resources_schedulers:
+
 Learning rate schedulers
 ========================
 

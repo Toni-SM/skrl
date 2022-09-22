@@ -34,8 +34,8 @@ class MultivariateGaussianMixin:
             >>> from skrl.models.torch import Model, MultivariateGaussianMixin
             >>> 
             >>> class Policy(MultivariateGaussianMixin, Model):
-            ...     def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False,
-            ...                  clip_log_std=True, min_log_std=-20, max_log_std=2):
+            ...     def __init__(self, observation_space, action_space, device="cuda:0",
+            ...                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
             ...         Model.__init__(self, observation_space, action_space, device)
             ...         MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
             ...

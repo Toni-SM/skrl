@@ -121,6 +121,39 @@ class Trainer:
         else:
             self.num_agents = 1
 
+    def _setup_wandb(self) -> None:
+        """Setup Weights & Biases"""
+        for n_agent in range(self.num_agents):
+            if self.num_agents == 1:
+                agent = self.agents
+            else:
+                agent = self.agents[n_agent]
+
+            wandb_cfg = agent.cfg.get("experiment", {}).get("wandb", {})
+
+            if wandb_cfg.get("enabled", False):
+                import wandb
+                dir = agent.experiment_dir
+                run_name = dir.split("/")[-1]
+                try:
+                    _net_cfg = {k: v.net._modules for (k, v) in agent.models.items()}
+                except AttributeError:
+                    _net_cfg = {k: v._modules for (k, v) in agent.models.items()}
+                _cfg = {
+                    **self.cfg,
+                    **agent.cfg,
+                    **_net_cfg
+                }
+                wandb.init(
+                    project=wandb_cfg.get("project", None),
+                    group=wandb_cfg.get("group", None),
+                    entity=wandb_cfg.get("entity", None),
+                    name=run_name,
+                    sync_tensorboard=True,
+                    resume="allow",
+                    config=_cfg
+                )
+
     def train(self) -> None:
         """Train the agents
 

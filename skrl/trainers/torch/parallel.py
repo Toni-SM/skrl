@@ -121,6 +121,9 @@ class ParallelTrainer(Trainer):
         agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
+        # Setup weights and biases
+        self._setup_wandb()
+
         mp.set_start_method(method='spawn', force=True)
 
     def train(self) -> None:

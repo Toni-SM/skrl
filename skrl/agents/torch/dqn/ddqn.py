@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
 import gym
 import copy
@@ -59,7 +59,7 @@ class DDQN(Agent):
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  action_space: Union[int, Tuple[int], gym.Space, None] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """Double Deep Q-Network (DDQN)
 
         https://ojs.aaai.org/index.php/AAAI/article/view/10295
@@ -82,7 +82,7 @@ class DDQN(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(DDQN_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,

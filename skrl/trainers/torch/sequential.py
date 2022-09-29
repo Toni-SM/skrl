@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 
 import copy
 import tqdm
@@ -21,8 +21,8 @@ class SequentialTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Sequential trainer
 
         Train agents sequentially (i.e., one after the other in each interaction with the environment)
@@ -38,7 +38,8 @@ class SequentialTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(SEQUENTIAL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents

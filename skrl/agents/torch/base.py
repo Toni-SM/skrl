@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Dict, Any
+from typing import Union, Mapping, Tuple, Dict, Any, Optional
 
 import os
 import gym
@@ -22,7 +22,7 @@ class Agent:
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  action_space: Union[int, Tuple[int], gym.Space, None] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL agent
 
         :param models: Models used by the agent
@@ -44,7 +44,7 @@ class Agent:
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(device)
-        self.cfg = cfg
+        self.cfg = cfg if cfg is not None else {}
 
         if type(memory) is list:
             self.memory = memory[0]

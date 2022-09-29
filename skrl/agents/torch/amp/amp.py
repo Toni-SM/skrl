@@ -1,4 +1,4 @@
-from typing import Callable, Union, Tuple, Dict, Any
+from typing import Callable, Union, Tuple, Dict, Any, Optional
 
 import gym
 import math
@@ -75,7 +75,7 @@ class AMP(Agent):
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  action_space: Union[int, Tuple[int], gym.Space, None] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {},
+                 cfg: Optional[dict] = None,
                  amp_observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  motion_dataset: Union[Memory, None] = None,
                  reply_buffer: Union[Memory, None] = None,
@@ -116,7 +116,7 @@ class AMP(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(AMP_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,

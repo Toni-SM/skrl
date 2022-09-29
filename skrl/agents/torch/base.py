@@ -18,15 +18,9 @@ from ...models.torch import Model
 class Agent:
     def __init__(self,
                  models: Dict[str, Model],
-<<<<<<< HEAD
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
-=======
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
                  observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
->>>>>>> 6be1f67 (Improve typing with Optional type hint)
                  device: Union[str, torch.device] = "cuda:0",
                  cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL agent
@@ -78,6 +72,15 @@ class Agent:
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
         self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
 
+        # experiment directory
+        directory = self.cfg.get("experiment", {}).get("directory", "")
+        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not directory:
+            directory = os.path.join(os.getcwd(), "runs")
+        if not experiment_name:
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
+        self.experiment_dir = os.path.join(directory, experiment_name)
+
     def __str__(self) -> str:
         """Generate a representation of the agent as string
 
@@ -124,15 +127,6 @@ class Agent:
         This method should be called before the agent is used.
         It will initialize the TensoBoard writer and checkpoint directory
         """
-        # experiment directory
-        directory = self.cfg.get("experiment", {}).get("directory", "")
-        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
-        if not directory:
-            directory = os.path.join(os.getcwd(), "runs")
-        if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
-        self.experiment_dir = os.path.join(directory, experiment_name)
-
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 

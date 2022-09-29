@@ -1,4 +1,4 @@
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 
 import os
 import csv
@@ -142,7 +142,7 @@ class Memory:
         with torch.no_grad():
             self.tensors[name].copy_(tensor)
 
-    def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
+    def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Optional[torch.dtype] = None) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).

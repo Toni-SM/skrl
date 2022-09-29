@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import List, Optional
 
 import math
 import logging
@@ -383,7 +383,7 @@ def ik(jacobian_end_effector: torch.Tensor,
        current_position: torch.Tensor,
        current_orientation: torch.Tensor,
        goal_position: torch.Tensor,
-       goal_orientation: Union[torch.Tensor, None] = None,
+       goal_orientation: Optional[torch.Tensor] = None,
        damping_factor: float = 0.05,
        squeeze_output: bool = True) -> torch.Tensor:
     """

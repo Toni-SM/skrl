@@ -18,9 +18,15 @@ from ...models.torch import Model
 class Agent:
     def __init__(self,
                  models: Dict[str, Model],
+<<<<<<< HEAD
                  memory: Union[Memory, Tuple[Memory], None] = None,
                  observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  action_space: Union[int, Tuple[int], gym.Space, None] = None,
+=======
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                  device: Union[str, torch.device] = "cuda:0",
                  cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL agent

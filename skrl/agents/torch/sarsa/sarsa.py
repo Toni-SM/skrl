@@ -35,9 +35,9 @@ SARSA_DEFAULT_CONFIG = {
 class SARSA(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
                  cfg: Optional[dict] = None) -> None:
         """State Action Reward State Action (SARSA)

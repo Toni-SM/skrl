@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 import gym
 from enum import Enum
@@ -93,7 +93,11 @@ def _generate_sequential(model: Model,
                          hidden_activation: list = ["relu", "relu"],
                          output_shape: Shape = Shape.ACTIONS,
                          output_activation: Union[str, None] = "tanh",
+<<<<<<< HEAD
                          output_scale: int = None) -> nn.Sequential:
+=======
+                         output_scale: Optional[int] = None) -> nn.Sequential:
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
     """Generate a sequential model
 
     :param model: model to generate sequential model for
@@ -130,8 +134,13 @@ def _generate_sequential(model: Model,
 
     return nn.Sequential(*input_layer, *hidden_layers, *output_layer)
 
+<<<<<<< HEAD
 def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                    action_space: Union[int, Tuple[int], gym.Space, None] = None,
+=======
+def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                   action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                    device: Union[str, torch.device] = "cuda:0",
                    clip_actions: bool = False,
                    clip_log_std: bool = True,
@@ -141,7 +150,11 @@ def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = 
                    hiddens: list = [256, 256],
                    hidden_activation: list = ["relu", "relu"],
                    output_shape: Shape = Shape.ACTIONS,
+<<<<<<< HEAD
                    output_activation: Union[str, None] = "tanh",
+=======
+                   output_activation: Optional[str] = "tanh",
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                    output_scale: float = 1.0) -> Model:
     """Instantiate a Gaussian model
 
@@ -222,8 +235,13 @@ def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = 
                          max_log_std=max_log_std,
                          metadata=metadata)
 
+<<<<<<< HEAD
 def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+=======
+def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                                action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                                 device: Union[str, torch.device] = "cuda:0",
                                 clip_actions: bool = False,
                                 clip_log_std: bool = True,
@@ -233,7 +251,11 @@ def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Sp
                                 hiddens: list = [256, 256],
                                 hidden_activation: list = ["relu", "relu"],
                                 output_shape: Shape = Shape.ACTIONS,
+<<<<<<< HEAD
                                 output_activation: Union[str, None] = "tanh",
+=======
+                                output_activation: Optional[str] = "tanh",
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                                 output_scale: float = 1.0) -> Model:
     """Instantiate a multivariate Gaussian model
 
@@ -314,15 +336,24 @@ def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Sp
                                      max_log_std=max_log_std,
                                      metadata=metadata)
 
+<<<<<<< HEAD
 def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                         action_space: Union[int, Tuple[int], gym.Space, None] = None,
+=======
+def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                        action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                         device: Union[str, torch.device] = "cuda:0",
                         clip_actions: bool = False,
                         input_shape: Shape = Shape.STATES,
                         hiddens: list = [256, 256],
                         hidden_activation: list = ["relu", "relu"],
                         output_shape: Shape = Shape.ACTIONS,
+<<<<<<< HEAD
                         output_activation: Union[str, None] = "tanh",
+=======
+                        output_activation: Optional[str] = "tanh",
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                         output_scale: float = 1.0) -> Model:
     """Instantiate a deterministic model
 
@@ -392,15 +423,24 @@ def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, Non
                               clip_actions=clip_actions,
                               metadata=metadata)
 
+<<<<<<< HEAD
 def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                       action_space: Union[int, Tuple[int], gym.Space, None] = None,
+=======
+def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                      action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
                       device: Union[str, torch.device] = "cuda:0",
                       unnormalized_log_prob: bool = False,
                       input_shape: Shape = Shape.STATES,
                       hiddens: list = [256, 256],
                       hidden_activation: list = ["relu", "relu"],
                       output_shape: Shape = Shape.ACTIONS,
+<<<<<<< HEAD
                       output_activation: Union[str, None] = None) -> Model:
+=======
+                      output_activation: Optional[str] = None) -> Model:
+>>>>>>> 6be1f67 (Improve typing with Optional type hint)
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).

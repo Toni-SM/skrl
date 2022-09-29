@@ -71,16 +71,16 @@ AMP_DEFAULT_CONFIG = {
 class AMP(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
                  cfg: Optional[dict] = None,
-                 amp_observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 motion_dataset: Union[Memory, None] = None,
-                 reply_buffer: Union[Memory, None] = None,
-                 collect_reference_motions: Union[Callable[[int], torch.Tensor], None] = None,
-                 collect_observation: Union[Callable[[], torch.Tensor], None] = None) -> None:
+                 amp_observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 motion_dataset: Optional[Memory] = None,
+                 reply_buffer: Optional[Memory] = None,
+                 collect_reference_motions: Optional[Callable[[int], torch.Tensor]] = None,
+                 collect_observation: Optional[Callable[[], torch.Tensor]] = None) -> None:
         """Adversarial Motion Priors (AMP)
 
         https://arxiv.org/abs/2104.02180

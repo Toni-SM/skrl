@@ -26,16 +26,16 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
         DeterministicMixin.__init__(self, clip_actions)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
-                                 nn.ELU(),
+                                 nn.Tanh(),
+                                 nn.Linear(256, 256),
+                                 nn.Tanh(),
                                  nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 64),
-                                 nn.ELU())
+                                 nn.Tanh())
         
-        self.mean_layer = nn.Linear(64, self.num_actions)
+        self.mean_layer = nn.Linear(128, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
         
-        self.value_layer = nn.Linear(64, 1)
+        self.value_layer = nn.Linear(128, 1)
 
     def act(self, states, taken_actions, role):
         if role == "policy":
@@ -51,7 +51,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
 
 # Load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Ant")
+env = load_omniverse_isaacgym_env(task_name="Crazyflie")
 env = wrap_env(env)
 
 device = env.device
@@ -74,13 +74,13 @@ models_ppo["value"] = models_ppo["policy"]  # same instance: shared model
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 16  # memory_size
-cfg_ppo["learning_epochs"] = 4
-cfg_ppo["mini_batches"] = 2  # 16 * 4096 / 32768
+cfg_ppo["learning_epochs"] = 8
+cfg_ppo["mini_batches"] = 4  # 16 * 4096 / 16384    
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
-cfg_ppo["learning_rate"] = 3e-4
+cfg_ppo["learning_rate"] = 1e-4
 cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
-cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.016}
 cfg_ppo["random_timesteps"] = 0
 cfg_ppo["learning_starts"] = 0
 cfg_ppo["grad_norm_clip"] = 1.0
@@ -95,9 +95,9 @@ cfg_ppo["state_preprocessor"] = RunningStandardScaler
 cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg_ppo["value_preprocessor"] = RunningStandardScaler
 cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-# logging to TensorBoard and write checkpoints each 40 and 400 timesteps respectively
-cfg_ppo["experiment"]["write_interval"] = 40
-cfg_ppo["experiment"]["checkpoint_interval"] = 400
+# logging to TensorBoard and write checkpoints each 80 and 800 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 80
+cfg_ppo["experiment"]["checkpoint_interval"] = 800
 
 agent = PPO(models=models_ppo,
             memory=memory, 
@@ -108,7 +108,7 @@ agent = PPO(models=models_ppo,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 8000, "headless": True}
+cfg_trainer = {"timesteps": 16000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

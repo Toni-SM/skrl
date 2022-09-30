@@ -51,7 +51,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
 
 # Load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Ant")
+env = load_omniverse_isaacgym_env(task_name="FrankaCabinet")
 env = wrap_env(env)
 
 device = env.device
@@ -74,11 +74,11 @@ models_ppo["value"] = models_ppo["policy"]  # same instance: shared model
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 16  # memory_size
-cfg_ppo["learning_epochs"] = 4
-cfg_ppo["mini_batches"] = 2  # 16 * 4096 / 32768
+cfg_ppo["learning_epochs"] = 8
+cfg_ppo["mini_batches"] = 8  # 16 * 4096 / 8192    
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
-cfg_ppo["learning_rate"] = 3e-4
+cfg_ppo["learning_rate"] = 5e-4
 cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
 cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
 cfg_ppo["random_timesteps"] = 0
@@ -88,16 +88,16 @@ cfg_ppo["ratio_clip"] = 0.2
 cfg_ppo["value_clip"] = 0.2
 cfg_ppo["clip_predicted_values"] = True
 cfg_ppo["entropy_loss_scale"] = 0.0
-cfg_ppo["value_loss_scale"] = 1.0
+cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0
 cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
 cfg_ppo["state_preprocessor"] = RunningStandardScaler
 cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg_ppo["value_preprocessor"] = RunningStandardScaler
 cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-# logging to TensorBoard and write checkpoints each 40 and 400 timesteps respectively
-cfg_ppo["experiment"]["write_interval"] = 40
-cfg_ppo["experiment"]["checkpoint_interval"] = 400
+# logging to TensorBoard and write checkpoints each 120 and 1200 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 120
+cfg_ppo["experiment"]["checkpoint_interval"] = 1200
 
 agent = PPO(models=models_ppo,
             memory=memory, 
@@ -108,7 +108,7 @@ agent = PPO(models=models_ppo,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 8000, "headless": True}
+cfg_trainer = {"timesteps": 24000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

@@ -24,9 +24,9 @@ set_seed(42)
 # - Value: takes the state as input and provides a value to guide the policy
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
                                  nn.ELU(),
@@ -74,10 +74,6 @@ memory = RandomMemory(memory_size=24, num_envs=env.num_envs, device=device)
 models_ppo = {}
 models_ppo["policy"] = Policy(env.observation_space, env.action_space, device)
 models_ppo["value"] = Value(env.observation_space, env.action_space, device)
-
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
 
 
 # Configure and instantiate the agent.

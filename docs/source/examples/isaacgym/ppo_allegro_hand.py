@@ -16,33 +16,15 @@ from skrl.utils import set_seed
 
 
 # set the seed for reproducibility
-set_seed(42)
+seed = set_seed(42)
 
 
-# Define the models (stochastic and deterministic models) for the agent using mixins.
-# - Policy: takes as input the environment's observation/state and returns an action
-# - Value: takes the state as input and provides a value to guide the policy
-class Policy(GaussianMixin, Model):
+# Define the shared model (stochastic and deterministic models) for the agent using mixins.
+class Shared(GaussianMixin, DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
-
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
-                                 nn.ELU(),
-                                 nn.Linear(512, 256),
-                                 nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, self.num_actions))
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
-
-class Value(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
         DeterministicMixin.__init__(self, clip_actions)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
@@ -50,15 +32,28 @@ class Value(DeterministicMixin, Model):
                                  nn.Linear(512, 256),
                                  nn.ELU(),
                                  nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 1))
+                                 nn.ELU())
+        
+        self.mean_layer = nn.Linear(128, self.num_actions)
+        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        
+        self.value_layer = nn.Linear(128, 1)
+
+    def act(self, states, taken_actions, role):
+        if role == "policy":
+            return GaussianMixin.act(self, states, taken_actions, role)
+        elif role == "value":
+            return DeterministicMixin.act(self, states, taken_actions, role)
 
     def compute(self, states, taken_actions, role):
-        return self.net(states)
+        if role == "policy":
+            return self.mean_layer(self.net(states)), self.log_std_parameter
+        elif role == "value":
+            return self.value_layer(self.net(states))
 
 
 # Load and wrap the Isaac Gym environment using the easy-to-use API from NVIDIA
-env = isaacgymenvs.make(seed=42, 
+env = isaacgymenvs.make(seed=seed, 
                         task="AllegroHand", 
                         num_envs=16384, 
                         sim_device="cuda:0",
@@ -78,12 +73,8 @@ memory = RandomMemory(memory_size=8, num_envs=env.num_envs, device=device)
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
 models_ppo = {}
-models_ppo["policy"] = Policy(env.observation_space, env.action_space, device)
-models_ppo["value"] = Value(env.observation_space, env.action_space, device)
-
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+models_ppo["policy"] = Shared(env.observation_space, env.action_space, device)
+models_ppo["value"] = models_ppo["policy"]  # same instance: shared model
 
 
 # Configure and instantiate the agent.

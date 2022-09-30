@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 # Import the skrl components to build the RL system
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
@@ -12,22 +12,35 @@ from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_isaacgym_env_preview4
 
 
-# Define only the policy for evaluation 
-class Policy(GaussianMixin, Model):
+# Define the shared model (stochastic and deterministic models) for the agent using mixins.
+class Shared(GaussianMixin, DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2):
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        DeterministicMixin.__init__(self, clip_actions)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
                                  nn.ELU(),
                                  nn.Linear(32, 32),
-                                 nn.ELU(),
-                                 nn.Linear(32, self.num_actions))
+                                 nn.ELU())
+        
+        self.mean_layer = nn.Linear(32, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        
+        self.value_layer = nn.Linear(32, 1)
+
+    def act(self, states, taken_actions, role):
+        if role == "policy":
+            return GaussianMixin.act(self, states, taken_actions, role)
+        elif role == "value":
+            return DeterministicMixin.act(self, states, taken_actions, role)
 
     def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+        if role == "policy":
+            return self.mean_layer(self.net(states)), self.log_std_parameter
+        elif role == "value":
+            return self.value_layer(self.net(states))
 
 
 # Load and wrap the Isaac Gym environment
@@ -41,7 +54,7 @@ device = env.device
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
 models_ppo = {}
-models_ppo["policy"] = Policy(env.observation_space, env.action_space, device)
+models_ppo["policy"] = Shared(env.observation_space, env.action_space, device)
 
 
 # Configure and instantiate the agent.

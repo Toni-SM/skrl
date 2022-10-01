@@ -300,6 +300,10 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. code-block:: bash
 
+    # memory
+    memory_size = horizon_length
+
+    # agent
     rollouts = horizon_length
     learning_epochs = mini_epochs
     mini_batches = horizon_length * num_actors / minibatch_size
@@ -319,6 +323,9 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     kl_threshold = 0
     rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
 
+    # trainer
+    timesteps = horizon_length * max_epochs
+
 .. note::
 
     Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True` for Isaac Gym environments (preview 3 and preview 4) or :literal:`python script.py --headless` for Isaac Gym environments (preview 2)
@@ -335,7 +342,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
                     :language: python
-                    :emphasize-lines: 2, 61-67
+                    :emphasize-lines: 2, 19, 56-62
 
             .. tab:: Ant
                 
@@ -343,7 +350,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ant.py
                     :language: python
-                    :emphasize-lines: 13-14, 61-62
+                    :emphasize-lines: 13-14, 56-57
 
             .. tab:: Anymal
                 
@@ -351,7 +358,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_anymal.py
                     :language: python
-                    :emphasize-lines: 13-14, 61-62
+                    :emphasize-lines: 13-14, 56-57
 
             .. tab:: AnymalTerrain
                 
@@ -359,7 +366,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
                     :language: python
-                    :emphasize-lines: 11, 105-108
+                    :emphasize-lines: 11, 101-104
 
             .. tab:: BallBalance
                 
@@ -367,7 +374,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
                     :language: python
-                    :emphasize-lines: 11, 104-107
+                    :emphasize-lines: 11, 96-99
 
             .. tab:: Cartpole
                 
@@ -391,7 +398,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
                     :language: python
-                    :emphasize-lines: 10, 93-94
+                    :emphasize-lines: 10, 84-85
 
             .. tab:: Humanoid
                 
@@ -399,7 +406,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
                     :language: python
-                    :emphasize-lines: 10, 93-94
+                    :emphasize-lines: 10, 84-85
 
             .. tab:: Humanoid (AMP)
                 
@@ -415,7 +422,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
                     :language: python
-                    :emphasize-lines: 2, 61-67
+                    :emphasize-lines: 2, 19, 56-62
 
             .. tab:: Quadcopter
                 
@@ -423,7 +430,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_quadcopter.py
                     :language: python
-                    :emphasize-lines: 104
+                    :emphasize-lines: 95
 
             .. tab:: ShadowHand
                 
@@ -431,7 +438,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_shadow_hand.py
                     :language: python
-                    :emphasize-lines: 108
+                    :emphasize-lines: 97
 
             .. tab:: Trifinger
                 
@@ -439,7 +446,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/isaacgym/ppo_trifinger.py
                     :language: python
-                    :emphasize-lines: 108
+                    :emphasize-lines: 95
 
     .. tab:: Isaac Gym environments (evaluation)
 
@@ -582,13 +589,21 @@ These examples perform the training of an agent in the `Omniverse Isaac Gym envi
 
 The following components or practices are exemplified (highlighted):
 
-    - Load and wrap an Omniverse Isaac Gym environment: **AllegroHand**, **Ant**, **Cartpole**, **Humanoid**, **ShadowHand**
+    - Load and wrap an Omniverse Isaac Gym environment: **AllegroHand**, **Ant**, **Anymal**
     - Load and wrap an Omniverse Isaac Gym multi-threaded environment: **Ant (multi-threaded)**, **Cartpole (multi-threaded)**
+    - Set an input preprocessor: **AnymalTerrain**, **BallBalance**
+    - Set a random seed for reproducibility: **Cartpole**, **Crazyflie**
+    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
+    - Define a reward shaping function: **Ingenuity**, **Quadcopter**, **ShadowHand**
 
 The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
 
 .. code-block:: bash
 
+    # memory
+    memory_size = horizon_length
+
+    # agent
     rollouts = horizon_length
     learning_epochs = mini_epochs
     mini_batches = horizon_length * num_actors / minibatch_size
@@ -608,6 +623,9 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     kl_threshold = 0
     rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
 
+    # trainer
+    timesteps = horizon_length * max_epochs
+
 .. note::
 
     Omniverse Isaac Gym environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
@@ -624,7 +642,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
                     :language: python
-                    :emphasize-lines: 11-12, 59-60
+                    :emphasize-lines: 11-12, 54-55
             
             .. tab:: Ant
                 
@@ -632,7 +650,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
                     :language: python
-                    :emphasize-lines: 11-12, 59-60
+                    :emphasize-lines: 11-12, 54-55
 
             .. tab:: Ant (multi-threaded)
                 
@@ -640,7 +658,31 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
                     :language: python
-                    :emphasize-lines: 1, 13-14, 61-62, 126, 130
+                    :emphasize-lines: 1, 13-14, 56-57, 117, 121
+            
+            .. tab:: Anymal
+                
+                :download:`ppo_anymal.py <../examples/omniisaacgym/ppo_anymal.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_anymal.py
+                    :language: python
+                    :emphasize-lines: 11-12, 54-55
+
+            .. tab:: AnymalTerrain
+                
+                :download:`ppo_anymal_terrain.py <../examples/omniisaacgym/ppo_anymal_terrain.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_anymal_terrain.py
+                    :language: python
+                    :emphasize-lines: 9, 99-102
+
+            .. tab:: BallBalance
+
+                :download:`ppo_ball_balance.py <../examples/omniisaacgym/ppo_ball_balance.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ball_balance.py
+                    :language: python
+                    :emphasize-lines: 9, 94-97
 
             .. tab:: Cartpole
                 
@@ -648,7 +690,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
                     :language: python
-                    :emphasize-lines: 11-12, 55-56
+                    :emphasize-lines: 13, 17
 
             .. tab:: Cartpole (multi-threaded)
                 
@@ -656,23 +698,55 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
                     :language: python
-                    :emphasize-lines: 1, 13-14, 57-58, 122, 126
-                    
+                    :emphasize-lines: 1, 13-14, 54-55, 115, 119
+
+            .. tab:: Crazyflie
+                
+                :download:`ppo_crazy_flie.py <../examples/omniisaacgym/ppo_crazy_flie.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_crazy_flie.py
+                    :language: python
+                    :emphasize-lines: 13, 17
+
+            .. tab:: FrankaCabinet
+                
+                :download:`ppo_franka_cabinet.py <../examples/omniisaacgym/ppo_franka_cabinet.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_franka_cabinet.py
+                    :language: python
+                    :emphasize-lines: 8, 82-83
+
             .. tab:: Humanoid
                 
                 :download:`ppo_humanoid.py <../examples/omniisaacgym/ppo_humanoid.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
                     :language: python
-                    :emphasize-lines: 11-12, 59-60
+                    :emphasize-lines: 8, 82-83
                     
+            .. tab:: Ingenuity
+                
+                :download:`ppo_ingenuity.py <../examples/omniisaacgym/ppo_ingenuity.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_ingenuity.py
+                    :language: python
+                    :emphasize-lines: 93
+
+            .. tab:: Quadcopter
+                
+                :download:`ppo_quadcopter.py <../examples/omniisaacgym/ppo_quadcopter.py>`
+
+                .. literalinclude:: ../examples/omniisaacgym/ppo_quadcopter.py
+                    :language: python
+                    :emphasize-lines: 93
+
             .. tab:: ShadowHand
                 
                 :download:`ppo_shadow_hand.py <../examples/omniisaacgym/ppo_shadow_hand.py>`
 
                 .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
                     :language: python
-                    :emphasize-lines: 11-12, 63-64
+                    :emphasize-lines: 95
 
 .. raw:: html
 

@@ -71,21 +71,21 @@ The implementation uses 2 deterministic function approximators. These function a
    * - Notation
      - Concept
      - Key
-     - Type
      - Input shape
      - Output shape
+     - Type
    * - :math:`Q_\phi(s, a)`
      - Q-network
      - :literal:`"q_network"`
-     - :ref:`Deterministic <models_deterministic>`
      - observation
      - action
+     - :ref:`Deterministic <models_deterministic>`
    * - :math:`Q_{\phi_{target}}(s, a)`
      - Target Q-network
      - :literal:`"target_q_network"`
-     - :ref:`Deterministic <models_deterministic>`
      - observation
      - action
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

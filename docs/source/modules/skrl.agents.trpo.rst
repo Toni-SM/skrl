@@ -162,21 +162,21 @@ The implementation uses 1 stochastic and 1 deterministic function approximator. 
    * - Notation
      - Concept
      - Key
-     - Type
      - Input shape
      - Output shape
+     - Type
    * - :math:`\pi_\theta(s)`
      - Policy
      - :literal:`"policy"`
-     - :ref:`Gaussian <models_gaussian>`
      - observation
      - action
+     - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
    * - :math:`V_\phi(s)`
      - Value
      - :literal:`"value"`
-     - :ref:`Deterministic <models_deterministic>`
      - observation
      - 1
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

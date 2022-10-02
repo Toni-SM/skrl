@@ -64,15 +64,15 @@ The implementation uses 1 discrete function approximator. This function approxim
    * - Notation
      - Concept
      - Key
-     - Type
      - Input shape
      - Output shape
+     - Type
    * - :math:`\pi(s)`
      - Policy
      - :literal:`"policy"`
-     - :ref:`Categorical <models_categorical>`
      - observation
      - action
+     - :ref:`Categorical <models_categorical>`
 
 API
 ^^^

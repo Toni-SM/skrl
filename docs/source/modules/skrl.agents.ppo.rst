@@ -124,21 +124,21 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
    * - Notation
      - Concept
      - Key
-     - Type
      - Input shape
      - Output shape
+     - Type
    * - :math:`\pi_\theta(s)`
      - Policy
      - :literal:`"policy"`
-     - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>`
      - observation
      - action
+     - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
    * - :math:`V_\phi(s)`
      - Value
      - :literal:`"value"`
-     - :ref:`Deterministic <models_deterministic>`
      - observation
      - 1
+     - :ref:`Deterministic <models_deterministic>`
 
 API
 ^^^

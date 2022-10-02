@@ -1,3 +1,5 @@
+.. _models_base_class:
+
 Base class
 ==========
 

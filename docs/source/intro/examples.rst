@@ -296,7 +296,7 @@ The following components or practices are exemplified (highlighted):
     - Access to environment-specific properties and methods: **Humanoid (AMP)**
     - Load a checkpoint during evaluation: **Cartpole**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. code-block:: bash
 
@@ -325,6 +325,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
     # trainer
     timesteps = horizon_length * max_epochs
+
+**Benchmark results** for Isaac Gym are listed in `Benchmark results #32 <https://github.com/Toni-SM/skrl/discussions/32>`_.
 
 .. note::
 
@@ -596,7 +598,7 @@ The following components or practices are exemplified (highlighted):
     - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
     - Define a reward shaping function: **Ingenuity**, **Quadcopter**, **ShadowHand**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. The following list shows the mapping between the two configurations
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
 
 .. code-block:: bash
 
@@ -625,6 +627,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
     # trainer
     timesteps = horizon_length * max_epochs
+
+**Benchmark results** for Omniverse Isaac Gym are listed in `Benchmark results #32 <https://github.com/Toni-SM/skrl/discussions/32>`_.
 
 .. note::
 

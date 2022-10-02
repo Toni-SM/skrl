@@ -32,8 +32,8 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
         42
 
         # random seed
-        >>> set_seed()
         >>> from skrl.utils import set_seed
+        >>> set_seed()
         [skrl:INFO] Seed: 1776118066
         1776118066
 

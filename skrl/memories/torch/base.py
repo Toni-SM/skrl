@@ -139,7 +139,8 @@ class Memory:
 
         :raises KeyError: The tensor does not exist
         """
-        self.tensors[name].copy_(tensor)
+        with torch.no_grad():
+            self.tensors[name].copy_(tensor)
 
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
         """Create a new internal tensor in memory

@@ -12,7 +12,7 @@ SKRL - Reinforcement Learning library (|version|)
 
 .. warning::
 
-    **skrl** is under **active continuous development**. Make sure you always have the latest version 
+    **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
 | **GitHub repository:** https://github.com/Toni-SM/skrl 
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions 
@@ -123,7 +123,7 @@ Memories
 Models
 ^^^^^^
 
-    Definition of helper classes for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
+    Definition of helper mixins for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper mixins to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities. In addition, it is possible to create :doc:`shared model <modules/skrl.models.shared_model>` by combining the implemented definitions
 
     * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
     * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
@@ -142,6 +142,7 @@ Models
     modules/skrl.models.gaussian
     modules/skrl.models.multivariate_gaussian
     modules/skrl.models.deterministic
+    modules/skrl.models.shared_model
 
 Trainers
 ^^^^^^^^

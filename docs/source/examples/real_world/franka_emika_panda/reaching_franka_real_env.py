@@ -17,7 +17,11 @@ class ReachingFranka(gym.Env):
         self.motion_type = motion_type  # waypoint or impedance
 
         if self.control_space == "cartesian" and self.motion_type == "impedance":
-            raise ValueError("Unsafe robot operation in cartesian/impedance configuration")
+            # The operation of this mode (Cartesian-impedance) was adjusted later without being able to test it on the real robot. 
+            # Dangerous movements may occur for the operator and the robot.
+            # Comment the following line of code if you want to proceed with this mode.
+            raise ValueError("See comment in the code to proceed with this mode")
+            pass
 
         # camera tracking (disabled by default)
         self.camera_tracking = camera_tracking
@@ -253,24 +257,3 @@ class ReachingFranka(gym.Env):
 
     def close(self):
         pass
-
-
-
-
-if __name__ == "__main__":
-
-    # test camera capturing
-    ReachingFranka._update_target_from_camera(None)
-    exit()
-    
-
-    env = ReachingFranka()
-
-    observation = env.reset()
-    for _ in range(100):
-        observation, reward, done, info = env.step(env.action_space.sample())
-        env.render()
-        if done:
-            observation = env.reset()
-    
-    env.close()

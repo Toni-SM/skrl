@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.8.0] - Unreleased
+## [0.8.0] - 2022-10-03
 ### Added
 - AMP agent for physics-based character animation
 - Manual trainer
@@ -14,16 +14,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Migrate checkpoints/models from other RL libraries to skrl models/agents
 - Configuration parameter `store_separately` to agent configuration dict
 - Save/load agent modules (models, optimizers, preprocessors)
+- Set random seed and configure deterministic behavior for reproducibility
+- Benchmark results for Isaac Gym and Omniverse Isaac Gym on the GitHub discussion page
+- Franka Emika real-world example
 
 ### Changed
 - Models implementation as Python mixin [**breaking change**]
 - Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
-- Show training/evaluadion display progress using `tqdm` (by @JohannLange)
+- Show training/evaluation display progress using `tqdm` (by @JohannLange)
+- Update Isaac Gym and Omniverse Isaac Gym examples
 
 ### Fixed
 - Missing recursive arguments during model weights initialization
 - Tensor dimension when computing preprocessor parallel variance
+- Models' clip tensors dtype to `float32`
 
 ### Removed
 - Parameter `inference` from model methods

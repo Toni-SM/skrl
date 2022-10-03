@@ -942,6 +942,10 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                 **Main environment configuration:**
 
+                .. note::
+
+                    In the joint control space the final control of the robot is performed through the Cartesian pose (forward kinematics from specified values for the joints)
+
                 The control space (Cartesian or joint), the robot motion type (waypoint or impedance) and the target position acquisition (command prompt / automatically generated or USB-camera) can be specified in the environment class constructor (from :literal:`reaching_franka_real_skrl_eval.py`) as follow:
 
                 .. code-block:: python
@@ -950,7 +954,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
                     motion_type = "waypoint"  # waypoint or impedance
                     camera_tracking = False   # True for USB-camera tracking
 
-            .. tab:: Simulation
+            .. tab:: Simulation (Omniverse Isaac Gym)
 
                 .. raw:: html
 
@@ -970,9 +974,9 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
-                * Environment: :download:`reaching_franka_sim_env.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_env.py>`
-                * Training script: :download:`reaching_franka_sim_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_skrl_train.py>`
-                * Evaluation script: :download:`reaching_franka_sim_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_sim_skrl_eval.py>`
+                * Environment: :download:`reaching_franka_omniverse_isaacgym_env.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_env.py>`
+                * Training script: :download:`reaching_franka_omniverse_isaacgym_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_franka_omniverse_isaacgym_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
 
                 **Training and evaluation:**
@@ -980,26 +984,74 @@ These examples show basic real-world use cases to guide and support advanced RL 
                 .. code-block:: bash
 
                     # training (local workstation)
-                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_franka_sim_skrl_train.py
+                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_franka_omniverse_isaacgym_skrl_train.py
 
                     # training (docker container)
-                    /isaac-sim/python.sh reaching_franka_sim_skrl_train.py
+                    /isaac-sim/python.sh reaching_franka_omniverse_isaacgym_skrl_train.py
 
                 .. code-block:: bash
 
                     # evaluation (local workstation)
-                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_franka_sim_skrl_eval.py
+                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_franka_omniverse_isaacgym_skrl_eval.py
 
                     # evaluation (docker container)
-                    /isaac-sim/python.sh reaching_franka_sim_skrl_eval.py
+                    /isaac-sim/python.sh reaching_franka_omniverse_isaacgym_skrl_eval.py
 
                 **Main environment configuration:**
 
-                The control space (Cartesian or joint) can be specified in the task configuration dictionary (from :literal:`reaching_franka_sim_skrl_train.py`) as follow:
+                The control space (Cartesian or joint) can be specified in the task configuration dictionary (from :literal:`reaching_franka_omniverse_isaacgym_skrl_train.py`) as follow:
 
                 .. code-block:: python
 
                     TASK_CFG["task"]["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
+
+            .. tab:: Simulation (Isaac Gym)
+
+                .. raw:: html
+
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/193537523-e0f0f8ad-2295-410c-ba9a-2a16c827a498.mp4" type="video/mp4">
+                    </video>
+
+                .. raw:: html
+
+                    <img width="100%" src="https://user-images.githubusercontent.com/22400377/193546966-bcf966e6-98d8-4b41-bc15-bd7364a79381.png">
+
+                |
+
+                **Prerequisites:**
+
+                All installation steps described in Isaac Gym's `Installation <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#installation>`_ section must be fulfilled
+
+                **Files** (the implementation is self-contained so no specific location is required):
+
+                * Environment: :download:`reaching_franka_isaacgym_env.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_env.py>`
+                * Training script: :download:`reaching_franka_isaacgym_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_franka_isaacgym_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_eval.py>`
+
+                **Training and evaluation:**
+
+                .. note::
+
+                    The checkpoints obtained in Isaac Gym were not evaluated with the real robot. However, they were evaluated in Omniverse Isaac Gym showing successful performance
+
+                .. code-block:: bash
+
+                    # training (with the Python virtual environment active)
+                    python reaching_franka_isaacgym_skrl_train.py
+
+                .. code-block:: bash
+
+                    # evaluation (with the Python virtual environment active)
+                    python reaching_franka_isaacgym_skrl_eval.py
+
+                **Main environment configuration:**
+
+                The control space (Cartesian or joint) can be specified in the task configuration dictionary (from :literal:`reaching_franka_isaacgym_skrl_train.py`) as follow:
+
+                .. code-block:: python
+
+                    TASK_CFG["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
 
 .. _library_utilities:
 

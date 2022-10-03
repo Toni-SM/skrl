@@ -27,7 +27,7 @@ SARSA_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -74,7 +74,7 @@ class SARSA(Agent):
         self.policy = self.models.get("policy", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
         
         # configuration
         self._discount_factor = self.cfg["discount_factor"]
@@ -98,11 +98,7 @@ class SARSA(Agent):
         """
         super().init()
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -111,18 +107,16 @@ class SARSA(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
         """
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample actions from policy
-        return self.policy.act(states, inference=inference)
+        return self.policy.act(states, taken_actions=None, role="policy")
 
     def record_transition(self, 
                           states: torch.Tensor, 
@@ -205,7 +199,7 @@ class SARSA(Agent):
         env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
         
         # compute next actions
-        next_actions = self.policy.act(self._current_next_states)[0]
+        next_actions = self.policy.act(self._current_next_states, taken_actions=None, role="policy")[0]
 
         # update Q-table
         q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate \

@@ -1,36 +1,55 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Mapping, Sequence
 
 import gym
+import collections
 import numpy as np
 
 import torch
 
+from skrl import logger
+
 
 class Model(torch.nn.Module):
     def __init__(self, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 observation_space: Union[int, Sequence[int], gym.Space], 
+                 action_space: Union[int, Sequence[int], gym.Space], 
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
         - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, tuple or list of integers, gym.Space or None): Observation/state space
-        - ``action_space`` (int, tuple or list of integers, gym.Space or None): Action space
-        - ``num_observations`` (int or None): Number of elements in the observation/state space
-        - ``num_actions`` (int or None): Number of elements in the action space
+        - ``observation_space`` (int, sequence of int, gym.Space): Observation/state space
+        - ``action_space`` (int, sequence of int, gym.Space): Action space
+        - ``num_observations`` (int): Number of elements in the observation/state space
+        - ``num_actions`` (int): Number of elements in the action space
         
-        :param observation_space: Observation/state space or shape (default: None).
-                                  If it is not None, the num_observations property will contain the size of that space
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
-        :param action_space: Action space or shape (default: None).
-                             If it is not None, the num_actions property will contain the size of that space
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param observation_space: Observation/state space or shape.
+                                  The ``num_observations`` property will contain the size of that space
+        :type observation_space: int, sequence of int, gym.Space
+        :param action_space: Action space or shape.
+                             The ``num_actions`` property will contain the size of that space
+        :type action_space: int, sequence of int, gym.Space
+        :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
         :type device: str or torch.device, optional
+
+        Custom models should override the ``act`` method::
+
+            import torch
+            from skrl.models.torch import Model
+
+            class CustomModel(Model):
+                def __init__(self, observation_space, action_space, device="cuda:0"):
+                    Model.__init__(self, observation_space, action_space, device)
+
+                    self.layer_1 = nn.Linear(self.num_observations, 64)
+                    self.layer_2 = nn.Linear(64, self.num_actions)
+
+                def act(self, states, taken_actions=None, role=""):
+                    x = F.relu(self.layer_1(states))
+                    x = F.relu(self.layer_2(x))
+                    return x
         """
-        # TODO: export to onnx (https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html)
         super(Model, self).__init__()
 
         self.device = torch.device(device)
@@ -42,55 +61,51 @@ class Model(torch.nn.Module):
 
         self._random_distribution = None
 
-        # internal variables to be used by the model instantiators
-        self._instantiator_net = None
-        self._instantiator_input_type = 0
-        self._instantiator_parameter = None
-        self._instantiator_output_scale = 1.0
-        
-    def _get_instantiator_output(self, 
-                                 states: torch.Tensor, 
-                                 taken_actions: Union[torch.Tensor, None] = None) -> Tuple[torch.Tensor]:
-        """Get the output of the instantiator model
-        
-        Input shape depends on the instantiator (see skrl.utils.model_instantiator.Shape) as follows:
-
-        - STATES / OBSERVATIONS = 0
-        - ACTIONS = -1
-        - STATES_ACTIONS = -2
-
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: None)
-        :type taken_actions: torch.Tensor, optional
-
-        :return: Output of the instantiator model
-        :rtype: tuple of torch.Tensor
-        """
-        if self._instantiator_input_type == 0:
-            output = self._instantiator_net(states)
-        elif self._instantiator_input_type == -1:
-            output = self._instantiator_net(taken_actions)
-        elif self._instantiator_input_type == -2:
-            output = self._instantiator_net(torch.cat((states, taken_actions), dim=1))
-        
-        # deterministic and categorical output
-        if self._instantiator_parameter is None:
-            return output * self._instantiator_output_scale
-        # gaussian output
-        else:
-            return output * self._instantiator_output_scale, self._instantiator_parameter
-
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
+    def _get_space_size(self, 
+                        space: Union[int, Sequence[int], gym.Space],
+                        number_of_elements: bool = True) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, or gym.Space
+        :type space: int, sequence of int, or gym.Space
+        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``). 
+                                   If ``False``, the shape of the space is returned. It only affects Discrete spaces
+        :type number_of_elements: bool, optional
 
         :raises ValueError: If the space is not supported
 
         :return: Size of the space (number of elements)
         :rtype: int
+
+        Example::
+
+            # from int
+            >>> model._get_space_size(2)
+            2
+
+            # from sequence of int
+            >>> model._get_space_size([2, 3])
+            6
+
+            # Box space
+            >>> space = gym.spaces.Box(low=-1, high=1, shape=(2, 3))
+            >>> model._get_space_size(space)
+            6
+
+            # Discrete space
+            >>> space = gym.spaces.Discrete(4)
+            >>> model._get_space_size(space)
+            4
+            >>> model._get_space_size(space, number_of_elements=False)
+            1
+
+            # Dict space
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            ...                          'b': gym.spaces.Discrete(4)})
+            >>> model._get_space_size(space)
+            10
+            >>> model._get_space_size(space, number_of_elements=False)
+            7
         """
         size = None
         if type(space) in [int, float]:
@@ -99,16 +114,22 @@ class Model(torch.nn.Module):
             size = np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
-                size = space.n
+                if number_of_elements:
+                    size = space.n
+                else:
+                    size = 1
             elif issubclass(type(space), gym.spaces.Box):
                 size = np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
-                size = sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+                size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
         if size is None:
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
-    def tensor_to_space(self, tensor: torch.Tensor, space: gym.Space, start: int = 0) -> Union[torch.Tensor, dict]:
+    def tensor_to_space(self, 
+                        tensor: torch.Tensor, 
+                        space: gym.Space, 
+                        start: int = 0) -> Union[torch.Tensor, dict]:
         """Map a flat tensor to a Gym space
 
         The mapping is done in the following way:
@@ -118,17 +139,28 @@ class Model(torch.nn.Module):
           keeping the first dimension (number of samples) as they are
         - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
 
-        :param tensor: Tensor to map
+        :param tensor: Tensor to map from
         :type tensor: torch.Tensor
         :param space: Space to map the tensor to
         :type space: gym.Space
-        :param start: Index of the first element of the tensor to map (default: 0)
+        :param start: Index of the first element of the tensor to map (default: ``0``)
         :type start: int, optional
 
         :raises ValueError: If the space is not supported
 
         :return: Mapped tensor or dictionary
         :rtype: torch.Tensor or dict
+
+        Example::
+
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            ...                          'b': gym.spaces.Discrete(4)})
+            >>> tensor = torch.tensor([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
+            >>>
+            >>> model.tensor_to_space(tensor, space)
+            {'a': tensor([[[-0.3000, -0.2000, -0.1000],
+                           [ 0.1000,  0.2000,  0.3000]]]),
+             'b': tensor([[2.]])}
         """
         if issubclass(type(space), gym.spaces.Discrete):
             return tensor
@@ -137,7 +169,7 @@ class Model(torch.nn.Module):
         elif issubclass(type(space), gym.spaces.Dict):
             output = {}
             for k in sorted(space.keys()):
-                end = start + self._get_space_size(space[k])
+                end = start + self._get_space_size(space[k], number_of_elements=False)
                 output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
                 start = end
             return output
@@ -145,22 +177,22 @@ class Model(torch.nn.Module):
 
     def random_act(self, 
                    states: torch.Tensor, 
-                   taken_actions: Union[torch.Tensor, None] = None, 
-                   inference=False) -> Tuple[torch.Tensor]:
+                   taken_actions: Optional[torch.Tensor] = None, 
+                   role: str = "") -> Sequence[torch.Tensor]:
         """Act randomly according to the action space
 
         :param states: Observation/state of the environment used to get the shape of the action space
         :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: None).
+        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the model is making inference (default: False)
-        :type inference: bool, optional
+        :type taken_actions: torch.Tensor, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         :raises NotImplementedError: Unsupported action space
 
         :return: Random actions to be taken by the agent
-        :rtype: tuple of torch.Tensor
+        :rtype: sequence of torch.Tensor
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete):
@@ -182,12 +214,20 @@ class Model(torch.nn.Module):
         Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
-        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "normal\_")
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"normal_"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
         :param kwargs: Key-value arguments of the method to be called
         :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all parameters with an orthogonal distribution with a gain of 0.5
+            >>> model.init_parameters("orthogonal_", gain=0.5)
+
+            # initialize all parameters as a sparse matrix with a sparsity of 0.1
+            >>> model.init_parameters("sparse_", sparsity=0.1)
         """
         for parameters in self.parameters():
             exec("torch.nn.init.{}(parameters, *args, **kwargs)".format(method_name))
@@ -201,17 +241,25 @@ class Model(torch.nn.Module):
         The following layers will be initialized:
         - torch.nn.Linear
         
-        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: "orthogonal\_")
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"orthogonal_"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
         :param kwargs: Key-value arguments of the method to be called
         :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all weights with uniform distribution in range [-0.1, 0.1]
+            >>> model.init_weights(method_name="uniform_", a=-0.1, b=0.1)
+
+            # initialize all weights with normal distribution with mean 0 and standard deviation 0.25
+            >>> model.init_weights(method_name="normal_", mean=0.0, std=0.25)
         """
         def _update_weights(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
-                    _update_weights(layer)
+                    _update_weights(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
                     exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
         
@@ -226,26 +274,29 @@ class Model(torch.nn.Module):
 
     def compute(self, 
                 states: torch.Tensor, 
-                taken_actions: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+                taken_actions: Optional[torch.Tensor] = None,
+                role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: None).
+        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor or None, optional
+        :type taken_actions: torch.Tensor, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
         
         :return: Computation performed by the models
-        :rtype: torch.Tensor or tuple of torch.Tensor
+        :rtype: torch.Tensor or sequence of torch.Tensor
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
     def act(self, 
             states: torch.Tensor, 
-            taken_actions: Union[torch.Tensor, None] = None, 
-            inference=False) -> Tuple[torch.Tensor]:
+            taken_actions: Optional[torch.Tensor] = None, 
+            role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -254,29 +305,30 @@ class Model(torch.nn.Module):
 
         :param states: Observation/state of the environment used to make the decision
         :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: None).
+        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
                               The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the model is making inference (default: False)
-        :type inference: bool, optional
+        :type taken_actions: torch.Tensor, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
         
         :return: Action to be taken by the agent given the state of the environment.
-                 The typical tuple's components are the actions, the log of the probability density function and mean actions.
+                 The typical sequence's components are the actions, the log of the probability density function and mean actions.
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
-        :rtype: tuple of torch.Tensor
+        :rtype: sequence of torch.Tensor
         """
+        logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
         
     def set_mode(self, mode: str) -> None:
         """Set the model mode (training or evaluation)
 
-        :param mode: Mode: "train" for training or "eval" for evaluation. 
+        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation. 
             See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
-        :raises ValueError: Mode must be ``"train"`` or ``"eval"``
+        :raises ValueError: If the mode is not ``"train"`` or ``"eval"``
         """
         if mode == "train":
             self.train(True)
@@ -285,25 +337,249 @@ class Model(torch.nn.Module):
         else:
             raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
 
-    def save(self, path: str, state_dict: Union[dict, None] = None) -> None:
+    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
             
         :param path: Path to save the model to
         :type path: str
-        :param state_dict: State dictionary to save (default: None).
+        :param state_dict: State dictionary to save (default: ``None``).
                            If None, the model's state_dict will be saved
         :type state_dict: dict, optional
+
+        Example::
+
+            # save the current model to the specified path
+            >>> model.save("/tmp/model.pt")
+
+            # save an older version of the model to the specified path
+            >>> old_state_dict = copy.deepcopy(model.state_dict())
+            >>> # ...
+            >>> model.save("/tmp/model.pt", old_state_dict)
         """
         torch.save(self.state_dict() if state_dict is None else state_dict, path)
 
     def load(self, path: str) -> None:
         """Load the model from the specified path
-                
+
+        The final storage device is determined by the constructor of the model
+
         :param path: Path to load the model from
         :type path: str
+
+        Example::
+
+            # load the model onto the CPU
+            >>> model = Model(observation_space, action_space, device="cpu")
+            >>> model.load("model.pt")
+
+            # load the model onto the GPU 1
+            >>> model = Model(observation_space, action_space, device="cuda:1")
+            >>> model.load("model.pt")
         """
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path, map_location=self.device))
         self.eval()
+
+    def migrate(self,
+                state_dict: Optional[Mapping[str, torch.Tensor]] = None,
+                path: Optional[str] = None,
+                name_map: Mapping[str, str] = {},
+                auto_mapping: bool = True,
+                verbose: bool = False) -> bool:
+        """Migrate the specified extrernal model's state dict to the current model
+
+        The final storage device is determined by the constructor of the model
+
+        Only one of ``state_dict`` or ``path`` can be specified.
+        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated 
+        by the *rl_games* and *stable-baselines3* libraries at the moment
+
+        For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
+        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully
+
+        :param state_dict: External model's state dict to migrate from (default: ``None``)
+        :type state_dict: Mapping[str, torch.Tensor], optional
+        :param path: Path to the external checkpoint to migrate from (default: ``None``)
+        :type path: str, optional
+        :param name_map: Name map to use for the migration (default: ``{}``).
+                         Keys are the current parameter names and values are the external parameter names
+        :type name_map: Mapping[str, str], optional
+        :param auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``)
+        :type auto_mapping: bool, optional
+        :param verbose: Show model names and migration (default: ``False``)
+        :type verbose: bool, optional
+
+        :raises ValueError: If neither or both of ``state_dict`` and ``path`` parameters have been set
+        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter
+
+        :return: True if the migration was successful, False otherwise.
+                 Migration is successful if all parameters of the current model are found in the external model
+        :rtype: bool
+
+        Example::
+
+            # migrate a rl_games checkpoint with unambiguous state_dict
+            >>> model.migrate(path="./runs/Ant/nn/Ant.pth")
+            True
+
+            # migrate a rl_games checkpoint with ambiguous state_dict
+            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", verbose=False)
+            [skrl:WARNING] Ambiguous match for log_std_parameter <- [value_mean_std.running_mean, value_mean_std.running_var, a2c_network.sigma]
+            [skrl:WARNING] Ambiguous match for net.0.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.2.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.4.weight <- [a2c_network.value.weight, a2c_network.mu.weight]
+            [skrl:WARNING] Ambiguous match for net.4.bias <- [a2c_network.value.bias, a2c_network.mu.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.0.bias -> [net.0.bias, net.2.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.2.bias -> [net.0.bias, net.2.bias]
+            False
+            >>> name_map = {"log_std_parameter": "a2c_network.sigma",
+            ...             "net.0.bias": "a2c_network.actor_mlp.0.bias",
+            ...             "net.2.bias": "a2c_network.actor_mlp.2.bias",
+            ...             "net.4.weight": "a2c_network.mu.weight",
+            ...             "net.4.bias": "a2c_network.mu.bias"}
+            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", name_map=name_map, verbose=True)
+            [skrl:INFO] Models
+            [skrl:INFO]   |-- current: 7 items
+            [skrl:INFO]   |    |-- log_std_parameter : torch.Size([1])
+            [skrl:INFO]   |    |-- net.0.weight : torch.Size([32, 4])
+            [skrl:INFO]   |    |-- net.0.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- net.2.weight : torch.Size([32, 32])
+            [skrl:INFO]   |    |-- net.2.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- net.4.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- net.4.bias : torch.Size([1])
+            [skrl:INFO]   |-- source: 15 items
+            [skrl:INFO]   |    |-- value_mean_std.running_mean : torch.Size([1])
+            [skrl:INFO]   |    |-- value_mean_std.running_var : torch.Size([1])
+            [skrl:INFO]   |    |-- value_mean_std.count : torch.Size([])
+            [skrl:INFO]   |    |-- running_mean_std.running_mean : torch.Size([4])
+            [skrl:INFO]   |    |-- running_mean_std.running_var : torch.Size([4])
+            [skrl:INFO]   |    |-- running_mean_std.count : torch.Size([])
+            [skrl:INFO]   |    |-- a2c_network.sigma : torch.Size([1])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.weight : torch.Size([32, 4])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.weight : torch.Size([32, 32])
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.bias : torch.Size([32])
+            [skrl:INFO]   |    |-- a2c_network.value.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- a2c_network.value.bias : torch.Size([1])
+            [skrl:INFO]   |    |-- a2c_network.mu.weight : torch.Size([1, 32])
+            [skrl:INFO]   |    |-- a2c_network.mu.bias : torch.Size([1])
+            [skrl:INFO] Migration
+            [skrl:INFO]   |-- map:  log_std_parameter <- a2c_network.sigma
+            [skrl:INFO]   |-- auto: net.0.weight <- a2c_network.actor_mlp.0.weight
+            [skrl:INFO]   |-- map:  net.0.bias <- a2c_network.actor_mlp.0.bias
+            [skrl:INFO]   |-- auto: net.2.weight <- a2c_network.actor_mlp.2.weight
+            [skrl:INFO]   |-- map:  net.2.bias <- a2c_network.actor_mlp.2.bias
+            [skrl:INFO]   |-- map:  net.4.weight <- a2c_network.mu.weight
+            [skrl:INFO]   |-- map:  net.4.bias <- a2c_network.mu.bias
+            False
+
+            # migrate a stable-baselines3 checkpoint with unambiguous state_dict
+            >>> model.migrate(path="./ddpg_pendulum.zip")
+            True
+
+            # migrate from any exported model by loading its state_dict (unambiguous state_dict)
+            >>> state_dict = torch.load("./external_model.pt")
+            >>> model.migrate(state_dict=state_dict)
+            True
+        """
+        if (state_dict is not None) + (path is not None) != 1:
+            raise ValueError("Exactly one of state_dict or path may be specified")
+
+        # load state_dict from path
+        if path is not None:
+            state_dict = {}
+            # rl_games checkpoint
+            if path.endswith(".pt") or path.endswith(".pth"):
+                checkpoint = torch.load(path, map_location=self.device)
+                if type(checkpoint) is dict:
+                    state_dict = checkpoint.get("model", {})
+            # stable-baselines3
+            elif path.endswith(".zip"):
+                import zipfile
+                try:
+                    archive = zipfile.ZipFile(path, 'r')
+                    with archive.open('policy.pth', mode="r") as file:
+                        state_dict = torch.load(file, map_location=self.device)
+                except KeyError as e:
+                    logger.warning(str(e))
+                    state_dict = {}
+            else:
+                raise ValueError("Cannot identify file type")
+
+        # show state_dict
+        if verbose:
+            logger.info("Models")
+            logger.info("  |-- current: {} items".format(len(self.state_dict().keys())))
+            for name, tensor in self.state_dict().items():
+                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
+            logger.info("  |-- source: {} items".format(len(state_dict.keys())))
+            for name, tensor in state_dict.items():
+                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
+            logger.info("Migration")
+
+        # migrate the state_dict to current model
+        new_state_dict = collections.OrderedDict()
+        match_counter = collections.defaultdict(list)
+        used_counter = collections.defaultdict(list)
+        for name, tensor in self.state_dict().items():
+            for external_name, external_tensor in state_dict.items():
+                # mapped names
+                if name_map.get(name, "") == external_name:
+                    if tensor.shape == external_tensor.shape:
+                        new_state_dict[name] = external_tensor
+                        match_counter[name].append(external_name)
+                        used_counter[external_name].append(name)
+                        if verbose:
+                            logger.info("  |-- map:  {} <- {}".format(name, external_name))
+                        break
+                    else:
+                        logger.warning("Shape mismatch for {} <- {} : {} != {}".format(name, external_name, tensor.shape, external_tensor.shape))
+                # auto-mapped names
+                if auto_mapping and name not in name_map:
+                    if tensor.shape == external_tensor.shape:
+                        if name.endswith(".weight"):
+                            if external_name.endswith(".weight"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+                        elif name.endswith(".bias"):
+                            if external_name.endswith(".bias"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+                        else:
+                            if not external_name.endswith(".weight") and not external_name.endswith(".bias"):
+                                new_state_dict[name] = external_tensor
+                                match_counter[name].append(external_name)
+                                used_counter[external_name].append(name)
+                                if verbose:
+                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+
+        # show ambiguous matches
+        status = True
+        for name, tensor in self.state_dict().items():
+            if len(match_counter.get(name, [])) > 1:
+                logger.warning("Ambiguous match for {} <- [{}]".format(name, ", ".join(match_counter.get(name, []))))
+                status = False
+        # show missing matches
+        for name, tensor in self.state_dict().items():
+            if not match_counter.get(name, []):
+                logger.warning("Missing match for {}".format(name))
+                status = False
+        # show multiple uses
+        for name, tensor in state_dict.items():
+            if len(used_counter.get(name, [])) > 1:
+                logger.warning("Multiple use of {} -> [{}]".format(name, ", ".join(used_counter.get(name, []))))
+                status = False
+
+        # load new state dict
+        self.load_state_dict(new_state_dict, strict=False)
+        self.eval()
+
+        return status
     
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
@@ -311,8 +587,16 @@ class Model(torch.nn.Module):
         - Freeze: disable gradient computation (``parameters.requires_grad = False``)
         - Unfreeze: enable gradient computation (``parameters.requires_grad = True``) 
         
-        :param freeze: Freeze the internal parameters if True, otherwise unfreeze them
+        :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
         :type freeze: bool, optional
+
+        Example::
+
+            # freeze model parameters
+            >>> model.freeze_parameters(True)
+
+            # unfreeze model parameters
+            >>> model.freeze_parameters(False)
         """
         for parameters in self.parameters():
             parameters.requires_grad = not freeze
@@ -322,12 +606,20 @@ class Model(torch.nn.Module):
 
         - Hard update: :math:`\\theta = \\theta_{net}`
         - Soft (polyak averaging) update: :math:`\\theta = (1 - \\rho) \\theta + \\rho \\theta_{net}`
-        
+
         :param model: Model used to update the internal parameters
         :type model: torch.nn.Module (skrl.models.torch.Model)
-        :param polyak: Polyak hyperparameter between 0 and 1 (usually close to 0).
-                       A hard update is performed when its value is 1 (default)
+        :param polyak: Polyak hyperparameter between 0 and 1 (default: ``1``).
+                       A hard update is performed when its value is 1
         :type polyak: float, optional
+
+        Example::
+
+            # hard update (from source model)
+            >>> model.update_parameters(source_model)
+
+            # soft update (from source model)
+            >>> model.update_parameters(source_model, polyak=0.005)
         """
         with torch.no_grad():
             # hard update

@@ -22,6 +22,16 @@ Basic usage
             :start-after: [start-sequential]
             :end-before: [end-sequential]
 
+Configuration
+^^^^^^^^^^^^^
+
+.. py:data:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+
+.. literalinclude:: ../../../skrl/trainers/torch/sequential.py
+    :language: python
+    :lines: 14-17
+    :linenos:
+
 API
 ^^^
 

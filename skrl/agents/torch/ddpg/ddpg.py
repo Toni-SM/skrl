@@ -45,7 +45,7 @@ DDPG_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -95,7 +95,10 @@ class DDPG(Agent):
         self.target_critic = self.models.get("target_critic", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["target_policy"] = self.target_policy
+        self.checkpoint_modules["critic"] = self.critic
+        self.checkpoint_modules["target_critic"] = self.target_critic
         
         if self.target_policy is not None and self.target_critic is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -137,9 +140,15 @@ class DDPG(Agent):
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
+            self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -163,11 +172,7 @@ class DDPG(Agent):
         # backward compatibility: torch < 1.9 clamp method does not support tensors
         self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -176,8 +181,6 @@ class DDPG(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -186,10 +189,10 @@ class DDPG(Agent):
 
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample deterministic actions
-        actions = self.policy.act(states, inference=inference)
+        actions = self.policy.act(states, taken_actions=None, role="policy")
 
         # add exloration noise
         if self._exploration_noise is not None:
@@ -313,13 +316,13 @@ class DDPG(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
+                next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
                 
-                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic")
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions)
+            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions, role="critic")
             
             critic_loss = F.mse_loss(critic_values, target_values)
             
@@ -329,8 +332,8 @@ class DDPG(Agent):
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
-            actions, _, _ = self.policy.act(states=sampled_states)
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions)
+            actions, _, _ = self.policy.act(states=sampled_states, taken_actions=None, role="policy")
+            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions, role="critic")
 
             policy_loss = -critic_values.mean()
 

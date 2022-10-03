@@ -98,7 +98,7 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
 
 .. list-table::
    :header-rows: 1
@@ -124,14 +124,20 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
    * - Notation
      - Concept
      - Key
+     - Input shape
+     - Output shape
      - Type
    * - :math:`\pi_\theta(s)`
      - Policy
      - :literal:`"policy"`
-     - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>`
+     - observation
+     - action
+     - :ref:`Categorical <models_categorical>` / :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
    * - :math:`V_\phi(s)`
      - Value
      - :literal:`"value"`
+     - observation
+     - 1
      - :ref:`Deterministic <models_deterministic>`
 
 API

@@ -1,3 +1,5 @@
+.. _resources_preprocessors:
+
 Preprocessors
 =============
 
@@ -27,7 +29,6 @@ The preprocessor class is set under the :literal:`"<variable>_preprocessor"` key
             cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
             cfg["value_preprocessor"] = RunningStandardScaler
             cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-
 
 .. raw:: html
 

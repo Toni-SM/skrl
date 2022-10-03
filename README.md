@@ -1,10 +1,10 @@
 <p align="center">
-  <img width="300rem" src="docs/source/_static/data/skrl-up-transparent.png">
+  <img width="300rem" src="https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/_static/data/skrl-up-transparent.png">
 </p>
 <h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
 <br>
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using [PyTorch](https://pytorch.org/)) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the [OpenAI Gym](https://www.gymlibrary.ml) and [DeepMind](https://github.com/deepmind/dm_env) environment interfaces, it allows loading and configuring [NVIDIA Isaac Gym](https://developer.nvidia.com/isaac-gym/) and [NVIDIA Omniverse Isaac Gym](https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using [PyTorch](https://pytorch.org/)) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the [OpenAI Gym](https://www.gymlibrary.dev) and [DeepMind](https://github.com/deepmind/dm_env) environment interfaces, it allows loading and configuring [NVIDIA Isaac Gym](https://developer.nvidia.com/isaac-gym/) and [NVIDIA Omniverse Isaac Gym](https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 <br>
 
@@ -14,7 +14,7 @@ https://skrl.readthedocs.io/en/latest/
 
 <br>
 
-> **Note:** This project is under **active continuous development**. Please make sure you always have the latest version 
+> **Note:** This project is under **active continuous development**. Please make sure you always have the latest version. Visit the [develop](https://github.com/Toni-SM/skrl/tree/develop) branch or its [documentation](https://skrl.readthedocs.io/en/develop) to access the latest updates to be released.
 
 <br>
 

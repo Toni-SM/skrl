@@ -38,7 +38,7 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
 
 .. list-table::
    :header-rows: 1
@@ -64,10 +64,14 @@ The implementation uses 1 discrete function approximator. This function approxim
    * - Notation
      - Concept
      - Key
+     - Input shape
+     - Output shape
      - Type
    * - :math:`\pi(s)`
      - Policy
      - :literal:`"policy"`
+     - observation
+     - action
      - :ref:`Categorical <models_categorical>`
 
 API

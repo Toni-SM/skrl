@@ -1,3 +1,5 @@
+.. _models_base_class:
+
 Base class
 ==========
 
@@ -7,26 +9,52 @@ Base class
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
 
-Basic inheritance usage
-^^^^^^^^^^^^^^^^^^^^^^^
+Mixin and inheritance
+^^^^^^^^^^^^^^^^^^^^^
 
 .. tabs::
-            
-    .. tab:: Inheritance
 
-        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/model.py>`_
+    .. tab:: Mixin
 
-        .. literalinclude:: ../snippets/model.py
+        .. literalinclude:: ../snippets/model_mixin.py
             :language: python
-            :linenos:
+            :start-after: [start-mixin]
+            :end-before: [end-mixin]
+
+    .. tab:: Model inheritance
+
+        .. literalinclude:: ../snippets/model_mixin.py
+            :language: python
+            :start-after: [start-model]
+            :end-before: [end-model]
 
 API
 ^^^
 
 .. autoclass:: skrl.models.torch.base.Model
-   :undoc-members:
-   :show-inheritance:
-   :private-members: _get_space_size
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _get_space_size
+    :members:
    
-   .. automethod:: __init__
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        Device to be used for the computations
+
+    .. py:property:: observation_space
+
+        Observation/state space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: action_space
+
+        Action space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: num_observations
+
+        Number of elements in the observation/state space
+
+    .. py:property:: num_actions
+
+        Number of elements in the action space

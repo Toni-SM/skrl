@@ -2,57 +2,51 @@ import isaacgym
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # Import the skrl components to build the RL system
-from skrl.models.torch import GaussianModel, DeterministicModel
+from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
 from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2, load_isaacgym_env_preview4
+from skrl.envs.torch import load_isaacgym_env_preview4
 
 
-# Define only the policies for evaluation 
-class StochasticActor(GaussianModel):
+# Define only the policies for evaluation
+class StochasticActor(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std)
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 32)
-        self.linear_layer_2 = nn.Linear(32, 32)
-        self.mean_action_layer = nn.Linear(32, self.num_actions)
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
+                                 nn.ELU(),
+                                 nn.Linear(32, 32),
+                                 nn.ELU(),
+                                 nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions):
-        x = F.elu(self.linear_layer_1(states))
-        x = F.elu(self.linear_layer_2(x))
-        return torch.tanh(self.mean_action_layer(x)), self.log_std_parameter
+    def compute(self, states, taken_actions, role):
+        return self.net(states), self.log_std_parameter
 
-class DeterministicActor(DeterministicModel):
-    def __init__(self, observation_space, action_space, device, clip_actions = False):
-        super().__init__(observation_space, action_space, device, clip_actions)
+class DeterministicActor(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions=False):
+        Model.__init__(self, observation_space, action_space, device)
+        DeterministicMixin.__init__(self, clip_actions)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 32)
-        self.linear_layer_2 = nn.Linear(32, 32)
-        self.action_layer = nn.Linear(32, self.num_actions)
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
+                                 nn.ELU(),
+                                 nn.Linear(32, 32),
+                                 nn.ELU(),
+                                 nn.Linear(32, self.num_actions))
 
-    def compute(self, states, taken_actions):
-        x = F.elu(self.linear_layer_1(states))
-        x = F.elu(self.linear_layer_2(x))
-        return torch.tanh(self.action_layer(x))
+    def compute(self, states, taken_actions, role):
+        return self.net(states)
 
 
-# Load and wrap the Isaac Gym environment.
-# The following lines are intended to support all versions (preview 2, 3 and 4). 
-# It tries to load from preview 3/4, but if it fails, it will try to load from preview 2
-try:
-    env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
-except Exception as e:
-    print("Isaac Gym (preview 3/4) failed: {}\nTrying preview 2...".format(e))
-    env = load_isaacgym_env_preview2("Cartpole")
+# Load and wrap the Isaac Gym environment
+env = load_isaacgym_env_preview4(task_name="Cartpole")   # preview 3 and 4 use the same loader
 env = wrap_env(env)
 
 device = env.device
@@ -61,18 +55,16 @@ device = env.device
 # Instantiate the agent's policies.
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ddpg.html#spaces-and-models
-models_ddpg = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)}
+models_ddpg = {}
+models_ddpg["policy"] = DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)
 # TD3 requires 6 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html#spaces-and-models
-models_td3 = {"policy": DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)}
+models_td3 = {}
+models_td3["policy"] = DeterministicActor(env.observation_space, env.action_space, device, clip_actions=True)
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sac.html#spaces-and-models
-models_sac = {"policy": StochasticActor(env.observation_space, env.action_space, device, clip_actions=True)}
-
-# load checkpoints
-models_ddpg["policy"].load("./runs/22-02-06_19-37-44-874837_DDPG/checkpoints/8000_policy.pt")
-models_td3["policy"].load("./runs/22-02-06_19-28-48-436345_TD3/checkpoints/5000_policy.pt")
-models_sac["policy"].load("./runs/22-02-06_19-28-48-441161_SAC/checkpoints/3000_policy.pt")
+models_sac = {}
+models_sac["policy"] = StochasticActor(env.observation_space, env.action_space, device, clip_actions=True)
 
 
 # Configure and instantiate the agents.
@@ -116,6 +108,11 @@ agent_sac = SAC(models=models_sac,
                 observation_space=env.observation_space, 
                 action_space=env.action_space,
                 device=device)
+
+# load checkpoint (agent)
+agent_ddpg.load("./runs/22-09-12_22-30-58-982355_DDPG/checkpoints/agent_8000.pt")
+agent_td3.load("./runs/22-09-12_22-30-58-986295_TD3/checkpoints/agent_8000.pt")
+agent_sac.load("./runs/22-09-12_22-30-58-987142_SAC/checkpoints/agent_8000.pt")
 
 
 # Configure and instantiate the RL trainer

@@ -1,3 +1,5 @@
+.. _resources_noises:
+
 Noises
 ======
 
@@ -116,8 +118,6 @@ Basic inheritance usage
 .. tabs::
             
     .. tab:: Inheritance
-
-        View the raw code `here <https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/snippets/noise.py>`_
 
         .. literalinclude:: ../snippets/noise.py
             :language: python

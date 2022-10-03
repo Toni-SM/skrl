@@ -23,26 +23,23 @@ device = env.device
 # Instantiate only the policy for evaluation.
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
-models_dqn = {"q_network": deterministic_model(observation_space=env.observation_space, 
-                                               action_space=env.action_space,
-                                               device=device,
-                                               clip_actions=False, 
-                                               input_shape=Shape.OBSERVATIONS,
-                                               hiddens=[64, 64],
-                                               hidden_activation=["relu", "relu"],
-                                               output_shape=Shape.ACTIONS,
-                                               output_activation=None,
-                                               output_scale=1.0)}
-
-# load checkpoint
-models_dqn["q_network"].load("./runs/22-02-06_19-19-56-857355_DQN/checkpoints/15000_q_network.pt")
+models_dqn = {}
+models_dqn["q_network"] = deterministic_model(observation_space=env.observation_space, 
+                                              action_space=env.action_space,
+                                              device=device,
+                                              clip_actions=False, 
+                                              input_shape=Shape.OBSERVATIONS,
+                                              hiddens=[64, 64],
+                                              hidden_activation=["relu", "relu"],
+                                              output_shape=Shape.ACTIONS,
+                                              output_activation=None,
+                                              output_scale=1.0)
 
 
 # Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#configuration-and-hyperparameters
 cfg_dqn = DQN_DEFAULT_CONFIG.copy()
-cfg_dqn["random_timesteps"] = 0
 cfg_dqn["exploration"]["timesteps"] = 0
 # # logging to TensorBoard each 1000 timesteps and ignore checkpoints
 cfg_dqn["experiment"]["write_interval"] = 1000
@@ -54,6 +51,9 @@ agent_dqn = DQN(models=models_dqn,
                 observation_space=env.observation_space, 
                 action_space=env.action_space,
                 device=device)
+
+# load checkpoint
+agent_dqn.load("./runs/22-09-10_10-48-10-551426_DQN/checkpoints/best_agent.pt")
 
 
 # Configure and instantiate the RL trainer

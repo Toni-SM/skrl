@@ -47,7 +47,7 @@ DQN_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -95,7 +95,8 @@ class DQN(Agent):
         self.target_q_network = self.models.get("target_q_network", None)
 
         # checkpoint models
-        self.checkpoint_models = {"q_network": self.q_network} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["q_network"] = self.q_network
+        self.checkpoint_modules["target_q_network"] = self.target_q_network
         
         if self.target_q_network is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -134,9 +135,14 @@ class DQN(Agent):
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["optimizer"] = self.optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -153,11 +159,7 @@ class DQN(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -166,8 +168,6 @@ class DQN(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -175,10 +175,10 @@ class DQN(Agent):
         states = self._state_preprocessor(states)
 
         if not self._exploration_timesteps:
-            return torch.argmax(self.q_network.act(states, inference=inference)[0], dim=1, keepdim=True), None, None
+            return torch.argmax(self.q_network.act(states, taken_actions=None, role="q_network")[0], dim=1, keepdim=True), None, None
 
         # sample random actions
-        actions = self.q_network.random_act(states)[0]
+        actions = self.q_network.random_act(states, taken_actions=None, role="q_network")[0]
         if timestep < self._random_timesteps:
             return actions, None, None
 
@@ -188,7 +188,7 @@ class DQN(Agent):
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], inference=inference)[0], dim=1, keepdim=True)
+            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], taken_actions=None, role="q_network")[0], dim=1, keepdim=True)
         
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
@@ -278,13 +278,14 @@ class DQN(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states)
+                next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states, taken_actions=None, role="target_q_network")
                 
                 target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values = torch.gather(self.q_network.act(states=sampled_states)[0], dim=1, index=sampled_actions.long())
+            q_values = torch.gather(self.q_network.act(states=sampled_states, taken_actions=None, role="q_network")[0], 
+                                    dim=1, index=sampled_actions.long())
 
             q_network_loss = F.mse_loss(q_values, target_values)
             

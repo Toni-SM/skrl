@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 
 # Import the skrl components to build the RL system
-from skrl.models.torch import GaussianModel, DeterministicModel
+from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 from skrl.envs.torch import load_omniverse_isaacgym_env
@@ -16,41 +17,37 @@ from skrl.utils import set_seed
 set_seed(42)
 
 
-# Define the models (stochastic and deterministic models) for the agent using helper classes.
-# - Policy: takes as input the environment's observation/state and returns an action
-# - Value: takes the state as input and provides a value to guide the policy
-class Policy(GaussianModel):
+# Define the shared model (stochastic and deterministic models) for the agent using mixins.
+class Shared(GaussianMixin, DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std)
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        DeterministicMixin.__init__(self, clip_actions)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
                                  nn.ELU(),
                                  nn.Linear(256, 128),
                                  nn.ELU(),
                                  nn.Linear(128, 64),
-                                 nn.ELU(),
-                                 nn.Linear(64, self.num_actions))
+                                 nn.ELU())
+        
+        self.mean_layer = nn.Linear(64, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        
+        self.value_layer = nn.Linear(64, 1)
 
-    def compute(self, states, taken_actions):
-        return self.net(states), self.log_std_parameter
+    def act(self, states, taken_actions, role):
+        if role == "policy":
+            return GaussianMixin.act(self, states, taken_actions, role)
+        elif role == "value":
+            return DeterministicMixin.act(self, states, taken_actions, role)
 
-class Value(DeterministicModel):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        super().__init__(observation_space, action_space, device, clip_actions)
-
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
-                                 nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 64),
-                                 nn.ELU(),
-                                 nn.Linear(64, 1))
-
-    def compute(self, states, taken_actions):
-        return self.net(states)
+    def compute(self, states, taken_actions, role):
+        if role == "policy":
+            return self.mean_layer(self.net(states)), self.log_std_parameter
+        elif role == "value":
+            return self.value_layer(self.net(states))
 
 
 # Load and wrap the Omniverse Isaac Gym environment
@@ -67,19 +64,16 @@ memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 # Instantiate the agent's models (function approximators).
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
-models_ppo = {"policy": Policy(env.observation_space, env.action_space, device),
-              "value": Value(env.observation_space, env.action_space, device)}
-
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+models_ppo = {}
+models_ppo["policy"] = Shared(env.observation_space, env.action_space, device)
+models_ppo["value"] = models_ppo["policy"]  # same instance: shared model
 
 
 # Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#configuration-and-hyperparameters
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
-cfg_ppo["rollouts"] = 16
+cfg_ppo["rollouts"] = 16  # memory_size
 cfg_ppo["learning_epochs"] = 4
 cfg_ppo["mini_batches"] = 2  # 16 * 4096 / 32768
 cfg_ppo["discount_factor"] = 0.99
@@ -97,6 +91,10 @@ cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 1.0
 cfg_ppo["kl_threshold"] = 0
 cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+cfg_ppo["state_preprocessor"] = RunningStandardScaler
+cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg_ppo["value_preprocessor"] = RunningStandardScaler
+cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints each 40 and 400 timesteps respectively
 cfg_ppo["experiment"]["write_interval"] = 40
 cfg_ppo["experiment"]["checkpoint_interval"] = 400

@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Mapping, Tuple, Dict, Any
 
 import os
 import gym
@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+from skrl import logger
 from ...memories.torch import Memory
 from ...models.torch import Model
 
@@ -66,10 +67,10 @@ class Agent:
         self._cumulative_timesteps = None
 
         # checkpoint
-        self.checkpoint_models = {}
+        self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
-        self.checkpoint_policy_only = self.cfg.get("experiment", {}).get("checkpoint_policy_only", True)
-        self.checkpoint_best_models = {"timestep": 0, "reward": -2 ** 31, "saved": False, "models": {}}
+        self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -87,7 +88,7 @@ class Agent:
                 string += "\n  |-- {}: {}".format(k, v)
         return string
 
-    def _empty_preprocessor(self, _input, *args, **kwargs) -> Any:
+    def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
         """Empty preprocess method
 
         This method is defined because PyTorch multiprocessing can't pickle lambdas
@@ -99,6 +100,17 @@ class Agent:
         :rtype: Any
         """
         return _input
+
+    def _get_internal_value(self, _module: Any) -> Any:
+        """Get internal module/variable state/value
+
+        :param _input: Module or variable
+        :type _input: Any
+
+        :return: Module/variable state/value
+        :rtype: Any
+        """
+        return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
     def init(self) -> None:
         """Initialize the agent
@@ -154,7 +166,7 @@ class Agent:
         self.tracking_data.clear()
 
     def write_checkpoint(self, timestep: int, timesteps: int) -> None:
-        """Write checkpoint (models) to disk
+        """Write checkpoint (modules) to disk
 
         The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
         The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
@@ -164,23 +176,37 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # current models
-        for k, model in self.checkpoint_models.items():
-            name = "{}_{}".format(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), k)
-            model.save(os.path.join(self.experiment_dir, "checkpoints", "{}.pt".format(name)))
+        tag = str(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"))
+        # separated modules
+        if self.checkpoint_store_separately:
+            for name, module in self.checkpoint_modules.items():
+                torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+        # whole agent
+        else:
+            modules = {}
+            for name, module in self.checkpoint_modules.items():
+                modules[name] = self._get_internal_value(module)
+            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
 
-        # best models
-        if self.checkpoint_best_models["models"] and not self.checkpoint_best_models["saved"]:
-            for k, model in self.checkpoint_models.items():
-                model.save(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(k)), 
-                           state_dict=self.checkpoint_best_models["models"][k])
-            self.checkpoint_best_models["saved"] = True
+        # best modules
+        if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
+            # separated modules
+            if self.checkpoint_store_separately:
+                for name, module in self.checkpoint_modules.items():
+                    torch.save(self.checkpoint_best_modules["modules"][name], 
+                               os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
+            # whole agent
+            else:
+                modules = {}
+                for name, module in self.checkpoint_modules.items():
+                    modules[name] = self.checkpoint_best_modules["modules"][name]
+                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+            self.checkpoint_best_modules["saved"] = True
 
     def act(self, 
             states: torch.Tensor, 
             timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+            timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -189,8 +215,6 @@ class Agent:
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :raises NotImplementedError: The method is not implemented by the inheriting classes
 
@@ -278,6 +302,277 @@ class Agent:
             if model is not None:
                 model.set_mode(mode)
 
+    def save(self, path: str) -> None:
+        """Save the agent to the specified path
+
+        :param path: Path to save the model to
+        :type path: str
+        """
+        modules = {}
+        for name, module in self.checkpoint_modules.items():
+            modules[name] = self._get_internal_value(module)
+        torch.save(modules, path)
+
+    def load(self, path: str) -> None:
+        """Load the model from the specified path
+
+        The final storage device is determined by the constructor of the model
+
+        :param path: Path to load the model from
+        :type path: str
+        """
+        modules = torch.load(path, map_location=self.device)
+        if type(modules) is dict:
+            for name, data in modules.items():
+                module = self.checkpoint_modules.get(name, None)
+                if module is not None:
+                    if hasattr(module, "load_state_dict"):
+                        module.load_state_dict(data)
+                        if hasattr(module, "eval"):
+                            module.eval()
+                    else:
+                        raise NotImplementedError
+                else:
+                    logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
+
+    def migrate(self,
+                path: str,
+                name_map: Mapping[str, Mapping[str, str]] = {},
+                auto_mapping: bool = True,
+                verbose: bool = False) -> bool:
+        """Migrate the specified extrernal checkpoint to the current agent
+
+        The final storage device is determined by the constructor of the agent.
+        Only files generated by the *rl_games* library are supported at the moment
+
+        For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
+        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully
+
+        :param path: Path to the external checkpoint to migrate from
+        :type path: str
+        :param name_map: Name map to use for the migration (default: ``{}``).
+                         Keys are the current parameter names and values are the external parameter names
+        :type name_map: Mapping[str, Mapping[str, str]], optional
+        :param auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``)
+        :type auto_mapping: bool, optional
+        :param verbose: Show model names and migration (default: ``False``)
+        :type verbose: bool, optional
+
+        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter
+
+        :return: True if the migration was successful, False otherwise.
+                 Migration is successful if all parameters of the current model are found in the external model
+        :rtype: bool
+
+        Example::
+
+            # migrate a rl_games checkpoint with ambiguous state_dict
+            >>> agent.migrate(path="./runs/Cartpole/nn/Cartpole.pth", verbose=False)
+            [skrl:WARNING] Ambiguous match for net.0.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.2.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.4.weight <- [a2c_network.value.weight, a2c_network.mu.weight]
+            [skrl:WARNING] Ambiguous match for net.4.bias <- [a2c_network.value.bias, a2c_network.mu.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.0.bias -> [net.0.bias, net.2.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.2.bias -> [net.0.bias, net.2.bias]
+            [skrl:WARNING] Ambiguous match for net.0.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.2.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
+            [skrl:WARNING] Ambiguous match for net.4.weight <- [a2c_network.value.weight, a2c_network.mu.weight]
+            [skrl:WARNING] Ambiguous match for net.4.bias <- [a2c_network.value.bias, a2c_network.mu.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.0.bias -> [net.0.bias, net.2.bias]
+            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.2.bias -> [net.0.bias, net.2.bias]
+            False
+            >>> name_map = {"policy": {"net.0.bias": "a2c_network.actor_mlp.0.bias",
+            ...                        "net.2.bias": "a2c_network.actor_mlp.2.bias",
+            ...                        "net.4.weight": "a2c_network.mu.weight",
+            ...                        "net.4.bias": "a2c_network.mu.bias"},
+            ...             "value": {"net.0.bias": "a2c_network.actor_mlp.0.bias",
+            ...                       "net.2.bias": "a2c_network.actor_mlp.2.bias",
+            ...                       "net.4.weight": "a2c_network.value.weight",
+            ...                       "net.4.bias": "a2c_network.value.bias"}}
+            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", name_map=name_map, verbose=True)
+            [skrl:INFO] Modules
+            [skrl:INFO]   |-- current
+            [skrl:INFO]   |    |-- policy (Policy)
+            [skrl:INFO]   |    |    |-- log_std_parameter : [1]
+            [skrl:INFO]   |    |    |-- net.0.weight : [32, 4]
+            [skrl:INFO]   |    |    |-- net.0.bias : [32]
+            [skrl:INFO]   |    |    |-- net.2.weight : [32, 32]
+            [skrl:INFO]   |    |    |-- net.2.bias : [32]
+            [skrl:INFO]   |    |    |-- net.4.weight : [1, 32]
+            [skrl:INFO]   |    |    |-- net.4.bias : [1]
+            [skrl:INFO]   |    |-- value (Value)
+            [skrl:INFO]   |    |    |-- net.0.weight : [32, 4]
+            [skrl:INFO]   |    |    |-- net.0.bias : [32]
+            [skrl:INFO]   |    |    |-- net.2.weight : [32, 32]
+            [skrl:INFO]   |    |    |-- net.2.bias : [32]
+            [skrl:INFO]   |    |    |-- net.4.weight : [1, 32]
+            [skrl:INFO]   |    |    |-- net.4.bias : [1]
+            [skrl:INFO]   |    |-- optimizer (Adam)
+            [skrl:INFO]   |    |    |-- state (dict)
+            [skrl:INFO]   |    |    |-- param_groups (list)
+            [skrl:INFO]   |    |-- state_preprocessor (RunningStandardScaler)
+            [skrl:INFO]   |    |    |-- running_mean : [4]
+            [skrl:INFO]   |    |    |-- running_variance : [4]
+            [skrl:INFO]   |    |    |-- current_count : []
+            [skrl:INFO]   |    |-- value_preprocessor (RunningStandardScaler)
+            [skrl:INFO]   |    |    |-- running_mean : [1]
+            [skrl:INFO]   |    |    |-- running_variance : [1]
+            [skrl:INFO]   |    |    |-- current_count : []
+            [skrl:INFO]   |-- source
+            [skrl:INFO]   |    |-- model (OrderedDict)
+            [skrl:INFO]   |    |    |-- value_mean_std.running_mean : [1]
+            [skrl:INFO]   |    |    |-- value_mean_std.running_var : [1]
+            [skrl:INFO]   |    |    |-- value_mean_std.count : []
+            [skrl:INFO]   |    |    |-- running_mean_std.running_mean : [4]
+            [skrl:INFO]   |    |    |-- running_mean_std.running_var : [4]
+            [skrl:INFO]   |    |    |-- running_mean_std.count : []
+            [skrl:INFO]   |    |    |-- a2c_network.sigma : [1]
+            [skrl:INFO]   |    |    |-- a2c_network.actor_mlp.0.weight : [32, 4]
+            [skrl:INFO]   |    |    |-- a2c_network.actor_mlp.0.bias : [32]
+            [skrl:INFO]   |    |    |-- a2c_network.actor_mlp.2.weight : [32, 32]
+            [skrl:INFO]   |    |    |-- a2c_network.actor_mlp.2.bias : [32]
+            [skrl:INFO]   |    |    |-- a2c_network.value.weight : [1, 32]
+            [skrl:INFO]   |    |    |-- a2c_network.value.bias : [1]
+            [skrl:INFO]   |    |    |-- a2c_network.mu.weight : [1, 32]
+            [skrl:INFO]   |    |    |-- a2c_network.mu.bias : [1]
+            [skrl:INFO]   |    |-- epoch (int)
+            [skrl:INFO]   |    |-- optimizer (dict)
+            [skrl:INFO]   |    |-- frame (int)
+            [skrl:INFO]   |    |-- last_mean_rewards (float32)
+            [skrl:INFO]   |    |-- env_state (NoneType)
+            [skrl:INFO] Migration
+            [skrl:INFO] Model: policy (Policy)
+            [skrl:INFO] Models
+            [skrl:INFO]   |-- current: 7 items
+            [skrl:INFO]   |    |-- log_std_parameter : [1]
+            [skrl:INFO]   |    |-- net.0.weight : [32, 4]
+            [skrl:INFO]   |    |-- net.0.bias : [32]
+            [skrl:INFO]   |    |-- net.2.weight : [32, 32]
+            [skrl:INFO]   |    |-- net.2.bias : [32]
+            [skrl:INFO]   |    |-- net.4.weight : [1, 32]
+            [skrl:INFO]   |    |-- net.4.bias : [1]
+            [skrl:INFO]   |-- source: 9 items
+            [skrl:INFO]   |    |-- a2c_network.sigma : [1]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.weight : [32, 4]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.bias : [32]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.weight : [32, 32]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.bias : [32]
+            [skrl:INFO]   |    |-- a2c_network.value.weight : [1, 32]
+            [skrl:INFO]   |    |-- a2c_network.value.bias : [1]
+            [skrl:INFO]   |    |-- a2c_network.mu.weight : [1, 32]
+            [skrl:INFO]   |    |-- a2c_network.mu.bias : [1]
+            [skrl:INFO] Migration
+            [skrl:INFO]   |-- auto: log_std_parameter <- a2c_network.sigma
+            [skrl:INFO]   |-- auto: net.0.weight <- a2c_network.actor_mlp.0.weight
+            [skrl:INFO]   |-- map:  net.0.bias <- a2c_network.actor_mlp.0.bias
+            [skrl:INFO]   |-- auto: net.2.weight <- a2c_network.actor_mlp.2.weight
+            [skrl:INFO]   |-- map:  net.2.bias <- a2c_network.actor_mlp.2.bias
+            [skrl:INFO]   |-- map:  net.4.weight <- a2c_network.mu.weight
+            [skrl:INFO]   |-- map:  net.4.bias <- a2c_network.mu.bias
+            [skrl:INFO] Model: value (Value)
+            [skrl:INFO] Models
+            [skrl:INFO]   |-- current: 6 items
+            [skrl:INFO]   |    |-- net.0.weight : [32, 4]
+            [skrl:INFO]   |    |-- net.0.bias : [32]
+            [skrl:INFO]   |    |-- net.2.weight : [32, 32]
+            [skrl:INFO]   |    |-- net.2.bias : [32]
+            [skrl:INFO]   |    |-- net.4.weight : [1, 32]
+            [skrl:INFO]   |    |-- net.4.bias : [1]
+            [skrl:INFO]   |-- source: 9 items
+            [skrl:INFO]   |    |-- a2c_network.sigma : [1]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.weight : [32, 4]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.bias : [32]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.weight : [32, 32]
+            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.bias : [32]
+            [skrl:INFO]   |    |-- a2c_network.value.weight : [1, 32]
+            [skrl:INFO]   |    |-- a2c_network.value.bias : [1]
+            [skrl:INFO]   |    |-- a2c_network.mu.weight : [1, 32]
+            [skrl:INFO]   |    |-- a2c_network.mu.bias : [1]
+            [skrl:INFO] Migration
+            [skrl:INFO]   |-- auto: net.0.weight <- a2c_network.actor_mlp.0.weight
+            [skrl:INFO]   |-- map:  net.0.bias <- a2c_network.actor_mlp.0.bias
+            [skrl:INFO]   |-- auto: net.2.weight <- a2c_network.actor_mlp.2.weight
+            [skrl:INFO]   |-- map:  net.2.bias <- a2c_network.actor_mlp.2.bias
+            [skrl:INFO]   |-- map:  net.4.weight <- a2c_network.value.weight
+            [skrl:INFO]   |-- map:  net.4.bias <- a2c_network.value.bias
+            True
+        """
+        # load state_dict from path
+        if path is not None:
+            # rl_games checkpoint
+            if path.endswith(".pt") or path.endswith(".pth"):
+                checkpoint = torch.load(path, map_location=self.device)
+            else:
+                raise ValueError("Cannot identify file type")
+
+        # show modules
+        if verbose:
+            logger.info("Modules")
+            logger.info("  |-- current")
+            for name, module in self.checkpoint_modules.items():
+                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                if hasattr(module, "state_dict"):
+                    for k, v in module.state_dict().items():
+                        if hasattr(v, "shape"):
+                            logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                        else:
+                            logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+            logger.info("  |-- source")
+            for name, module in checkpoint.items():
+                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                if name == "model":
+                    for k, v in module.items():
+                        logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                else:
+                    if hasattr(module, "state_dict"):
+                        for k, v in module.state_dict().items():
+                            if hasattr(v, "shape"):
+                                logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                            else:
+                                logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+            logger.info("Migration")
+
+        if "optimizer" in self.checkpoint_modules:
+            # loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+            # self.checkpoint_modules["optimizer"].load_state_dict(checkpoint["optimizer"])
+            pass
+        # state_preprocessor
+        if "state_preprocessor" in self.checkpoint_modules:
+            if "running_mean_std.running_mean" in checkpoint["model"]:
+                state_dict = copy.deepcopy(self.checkpoint_modules["state_preprocessor"].state_dict())
+                state_dict["running_mean"] = checkpoint["model"]["running_mean_std.running_mean"]
+                state_dict["running_variance"] = checkpoint["model"]["running_mean_std.running_var"]
+                state_dict["current_count"] = checkpoint["model"]["running_mean_std.count"]
+                self.checkpoint_modules["state_preprocessor"].load_state_dict(state_dict)
+                del checkpoint["model"]["running_mean_std.running_mean"]
+                del checkpoint["model"]["running_mean_std.running_var"]
+                del checkpoint["model"]["running_mean_std.count"]
+        # value_preprocessor
+        if "value_preprocessor" in self.checkpoint_modules:
+            if "value_mean_std.running_mean" in checkpoint["model"]:
+                state_dict = copy.deepcopy(self.checkpoint_modules["value_preprocessor"].state_dict())
+                state_dict["running_mean"] = checkpoint["model"]["value_mean_std.running_mean"]
+                state_dict["running_variance"] = checkpoint["model"]["value_mean_std.running_var"]
+                state_dict["current_count"] = checkpoint["model"]["value_mean_std.count"]
+                self.checkpoint_modules["value_preprocessor"].load_state_dict(state_dict)
+                del checkpoint["model"]["value_mean_std.running_mean"]
+                del checkpoint["model"]["value_mean_std.running_var"]
+                del checkpoint["model"]["value_mean_std.count"]
+        # TODO: AMP state preprocessor
+        # model
+        status = True
+        for name, module in self.checkpoint_modules.items():
+            if module not in ["state_preprocessor", "value_preprocessor", "optimizer"] and hasattr(module, "migrate"):
+                if verbose:
+                    logger.info("Model: {} ({})".format(name, type(module).__name__))
+                status *= module.migrate(state_dict=checkpoint["model"], 
+                                            name_map=name_map.get(name, {}), 
+                                            auto_mapping=auto_mapping, 
+                                            verbose=verbose)
+
+        self.set_mode("eval")
+        return bool(status)
+
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
 
@@ -302,11 +597,11 @@ class Agent:
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
-            if reward > self.checkpoint_best_models["reward"]:
-                self.checkpoint_best_models["timestep"] = timestep
-                self.checkpoint_best_models["reward"] = reward
-                self.checkpoint_best_models["saved"] = False
-                self.checkpoint_best_models["models"] = {k: copy.deepcopy(model.state_dict()) for k, model in self.checkpoint_models.items()}
+            if reward > self.checkpoint_best_modules["reward"]:
+                self.checkpoint_best_modules["timestep"] = timestep
+                self.checkpoint_best_modules["reward"] = reward
+                self.checkpoint_best_modules["saved"] = False
+                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
 
             # write to tensorboard
             self.write_tracking_data(timestep, timesteps)

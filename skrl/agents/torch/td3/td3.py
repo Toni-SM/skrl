@@ -50,7 +50,7 @@ TD3_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -102,7 +102,12 @@ class TD3(Agent):
         self.target_critic_2 = self.models.get("target_critic_2", None)
         
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["target_policy"] = self.target_policy
+        self.checkpoint_modules["critic_1"] = self.critic_1
+        self.checkpoint_modules["critic_2"] = self.critic_2
+        self.checkpoint_modules["target_critic_1"] = self.target_critic_1
+        self.checkpoint_modules["target_critic_2"] = self.target_critic_2
 
         if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -153,9 +158,15 @@ class TD3(Agent):
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
+            self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -179,11 +190,7 @@ class TD3(Agent):
         # backward compatibility: torch < 1.9 clamp method does not support tensors
         self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -192,8 +199,6 @@ class TD3(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -202,10 +207,10 @@ class TD3(Agent):
 
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample deterministic actions
-        actions = self.policy.act(states, inference=inference)
+        actions = self.policy.act(states, taken_actions=None, role="policy")
         
         # add noise
         if self._exploration_noise is not None:
@@ -330,7 +335,7 @@ class TD3(Agent):
             
             with torch.no_grad():
                 # target policy smoothing
-                next_actions, _, _ = self.target_policy.act(states=sampled_next_states)
+                next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
                 noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), 
                                      min=-self._smooth_regularization_clip, 
                                      max=self._smooth_regularization_clip)
@@ -342,14 +347,14 @@ class TD3(Agent):
                     next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
-                target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)
-                target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic_1")
+                target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic_2")
                 target_q_values = torch.min(target_q1_values, target_q2_values)
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
-            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
+            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions, role="critic_1")
+            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions, role="critic_2")
             
             critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
             
@@ -363,8 +368,8 @@ class TD3(Agent):
             if not self._critic_update_counter % self._policy_delay:
 
                 # compute policy (actor) loss
-                actions, _, _ = self.policy.act(states=sampled_states)
-                critic_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
+                actions, _, _ = self.policy.act(states=sampled_states, taken_actions=None, role="policy")
+                critic_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions, role="critic_1")
 
                 policy_loss = -critic_values.mean()
 

@@ -1,7 +1,7 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://www.gymlibrary.ml>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://www.gymlibrary.dev>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
@@ -12,7 +12,7 @@ SKRL - Reinforcement Learning library (|version|)
 
 .. warning::
 
-    **skrl** is under **active continuous development**. Make sure you always have the latest version 
+    **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
 | **GitHub repository:** https://github.com/Toni-SM/skrl 
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions 
@@ -56,6 +56,7 @@ Agents
     Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
     * :doc:`Advantage Actor Critic <modules/skrl.agents.a2c>` (**A2C**)
+    * :doc:`Adversarial Motion Priors <modules/skrl.agents.amp>` (**AMP**)
     * :doc:`Cross-Entropy Method <modules/skrl.agents.cem>` (**CEM**)
     * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
     * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
@@ -74,6 +75,7 @@ Agents
 
     modules/skrl.agents.base_class
     A2C <modules/skrl.agents.a2c>
+    AMP <modules/skrl.agents.amp>
     CEM <modules/skrl.agents.cem>
     DDPG <modules/skrl.agents.ddpg>
     DDQN <modules/skrl.agents.ddqn>
@@ -121,11 +123,12 @@ Memories
 Models
 ^^^^^^
 
-    Definition of helper classes for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper classes to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities
+    Definition of helper mixins for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper mixins to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities. In addition, it is possible to create :doc:`shared model <modules/skrl.models.shared_model>` by combining the implemented definitions
 
     * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
     * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
     * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)
+    * :doc:`Multivariate Gaussian model <modules/skrl.models.multivariate_gaussian>` (continuous domain)
     * :doc:`Deterministic model <modules/skrl.models.deterministic>` (continuous domain)
 
 .. toctree::
@@ -137,7 +140,9 @@ Models
     modules/skrl.models.tabular
     modules/skrl.models.categorical
     modules/skrl.models.gaussian
+    modules/skrl.models.multivariate_gaussian
     modules/skrl.models.deterministic
+    modules/skrl.models.shared_model
 
 Trainers
 ^^^^^^^^
@@ -146,6 +151,7 @@ Trainers
 
     * :doc:`Sequential trainer <modules/skrl.trainers.sequential>`
     * :doc:`Parallel trainer <modules/skrl.trainers.parallel>`
+    * :doc:`Manual trainer <modules/skrl.trainers.manual>`
 
 .. toctree::
     :maxdepth: 1
@@ -155,6 +161,7 @@ Trainers
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
+    modules/skrl.trainers.manual
 
 Resources
 ^^^^^^^^^
@@ -192,6 +199,7 @@ Utils
     * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
     * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
     * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
+    * :doc:`Omniverse Isaac Gym utils <modules/skrl.utils.omniverse_isaacgym_utils>`
 
 .. toctree::
     :maxdepth: 1
@@ -202,3 +210,4 @@ Utils
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
     modules/skrl.utils.isaacgym_utils
+    modules/skrl.utils.omniverse_isaacgym_utils

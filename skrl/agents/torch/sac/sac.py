@@ -45,7 +45,7 @@ SAC_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -96,7 +96,11 @@ class SAC(Agent):
         self.target_critic_2 = self.models.get("target_critic_2", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["critic_1"] = self.critic_1
+        self.checkpoint_modules["critic_2"] = self.critic_2
+        self.checkpoint_modules["target_critic_1"] = self.target_critic_1
+        self.checkpoint_modules["target_critic_2"] = self.target_critic_2
 
         if self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -138,6 +142,8 @@ class SAC(Agent):
             self.log_entropy_coefficient = torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient).requires_grad_(True)
             self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
 
+            self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
+
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
@@ -147,9 +153,15 @@ class SAC(Agent):
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
+            self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -166,11 +178,7 @@ class SAC(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -179,8 +187,6 @@ class SAC(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -190,10 +196,10 @@ class SAC(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample stochastic actions
-        return self.policy.act(states, inference=inference)
+        return self.policy.act(states, taken_actions=None, role="policy")
 
     def record_transition(self, 
                           states: torch.Tensor, 
@@ -278,16 +284,16 @@ class SAC(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_actions, next_log_prob, _ = self.policy.act(states=sampled_next_states)
+                next_actions, next_log_prob, _ = self.policy.act(states=sampled_next_states, taken_actions=None, role="policy")
 
-                target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions)
-                target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions)
+                target_q1_values, _, _ = self.target_critic_1.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic_1")
+                target_q2_values, _, _ = self.target_critic_2.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic_2")
                 target_q_values = torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions)
-            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions)
+            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions, role="critic_1")
+            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions, role="critic_2")
             
             critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
             
@@ -297,9 +303,9 @@ class SAC(Agent):
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
-            actions, log_prob, _ = self.policy.act(states=sampled_states)
-            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions)
-            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=actions)
+            actions, log_prob, _ = self.policy.act(states=sampled_states, taken_actions=None, role="policy")
+            critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=actions, role="critic_1")
+            critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=actions, role="critic_2")
 
             policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
 

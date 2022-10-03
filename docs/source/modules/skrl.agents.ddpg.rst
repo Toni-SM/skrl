@@ -66,7 +66,7 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.ml/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
 
 .. list-table::
    :header-rows: 1
@@ -92,22 +92,32 @@ The implementation uses 4 deterministic function approximators. These function a
    * - Notation
      - Concept
      - Key
+     - Input shape
+     - Output shape
      - Type
    * - :math:`\mu_\theta(s)`
      - Policy (actor)
      - :literal:`"policy"`
+     - observation
+     - action
      - :ref:`Deterministic <models_deterministic>`
    * - :math:`\mu_{\theta_{target}}(s)`
      - Target policy
      - :literal:`"target_policy"`
+     - observation
+     - action
      - :ref:`Deterministic <models_deterministic>`
    * - :math:`Q_\phi(s, a)`
      - Q-network (critic)
      - :literal:`"critic"`
+     - observation + action
+     - 1
      - :ref:`Deterministic <models_deterministic>`
    * - :math:`Q_{\phi_{target}}(s, a)`
      - Target Q-network
      - :literal:`"target_critic"`
+     - observation + action
+     - 1
      - :ref:`Deterministic <models_deterministic>`
 
 API

@@ -10,7 +10,9 @@ Prerequisites
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://www.gymlibrary.ml>`_
+    * `gym <https://www.gymlibrary.dev>`_
+    * `tqdm <https://tqdm.github.io>`_
+    * `packaging <https://packaging.pypa.io>`_
     * `torch <https://pytorch.org>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
 
@@ -77,3 +79,9 @@ Known issues
     .. code-block:: text
         
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
+
+Changelog
+---------
+
+.. literalinclude:: ../../../CHANGELOG.md
+    :language: markdown

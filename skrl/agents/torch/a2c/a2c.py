@@ -2,6 +2,7 @@ from typing import Union, Tuple, Dict, Any
 
 import gym
 import copy
+import itertools
 
 import torch
 import torch.nn as nn
@@ -20,8 +21,7 @@ A2C_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
     
-    "policy_learning_rate": 1e-3,   # policy learning rate
-    "value_learning_rate": 1e-3,    # value learning rate
+    "learning_rate": 1e-3,          # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
@@ -45,7 +45,7 @@ A2C_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -93,7 +93,8 @@ class A2C(Agent):
         self.value = self.models.get("value", None)
 
         # checkpoint models
-        self.checkpoint_models = {"policy": self.policy} if self.checkpoint_policy_only else self.models
+        self.checkpoint_modules["policy"] = self.policy
+        self.checkpoint_modules["value"] = self.value
 
         # configuration
         self._mini_batches = self.cfg["mini_batches"]
@@ -104,8 +105,7 @@ class A2C(Agent):
 
         self._entropy_loss_scale = self.cfg["entropy_loss_scale"]
 
-        self._policy_learning_rate = self.cfg["policy_learning_rate"]
-        self._value_learning_rate = self.cfg["value_learning_rate"]
+        self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
@@ -119,19 +119,30 @@ class A2C(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
-        # set up optimizers and learning rate schedulers
+        # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
-            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._policy_learning_rate)
-            self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
+            if self.policy is self.value:
+                self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+            else:
+                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), 
+                                                  lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
-                self.value_scheduler = self._learning_rate_scheduler(self.value_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+
+            self.checkpoint_modules["optimizer"] = self.optimizer
 
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
-        self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"]) if self._value_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
+
+        if self._value_preprocessor:
+            self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
+            self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
+        else:
+            self._value_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -154,11 +165,7 @@ class A2C(Agent):
         # create temporary variables needed for storage and computation
         self._current_next_states = None
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -167,8 +174,6 @@ class A2C(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -178,10 +183,10 @@ class A2C(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample stochastic actions
-        return self.policy.act(states, inference=inference)
+        return self.policy.act(states, taken_actions=None, role="policy")
 
     def record_transition(self, 
                           states: torch.Tensor, 
@@ -220,7 +225,8 @@ class A2C(Agent):
         self._current_next_states = next_states
 
         if self.memory is not None:
-            values, _, _ = self.value.act(states=self._state_preprocessor(states), inference=True)
+            with torch.no_grad():
+                values, _, _ = self.value.act(self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
@@ -306,8 +312,8 @@ class A2C(Agent):
             return returns, advantages
 
         # compute returns and advantages
-        last_values, _, _ = self.value.act(states=self._state_preprocessor(self._current_next_states.float() \
-            if not torch.is_floating_point(self._current_next_states) else self._current_next_states), inference=True)
+        with torch.no_grad():
+            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
@@ -334,35 +340,31 @@ class A2C(Agent):
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-            _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions)
+            _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
 
             # compute entropy loss
             if self._entropy_loss_scale:
-                entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy().mean()
+                entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
             else:
                 entropy_loss = 0
             
             # compute policy loss
             policy_loss = -(sampled_advantages * next_log_prob).mean()
 
-            # optimization step (policy)
-            self.policy_optimizer.zero_grad()
-            (policy_loss + entropy_loss).backward()
-            if self._grad_norm_clip > 0:
-                nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-            self.policy_optimizer.step()
-
             # compute value loss
-            predicted_values, _, _ = self.value.act(states=sampled_states)
+            predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
 
             value_loss = F.mse_loss(sampled_returns, predicted_values)
 
-            # optimization step (value)
-            self.value_optimizer.zero_grad()
-            value_loss.backward()
+            # optimization step
+            self.optimizer.zero_grad()
+            (policy_loss + entropy_loss + value_loss).backward()
             if self._grad_norm_clip > 0:
-                nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
-            self.value_optimizer.step()
+                if self.policy is self.value:
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+                else:
+                    nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
+            self.optimizer.step()
 
             # update cumulative losses
             cumulative_policy_loss += policy_loss.item()
@@ -372,8 +374,7 @@ class A2C(Agent):
 
         # update learning rate
         if self._learning_rate_scheduler:
-            self.policy_scheduler.step()
-            self.value_scheduler.step()
+            self.scheduler.step()
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
@@ -382,8 +383,7 @@ class A2C(Agent):
         if self._entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
 
-        self.track_data("Policy / Standard deviation", self.policy.distribution().stddev.mean().item())
+        self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
         if self._learning_rate_scheduler:
-            self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
-            self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])
+            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

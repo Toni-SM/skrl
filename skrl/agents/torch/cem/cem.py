@@ -36,7 +36,7 @@ CEM_DEFAULT_CONFIG = {
         "write_interval": 250,      # TensorBoard writing interval (timesteps)
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
-        "checkpoint_policy_only": True,     # checkpoint for policy only
+        "store_separately": False,          # whether to store checkpoints separately
     }
 }
 
@@ -83,7 +83,7 @@ class CEM(Agent):
         self.policy = self.models.get("policy", None)
 
         # checkpoint models
-        self.checkpoint_models = self.models
+        self.checkpoint_modules["policy"] = self.policy
         
         # configuration:
         self._rollouts = self.cfg["rollouts"]
@@ -110,9 +110,14 @@ class CEM(Agent):
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
+            self.checkpoint_modules["optimizer"] = self.optimizer
+
         # set up preprocessors
-        self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"]) if self._state_preprocessor \
-            else self._empty_preprocessor
+        if self._state_preprocessor:
+            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+            self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
+        else:
+            self._state_preprocessor = self._empty_preprocessor
 
     def init(self) -> None:
         """Initialize the agent
@@ -129,11 +134,7 @@ class CEM(Agent):
 
         self.tensors_names = ["states", "actions", "rewards", "next_states", "dones"]
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
-            timesteps: int, 
-            inference: bool = False) -> torch.Tensor:
+    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -142,8 +143,6 @@ class CEM(Agent):
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
-        :param inference: Flag to indicate whether the model is making inference
-        :type inference: bool
 
         :return: Actions
         :rtype: torch.Tensor
@@ -153,10 +152,10 @@ class CEM(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states)
+            return self.policy.random_act(states, taken_actions=None, role="policy")
 
         # sample stochastic actions 
-        return self.policy.act(states, inference=inference)
+        return self.policy.act(states, taken_actions=None, role="policy")
 
     def record_transition(self, 
                           states: torch.Tensor, 
@@ -269,7 +268,7 @@ class CEM(Agent):
             elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
 
         # compute scores for the elite states
-        scores = self.policy.act(elite_states)[2]
+        scores = self.policy.act(elite_states, taken_actions=None, role="policy")[2]
 
         # compute policy loss
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))

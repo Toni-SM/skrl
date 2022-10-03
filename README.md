@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300rem" src="docs/source/_static/data/skrl-up-transparent.png">
+  <img width="300rem" src="https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/_static/data/skrl-up-transparent.png">
 </p>
 <h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
 <br>
@@ -14,7 +14,7 @@ https://skrl.readthedocs.io/en/latest/
 
 <br>
 
-> **Note:** This project is under **active continuous development**. Please make sure you always have the latest version 
+> **Note:** This project is under **active continuous development**. Please make sure you always have the latest version. Visit the [develop](https://github.com/Toni-SM/skrl/tree/develop) branch or its [documentation](https://skrl.readthedocs.io/en/develop) to access the latest updates to be released.
 
 <br>
 

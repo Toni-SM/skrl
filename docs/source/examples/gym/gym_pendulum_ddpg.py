@@ -15,7 +15,7 @@ from skrl.envs.torch import wrap_env
 
 # Define the models (deterministic models) for the DDPG agent using mixin
 # - Actor (policy): takes as input the environment's observation/state and returns an action
-# - Critic: takes the state and action as input and provides a value to guide the policy 
+# - Critic: takes the state and action as input and provides a value to guide the policy
 class DeterministicActor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
         Model.__init__(self, observation_space, action_space, device)
@@ -88,10 +88,10 @@ cfg_ddpg["learning_starts"] = 100
 cfg_ddpg["experiment"]["write_interval"] = 300
 cfg_ddpg["experiment"]["checkpoint_interval"] = 1500
 
-agent_ddpg = DDPG(models=models_ddpg, 
-                  memory=memory, 
-                  cfg=cfg_ddpg, 
-                  observation_space=env.observation_space, 
+agent_ddpg = DDPG(models=models_ddpg,
+                  memory=memory,
+                  cfg=cfg_ddpg,
+                  observation_space=env.observation_space,
                   action_space=env.action_space,
                   device=device)
 

@@ -19,23 +19,23 @@ class TabularMixin:
             # define the model
             >>> import torch
             >>> from skrl.models.torch import Model, TabularMixin
-            >>> 
+            >>>
             >>> class GreedyPolicy(TabularMixin, Model):
             ...     def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
             ...         Model.__init__(self, observation_space, action_space, device)
             ...         TabularMixin.__init__(self, num_envs)
             ...
-            ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions), 
+            ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
             ...                                 dtype=torch.float32, device=self.device)
             ...
             ...     def compute(self, states, taken_actions, role):
-            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states], 
+            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states],
             ...                                dim=-1, keepdim=True).view(-1,1)
             ...
             >>> # given an observation_space: gym.spaces.Discrete with n=100
             >>> # and an action_space: gym.spaces.Discrete with n=5
             >>> model = GreedyPolicy(observation_space, action_space, num_envs=1)
-            >>> 
+            >>>
             >>> print(model)
             GreedyPolicy(
               (table): Tensor(shape=[1, 100, 5])
@@ -69,9 +69,9 @@ class TabularMixin:
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act in response to the state of the environment
 
@@ -94,10 +94,10 @@ class TabularMixin:
             >>> print(output[0], output[1], output[2])
             tensor([[3]], device='cuda:0') None None
         """
-        actions = self.compute(states.to(self.device), 
+        actions = self.compute(states.to(self.device),
                                taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
         return actions, None, None
-        
+
     def table(self) -> torch.Tensor:
         """Return the Q-table
 
@@ -143,12 +143,12 @@ class TabularMixin:
 
         :param state_dict: A dict containing parameters and persistent buffers
         :type state_dict: dict
-        :param strict: Whether to strictly enforce that the keys in state_dict match the keys 
+        :param strict: Whether to strictly enforce that the keys in state_dict match the keys
                        returned by this module's state_dict() function (default: ``True``)
         :type strict: bool, optional
         """
         Model.load_state_dict(self, state_dict, strict=False)
-        
+
         for name, tensor in state_dict.items():
             if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
                 _tensor = getattr(self, name)
@@ -163,7 +163,7 @@ class TabularMixin:
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
         :param state_dict: State dictionary to save (default: ``None``).

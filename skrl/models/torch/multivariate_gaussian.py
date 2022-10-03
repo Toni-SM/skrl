@@ -7,10 +7,10 @@ from torch.distributions import MultivariateNormal
 
 
 class MultivariateGaussianMixin:
-    def __init__(self, 
-                 clip_actions: bool = False, 
-                 clip_log_std: bool = True, 
-                 min_log_std: float = -20, 
+    def __init__(self,
+                 clip_actions: bool = False,
+                 clip_log_std: bool = True,
+                 min_log_std: float = -20,
                  max_log_std: float = 2,
                  role: str = "") -> None:
         """Multivariate Gaussian mixin model (stochastic model)
@@ -32,7 +32,7 @@ class MultivariateGaussianMixin:
             >>> import torch
             >>> import torch.nn as nn
             >>> from skrl.models.torch import Model, MultivariateGaussianMixin
-            >>> 
+            >>>
             >>> class Policy(MultivariateGaussianMixin, Model):
             ...     def __init__(self, observation_space, action_space, device="cuda:0",
             ...                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
@@ -52,7 +52,7 @@ class MultivariateGaussianMixin:
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
             >>> model = Policy(observation_space, action_space)
-            >>> 
+            >>>
             >>> print(model)
             Policy(
               (net): Sequential(
@@ -71,7 +71,7 @@ class MultivariateGaussianMixin:
         if self._mg_clip_actions[role]:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
-            
+
             # backward compatibility: torch < 1.9 clamp method does not support tensors
             self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
@@ -94,10 +94,10 @@ class MultivariateGaussianMixin:
         if not hasattr(self, "_mg_distribution"):
             self._mg_distribution = {}
         self._mg_distribution[role] = None
-        
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
@@ -108,7 +108,7 @@ class MultivariateGaussianMixin:
         :type taken_actions: torch.Tensor, optional
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
-        
+
         :return: Action to be taken by the agent given the state of the environment.
                  The sequence's components are the actions, the log of the probability density function and mean actions
         :rtype: sequence of torch.Tensor
@@ -121,12 +121,12 @@ class MultivariateGaussianMixin:
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states.to(self.device), 
+        actions_mean, log_std = self.compute(states.to(self.device),
                                              taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
 
         # clamp log standard deviations
         if self._mg_clip_log_std[role] if role in self._mg_clip_log_std else self._mg_clip_log_std[""]:
-            log_std = torch.clamp(log_std, 
+            log_std = torch.clamp(log_std,
                                   self._mg_log_std_min[role] if role in self._mg_log_std_min else self._mg_log_std_min[""],
                                   self._mg_log_std_max[role] if role in self._mg_log_std_max else self._mg_log_std_max[""])
 
@@ -146,7 +146,7 @@ class MultivariateGaussianMixin:
                 actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
             else:
                 actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
-        
+
         # log of the probability density function
         log_prob = self._mg_distribution[role].log_prob(actions if taken_actions is None else taken_actions)
         if log_prob.dim() != actions.dim():

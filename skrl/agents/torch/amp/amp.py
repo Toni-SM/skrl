@@ -19,10 +19,10 @@ AMP_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 6,           # number of learning epochs during each update
     "mini_batches": 2,              # number of mini batches during each learning epoch
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-    
+
     "learning_rate": 5e-5,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -69,14 +69,14 @@ AMP_DEFAULT_CONFIG = {
 
 
 class AMP(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {},
-                 amp_observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+                 amp_observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                  motion_dataset: Union[Memory, None] = None,
                  reply_buffer: Union[Memory, None] = None,
                  collect_reference_motions: Union[Callable[[int], torch.Tensor], None] = None,
@@ -84,14 +84,14 @@ class AMP(Agent):
         """Adversarial Motion Priors (AMP)
 
         https://arxiv.org/abs/2104.02180
-        
+
         The implementation is adapted from the NVIDIA IsaacGymEnvs
         (https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/blob/main/isaacgymenvs/learning/amp_continuous.py)
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -104,7 +104,7 @@ class AMP(Agent):
         :type cfg: dict
         :param amp_observation_space: AMP observation/state space or shape (default: None)
         :type amp_observation_space: int, tuple or list of integers, gym.Space or None
-        :param motion_dataset: Reference motion dataset: M (default: None) 
+        :param motion_dataset: Reference motion dataset: M (default: None)
         :type motion_dataset: skrl.memory.torch.Memory or None
         :param reply_buffer: Reply buffer for preventing discriminator overfitting: B (default: None)
         :type reply_buffer: skrl.memory.torch.Memory or None
@@ -117,11 +117,11 @@ class AMP(Agent):
         """
         _cfg = copy.deepcopy(AMP_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         self.amp_observation_space = amp_observation_space
@@ -169,7 +169,7 @@ class AMP(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._amp_batch_size = self.cfg["amp_batch_size"]
-        self._task_reward_weight = self.cfg["task_reward_weight"] 
+        self._task_reward_weight = self.cfg["task_reward_weight"]
         self._style_reward_weight = self.cfg["style_reward_weight"]
 
         self._discriminator_batch_size = self.cfg["discriminator_batch_size"]
@@ -182,9 +182,9 @@ class AMP(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None and self.discriminator is not None:
-            self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), 
+            self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(),
                                                               self.value.parameters(),
-                                                              self.discriminator.parameters()), 
+                                                              self.discriminator.parameters()),
                                               lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -215,7 +215,7 @@ class AMP(Agent):
         """
         super().init()
         self.set_mode("eval")
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -276,17 +276,17 @@ class AMP(Agent):
 
         return actions, log_prob, actions_mean
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -307,7 +307,7 @@ class AMP(Agent):
         # use collected states
         if self._current_states is not None:
             states = self._current_states
-        
+
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
 
         # reward shaping
@@ -326,12 +326,12 @@ class AMP(Agent):
             next_values = self._value_preprocessor(next_values, inverse=True)
             next_values *= infos['terminate'].view(-1, 1).logical_not()
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                     log_prob=self._current_log_prob, values=values, amp_states=amp_states, next_values=next_values)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                    log_prob=self._current_log_prob, values=values, amp_states=amp_states, next_values=next_values)
-        
+
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
 
@@ -368,11 +368,11 @@ class AMP(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor, 
-                        dones: torch.Tensor, 
-                        values: torch.Tensor, 
-                        next_values: torch.Tensor, 
-                        discount_factor: float = 0.99, 
+        def compute_gae(rewards: torch.Tensor,
+                        dones: torch.Tensor,
+                        values: torch.Tensor,
+                        next_values: torch.Tensor,
+                        discount_factor: float = 0.99,
                         lambda_coefficient: float = 0.95) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
@@ -419,7 +419,7 @@ class AMP(Agent):
             amp_logits, _, _ = self.discriminator.act(self._amp_state_preprocessor(amp_states), taken_actions=None, role="discriminator")
             style_reward = -torch.log(torch.maximum(1 - 1 / (1 + torch.exp(-amp_logits)), torch.tensor(0.0001, device=self.device)))
             style_reward *= self._discriminator_reward_scale
-        
+
         combined_rewards = self._task_reward_weight * rewards + self._style_reward_weight * style_reward
 
         # compute returns and advantages
@@ -462,7 +462,7 @@ class AMP(Agent):
                 sampled_amp_states, _) in enumerate(sampled_batches):
 
                 sampled_states = self._state_preprocessor(sampled_states, train=True)
-                
+
                 _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
 
                 # compute entropy loss
@@ -470,20 +470,20 @@ class AMP(Agent):
                     entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
                 else:
                     entropy_loss = 0
-                
+
                 # compute policy loss
                 ratio = torch.exp(next_log_prob - sampled_log_prob)
                 surrogate = sampled_advantages * ratio
                 surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
-                
+
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
                 predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
 
                 if self._clip_predicted_values:
-                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
-                                                                min=-self._value_clip, 
+                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
+                                                                min=-self._value_clip,
                                                                 max=self._value_clip)
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
@@ -517,11 +517,11 @@ class AMP(Agent):
 
                 # discriminator gradient penalty
                 if self._discriminator_gradient_penalty_scale:
-                    amp_motion_gradient = torch.autograd.grad(amp_motion_logits, 
-                                                              sampled_amp_motion_states, 
+                    amp_motion_gradient = torch.autograd.grad(amp_motion_logits,
+                                                              sampled_amp_motion_states,
                                                               grad_outputs=torch.ones_like(amp_motion_logits),
-                                                              create_graph=True, 
-                                                              retain_graph=True, 
+                                                              create_graph=True,
+                                                              retain_graph=True,
                                                               only_inputs=True)
                     gradient_penalty = torch.sum(torch.square(amp_motion_gradient[0]), dim=-1).mean()
                     discriminator_loss += self._discriminator_gradient_penalty_scale * gradient_penalty
@@ -539,8 +539,8 @@ class AMP(Agent):
                 self.optimizer.zero_grad()
                 (policy_loss + entropy_loss + value_loss + discriminator_loss).backward()
                 if self._grad_norm_clip > 0:
-                    nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), 
-                                                             self.value.parameters(), 
+                    nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(),
+                                                             self.value.parameters(),
                                                              self.discriminator.parameters()), self._grad_norm_clip)
                 self.optimizer.step()
 

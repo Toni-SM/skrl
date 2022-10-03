@@ -31,10 +31,10 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(64, 32),
                                  nn.ELU())
-        
+
         self.mean_layer = nn.Linear(32, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-        
+
         self.value_layer = nn.Linear(32, 1)
 
     def act(self, states, taken_actions, role):

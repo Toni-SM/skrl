@@ -24,10 +24,10 @@ device = env.device
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.dqn.html#spaces-and-models
 models_dqn = {}
-models_dqn["q_network"] = deterministic_model(observation_space=env.observation_space, 
+models_dqn["q_network"] = deterministic_model(observation_space=env.observation_space,
                                               action_space=env.action_space,
                                               device=device,
-                                              clip_actions=False, 
+                                              clip_actions=False,
                                               input_shape=Shape.OBSERVATIONS,
                                               hiddens=[64, 64],
                                               hidden_activation=["relu", "relu"],
@@ -45,10 +45,10 @@ cfg_dqn["exploration"]["timesteps"] = 0
 cfg_dqn["experiment"]["write_interval"] = 1000
 cfg_dqn["experiment"]["checkpoint_interval"] = 0
 
-agent_dqn = DQN(models=models_dqn, 
-                memory=None, 
-                cfg=cfg_dqn, 
-                observation_space=env.observation_space, 
+agent_dqn = DQN(models=models_dqn,
+                memory=None,
+                cfg=cfg_dqn,
+                observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=device)
 

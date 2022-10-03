@@ -16,10 +16,10 @@ from .. import Agent
 TD3_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.005,                # soft update hyperparameter (tau)
-    
+
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
@@ -56,21 +56,21 @@ TD3_DEFAULT_CONFIG = {
 
 
 class TD3(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Twin Delayed DDPG (TD3)
 
         https://arxiv.org/abs/1802.09477
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -86,11 +86,11 @@ class TD3(Agent):
         """
         _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -100,7 +100,7 @@ class TD3(Agent):
         self.critic_2 = self.models.get("critic_2", None)
         self.target_critic_1 = self.models.get("target_critic_1", None)
         self.target_critic_2 = self.models.get("target_critic_2", None)
-        
+
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["target_policy"] = self.target_policy
@@ -126,13 +126,13 @@ class TD3(Agent):
 
         self._discount_factor = self.cfg["discount_factor"]
         self._polyak = self.cfg["polyak"]
-        
+
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
-        
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -152,7 +152,7 @@ class TD3(Agent):
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
+            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()),
                                                      lr=self._critic_learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -211,17 +211,17 @@ class TD3(Agent):
 
         # sample deterministic actions
         actions = self.policy.act(states, taken_actions=None, role="policy")
-        
+
         # add noise
         if self._exploration_noise is not None:
             # sample noises
             noises = self._exploration_noise.sample(actions[0].shape)
-            
+
             # define exploration timesteps
             scale = self._exploration_final_scale
             if self._exploration_timesteps is None:
                 self._exploration_timesteps = timesteps
-            
+
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
                 scale = (1 - timestep / self._exploration_timesteps) \
@@ -233,8 +233,8 @@ class TD3(Agent):
                 actions[0].add_(noises)
 
                 if self._backward_compatibility:
-                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min), 
-                               actions[1], 
+                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min),
+                               actions[1],
                                actions[2])
                 else:
                     actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
@@ -243,7 +243,7 @@ class TD3(Agent):
                 self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
                 self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
                 self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
-            
+
             else:
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", 0)
@@ -252,17 +252,17 @@ class TD3(Agent):
 
         return actions
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -285,7 +285,7 @@ class TD3(Agent):
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
-        
+
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -311,10 +311,10 @@ class TD3(Agent):
         """
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
-        
+
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
-    
+
     def _update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step
 
@@ -332,12 +332,12 @@ class TD3(Agent):
 
             sampled_states = self._state_preprocessor(sampled_states, train=not gradient_step)
             sampled_next_states = self._state_preprocessor(sampled_next_states)
-            
+
             with torch.no_grad():
                 # target policy smoothing
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
-                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape), 
-                                     min=-self._smooth_regularization_clip, 
+                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape),
+                                     min=-self._smooth_regularization_clip,
                                      max=self._smooth_regularization_clip)
                 next_actions.add_(noises)
 
@@ -355,9 +355,9 @@ class TD3(Agent):
             # compute critic loss
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions, role="critic_1")
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions, role="critic_2")
-            
+
             critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
-            
+
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -400,7 +400,7 @@ class TD3(Agent):
             self.track_data("Q-network / Q2 (max)", torch.max(critic_2_values).item())
             self.track_data("Q-network / Q2 (min)", torch.min(critic_2_values).item())
             self.track_data("Q-network / Q2 (mean)", torch.mean(critic_2_values).item())
-            
+
             self.track_data("Target / Target (max)", torch.max(target_values).item())
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())

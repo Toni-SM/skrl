@@ -22,9 +22,9 @@ class MLP(DeterministicMixin, Model):
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              clip_actions=False)
 # [end-mlp]
 
@@ -61,14 +61,14 @@ class CNN(DeterministicMixin, Model):
                                  nn.Linear(32, 1))
 
     def compute(self, states, taken_actions, role):
-        # permute (samples, width, height, channels) -> (samples, channels, width, height) 
+        # permute (samples, width, height, channels) -> (samples, channels, width, height)
         x = self.features_extractor(states.permute(0, 3, 1, 2))
         return self.net(torch.cat([x, taken_actions], dim=1))
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = CNN(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              clip_actions=False)
 # [end-cnn]

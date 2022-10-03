@@ -13,7 +13,7 @@ Basic usage
 ^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Snippet
 
         .. literalinclude:: ../snippets/trainer.py

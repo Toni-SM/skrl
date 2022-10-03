@@ -8,14 +8,14 @@ import torch.nn as nn
 
 
 class RunningStandardScaler(nn.Module):
-    def __init__(self, 
-                 size: Union[int, Tuple[int], gym.Space], 
-                 epsilon: float = 1e-8, 
+    def __init__(self,
+                 size: Union[int, Tuple[int], gym.Space],
+                 epsilon: float = 1e-8,
                  clip_threshold: float = 5.0,
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation
 
-        The implementation is adapted from the rl_games library 
+        The implementation is adapted from the rl_games library
         (https://github.com/Denys88/rl_games/blob/master/rl_games/algos_torch/running_mean_std.py)
 
         Example::
@@ -39,7 +39,7 @@ class RunningStandardScaler(nn.Module):
         self.clip_threshold = clip_threshold
 
         size = self._get_space_size(size)
-        
+
         self.register_buffer("running_mean", torch.zeros(size, dtype = torch.float64, device=device))
         self.register_buffer("running_variance", torch.ones(size, dtype = torch.float64, device=device))
         self.register_buffer("current_count", torch.ones((), dtype = torch.float64, device=device))
@@ -69,7 +69,7 @@ class RunningStandardScaler(nn.Module):
         raise ValueError("Space type {} not supported".format(type(space)))
 
     def _parallel_variance(self, input_mean: torch.Tensor, input_var: torch.Tensor, input_count: int) -> None:
-        """Update internal variables using the parallel algorithm for computing variance 
+        """Update internal variables using the parallel algorithm for computing variance
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
 
@@ -112,7 +112,7 @@ class RunningStandardScaler(nn.Module):
                 * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
         # standardization by centering and scaling
         else:
-            return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon), 
+            return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
                                 min=-self.clip_threshold, max=self.clip_threshold)
 
     def forward(self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True) -> torch.Tensor:
@@ -125,7 +125,7 @@ class RunningStandardScaler(nn.Module):
             tensor([[0.6933, 0.1905],
                     [0.3806, 0.3162],
                     [0.1140, 0.0272]], device='cuda:0')
-            
+
             >>> running_standard_scaler(x, train=True)
             tensor([[ 0.8681, -0.6731],
                     [ 0.0560, -0.3684],

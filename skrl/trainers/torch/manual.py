@@ -171,7 +171,7 @@ class ManualTrainer(Trainer):
         # reset env
         if self.states is None:
             self.states = self.env.reset()
-        
+
         with torch.no_grad():
             if self.num_agents == 1:
                 # compute actions

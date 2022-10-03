@@ -14,8 +14,8 @@ SKRL - Reinforcement Learning library (|version|)
 
     **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
-| **GitHub repository:** https://github.com/Toni-SM/skrl 
-| **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions 
+| **GitHub repository:** https://github.com/Toni-SM/skrl
+| **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
 
 **Citing skrl:** To cite this library (created at `Mondragon Unibertsitatea <https://www.mondragon.edu/en/home>`_) use the following reference to its `article <https://arxiv.org/abs/2202.03825>`_: *"skrl: Modular and Flexible Library for Reinforcement Learning"*
 
@@ -157,7 +157,7 @@ Trainers
     :maxdepth: 1
     :caption: Trainers
     :hidden:
-        
+
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
@@ -185,7 +185,7 @@ Resources
     :maxdepth: 2
     :caption: Resources
     :hidden:
-    
+
     modules/skrl.resources.noises
     modules/skrl.resources.schedulers
     modules/skrl.resources.preprocessors
@@ -205,7 +205,7 @@ Utils
     :maxdepth: 1
     :caption: Utils
     :hidden:
-        
+
     modules/skrl.utils.utilities
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing

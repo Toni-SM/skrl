@@ -39,7 +39,7 @@ Basic usage
 -----------
 
 .. tabs::
-    
+
     .. tab:: Multi-Layer Perceptron (MLP)
 
         .. literalinclude:: ../snippets/deterministic_model.py

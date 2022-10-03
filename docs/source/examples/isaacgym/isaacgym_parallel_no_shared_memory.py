@@ -112,7 +112,7 @@ if __name__ == '__main__':
         model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
     for model in models_sac.values():
         model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-        
+
 
     # Configure and instantiate the agent.
     # Only modify some of the default configuration, visit its documentation to see all the options
@@ -149,32 +149,32 @@ if __name__ == '__main__':
     cfg_sac["experiment"]["write_interval"] = 25
     cfg_sac["experiment"]["checkpoint_interval"] = 1000
 
-    agent_ddpg = DDPG(models=models_ddpg, 
-                      memory=memory_ddpg, 
-                      cfg=cfg_ddpg, 
-                      observation_space=env.observation_space, 
+    agent_ddpg = DDPG(models=models_ddpg,
+                      memory=memory_ddpg,
+                      cfg=cfg_ddpg,
+                      observation_space=env.observation_space,
                       action_space=env.action_space,
                       device=device)
 
-    agent_td3 = TD3(models=models_td3, 
-                    memory=memory_td3, 
-                    cfg=cfg_td3, 
-                    observation_space=env.observation_space, 
+    agent_td3 = TD3(models=models_td3,
+                    memory=memory_td3,
+                    cfg=cfg_td3,
+                    observation_space=env.observation_space,
                     action_space=env.action_space,
                     device=device)
 
-    agent_sac = SAC(models=models_sac, 
-                    memory=memory_sac, 
-                    cfg=cfg_sac, 
-                    observation_space=env.observation_space, 
+    agent_sac = SAC(models=models_sac,
+                    memory=memory_sac,
+                    cfg=cfg_sac,
+                    observation_space=env.observation_space,
                     action_space=env.action_space,
                     device=device)
 
 
     # Configure and instantiate the RL trainer and define the agent scopes
     cfg = {"timesteps": 8000, "headless": True}
-    trainer = ParallelTrainer(cfg=cfg, 
-                              env=env, 
+    trainer = ParallelTrainer(cfg=cfg,
+                              env=env,
                               agents=[agent_ddpg, agent_td3, agent_sac],
                               agents_scope=[100, 200, 212])   # agent scopes
 

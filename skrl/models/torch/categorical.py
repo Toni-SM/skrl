@@ -9,8 +9,8 @@ class CategoricalMixin:
         """Categorical mixin model (stochastic model)
 
         :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: ``True``).
-                                      If True, the model's output is interpreted as unnormalized log probabilities 
-                                      (it can be any real number), otherwise as normalized probabilities 
+                                      If True, the model's output is interpreted as unnormalized log probabilities
+                                      (it can be any real number), otherwise as normalized probabilities
                                       (the output must be non-negative, finite and have a non-zero sum)
         :type unnormalized_log_prob: bool, optional
         :param role: Role play by the model (default: ``""``)
@@ -22,7 +22,7 @@ class CategoricalMixin:
             >>> import torch
             >>> import torch.nn as nn
             >>> from skrl.models.torch import Model, CategoricalMixin
-            >>> 
+            >>>
             >>> class Policy(CategoricalMixin, Model):
             ...     def __init__(self, observation_space, action_space, device="cuda:0", unnormalized_log_prob=True):
             ...         Model.__init__(self, observation_space, action_space, device)
@@ -40,7 +40,7 @@ class CategoricalMixin:
             >>> # given an observation_space: gym.spaces.Box with shape (4,)
             >>> # and an action_space: gym.spaces.Discrete with n = 2
             >>> model = Policy(observation_space, action_space)
-            >>> 
+            >>>
             >>> print(model)
             Policy(
               (net): Sequential(
@@ -60,9 +60,9 @@ class CategoricalMixin:
             self._c_distribution = {}
         self._c_distribution[role] = None
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
@@ -86,7 +86,7 @@ class CategoricalMixin:
             torch.Size([4096, 1]) torch.Size([4096, 1]) torch.Size([4096, 2])
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities
-        output = self.compute(states.to(self.device), 
+        output = self.compute(states.to(self.device),
                               taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
 
         # unnormalized log probabilities
@@ -95,7 +95,7 @@ class CategoricalMixin:
         # normalized probabilities
         else:
             self._c_distribution[role] = Categorical(probs=output)
-        
+
         # actions and log of the probability density function
         actions = self._c_distribution[role].sample()
         log_prob = self._c_distribution[role].log_prob(actions if taken_actions is None else taken_actions.view(-1))

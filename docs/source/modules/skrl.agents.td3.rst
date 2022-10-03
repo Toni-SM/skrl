@@ -1,7 +1,7 @@
 Twin-Delayed DDPG (TD3)
 =======================
 
-TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms 
+TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms
 
 Paper: `Addressing Function Approximation Error in Actor-Critic Methods <https://arxiv.org/abs/1802.09477>`_
 
@@ -28,7 +28,7 @@ Algorithm implementation
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
-|     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip` 
+|     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip`
 |     :math:`a' \leftarrow a' + noise`
 |     :math:`a' \leftarrow \text{clip}(a', {a'}_{Low}, {a'}_{High})`
 |     :green:`# compute target values`
@@ -150,5 +150,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

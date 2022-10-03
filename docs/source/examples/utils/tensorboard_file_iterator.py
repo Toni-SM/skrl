@@ -8,7 +8,7 @@ labels = []
 rewards = []
 
 # load the Tensorboard files and iterate over them (tag: "Reward / Total reward (mean)")
-tensorboard_iterator = postprocessing.TensorboardFileIterator("runs/*/events.out.tfevents.*", 
+tensorboard_iterator = postprocessing.TensorboardFileIterator("runs/*/events.out.tfevents.*",
                                                               tags=["Reward / Total reward (mean)"])
 for dirname, data in tensorboard_iterator:
     rewards.append(data["Reward / Total reward (mean)"])

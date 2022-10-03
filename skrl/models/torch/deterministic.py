@@ -20,7 +20,7 @@ class DeterministicMixin:
             >>> import torch
             >>> import torch.nn as nn
             >>> from skrl.models.torch import Model, DeterministicMixin
-            >>> 
+            >>>
             >>> class Value(DeterministicMixin, Model):
             ...     def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
             ...         Model.__init__(self, observation_space, action_space, device)
@@ -38,7 +38,7 @@ class DeterministicMixin:
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
             >>> model = Value(observation_space, action_space)
-            >>> 
+            >>>
             >>> print(model)
             Value(
               (net): Sequential(
@@ -60,10 +60,10 @@ class DeterministicMixin:
 
             # backward compatibility: torch < 1.9 clamp method does not support tensors
             self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
-        
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act deterministically in response to the state of the environment
 
@@ -87,10 +87,10 @@ class DeterministicMixin:
             torch.Size([4096, 1]) None None
         """
         # map from observations/states to actions
-        actions = self.compute(states.to(self.device), 
+        actions = self.compute(states.to(self.device),
                                taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
 
-        # clip actions 
+        # clip actions
         if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:
             if self._backward_compatibility:
                 actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
@@ -98,4 +98,3 @@ class DeterministicMixin:
                 actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
         return actions, None, None
-        

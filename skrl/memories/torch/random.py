@@ -6,13 +6,13 @@ from .base import Memory
 
 
 class RandomMemory(Memory):
-    def __init__(self, 
-                 memory_size: int, 
-                 num_envs: int = 1, 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 export: bool = False, 
-                 export_format: str = "pt", 
-                 export_directory: str = "", 
+    def __init__(self,
+                 memory_size: int,
+                 num_envs: int = 1,
+                 device: Union[str, torch.device] = "cuda:0",
+                 export: bool = False,
+                 export_format: str = "pt",
+                 export_directory: str = "",
                  replacement=True) -> None:
         """Random sampling memory
 
@@ -33,7 +33,7 @@ class RandomMemory(Memory):
         :param export_directory: Directory where the memory will be exported (default: "").
                                  If empty, the agent's experiment directory will be used
         :type export_directory: str, optional
-        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True). 
+        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True).
                             Replacement implies that a value can be selected multiple times (the batch size is always guaranteed).
                             Sampling without replacement will return a batch of maximum memory size if the memory size is less than the requested batch size
         :type replacement: bool, optional
@@ -62,7 +62,7 @@ class RandomMemory(Memory):
         if self._replacement:
             indexes = torch.randint(0, len(self), (batch_size,), device=self.device)
         else:
-            # details about the random sampling performance can be found here: 
+            # details about the random sampling performance can be found here:
             # https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/19
             indexes = torch.randperm(len(self), dtype=torch.long, device=self.device)[:batch_size]
 

@@ -105,9 +105,9 @@ cfg_ppo["experiment"]["write_interval"] = 480
 cfg_ppo["experiment"]["checkpoint_interval"] = 4800
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

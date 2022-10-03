@@ -100,7 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - More examples and contents in the documentation
 
 ### Fixed
-- Clip actions using the whole space's limits 
+- Clip actions using the whole space's limits
 
 ## [0.2.0] - 2022-01-18
 ### Added

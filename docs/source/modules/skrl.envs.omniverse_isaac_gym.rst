@@ -53,7 +53,7 @@ In this approach, the RL algorithm maintains the main execution loop
             env = load_omniverse_isaacgym_env(task_name="Cartpole")
 
     .. tab:: Command line arguments (priority)
-            
+
         .. code-block:: python
             :linenos:
 
@@ -98,7 +98,7 @@ In this approach, the RL algorithm is executed on a secondary thread while the s
             env.run()
 
     .. tab:: Command line arguments (priority)
-            
+
         .. code-block:: python
             :linenos:
 

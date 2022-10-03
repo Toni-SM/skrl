@@ -57,10 +57,10 @@ cfg_cem["learning_starts"] = 100
 cfg_cem["experiment"]["write_interval"] = 1000
 cfg_cem["experiment"]["checkpoint_interval"] = 0
 
-agent_cem = CEM(models=models_cem, 
-                memory=None, 
-                cfg=cfg_cem, 
-                observation_space=env.observation_space, 
+agent_cem = CEM(models=models_cem,
+                memory=None,
+                cfg=cfg_cem,
+                observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=device)
 

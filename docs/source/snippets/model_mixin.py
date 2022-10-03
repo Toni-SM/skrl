@@ -9,9 +9,9 @@ from skrl.models.torch import Model     # from . import Model
 
 
 class CustomModel(Model):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
+    def __init__(self,
+                 observation_space: Union[int, Sequence[int], gym.Space],
+                 action_space: Union[int, Sequence[int], gym.Space],
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """
         :param observation_space: Observation/state space or shape.
@@ -24,10 +24,10 @@ class CustomModel(Model):
         :type device: str or torch.device, optional
         """
         super().__init__(observation_space, action_space, device)
-        
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior
 
@@ -40,7 +40,7 @@ class CustomModel(Model):
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Action to be taken by the agent given the state of the environment.
                  The typical sequence's components are the actions, the log of the probability density function and mean actions.
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
@@ -74,9 +74,9 @@ class CustomMixin:
             self._custom_clip_actions = {}
         self._custom_clip_actions[role]
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior
 
@@ -89,7 +89,7 @@ class CustomMixin:
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Action to be taken by the agent given the state of the environment.
                  The typical sequence's components are the actions, the log of the probability density function and mean actions.
                  Deterministic agents must ignore the last two components and return empty tensors or None for them

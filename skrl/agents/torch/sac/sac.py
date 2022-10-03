@@ -17,10 +17,10 @@ from .. import Agent
 SAC_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.005,                # soft update hyperparameter (tau)
-    
+
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
@@ -51,21 +51,21 @@ SAC_DEFAULT_CONFIG = {
 
 
 class SAC(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Soft Actor-Critic (SAC)
 
         https://arxiv.org/abs/1801.01290
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -81,11 +81,11 @@ class SAC(Agent):
         """
         _cfg = copy.deepcopy(SAC_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -117,11 +117,11 @@ class SAC(Agent):
 
         self._discount_factor = self.cfg["discount_factor"]
         self._polyak = self.cfg["polyak"]
-        
+
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-        
+
         self._state_preprocessor = self.cfg["state_preprocessor"]
 
         self._random_timesteps = self.cfg["random_timesteps"]
@@ -138,7 +138,7 @@ class SAC(Agent):
             self._target_entropy = self.cfg["target_entropy"]
             if self._target_entropy is None:
                 self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
-            
+
             self.log_entropy_coefficient = torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient).requires_grad_(True)
             self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
 
@@ -147,7 +147,7 @@ class SAC(Agent):
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), 
+            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()),
                                                      lr=self._critic_learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -201,17 +201,17 @@ class SAC(Agent):
         # sample stochastic actions
         return self.policy.act(states, taken_actions=None, role="policy")
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -234,7 +234,7 @@ class SAC(Agent):
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
-        
+
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -260,10 +260,10 @@ class SAC(Agent):
         """
         if timestep >= self._learning_starts:
             self._update(timestep, timesteps)
-        
+
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
-             
+
     def _update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step
 
@@ -278,7 +278,7 @@ class SAC(Agent):
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
-            
+
             sampled_states = self._state_preprocessor(sampled_states, train=not gradient_step)
             sampled_next_states = self._state_preprocessor(sampled_next_states)
 
@@ -294,9 +294,9 @@ class SAC(Agent):
             # compute critic loss
             critic_1_values, _, _ = self.critic_1.act(states=sampled_states, taken_actions=sampled_actions, role="critic_1")
             critic_2_values, _, _ = self.critic_2.act(states=sampled_states, taken_actions=sampled_actions, role="critic_2")
-            
+
             critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
-            
+
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -348,7 +348,7 @@ class SAC(Agent):
                 self.track_data("Q-network / Q2 (max)", torch.max(critic_2_values).item())
                 self.track_data("Q-network / Q2 (min)", torch.min(critic_2_values).item())
                 self.track_data("Q-network / Q2 (mean)", torch.mean(critic_2_values).item())
-                
+
                 self.track_data("Target / Target (max)", torch.max(target_values).item())
                 self.track_data("Target / Target (min)", torch.min(target_values).item())
                 self.track_data("Target / Target (mean)", torch.mean(target_values).item())

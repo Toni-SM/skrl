@@ -10,7 +10,7 @@ from skrl.utils.omniverse_isaacgym_utils import get_env_instance
 from skrl.envs.torch import wrap_env
 
 
-# Define only the policy for evaluation 
+# Define only the policy for evaluation
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
@@ -32,7 +32,7 @@ class Policy(GaussianMixin, Model):
 
 # instance VecEnvBase and setup task
 headless = True  # set headless to False for rendering
-env = get_env_instance(headless=headless)  
+env = get_env_instance(headless=headless)
 
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 from reaching_franka_sim_env import ReachingFrankaTask, TASK_CFG
@@ -71,9 +71,9 @@ cfg_ppo["experiment"]["write_interval"] = 32
 cfg_ppo["experiment"]["checkpoint_interval"] = 0
 
 agent = PPO(models=models_ppo,
-            memory=None, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=None,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

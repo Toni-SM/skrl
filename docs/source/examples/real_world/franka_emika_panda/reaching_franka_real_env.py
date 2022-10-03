@@ -17,7 +17,7 @@ class ReachingFranka(gym.Env):
         self.motion_type = motion_type  # waypoint or impedance
 
         if self.control_space == "cartesian" and self.motion_type == "impedance":
-            # The operation of this mode (Cartesian-impedance) was adjusted later without being able to test it on the real robot. 
+            # The operation of this mode (Cartesian-impedance) was adjusted later without being able to test it on the real robot.
             # Dangerous movements may occur for the operator and the robot.
             # Comment the following line of code if you want to proceed with this mode.
             raise ValueError("See comment in the code to proceed with this mode")
@@ -42,7 +42,7 @@ class ReachingFranka(gym.Env):
         self.robot = frankx.Robot(robot_ip)
         self.robot.set_default_behavior()
         self.robot.recover_from_errors()
-        
+
         # the robot's response can be better managed by independently setting the following properties, for example:
         # - self.robot.velocity_rel = 0.2
         # - self.robot.acceleration_rel = 0.1
@@ -149,12 +149,12 @@ class ReachingFranka(gym.Env):
             self.motion_thread.join()
         self.motion = None
         self.motion_thread = None
-        
+
         # open/close gripper
         # self.gripper.open()
         # self.gripper.clamp()
 
-        # go to 1) safe position, 2) random position 
+        # go to 1) safe position, 2) random position
         self.robot.move(frankx.JointMotion(self.robot_default_dof_pos.tolist()))
         dof_pos = self.robot_default_dof_pos + 0.25 * (np.random.rand(7) - 0.5)
         self.robot.move(frankx.JointMotion(dof_pos.tolist()))
@@ -178,7 +178,7 @@ class ReachingFranka(gym.Env):
         # initial pose
         affine = frankx.Affine(frankx.Kinematics.forward(dof_pos.tolist()))
         affine = affine * frankx.Affine(x=0, y=0, z=-0.10335, a=np.pi/2)
-        
+
         # motion type
         if self.motion_type == "waypoint":
             self.motion = frankx.WaypointMotion([frankx.Waypoint(affine)], return_when_finished=False)
@@ -186,7 +186,7 @@ class ReachingFranka(gym.Env):
             self.motion = frankx.ImpedanceMotion(500, 50)
         else:
             raise ValueError("Invalid motion type:", self.motion_type)
-        
+
         self.motion_thread = self.robot.move_async(self.motion)
         if self.motion_type == "impedance":
             self.motion.target = affine
@@ -200,7 +200,7 @@ class ReachingFranka(gym.Env):
             return observation
         else:
             return observation, {}
-            
+
     def step(self, action):
         self.progress_buf += 1
 

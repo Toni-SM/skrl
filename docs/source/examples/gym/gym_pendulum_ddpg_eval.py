@@ -11,7 +11,7 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define only the policy for evaluation 
+# Define only the policy for evaluation
 class DeterministicActor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
         Model.__init__(self, observation_space, action_space, device)
@@ -56,10 +56,10 @@ cfg_ddpg["random_timesteps"] = 0
 cfg_ddpg["experiment"]["write_interval"] = 300
 cfg_ddpg["experiment"]["checkpoint_interval"] = 0
 
-agent_ddpg = DDPG(models=models_ddpg, 
-                  memory=None, 
-                  cfg=cfg_ddpg, 
-                  observation_space=env.observation_space, 
+agent_ddpg = DDPG(models=models_ddpg,
+                  memory=None,
+                  cfg=cfg_ddpg,
+                  observation_space=env.observation_space,
                   action_space=env.action_space,
                   device=device)
 

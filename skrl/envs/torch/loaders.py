@@ -3,9 +3,9 @@ import sys
 import queue
 from contextlib import contextmanager
 
-__all__ = ["load_isaacgym_env_preview2", 
-           "load_isaacgym_env_preview3", 
-           "load_isaacgym_env_preview4", 
+__all__ = ["load_isaacgym_env_preview2",
+           "load_isaacgym_env_preview3",
+           "load_isaacgym_env_preview4",
            "load_omniverse_isaacgym_env"]
 
 
@@ -27,7 +27,7 @@ def cwd(new_path: str) -> None:
 
 def _omegaconf_to_dict(config) -> dict:
     """Convert OmegaConf config to dict
-    
+
     :param config: The OmegaConf config
     :type config: OmegaConf.Config
 
@@ -69,8 +69,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     :type isaacgymenvs_path: str, optional
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
-    
-    :raises ValueError: The task name has not been defined, 
+
+    :raises ValueError: The task name has not been defined,
                         neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The isaacgym package is not installed or the path is wrong
 
@@ -99,7 +99,7 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
             sys.argv.append(task_name)
         else:
             raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
-    
+
     # get isaacgym envs path from isaacgym package metadata
     if not isaacgymenvs_path:
         if not hasattr(isaacgym, "__path__"):
@@ -129,7 +129,7 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
     if show_cfg:
         print("\nIsaac Gym environment ({})".format(args.task))
         _print_cfg(vars(args))
-   
+
     # update task arguments
     args.cfg_train = os.path.join(path, args.cfg_train)
     args.cfg_env = os.path.join(path, args.cfg_env)
@@ -139,12 +139,12 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
         cfg, cfg_train, _ = load_cfg(args)
         sim_params = parse_sim_params(args, cfg, cfg_train)
         task, env = parse_task(args, cfg, cfg_train, sim_params)
-    
+
     return env
 
 def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """Load an Isaac Gym environment (preview 3) 
-    
+    """Load an Isaac Gym environment (preview 3)
+
     Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
 
     :param task_name: The name of the task (default: "").
@@ -156,7 +156,7 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     :type isaacgymenvs_path: str, optional
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
-    
+
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
 
@@ -171,7 +171,7 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
 
     import isaacgym
     import isaacgymenvs
-    
+
     # check task from command line arguments
     defined = False
     for arg in sys.argv:
@@ -233,12 +233,12 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     sys.path.append(isaacgymenvs_path)
     from tasks import isaacgym_task_map
     try:
-        env = isaacgym_task_map[config.task.name](cfg=cfg, 
+        env = isaacgym_task_map[config.task.name](cfg=cfg,
                                                   sim_device=config.sim_device,
                                                   graphics_device_id=config.graphics_device_id,
                                                   headless=config.headless)
     except TypeError as e:
-        env = isaacgym_task_map[config.task.name](cfg=cfg, 
+        env = isaacgym_task_map[config.task.name](cfg=cfg,
                                                   rl_device=config.rl_device,
                                                   sim_device=config.sim_device,
                                                   graphics_device_id=config.graphics_device_id,
@@ -249,8 +249,8 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
     return env
 
 def load_isaacgym_env_preview4(task_name: str = "", isaacgymenvs_path: str = "", show_cfg: bool = True):
-    """Load an Isaac Gym environment (preview 4) 
-    
+    """Load an Isaac Gym environment (preview 4)
+
     Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
 
     :param task_name: The name of the task (default: "").
@@ -262,7 +262,7 @@ def load_isaacgym_env_preview4(task_name: str = "", isaacgymenvs_path: str = "",
     :type isaacgymenvs_path: str, optional
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
-    
+
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
 
@@ -271,10 +271,10 @@ def load_isaacgym_env_preview4(task_name: str = "", isaacgymenvs_path: str = "",
     """
     return load_isaacgym_env_preview3(task_name, isaacgymenvs_path, show_cfg)
 
-def load_omniverse_isaacgym_env(task_name: str = "", 
-                                omniisaacgymenvs_path: str = "", 
-                                show_cfg: bool = True, 
-                                multi_threaded: bool = False, 
+def load_omniverse_isaacgym_env(task_name: str = "",
+                                omniisaacgymenvs_path: str = "",
+                                show_cfg: bool = True,
+                                multi_threaded: bool = False,
                                 timeout: int = 30):
     """Load an Omniverse Isaac Gym environment
 
@@ -293,7 +293,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     :type multi_threaded: bool, optional
     :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment (default: 30)
     :type timeout: int, optional
-    
+
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
     :raises RuntimeError: The omniisaacgymenvs package is not installed or the path is wrong
 
@@ -306,12 +306,12 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
 
     from omegaconf import OmegaConf
-    
+
     from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException
     from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT
 
     import omniisaacgymenvs
-    
+
     # check task from command line arguments
     defined = False
     for arg in sys.argv:
@@ -350,7 +350,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     hydra_object = Hydra.create_main_hydra2(task_name='load_omniisaacgymenv', config_search_path=search_path)
     config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
 
-    cfg = {} 
+    cfg = {}
     cfg["task"] = _omegaconf_to_dict(config.task)
     cfg["task_name"] = config.task_name
     cfg["experiment"] = config.experiment
@@ -374,7 +374,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
         print("\nOmniverse Isaac Gym environment ({})".format(config.task.name))
         _print_cfg(cfg)
 
-    # internal classes 
+    # internal classes
     class _OmniIsaacGymVecEnv(VecEnvBase):
         def step(self, actions):
             actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
@@ -404,7 +404,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     class _OmniIsaacGymVecEnvMT(VecEnvMT):
         def __init__(self, headless):
             super().__init__(headless)
-            
+
             self.action_queue = queue.Queue(1)
             self.data_queue = queue.Queue(1)
 

@@ -13,18 +13,18 @@ from torch.utils.data.sampler import BatchSampler
 
 
 class Memory:
-    def __init__(self, 
-                 memory_size: int, 
-                 num_envs: int = 1, 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 export: bool = False, 
-                 export_format: str = "pt", 
+    def __init__(self,
+                 memory_size: int,
+                 num_envs: int = 1,
+                 device: Union[str, torch.device] = "cuda:0",
+                 export: bool = False,
+                 export_format: str = "pt",
                  export_directory: str = "") -> None:
         """Base class representing a memory with circular buffers
 
         Buffers are torch tensors with shape (memory size, number of environments, data size).
         Circular buffers are implemented with two integers: a memory index and an environment index
-        
+
         :param memory_size: Maximum number of elements in the first dimension of each internal storage
         :type memory_size: int
         :param num_envs: Number of parallel environments (default: 1)
@@ -65,7 +65,7 @@ class Memory:
 
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
-        
+
         The valid size is calculated as the ``memory_size * num_envs`` if the memory is full (filled).
         Otherwise, the ``memory_index * num_envs + env_index`` is returned
 
@@ -73,7 +73,7 @@ class Memory:
         :rtype: int
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
-        
+
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
         """Get the size (number of elements) of a space
 
@@ -144,7 +144,7 @@ class Memory:
 
     def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Union[torch.dtype, None] = None) -> bool:
         """Create a new internal tensor in memory
-        
+
         The tensor will have a 3-components shape (memory size, number of environments, size).
         The internal representation will use _tensor_<name> as the name of the class property
 
@@ -156,7 +156,7 @@ class Memory:
         :param dtype: Data type (torch.dtype).
                       If None, the global default torch data type will be used (default)
         :type dtype: torch.dtype or None, optional
-        
+
         :raises ValueError: The tensor name exists already but the size or dtype are different
 
         :return: True if the tensor was created, otherwise False
@@ -210,7 +210,7 @@ class Memory:
 
         - number of environments less than num_envs:
           Store the samples and increment the environment index (second index) by the number of the environments
-        
+
         - number of environments equals num_envs:
           Store the samples and increment the memory index (first index) by one
 
@@ -282,9 +282,9 @@ class Memory:
         :type batch_size: int
         :param mini_batches: Number of mini-batches to sample (default: 1)
         :type mini_batches: int, optional
-        
+
         :raises NotImplementedError: The method has not been implemented
-        
+
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
         :rtype: list of torch.Tensor list
@@ -312,7 +312,7 @@ class Memory:
 
     def sample_all(self, names: Tuple[str], mini_batches: int = 1) -> List[List[torch.Tensor]]:
         """Sample all data from memory
-        
+
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
         :param mini_batches: Number of mini-batches to sample (default: 1)
@@ -327,12 +327,12 @@ class Memory:
             batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
             return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name] for name in names]]
-        
+
     def save(self, directory: str = "", format: str = "pt") -> None:
         """Save the memory to a file
 
         Supported formats:
-        
+
         - PyTorch (pt)
         - NumPy (npz)
         - Comma-separated values (csv)
@@ -350,7 +350,7 @@ class Memory:
         os.makedirs(os.path.join(directory, "memories"), exist_ok=True)
         memory_path = os.path.join(directory, "memories", \
             "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format))
-        
+
         # torch
         if format == "pt":
             torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, memory_path)
@@ -391,18 +391,18 @@ class Memory:
             data = torch.load(path)
             for name in self.get_tensor_names():
                 setattr(self, "_tensor_{}".format(name), data[name])
-        
+
         # numpy
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
                 setattr(self, "_tensor_{}".format(name), torch.tensor(data[name]))
-        
+
         # comma-separated values
         elif path.endswith(".csv"):
             # TODO: load the memory from a csv
             pass
-        
+
         # unsupported format
         else:
             raise ValueError("Unsupported format: {}".format(path))

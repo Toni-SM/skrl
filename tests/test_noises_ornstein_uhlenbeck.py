@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     if not sys.argv[-1] == '--debug':
         raise RuntimeError('Test can only be runned manually with --debug flag')
-    
+
     test = TestCase()
     test.setUp()
     for method in dir(test):

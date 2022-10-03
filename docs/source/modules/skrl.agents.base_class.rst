@@ -11,7 +11,7 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Inheritance
 
         .. literalinclude:: ../snippets/agent.py
@@ -26,6 +26,6 @@ API
    :inherited-members:
    :private-members: _update, _empty_preprocessor, _get_internal_value
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __str__

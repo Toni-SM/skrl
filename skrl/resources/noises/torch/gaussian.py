@@ -21,13 +21,13 @@ class GaussianNoise(Noise):
 
         self.distribution = Normal(loc=torch.tensor(mean, device=self.device, dtype=torch.float32),
                                    scale=torch.tensor(std, device=self.device, dtype=torch.float32))
-        
+
     def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
         """Sample a Gaussian noise
 
         :param size: Shape of the sampled tensor
         :type size: tuple or list of integers, or torch.Size
-        
+
         :return: Sampled noise
         :rtype: torch.Tensor
         """

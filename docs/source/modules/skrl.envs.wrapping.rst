@@ -63,7 +63,7 @@ Basic usage
         .. tabs::
 
             .. tab:: Preview 4 (isaacgymenvs.make)
-            
+
                 .. code-block:: python
                     :linenos:
 
@@ -73,9 +73,9 @@ Basic usage
                     from skrl.envs.torch import wrap_env
 
                     # create/load the environment using the easy-to-use API from NVIDIA
-                    env = isaacgymenvs.make(seed=0, 
-                                            task="Cartpole", 
-                                            num_envs=512, 
+                    env = isaacgymenvs.make(seed=0,
+                                            task="Cartpole",
+                                            num_envs=512,
                                             sim_device="cuda:0",
                                             rl_device="cuda:0",
                                             graphics_device_id=0,
@@ -85,7 +85,7 @@ Basic usage
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
             .. tab:: Preview 4
-            
+
                 .. code-block:: python
                     :linenos:
 
@@ -100,7 +100,7 @@ Basic usage
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
             .. tab:: Preview 3
-            
+
                 .. code-block:: python
                     :linenos:
 
@@ -115,7 +115,7 @@ Basic usage
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 
             .. tab:: Preview 2
-            
+
                 .. code-block:: python
                     :linenos:
 
@@ -130,7 +130,7 @@ Basic usage
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
     .. tab:: OpenAI Gym
-   
+
         .. tabs::
 
             .. tab:: Single environment
@@ -166,7 +166,7 @@ Basic usage
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
     .. tab:: DeepMind
-   
+
         .. code-block:: python
             :linenos:
 
@@ -200,41 +200,41 @@ Internal API
     :undoc-members:
     :show-inheritance:
     :members:
-   
+
     .. automethod:: __init__
 
     .. py:property:: device
 
         The device used by the environment
 
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability 
+        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
 
 .. autoclass:: skrl.envs.torch.wrappers.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-   
+
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.torch.wrappers.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-   
+
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.torch.wrappers.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-   
+
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.torch.wrappers.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-   
+
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.torch.wrappers.DeepMindWrapper
@@ -242,5 +242,5 @@ Internal API
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
     :members:
-   
+
     .. automethod:: __init__

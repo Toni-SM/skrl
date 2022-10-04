@@ -22,9 +22,9 @@ class MLP(CategoricalMixin, Model):
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              unnormalized_log_prob=True)
 # [end-mlp]
 
@@ -60,13 +60,13 @@ class CNN(CategoricalMixin, Model):
                                  nn.Linear(32, self.num_actions))
 
     def compute(self, states, taken_actions, role):
-        # permute (samples, width, height, channels) -> (samples, channels, width, height) 
+        # permute (samples, width, height, channels) -> (samples, channels, width, height)
         return self.net(states.permute(0, 3, 1, 2))
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = CNN(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              unnormalized_log_prob=True)
 # [end-cnn]

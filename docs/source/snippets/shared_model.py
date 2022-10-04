@@ -18,7 +18,7 @@ class SharedModel(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, 32),
                                  nn.ELU())
-        
+
         # separated layers ("policy")
         self.mean_layer = nn.Linear(32, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))

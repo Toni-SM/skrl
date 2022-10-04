@@ -32,6 +32,6 @@ class CustomMemory(Memory):
         :rtype: list of torch.Tensor list
         """
         # ================================
-        # - sample a batch from memory. 
+        # - sample a batch from memory.
         #   It is possible to generate only the sampling indexes and call self.sample_by_index(...)
         # ================================

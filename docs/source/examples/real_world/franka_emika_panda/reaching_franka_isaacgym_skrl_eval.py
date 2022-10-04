@@ -11,7 +11,7 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define only the policy for evaluation 
+# Define only the policy for evaluation
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
@@ -68,9 +68,9 @@ cfg_ppo["experiment"]["write_interval"] = 32
 cfg_ppo["experiment"]["checkpoint_interval"] = 0
 
 agent = PPO(models=models_ppo,
-            memory=None, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=None,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

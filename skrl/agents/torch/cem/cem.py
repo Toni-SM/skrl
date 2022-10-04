@@ -17,7 +17,7 @@ CEM_DEFAULT_CONFIG = {
     "percentile": 0.70,             # percentile to compute the reward bound [0, 1]
 
     "discount_factor": 0.99,        # discount factor (gamma)
-    
+
     "learning_rate": 1e-2,          # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -42,21 +42,21 @@ CEM_DEFAULT_CONFIG = {
 
 
 class CEM(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Cross-Entropy Method (CEM)
 
         https://ieeexplore.ieee.org/abstract/document/6796865/
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -72,11 +72,11 @@ class CEM(Agent):
         """
         _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -84,7 +84,7 @@ class CEM(Agent):
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
-        
+
         # configuration:
         self._rollouts = self.cfg["rollouts"]
         self._rollout = 0
@@ -99,7 +99,7 @@ class CEM(Agent):
 
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
-        
+
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
         self._episode_tracking = []
@@ -123,7 +123,7 @@ class CEM(Agent):
         """Initialize the agent
         """
         super().init()
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -154,20 +154,20 @@ class CEM(Agent):
         if timestep < self._random_timesteps:
             return self.policy.random_act(states, taken_actions=None, role="policy")
 
-        # sample stochastic actions 
+        # sample stochastic actions
         return self.policy.act(states, taken_actions=None, role="policy")
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -190,7 +190,7 @@ class CEM(Agent):
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
-        
+
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -258,10 +258,10 @@ class CEM(Agent):
             if not len(returns):
                 print("[WARNING] No returns to update. Consider increasing the number of rollouts")
                 return
-            
+
             returns = torch.tensor(returns)
             return_threshold = torch.quantile(returns, self._percentile, dim=-1)
-            
+
             # get elite states and actions
             indexes = torch.nonzero(returns >= return_threshold)
             elite_states = torch.cat([sampled_states[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
@@ -287,6 +287,6 @@ class CEM(Agent):
 
         self.track_data("Coefficient / Return threshold", return_threshold.item())
         self.track_data("Coefficient / Mean discounted returns", torch.mean(returns).item())
-        
+
         if self._learning_rate_scheduler:
             self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

@@ -82,17 +82,17 @@ def _get_num_units_by_shape(model: Model, shape: Shape) -> int:
     :rtype: int
     """
     num_units = {Shape.ONE: 1,
-                 Shape.STATES: model.num_observations, 
+                 Shape.STATES: model.num_observations,
                  Shape.ACTIONS: model.num_actions,
                  Shape.STATES_ACTIONS: model.num_observations + model.num_actions}
     return num_units[shape]
 
-def _generate_sequential(model: Model, 
-                         input_shape: Shape = Shape.STATES, 
-                         hiddens: list = [256, 256], 
-                         hidden_activation: list = ["relu", "relu"], 
-                         output_shape: Shape = Shape.ACTIONS, 
-                         output_activation: Union[str, None] = "tanh", 
+def _generate_sequential(model: Model,
+                         input_shape: Shape = Shape.STATES,
+                         hiddens: list = [256, 256],
+                         hidden_activation: list = ["relu", "relu"],
+                         output_shape: Shape = Shape.ACTIONS,
+                         output_activation: Union[str, None] = "tanh",
                          output_scale: int = None) -> nn.Sequential:
     """Generate a sequential model
 
@@ -127,22 +127,22 @@ def _generate_sequential(model: Model,
     output_layer = [nn.Linear(hiddens[-1], _get_num_units_by_shape(model, output_shape))]
     if output_activation is not None:
         output_layer.append(_get_activation_function(output_activation))
-    
+
     return nn.Sequential(*input_layer, *hidden_layers, *output_layer)
 
-def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                    action_space: Union[int, Tuple[int], gym.Space, None] = None,
-                   device: Union[str, torch.device] = "cuda:0", 
-                   clip_actions: bool = False, 
-                   clip_log_std: bool = True, 
-                   min_log_std: float = -20, 
-                   max_log_std: float = 2, 
-                   input_shape: Shape = Shape.STATES, 
-                   hiddens: list = [256, 256], 
-                   hidden_activation: list = ["relu", "relu"], 
-                   output_shape: Shape = Shape.ACTIONS, 
-                   output_activation: Union[str, None] = "tanh", 
-                   output_scale: float = 1.0) -> Model: 
+                   device: Union[str, torch.device] = "cuda:0",
+                   clip_actions: bool = False,
+                   clip_log_std: bool = True,
+                   min_log_std: float = -20,
+                   max_log_std: float = 2,
+                   input_shape: Shape = Shape.STATES,
+                   hiddens: list = [256, 256],
+                   hidden_activation: list = ["relu", "relu"],
+                   output_shape: Shape = Shape.ACTIONS,
+                   output_activation: Union[str, None] = "tanh",
+                   output_scale: float = 1.0) -> Model:
     """Instantiate a Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -195,7 +195,7 @@ def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = 
                                             output_activation=metadata["output_activation"],
                                             output_scale=metadata["output_scale"])
             self.log_std_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(self, metadata["output_shape"])))
-        
+
         def compute(self, states, taken_actions=None, role=""):
             if self.instantiator_input_type == 0:
                 output = self.net(states)
@@ -206,35 +206,35 @@ def gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = 
 
             return output * self.instantiator_output_scale, self.log_std_parameter
 
-    metadata = {"input_shape": input_shape, 
-                "hiddens": hiddens, 
-                "hidden_activation": hidden_activation, 
-                "output_shape": output_shape, 
-                "output_activation": output_activation, 
+    metadata = {"input_shape": input_shape,
+                "hiddens": hiddens,
+                "hidden_activation": hidden_activation,
+                "output_shape": output_shape,
+                "output_activation": output_activation,
                 "output_scale": output_scale}
 
     return GaussianModel(observation_space=observation_space,
-                         action_space=action_space, 
-                         device=device, 
-                         clip_actions=clip_actions, 
-                         clip_log_std=clip_log_std, 
+                         action_space=action_space,
+                         device=device,
+                         clip_actions=clip_actions,
+                         clip_log_std=clip_log_std,
                          min_log_std=min_log_std,
                          max_log_std=max_log_std,
                          metadata=metadata)
-    
-def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
+
+def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
                                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
-                                device: Union[str, torch.device] = "cuda:0", 
-                                clip_actions: bool = False, 
-                                clip_log_std: bool = True, 
-                                min_log_std: float = -20, 
-                                max_log_std: float = 2, 
-                                input_shape: Shape = Shape.STATES, 
-                                hiddens: list = [256, 256], 
-                                hidden_activation: list = ["relu", "relu"], 
-                                output_shape: Shape = Shape.ACTIONS, 
-                                output_activation: Union[str, None] = "tanh", 
-                                output_scale: float = 1.0) -> Model: 
+                                device: Union[str, torch.device] = "cuda:0",
+                                clip_actions: bool = False,
+                                clip_log_std: bool = True,
+                                min_log_std: float = -20,
+                                max_log_std: float = 2,
+                                input_shape: Shape = Shape.STATES,
+                                hiddens: list = [256, 256],
+                                hidden_activation: list = ["relu", "relu"],
+                                output_shape: Shape = Shape.ACTIONS,
+                                output_activation: Union[str, None] = "tanh",
+                                output_scale: float = 1.0) -> Model:
     """Instantiate a multivariate Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -287,7 +287,7 @@ def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Sp
                                             output_activation=metadata["output_activation"],
                                             output_scale=metadata["output_scale"])
             self.log_std_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(self, metadata["output_shape"])))
-        
+
         def compute(self, states, taken_actions=None, role=""):
             if self.instantiator_input_type == 0:
                 output = self.net(states)
@@ -298,31 +298,31 @@ def multivariate_gaussian_model(observation_space: Union[int, Tuple[int], gym.Sp
 
             return output * self.instantiator_output_scale, self.log_std_parameter
 
-    metadata = {"input_shape": input_shape, 
-                "hiddens": hiddens, 
-                "hidden_activation": hidden_activation, 
-                "output_shape": output_shape, 
-                "output_activation": output_activation, 
+    metadata = {"input_shape": input_shape,
+                "hiddens": hiddens,
+                "hidden_activation": hidden_activation,
+                "output_shape": output_shape,
+                "output_activation": output_activation,
                 "output_scale": output_scale}
 
     return MultivariateGaussianModel(observation_space=observation_space,
-                                     action_space=action_space, 
-                                     device=device, 
-                                     clip_actions=clip_actions, 
-                                     clip_log_std=clip_log_std, 
+                                     action_space=action_space,
+                                     device=device,
+                                     clip_actions=clip_actions,
+                                     clip_log_std=clip_log_std,
                                      min_log_std=min_log_std,
                                      max_log_std=max_log_std,
                                      metadata=metadata)
 
-def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                        action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                        device: Union[str, torch.device] = "cuda:0", 
-                        clip_actions: bool = False, 
-                        input_shape: Shape = Shape.STATES, 
-                        hiddens: list = [256, 256], 
-                        hidden_activation: list = ["relu", "relu"], 
-                        output_shape: Shape = Shape.ACTIONS, 
-                        output_activation: Union[str, None] = "tanh", 
+def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                        action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                        device: Union[str, torch.device] = "cuda:0",
+                        clip_actions: bool = False,
+                        input_shape: Shape = Shape.STATES,
+                        hiddens: list = [256, 256],
+                        hidden_activation: list = ["relu", "relu"],
+                        output_shape: Shape = Shape.ACTIONS,
+                        output_activation: Union[str, None] = "tanh",
                         output_scale: float = 1.0) -> Model:
     """Instantiate a deterministic model
 
@@ -368,7 +368,7 @@ def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, Non
                                             output_shape=metadata["output_shape"],
                                             output_activation=metadata["output_activation"],
                                             output_scale=metadata["output_scale"])
-        
+
         def compute(self, states, taken_actions=None, role=""):
             if self.instantiator_input_type == 0:
                 output = self.net(states)
@@ -379,27 +379,27 @@ def deterministic_model(observation_space: Union[int, Tuple[int], gym.Space, Non
 
             return output * self.instantiator_output_scale
 
-    metadata = {"input_shape": input_shape, 
-                "hiddens": hiddens, 
-                "hidden_activation": hidden_activation, 
-                "output_shape": output_shape, 
-                "output_activation": output_activation, 
+    metadata = {"input_shape": input_shape,
+                "hiddens": hiddens,
+                "hidden_activation": hidden_activation,
+                "output_shape": output_shape,
+                "output_activation": output_activation,
                 "output_scale": output_scale}
 
     return DeterministicModel(observation_space=observation_space,
-                              action_space=action_space, 
-                              device=device, 
-                              clip_actions=clip_actions, 
+                              action_space=action_space,
+                              device=device,
+                              clip_actions=clip_actions,
                               metadata=metadata)
 
-def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                      action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                      device: Union[str, torch.device] = "cuda:0", 
-                      unnormalized_log_prob: bool = False, 
-                      input_shape: Shape = Shape.STATES, 
-                      hiddens: list = [256, 256], 
-                      hidden_activation: list = ["relu", "relu"], 
-                      output_shape: Shape = Shape.ACTIONS, 
+def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                      action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                      device: Union[str, torch.device] = "cuda:0",
+                      unnormalized_log_prob: bool = False,
+                      input_shape: Shape = Shape.STATES,
+                      hiddens: list = [256, 256],
+                      hidden_activation: list = ["relu", "relu"],
+                      output_shape: Shape = Shape.ACTIONS,
                       output_activation: Union[str, None] = None) -> Model:
     """Instantiate a categorical model
 
@@ -412,8 +412,8 @@ def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None]
     :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
     :type device: str or torch.device, optional
     :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).
-                                  If True, the model's output is interpreted as unnormalized log probabilities 
-                                  (it can be any real number), otherwise as normalized probabilities 
+                                  If True, the model's output is interpreted as unnormalized log probabilities
+                                  (it can be any real number), otherwise as normalized probabilities
                                   (the output must be non-negative, finite and have a non-zero sum)
     :type unnormalized_log_prob: bool, optional
     :param input_shape: Shape of the input (default: Shape.STATES)
@@ -443,7 +443,7 @@ def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None]
                                             hidden_activation=metadata["hidden_activation"],
                                             output_shape=metadata["output_shape"],
                                             output_activation=metadata["output_activation"])
-        
+
         def compute(self, states, taken_actions=None, role=""):
             if self.instantiator_input_type == 0:
                 output = self.net(states)
@@ -454,14 +454,14 @@ def categorical_model(observation_space: Union[int, Tuple[int], gym.Space, None]
 
             return output
 
-    metadata = {"input_shape": input_shape, 
-                "hiddens": hiddens, 
-                "hidden_activation": hidden_activation, 
-                "output_shape": output_shape, 
+    metadata = {"input_shape": input_shape,
+                "hiddens": hiddens,
+                "hidden_activation": hidden_activation,
+                "output_shape": output_shape,
                 "output_activation": output_activation}
 
     return CategoricalModel(observation_space=observation_space,
-                            action_space=action_space, 
-                            device=device, 
-                            unnormalized_log_prob=unnormalized_log_prob, 
+                            action_space=action_space,
+                            device=device,
+                            unnormalized_log_prob=unnormalized_log_prob,
                             metadata=metadata)

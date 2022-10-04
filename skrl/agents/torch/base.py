@@ -16,19 +16,19 @@ from ...models.torch import Model
 
 
 class Agent:
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Base class that represent a RL agent
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -52,7 +52,7 @@ class Agent:
         else:
             self.memory = memory
             self.secondary_memories = []
-        
+
         # convert the models to their respective device
         for model in self.models.values():
             if model is not None:
@@ -126,7 +126,7 @@ class Agent:
         if not experiment_name:
             experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
         self.experiment_dir = os.path.join(directory, experiment_name)
-        
+
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
@@ -193,7 +193,7 @@ class Agent:
             # separated modules
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
-                    torch.save(self.checkpoint_best_modules["modules"][name], 
+                    torch.save(self.checkpoint_best_modules["modules"][name],
                                os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
             # whole agent
             else:
@@ -203,9 +203,9 @@ class Agent:
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
+    def act(self,
+            states: torch.Tensor,
+            timestep: int,
             timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
@@ -223,20 +223,20 @@ class Agent:
         """
         raise NotImplementedError
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
         In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -258,7 +258,7 @@ class Agent:
         if self._cumulative_rewards is None:
             self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
             self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
-        
+
         self._cumulative_rewards.add_(rewards)
         self._cumulative_timesteps.add_(1)
 
@@ -273,7 +273,7 @@ class Agent:
             # reset the cumulative rewards and timesteps
             self._cumulative_rewards[finished_episodes] = 0
             self._cumulative_timesteps[finished_episodes] = 0
-        
+
         # record data
         if self.write_interval > 0:
             self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
@@ -565,9 +565,9 @@ class Agent:
             if module not in ["state_preprocessor", "value_preprocessor", "optimizer"] and hasattr(module, "migrate"):
                 if verbose:
                     logger.info("Model: {} ({})".format(name, type(module).__name__))
-                status *= module.migrate(state_dict=checkpoint["model"], 
-                                            name_map=name_map.get(name, {}), 
-                                            auto_mapping=auto_mapping, 
+                status *= module.migrate(state_dict=checkpoint["model"],
+                                            name_map=name_map.get(name, {}),
+                                            auto_mapping=auto_mapping,
                                             verbose=verbose)
 
         self.set_mode("eval")

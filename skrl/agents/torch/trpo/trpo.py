@@ -19,10 +19,10 @@ TRPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
     "mini_batches": 2,              # number of mini batches during each learning epoch
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.99,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-    
+
     "value_learning_rate": 1e-3,    # value learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -59,21 +59,21 @@ TRPO_DEFAULT_CONFIG = {
 
 
 class TRPO(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Trust Region Policy Optimization (TRPO)
 
         https://arxiv.org/abs/1502.05477
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -89,11 +89,11 @@ class TRPO(Agent):
         """
         _cfg = copy.deepcopy(TRPO_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -161,7 +161,7 @@ class TRPO(Agent):
         """Initialize the agent
         """
         super().init()
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -205,17 +205,17 @@ class TRPO(Agent):
 
         return actions, log_prob, actions_mean
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -246,10 +246,10 @@ class TRPO(Agent):
                 values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                     log_prob=self._current_log_prob, values=values)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                    log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
@@ -285,11 +285,11 @@ class TRPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor, 
-                        dones: torch.Tensor, 
-                        values: torch.Tensor, 
-                        next_values: torch.Tensor, 
-                        discount_factor: float = 0.99, 
+        def compute_gae(rewards: torch.Tensor,
+                        dones: torch.Tensor,
+                        values: torch.Tensor,
+                        next_values: torch.Tensor,
+                        discount_factor: float = 0.99,
                         lambda_coefficient: float = 0.95) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
@@ -326,10 +326,10 @@ class TRPO(Agent):
 
             return returns, advantages
 
-        def surrogate_loss(policy: Model, 
-                           states: torch.Tensor, 
-                           actions: torch.Tensor, 
-                           log_prob: torch.Tensor, 
+        def surrogate_loss(policy: Model,
+                           states: torch.Tensor,
+                           actions: torch.Tensor,
+                           log_prob: torch.Tensor,
                            advantages: torch.Tensor) -> torch.Tensor:
             """Compute the surrogate objective (policy loss)
 
@@ -350,10 +350,10 @@ class TRPO(Agent):
             _, new_log_prob, _ = policy.act(states, taken_actions=actions, role="policy")
             return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
-        def conjugate_gradient(policy: Model, 
-                               states: torch.Tensor, 
-                               b: torch.Tensor, 
-                               num_iterations: float = 10, 
+        def conjugate_gradient(policy: Model,
+                               states: torch.Tensor,
+                               b: torch.Tensor,
+                               num_iterations: float = 10,
                                residual_tolerance: float = 1e-10) -> torch.Tensor:
             """Conjugate gradient algorithm to solve Ax = b using the iterative method
 
@@ -363,7 +363,7 @@ class TRPO(Agent):
             :type policy: Model
             :param states: States
             :type states: torch.Tensor
-            :param b: Vector b 
+            :param b: Vector b
             :type b: torch.Tensor
             :param num_iterations: Number of iterations (default: 10)
             :type num_iterations: float, optional
@@ -389,12 +389,12 @@ class TRPO(Agent):
                 rr_old = rr_new
             return x
 
-        def fisher_vector_product(policy: Model, 
-                                  states: torch.Tensor, 
-                                  vector: torch.Tensor, 
+        def fisher_vector_product(policy: Model,
+                                  states: torch.Tensor,
+                                  vector: torch.Tensor,
                                   damping: float = 0.1) -> torch.Tensor:
             """Compute the Fisher vector product (direct method)
-            
+
             https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/
 
             :param policy: Policy
@@ -437,7 +437,7 @@ class TRPO(Agent):
 
             _, _, mu_2 = policy_2.act(states, taken_actions=None, role="policy")
             logstd_2 = policy_2.get_log_std(role="policy")
-            
+
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
                / torch.square(logstd_2.exp()) - 0.5
             return torch.sum(kl, dim=-1).mean()
@@ -446,7 +446,7 @@ class TRPO(Agent):
         with torch.no_grad():
             last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
-        
+
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
                                           dones=self.memory.get_tensor_by_name("dones"),
@@ -467,7 +467,7 @@ class TRPO(Agent):
 
         # learning epochs
         for epoch in range(self._learning_epochs):
-            
+
             # mini-batches loop
             for sampled_states, sampled_actions, sampled_log_prob, sampled_returns, sampled_advantages in sampled_batches:
 
@@ -479,7 +479,7 @@ class TRPO(Agent):
                 flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
                 # compute the search direction using the conjugate gradient algorithm
-                search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data, 
+                search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data,
                                                       num_iterations=self._conjugate_gradient_steps)
 
                 # compute step size and full step
@@ -533,7 +533,7 @@ class TRPO(Agent):
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
-        
+
         self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
         if self._learning_rate_scheduler:

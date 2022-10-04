@@ -26,9 +26,9 @@ With the release of Isaac Gym (preview 4), NVIDIA developers provide an easy-to-
 
             import isaacgymenvs
 
-            env = isaacgymenvs.make(seed=0, 
-                                    task="Cartpole", 
-                                    num_envs=2000, 
+            env = isaacgymenvs.make(seed=0,
+                                    task="Cartpole",
+                                    num_envs=2000,
                                     sim_device="cuda:0",
                                     rl_device="cuda:0",
                                     graphics_device_id=0,
@@ -61,7 +61,7 @@ Basic usage
             env = load_isaacgym_env_preview4(task_name="Cartpole")
 
     .. tab:: Command line arguments (priority)
-            
+
         .. code-block:: python
             :linenos:
 
@@ -118,7 +118,7 @@ Basic usage
             env = load_isaacgym_env_preview3(task_name="Cartpole")
 
     .. tab:: Command line arguments (priority)
-            
+
         .. code-block:: python
             :linenos:
 
@@ -171,7 +171,7 @@ Basic usage
             env = load_isaacgym_env_preview2(task_name="Cartpole")
 
     .. tab:: Command line arguments (priority)
-            
+
         .. code-block:: python
             :linenos:
 

@@ -10,7 +10,7 @@ Basic usage
 ^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: PyTorch (.pt)
 
         .. literalinclude:: ../snippets/utils_postprocessing.py
@@ -47,7 +47,7 @@ API
    :inherited-members:
    :private-members: _format_numpy, _format_torch, _format_csv
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __iter__
    .. automethod:: __next__
@@ -70,7 +70,7 @@ Basic usage
 ^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Tensorboard (events.out.tfevents.*)
 
         .. literalinclude:: ../snippets/utils_postprocessing.py
@@ -88,7 +88,7 @@ API
    :show-inheritance:
    :inherited-members:
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __iter__
    .. automethod:: __next__

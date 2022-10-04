@@ -14,6 +14,7 @@ INSTALL_REQUIRES = [
     "tensorboard",
     "tqdm",
     "packaging",
+    "pre-commit",
 ]
 
 # installation

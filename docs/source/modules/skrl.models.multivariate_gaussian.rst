@@ -13,7 +13,7 @@ skrl provides a Python mixin (:literal:`MultivariateGaussianMixin`) to assist in
       :emphasize-lines: 1
 
       class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0", 
+          def __init__(self, observation_space, action_space, device="cuda:0",
                        clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
               Model.__init__(self, observation_space, action_space, device)
               MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
@@ -24,7 +24,7 @@ skrl provides a Python mixin (:literal:`MultivariateGaussianMixin`) to assist in
       :emphasize-lines: 4-5
 
       class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0", 
+          def __init__(self, observation_space, action_space, device="cuda:0",
                        clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
               Model.__init__(self, observation_space, action_space, device)
               MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
@@ -41,7 +41,7 @@ Basic usage
 -----------
 
 .. tabs::
-    
+
     .. tab:: Multi-Layer Perceptron (MLP)
 
         .. literalinclude:: ../snippets/multivariate_gaussian_model.py

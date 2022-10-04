@@ -8,7 +8,7 @@ from skrl.models.torch import Model, GaussianMixin
 
 # define the model
 class MLP(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, 
+    def __init__(self, observation_space, action_space, device,
                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
@@ -27,9 +27,9 @@ class MLP(GaussianMixin, Model):
         return torch.tanh(self.mean_action_layer(x)), self.log_std_parameter
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              clip_actions=True,
              clip_log_std=True,
              min_log_std=-20,
@@ -49,7 +49,7 @@ from skrl.models.torch import Model, GaussianMixin
 
 # define the model
 class CNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, 
+    def __init__(self, observation_space, action_space, device,
                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
@@ -70,18 +70,18 @@ class CNN(GaussianMixin, Model):
                                  nn.Linear(16, 32),
                                  nn.Tanh(),
                                  nn.Linear(32, self.num_actions))
-        
+
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, states, taken_actions, role):
-        # permute (samples, width, height, channels) -> (samples, channels, width, height) 
+        # permute (samples, width, height, channels) -> (samples, channels, width, height)
         return self.net(states.permute(0, 3, 1, 2)), self.log_std_parameter
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space, 
-             action_space=env.action_space, 
-             device=env.device, 
+policy = CNN(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
              clip_actions=True,
              clip_log_std=True,
              min_log_std=-20,

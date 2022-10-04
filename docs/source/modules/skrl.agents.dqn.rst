@@ -1,7 +1,7 @@
 Deep Q-Network (DQN)
 ====================
 
-DQN is a **model-free**, **off-policy** algorithm that trains a control policies directly from high-dimensional sensory using a deep function approximator to represent the Q-value function 
+DQN is a **model-free**, **off-policy** algorithm that trains a control policies directly from high-dimensional sensory using a deep function approximator to represent the Q-value function
 
 Paper: `Playing Atari with Deep Reinforcement Learning <https://arxiv.org/abs/1312.5602>`_
 
@@ -95,5 +95,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

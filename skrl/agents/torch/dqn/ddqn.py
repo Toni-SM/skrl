@@ -16,10 +16,10 @@ from .. import Agent
 DDQN_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.005,                # soft update hyperparameter (tau)
-    
+
     "learning_rate": 1e-3,          # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -36,7 +36,7 @@ DDQN_DEFAULT_CONFIG = {
     "exploration": {
         "initial_epsilon": 1.0,       # initial epsilon for epsilon-greedy exploration
         "final_epsilon": 0.05,        # final epsilon for epsilon-greedy exploration
-        "timesteps": 1000,            # timesteps for epsilon-greedy decay 
+        "timesteps": 1000,            # timesteps for epsilon-greedy decay
     },
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
@@ -53,21 +53,21 @@ DDQN_DEFAULT_CONFIG = {
 
 
 class DDQN(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Double Deep Q-Network (DDQN)
 
         https://ojs.aaai.org/index.php/AAAI/article/view/10295
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -83,11 +83,11 @@ class DDQN(Agent):
         """
         _cfg = copy.deepcopy(DDQN_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -108,7 +108,7 @@ class DDQN(Agent):
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
-        
+
         self._discount_factor = self.cfg["discount_factor"]
         self._polyak = self.cfg["polyak"]
 
@@ -116,7 +116,7 @@ class DDQN(Agent):
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
-        
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -128,7 +128,7 @@ class DDQN(Agent):
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
-        
+
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
             self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
@@ -176,7 +176,7 @@ class DDQN(Agent):
 
         if not self._exploration_timesteps:
             return torch.argmax(self.q_network.act(states, taken_actions=None, role="q_network")[0], dim=1, keepdim=True), None, None
-            
+
         # sample random actions
         actions = self.q_network.random_act(states, taken_actions=None, role="q_network")[0]
         if timestep < self._random_timesteps:
@@ -189,23 +189,23 @@ class DDQN(Agent):
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
             actions[indexes] = torch.argmax(self.q_network.act(states[indexes], taken_actions=None, role="q_network")[0], dim=1, keepdim=True)
-        
+
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
-        
+
         return actions, None, None
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -228,7 +228,7 @@ class DDQN(Agent):
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
-        
+
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -279,17 +279,17 @@ class DDQN(Agent):
             # compute target values
             with torch.no_grad():
                 next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states, taken_actions=None, role="target_q_network")
-                
+
                 target_q_values = torch.gather(next_q_values, dim=1, index=torch.argmax(self.q_network.act(states=sampled_next_states, \
                     taken_actions=None, role="q_network")[0], dim=1, keepdim=True))
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values = torch.gather(self.q_network.act(states=sampled_states, taken_actions=None, role="q_network")[0], 
+            q_values = torch.gather(self.q_network.act(states=sampled_states, taken_actions=None, role="q_network")[0],
                                     dim=1, index=sampled_actions.long())
 
             q_network_loss = F.mse_loss(q_values, target_values)
-            
+
             # optimize Q-network
             self.optimizer.zero_grad()
             q_network_loss.backward()

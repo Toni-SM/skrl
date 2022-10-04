@@ -91,7 +91,7 @@ models_ppo["value"] = Value(env.observation_space, env.action_space, device)
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 16
 cfg_ppo["learning_epochs"] = 8
-cfg_ppo["mini_batches"] = 8  
+cfg_ppo["mini_batches"] = 8
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
 cfg_ppo["learning_rate"] = 5e-4
@@ -115,9 +115,9 @@ cfg_ppo["experiment"]["write_interval"] = 5
 cfg_ppo["experiment"]["checkpoint_interval"] = 250
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

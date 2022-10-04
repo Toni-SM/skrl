@@ -16,9 +16,9 @@ CUSTOM_DEFAULT_CONFIG = {
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, 
-                 env: Wrapper, 
-                 agents: Union[Agent, List[Agent], List[List[Agent]]], 
+    def __init__(self,
+                 env: Wrapper,
+                 agents: Union[Agent, List[Agent], List[List[Agent]]],
                  agents_scope : List[int] = [],
                  cfg: dict = {}) -> None:
         """

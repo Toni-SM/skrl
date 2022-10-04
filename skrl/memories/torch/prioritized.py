@@ -21,7 +21,7 @@ class PrioritizedMemory(Memory):
         :type device: str or torch.device, optional
         :param preallocate: If true, preallocate memory for efficient use (default: True)
         :type preallocate: bool, optional
-        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True). 
+        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True).
                             Replacement implies that a value can be selected multiple times (the batch size is always guaranteed).
                             Sampling without replacement will return a batch of maximum memory size if the memory size is less than the requested batch size
         :type replacement: bool, optional
@@ -49,8 +49,8 @@ class PrioritizedMemory(Memory):
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
         :rtype: tuple of torch.Tensor
-        """ 
+        """
         # generate random indexes
         indexes = np.random.choice(len(self), size=batch_size, replace=True)
-        
+
         return self.sample_by_index(indexes=indexes, names=names)

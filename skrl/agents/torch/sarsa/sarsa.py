@@ -33,21 +33,21 @@ SARSA_DEFAULT_CONFIG = {
 
 
 class SARSA(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """State Action Reward State Action (SARSA)
 
         https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.2539
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -63,11 +63,11 @@ class SARSA(Agent):
         """
         _cfg = copy.deepcopy(SARSA_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -75,10 +75,10 @@ class SARSA(Agent):
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
-        
+
         # configuration
         self._discount_factor = self.cfg["discount_factor"]
-        
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -118,17 +118,17 @@ class SARSA(Agent):
         # sample actions from policy
         return self.policy.act(states, taken_actions=None, role="policy")
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -197,7 +197,7 @@ class SARSA(Agent):
         """
         q_table = self.policy.table()
         env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
-        
+
         # compute next actions
         next_actions = self.policy.act(self._current_next_states, taken_actions=None, role="policy")[0]
 
@@ -206,4 +206,3 @@ class SARSA(Agent):
             * (self._current_rewards + self._discount_factor * self._current_dones.logical_not() \
                 * q_table[env_ids, self._current_next_states, next_actions] \
                     - q_table[env_ids, self._current_states, self._current_actions])
-        

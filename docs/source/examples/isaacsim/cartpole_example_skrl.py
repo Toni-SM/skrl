@@ -1,4 +1,4 @@
-# Omniverse Isaac Sim tutorial: Creating New RL Environment 
+# Omniverse Isaac Sim tutorial: Creating New RL Environment
 # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html
 
 # Instance of VecEnvBase and create the task
@@ -75,7 +75,7 @@ models_ppo["value"] = Value(env.observation_space, env.action_space, device)
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -101,9 +101,9 @@ cfg_ppo["experiment"]["write_interval"] = 1000
 cfg_ppo["experiment"]["checkpoint_interval"] = 10000
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

@@ -15,10 +15,10 @@ from .. import Agent
 DDPG_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.005,                # soft update hyperparameter (tau)
-    
+
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
@@ -51,21 +51,21 @@ DDPG_DEFAULT_CONFIG = {
 
 
 class DDPG(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Deep Deterministic Policy Gradient (DDPG)
 
         https://arxiv.org/abs/1509.02971
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -81,11 +81,11 @@ class DDPG(Agent):
         """
         _cfg = copy.deepcopy(DDPG_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -99,7 +99,7 @@ class DDPG(Agent):
         self.checkpoint_modules["target_policy"] = self.target_policy
         self.checkpoint_modules["critic"] = self.critic
         self.checkpoint_modules["target_critic"] = self.target_critic
-        
+
         if self.target_policy is not None and self.target_critic is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
@@ -112,7 +112,7 @@ class DDPG(Agent):
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
-        
+
         self._discount_factor = self.cfg["discount_factor"]
         self._polyak = self.cfg["polyak"]
 
@@ -121,7 +121,7 @@ class DDPG(Agent):
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
-        
+
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
@@ -131,7 +131,7 @@ class DDPG(Agent):
         self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
-        
+
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
@@ -154,7 +154,7 @@ class DDPG(Agent):
         """Initialize the agent
         """
         super().init()
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -198,12 +198,12 @@ class DDPG(Agent):
         if self._exploration_noise is not None:
             # sample noises
             noises = self._exploration_noise.sample(actions[0].shape)
-            
+
             # define exploration timesteps
             scale = self._exploration_final_scale
             if self._exploration_timesteps is None:
                 self._exploration_timesteps = timesteps
-            
+
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
                 scale = (1 - timestep / self._exploration_timesteps) \
@@ -214,8 +214,8 @@ class DDPG(Agent):
                 # modify actions
                 actions[0].add_(noises)
                 if self._backward_compatibility:
-                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min), 
-                               actions[1], 
+                    actions = (torch.max(torch.min(actions[0], self.clip_actions_max), self.clip_actions_min),
+                               actions[1],
                                actions[2])
                 else:
                     actions[0].clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
@@ -224,26 +224,26 @@ class DDPG(Agent):
                 self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
                 self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
                 self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
-            
+
             else:
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", 0)
                 self.track_data("Exploration / Exploration noise (min)", 0)
                 self.track_data("Exploration / Exploration noise (mean)", 0)
-        
+
         return actions
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -266,7 +266,7 @@ class DDPG(Agent):
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
-        
+
         if self.memory is not None:
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
@@ -317,15 +317,15 @@ class DDPG(Agent):
             # compute target values
             with torch.no_grad():
                 next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
-                
+
                 target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic")
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
             critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions, role="critic")
-            
+
             critic_loss = F.mse_loss(critic_values, target_values)
-            
+
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()

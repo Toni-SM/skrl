@@ -16,7 +16,7 @@ Basic usage
 The noise usage is defined in each agent's configuration dictionary. A noise instance is set under the :literal:`"noise"` sub-key. The following examples show how to set the noise for an agent:
 
 .. tabs::
-            
+
     .. tab:: Gaussian noise
 
         .. image:: ../_static/imgs/noise_gaussian.png
@@ -73,7 +73,7 @@ API
    :inherited-members:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__
 
 .. raw:: html
@@ -94,7 +94,7 @@ API
    :inherited-members:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__
 
 .. raw:: html
@@ -116,7 +116,7 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Inheritance
 
         .. literalinclude:: ../snippets/noise.py
@@ -132,5 +132,5 @@ API
    :inherited-members:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

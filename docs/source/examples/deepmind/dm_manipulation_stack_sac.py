@@ -42,30 +42,30 @@ class StochasticActor(GaussianMixin, Model):
 
     def compute(self, states, taken_actions, role):
         # The dm_control.manipulation tasks have as observation/state spec a `collections.OrderedDict` object as follows:
-        # OrderedDict([('front_close', BoundedArray(shape=(1, 84, 84, 3), dtype=dtype('uint8'), name='front_close', minimum=0, maximum=255)), 
-        #              ('jaco_arm/joints_pos', Array(shape=(1, 6, 2), dtype=dtype('float64'), name='jaco_arm/joints_pos')), 
-        #              ('jaco_arm/joints_torque', Array(shape=(1, 6), dtype=dtype('float64'), name='jaco_arm/joints_torque')), 
-        #              ('jaco_arm/joints_vel', Array(shape=(1, 6), dtype=dtype('float64'), name='jaco_arm/joints_vel')), 
-        #              ('jaco_arm/jaco_hand/joints_pos', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/joints_pos')), 
-        #              ('jaco_arm/jaco_hand/joints_vel', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/joints_vel')), 
-        #              ('jaco_arm/jaco_hand/pinch_site_pos', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/pinch_site_pos')), 
+        # OrderedDict([('front_close', BoundedArray(shape=(1, 84, 84, 3), dtype=dtype('uint8'), name='front_close', minimum=0, maximum=255)),
+        #              ('jaco_arm/joints_pos', Array(shape=(1, 6, 2), dtype=dtype('float64'), name='jaco_arm/joints_pos')),
+        #              ('jaco_arm/joints_torque', Array(shape=(1, 6), dtype=dtype('float64'), name='jaco_arm/joints_torque')),
+        #              ('jaco_arm/joints_vel', Array(shape=(1, 6), dtype=dtype('float64'), name='jaco_arm/joints_vel')),
+        #              ('jaco_arm/jaco_hand/joints_pos', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/joints_pos')),
+        #              ('jaco_arm/jaco_hand/joints_vel', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/joints_vel')),
+        #              ('jaco_arm/jaco_hand/pinch_site_pos', Array(shape=(1, 3), dtype=dtype('float64'), name='jaco_arm/jaco_hand/pinch_site_pos')),
         #              ('jaco_arm/jaco_hand/pinch_site_rmat', Array(shape=(1, 9), dtype=dtype('float64'), name='jaco_arm/jaco_hand/pinch_site_rmat'))])
 
         # This spec is converted to a `gym.spaces.Dict` space by the `wrap_env` function as follows:
-        # Dict(front_close: Box(0, 255, (1, 84, 84, 3), uint8), 
-        #      jaco_arm/jaco_hand/joints_pos: Box(-inf, inf, (1, 3), float64), 
-        #      jaco_arm/jaco_hand/joints_vel: Box(-inf, inf, (1, 3), float64), 
-        #      jaco_arm/jaco_hand/pinch_site_pos: Box(-inf, inf, (1, 3), float64), 
-        #      jaco_arm/jaco_hand/pinch_site_rmat: Box(-inf, inf, (1, 9), float64), 
-        #      jaco_arm/joints_pos: Box(-inf, inf, (1, 6, 2), float64), 
-        #      jaco_arm/joints_torque: Box(-inf, inf, (1, 6), float64), 
+        # Dict(front_close: Box(0, 255, (1, 84, 84, 3), uint8),
+        #      jaco_arm/jaco_hand/joints_pos: Box(-inf, inf, (1, 3), float64),
+        #      jaco_arm/jaco_hand/joints_vel: Box(-inf, inf, (1, 3), float64),
+        #      jaco_arm/jaco_hand/pinch_site_pos: Box(-inf, inf, (1, 3), float64),
+        #      jaco_arm/jaco_hand/pinch_site_rmat: Box(-inf, inf, (1, 9), float64),
+        #      jaco_arm/joints_pos: Box(-inf, inf, (1, 6, 2), float64),
+        #      jaco_arm/joints_torque: Box(-inf, inf, (1, 6), float64),
         #      jaco_arm/joints_vel: Box(-inf, inf, (1, 6), float64))
-        
+
         # The `spaces` parameter is a flat tensor of the flattened observation/state space with shape (batch_size, size_of_flat_space).
         # Using the model's method `tensor_to_space` we can convert the flattened tensor to the original space.
         # https://skrl.readthedocs.io/en/latest/modules/skrl.models.base_class.html#skrl.models.torch.base.Model.tensor_to_space
         input = self.tensor_to_space(states, self.observation_space)
-        
+
         # For this case, the `input` variable is a Python dictionary with the following structure and shapes:
         # {'front_close': torch.Tensor(shape=[batch_size, 1, 84, 84, 3], dtype=torch.float32),
         #  'jaco_arm/jaco_hand/joints_pos': torch.Tensor(shape=[batch_size, 1, 3], dtype=torch.float32)
@@ -79,10 +79,10 @@ class StochasticActor(GaussianMixin, Model):
         # permute and normalize the images (samples, width, height, channels) -> (samples, channels, width, height)
         features = self.features_extractor(input['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
 
-        return torch.tanh(self.net(torch.cat([features, 
-                                              input["jaco_arm/joints_pos"].view(states.shape[0], -1), 
+        return torch.tanh(self.net(torch.cat([features,
+                                              input["jaco_arm/joints_pos"].view(states.shape[0], -1),
                                               input["jaco_arm/joints_vel"].view(states.shape[0], -1)], dim=-1))), self.log_std_parameter
-        
+
 class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
         Model.__init__(self, observation_space, action_space, device)
@@ -107,15 +107,15 @@ class Critic(DeterministicMixin, Model):
                                  nn.Linear(32, 1))
 
     def compute(self, states, taken_actions, role):
-        # map the observations/states to the original space. 
+        # map the observations/states to the original space.
         # See the explanation above (StochasticActor.compute)
         input = self.tensor_to_space(states, self.observation_space)
-        
+
         # permute and normalize the images (samples, width, height, channels) -> (samples, channels, width, height)
         features = self.features_extractor(input['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
 
-        return self.net(torch.cat([features, 
-                                   input["jaco_arm/joints_pos"].view(states.shape[0], -1), 
+        return self.net(torch.cat([features,
+                                   input["jaco_arm/joints_pos"].view(states.shape[0], -1),
                                    input["jaco_arm/joints_vel"].view(states.shape[0], -1),
                                    taken_actions], dim=-1))
 
@@ -160,10 +160,10 @@ cfg_sac["experiment"]["write_interval"] = 1000
 cfg_sac["experiment"]["checkpoint_interval"] = 5000
 
 
-agent_sac = SAC(models=models_sac, 
-                memory=memory, 
-                cfg=cfg_sac, 
-                observation_space=env.observation_space, 
+agent_sac = SAC(models=models_sac,
+                memory=memory,
+                cfg=cfg_sac,
+                observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=device)
 

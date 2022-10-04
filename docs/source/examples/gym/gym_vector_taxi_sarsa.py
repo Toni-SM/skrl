@@ -16,13 +16,13 @@ class EpilonGreedyPolicy(TabularMixin, Model):
         TabularMixin.__init__(self, num_envs)
 
         self.epsilon = epsilon
-        self.q_table = torch.ones((num_envs, self.num_observations, self.num_actions), 
+        self.q_table = torch.ones((num_envs, self.num_observations, self.num_actions),
                                   dtype=torch.float32, device=self.device)
-        
+
     def compute(self, states, taken_actions, role):
-        actions = torch.argmax(self.q_table[torch.arange(self.num_envs).view(-1, 1), states], 
+        actions = torch.argmax(self.q_table[torch.arange(self.num_envs).view(-1, 1), states],
                                dim=-1, keepdim=True).view(-1,1)
-        
+
         # choose random actions for exploration according to epsilon
         indexes = (torch.rand(states.shape[0], device=self.device) < self.epsilon).nonzero().view(-1)
         if indexes.numel():
@@ -55,15 +55,15 @@ models_sarsa["policy"] = EpilonGreedyPolicy(env.observation_space, env.action_sp
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sarsa.html#configuration-and-hyperparameters
 cfg_sarsa = SARSA_DEFAULT_CONFIG.copy()
 cfg_sarsa["discount_factor"] = 0.999
-cfg_sarsa["alpha"] = 0.4 
+cfg_sarsa["alpha"] = 0.4
 # logging to TensorBoard and write checkpoints each 1600 and 8000 timesteps respectively
 cfg_sarsa["experiment"]["write_interval"] = 1600
 cfg_sarsa["experiment"]["checkpoint_interval"] = 8000
 
 agent_sarsa = SARSA(models=models_sarsa,
-                    memory=None, 
-                    cfg=cfg_sarsa, 
-                    observation_space=env.observation_space, 
+                    memory=None,
+                    cfg=cfg_sarsa,
+                    observation_space=env.observation_space,
                     action_space=env.action_space,
                     device=device)
 

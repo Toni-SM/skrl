@@ -21,7 +21,7 @@ Basic usage
     At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented
 
 .. tabs::
-            
+
     .. tab:: Snippet
 
         .. literalinclude:: ../snippets/trainer.py

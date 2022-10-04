@@ -33,10 +33,10 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(200, 100),
                                  nn.ELU())
-        
+
         self.mean_layer = nn.Linear(100, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-        
+
         self.value_layer = nn.Linear(100, 1)
 
     def act(self, states, taken_actions, role):
@@ -102,9 +102,9 @@ cfg_ppo["experiment"]["write_interval"] = 160
 cfg_ppo["experiment"]["checkpoint_interval"] = 1600
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

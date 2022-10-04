@@ -62,7 +62,7 @@ Algorithm implementation
 |     :green:`# optimization step`
 |     reset :math:`\text{optimizer}_{\theta, \phi}`
 |     :math:`\nabla_{\theta, \, \phi} (L_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`
-|     :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip` 
+|     :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_{\theta, \phi}`
 | :green:`# update learning rate`
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
@@ -132,5 +132,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

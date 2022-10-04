@@ -10,9 +10,9 @@ from skrl import logger
 
 
 class Model(torch.nn.Module):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
+    def __init__(self,
+                 observation_space: Union[int, Sequence[int], gym.Space],
+                 action_space: Union[int, Sequence[int], gym.Space],
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
@@ -23,7 +23,7 @@ class Model(torch.nn.Module):
         - ``action_space`` (int, sequence of int, gym.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
         - ``num_actions`` (int): Number of elements in the action space
-        
+
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
         :type observation_space: int, sequence of int, gym.Space
@@ -61,14 +61,14 @@ class Model(torch.nn.Module):
 
         self._random_distribution = None
 
-    def _get_space_size(self, 
+    def _get_space_size(self,
                         space: Union[int, Sequence[int], gym.Space],
                         number_of_elements: bool = True) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
         :type space: int, sequence of int, or gym.Space
-        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``). 
+        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``).
                                    If ``False``, the shape of the space is returned. It only affects Discrete spaces
         :type number_of_elements: bool, optional
 
@@ -100,7 +100,7 @@ class Model(torch.nn.Module):
             1
 
             # Dict space
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
             ...                          'b': gym.spaces.Discrete(4)})
             >>> model._get_space_size(space)
             10
@@ -126,16 +126,16 @@ class Model(torch.nn.Module):
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
-    def tensor_to_space(self, 
-                        tensor: torch.Tensor, 
-                        space: gym.Space, 
+    def tensor_to_space(self,
+                        tensor: torch.Tensor,
+                        space: gym.Space,
                         start: int = 0) -> Union[torch.Tensor, dict]:
         """Map a flat tensor to a Gym space
 
         The mapping is done in the following way:
 
         - Tensors belonging to Discrete spaces are returned without modification
-        - Tensors belonging to Box spaces are reshaped to the corresponding space shape 
+        - Tensors belonging to Box spaces are reshaped to the corresponding space shape
           keeping the first dimension (number of samples) as they are
         - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
 
@@ -153,7 +153,7 @@ class Model(torch.nn.Module):
 
         Example::
 
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
             ...                          'b': gym.spaces.Discrete(4)})
             >>> tensor = torch.tensor([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
             >>>
@@ -175,9 +175,9 @@ class Model(torch.nn.Module):
             return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
-    def random_act(self, 
-                   states: torch.Tensor, 
-                   taken_actions: Optional[torch.Tensor] = None, 
+    def random_act(self,
+                   states: torch.Tensor,
+                   taken_actions: Optional[torch.Tensor] = None,
                    role: str = "") -> Sequence[torch.Tensor]:
         """Act randomly according to the action space
 
@@ -203,7 +203,7 @@ class Model(torch.nn.Module):
                 self._random_distribution = torch.distributions.uniform.Uniform(
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
                     high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
-            
+
             return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
@@ -211,7 +211,7 @@ class Model(torch.nn.Module):
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"normal_"``)
@@ -234,13 +234,13 @@ class Model(torch.nn.Module):
 
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
-        
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         The following layers will be initialized:
         - torch.nn.Linear
-        
+
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"orthogonal_"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
@@ -262,7 +262,7 @@ class Model(torch.nn.Module):
                     _update_weights(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
                     exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
-        
+
         _update_weights(self.children(), method_name, args, kwargs)
 
     def forward(self):
@@ -272,8 +272,8 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
-    def compute(self, 
-                states: torch.Tensor, 
+    def compute(self,
+                states: torch.Tensor,
                 taken_actions: Optional[torch.Tensor] = None,
                 role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
@@ -287,15 +287,15 @@ class Model(torch.nn.Module):
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Computation performed by the models
         :rtype: torch.Tensor or sequence of torch.Tensor
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
+    def act(self,
+            states: torch.Tensor,
+            taken_actions: Optional[torch.Tensor] = None,
             role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
@@ -312,7 +312,7 @@ class Model(torch.nn.Module):
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Action to be taken by the agent given the state of the environment.
                  The typical sequence's components are the actions, the log of the probability density function and mean actions.
                  Deterministic agents must ignore the last two components and return empty tensors or None for them
@@ -320,11 +320,11 @@ class Model(torch.nn.Module):
         """
         logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
-        
+
     def set_mode(self, mode: str) -> None:
         """Set the model mode (training or evaluation)
 
-        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation. 
+        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation.
             See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
@@ -339,7 +339,7 @@ class Model(torch.nn.Module):
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
         :param state_dict: State dictionary to save (default: ``None``).
@@ -390,7 +390,7 @@ class Model(torch.nn.Module):
         The final storage device is determined by the constructor of the model
 
         Only one of ``state_dict`` or ``path`` can be specified.
-        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated 
+        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated
         by the *rl_games* and *stable-baselines3* libraries at the moment
 
         For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
@@ -580,13 +580,13 @@ class Model(torch.nn.Module):
         self.eval()
 
         return status
-    
+
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
 
         - Freeze: disable gradient computation (``parameters.requires_grad = False``)
-        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``) 
-        
+        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``)
+
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
         :type freeze: bool, optional
 

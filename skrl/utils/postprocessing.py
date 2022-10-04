@@ -12,9 +12,9 @@ import collections
 class MemoryFileIterator():
     def __init__(self, pathname: str) -> None:
         """Python iterator for loading data from exported memories
-        
+
         The iterator will load the next memory file in the list of path names.
-        The output of the iterator is a tuple of the filename and the memory data 
+        The output of the iterator is a tuple of the filename and the memory data
         where the memory data is a dictionary of torch.Tensor (PyTorch), numpy.ndarray (NumPy)
         or lists (CSV) depending on the format and the keys of the dictionary are the names of the variables
 
@@ -31,7 +31,7 @@ class MemoryFileIterator():
         - Comma-separated values: (memory_size * num_envs, data_size)
 
         :param pathname: String containing a path specification for the exported memories.
-                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method 
+                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method
                          is used to find all files matching the path specification
         :type pathname: str
         """
@@ -50,7 +50,7 @@ class MemoryFileIterator():
         """
         if self.n >= len(self.file_paths):
             raise StopIteration
-        
+
         if self.file_paths[self.n].endswith(".pt"):
             return self._format_torch()
         elif self.file_paths[self.n].endswith(".npz"):
@@ -62,7 +62,7 @@ class MemoryFileIterator():
 
     def _format_numpy(self) -> Tuple[str, dict]:
         """Load numpy array from file
-        
+
         :return: Tuple of file name and data
         :rtype: tuple
         """
@@ -94,7 +94,7 @@ class MemoryFileIterator():
 
         with open(self.file_paths[self.n], 'r') as f:
             reader = csv.reader(f)
-            
+
             # parse header
             try:
                 header = next(reader, None)
@@ -123,13 +123,13 @@ class MemoryFileIterator():
 class TensorboardFileIterator():
     def __init__(self, pathname: str, tags: Union[str, List[str]]) -> None:
         """Python iterator for loading data from Tensorboard files
-        
+
         The iterator will load the next Tensorboard file in the list of path names.
         The iterator's output is a tuple of the directory name and the Tensorboard variables selected by the tags.
         The Tensorboard data is returned as a dictionary with the tag as the key and a list of steps and values as the value
 
         :param pathname: String containing a path specification for the Tensorboard files.
-                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method 
+                         Python `glob <https://docs.python.org/3/library/glob.html#glob.glob>`_ method
                          is used to find all files matching the path specification
         :type pathname: str
         :param tags: String or list of strings containing the tags of the variables to load
@@ -150,7 +150,7 @@ class TensorboardFileIterator():
         :rtype: tuple
         """
         from tensorflow.python.summary.summary_iterator import summary_iterator
-        
+
         if self.n >= len(self.file_paths):
             raise StopIteration
 

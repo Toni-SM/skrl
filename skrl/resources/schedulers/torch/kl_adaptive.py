@@ -5,24 +5,24 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 
 class KLAdaptiveRL(_LRScheduler):
-    def __init__(self, 
-                 optimizer: torch.optim.Optimizer, 
-                 kl_threshold: float = 0.008, 
-                 min_lr: float = 1e-6, 
+    def __init__(self,
+                 optimizer: torch.optim.Optimizer,
+                 kl_threshold: float = 0.008,
+                 min_lr: float = 1e-6,
                  max_lr: float = 1e-2,
                  kl_factor: float = 2,
                  lr_factor: float = 1.5,
-                 last_epoch: int = -1, 
+                 last_epoch: int = -1,
                  verbose: bool = False) -> None:
         """Adaptive KL scheduler
-        
+
         Adjusts the learning rate according to the KL divergence.
-        The implementation is adapted from the rl_games library 
+        The implementation is adapted from the rl_games library
         (https://github.com/Denys88/rl_games/blob/master/rl_games/common/schedulers.py)
 
         .. note::
 
-            This scheduler is only available for PPO at the moment. 
+            This scheduler is only available for PPO at the moment.
             Applying it to other agents will not change the learning rate
 
         Example::
@@ -64,7 +64,7 @@ class KLAdaptiveRL(_LRScheduler):
     def step(self, kl: Union[torch.Tensor, float, None] = None, epoch: Union[int, None] = None) -> None:
         """
         Step scheduler
-        
+
         Example::
 
             >>> kl = torch.distributions.kl_divergence(p, q)
@@ -88,5 +88,5 @@ class KLAdaptiveRL(_LRScheduler):
                     group['lr'] = max(group['lr'] / self._lr_factor, self.min_lr)
                 elif kl < self.kl_threshold / self._kl_factor:
                     group['lr'] = min(group['lr'] * self._lr_factor, self.max_lr)
-                    
+
             self._last_lr = [group['lr'] for group in self.optimizer.param_groups]

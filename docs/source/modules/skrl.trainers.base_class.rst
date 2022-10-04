@@ -11,7 +11,7 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Inheritance
 
         .. literalinclude:: ../snippets/trainer.py
@@ -29,6 +29,6 @@ API
    :inherited-members:
    :private-members: _setup_agents
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __str__

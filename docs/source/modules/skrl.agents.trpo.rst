@@ -9,7 +9,7 @@ Algorithm
 ^^^^^^^^^
 
 | For each iteration do
-|     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi` 
+|     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
 |     :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d, V`]
 |     :math:`\bullet \;` Compute the surrogate objective (policy loss) gradient :math:`g` and the Hessian :math:`H` of :math:`KL` divergence with respect to the policy parameters :math:`\theta`
 |     :math:`\bullet \;` Compute the search direction :math:`\; x \approx H^{-1}g \;` using the conjugate gradient method
@@ -117,7 +117,7 @@ Algorithm implementation
 |          :green:`# optimization step (value)`
 |          reset :math:`\text{optimizer}_\phi`
 |          :math:`\nabla_{\phi} L_{V_\phi}`
-|          :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip` 
+|          :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip`
 |          step :math:`\text{optimizer}_\phi`
 |     :green:`# update learning rate`
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
@@ -186,5 +186,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

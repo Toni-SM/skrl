@@ -79,5 +79,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

@@ -18,7 +18,7 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
     DEFAULT_CONFIG = {
         ...
-        
+
         "experiment": {
             "directory": "",            # experiment's parent directory
             "experiment_name": "",      # experiment name
@@ -143,7 +143,7 @@ The checkpoint management, as in the previous case, is the responsibility of the
 
     DEFAULT_CONFIG = {
         ...
-        
+
         "experiment": {
             "directory": "",            # experiment's parent directory
             "experiment_name": "",      # experiment name
@@ -305,9 +305,9 @@ Memories can be automatically exported to files at each filling cycle (before da
     from skrl.memories.torch import RandomMemory
 
     # Instantiate a memory and enable its export
-    memory = RandomMemory(memory_size=16, 
-                          num_envs=env.num_envs, 
-                          device=device, 
+    memory = RandomMemory(memory_size=16,
+                          num_envs=env.num_envs,
+                          device=device,
                           export=True,
                           export_format="pt",
                           export_directory="./memories")

@@ -19,10 +19,10 @@ PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
     "mini_batches": 2,              # number of mini batches during each learning epoch
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-    
+
     "learning_rate": 1e-3,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -59,21 +59,21 @@ PPO_DEFAULT_CONFIG = {
 
 
 class PPO(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Union[Memory, Tuple[Memory], None] = None,
+                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 device: Union[str, torch.device] = "cuda:0",
                  cfg: dict = {}) -> None:
         """Proximal Policy Optimization (PPO)
 
         https://arxiv.org/abs/1707.06347
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
@@ -89,11 +89,11 @@ class PPO(Agent):
         """
         _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)
         _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -139,7 +139,7 @@ class PPO(Agent):
             if self.policy is self.value:
                 self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             else:
-                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), 
+                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()),
                                                   lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -164,7 +164,7 @@ class PPO(Agent):
         """
         super().init()
         self.set_mode("eval")
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
@@ -208,17 +208,17 @@ class PPO(Agent):
 
         return actions, log_prob, actions_mean
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -249,10 +249,10 @@ class PPO(Agent):
                 values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                     log_prob=self._current_log_prob, values=values)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
                                    log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
@@ -290,11 +290,11 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor, 
-                        dones: torch.Tensor, 
-                        values: torch.Tensor, 
-                        next_values: torch.Tensor, 
-                        discount_factor: float = 0.99, 
+        def compute_gae(rewards: torch.Tensor,
+                        dones: torch.Tensor,
+                        values: torch.Tensor,
+                        next_values: torch.Tensor,
+                        discount_factor: float = 0.99,
                         lambda_coefficient: float = 0.95) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
@@ -330,7 +330,7 @@ class PPO(Agent):
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
             return returns, advantages
-        
+
         # compute returns and advantages
         with torch.no_grad():
             last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
@@ -364,7 +364,7 @@ class PPO(Agent):
                 in sampled_batches:
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
-                
+
                 _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
 
                 # compute aproximate KL divergence
@@ -382,20 +382,20 @@ class PPO(Agent):
                     entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
                 else:
                     entropy_loss = 0
-                
+
                 # compute policy loss
                 ratio = torch.exp(next_log_prob - sampled_log_prob)
                 surrogate = sampled_advantages * ratio
                 surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
-                
+
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
                 predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
 
                 if self._clip_predicted_values:
-                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
-                                                                   min=-self._value_clip, 
+                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
+                                                                   min=-self._value_clip,
                                                                    max=self._value_clip)
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
@@ -414,10 +414,10 @@ class PPO(Agent):
                 cumulative_value_loss += value_loss.item()
                 if self._entropy_loss_scale:
                     cumulative_entropy_loss += entropy_loss.item()
-            
+
             # update learning rate
             if self._learning_rate_scheduler:
-                if isinstance(self.scheduler, KLAdaptiveRL):                
+                if isinstance(self.scheduler, KLAdaptiveRL):
                     self.scheduler.step(torch.tensor(kl_divergences).mean())
                 else:
                     self.scheduler.step()

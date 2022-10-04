@@ -18,7 +18,7 @@ If you have a question, please do not open an issue for this. Instead, use the f
 Open an issue on [skrl's GitHub issues](https://github.com/Toni-SM/skrl/issues) and describe the bug. If possible, please provide some of the following items:
 
 - Minimum code that reproduces the bug...
-- or the exact steps to reproduce it 
+- or the exact steps to reproduce it
 - The error log or a screenshot of it
 - A link to the source code of the library that you are using (some problems may be due to the use of older versions. If possible, always use the latest version)
 - Any other information that you think may be useful or help to reproduce/describe the problem
@@ -31,7 +31,9 @@ There is a [board](https://github.com/users/Toni-SM/projects/2/views/8) containi
 
 - Try to **communicate your change first** to [discuss](https://github.com/Toni-SM/skrl/discussions) the implementation if you want to add a new feature or change an existing one
 - Modify only the minimum amount of code required and the files needed to make the change
+- Use the provided [pre-commit](https://pre-commit.com/) hooks to format the code. Install it by running `pre-commit install` in the root of the repository, running it periodically using `pre-commit run --all` helps reducing commit errors
 - Changes that are cosmetic in nature (code formatting, removing whitespace, etc.) or that correct grammatical, spelling or typo errors, and that do not add anything substantial to the functionality of the library will generally not be accepted as a pull request
+  - The only exception are changes that results from the use of the pre-commit hooks
 
 #### Coding conventions
 
@@ -51,7 +53,7 @@ Read the code a little bit and you will understand it at first glance... Also
 
   ```ini
   function annotation (e.g. typing)
-  # insert an empty line 
+  # insert an empty line
   python libraries and other libraries (e.g. gym, numpy, time, etc.)
   # insert an empty line
   machine learning framework modules (e.g. torch, torch.nn)

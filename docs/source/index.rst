@@ -61,6 +61,7 @@ Agents
     * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
     * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
     * :doc:`Deep Q-Network <modules/skrl.agents.dqn>` (**DQN**)
+    * :doc:`Model-Based Meta-Policy-Optimization <modules/skrl.agents.mbmpo>`(**MBMPO**)
     * :doc:`Proximal Policy Optimization <modules/skrl.agents.ppo>` (**PPO**)
     * :doc:`Q-learning <modules/skrl.agents.q_learning>` (**Q-learning**)
     * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
@@ -80,6 +81,7 @@ Agents
     DDPG <modules/skrl.agents.ddpg>
     DDQN <modules/skrl.agents.ddqn>
     DQN <modules/skrl.agents.dqn>
+    MBMPO <modules/skrl.agents.mbmpo>
     PPO <modules/skrl.agents.ppo>
     Q-learning <modules/skrl.agents.q_learning>
     SAC <modules/skrl.agents.sac>

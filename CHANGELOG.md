@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.0] - Unreleased
+### Fixed
+- Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
+
 ## [0.8.0] - 2022-10-03
 ### Added
 - AMP agent for physics-based character animation

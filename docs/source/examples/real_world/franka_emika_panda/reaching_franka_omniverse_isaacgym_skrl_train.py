@@ -60,7 +60,7 @@ headless = True  # set headless to False for rendering
 env = get_env_instance(headless=headless)
 
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
-from reaching_franka_sim_env import ReachingFrankaTask, TASK_CFG
+from reaching_franka_omniverse_isaacgym_env import ReachingFrankaTask, TASK_CFG
 
 TASK_CFG["headless"] = headless
 TASK_CFG["task"]["env"]["numEnvs"] = 1024

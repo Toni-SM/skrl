@@ -4,9 +4,9 @@ import numpy as np
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.franka import Franka as Robot
 
-from omni.isaac.core.prims import RigidPrimView, XFormPrimView
+from omni.isaac.core.prims import RigidPrimView
 from omni.isaac.core.articulations import ArticulationView
-from omni.isaac.core.objects import VisualSphere
+from omni.isaac.core.objects import DynamicSphere
 from omni.isaac.core.utils.prims import get_prim_at_path
 
 from skrl.utils import omniverse_isaacgym_utils
@@ -79,7 +79,19 @@ TASK_CFG = {"test": False,
                                        "density": -1,
                                        "max_depenetration_velocity": 1000.0,
                                        "contact_offset": 0.005,
-                                       "rest_offset": 0.0}}}}
+                                       "rest_offset": 0.0},
+                             "target": {"override_usd_defaults": False,
+                                        "fixed_base": True,
+                                        "enable_self_collisions": False,
+                                        "enable_gyroscopic_forces": True,
+                                        "solver_position_iteration_count": 4,
+                                        "solver_velocity_iteration_count": 1,
+                                        "sleep_threshold": 0.005,
+                                        "stabilization_threshold": 0.001,
+                                        "density": -1,
+                                        "max_depenetration_velocity": 1000.0,
+                                        "contact_offset": 0.005,
+                                        "rest_offset": 0.0}}}}
 
 
 class RobotView(ArticulationView):
@@ -132,7 +144,7 @@ class ReachingFrankaTask(RLTask):
             self._hands = RigidPrimView(prim_paths_expr="/World/envs/.*/robot/panda_hand", name="hand_view", reset_xform_properties=False)
             scene.add(self._hands)
         # target view
-        self._targets = XFormPrimView(prim_paths_expr="/World/envs/.*/target", name="target_view", reset_xform_properties=False)
+        self._targets = RigidPrimView(prim_paths_expr="/World/envs/.*/target", name="target_view", reset_xform_properties=False)
         scene.add(self._targets)
 
         self.init_data()
@@ -145,10 +157,11 @@ class ReachingFrankaTask(RLTask):
         self._sim_config.apply_articulation_settings("robot", get_prim_at_path(robot.prim_path), self._sim_config.parse_actor_config("robot"))
 
     def get_target(self):
-        target = VisualSphere(prim_path=self.default_zero_env_path + "/target",
-                              name="target",
-                              radius=0.025,
-                              color=torch.tensor([1, 0, 0]))
+        target = DynamicSphere(prim_path=self.default_zero_env_path + "/target",
+                               name="target",
+                               radius=0.025,
+                               color=torch.tensor([1, 0, 0]))
+        self._sim_config.apply_articulation_settings("target", get_prim_at_path(target.prim_path), self._sim_config.parse_actor_config("target"))
         target.set_collision_enabled(False)
 
     def init_data(self) -> None:
@@ -162,8 +175,8 @@ class ReachingFrankaTask(RLTask):
     def get_observations(self) -> dict:
         robot_dof_pos = self._robots.get_joint_positions(clone=False)
         robot_dof_vel = self._robots.get_joint_velocities(clone=False)
-        end_effector_pos, end_effector_rot = self._end_effectors.get_local_poses()
-        target_pos, target_rot = self._targets.get_local_poses()
+        end_effector_pos, end_effector_rot = self._end_effectors.get_world_poses(clone=False)
+        target_pos, target_rot = self._targets.get_world_poses(clone=False)
 
         dof_pos_scaled = 2.0 * (robot_dof_pos - self.robot_dof_lower_limits) \
             / (self.robot_dof_upper_limits - self.robot_dof_lower_limits) - 1.0
@@ -174,14 +187,15 @@ class ReachingFrankaTask(RLTask):
         self.obs_buf[:, 0] = self.progress_buf / self._max_episode_length
         self.obs_buf[:, 1:8] = dof_pos_scaled[:, :7]
         self.obs_buf[:, 8:15] = dof_vel_scaled[:, :7] * generalization_noise
-        self.obs_buf[:, 15:18] = target_pos
+        self.obs_buf[:, 15:18] = target_pos - self._env_pos
 
         # compute distance for calculate_metrics() and is_done()
         self._computed_distance = torch.norm(end_effector_pos - target_pos, dim=-1)
 
         if self._control_space == "cartesian":
             self.jacobians = self._robots.get_jacobians(clone=False)
-            self.hand_pos, self.hand_rot = self._hands.get_local_poses()
+            self.hand_pos, self.hand_rot = self._hands.get_world_poses(clone=False)
+            self.hand_pos -= self._env_pos
 
         return {self._robots.name: {"obs_buf": self.obs_buf}}
 
@@ -227,12 +241,11 @@ class ReachingFrankaTask(RLTask):
         self._robots.set_joint_velocities(dof_vel, indices=indices)
 
         # reset target
-        pos = (torch.rand((len(env_ids), 3), device=self._device) - 0.5) * 2
-        pos[:, 0] = 0.50 + pos[:, 0] * 0.25
-        pos[:, 1] = 0.00 + pos[:, 1] * 0.25
-        pos[:, 2] = 0.20 + pos[:, 2] * 0.10
+        pos = (torch.rand((len(env_ids), 3), device=self._device) - 0.5) * 2 \
+            * torch.tensor([0.25, 0.25, 0.10], device=self._device) \
+            + torch.tensor([0.50, 0.00, 0.20], device=self._device)
 
-        self._targets.set_local_poses(pos, indices=indices)
+        self._targets.set_world_poses(pos + self._env_pos[env_ids], indices=indices)
 
         # bookkeeping
         self.reset_buf[env_ids] = 0

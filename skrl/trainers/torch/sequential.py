@@ -42,15 +42,12 @@ class SequentialTrainer(Trainer):
         agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
-        # Setup weights and biases
-        self._setup_wandb()
-
         # init agents
         if self.num_agents > 1:
             for agent in self.agents:
-                agent.init()
+                agent.init(trainer_cfg=self.cfg)
         else:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
 
     def train(self) -> None:
         """Train the agents sequentially

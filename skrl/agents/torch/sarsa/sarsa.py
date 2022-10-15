@@ -101,10 +101,10 @@ class SARSA(Agent):
         self._current_next_states = None
         self._current_dones = None
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy

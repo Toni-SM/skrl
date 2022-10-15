@@ -121,12 +121,15 @@ class Agent:
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
 
         This method should be called before the agent is used.
         It will initialize the TensoBoard writer and checkpoint directory
         """
+        # Setup Weight and Biases
+        self._setup_wandb(trainer_cfg=trainer_cfg)
+
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
@@ -621,3 +624,31 @@ class Agent:
         :raises NotImplementedError: The method is not implemented by the inheriting classes
         """
         raise NotImplementedError
+
+    def _setup_wandb(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
+        """Setup Weights & Biases"""
+        wandb_cfg = self.cfg.get("experiment", {}).get("wandb", {})
+
+        if wandb_cfg.get("enabled", False):
+            import wandb
+            dir = self.experiment_dir
+            run_name = dir.split("/")[-1]
+            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+            try:
+                _net_cfg = {k: v.net._modules for (k, v) in self.models.items()}
+            except AttributeError:
+                _net_cfg = {k: v._modules for (k, v) in self.models.items()}
+            _cfg = {
+                **self.cfg,
+                **trainer_cfg,
+                **_net_cfg
+            }
+            wandb.init(
+                project=wandb_cfg.get("project", None),
+                group=wandb_cfg.get("group", None),
+                entity=wandb_cfg.get("entity", None),
+                name=run_name,
+                sync_tensorboard=True,
+                resume="allow",
+                config=_cfg
+            )

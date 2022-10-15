@@ -25,6 +25,7 @@ def fn_processor(process_index, *args):
     queue = args[1][process_index]
     barrier = args[2]
     scope = args[3][process_index]
+    trainer_cfg = scope = args[34][process_index]
 
     agent = None
     _states = None
@@ -44,7 +45,7 @@ def fn_processor(process_index, *args):
         # initialize agent
         elif task == 'init':
             agent = queue.get()
-            agent.init()
+            agent.init(trainer_cfg=trainer_cfg)
             print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
             barrier.wait()
 
@@ -121,9 +122,6 @@ class ParallelTrainer(Trainer):
         agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
-        # Setup weights and biases
-        self._setup_wandb()
-
         mp.set_start_method(method='spawn', force=True)
 
     def train(self) -> None:
@@ -141,7 +139,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_train()
             return
 
@@ -171,7 +169,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
             processes.append(process)
             process.start()
@@ -265,7 +263,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_eval()
             return
 

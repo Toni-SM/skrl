@@ -167,10 +167,10 @@ class PPO(Agent):
         else:
             self._value_preprocessor = self._empty_preprocessor
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
         # create tensors in memory

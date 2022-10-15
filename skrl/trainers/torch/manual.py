@@ -77,6 +77,13 @@ class ManualTrainer(Trainer):
             self._progress = tqdm.tqdm(total=timesteps)
         self._progress.update(n=1)
 
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("train")
+        else:
+            self.agents.set_running_mode("train")
+
         # reset env
         if self.states is None:
             self.states = self.env.reset()
@@ -167,6 +174,13 @@ class ManualTrainer(Trainer):
         if self._progress is None:
             self._progress = tqdm.tqdm(total=timesteps)
         self._progress.update(n=1)
+
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("eval")
+        else:
+            self.agents.set_running_mode("eval")
 
         # reset env
         if self.states is None:

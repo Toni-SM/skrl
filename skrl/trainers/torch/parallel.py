@@ -135,6 +135,13 @@ class ParallelTrainer(Trainer):
         - Post-interaction (in parallel)
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("train")
+        else:
+            self.agents.set_running_mode("train")
+
         # single agent
         if self.num_agents == 1:
             self.agents.init()
@@ -259,6 +266,13 @@ class ParallelTrainer(Trainer):
         - Render scene
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("eval")
+        else:
+            self.agents.set_running_mode("eval")
+
         # single agent
         if self.num_agents == 1:
             self.agents.init()

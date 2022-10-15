@@ -61,6 +61,13 @@ class SequentialTrainer(Trainer):
         - Post-interaction (sequentially)
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("train")
+        else:
+            self.agents.set_running_mode("train")
+
         # single agent
         if self.num_agents == 1:
             self.single_agent_train()
@@ -123,6 +130,13 @@ class SequentialTrainer(Trainer):
         - Render scene
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("eval")
+        else:
+            self.agents.set_running_mode("eval")
+
         # single agent
         if self.num_agents == 1:
             self.single_agent_eval()

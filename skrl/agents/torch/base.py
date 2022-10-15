@@ -66,6 +66,8 @@ class Agent:
         self._cumulative_rewards = None
         self._cumulative_timesteps = None
 
+        self.training = True
+
         # checkpoint
         self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
@@ -301,6 +303,17 @@ class Agent:
         for model in self.models.values():
             if model is not None:
                 model.set_mode(mode)
+
+    def set_running_mode(self, mode: str) -> None:
+        """Set the current running mode (training or evaluation)
+
+        This method sets the value of the ``training`` property (boolean).
+        This property can be used to know if the agent is running in training or evaluation mode.
+
+        :param mode: Mode: 'train' for training or 'eval' for evaluation
+        :type mode: str
+        """
+        self.training = mode == "train"
 
     def save(self, path: str) -> None:
         """Save the agent to the specified path

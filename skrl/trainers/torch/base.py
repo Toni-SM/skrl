@@ -135,14 +135,6 @@ class Trainer():
         """
         raise NotImplementedError
 
-    def start(self) -> None:
-        """Start training
-
-        This method is deprecated in favour of the '.train()' method
-        """
-        # TODO: remove this method in future versions
-        print("[WARNING] Trainer.start() method is deprecated in favour of the '.train()' method")
-
     def single_agent_train(self) -> None:
         """Train a single agent
 

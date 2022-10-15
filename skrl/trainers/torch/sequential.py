@@ -180,11 +180,3 @@ class SequentialTrainer(Trainer):
 
         # close the environment
         self.env.close()
-
-    def start(self) -> None:
-        """Start training
-
-        This method is deprecated in favour of the '.train()' method
-        """
-        super().start()
-        self.train()

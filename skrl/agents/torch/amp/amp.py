@@ -1,4 +1,4 @@
-from typing import Callable, Union, Tuple, Dict, Any
+from typing import Callable, Union, Tuple, Dict, Any, Optional
 
 import gym
 import math
@@ -64,6 +64,14 @@ AMP_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": {
+            "enabled": False,               # whether to use Weights & Biases
+            "project": None,                  # project name
+            "entity": None,                   # entity name
+            "group": None,                    # group name
+            "tags": [],                     # tags
+        }
     }
 }
 
@@ -71,16 +79,16 @@ AMP_DEFAULT_CONFIG = {
 class AMP(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {},
-                 amp_observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 motion_dataset: Union[Memory, None] = None,
-                 reply_buffer: Union[Memory, None] = None,
-                 collect_reference_motions: Union[Callable[[int], torch.Tensor], None] = None,
-                 collect_observation: Union[Callable[[], torch.Tensor], None] = None) -> None:
+                 cfg: Optional[dict] = None,
+                 amp_observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 motion_dataset: Optional[Memory] = None,
+                 reply_buffer: Optional[Memory] = None,
+                 collect_reference_motions: Optional[Callable[[int], torch.Tensor]] = None,
+                 collect_observation: Optional[Callable[[], torch.Tensor]] = None) -> None:
         """Adversarial Motion Priors (AMP)
 
         https://arxiv.org/abs/2104.02180
@@ -116,7 +124,7 @@ class AMP(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(AMP_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,
@@ -210,10 +218,10 @@ class AMP(Agent):
         else:
             self._amp_state_preprocessor = self._empty_preprocessor
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
         # create tensors in memory

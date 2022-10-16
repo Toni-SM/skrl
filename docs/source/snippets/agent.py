@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
 import gym
 
@@ -25,11 +25,11 @@ CUSTOM_DEFAULT_CONFIG = {
 class CUSTOM(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Memory] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
@@ -44,7 +44,7 @@ class CUSTOM(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
-        CUSTOM_DEFAULT_CONFIG.update(cfg)
+        CUSTOM_DEFAULT_CONFIG.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,
@@ -59,10 +59,10 @@ class CUSTOM(Agent):
         # - set up preprocessors
         # =====================================================================
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
         # =================================================================
         # - create tensors in memory if required

@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 
 import tqdm
 
@@ -30,12 +30,12 @@ def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:
     return scopes
 
 
-class Trainer():
+class Trainer:
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Base class for trainers
 
         :param env: Environment to train on
@@ -47,13 +47,13 @@ class Trainer():
         :param cfg: Configuration dictionary (default: {})
         :type cfg: dict, optional
         """
-        self.cfg = cfg
+        self.cfg = cfg if cfg is not None else {}
         self.env = env
         self.agents = agents
-        self.agents_scope = agents_scope
+        self.agents_scope = agents_scope if agents_scope is not None else []
 
         # get configuration
-        self.timesteps = self.cfg.get('timesteps', 0)
+        self.timesteps = self.cfg.get("timesteps", 0)
         self.headless = self.cfg.get("headless", False)
 
         self.initial_timestep = 0

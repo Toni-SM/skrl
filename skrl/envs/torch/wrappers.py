@@ -304,7 +304,7 @@ class GymWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _observation_to_tensor(self, observation: Any, space: Union[gym.Space, None] = None) -> torch.Tensor:
+    def _observation_to_tensor(self, observation: Any, space: Optional[gym.Space] = None) -> torch.Tensor:
         """Convert the OpenAI Gym observation to a flat tensor
 
         :param observation: The OpenAI Gym observation to convert to a tensor
@@ -472,7 +472,7 @@ class DeepMindWrapper(Wrapper):
         else:
             raise ValueError("Spec type {} not supported. Please report this issue".format(type(spec)))
 
-    def _observation_to_tensor(self, observation: Any, spec: Union[Any, None] = None) -> torch.Tensor:
+    def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
         """Convert the DeepMind observation to a flat tensor
 
         :param observation: The DeepMind observation to convert to a tensor

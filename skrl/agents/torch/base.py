@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Dict, Any
+from typing import Union, Mapping, Tuple, Dict, Any, Optional
 
 import os
 import gym
@@ -18,11 +18,11 @@ from ...models.torch import Model
 class Agent:
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL agent
 
         :param models: Models used by the agent
@@ -44,7 +44,7 @@ class Agent:
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = torch.device(device)
-        self.cfg = cfg
+        self.cfg = cfg if cfg is not None else {}
 
         if type(memory) is list:
             self.memory = memory[0]
@@ -73,6 +73,15 @@ class Agent:
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
         self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
+
+        # experiment directory
+        directory = self.cfg.get("experiment", {}).get("directory", "")
+        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not directory:
+            directory = os.path.join(os.getcwd(), "runs")
+        if not experiment_name:
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
+        self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -114,20 +123,14 @@ class Agent:
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
 
         This method should be called before the agent is used.
         It will initialize the TensoBoard writer and checkpoint directory
         """
-        # experiment directory
-        directory = self.cfg.get("experiment", {}).get("directory", "")
-        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
-        if not directory:
-            directory = os.path.join(os.getcwd(), "runs")
-        if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
-        self.experiment_dir = os.path.join(directory, experiment_name)
+        # Setup Weight and Biases
+        self._setup_wandb(trainer_cfg=trainer_cfg)
 
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
@@ -634,3 +637,31 @@ class Agent:
         :raises NotImplementedError: The method is not implemented by the inheriting classes
         """
         raise NotImplementedError
+
+    def _setup_wandb(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
+        """Setup Weights & Biases"""
+        wandb_cfg = self.cfg.get("experiment", {}).get("wandb", {})
+
+        if wandb_cfg.get("enabled", False):
+            import wandb
+            dir = self.experiment_dir
+            run_name = dir.split("/")[-1]
+            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+            try:
+                _net_cfg = {k: v.net._modules for (k, v) in self.models.items()}
+            except AttributeError:
+                _net_cfg = {k: v._modules for (k, v) in self.models.items()}
+            _cfg = {
+                **self.cfg,
+                **trainer_cfg,
+                **_net_cfg
+            }
+            wandb.init(
+                project=wandb_cfg.get("project", None),
+                group=wandb_cfg.get("group", None),
+                entity=wandb_cfg.get("entity", None),
+                name=run_name,
+                sync_tensorboard=True,
+                resume="allow",
+                config=_cfg
+            )

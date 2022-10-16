@@ -15,6 +15,7 @@ INSTALL_REQUIRES = [
     "tqdm",
     "packaging",
     "pre-commit",
+    "wandb",
 ]
 
 # installation

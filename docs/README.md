@@ -1,6 +1,6 @@
-## Documentation
+# Documentation
 
-### Install Sphinx and Read the Docs Sphinx Theme
+## Install Sphinx and Read the Docs Sphinx Theme
 
 ```bash
 pip install sphinx
@@ -9,7 +9,7 @@ pip install sphinx-autobuild
 pip install sphinx-tabs==3.2.0
 ```
 
-### Building the documentation
+## Building the documentation
 
 ```bash
 cd docs

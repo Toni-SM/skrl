@@ -115,8 +115,8 @@ class Agent:
     def _get_internal_value(self, _module: Any) -> Any:
         """Get internal module/variable state/value
 
-        :param _input: Module or variable
-        :type _input: Any
+        :param _module: Module or variable
+        :type _module: Any
 
         :return: Module/variable state/value
         :rtype: Any
@@ -127,10 +127,29 @@ class Agent:
         """Initialize the agent
 
         This method should be called before the agent is used.
-        It will initialize the TensoBoard writer and checkpoint directory
+        It will initialize the TensoBoard writer (and optionally Weights & Biases) and create the checkpoints directory
+
+        :param trainer_cfg: Trainer configuration
+        :type trainer_cfg: dict, optional
         """
-        # Setup Weight and Biases
-        self._setup_wandb(trainer_cfg=trainer_cfg)
+        # setup Weights & Biases
+        if self.cfg.get("experiment", {}).get("wandb", False):
+            # save experiment config
+            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+            try:
+                models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
+            except AttributeError:
+                models_cfg = {k: v._modules for (k, v) in self.models.items()}
+            config={**self.cfg, **trainer_cfg, **models_cfg}
+            # set default values
+            wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
+            wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
+            wandb_kwargs.setdefault("sync_tensorboard", True)
+            wandb_kwargs.setdefault("config", {})
+            wandb_kwargs["config"].update(config)
+            # init Weights & Biases
+            import wandb
+            wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
@@ -637,31 +656,3 @@ class Agent:
         :raises NotImplementedError: The method is not implemented by the inheriting classes
         """
         raise NotImplementedError
-
-    def _setup_wandb(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
-        """Setup Weights & Biases"""
-        wandb_cfg = self.cfg.get("experiment", {}).get("wandb", {})
-
-        if wandb_cfg.get("enabled", False):
-            import wandb
-            dir = self.experiment_dir
-            run_name = dir.split("/")[-1]
-            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
-            try:
-                _net_cfg = {k: v.net._modules for (k, v) in self.models.items()}
-            except AttributeError:
-                _net_cfg = {k: v._modules for (k, v) in self.models.items()}
-            _cfg = {
-                **self.cfg,
-                **trainer_cfg,
-                **_net_cfg
-            }
-            wandb.init(
-                project=wandb_cfg.get("project", None),
-                group=wandb_cfg.get("group", None),
-                entity=wandb_cfg.get("entity", None),
-                name=run_name,
-                sync_tensorboard=True,
-                resume="allow",
-                config=_cfg
-            )

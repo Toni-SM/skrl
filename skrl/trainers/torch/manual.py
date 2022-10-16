@@ -21,8 +21,8 @@ class ManualTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Manual trainer
 
         Train agents by manually controlling the training/evaluation loop
@@ -38,15 +38,16 @@ class ManualTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(MANUAL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
         if self.num_agents > 1:
             for agent in self.agents:
-                agent.init()
+                agent.init(trainer_cfg=self.cfg)
         else:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
 
         self._progress = None
 

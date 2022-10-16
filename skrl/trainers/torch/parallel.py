@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 
 import copy
 import tqdm
@@ -25,6 +25,7 @@ def fn_processor(process_index, *args):
     queue = args[1][process_index]
     barrier = args[2]
     scope = args[3][process_index]
+    trainer_cfg = scope = args[34][process_index]
 
     agent = None
     _states = None
@@ -44,7 +45,7 @@ def fn_processor(process_index, *args):
         # initialize agent
         elif task == 'init':
             agent = queue.get()
-            agent.init()
+            agent.init(trainer_cfg=trainer_cfg)
             print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
             barrier.wait()
 
@@ -100,8 +101,8 @@ class ParallelTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Parallel trainer
 
         Train agents in parallel using multiple processes
@@ -117,7 +118,8 @@ class ParallelTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         mp.set_start_method(method='spawn', force=True)
@@ -137,7 +139,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_train()
             return
 
@@ -167,7 +169,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
             processes.append(process)
             process.start()
@@ -261,7 +263,7 @@ class ParallelTrainer(Trainer):
         """
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_eval()
             return
 

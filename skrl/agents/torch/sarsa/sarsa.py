@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
 import gym
 import copy
@@ -28,6 +28,14 @@ SARSA_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": {
+            "enabled": False,               # whether to use Weights & Biases
+            "project": None,                  # project name
+            "entity": None,                   # entity name
+            "group": None,                    # group name
+            "tags": [],                     # tags
+        }
     }
 }
 
@@ -35,11 +43,11 @@ SARSA_DEFAULT_CONFIG = {
 class SARSA(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """State Action Reward State Action (SARSA)
 
         https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.2539
@@ -62,7 +70,7 @@ class SARSA(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(SARSA_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,
@@ -93,10 +101,10 @@ class SARSA(Agent):
         self._current_next_states = None
         self._current_dones = None
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy

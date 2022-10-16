@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
 import gym
 import copy
@@ -51,6 +51,14 @@ TD3_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": {
+            "enabled": False,               # whether to use Weights & Biases
+            "project": None,                  # project name
+            "entity": None,                   # entity name
+            "group": None,                    # group name
+            "tags": [],                     # tags
+        }
     }
 }
 
@@ -58,11 +66,11 @@ TD3_DEFAULT_CONFIG = {
 class TD3(Agent):
     def __init__(self,
                  models: Dict[str, Model],
-                 memory: Union[Memory, Tuple[Memory], None] = None,
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None,
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None,
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
-                 cfg: dict = {}) -> None:
+                 cfg: Optional[dict] = None) -> None:
         """Twin Delayed DDPG (TD3)
 
         https://arxiv.org/abs/1802.09477
@@ -85,7 +93,7 @@ class TD3(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
                          memory=memory,
                          observation_space=observation_space,
@@ -168,10 +176,10 @@ class TD3(Agent):
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
         if self.memory is not None:

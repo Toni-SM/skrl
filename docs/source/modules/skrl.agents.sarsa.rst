@@ -29,7 +29,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sarsa/sarsa.py
    :language: python
-   :lines: 14-32
+   :lines: 14-35
    :linenos:
 
 Spaces and models

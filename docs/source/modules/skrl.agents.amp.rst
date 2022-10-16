@@ -97,7 +97,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/amp/amp.py
    :language: python
-   :lines: 18-68
+   :lines: 18-71
    :linenos:
 
 Spaces and models

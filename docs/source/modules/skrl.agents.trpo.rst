@@ -130,7 +130,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/trpo/trpo.py
    :language: python
-   :lines: 18-58
+   :lines: 18-61
    :linenos:
 
 Spaces and models

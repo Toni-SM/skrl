@@ -92,7 +92,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/ppo/ppo.py
    :language: python
-   :lines: 18-58
+   :lines: 18-61
    :linenos:
 
 Spaces and models

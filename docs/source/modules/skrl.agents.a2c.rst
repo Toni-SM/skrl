@@ -76,7 +76,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/a2c/a2c.py
    :language: python
-   :lines: 17-50
+   :lines: 17-53
    :linenos:
 
 Spaces and models

@@ -60,7 +60,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/ddpg/ddpg.py
    :language: python
-   :lines: 15-50
+   :lines: 15-53
    :linenos:
 
 Spaces and models

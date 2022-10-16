@@ -3,8 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.9.0] - Unreleased
+### Added
+- Set the running mode (training or evaluation) of the agents
+- Weights & Biases integration (by @juhannc)
+
 ### Fixed
 - Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
+- Call agents' method `record_transition` instead of parent method
+to allow storing samples in memories during evaluation
+
+### Removed
+- Deprecated method `start` in trainers
 
 ## [0.8.0] - 2022-10-03
 ### Added
@@ -13,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Gaussian model mixin
 - Support for creating shared models
 - Parameter `role` to model methods
-- Wrapper compatibility with the new OpenAI Gym environment API (by @JohannLange)
+- Wrapper compatibility with the new OpenAI Gym environment API (by @juhannc)
 - Internal library colored logger
 - Migrate checkpoints/models from other RL libraries to skrl models/agents
 - Configuration parameter `store_separately` to agent configuration dict
@@ -26,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Models implementation as Python mixin [**breaking change**]
 - Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
-- Show training/evaluation display progress using `tqdm` (by @JohannLange)
+- Show training/evaluation display progress using `tqdm` (by @juhannc)
 - Update Isaac Gym and Omniverse Isaac Gym examples
 
 ### Fixed

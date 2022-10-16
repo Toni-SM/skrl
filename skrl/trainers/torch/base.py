@@ -223,14 +223,14 @@ class Trainer:
 
             with torch.no_grad():
                 # write data to TensorBoard
-                super(type(self.agents), self.agents).record_transition(states=states,
-                                                                        actions=actions,
-                                                                        rewards=rewards,
-                                                                        next_states=next_states,
-                                                                        dones=dones,
-                                                                        infos=infos,
-                                                                        timestep=timestep,
-                                                                        timesteps=self.timesteps)
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              dones=dones,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
                 # reset environments

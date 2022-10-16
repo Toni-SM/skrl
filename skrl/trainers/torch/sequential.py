@@ -163,14 +163,14 @@ class SequentialTrainer(Trainer):
             with torch.no_grad():
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
-                    super(type(agent), agent).record_transition(states=states[scope[0]:scope[1]],
-                                                                actions=actions[scope[0]:scope[1]],
-                                                                rewards=rewards[scope[0]:scope[1]],
-                                                                next_states=next_states[scope[0]:scope[1]],
-                                                                dones=dones[scope[0]:scope[1]],
-                                                                infos=infos,
-                                                                timestep=timestep,
-                                                                timesteps=self.timesteps)
+                    agent.record_transition(states=states[scope[0]:scope[1]],
+                                            actions=actions[scope[0]:scope[1]],
+                                            rewards=rewards[scope[0]:scope[1]],
+                                            next_states=next_states[scope[0]:scope[1]],
+                                            dones=dones[scope[0]:scope[1]],
+                                            infos=infos,
+                                            timestep=timestep,
+                                            timesteps=self.timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
                 # reset environments

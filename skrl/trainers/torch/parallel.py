@@ -85,14 +85,14 @@ def fn_processor(process_index, *args):
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
-                super(type(agent), agent).record_transition(states=_states,
-                                                            actions=_actions,
-                                                            rewards=queue.get()[scope[0]:scope[1]],
-                                                            next_states=queue.get()[scope[0]:scope[1]],
-                                                            dones=queue.get()[scope[0]:scope[1]],
-                                                            infos=queue.get(),
-                                                            timestep=msg['timestep'],
-                                                            timesteps=msg['timesteps'])
+                agent.record_transition(states=_states,
+                                        actions=_actions,
+                                        rewards=queue.get()[scope[0]:scope[1]],
+                                        next_states=queue.get()[scope[0]:scope[1]],
+                                        dones=queue.get()[scope[0]:scope[1]],
+                                        infos=queue.get(),
+                                        timestep=msg['timestep'],
+                                        timesteps=msg['timesteps'])
                 super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
                 barrier.wait()
 

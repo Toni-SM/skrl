@@ -207,27 +207,27 @@ class ManualTrainer(Trainer):
         with torch.no_grad():
             if self.num_agents == 1:
                 # write data to TensorBoard
-                super(type(self.agents), self.agents).record_transition(states=self.states,
-                                                                        actions=actions,
-                                                                        rewards=rewards,
-                                                                        next_states=next_states,
-                                                                        dones=dones,
-                                                                        infos=infos,
-                                                                        timestep=timestep,
-                                                                        timesteps=timesteps)
+                self.agents.record_transition(states=self.states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              dones=dones,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
 
             else:
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
-                    super(type(agent), agent).record_transition(states=self.states[scope[0]:scope[1]],
-                                                                actions=actions[scope[0]:scope[1]],
-                                                                rewards=rewards[scope[0]:scope[1]],
-                                                                next_states=next_states[scope[0]:scope[1]],
-                                                                dones=dones[scope[0]:scope[1]],
-                                                                infos=infos,
-                                                                timestep=timestep,
-                                                                timesteps=timesteps)
+                    agent.record_transition(states=self.states[scope[0]:scope[1]],
+                                            actions=actions[scope[0]:scope[1]],
+                                            rewards=rewards[scope[0]:scope[1]],
+                                            next_states=next_states[scope[0]:scope[1]],
+                                            dones=dones[scope[0]:scope[1]],
+                                            infos=infos,
+                                            timestep=timestep,
+                                            timesteps=timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
 
             # reset environments

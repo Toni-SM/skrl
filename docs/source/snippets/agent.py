@@ -18,6 +18,9 @@ CUSTOM_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": False,             # whether to use Weights & Biases
+        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
 

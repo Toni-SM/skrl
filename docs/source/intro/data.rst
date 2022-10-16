@@ -141,7 +141,7 @@ Follow the steps described in Weights & Biases documentation (`Set up wandb <htt
 Configuration
 ^^^^^^^^^^^^^
 
-Each agent offers the following parameters under the :literal:`experiment` key. Visit the Weights & Biases documentation () for more details about the configuration parameters.
+Each agent offers the following parameters under the :literal:`"experiment"` key. Visit the Weights & Biases documentation for more details about the configuration parameters.
 
 .. code-block:: python
     :emphasize-lines: 12-13
@@ -166,11 +166,11 @@ Each agent offers the following parameters under the :literal:`experiment` key. 
 
 * **wandb_kwargs**: keyword argument dictionary used to parameterize the `wandb.init <https://docs.wandb.ai/ref/python/init>`_ function. If no values are provided for the following parameters, the following values will be set for them:
 
-  * :literal:`name``: will be set to the name of the experiment directory.
+  * :literal:`"name"`: will be set to the name of the experiment directory.
 
-  * :literal:`sync_tensorboard`:  will be set to :literal:`True`.
+  * :literal:`"sync_tensorboard"`:  will be set to :literal:`True`.
 
-  * :literal:`config`: will be updated with the configuration dictionaries of both the agent (and its models) and the trainer. The update will be done even if a value has been set for the parameter.
+  * :literal:`"config"`: will be updated with the configuration dictionaries of both the agent (and its models) and the trainer. The update will be done even if a value has been set for the parameter.
 
 ----------------
 

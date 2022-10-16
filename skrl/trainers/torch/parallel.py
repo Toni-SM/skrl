@@ -25,7 +25,7 @@ def fn_processor(process_index, *args):
     queue = args[1][process_index]
     barrier = args[2]
     scope = args[3][process_index]
-    trainer_cfg = scope = args[34][process_index]
+    trainer_cfg = args[4]
 
     agent = None
     _states = None
@@ -308,7 +308,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
             processes.append(process)
             process.start()

@@ -266,11 +266,11 @@ class DDPG(Agent):
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
 
-        # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
-
         if self.memory is not None:
+            # reward shaping
+            if self._rewards_shaper is not None:
+                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
             for memory in self.secondary_memories:
                 memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)

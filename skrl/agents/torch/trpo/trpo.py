@@ -238,13 +238,13 @@ class TRPO(Agent):
         """
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
 
-        # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
-
-        self._current_next_states = next_states
-
         if self.memory is not None:
+            self._current_next_states = next_states
+
+            # reward shaping
+            if self._rewards_shaper is not None:
+                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+
             with torch.no_grad():
                 values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)

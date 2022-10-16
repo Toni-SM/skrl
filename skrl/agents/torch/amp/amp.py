@@ -313,13 +313,13 @@ class AMP(Agent):
 
         super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
 
-        # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
-
-        amp_states = infos["amp_obs"]
-
         if self.memory is not None:
+            amp_states = infos["amp_obs"]
+
+            # reward shaping
+            if self._rewards_shaper is not None:
+                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+
             with torch.no_grad():
                 values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)

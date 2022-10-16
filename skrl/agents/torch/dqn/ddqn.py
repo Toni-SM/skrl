@@ -49,13 +49,8 @@ DDQN_DEFAULT_CONFIG = {
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
-        "wandb": {
-            "enabled": False,               # whether to use Weights & Biases
-            "project": None,                  # project name
-            "entity": None,                   # entity name
-            "group": None,                    # group name
-            "tags": [],                     # tags
-        }
+        "wandb": False,             # whether to use Weights & Biases
+        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
 

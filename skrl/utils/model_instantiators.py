@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Optional
 
 import gym
+import gymnasium
 from enum import Enum
 
 import torch
@@ -130,8 +131,8 @@ def _generate_sequential(model: Model,
 
     return nn.Sequential(*input_layer, *hidden_layers, *output_layer)
 
-def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                   action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                   action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                    device: Union[str, torch.device] = "cuda:0",
                    clip_actions: bool = False,
                    clip_log_std: bool = True,
@@ -147,10 +148,10 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space or None, optional
+    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which the model will be trained (default: "cuda:0")
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
@@ -222,8 +223,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]
                          max_log_std=max_log_std,
                          metadata=metadata)
 
-def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                                action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                                action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                                 device: Union[str, torch.device] = "cuda:0",
                                 clip_actions: bool = False,
                                 clip_log_std: bool = True,
@@ -239,10 +240,10 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space or None, optional
+    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which the model will be trained (default: "cuda:0")
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
@@ -314,8 +315,8 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
                                      max_log_std=max_log_std,
                                      metadata=metadata)
 
-def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                        action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                        action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                         device: Union[str, torch.device] = "cuda:0",
                         clip_actions: bool = False,
                         input_shape: Shape = Shape.STATES,
@@ -328,10 +329,10 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                             If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space or None, optional
+    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
@@ -392,8 +393,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                               clip_actions=clip_actions,
                               metadata=metadata)
 
-def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                      action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                      action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                       device: Union[str, torch.device] = "cuda:0",
                       unnormalized_log_prob: bool = False,
                       input_shape: Shape = Shape.STATES,
@@ -405,10 +406,10 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                             If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space or None, optional
+    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
     :type device: str or torch.device, optional
     :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).

@@ -1,6 +1,7 @@
 from typing import Union, Tuple
 
 import gym
+import gymnasium
 import numpy as np
 
 import torch
@@ -9,7 +10,7 @@ import torch.nn as nn
 
 class RunningStandardScaler(nn.Module):
     def __init__(self,
-                 size: Union[int, Tuple[int], gym.Space],
+                 size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
                  epsilon: float = 1e-8,
                  clip_threshold: float = 5.0,
                  device: Union[str, torch.device] = "cuda:0") -> None:
@@ -25,7 +26,7 @@ class RunningStandardScaler(nn.Module):
             >>> running_standard_scaler(data)
 
         :param size: Size of the input space
-        :type size: int, tuple or list of integers, or gym.Space
+        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
         :param epsilon: Small number to avoid division by zero (default: 1e-8)
         :type epsilon: float
         :param clip_threshold: Threshold to clip the data (default: 5.0)
@@ -44,11 +45,11 @@ class RunningStandardScaler(nn.Module):
         self.register_buffer("running_variance", torch.ones(size, dtype = torch.float64, device=device))
         self.register_buffer("current_count", torch.ones((), dtype = torch.float64, device=device))
 
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
+    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, or gym.Space
+        :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
 
         :raises ValueError: If the space is not supported
 
@@ -65,6 +66,13 @@ class RunningStandardScaler(nn.Module):
             elif issubclass(type(space), gym.spaces.Box):
                 return np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
+                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        elif issubclass(type(space), gymnasium.Space):
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                return 1
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                return np.prod(space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         raise ValueError("Space type {} not supported".format(type(space)))
 

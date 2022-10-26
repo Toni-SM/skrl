@@ -10,6 +10,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 # dependencies
 INSTALL_REQUIRES = [
     "gym",
+    "gymnasium",
     "torch",
     "tensorboard",
     "tqdm",

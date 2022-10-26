@@ -1,6 +1,6 @@
 from typing import Callable, Union, Tuple, Dict, Any, Optional
 
-import gym
+import gym, gymnasium
 import math
 import copy
 import itertools
@@ -75,11 +75,11 @@ class AMP(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Union[str, torch.device] = "cuda:0",
                  cfg: Optional[dict] = None,
-                 amp_observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 amp_observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  motion_dataset: Optional[Memory] = None,
                  reply_buffer: Optional[Memory] = None,
                  collect_reference_motions: Optional[Callable[[int], torch.Tensor]] = None,
@@ -98,15 +98,15 @@ class AMP(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
+        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
         :param device: Computing device (default: "cuda:0")
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         :param amp_observation_space: AMP observation/state space or shape (default: None)
-        :type amp_observation_space: int, tuple or list of integers, gym.Space or None
+        :type amp_observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None
         :param motion_dataset: Reference motion dataset: M (default: None)
         :type motion_dataset: skrl.memory.torch.Memory or None
         :param reply_buffer: Reply buffer for preventing discriminator overfitting: B (default: None)

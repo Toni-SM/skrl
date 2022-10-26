@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 
 import gym
+import gymnasium
 
 import torch
 from torch.distributions import Normal
@@ -73,7 +74,8 @@ class GaussianMixin:
         """
         if not hasattr(self, "_g_clip_actions"):
             self._g_clip_actions = {}
-        self._g_clip_actions[role] = clip_actions and issubclass(type(self.action_space), gym.Space)
+        self._g_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+            issubclass(type(self.action_space), gymnasium.Space))
 
         if self._g_clip_actions[role]:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)

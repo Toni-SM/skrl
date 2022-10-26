@@ -1,6 +1,7 @@
 from typing import Optional, Union, Mapping, Sequence
 
 import gym
+import gymnasium
 import collections
 import numpy as np
 
@@ -11,25 +12,25 @@ from skrl import logger
 
 class Model(torch.nn.Module):
     def __init__(self,
-                 observation_space: Union[int, Sequence[int], gym.Space],
-                 action_space: Union[int, Sequence[int], gym.Space],
+                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
         - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, sequence of int, gym.Space): Observation/state space
-        - ``action_space`` (int, sequence of int, gym.Space): Action space
+        - ``observation_space`` (int, sequence of int, gym.Space, gymnasium.Space): Observation/state space
+        - ``action_space`` (int, sequence of int, gym.Space, gymnasium.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
         - ``num_actions`` (int): Number of elements in the action space
 
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space
+        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space
+        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
         :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
         :type device: str or torch.device, optional
 
@@ -62,12 +63,12 @@ class Model(torch.nn.Module):
         self._random_distribution = None
 
     def _get_space_size(self,
-                        space: Union[int, Sequence[int], gym.Space],
+                        space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
                         number_of_elements: bool = True) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
-        :type space: int, sequence of int, or gym.Space
+        :type space: int, sequence of int, gym.Space, or gymnasium.Space
         :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``).
                                    If ``False``, the shape of the space is returned. It only affects Discrete spaces
         :type number_of_elements: bool, optional
@@ -122,15 +123,25 @@ class Model(torch.nn.Module):
                 size = np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
                 size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
+        elif issubclass(type(space), gymnasium.Space):
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                if number_of_elements:
+                    size = space.n
+                else:
+                    size = 1
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                size = np.prod(space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
+                size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
         if size is None:
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
     def tensor_to_space(self,
                         tensor: torch.Tensor,
-                        space: gym.Space,
+                        space: Union[gym.Space, gymnasium.Space],
                         start: int = 0) -> Union[torch.Tensor, dict]:
-        """Map a flat tensor to a Gym space
+        """Map a flat tensor to a Gym/Gymnasium space
 
         The mapping is done in the following way:
 
@@ -142,7 +153,7 @@ class Model(torch.nn.Module):
         :param tensor: Tensor to map from
         :type tensor: torch.Tensor
         :param space: Space to map the tensor to
-        :type space: gym.Space
+        :type space: gym.Space or gymnasium.Space
         :param start: Index of the first element of the tensor to map (default: ``0``)
         :type start: int, optional
 
@@ -162,17 +173,30 @@ class Model(torch.nn.Module):
                            [ 0.1000,  0.2000,  0.3000]]]),
              'b': tensor([[2.]])}
         """
-        if issubclass(type(space), gym.spaces.Discrete):
-            return tensor
-        elif issubclass(type(space), gym.spaces.Box):
-            return tensor.view(tensor.shape[0], *space.shape)
-        elif issubclass(type(space), gym.spaces.Dict):
-            output = {}
-            for k in sorted(space.keys()):
-                end = start + self._get_space_size(space[k], number_of_elements=False)
-                output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
-                start = end
-            return output
+        if issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gym.spaces.Box):
+                return tensor.view(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
+        else:
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                return tensor.view(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
     def random_act(self,
@@ -195,10 +219,10 @@ class Model(torch.nn.Module):
         :rtype: sequence of torch.Tensor
         """
         # discrete action space (Discrete)
-        if issubclass(type(self.action_space), gym.spaces.Discrete):
+        if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
              return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
         # continuous action space (Box)
-        elif issubclass(type(self.action_space), gym.spaces.Box):
+        elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             if self._random_distribution is None:
                 self._random_distribution = torch.distributions.uniform.Uniform(
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),

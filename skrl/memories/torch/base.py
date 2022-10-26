@@ -3,6 +3,7 @@ from typing import Union, Tuple, List, Optional
 import os
 import csv
 import gym
+import gymnasium
 import operator
 import datetime
 import functools
@@ -74,11 +75,11 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space]) -> int:
+    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, or gym.Space
+        :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
 
         :raises ValueError: If the space is not supported
 
@@ -95,6 +96,13 @@ class Memory:
             elif issubclass(type(space), gym.spaces.Box):
                 return np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
+                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
+        elif issubclass(type(space), gymnasium.Space):
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                return 1
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                return np.prod(space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         raise ValueError("Space type {} not supported".format(type(space)))
 
@@ -142,7 +150,10 @@ class Memory:
         with torch.no_grad():
             self.tensors[name].copy_(tensor)
 
-    def create_tensor(self, name: str, size: Union[int, Tuple[int], gym.Space], dtype: Optional[torch.dtype] = None) -> bool:
+    def create_tensor(self,
+                      name: str,
+                      size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                      dtype: Optional[torch.dtype] = None) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).
@@ -151,8 +162,8 @@ class Memory:
         :param name: Tensor name (the name has to follow the python PEP 8 style)
         :type name: str
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for collections or gym spaces types
-        :type size: int, tuple or list of integers or gym.Space
+                     The product of the elements will be computed for collections or gym/gymnasium spaces types
+        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
         :param dtype: Data type (torch.dtype).
                       If None, the global default torch data type will be used (default)
         :type dtype: torch.dtype or None, optional

@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 
 import gym
+import gymnasium
 
 import torch
 
@@ -52,7 +53,8 @@ class DeterministicMixin:
         """
         if not hasattr(self, "_d_clip_actions"):
             self._d_clip_actions = {}
-        self._d_clip_actions[role] = clip_actions and issubclass(type(self.action_space), gym.Space)
+        self._d_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+            issubclass(type(self.action_space), gymnasium.Space))
 
         if self._d_clip_actions[role]:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)

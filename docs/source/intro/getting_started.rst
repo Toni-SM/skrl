@@ -19,9 +19,9 @@ At each step (also called timestep) of interaction with the environment, the age
 1. Environments
 ---------------
 
-The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym or DeepMind. However, each of them has a different API and work with non-compatible data types.
+The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-skrl offers a function to **wrap environments** based on the OpenAI Gym, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with OpenAI Gym) and offer, for library components, a common interface (based on OpenAI Gym) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
+skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
 
 .. image:: ../_static/imgs/wrapping.svg
     :width: 100%
@@ -131,39 +131,77 @@ Within the methods and properties defined in the wrapped environment, the observ
                     # wrap the environment
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
-    .. tab:: OpenAI Gym
+    .. tab:: Gym / Gymnasium
 
         .. tabs::
 
-            .. tab:: Single environment
+            .. tab:: Gym
 
-                .. code-block:: python
+                .. tabs::
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                    .. tab:: Single environment
 
-                    # load environment
-                    env = gym.make('Pendulum-v1')
+                        .. code-block:: python
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
 
-            .. tab:: Vectorized environment
+                            # load environment
+                            env = gym.make('Pendulum-v1')
 
-                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.dev/content/vector_api>`_) for more information about the creation and usage of vectorized environments.
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
-                .. code-block:: python
+                    .. tab:: Vectorized environment
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                        Visit the OpenAI Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments.
 
-                    # load a vectorized environment
-                    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                        .. code-block:: python
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+
+            .. tab:: Gymnasium
+
+                .. tabs::
+
+                    .. tab:: Single environment
+
+                        .. code-block:: python
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load environment
+                            env = gym.make('Pendulum-v1')
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+
+                    .. tab:: Vectorized environment
+
+                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments.
+
+                        .. code-block:: python
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
     .. tab:: DeepMind
 

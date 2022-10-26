@@ -3,7 +3,7 @@ Wrapping
 
 This library works with a common API to interact with the following RL environments:
 
-* `OpenAI Gym <https://www.gymlibrary.dev>`_ (single and vectorized environments)
+* OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_ (single and vectorized environments)
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
@@ -129,41 +129,81 @@ Basic usage
                     # wrap the environment
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
-    .. tab:: OpenAI Gym
+    .. tab:: Gym / Gymnasium
 
         .. tabs::
 
-            .. tab:: Single environment
+            .. tab:: Gym
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                    .. tab:: Single environment
 
-                    # load environment
-                    env = gym.make('Pendulum-v1')
+                        .. code-block:: python
+                            :linenos:
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
 
-            .. tab:: Vectorized environment
+                            # load environment
+                            env = gym.make('Pendulum-v1')
 
-                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.dev/content/vector_api>`_) for more information about the creation and usage of vectorized environments
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
-                .. code-block:: python
-                    :linenos:
+                    .. tab:: Vectorized environment
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                        Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
 
-                    # load a vectorized environment
-                    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                        .. code-block:: python
+                            :linenos:
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+
+            .. tab:: Gymnasium
+
+                .. tabs::
+
+                    .. tab:: Single environment
+
+                        .. code-block:: python
+                            :linenos:
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load environment
+                            env = gym.make('Pendulum-v1')
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+
+                    .. tab:: Vectorized environment
+
+                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
+
+                        .. code-block:: python
+                            :linenos:
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
     .. tab:: DeepMind
 

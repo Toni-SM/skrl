@@ -10,7 +10,7 @@ Prerequisites
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://www.gymlibrary.dev>`_
+    * `gym <https://www.gymlibrary.dev>`_ / `gymnasium <https://gymnasium.farama.org/>`_
     * `tqdm <https://tqdm.github.io>`_
     * `packaging <https://packaging.pypa.io>`_
     * `torch <https://pytorch.org>`_ 1.8.0 or higher

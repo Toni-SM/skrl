@@ -136,12 +136,12 @@ Configuration and hyperparameters
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete

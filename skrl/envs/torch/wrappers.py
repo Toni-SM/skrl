@@ -503,7 +503,7 @@ class GymnasiumWrapper(Wrapper):
                     return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
                 elif isinstance(space[0], gymnasium.spaces.Discrete):
                     return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(-1)
-        elif isinstance(space, gymnasium.spaces.Discrete):
+        if isinstance(space, gymnasium.spaces.Discrete):
             return actions.item()
         elif isinstance(space, gymnasium.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
@@ -518,14 +518,11 @@ class GymnasiumWrapper(Wrapper):
         :return: The state, the reward, the done flag, and the info
         :rtype: tuple of torch.Tensor and any other info
         """
-        if self._drepecated_api:
-            observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
+        observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
+        if type(termination) is bool:
+            done = termination or truncation
         else:
-            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
-            if type(termination) is bool:
-                done = termination or truncation
-            else:
-                done = np.logical_or(termination, truncation)
+            done = np.logical_or(termination, truncation)
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
@@ -538,10 +535,7 @@ class GymnasiumWrapper(Wrapper):
         :return: The state of the environment
         :rtype: torch.Tensor
         """
-        if self._drepecated_api:
-            observation = self._env.reset()
-        else:
-            observation, info = self._env.reset()
+        observation, info = self._env.reset()
         return self._observation_to_tensor(observation)
 
     def render(self, *args, **kwargs) -> None:

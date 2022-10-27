@@ -89,7 +89,7 @@ class SequentialTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -102,7 +102,8 @@ class SequentialTrainer(Trainer):
                                             actions=actions[scope[0]:scope[1]],
                                             rewards=rewards[scope[0]:scope[1]],
                                             next_states=next_states[scope[0]:scope[1]],
-                                            dones=dones[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
@@ -113,7 +114,7 @@ class SequentialTrainer(Trainer):
 
             # reset environments
             with torch.no_grad():
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
@@ -154,7 +155,7 @@ class SequentialTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -167,14 +168,15 @@ class SequentialTrainer(Trainer):
                                             actions=actions[scope[0]:scope[1]],
                                             rewards=rewards[scope[0]:scope[1]],
                                             next_states=next_states[scope[0]:scope[1]],
-                                            dones=dones[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
                 # reset environments
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)

@@ -163,7 +163,7 @@ class Trainer:
                 actions, _, _ = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -175,7 +175,8 @@ class Trainer:
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
@@ -185,7 +186,7 @@ class Trainer:
 
             # reset environments
             with torch.no_grad():
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)
@@ -215,7 +216,7 @@ class Trainer:
                 actions, _, _ = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -227,14 +228,15 @@ class Trainer:
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
                 # reset environments
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                 else:
                     states.copy_(next_states)

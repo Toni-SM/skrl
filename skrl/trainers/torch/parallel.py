@@ -71,7 +71,8 @@ def fn_processor(process_index, *args):
                                         actions=_actions,
                                         rewards=queue.get()[scope[0]:scope[1]],
                                         next_states=queue.get()[scope[0]:scope[1]],
-                                        dones=queue.get()[scope[0]:scope[1]],
+                                        terminated=queue.get()[scope[0]:scope[1]],
+                                        truncated=queue.get()[scope[0]:scope[1]],
                                         infos=queue.get(),
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
@@ -89,7 +90,8 @@ def fn_processor(process_index, *args):
                                         actions=_actions,
                                         rewards=queue.get()[scope[0]:scope[1]],
                                         next_states=queue.get()[scope[0]:scope[1]],
-                                        dones=queue.get()[scope[0]:scope[1]],
+                                        terminated=queue.get()[scope[0]:scope[1]],
+                                        truncated=queue.get()[scope[0]:scope[1]],
                                         infos=queue.get(),
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
@@ -210,7 +212,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -222,14 +224,17 @@ class ParallelTrainer(Trainer):
                     rewards.share_memory_()
                 if not next_states.is_cuda:
                     next_states.share_memory_()
-                if not dones.is_cuda:
-                    dones.share_memory_()
+                if not terminated.is_cuda:
+                    terminated.share_memory_()
+                if not truncated.is_cuda:
+                    truncated.share_memory_()
 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
-                    queue.put(dones)
+                    queue.put(terminated)
+                    queue.put(truncated)
                     queue.put(infos)
                 barrier.wait()
 
@@ -240,7 +245,7 @@ class ParallelTrainer(Trainer):
 
             # reset environments
             with torch.no_grad():
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()
@@ -337,7 +342,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -349,8 +354,10 @@ class ParallelTrainer(Trainer):
                     rewards.share_memory_()
                 if not next_states.is_cuda:
                     next_states.share_memory_()
-                if not dones.is_cuda:
-                    dones.share_memory_()
+                if not terminated.is_cuda:
+                    terminated.share_memory_()
+                if not truncated.is_cuda:
+                    truncated.share_memory_()
 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "eval-record_transition-post_interaction",
@@ -358,12 +365,13 @@ class ParallelTrainer(Trainer):
                                "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
-                    queue.put(dones)
+                    queue.put(terminated)
+                    queue.put(truncated)
                     queue.put(infos)
                 barrier.wait()
 
                 # reset environments
-                if dones.any():
+                if terminated.any() or truncated.any():
                     states = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()

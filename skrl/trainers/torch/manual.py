@@ -108,7 +108,7 @@ class ManualTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments
-        next_states, rewards, dones, infos = self.env.step(actions)
+        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
         # render scene
         if not self.headless:
@@ -121,7 +121,8 @@ class ManualTrainer(Trainer):
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=timesteps)
@@ -137,7 +138,8 @@ class ManualTrainer(Trainer):
                                             actions=actions[scope[0]:scope[1]],
                                             rewards=rewards[scope[0]:scope[1]],
                                             next_states=next_states[scope[0]:scope[1]],
-                                            dones=dones[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
@@ -148,7 +150,7 @@ class ManualTrainer(Trainer):
 
         # reset environments
         with torch.no_grad():
-            if dones.any():
+            if terminated.any() or truncated.any():
                 self.states = self.env.reset()
             else:
                 self.states.copy_(next_states)
@@ -198,7 +200,7 @@ class ManualTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments
-        next_states, rewards, dones, infos = self.env.step(actions)
+        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
         # render scene
         if not self.headless:
@@ -211,7 +213,8 @@ class ManualTrainer(Trainer):
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=timesteps)
@@ -224,14 +227,15 @@ class ManualTrainer(Trainer):
                                             actions=actions[scope[0]:scope[1]],
                                             rewards=rewards[scope[0]:scope[1]],
                                             next_states=next_states[scope[0]:scope[1]],
-                                            dones=dones[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
 
             # reset environments
-            if dones.any():
+            if terminated.any() or truncated.any():
                 self.states = self.env.reset()
             else:
                 self.states.copy_(next_states)

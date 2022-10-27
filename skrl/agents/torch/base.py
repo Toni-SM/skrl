@@ -252,7 +252,8 @@ class Agent:
                           actions: torch.Tensor,
                           rewards: torch.Tensor,
                           next_states: torch.Tensor,
-                          dones: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
                           infos: Any,
                           timestep: int,
                           timesteps: int) -> None:
@@ -269,8 +270,10 @@ class Agent:
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -287,7 +290,7 @@ class Agent:
         self._cumulative_timesteps.add_(1)
 
         # check ended episodes
-        finished_episodes = dones.nonzero(as_tuple=False)
+        finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
         if finished_episodes.numel():
 
             # storage cumulative rewards and timesteps

@@ -44,17 +44,17 @@ class Wrapper(object):
         raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
             .format(self._env.__class__.__name__, key))
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
         :raises NotImplementedError: Not implemented
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         raise NotImplementedError
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -62,7 +62,7 @@ class Wrapper(object):
 
         :raises NotImplementedError: Not implemented
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         raise NotImplementedError
@@ -123,28 +123,29 @@ class IsaacGymPreview2Wrapper(Wrapper):
         self._reset_once = True
         self._obs_buf = None
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_buf, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_buf, rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_buf, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_buf, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_buf = self._env.reset()
             self._reset_once = False
-        return self._obs_buf
+        return self._obs_buf, {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -169,28 +170,29 @@ class IsaacGymPreview3Wrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_dict, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_dict["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_dict = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["obs"]
+        return self._obs_dict["obs"], {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -225,28 +227,29 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """
         self._env.run(trainer)
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_dict, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_dict["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_dict = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["obs"]
+        return self._obs_dict["obs"], {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -363,40 +366,39 @@ class GymWrapper(Wrapper):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         if self._drepecated_api:
-            observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
+            observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
+            truncated = info.get("TimeLimit.truncated", False) # https://gymnasium.farama.org/tutorials/handling_time_limits
         else:
-            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
-            if type(termination) is bool:
-                done = termination or truncation
-            else:
-                done = np.logical_or(termination, truncation)
+            observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._drepecated_api:
             observation = self._env.reset()
+            info = {}
         else:
             observation, info = self._env.reset()
-        return self._observation_to_tensor(observation)
+        return self._observation_to_tensor(observation), info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -509,34 +511,31 @@ class GymnasiumWrapper(Wrapper):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
-        if type(termination) is bool:
-            done = termination or truncation
-        else:
-            done = np.logical_or(termination, truncation)
+        observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         observation, info = self._env.reset()
-        return self._observation_to_tensor(observation)
+        return self._observation_to_tensor(observation), info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -656,36 +655,38 @@ class DeepMindWrapper(Wrapper):
         else:
             raise ValueError("Action spec type {} not supported. Please report this issue".format(type(spec)))
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         timestep = self._env.step(self._tensor_to_action(actions))
 
         observation = timestep.observation
         reward = timestep.reward if timestep.reward is not None else 0
-        done = timestep.last()
+        terminated = timestep.last()
+        truncated = False
         info = {}
 
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
         :return: The state of the environment
         :rtype: torch.Tensor
         """
         timestep = self._env.reset()
-        return self._observation_to_tensor(timestep.observation)
+        return self._observation_to_tensor(timestep.observation), {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

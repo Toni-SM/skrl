@@ -377,7 +377,14 @@ class GymWrapper(Wrapper):
         """
         if self._drepecated_api:
             observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
-            truncated = info.get("TimeLimit.truncated", False) # https://gymnasium.farama.org/tutorials/handling_time_limits
+            # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
+            if type(info) is list:
+                truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
+                terminated *= np.logical_not(truncated)
+            else:
+                truncated = info.get("TimeLimit.truncated", False)
+                if truncated:
+                    terminated = False
         else:
             observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
         # convert response to torch

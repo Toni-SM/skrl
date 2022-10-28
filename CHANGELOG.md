@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Weights & Biases integration (by @juhannc)
 - Support for Gymnasium interface
 
+### Changed
+- Adopt the implementation of `terminated` and `truncated` over `done` for all environments
+
 ### Fixed
 - Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
 - Call agents' method `record_transition` instead of parent method

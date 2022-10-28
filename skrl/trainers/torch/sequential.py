@@ -75,7 +75,7 @@ class SequentialTrainer(Trainer):
             return
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
@@ -115,7 +115,7 @@ class SequentialTrainer(Trainer):
             # reset environments
             with torch.no_grad():
                 if terminated.any() or truncated.any():
-                    states = self.env.reset()
+                    states, infos = self.env.reset()
                 else:
                     states.copy_(next_states)
 
@@ -145,7 +145,7 @@ class SequentialTrainer(Trainer):
             return
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
 
@@ -177,7 +177,7 @@ class SequentialTrainer(Trainer):
 
                 # reset environments
                 if terminated.any() or truncated.any():
-                    states = self.env.reset()
+                    states, infos = self.env.reset()
                 else:
                     states.copy_(next_states)
 

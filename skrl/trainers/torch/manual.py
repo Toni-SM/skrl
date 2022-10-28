@@ -1,3 +1,4 @@
+from distutils.log import info
 from typing import Union, List, Optional
 
 import copy
@@ -87,7 +88,7 @@ class ManualTrainer(Trainer):
 
         # reset env
         if self.states is None:
-            self.states = self.env.reset()
+            self.states, infos = self.env.reset()
 
         if self.num_agents == 1:
             # pre-interaction
@@ -151,7 +152,7 @@ class ManualTrainer(Trainer):
         # reset environments
         with torch.no_grad():
             if terminated.any() or truncated.any():
-                self.states = self.env.reset()
+                self.states, infos = self.env.reset()
             else:
                 self.states.copy_(next_states)
 
@@ -187,7 +188,7 @@ class ManualTrainer(Trainer):
 
         # reset env
         if self.states is None:
-            self.states = self.env.reset()
+            self.states, infos = self.env.reset()
 
         with torch.no_grad():
             if self.num_agents == 1:
@@ -236,6 +237,6 @@ class ManualTrainer(Trainer):
 
             # reset environments
             if terminated.any() or truncated.any():
-                self.states = self.env.reset()
+                self.states, infos = self.env.reset()
             else:
                 self.states.copy_(next_states)

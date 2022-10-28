@@ -191,7 +191,7 @@ class ParallelTrainer(Trainer):
         barrier.wait()
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
         if not states.is_cuda:
             states.share_memory_()
 
@@ -246,7 +246,7 @@ class ParallelTrainer(Trainer):
             # reset environments
             with torch.no_grad():
                 if terminated.any() or truncated.any():
-                    states = self.env.reset()
+                    states, infos = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()
                 else:
@@ -326,7 +326,7 @@ class ParallelTrainer(Trainer):
         barrier.wait()
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
         if not states.is_cuda:
             states.share_memory_()
 
@@ -372,7 +372,7 @@ class ParallelTrainer(Trainer):
 
                 # reset environments
                 if terminated.any() or truncated.any():
-                    states = self.env.reset()
+                    states, infos = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()
                 else:

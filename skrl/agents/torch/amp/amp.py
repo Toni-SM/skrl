@@ -225,7 +225,7 @@ class AMP(Agent):
             self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -234,7 +234,7 @@ class AMP(Agent):
             self.memory.create_tensor(name="amp_states", size=self.amp_observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="next_values", size=1, dtype=torch.float32)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "dones", \
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated", \
             "log_prob", "values", "returns", "advantages", "amp_states", "next_values"]
 
         # create tensors for motion dataset and reply buffer
@@ -284,7 +284,8 @@ class AMP(Agent):
                           actions: torch.Tensor,
                           rewards: torch.Tensor,
                           next_states: torch.Tensor,
-                          dones: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
                           infos: Any,
                           timestep: int,
                           timesteps: int) -> None:
@@ -298,8 +299,10 @@ class AMP(Agent):
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -311,7 +314,7 @@ class AMP(Agent):
         if self._current_states is not None:
             states = self._current_states
 
-        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
         if self.memory is not None:
             amp_states = infos["amp_obs"]
@@ -329,10 +332,10 @@ class AMP(Agent):
             next_values = self._value_preprocessor(next_values, inverse=True)
             next_values *= infos['terminate'].view(-1, 1).logical_not()
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, terminated=terminated, truncated=truncated,
                                     log_prob=self._current_log_prob, values=values, amp_states=amp_states, next_values=next_values)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, terminated=terminated, truncated=truncated,
                                    log_prob=self._current_log_prob, values=values, amp_states=amp_states, next_values=next_values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
@@ -429,7 +432,7 @@ class AMP(Agent):
         values = self.memory.get_tensor_by_name("values")
         next_values=self.memory.get_tensor_by_name("next_values")
         returns, advantages = compute_gae(rewards=combined_rewards,
-                                          dones=self.memory.get_tensor_by_name("dones"),
+                                          dones=self.memory.get_tensor_by_name("terminated"),
                                           values=values,
                                           next_values=next_values,
                                           discount_factor=self._discount_factor,

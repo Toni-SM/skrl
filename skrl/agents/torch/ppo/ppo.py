@@ -173,13 +173,13 @@ class PPO(Agent):
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-        self.tensors_names = ["states", "actions", "rewards", "dones", "log_prob", "values", "returns", "advantages"]
+        self.tensors_names = ["states", "actions", "rewards", "terminated", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = None
@@ -216,7 +216,8 @@ class PPO(Agent):
                           actions: torch.Tensor,
                           rewards: torch.Tensor,
                           next_states: torch.Tensor,
-                          dones: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
                           infos: Any,
                           timestep: int,
                           timesteps: int) -> None:
@@ -230,8 +231,10 @@ class PPO(Agent):
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -239,7 +242,7 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
         if self.memory is not None:
             self._current_next_states = next_states
@@ -252,11 +255,11 @@ class PPO(Agent):
                 values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
-                                    log_prob=self._current_log_prob, values=values)
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones,
-                                   log_prob=self._current_log_prob, values=values)
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -341,7 +344,7 @@ class PPO(Agent):
 
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                          dones=self.memory.get_tensor_by_name("dones"),
+                                          dones=self.memory.get_tensor_by_name("terminated"),
                                           values=values,
                                           next_values=last_values,
                                           discount_factor=self._discount_factor,

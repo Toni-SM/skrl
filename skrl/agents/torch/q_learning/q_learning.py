@@ -126,7 +126,8 @@ class Q_LEARNING(Agent):
                           actions: torch.Tensor,
                           rewards: torch.Tensor,
                           next_states: torch.Tensor,
-                          dones: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
                           infos: Any,
                           timestep: int,
                           timesteps: int) -> None:
@@ -140,8 +141,10 @@ class Q_LEARNING(Agent):
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -149,7 +152,7 @@ class Q_LEARNING(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
+        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
         # reward shaping
         if self._rewards_shaper is not None:
@@ -159,12 +162,14 @@ class Q_LEARNING(Agent):
         self._current_actions = actions
         self._current_rewards = rewards
         self._current_next_states = next_states
-        self._current_dones = dones
+        self._current_dones = terminated + truncated
 
         if self.memory is not None:
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                    terminated=terminated, truncated=truncated)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones)
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                   terminated=terminated, truncated=truncated)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment

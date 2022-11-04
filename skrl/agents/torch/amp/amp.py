@@ -271,10 +271,10 @@ class AMP(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
+        actions, log_prob, actions_mean = self.policy.act({"states": states}, role="policy")
         self._current_log_prob = log_prob
 
         return actions, log_prob, actions_mean
@@ -324,11 +324,11 @@ class AMP(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             with torch.no_grad():
-                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
+                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             with torch.no_grad():
-                next_values, _, _ = self.value.act(states=self._state_preprocessor(next_states), taken_actions=None, role="value")
+                next_values, _, _ = self.value.act({"states": self._state_preprocessor(next_states)}, role="value")
             next_values = self._value_preprocessor(next_values, inverse=True)
             next_values *= infos['terminate'].view(-1, 1).logical_not()
 
@@ -422,7 +422,7 @@ class AMP(Agent):
         amp_states = self.memory.get_tensor_by_name("amp_states")
 
         with torch.no_grad():
-            amp_logits, _, _ = self.discriminator.act(self._amp_state_preprocessor(amp_states), taken_actions=None, role="discriminator")
+            amp_logits, _, _ = self.discriminator.act({"states": self._amp_state_preprocessor(amp_states)}, role="discriminator")
             style_reward = -torch.log(torch.maximum(1 - 1 / (1 + torch.exp(-amp_logits)), torch.tensor(0.0001, device=self.device)))
             style_reward *= self._discriminator_reward_scale
 
@@ -469,7 +469,7 @@ class AMP(Agent):
 
                 sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
+                _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
                 # compute entropy loss
                 if self._entropy_loss_scale:
@@ -485,7 +485,7 @@ class AMP(Agent):
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
+                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
 
                 if self._clip_predicted_values:
                     predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
@@ -506,9 +506,9 @@ class AMP(Agent):
                     sampled_amp_motion_states = self._amp_state_preprocessor(sampled_motion_batches[batch_index][0], train=True)
 
                 sampled_amp_motion_states.requires_grad_(True)
-                amp_logits, _, _ = self.discriminator.act(states=sampled_amp_states, taken_actions=None, role="discriminator")
-                amp_replay_logits, _, _ = self.discriminator.act(states=sampled_amp_replay_states, taken_actions=None, role="discriminator")
-                amp_motion_logits, _, _ = self.discriminator.act(states=sampled_amp_motion_states, taken_actions=None, role="discriminator")
+                amp_logits, _, _ = self.discriminator.act({"states": sampled_amp_states}, role="discriminator")
+                amp_replay_logits, _, _ = self.discriminator.act({"states": sampled_amp_replay_states}, role="discriminator")
+                amp_motion_logits, _, _ = self.discriminator.act({"states": sampled_amp_motion_states}, role="discriminator")
 
                 amp_cat_logits = torch.cat([amp_logits, amp_replay_logits], dim=0)
 

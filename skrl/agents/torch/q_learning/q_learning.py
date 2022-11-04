@@ -116,10 +116,10 @@ class Q_LEARNING(Agent):
         """
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample actions from policy
-        return self.policy.act(states, taken_actions=None, role="policy")
+        return self.policy.act({"states": states}, role="policy")
 
     def record_transition(self,
                           states: torch.Tensor,

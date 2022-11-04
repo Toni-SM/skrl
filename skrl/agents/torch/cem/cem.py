@@ -155,10 +155,10 @@ class CEM(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        return self.policy.act(states, taken_actions=None, role="policy")
+        return self.policy.act({"states": states}, role="policy")
 
     def record_transition(self,
                           states: torch.Tensor,
@@ -276,7 +276,7 @@ class CEM(Agent):
             elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
 
         # compute scores for the elite states
-        scores = self.policy.act(elite_states, taken_actions=None, role="policy")[2]
+        scores = self.policy.act({"states": elite_states}, role="policy")[2]
 
         # compute policy loss
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))

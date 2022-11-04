@@ -116,10 +116,10 @@ class SARSA(Agent):
         """
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample actions from policy
-        return self.policy.act(states, taken_actions=None, role="policy")
+        return self.policy.act({"states": states}, role="policy")
 
     def record_transition(self,
                           states: torch.Tensor,
@@ -207,7 +207,7 @@ class SARSA(Agent):
         env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
 
         # compute next actions
-        next_actions = self.policy.act(self._current_next_states, taken_actions=None, role="policy")[0]
+        next_actions = self.policy.act({"states": self._current_next_states}, role="policy")[0]
 
         # update Q-table
         q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate \

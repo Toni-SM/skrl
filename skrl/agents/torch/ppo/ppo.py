@@ -203,10 +203,10 @@ class PPO(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
+        actions, log_prob, actions_mean = self.policy.act({"states": states}, role="policy")
         self._current_log_prob = log_prob
 
         return actions, log_prob, actions_mean
@@ -252,7 +252,7 @@ class PPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             with torch.no_grad():
-                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
+                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -339,7 +339,7 @@ class PPO(Agent):
 
         # compute returns and advantages
         with torch.no_grad():
-            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
+            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
@@ -371,7 +371,7 @@ class PPO(Agent):
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
-                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
+                _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
                 # compute aproximate KL divergence
                 with torch.no_grad():
@@ -397,7 +397,7 @@ class PPO(Agent):
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
+                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
 
                 if self._clip_predicted_values:
                     predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,

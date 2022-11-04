@@ -178,10 +178,10 @@ class DQN(Agent):
         states = self._state_preprocessor(states)
 
         if not self._exploration_timesteps:
-            return torch.argmax(self.q_network.act(states, taken_actions=None, role="q_network")[0], dim=1, keepdim=True), None, None
+            return torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True), None, None
 
         # sample random actions
-        actions = self.q_network.random_act(states, taken_actions=None, role="q_network")[0]
+        actions = self.q_network.random_act({"states": states}, role="q_network")[0]
         if timestep < self._random_timesteps:
             return actions, None, None
 
@@ -191,7 +191,7 @@ class DQN(Agent):
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act(states[indexes], taken_actions=None, role="q_network")[0], dim=1, keepdim=True)
+            actions[indexes] = torch.argmax(self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True)
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
@@ -286,13 +286,13 @@ class DQN(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act(states=sampled_next_states, taken_actions=None, role="target_q_network")
+                next_q_values, _, _ = self.target_q_network.act({"states": sampled_next_states}, role="target_q_network")
 
                 target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values = torch.gather(self.q_network.act(states=sampled_states, taken_actions=None, role="q_network")[0],
+            q_values = torch.gather(self.q_network.act({"states": sampled_states}, role="q_network")[0],
                                     dim=1, index=sampled_actions.long())
 
             q_network_loss = F.mse_loss(q_values, target_values)

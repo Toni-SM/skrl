@@ -186,10 +186,10 @@ class A2C(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        return self.policy.act(states, taken_actions=None, role="policy")
+        return self.policy.act({"states": states}, role="policy")
 
     def record_transition(self,
                           states: torch.Tensor,
@@ -232,7 +232,7 @@ class A2C(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             with torch.no_grad():
-                values, _, _ = self.value.act(self._state_preprocessor(states), taken_actions=None, role="value")
+                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -319,7 +319,7 @@ class A2C(Agent):
 
         # compute returns and advantages
         with torch.no_grad():
-            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
+            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
@@ -346,7 +346,7 @@ class A2C(Agent):
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-            _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
+            _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
             # compute entropy loss
             if self._entropy_loss_scale:
@@ -358,7 +358,7 @@ class A2C(Agent):
             policy_loss = -(sampled_advantages * next_log_prob).mean()
 
             # compute value loss
-            predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
+            predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
 
             value_loss = F.mse_loss(sampled_returns, predicted_values)
 

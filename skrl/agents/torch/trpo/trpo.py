@@ -200,10 +200,10 @@ class TRPO(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
+        actions, log_prob, actions_mean = self.policy.act({"states": states}, role="policy")
         self._current_log_prob = log_prob
 
         return actions, log_prob, actions_mean
@@ -249,7 +249,7 @@ class TRPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             with torch.no_grad():
-                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
+                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -353,7 +353,7 @@ class TRPO(Agent):
             :return: Surrogate loss
             :rtype: torch.Tensor
             """
-            _, new_log_prob, _ = policy.act(states, taken_actions=actions, role="policy")
+            _, new_log_prob, _ = policy.act({"states": states, "taken_actions": actions}, role="policy")
             return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
         def conjugate_gradient(policy: Model,
@@ -437,11 +437,11 @@ class TRPO(Agent):
             :return: KL divergence
             :rtype: torch.Tensor
             """
-            _, _, mu_1 = policy_1.act(states, taken_actions=None, role="policy")
+            _, _, mu_1 = policy_1.act({"states": states}, role="policy")
             logstd_1 = policy_1.get_log_std(role="policy")
             mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
-            _, _, mu_2 = policy_2.act(states, taken_actions=None, role="policy")
+            _, _, mu_2 = policy_2.act({"states": states}, role="policy")
             logstd_2 = policy_2.get_log_std(role="policy")
 
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
@@ -450,7 +450,7 @@ class TRPO(Agent):
 
         # compute returns and advantages
         with torch.no_grad():
-            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
+            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
@@ -517,7 +517,7 @@ class TRPO(Agent):
                     self.policy.update_parameters(self.backup_policy)
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(sampled_states, taken_actions=None, role="value")
+                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
 
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 

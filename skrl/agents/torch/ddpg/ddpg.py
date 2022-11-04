@@ -192,10 +192,10 @@ class DDPG(Agent):
 
         # sample random actions
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": states}, role="policy")
 
         # sample deterministic actions
-        actions = self.policy.act(states, taken_actions=None, role="policy")
+        actions = self.policy.act({"states": states}, role="policy")
 
         # add exloration noise
         if self._exploration_noise is not None:
@@ -324,13 +324,13 @@ class DDPG(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act(states=sampled_next_states, taken_actions=None, role="target_policy")
+                next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
 
-                target_q_values, _, _ = self.target_critic.act(states=sampled_next_states, taken_actions=next_actions, role="target_critic")
+                target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=sampled_actions, role="critic")
+            critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
 
             critic_loss = F.mse_loss(critic_values, target_values)
 
@@ -340,8 +340,8 @@ class DDPG(Agent):
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
-            actions, _, _ = self.policy.act(states=sampled_states, taken_actions=None, role="policy")
-            critic_values, _, _ = self.critic.act(states=sampled_states, taken_actions=actions, role="critic")
+            actions, _, _ = self.policy.act({"states": sampled_states}, role="policy")
+            critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": actions}, role="critic")
 
             policy_loss = -critic_values.mean()
 

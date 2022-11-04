@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Mapping, Sequence
 
 import torch
 from torch.distributions import Categorical
@@ -34,8 +34,8 @@ class CategoricalMixin:
             ...                                  nn.ELU(),
             ...                                  nn.Linear(32, self.num_actions))
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         return self.net(states)
+            ...     def compute(self, inputs, role):
+            ...         return self.net(inputs["states"])
             ...
             >>> # given an observation_space: gym.spaces.Box with shape (4,)
             >>> # and an action_space: gym.spaces.Discrete with n = 2
@@ -60,17 +60,14 @@ class CategoricalMixin:
             self._c_distribution = {}
         self._c_distribution[role] = None
 
-    def act(self,
-            states: torch.Tensor,
-            taken_actions: Optional[torch.Tensor] = None,
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -81,13 +78,12 @@ class CategoricalMixin:
         Example::
 
             >>> # given a batch of sample states with shape (4096, 4)
-            >>> action, log_prob, net_output = model.act(states)
+            >>> action, log_prob, net_output = model.act({"states": states})
             >>> print(action.shape, log_prob.shape, net_output.shape)
             torch.Size([4096, 1]) torch.Size([4096, 1]) torch.Size([4096, 2])
         """
         # map from states/observations to normalized probabilities or unnormalized log probabilities
-        output = self.compute(states.to(self.device),
-                              taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+        output = self.compute(inputs, role)
 
         # unnormalized log probabilities
         if self._c_unnormalized_log_prob[role] if role in self._c_unnormalized_log_prob else self._c_unnormalized_log_prob[""]:
@@ -98,7 +94,7 @@ class CategoricalMixin:
 
         # actions and log of the probability density function
         actions = self._c_distribution[role].sample()
-        log_prob = self._c_distribution[role].log_prob(actions if taken_actions is None else taken_actions.view(-1))
+        log_prob = self._c_distribution[role].log_prob(inputs.get("taken_actions", actions).view(-1))
 
         return actions.unsqueeze(-1), log_prob.unsqueeze(-1), output
 

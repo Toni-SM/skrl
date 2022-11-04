@@ -28,8 +28,8 @@ class TabularMixin:
             ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
             ...                                 dtype=torch.float32, device=self.device)
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states],
+            ...     def compute(self, inputs, role):
+            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
             ...                                dim=-1, keepdim=True).view(-1,1)
             ...
             >>> # given an observation_space: gym.spaces.Discrete with n=100
@@ -69,17 +69,14 @@ class TabularMixin:
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self,
-            states: torch.Tensor,
-            taken_actions: Optional[torch.Tensor] = None,
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -90,12 +87,11 @@ class TabularMixin:
         Example::
 
             >>> # given a batch of sample states with shape (1, 100)
-            >>> output = model.act(states)
+            >>> output = model.act({"states": states})
             >>> print(output[0], output[1], output[2])
             tensor([[3]], device='cuda:0') None None
         """
-        actions = self.compute(states.to(self.device),
-                               taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+        actions = self.compute(inputs, role)
         return actions, None, None
 
     def table(self) -> torch.Tensor:

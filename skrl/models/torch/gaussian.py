@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Mapping, Sequence
 
 import gym
 import gymnasium
@@ -54,8 +54,8 @@ class GaussianMixin:
             ...                                  nn.Linear(32, self.num_actions))
             ...         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         return self.net(states), self.log_std_parameter
+            ...     def compute(self, inputs, role):
+            ...         return self.net(inputs["states"]), self.log_std_parameter
             ...
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
@@ -111,17 +111,14 @@ class GaussianMixin:
         self._g_reduction[role] = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
             else torch.prod if reduction == "prod" else None
 
-    def act(self,
-            states: torch.Tensor,
-            taken_actions: Optional[torch.Tensor] = None,
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act stochastically in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -132,13 +129,12 @@ class GaussianMixin:
         Example::
 
             >>> # given a batch of sample states with shape (4096, 60)
-            >>> action, log_prob, mean_action = model.act(states)
+            >>> action, log_prob, mean_action = model.act({"states": states})
             >>> print(action.shape, log_prob.shape, mean_action.shape)
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states.to(self.device),
-                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+        actions_mean, log_std = self.compute(inputs, role)
 
         # clamp log standard deviations
         if self._g_clip_log_std[role] if role in self._g_clip_log_std else self._g_clip_log_std[""]:
@@ -163,7 +159,7 @@ class GaussianMixin:
                 actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
         # log of the probability density function
-        log_prob = self._g_distribution[role].log_prob(actions if taken_actions is None else taken_actions)
+        log_prob = self._g_distribution[role].log_prob(inputs.get("taken_actions", actions))
         reduction = self._g_reduction[role] if role in self._g_reduction else self._g_reduction[""]
         if reduction is not None:
             log_prob = reduction(log_prob, dim=-1)

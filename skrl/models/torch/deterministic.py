@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Mapping, Sequence
 
 import gym
 import gymnasium
@@ -33,8 +33,8 @@ class DeterministicMixin:
             ...                                  nn.ELU(),
             ...                                  nn.Linear(32, 1))
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         return self.net(states)
+            ...     def compute(self, inputs, role):
+            ...         return self.net(inputs["states"])
             ...
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
@@ -63,17 +63,14 @@ class DeterministicMixin:
             # backward compatibility: torch < 1.9 clamp method does not support tensors
             self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
-    def act(self,
-            states: torch.Tensor,
-            taken_actions: Optional[torch.Tensor] = None,
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act deterministically in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -84,13 +81,12 @@ class DeterministicMixin:
         Example::
 
             >>> # given a batch of sample states with shape (4096, 60)
-            >>> output = model.act(states)
+            >>> output = model.act({"states": states})
             >>> print(output[0].shape, output[1], output[2])
             torch.Size([4096, 1]) None None
         """
         # map from observations/states to actions
-        actions = self.compute(states.to(self.device),
-                               taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+        actions = self.compute(inputs, role)
 
         # clip actions
         if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:

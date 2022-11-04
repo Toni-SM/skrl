@@ -46,8 +46,8 @@ class Model(torch.nn.Module):
                     self.layer_1 = nn.Linear(self.num_observations, 64)
                     self.layer_2 = nn.Linear(64, self.num_actions)
 
-                def act(self, states, taken_actions=None, role=""):
-                    x = F.relu(self.layer_1(states))
+                def act(self, inputs, role=""):
+                    x = F.relu(self.layer_1(inputs["states"]))
                     x = F.relu(self.layer_2(x))
                     return x
         """
@@ -199,17 +199,14 @@ class Model(torch.nn.Module):
                 return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
-    def random_act(self,
-                   states: torch.Tensor,
-                   taken_actions: Optional[torch.Tensor] = None,
-                   role: str = "") -> Sequence[torch.Tensor]:
+    def random_act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act randomly according to the action space
 
-        :param states: Observation/state of the environment used to get the shape of the action space
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -220,7 +217,7 @@ class Model(torch.nn.Module):
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
-             return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
+             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, None
         # continuous action space (Box)
         elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             if self._random_distribution is None:
@@ -228,7 +225,7 @@ class Model(torch.nn.Module):
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
                     high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
 
-            return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
+            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, None
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
 
@@ -296,17 +293,14 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
-    def compute(self,
-                states: torch.Tensor,
-                taken_actions: Optional[torch.Tensor] = None,
-                role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
+    def compute(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -317,21 +311,18 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self,
-            states: torch.Tensor,
-            taken_actions: Optional[torch.Tensor] = None,
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
         This method is currently implemented by the helper models (**GaussianModel**, etc.).
         The classes that inherit from the latter must only implement the ``.compute()`` method
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: Mapping[str, torch.Tensor]
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 

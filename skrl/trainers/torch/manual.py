@@ -96,7 +96,7 @@ class ManualTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
+                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
 
         else:
             # pre-interaction
@@ -193,7 +193,7 @@ class ManualTrainer(Trainer):
         with torch.no_grad():
             if self.num_agents == 1:
                 # compute actions
-                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
+                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
 
             else:
                 # compute actions

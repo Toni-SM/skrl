@@ -1,4 +1,4 @@
-from typing import Optional, Union, Mapping, Sequence
+from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import gym
 import gymnasium
@@ -49,7 +49,7 @@ class Model(torch.nn.Module):
                 def act(self, inputs, role=""):
                     x = F.relu(self.layer_1(inputs["states"]))
                     x = F.relu(self.layer_2(x))
-                    return x
+                    return x, None, {}
         """
         super(Model, self).__init__()
 
@@ -199,25 +199,27 @@ class Model(torch.nn.Module):
                 return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
-    def random_act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
+    def random_act(self,
+                   inputs: Mapping[str, Union[torch.Tensor, Any]],
+                   role: str = "") -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
         """Act randomly according to the action space
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: Mapping[str, torch.Tensor]
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Unsupported action space
 
-        :return: Random actions to be taken by the agent
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent
+        :rtype: tuple of torch.Tensor, None, and dictionary
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
-             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, None
+             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
         # continuous action space (Box)
         elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             if self._random_distribution is None:
@@ -225,7 +227,7 @@ class Model(torch.nn.Module):
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
                     high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
 
-            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, None
+            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, {}
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
 
@@ -293,25 +295,29 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("Implement .act() and .compute() methods instead of this")
 
-    def compute(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
+    def compute(self,
+                inputs: Mapping[str, Union[torch.Tensor, Any]],
+                role: str = "") -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: Mapping[str, torch.Tensor]
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
 
         :return: Computation performed by the models
-        :rtype: torch.Tensor or sequence of torch.Tensor
+        :rtype: tuple of torch.Tensor and dictionary
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -322,16 +328,16 @@ class Model(torch.nn.Module):
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: Mapping[str, torch.Tensor]
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
 
-        :return: Action to be taken by the agent given the state of the environment.
-                 The typical sequence's components are the actions, the log of the probability density function and mean actions.
-                 Deterministic agents must ignore the last two components and return empty tensors or None for them
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
         logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")

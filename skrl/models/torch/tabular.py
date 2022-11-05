@@ -1,4 +1,4 @@
-from typing import Optional, Mapping, Sequence
+from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import torch
 
@@ -31,6 +31,7 @@ class TabularMixin:
             ...     def compute(self, inputs, role):
             ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
             ...                                dim=-1, keepdim=True).view(-1,1)
+            ...         return actions, {}
             ...
             >>> # given an observation_space: gym.spaces.Discrete with n=100
             >>> # and an action_space: gym.spaces.Discrete with n=5
@@ -69,30 +70,32 @@ class TabularMixin:
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: Mapping[str, torch.Tensor]
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
-        :return: Action to be taken by the agent given the state of the environment.
-                 The sequence's components are the computed actions and None for the last two components
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is ``None``. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
 
         Example::
 
             >>> # given a batch of sample states with shape (1, 100)
-            >>> output = model.act({"states": states})
-            >>> print(output[0], output[1], output[2])
-            tensor([[3]], device='cuda:0') None None
+            >>> actions, _, outputs = model.act({"states": states})
+            >>> print(actions[0], outputs)
+            tensor([[3]], device='cuda:0') {}
         """
-        actions = self.compute(inputs, role)
-        return actions, None, None
+        actions, outputs = self.compute(inputs, role)
+        return actions, None, outputs
 
     def table(self) -> torch.Tensor:
         """Return the Q-table

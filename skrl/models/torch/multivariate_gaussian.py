@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence
+from typing import Union, Mapping, Tuple, Any
 
 import gym
 import gymnasium
@@ -48,7 +48,7 @@ class MultivariateGaussianMixin:
             ...         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
             ...
             ...     def compute(self, inputs, role):
-            ...         return self.net(inputs["states"]), self.log_std_parameter
+            ...         return self.net(inputs["states"]), self.log_std_parameter, {}
             ...
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
@@ -97,30 +97,34 @@ class MultivariateGaussianMixin:
             self._mg_distribution = {}
         self._mg_distribution[role] = None
 
-    def act(self, inputs: Mapping[str, torch.Tensor], role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: Mapping[str, torch.Tensor]
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
-        :return: Action to be taken by the agent given the state of the environment.
-                 The sequence's components are the actions, the log of the probability density function and mean actions
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function.
+                 The third component is a dictionary containing the mean actions ``"mean_actions"``
+                 and extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
 
         Example::
 
             >>> # given a batch of sample states with shape (4096, 60)
-            >>> action, log_prob, mean_action = model.act({"states": states})
-            >>> print(action.shape, log_prob.shape, mean_action.shape)
+            >>> actions, log_prob, outputs = model.act({"states": states})
+            >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(inputs, role)
+        mean_actions, log_std, outputs = self.compute(inputs, role)
 
         # clamp log standard deviations
         if self._mg_clip_log_std[role] if role in self._mg_clip_log_std else self._mg_clip_log_std[""]:
@@ -129,11 +133,11 @@ class MultivariateGaussianMixin:
                                   self._mg_log_std_max[role] if role in self._mg_log_std_max else self._mg_log_std_max[""])
 
         self._mg_log_std[role] = log_std
-        self._mg_num_samples[role] = actions_mean.shape[0]
+        self._mg_num_samples[role] = mean_actions.shape[0]
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        self._mg_distribution[role] = MultivariateNormal(actions_mean, scale_tril=covariance)
+        self._mg_distribution[role] = MultivariateNormal(mean_actions, scale_tril=covariance)
 
         # sample using the reparameterization trick
         actions = self._mg_distribution[role].rsample()
@@ -150,7 +154,8 @@ class MultivariateGaussianMixin:
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
-        return actions, log_prob, actions_mean
+        outputs["mean_actions"] = mean_actions
+        return actions, log_prob, outputs
 
     def get_entropy(self, role: str = "") -> torch.Tensor:
         """Compute and return the entropy of the model

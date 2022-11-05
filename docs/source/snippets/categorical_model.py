@@ -15,10 +15,10 @@ class MLP(CategoricalMixin, Model):
         self.linear_layer_2 = nn.Linear(64, 32)
         self.output_layer = nn.Linear(32, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return self.output_layer(x)
+        return self.output_layer(x), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
@@ -59,9 +59,9 @@ class CNN(CategoricalMixin, Model):
                                  nn.Tanh(),
                                  nn.Linear(32, self.num_actions))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        return self.net(states.permute(0, 3, 1, 2))
+        return self.net(inputs["states"].permute(0, 3, 1, 2)), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)

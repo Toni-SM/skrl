@@ -27,18 +27,18 @@ class SharedModel(GaussianMixin, DeterministicMixin, Model):
         self.value_layer = nn.Linear(32, 1)
 
     # override the .act(...) method to disambiguate its call
-    def act(self, states, taken_actions, role):
+    def act(self, inputs, role):
         if role == "policy":
-            return GaussianMixin.act(self, states, taken_actions, role)
+            return GaussianMixin.act(self, inputs, role)
         elif role == "value":
-            return DeterministicMixin.act(self, states, taken_actions, role)
+            return DeterministicMixin.act(self, inputs, role)
 
     # forward the input to compute model output according to the specified role
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         if role == "policy":
-            return self.mean_layer(self.net(states)), self.log_std_parameter
+            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
         elif role == "value":
-            return self.value_layer(self.net(states))
+            return self.value_layer(self.net(inputs["states"])), {}
 
 
 # instantiate the shared model and pass the same instance to the other key

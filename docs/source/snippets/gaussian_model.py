@@ -20,11 +20,11 @@ class MLP(GaussianMixin, Model):
 
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
         x = F.relu(self.linear_layer_3(x))
-        return torch.tanh(self.mean_action_layer(x)), self.log_std_parameter
+        return torch.tanh(self.mean_action_layer(x)), self.log_std_parameter, {}
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = MLP(observation_space=env.observation_space,
@@ -73,9 +73,9 @@ class CNN(GaussianMixin, Model):
 
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        return self.net(states.permute(0, 3, 1, 2)), self.log_std_parameter
+        return self.net(inputs["states"].permute(0, 3, 1, 2)), self.log_std_parameter, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)

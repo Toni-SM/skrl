@@ -17,8 +17,8 @@ class MLP(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(torch.cat([states, taken_actions], dim=1))
+    def compute(self, inputs, role):
+        return self.net(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
@@ -60,10 +60,10 @@ class CNN(DeterministicMixin, Model):
                                  nn.Tanh(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        x = self.features_extractor(states.permute(0, 3, 1, 2))
-        return self.net(torch.cat([x, taken_actions], dim=1))
+        x = self.features_extractor(inputs["states"].permute(0, 3, 1, 2))
+        return self.net(torch.cat([x, inputs["taken_actions"]], dim=1)), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)

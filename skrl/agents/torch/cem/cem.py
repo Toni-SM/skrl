@@ -276,7 +276,8 @@ class CEM(Agent):
             elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
 
         # compute scores for the elite states
-        scores = self.policy.act({"states": elite_states}, role="policy")[2]
+        _, _, outputs = self.policy.act({"states": elite_states}, role="policy")
+        scores = outputs["net_output"]
 
         # compute policy loss
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))

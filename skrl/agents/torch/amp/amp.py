@@ -274,10 +274,10 @@ class AMP(Agent):
             return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act({"states": states}, role="policy")
+        actions, log_prob, outputs = self.policy.act({"states": states}, role="policy")
         self._current_log_prob = log_prob
 
-        return actions, log_prob, actions_mean
+        return actions, log_prob, outputs
 
     def record_transition(self,
                           states: torch.Tensor,

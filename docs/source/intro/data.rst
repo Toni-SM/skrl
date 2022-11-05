@@ -263,8 +263,8 @@ The following code snippets show how to load the checkpoints through the instant
                                              nn.ReLU(),
                                              nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
             # Instantiate the model
             policy = Policy(env.observation_space, env.action_space, env.device, clip_actions=True)
@@ -322,8 +322,8 @@ The following code snippets show how to migrate checkpoints from other libraries
                                              nn.ReLU(),
                                              nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
             # Instantiate the model
             policy = Policy(env.observation_space, env.action_space, env.device, clip_actions=True)

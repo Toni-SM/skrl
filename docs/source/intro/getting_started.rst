@@ -281,8 +281,8 @@ The following code snippets show how to define a model, based on the concept of 
                                             nn.ELU(),
                                             nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
     .. tab:: Gaussian
 
@@ -315,8 +315,8 @@ The following code snippets show how to define a model, based on the concept of 
                                              nn.Linear(32, self.num_actions))
                     self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states), self.log_std_parameter
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), self.log_std_parameter, {}
 
     .. tab:: Multivariate Gaussian
 
@@ -349,8 +349,8 @@ The following code snippets show how to define a model, based on the concept of 
                                              nn.Linear(32, self.num_actions))
                     self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states), self.log_std_parameter
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), self.log_std_parameter, {}
 
     .. tab:: Deterministic
 
@@ -381,8 +381,8 @@ The following code snippets show how to define a model, based on the concept of 
                                              nn.ELU(),
                                              nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
     .. tab:: Tabular
 
@@ -400,9 +400,10 @@ The following code snippets show how to define a model, based on the concept of 
                     self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
                                             dtype=torch.float32, device=self.device)
 
-                def compute(self, states, taken_actions, role):
-                    actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states],
+                def compute(self, inputs, role):
+                    actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
                                            dim=-1, keepdim=True).view(-1,1)
+                    return actions, {}
 
 Models must be collected in a dictionary and passed to the agent constructor during its instantiation under the argument :literal:`models`. The dictionary keys are specific to each agent. Visit their respective documentation for more details (under *Spaces and models* section). For example, the PPO agent requires the policy and value models as shown below:
 

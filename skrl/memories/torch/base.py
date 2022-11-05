@@ -55,6 +55,7 @@ class Memory:
 
         self.tensors = {}
         self.tensors_view = {}
+        self.tensors_keep_dimensions = {}
 
         # exporting data
         self.export = export
@@ -75,34 +76,42 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
+    def _get_space_size(self,
+                        space: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                        keep_dimensions: bool = False) -> Union[Tuple, int]:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
         :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
+        :param keep_dimensions: Whether or not to keep the space dimensions (default: False)
+        :type keep_dimensions: bool
 
         :raises ValueError: If the space is not supported
 
-        :return: Size of the space data
-        :rtype: Space size (number of elements)
+        :return: Size of the space. If keep_dimensions is True, the space size will be a tuple
+        :rtype: int or tuple of int
         """
         if type(space) in [int, float]:
-            return int(space)
+            return (int(space),) if keep_dimensions else int(space)
         elif type(space) in [tuple, list]:
-            return np.prod(space)
+            return tuple(space) if keep_dimensions else np.prod(space)
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
-                return 1
+                return (1,) if keep_dimensions else 1
             elif issubclass(type(space), gym.spaces.Box):
-                return np.prod(space.shape)
+                return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
+                if keep_dimensions:
+                    raise ValueError("keep_dimensions=True cannot be used with Dict spaces")
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         elif issubclass(type(space), gymnasium.Space):
             if issubclass(type(space), gymnasium.spaces.Discrete):
-                return 1
+                return (1,) if keep_dimensions else 1
             elif issubclass(type(space), gymnasium.spaces.Box):
-                return np.prod(space.shape)
+                return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
             elif issubclass(type(space), gymnasium.spaces.Dict):
+                if keep_dimensions:
+                    raise ValueError("keep_dimensions=True cannot be used with Dict spaces")
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         raise ValueError("Space type {} not supported".format(type(space)))
 
@@ -153,7 +162,8 @@ class Memory:
     def create_tensor(self,
                       name: str,
                       size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
-                      dtype: Optional[torch.dtype] = None) -> bool:
+                      dtype: Optional[torch.dtype] = None,
+                      keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).
@@ -162,11 +172,13 @@ class Memory:
         :param name: Tensor name (the name has to follow the python PEP 8 style)
         :type name: str
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for collections or gym/gymnasium spaces types
+                     The product of the elements will be computed for sequences or gym/gymnasium spaces
         :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
         :param dtype: Data type (torch.dtype).
                       If None, the global default torch data type will be used (default)
         :type dtype: torch.dtype or None, optional
+        :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: False)
+        :type keep_dimensions: bool
 
         :raises ValueError: The tensor name exists already but the size or dtype are different
 
@@ -174,7 +186,7 @@ class Memory:
         :rtype: bool
         """
         # compute data size
-        size = self._get_space_size(size)
+        size = self._get_space_size(size, keep_dimensions)
         # check dtype and size if the tensor exists
         if name in self.tensors:
             tensor = self.tensors[name]
@@ -184,9 +196,12 @@ class Memory:
                 raise ValueError("The dtype of the tensor {} ({}) doesn't match the existing one ({})".format(name, dtype, tensor.dtype))
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
-        setattr(self, "_tensor_{}".format(name), torch.zeros((self.memory_size, self.num_envs, size), device=self.device, dtype=dtype))
+        tensor_shape = (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
+        view_shape = (-1, *size) if keep_dimensions else (-1, size)
+        setattr(self, "_tensor_{}".format(name), torch.zeros(tensor_shape, device=self.device, dtype=dtype))
         self.tensors[name] = getattr(self, "_tensor_{}".format(name))
-        self.tensors_view[name] = self.tensors[name].view(-1, self.tensors[name].size(-1))
+        self.tensors_view[name] = self.tensors[name].view(*view_shape)
+        self.tensors_keep_dimensions[name] = keep_dimensions
         # fill the tensors (float tensors) with NaN
         for tensor in self.tensors.values():
             if torch.is_floating_point(tensor):

@@ -197,15 +197,15 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                                             output_scale=metadata["output_scale"])
             self.log_std_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(self, metadata["output_shape"])))
 
-        def compute(self, states, taken_actions=None, role=""):
+        def compute(self, inputs, role=""):
             if self.instantiator_input_type == 0:
-                output = self.net(states)
+                output = self.net(inputs["states"])
             elif self.instantiator_input_type == -1:
-                output = self.net(taken_actions)
+                output = self.net(inputs["taken_actions"])
             elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((states, taken_actions), dim=1))
+                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
 
-            return output * self.instantiator_output_scale, self.log_std_parameter
+            return output * self.instantiator_output_scale, self.log_std_parameter, {}
 
     metadata = {"input_shape": input_shape,
                 "hiddens": hiddens,
@@ -289,15 +289,15 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
                                             output_scale=metadata["output_scale"])
             self.log_std_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(self, metadata["output_shape"])))
 
-        def compute(self, states, taken_actions=None, role=""):
+        def compute(self, inputs, role=""):
             if self.instantiator_input_type == 0:
-                output = self.net(states)
+                output = self.net(inputs["states"])
             elif self.instantiator_input_type == -1:
-                output = self.net(taken_actions)
+                output = self.net(inputs["taken_actions"])
             elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((states, taken_actions), dim=1))
+                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
 
-            return output * self.instantiator_output_scale, self.log_std_parameter
+            return output * self.instantiator_output_scale, self.log_std_parameter, {}
 
     metadata = {"input_shape": input_shape,
                 "hiddens": hiddens,
@@ -370,15 +370,15 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                                             output_activation=metadata["output_activation"],
                                             output_scale=metadata["output_scale"])
 
-        def compute(self, states, taken_actions=None, role=""):
+        def compute(self, inputs, role=""):
             if self.instantiator_input_type == 0:
-                output = self.net(states)
+                output = self.net(inputs["states"])
             elif self.instantiator_input_type == -1:
-                output = self.net(taken_actions)
+                output = self.net(inputs["taken_actions"])
             elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((states, taken_actions), dim=1))
+                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
 
-            return output * self.instantiator_output_scale
+            return output * self.instantiator_output_scale, {}
 
     metadata = {"input_shape": input_shape,
                 "hiddens": hiddens,
@@ -445,15 +445,15 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                                             output_shape=metadata["output_shape"],
                                             output_activation=metadata["output_activation"])
 
-        def compute(self, states, taken_actions=None, role=""):
+        def compute(self, inputs, role=""):
             if self.instantiator_input_type == 0:
-                output = self.net(states)
+                output = self.net(inputs["states"])
             elif self.instantiator_input_type == -1:
-                output = self.net(taken_actions)
+                output = self.net(inputs["taken_actions"])
             elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((states, taken_actions), dim=1))
+                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
 
-            return output
+            return output, {}
 
     metadata = {"input_shape": input_shape,
                 "hiddens": hiddens,

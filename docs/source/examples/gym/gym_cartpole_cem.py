@@ -22,10 +22,10 @@ class Policy(CategoricalMixin, Model):
         self.linear_layer_2 = nn.Linear(64, 64)
         self.output_layer = nn.Linear(64, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return self.output_layer(x)
+        return self.output_layer(x), {}
 
 
 # Load and wrap the Gym environment.

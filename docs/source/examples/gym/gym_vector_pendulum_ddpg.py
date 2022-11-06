@@ -25,10 +25,10 @@ class DeterministicActor(DeterministicMixin, Model):
         self.linear_layer_2 = nn.Linear(400, 300)
         self.action_layer = nn.Linear(300, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v1 action_space is -2 to 2
+        return 2 * torch.tanh(self.action_layer(x)), {}  # Pendulum-v1 action_space is -2 to 2
 
 class DeterministicCritic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -39,10 +39,10 @@ class DeterministicCritic(DeterministicMixin, Model):
         self.linear_layer_2 = nn.Linear(400, 300)
         self.linear_layer_3 = nn.Linear(300, 1)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(torch.cat([states, taken_actions], dim=1)))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)))
         x = F.relu(self.linear_layer_2(x))
-        return self.linear_layer_3(x)
+        return self.linear_layer_3(x), {}
 
 
 # Load and wrap the Gym environment.

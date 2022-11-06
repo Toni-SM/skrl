@@ -19,15 +19,15 @@ class EpilonGreedyPolicy(TabularMixin, Model):
         self.q_table = torch.ones((num_envs, self.num_observations, self.num_actions),
                                   dtype=torch.float32, device=self.device)
 
-    def compute(self, states, taken_actions, role):
-        actions = torch.argmax(self.q_table[torch.arange(self.num_envs).view(-1, 1), states],
+    def compute(self, inputs, role):
+        actions = torch.argmax(self.q_table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
                                dim=-1, keepdim=True).view(-1,1)
 
         # choose random actions for exploration according to epsilon
-        indexes = (torch.rand(states.shape[0], device=self.device) < self.epsilon).nonzero().view(-1)
+        indexes = (torch.rand(inputs["states"].shape[0], device=self.device) < self.epsilon).nonzero().view(-1)
         if indexes.numel():
             actions[indexes] = torch.randint(self.num_actions, (indexes.numel(), 1), device=self.device)
-        return actions
+        return actions, {}
 
 
 # Load and wrap the Gym environment.

@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Support for Gymnasium interface
 
 ### Changed
+- Forward model inputs as a Python dictionary [**breaking change**]
+- Returns a Python dictionary with extra output values in model calls [**breaking change**]
 - Adopt the implementation of `terminated` and `truncated` over `done` for all environments
 
 ### Fixed

@@ -34,8 +34,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -48,8 +48,8 @@ class Value(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the Isaac Gym environment

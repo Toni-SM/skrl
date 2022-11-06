@@ -32,8 +32,8 @@ class StochasticActor(GaussianMixin, Model):
                                  nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class DeterministicActor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -46,8 +46,8 @@ class DeterministicActor(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -60,8 +60,8 @@ class Critic(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(torch.cat([states, taken_actions], dim=1))
+    def compute(self, inputs, role):
+        return self.net(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)), {}
 
 
 if __name__ == '__main__':

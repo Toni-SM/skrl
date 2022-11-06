@@ -39,11 +39,11 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         # view (samples, width * height * channels) -> (samples, width, height, channels)
         # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        x = self.net(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
-        return 10 * torch.tanh(x), self.log_std_parameter   # JetBotEnv action_space is -10 to 10
+        x = self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
+        return 10 * torch.tanh(x), self.log_std_parameter, {}   # JetBotEnv action_space is -10 to 10
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -67,10 +67,10 @@ class Value(DeterministicMixin, Model):
                                  nn.Tanh(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         # view (samples, width * height * channels) -> (samples, width, height, channels)
         # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        return self.net(states.view(-1, *self.observation_space.shape).permute(0, 3, 1, 2))
+        return self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), {}
 
 
 # Load and wrap the JetBot environment (a subclass of Gym)

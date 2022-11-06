@@ -40,7 +40,9 @@ class StochasticActor(GaussianMixin, Model):
 
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
+        states = inputs["states"]
+
         # The dm_control.manipulation tasks have as observation/state spec a `collections.OrderedDict` object as follows:
         # OrderedDict([('front_close', BoundedArray(shape=(1, 84, 84, 3), dtype=dtype('uint8'), name='front_close', minimum=0, maximum=255)),
         #              ('jaco_arm/joints_pos', Array(shape=(1, 6, 2), dtype=dtype('float64'), name='jaco_arm/joints_pos')),
@@ -64,9 +66,9 @@ class StochasticActor(GaussianMixin, Model):
         # The `spaces` parameter is a flat tensor of the flattened observation/state space with shape (batch_size, size_of_flat_space).
         # Using the model's method `tensor_to_space` we can convert the flattened tensor to the original space.
         # https://skrl.readthedocs.io/en/latest/modules/skrl.models.base_class.html#skrl.models.torch.base.Model.tensor_to_space
-        input = self.tensor_to_space(states, self.observation_space)
+        space = self.tensor_to_space(states, self.observation_space)
 
-        # For this case, the `input` variable is a Python dictionary with the following structure and shapes:
+        # For this case, the `space` variable is a Python dictionary with the following structure and shapes:
         # {'front_close': torch.Tensor(shape=[batch_size, 1, 84, 84, 3], dtype=torch.float32),
         #  'jaco_arm/jaco_hand/joints_pos': torch.Tensor(shape=[batch_size, 1, 3], dtype=torch.float32)
         #  'jaco_arm/jaco_hand/joints_vel': torch.Tensor(shape=[batch_size, 1, 3], dtype=torch.float32)
@@ -77,11 +79,13 @@ class StochasticActor(GaussianMixin, Model):
         #  'jaco_arm/joints_vel': torch.Tensor(shape=[batch_size, 1, 6], dtype=torch.float32)}
 
         # permute and normalize the images (samples, width, height, channels) -> (samples, channels, width, height)
-        features = self.features_extractor(input['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
+        features = self.features_extractor(space['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
 
-        return torch.tanh(self.net(torch.cat([features,
-                                              input["jaco_arm/joints_pos"].view(states.shape[0], -1),
-                                              input["jaco_arm/joints_vel"].view(states.shape[0], -1)], dim=-1))), self.log_std_parameter
+        mean_actions = torch.tanh(self.net(torch.cat([features,
+                                                      space["jaco_arm/joints_pos"].view(states.shape[0], -1),
+                                                      space["jaco_arm/joints_vel"].view(states.shape[0], -1)], dim=-1)))
+
+        return mean_actions, self.log_std_parameter, {}
 
 class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -106,18 +110,20 @@ class Critic(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
+        states = inputs["states"]
+
         # map the observations/states to the original space.
         # See the explanation above (StochasticActor.compute)
-        input = self.tensor_to_space(states, self.observation_space)
+        space = self.tensor_to_space(states, self.observation_space)
 
         # permute and normalize the images (samples, width, height, channels) -> (samples, channels, width, height)
-        features = self.features_extractor(input['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
+        features = self.features_extractor(space['front_close'][:,0].permute(0, 3, 1, 2) / 255.0)
 
         return self.net(torch.cat([features,
-                                   input["jaco_arm/joints_pos"].view(states.shape[0], -1),
-                                   input["jaco_arm/joints_vel"].view(states.shape[0], -1),
-                                   taken_actions], dim=-1))
+                                   space["jaco_arm/joints_pos"].view(states.shape[0], -1),
+                                   space["jaco_arm/joints_vel"].view(states.shape[0], -1),
+                                   inputs["taken_actions"]], dim=-1)), {}
 
 
 # Load and wrap the DeepMind environment

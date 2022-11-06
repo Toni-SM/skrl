@@ -26,10 +26,10 @@ class DeterministicActor(DeterministicMixin, Model):
         self.linear_layer_2 = nn.Linear(400, 300)
         self.action_layer = nn.Linear(300, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return torch.tanh(self.action_layer(x))
+        return torch.tanh(self.action_layer(x)), {}
 
 class DeterministicCritic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -42,8 +42,8 @@ class DeterministicCritic(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(300, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(torch.cat([states, taken_actions], dim=1))
+    def compute(self, inputs, role):
+        return self.net(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)), {}
 
 
 # Load and wrap the DeepMind environment

@@ -21,10 +21,10 @@ class DeterministicActor(DeterministicMixin, Model):
         self.linear_layer_2 = nn.Linear(400, 300)
         self.action_layer = nn.Linear(300, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return 2 * torch.tanh(self.action_layer(x))  # Pendulum-v1 action_space is -2 to 2
+        return 2 * torch.tanh(self.action_layer(x)), {}  # Pendulum-v1 action_space is -2 to 2
 
 
 # Load and wrap the Gymnasium environment.

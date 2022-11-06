@@ -279,7 +279,7 @@ The following components or practices are exemplified (highlighted):
 
                 .. literalinclude:: ../examples/deepmind/dm_manipulation_stack_sac.py
                     :language: python
-                    :emphasize-lines: 67, 80, 83-84, 112, 115, 118-119
+                    :emphasize-lines: 69, 82, 85-86, 118, 121, 124-125
 
 .. raw:: html
 

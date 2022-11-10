@@ -288,12 +288,22 @@ class Model(torch.nn.Module):
 
         _update_weights(self.children(), method_name, args, kwargs)
 
-    def forward(self):
+    def forward(self, *args, **kwargs) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
-        :raises NotImplementedError: Child class must ``.act()`` and ``.compute()`` methods
+        This method calls the ``.act()`` method and returns its result
+
+        :param args: Positional arguments passed to the called method
+        :type args: tuple, optional
+        :param kwargs: Key-value arguments passed to the called method
+        :type kwargs: dict, optional
+
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
-        raise NotImplementedError("Implement .act() and .compute() methods instead of this")
+        return self.act(*args, **kwargs)
 
     def compute(self,
                 inputs: Mapping[str, Union[torch.Tensor, Any]],

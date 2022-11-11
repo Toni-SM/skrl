@@ -288,10 +288,34 @@ class Model(torch.nn.Module):
 
         _update_weights(self.children(), method_name, args, kwargs)
 
+    def get_specification(self) -> Mapping[str, Any]:
+        """Returns the specification of the model
+
+        The following keys are used by the agents for initialization:
+
+        - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells
+
+          - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
+            There must be as many tuples as there are states in the recurrent layer/cell. E.g., LSTM has 2 states (hidden and cell).
+
+        :return: Dictionary containing advanced specification of the model
+        :rtype: dict
+
+        Example::
+
+            # model with a LSTM layer.
+            # - number of layers: 1
+            # - number of environments: 4
+            # - number of features in the RNN state: 64
+            >>> model.get_specification()
+            {'rnn': {'sizes': [(1, 4, 64), (1, 4, 64)]}}
+        """
+        return {}
+
     def forward(self, *args, **kwargs) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
-        This method calls the ``.act()`` method and returns its result
+        This method calls the ``.act()`` method and returns its outputs
 
         :param args: Positional arguments passed to the called method
         :type args: tuple, optional

@@ -56,7 +56,6 @@ class Memory:
         self.tensors = {}
         self.tensors_view = {}
         self.tensors_keep_dimensions = {}
-        self.tensors_common_for_all_envs = {}
 
         # exporting data
         self.export = export
@@ -164,8 +163,7 @@ class Memory:
                       name: str,
                       size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
                       dtype: Optional[torch.dtype] = None,
-                      keep_dimensions: bool = False,
-                      common_for_all_envs: bool = False) -> bool:
+                      keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).
@@ -181,9 +179,6 @@ class Memory:
         :type dtype: torch.dtype or None, optional
         :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: False)
         :type keep_dimensions: bool
-        :param common_for_all_envs: Whether or not the tensor should be defined for all environments (default: False).
-                                    If True, the 2nd tensor dimension (number of environment) will be suppressed
-        :type common_for_all_all: bool
 
         :raises ValueError: The tensor name exists already but the size or dtype are different
 
@@ -201,10 +196,7 @@ class Memory:
                 raise ValueError("The dtype of the tensor {} ({}) doesn't match the existing one ({})".format(name, dtype, tensor.dtype))
             return False
         # define tensor shape
-        if common_for_all_envs:
-            tensor_shape = (self.memory_size, *size) if keep_dimensions else (self.memory_size, size)
-        else:
-            tensor_shape = (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
+        tensor_shape = (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
         view_shape = (-1, *size) if keep_dimensions else (-1, size)
         # create tensor (_tensor_<name>) and add it to the internal storage
         setattr(self, "_tensor_{}".format(name), torch.zeros(tensor_shape, device=self.device, dtype=dtype))
@@ -212,7 +204,6 @@ class Memory:
         self.tensors[name] = getattr(self, "_tensor_{}".format(name))
         self.tensors_view[name] = self.tensors[name].view(*view_shape)
         self.tensors_keep_dimensions[name] = keep_dimensions
-        self.tensors_common_for_all_envs[name] = common_for_all_envs
         # fill the tensors (float tensors) with NaN
         for tensor in self.tensors.values():
             if torch.is_floating_point(tensor):
@@ -261,21 +252,21 @@ class Memory:
             raise ValueError("No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)")
 
         # dimensions and shapes of the tensors (assume all tensors have the dimensions of the first tensor)
-        tmp = tensors[next(iter(tensors))]
+        tmp = tensors.get("states", tensors[next(iter(tensors))])  # ask for states first
         dim, shape = tmp.ndim, tmp.shape
 
-        # multi environment (number of environments less than num_envs)
-        if dim == 2 and shape[0] < self.num_envs:
-            for name, tensor in tensors.items():
-                if name in self.tensors:
-                    self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
-            self.env_index += tensor.shape[0]
         # multi environment (number of environments equals num_envs)
-        elif dim == 2 and shape[0] == self.num_envs:
+        if dim == 2 and shape[0] == self.num_envs:
             for name, tensor in tensors.items():
                 if name in self.tensors:
                     self.tensors[name][self.memory_index].copy_(tensor)
             self.memory_index += 1
+        # multi environment (number of environments less than num_envs)
+        elif dim == 2 and shape[0] < self.num_envs:
+            for name, tensor in tensors.items():
+                if name in self.tensors:
+                    self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
+            self.env_index += tensor.shape[0]
         # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
         elif dim == 2 and self.num_envs == 1:
             for name, tensor in tensors.items():
@@ -360,12 +351,9 @@ class Memory:
         :rtype: list of torch.Tensor list
         """
         if mini_batches > 1:
-            indexes_0 = np.arange(self.memory_size)  # common for all environments
-            indexes_1 = np.arange(self.memory_size * self.num_envs)  # per each environment
-            batches_0 = BatchSampler(indexes_0, batch_size=len(indexes_0) // mini_batches, drop_last=True)
-            batches_1 = BatchSampler(indexes_1, batch_size=len(indexes_1) // mini_batches, drop_last=True)
-            return [[self.tensors_view[name][b0 if self.tensors_common_for_all_envs[name] else b1] for name in names] \
-                for b0, b1 in zip(batches_0, batches_1)]
+            indexes = np.arange(self.memory_size * self.num_envs)
+            batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
+            return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name] for name in names]]
 
     def save(self, directory: str = "", format: str = "pt") -> None:
@@ -399,7 +387,7 @@ class Memory:
             np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
         # comma-separated values
         elif format == "csv":
-            # open csv writer
+            # open csv writer # TODO: support keeping the dimensions
             with open(memory_path, "a") as file:
                 writer = csv.writer(file)
                 names = self.get_tensor_names()

@@ -10,8 +10,9 @@ from skrl.trainers.torch import Trainer       # from . import Trainer
 
 
 CUSTOM_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
 }
 
 

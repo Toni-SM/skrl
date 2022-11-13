@@ -37,7 +37,7 @@ Configuration
 
 .. literalinclude:: ../../../skrl/trainers/torch/parallel.py
     :language: python
-    :lines: 15-18
+    :lines: 15-19
     :linenos:
 
 API

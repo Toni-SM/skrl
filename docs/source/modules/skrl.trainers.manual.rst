@@ -29,7 +29,7 @@ Configuration
 
 .. literalinclude:: ../../../skrl/trainers/torch/manual.py
     :language: python
-    :lines: 14-17
+    :lines: 14-18
     :linenos:
 
 API

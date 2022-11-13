@@ -13,8 +13,9 @@ from . import Trainer
 
 
 MANUAL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
 }
 
 
@@ -76,7 +77,7 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
         self._progress.update(n=1)
 
         # set running mode
@@ -176,7 +177,7 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
         self._progress.update(n=1)
 
         # set running mode

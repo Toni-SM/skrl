@@ -13,8 +13,9 @@ from . import Trainer
 
 
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
 }
 
 
@@ -195,7 +196,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -330,7 +331,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # compute actions
             with torch.no_grad():

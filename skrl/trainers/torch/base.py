@@ -55,6 +55,7 @@ class Trainer:
         # get configuration
         self.timesteps = self.cfg.get("timesteps", 0)
         self.headless = self.cfg.get("headless", False)
+        self.disable_progressbar = self.cfg.get("disable_progressbar", False)
 
         self.initial_timestep = 0
 
@@ -153,7 +154,7 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -209,7 +210,7 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # compute actions
             with torch.no_grad():

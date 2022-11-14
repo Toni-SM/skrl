@@ -187,6 +187,7 @@ class PPO(Agent):
         self._rnn_tensors_names = []  # used for sampling during training
         self._rnn_final_states = {"policy": [], "value": []}
         self._rnn_initial_states = {"policy": [], "value": []}
+        self._rnn_sequence_length = self.policy.get_specification().get("rnn", {}).get("sequence_length", 1)
 
         # policy
         for i, size in enumerate(self.policy.get_specification().get("rnn", {}).get("sizes", [])):
@@ -414,8 +415,8 @@ class PPO(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
-        sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
+        sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
 
         rnn_policy, rnn_value = {}, {}
 

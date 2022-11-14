@@ -44,7 +44,11 @@ class RandomMemory(Memory):
 
         self._replacement = replacement
 
-    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[torch.Tensor]]:
+    def sample(self,
+               names: Tuple[str],
+               batch_size: int,
+               mini_batches: int = 1,
+               sequence_length: int = 1) -> List[List[torch.Tensor]]:
         """Sample a batch from memory randomly
 
         :param names: Tensors names from which to obtain the samples
@@ -53,17 +57,30 @@ class RandomMemory(Memory):
         :type batch_size: int
         :param mini_batches: Number of mini-batches to sample (default: 1)
         :type mini_batches: int, optional
+        :param sequence_length: Length of each sequence (default: 1)
+        :type sequence_length: int, optional
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
         :rtype: list of torch.Tensor list
         """
+        # compute valid memory sizes
+        size = len(self)
+        if sequence_length > 1:
+            sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
+            size -= sequence_indexes[-1].item()
+
         # generate random indexes
         if self._replacement:
-            indexes = torch.randint(0, len(self), (batch_size,), device=self.device)
+            indexes = torch.randint(0, size, (batch_size,))
         else:
             # details about the random sampling performance can be found here:
             # https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/19
-            indexes = torch.randperm(len(self), dtype=torch.long, device=self.device)[:batch_size]
+            indexes = torch.randperm(size, dtype=torch.long)[:batch_size]
 
+        # generate sequence indexes
+        if sequence_length > 1:
+            indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.view(-1, 1)).view(-1)
+
+        self.sampling_indexes = indexes
         return self.sample_by_index(names=names, indexes=indexes, mini_batches=mini_batches)

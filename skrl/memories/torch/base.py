@@ -57,6 +57,8 @@ class Memory:
         self.tensors_view = {}
         self.tensors_keep_dimensions = {}
 
+        self.sampling_indexes = None
+
         # exporting data
         self.export = export
         self.export_format = export_format
@@ -301,7 +303,11 @@ class Memory:
             if self.export:
                 self.save(directory=self.export_directory, format=self.export_format)
 
-    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[torch.Tensor]]:
+    def sample(self,
+               names: Tuple[str],
+               batch_size: int,
+               mini_batches: int = 1,
+               sequence_length: int = 1) -> List[List[torch.Tensor]]:
         """Data sampling method to be implemented by the inheriting classes
 
         :param names: Tensors names from which to obtain the samples
@@ -310,6 +316,8 @@ class Memory:
         :type batch_size: int
         :param mini_batches: Number of mini-batches to sample (default: 1)
         :type mini_batches: int, optional
+        :param sequence_length: Length of each sequence (default: 1)
+        :type sequence_length: int, optional
 
         :raises NotImplementedError: The method has not been implemented
 
@@ -355,6 +363,14 @@ class Memory:
             batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
             return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name] for name in names]]
+
+    def get_sampling_indexes(self) -> Union[tuple, np.ndarray, torch.Tensor]:
+        """Get the last indexes used for sampling
+
+        :return: Last sampling indexes
+        :rtype: tuple or list, numpy.ndarray or torch.Tensor
+        """
+        return self.sampling_indexes
 
     def save(self, directory: str = "", format: str = "pt") -> None:
         """Save the memory to a file

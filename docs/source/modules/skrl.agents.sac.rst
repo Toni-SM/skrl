@@ -32,6 +32,7 @@ Algorithm implementation
 |     :green:`# optimization step (critic)`
 |     reset :math:`\text{optimizer}_\phi`
 |     :math:`\nabla_{\phi} L_{Q_\phi}`
+|     :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\phi`
 |     :green:`# compute policy (actor) loss`
 |     :math:`a,\; logp \leftarrow \pi_\theta(s)`
@@ -41,6 +42,7 @@ Algorithm implementation
 |     :green:`# optimization step (policy)`
 |     reset :math:`\text{optimizer}_\theta`
 |     :math:`\nabla_{\theta} L_{\pi_\theta}`
+|     :math:`\text{clip}(\lVert \nabla_{\theta} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\theta`
 |     :green:`# entropy learning`
 |     **IF** :guilabel:`learn_entropy` is enabled **THEN**
@@ -67,7 +69,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 17-53
+   :lines: 18-56
    :linenos:
 
 Spaces and models

@@ -43,6 +43,7 @@ Algorithm implementation
 |     :green:`# optimization step (critic)`
 |     reset :math:`\text{optimizer}_\phi`
 |     :math:`\nabla_{\phi} L_{Q_\phi}`
+|     :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\phi`
 |     :green:`# delayed update`
 |     **IF** it's time for the :guilabel:`policy_delay` update **THEN**
@@ -53,6 +54,7 @@ Algorithm implementation
 |         :green:`# optimization step (policy)`
 |         reset :math:`\text{optimizer}_\theta`
 |         :math:`\nabla_{\theta} L_{\mu_\theta}`
+|         :math:`\text{clip}(\lVert \nabla_{\theta} \rVert)` with :guilabel:`grad_norm_clip`
 |         step :math:`\text{optimizer}_\theta`
 |         :green:`# update target networks`
 |         :math:`\theta_{target} \leftarrow` :guilabel:`polyak` :math:`\theta + (1 \;-` :guilabel:`polyak` :math:`) \theta_{target}`
@@ -70,7 +72,7 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 16-58
+   :lines: 17-61
    :linenos:
 
 Spaces and models

@@ -180,6 +180,7 @@ class SAC(Agent):
         """Initialize the agent
         """
         super().init(trainer_cfg=trainer_cfg)
+        self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
@@ -189,7 +190,24 @@ class SAC(Agent):
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+
+        # RNN specifications
+        self._rnn = False  # flag to indicate whether RNN is available
+        self._rnn_tensors_names = []  # used for sampling during training
+        self._rnn_final_states = {"policy": []}
+        self._rnn_initial_states = {"policy": []}
+        self._rnn_sequence_length = self.policy.get_specification().get("rnn", {}).get("sequence_length", 1)
+
+        # policy
+        for i, size in enumerate(self.policy.get_specification().get("rnn", {}).get("sizes", [])):
+            self._rnn = True
+            # create tensors in memory
+            if self.memory is not None:
+                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                self._rnn_tensors_names.append(f"rnn_policy_{i}")
+            # default RNN states
+            self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -204,15 +222,20 @@ class SAC(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
-        states = self._state_preprocessor(states)
+        rnn = {"rnn": self._rnn_initial_states["policy"]} if self._rnn else {}
 
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": states}, role="policy")
+            return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         # sample stochastic actions
-        return self.policy.act({"states": states}, role="policy")
+        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+
+        if self._rnn:
+            self._rnn_final_states["policy"] = outputs.get("rnn", [])
+
+        return actions, None, outputs
 
     def record_transition(self,
                           states: torch.Tensor,
@@ -252,11 +275,27 @@ class SAC(Agent):
             if self._rewards_shaper is not None:
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
+            # package RNN states
+            rnn_states = {}
+            if self._rnn:
+                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
+
+            # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+                                    terminated=terminated, truncated=truncated, **rnn_states)
             for memory in self.secondary_memories:
                 memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                                   terminated=terminated, truncated=truncated, **rnn_states)
+
+         # update RNN states
+        if self._rnn:
+            # reset states if the episodes have ended
+            finished_episodes = terminated.nonzero(as_tuple=False)
+            if finished_episodes.numel():
+                for rnn_state in self._rnn_final_states["policy"]:
+                    rnn_state[:, finished_episodes[:, 0]] = 0
+
+            self._rnn_initial_states = self._rnn_final_states
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -277,7 +316,9 @@ class SAC(Agent):
         :type timesteps: int
         """
         if timestep >= self._learning_starts:
+            self.set_mode("train")
             self._update(timestep, timesteps)
+            self.set_mode("eval")
 
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
@@ -292,7 +333,12 @@ class SAC(Agent):
         """
         # sample a batch from memory
         sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
+            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length)[0]
+
+        rnn_policy = {}
+        if self._rnn:
+            sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
+            rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn]}
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
@@ -302,16 +348,16 @@ class SAC(Agent):
 
             # compute target values
             with torch.no_grad():
-                next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
+                next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states, **rnn_policy}, role="policy")
 
-                target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")
-                target_q2_values, _, _ = self.target_critic_2.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2")
+                target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_1")
+                target_q2_values, _, _ = self.target_critic_2.act({"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_2")
                 target_q_values = torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_1_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic_1")
-            critic_2_values, _, _ = self.critic_2.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic_2")
+            critic_1_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_1")
+            critic_2_values, _, _ = self.critic_2.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_2")
 
             critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
 
@@ -323,9 +369,9 @@ class SAC(Agent):
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
-            actions, log_prob, _ = self.policy.act({"states": sampled_states}, role="policy")
-            critic_1_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": actions}, role="critic_1")
-            critic_2_values, _, _ = self.critic_2.act({"states": sampled_states, "taken_actions": actions}, role="critic_2")
+            actions, log_prob, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
+            critic_1_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_1")
+            critic_2_values, _, _ = self.critic_2.act({"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_2")
 
             policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
 

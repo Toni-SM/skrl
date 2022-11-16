@@ -140,7 +140,12 @@ class SAC(Agent):
         if self._learn_entropy:
             self._target_entropy = self.cfg["target_entropy"]
             if self._target_entropy is None:
-                self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
+                if issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
+                    self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
+                elif issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+                    self._target_entropy = -self.action_space.n
+                else:
+                    self._target_entropy = 0
 
             self.log_entropy_coefficient = torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient).requires_grad_(True)
             self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)

@@ -5,6 +5,7 @@ import copy
 import itertools
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from ....memories.torch import Memory
@@ -30,6 +31,8 @@ TD3_DEFAULT_CONFIG = {
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
+
+    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
 
     "exploration": {
         "noise": None,              # exploration noise
@@ -138,6 +141,8 @@ class TD3(Agent):
 
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
+
+        self._grad_norm_clip = self.cfg["grad_norm_clip"]
 
         self._exploration_noise = self.cfg["exploration"]["noise"]
         self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
@@ -410,6 +415,8 @@ class TD3(Agent):
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            if self._grad_norm_clip > 0:
+                nn.utils.clip_grad_norm_(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip)
             self.critic_optimizer.step()
 
             # delayed update
@@ -425,6 +432,8 @@ class TD3(Agent):
                 # optimization step (policy)
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
+                if self._grad_norm_clip > 0:
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 self.policy_optimizer.step()
 
                 # update target networks

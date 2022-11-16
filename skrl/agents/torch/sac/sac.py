@@ -6,6 +6,7 @@ import itertools
 import numpy as np
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from ....memories.torch import Memory
@@ -31,6 +32,8 @@ SAC_DEFAULT_CONFIG = {
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
+
+    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
 
     "learn_entropy": True,          # learn entropy
     "entropy_learning_rate": 1e-3,  # entropy learning rate
@@ -129,6 +132,8 @@ class SAC(Agent):
 
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
+
+        self._grad_norm_clip = self.cfg["grad_norm_clip"]
 
         self._entropy_learning_rate = self.cfg["entropy_learning_rate"]
         self._learn_entropy = self.cfg["learn_entropy"]
@@ -313,6 +318,8 @@ class SAC(Agent):
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            if self._grad_norm_clip > 0:
+                nn.utils.clip_grad_norm_(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip)
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
@@ -325,6 +332,8 @@ class SAC(Agent):
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
+            if self._grad_norm_clip > 0:
+                nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
             self.policy_optimizer.step()
 
             # entropy learning

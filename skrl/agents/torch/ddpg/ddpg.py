@@ -4,6 +4,7 @@ import gym, gymnasium
 import copy
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from ....memories.torch import Memory
@@ -29,6 +30,8 @@ DDPG_DEFAULT_CONFIG = {
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
+
+    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
 
     "exploration": {
         "noise": None,              # exploration noise
@@ -128,6 +131,8 @@ class DDPG(Agent):
         self._random_timesteps = self.cfg["random_timesteps"]
         self._learning_starts = self.cfg["learning_starts"]
 
+        self._grad_norm_clip = self.cfg["grad_norm_clip"]
+
         self._exploration_noise = self.cfg["exploration"]["noise"]
         self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
         self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
@@ -184,11 +189,6 @@ class DDPG(Agent):
                 self._rnn_tensors_names.append(f"rnn_policy_{i}")
             # default RNN states
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
-
-        # critic
-        if self.critic is not None:
-            for i, size in enumerate(self.critic.get_specification().get("rnn", {}).get("sizes", [])):
-                self._rnn = True
 
         # clip noise bounds
         self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
@@ -381,6 +381,8 @@ class DDPG(Agent):
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            if self._grad_norm_clip > 0:
+                nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
             self.critic_optimizer.step()
 
             # compute policy (actor) loss
@@ -392,6 +394,8 @@ class DDPG(Agent):
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
+            if self._grad_norm_clip > 0:
+                nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
             self.policy_optimizer.step()
 
             # update target networks

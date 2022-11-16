@@ -162,6 +162,7 @@ class DDPG(Agent):
         """Initialize the agent
         """
         super().init(trainer_cfg=trainer_cfg)
+        self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
@@ -338,7 +339,9 @@ class DDPG(Agent):
         :type timesteps: int
         """
         if timestep >= self._learning_starts:
+            self.set_mode("train")
             self._update(timestep, timesteps)
+            self.set_mode("eval")
 
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)

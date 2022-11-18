@@ -513,7 +513,7 @@ class TRPO(Agent):
         sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches)
 
         cumulative_value_loss = 0
-        
+
         # learning epochs
         for epoch in range(self._learning_epochs):
 

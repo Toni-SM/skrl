@@ -79,38 +79,40 @@ Algorithm implementation
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
 | :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
+| :green:`# sample all from memory`
+| [[:math:`s, a, logp, A`]] :math:`\leftarrow` states, actions, log_prob, advantages
+| :green:`# compute policy loss gradient`
+| :math:`L_{\pi_\theta} \leftarrow f_{Loss}(\pi_\theta, s, a, logp, A)`
+| :math:`g \leftarrow \nabla_{\theta} L_{\pi_\theta}`
+| :math:`g_{_{flat}} \leftarrow \text{flatten}(g)`
+| :green:`# compute the search direction using the conjugate gradient algorithm`
+| :math:`search_{direction} \leftarrow f_{CG}(\pi_\theta, s, g_{_{flat}})`
+| :green:`# compute step size and full step`
+| :math:`xHx \leftarrow search_{direction} \; f_{Ax}(\pi_\theta, s, search_{direction})`
+| :math:`step_{size} \leftarrow \sqrt{\dfrac{2 \, \delta}{xHx}} \qquad` with :math:`\; \delta` as :guilabel:`max_kl_divergence`
+| :math:`\beta \leftarrow step_{size} \; search_{direction}`
+| :green:`# backtracking line search`
+| :math:`flag_{restore} \leftarrow \text{True}`
+| :math:`\pi_{\theta_{backup}} \leftarrow \pi_\theta`
+| :math:`\theta \leftarrow \text{get_parameters}(\pi_\theta)`
+| :math:`I_{expected} \leftarrow g_{_{flat}} \; \beta`
+| **FOR** :math:`\alpha \leftarrow (0.5` :guilabel:`step_fraction` :math:`)^i \;` with :math:`i = 0, 1, 2, ...` up to :guilabel:`max_backtrack_steps` **DO**
+|     :math:`\theta_{new} \leftarrow \theta + \alpha \; \beta`
+|     :math:`\pi_\theta \leftarrow \text{set_parameters}(\theta_{new})`
+|     :math:`I_{expected} \leftarrow \alpha \; I_{expected}`
+|     :math:`kl \leftarrow f_{KL}(\pi_{\theta_{backup}}, \pi_\theta, s)`
+|     :math:`L \leftarrow f_{Loss}(\pi_\theta, s, a, logp, A)`
+|     **IF** :math:`kl < \delta` **AND** :math:`\dfrac{L - L_{\pi_\theta}}{I_{expected}} >` :guilabel:`accept_ratio` **THEN**
+|         :math:`flag_{restore} \leftarrow \text{False}`
+|         **BREAK LOOP**
+| **IF** :math:`flag_{restore}` **THEN**
+|     :math:`\pi_\theta \leftarrow \pi_{\theta_{backup}}`
 | :green:`# sample mini-batches from memory`
-| [[:math:`s, a, logp, R, A`]] :math:`\leftarrow` states, actions, log_prob, returns, advantages
+| [[:math:`s, R`]] :math:`\leftarrow` states, returns
 | :green:`# learning epochs`
 | **FOR** each learning epoch up to :guilabel:`learning_epochs` **DO**
 |     :green:`# mini-batches loop`
-|     **FOR** each mini-batch [:math:`s, a, logp, R, A`] up to :guilabel:`mini_batches` **DO**
-|          :green:`# compute policy loss gradient`
-|          :math:`L_{\pi_\theta} \leftarrow f_{Loss}(\pi_\theta, s, a, logp, A)`
-|          :math:`g \leftarrow \nabla_{\theta} L_{\pi_\theta}`
-|          :math:`g_{_{flat}} \leftarrow \text{flatten}(g)`
-|          :green:`# compute the search direction using the conjugate gradient algorithm`
-|          :math:`search_{direction} \leftarrow f_{CG}(\pi_\theta, s, g_{_{flat}})`
-|          :green:`# compute step size and full step`
-|          :math:`xHx \leftarrow search_{direction} \; f_{Ax}(\pi_\theta, s, search_{direction})`
-|          :math:`step_{size} \leftarrow \sqrt{\dfrac{2 \, \delta}{xHx}} \qquad` with :math:`\; \delta` as :guilabel:`max_kl_divergence`
-|          :math:`\beta \leftarrow step_{size} \; search_{direction}`
-|          :green:`# backtracking line search`
-|          :math:`flag_{restore} \leftarrow \text{True}`
-|          :math:`\pi_{\theta_{backup}} \leftarrow \pi_\theta`
-|          :math:`\theta \leftarrow \text{get_parameters}(\pi_\theta)`
-|          :math:`I_{expected} \leftarrow g_{_{flat}} \; \beta`
-|          **FOR** :math:`\alpha \leftarrow (0.5` :guilabel:`step_fraction` :math:`)^i \;` with :math:`i = 0, 1, 2, ...` up to :guilabel:`max_backtrack_steps` **DO**
-|              :math:`\theta_{new} \leftarrow \theta + \alpha \; \beta`
-|              :math:`\pi_\theta \leftarrow \text{set_parameters}(\theta_{new})`
-|              :math:`I_{expected} \leftarrow \alpha \; I_{expected}`
-|              :math:`kl \leftarrow f_{KL}(\pi_{\theta_{backup}}, \pi_\theta, s)`
-|              :math:`L \leftarrow f_{Loss}(\pi_\theta, s, a, logp, A)`
-|              **IF** :math:`kl < \delta` **AND** :math:`\dfrac{L - L_{\pi_\theta}}{I_{expected}} >` :guilabel:`accept_ratio` **THEN**
-|                  :math:`flag_{restore} \leftarrow \text{False}`
-|                  **BREAK LOOP**
-|          **IF** :math:`flag_{restore}` **THEN**
-|              :math:`\pi_\theta \leftarrow \pi_{\theta_{backup}}`
+|     **FOR** each mini-batch [:math:`s, R`] up to :guilabel:`mini_batches` **DO**
 |          :green:`# compute value loss`
 |          :math:`V' \leftarrow V_\phi(s)`
 |          :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V')^2`

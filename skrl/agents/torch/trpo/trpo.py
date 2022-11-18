@@ -176,7 +176,8 @@ class TRPO(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-        self.tensors_names = ["states", "actions", "log_prob", "returns", "advantages"]
+            self._tensors_names_policy = ["states", "actions", "log_prob", "advantages"]
+            self._tensors_names_value = ["states", "returns"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = None
@@ -437,11 +438,11 @@ class TRPO(Agent):
             :return: KL divergence
             :rtype: torch.Tensor
             """
-            _, _, mu_1 = policy_1.act({"states": states}, role="policy")
+            mu_1 = policy_1.act({"states": states}, role="policy")[2]["mean_actions"]
             logstd_1 = policy_1.get_log_std(role="policy")
             mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
-            _, _, mu_2 = policy_2.act({"states": states}, role="policy")
+            mu_2 = policy_2.act({"states": states}, role="policy")[2]["mean_actions"]
             logstd_2 = policy_2.get_log_std(role="policy")
 
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
@@ -465,56 +466,61 @@ class TRPO(Agent):
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 
+        # sample all from memory
+        sampled_states, sampled_actions, sampled_log_prob, sampled_advantages \
+            = self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1)[0]
+
+        sampled_states = self._state_preprocessor(sampled_states, train=True)
+
+        # compute policy loss gradient
+        policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+        policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
+        flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
+
+        # compute the search direction using the conjugate gradient algorithm
+        search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data,
+                                                num_iterations=self._conjugate_gradient_steps)
+
+        # compute step size and full step
+        xHx = (search_direction * fisher_vector_product(self.policy, sampled_states, search_direction, self._damping)) \
+            .sum(0, keepdim=True)
+        step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
+        full_step = step_size * search_direction
+
+        # backtracking line search
+        restore_policy_flag = True
+        self.backup_policy.update_parameters(self.policy)
+        params = parameters_to_vector(self.policy.parameters())
+
+        expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
+
+        for alpha in [self._step_fraction * 0.5 ** i for i in range(self._max_backtrack_steps)]:
+            new_params = params + alpha * full_step
+            vector_to_parameters(new_params, self.policy.parameters())
+
+            expected_improvement *= alpha
+            kl = kl_divergence(self.backup_policy, self.policy, sampled_states)
+            loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+
+            if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:
+                restore_policy_flag = False
+                break
+
+        if restore_policy_flag:
+            self.policy.update_parameters(self.backup_policy)
+
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches)
 
-        cumulative_policy_loss = 0
         cumulative_value_loss = 0
-
+        
         # learning epochs
         for epoch in range(self._learning_epochs):
 
             # mini-batches loop
-            for sampled_states, sampled_actions, sampled_log_prob, sampled_returns, sampled_advantages in sampled_batches:
+            for sampled_states, sampled_returns in sampled_batches:
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
-
-                # compute policy loss gradient
-                policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
-                policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
-                flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
-
-                # compute the search direction using the conjugate gradient algorithm
-                search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data,
-                                                      num_iterations=self._conjugate_gradient_steps)
-
-                # compute step size and full step
-                xHx = (search_direction * fisher_vector_product(self.policy, sampled_states, search_direction, self._damping)) \
-                    .sum(0, keepdim=True)
-                step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
-                full_step = step_size * search_direction
-
-                # backtracking line search
-                restore_policy_flag = True
-                self.backup_policy.update_parameters(self.policy)
-                params = parameters_to_vector(self.policy.parameters())
-
-                expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
-
-                for alpha in [self._step_fraction * 0.5 ** i for i in range(self._max_backtrack_steps)]:
-                    new_params = params + alpha * full_step
-                    vector_to_parameters(new_params, self.policy.parameters())
-
-                    expected_improvement *= alpha
-                    kl = kl_divergence(self.backup_policy, self.policy, sampled_states)
-                    loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
-
-                    if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:
-                        restore_policy_flag = False
-                        break
-
-                if restore_policy_flag:
-                    self.policy.update_parameters(self.backup_policy)
 
                 # compute value loss
                 predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
@@ -529,7 +535,6 @@ class TRPO(Agent):
                 self.value_optimizer.step()
 
                 # update cumulative losses
-                cumulative_policy_loss += policy_loss.item()
                 cumulative_value_loss += value_loss.item()
 
             # update learning rate
@@ -537,7 +542,7 @@ class TRPO(Agent):
                 self.value_scheduler.step()
 
         # record data
-        self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
+        self.track_data("Loss / Policy loss", policy_loss.item())
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
 
         self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())

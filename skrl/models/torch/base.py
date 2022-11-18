@@ -288,6 +288,39 @@ class Model(torch.nn.Module):
 
         _update_weights(self.children(), method_name, args, kwargs)
 
+    def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
+        """Initialize the model biases according to the specified method name
+
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
+        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
+
+        The following layers will be initialized:
+        - torch.nn.Linear
+
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"constant_"``)
+        :type method_name: str, optional
+        :param args: Positional arguments of the method to be called
+        :type args: tuple, optional
+        :param kwargs: Key-value arguments of the method to be called
+        :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all biases with a constant value (0)
+            >>> model.init_biases(method_name="constant_", val=0)
+
+            # initialize all biases with normal distribution with mean 0 and standard deviation 0.25
+            >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
+        """
+        def _update_biases(module, method_name, args, kwargs):
+            for layer in module:
+                if isinstance(layer, torch.nn.Sequential):
+                    _update_biases(layer, method_name, args, kwargs)
+                elif isinstance(layer, torch.nn.Linear):
+                    exec("torch.nn.init.{}(layer.bias, *args, **kwargs)".format(method_name))
+
+        _update_biases(self.children(), method_name, args, kwargs)
+
     def get_specification(self) -> Mapping[str, Any]:
         """Returns the specification of the model
 

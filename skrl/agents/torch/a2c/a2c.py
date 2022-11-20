@@ -165,7 +165,7 @@ class A2C(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            self._tensors_names = ["states", "actions", "log_prob", "returns", "advantages"]
+            self._tensors_names = ["states", "actions", "terminated", "log_prob", "returns", "advantages"]
 
         # RNN specifications
         self._rnn = False  # flag to indicate whether RNN is available
@@ -412,15 +412,15 @@ class A2C(Agent):
         kl_divergences = []
 
         # mini-batches loop
-        for i, (sampled_states, sampled_actions, sampled_log_prob, sampled_returns, sampled_advantages) in enumerate(sampled_batches):
+        for i, (sampled_states, sampled_actions, sampled_dones, sampled_log_prob, sampled_returns, sampled_advantages) in enumerate(sampled_batches):
 
             if self._rnn:
                 if self.policy is self.value:
-                    rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]]}
+                    rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]], "terminated": sampled_dones}
                     rnn_value = rnn_policy
                 else:
-                    rnn_policy = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "policy" in n]}
-                    rnn_value = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "value" in n]}
+                    rnn_policy = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "policy" in n], "terminated": sampled_dones}
+                    rnn_value = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "value" in n], "terminated": sampled_dones}
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
 

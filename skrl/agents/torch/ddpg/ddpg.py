@@ -361,7 +361,7 @@ class DDPG(Agent):
         rnn_policy = {}
         if self._rnn:
             sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
-            rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn]}
+            rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):

@@ -383,8 +383,10 @@ class A2C(Agent):
 
         # compute returns and advantages
         with torch.no_grad():
+            self.value.train(False)
             rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
             last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float()), **rnn}, role="value")
+            self.value.train(True)
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")

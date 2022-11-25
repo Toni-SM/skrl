@@ -403,9 +403,10 @@ class A2C(Agent):
 
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
-        sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
 
         rnn_policy, rnn_value = {}, {}
+        if self._rnn:
+            sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0

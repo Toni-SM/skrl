@@ -40,23 +40,66 @@ Concept
 Basic usage
 -----------
 
+* Multi-Layer Perceptron (**MLP**)
+* Convolutional Neural Network (**CNN**)
+
 .. tabs::
 
-    .. tab:: Multi-Layer Perceptron (MLP)
+    .. tab:: MLP
 
-        .. literalinclude:: ../snippets/multivariate_gaussian_model.py
-            :language: python
-            :linenos:
-            :start-after: [start-mlp]
-            :end-before: [end-mlp]
+        .. image:: ../_static/imgs/model_gaussian_mlp.svg
+            :width: 42%
+            :align: center
 
-    .. tab:: Convolutional Neural Network (CNN)
+        .. raw:: html
 
-        .. literalinclude:: ../snippets/multivariate_gaussian_model.py
-            :language: python
-            :linenos:
-            :start-after: [start-cnn]
-            :end-before: [end-cnn]
+            <br>
+
+        .. tabs::
+
+            .. tab:: nn.Sequential
+
+                .. literalinclude:: ../snippets/multivariate_gaussian_model.py
+                    :language: python
+                    :linenos:
+                    :start-after: [start-mlp-sequential]
+                    :end-before: [end-mlp-sequential]
+
+            .. tab:: nn.functional
+
+                .. literalinclude:: ../snippets/multivariate_gaussian_model.py
+                    :language: python
+                    :linenos:
+                    :start-after: [start-mlp-functional]
+                    :end-before: [end-mlp-functional]
+
+    .. tab:: CNN
+
+        .. image:: ../_static/imgs/model_gaussian_cnn.svg
+            :width: 100%
+            :align: center
+
+        .. raw:: html
+
+            <br>
+
+        .. tabs::
+
+            .. tab:: nn.Sequential
+
+                .. literalinclude:: ../snippets/multivariate_gaussian_model.py
+                    :language: python
+                    :linenos:
+                    :start-after: [start-cnn-sequential]
+                    :end-before: [end-cnn-sequential]
+
+            .. tab:: nn.functional
+
+                .. literalinclude:: ../snippets/multivariate_gaussian_model.py
+                    :language: python
+                    :linenos:
+                    :start-after: [start-cnn-functional]
+                    :end-before: [end-cnn-functional]
 
 API
 ---

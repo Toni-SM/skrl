@@ -55,7 +55,7 @@ Basic usage
 
         .. tabs::
 
-            .. tab:: nn.Sequential
+            .. group-tab:: nn.Sequential
 
                 .. literalinclude:: ../snippets/deterministic_model.py
                     :language: python
@@ -63,7 +63,7 @@ Basic usage
                     :start-after: [start-mlp-sequential]
                     :end-before: [end-mlp-sequential]
 
-            .. tab:: nn.functional
+            .. group-tab:: nn.functional
 
                 .. literalinclude:: ../snippets/deterministic_model.py
                     :language: python
@@ -83,7 +83,7 @@ Basic usage
 
         .. tabs::
 
-            .. tab:: nn.Sequential
+            .. group-tab:: nn.Sequential
 
                 .. literalinclude:: ../snippets/deterministic_model.py
                     :language: python
@@ -91,7 +91,7 @@ Basic usage
                     :start-after: [start-cnn-sequential]
                     :end-before: [end-cnn-sequential]
 
-            .. tab:: nn.functional
+            .. group-tab:: nn.functional
 
                 .. literalinclude:: ../snippets/deterministic_model.py
                     :language: python

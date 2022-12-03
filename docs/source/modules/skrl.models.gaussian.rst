@@ -57,7 +57,7 @@ Basic usage
 
         .. tabs::
 
-            .. tab:: nn.Sequential
+            .. group-tab:: nn.Sequential
 
                 .. literalinclude:: ../snippets/gaussian_model.py
                     :language: python
@@ -65,7 +65,7 @@ Basic usage
                     :start-after: [start-mlp-sequential]
                     :end-before: [end-mlp-sequential]
 
-            .. tab:: nn.functional
+            .. group-tab:: nn.functional
 
                 .. literalinclude:: ../snippets/gaussian_model.py
                     :language: python
@@ -85,7 +85,7 @@ Basic usage
 
         .. tabs::
 
-            .. tab:: nn.Sequential
+            .. group-tab:: nn.Sequential
 
                 .. literalinclude:: ../snippets/gaussian_model.py
                     :language: python
@@ -93,13 +93,14 @@ Basic usage
                     :start-after: [start-cnn-sequential]
                     :end-before: [end-cnn-sequential]
 
-            .. tab:: nn.functional
+            .. group-tab:: nn.functional
 
                 .. literalinclude:: ../snippets/gaussian_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-cnn-functional]
                     :end-before: [end-cnn-functional]
+
 API
 ---
 

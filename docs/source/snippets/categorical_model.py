@@ -1,4 +1,35 @@
-# [start-mlp]
+# [start-mlp-sequential]
+import torch
+import torch.nn as nn
+
+from skrl.models.torch import Model, CategoricalMixin
+
+
+# define the model
+class MLP(CategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(self, observation_space, action_space, device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
+
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
+                                 nn.ReLU(),
+                                 nn.Linear(64, 32),
+                                 nn.ReLU(),
+                                 nn.Linear(32, self.num_actions))
+
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             unnormalized_log_prob=True)
+# [end-mlp-sequential]
+
+# [start-mlp-functional]
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -11,14 +42,16 @@ class MLP(CategoricalMixin, Model):
         Model.__init__(self, observation_space, action_space, device)
         CategoricalMixin.__init__(self, unnormalized_log_prob)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 64)
-        self.linear_layer_2 = nn.Linear(64, 32)
-        self.output_layer = nn.Linear(32, self.num_actions)
+        self.fc1 = nn.Linear(self.num_observations, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.logits = nn.Linear(32, self.num_actions)
 
     def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(inputs["states"]))
-        x = F.relu(self.linear_layer_2(x))
-        return self.output_layer(x), {}
+        x = self.fc1(inputs["states"])
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        return self.logits(x), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
@@ -26,11 +59,12 @@ policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              unnormalized_log_prob=True)
-# [end-mlp]
+# [end-mlp-functional]
 
 # =============================================================================
 
-# [start-cnn]
+# [start-cnn-sequential]
+import torch
 import torch.nn as nn
 
 from skrl.models.torch import Model, CategoricalMixin
@@ -49,7 +83,7 @@ class CNN(CategoricalMixin, Model):
                                  nn.Conv2d(64, 64, kernel_size=3, stride=1),
                                  nn.ReLU(),
                                  nn.Flatten(),
-                                 nn.Linear(9216, 512),
+                                 nn.Linear(1024, 512),
                                  nn.ReLU(),
                                  nn.Linear(512, 16),
                                  nn.Tanh(),
@@ -60,8 +94,8 @@ class CNN(CategoricalMixin, Model):
                                  nn.Linear(32, self.num_actions))
 
     def compute(self, inputs, role):
-        # permute (samples, width, height, channels) -> (samples, channels, width, height)
-        return self.net(inputs["states"].permute(0, 3, 1, 2)), {}
+        # permute (samples, width * height * channels) -> (samples, channels, width, height)
+        return self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
@@ -69,4 +103,56 @@ policy = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              unnormalized_log_prob=True)
-# [end-cnn]
+# [end-cnn-sequential]
+
+# [start-cnn-functional]
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from skrl.models.torch import Model, CategoricalMixin
+
+
+# define the model
+class CNN(CategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(self, observation_space, action_space, device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
+
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc1 = nn.Linear(1024, 512)
+        self.fc2 = nn.Linear(512, 16)
+        self.fc3 = nn.Linear(16, 64)
+        self.fc4 = nn.Linear(64, 32)
+        self.fc5 = nn.Linear(32, self.num_actions)
+
+    def compute(self, inputs, role):
+        # permute (samples, width * height * channels) -> (samples, channels, width, height)
+        x = inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = torch.flatten(x, start_dim=1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = torch.tanh(x)
+        x = self.fc3(x)
+        x = torch.tanh(x)
+        x = self.fc4(x)
+        x = torch.tanh(x)
+        x = self.fc5(x)
+        return x, {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = CNN(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             unnormalized_log_prob=True)
+# [end-cnn-functional]

@@ -87,6 +87,18 @@ The implementation uses 2 deterministic function approximators. These function a
      - action
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - \-
+
 API
 ^^^
 

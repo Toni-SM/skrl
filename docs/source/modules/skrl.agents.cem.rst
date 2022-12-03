@@ -74,6 +74,16 @@ The implementation uses 1 discrete function approximator. This function approxim
      - action
      - :ref:`Categorical <models_categorical>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - RNN support
+     - \-
+
 API
 ^^^
 

@@ -135,6 +135,18 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - RNN, LSTM, GRU and any other variant
+
 API
 ^^^
 

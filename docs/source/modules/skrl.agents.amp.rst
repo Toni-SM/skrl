@@ -155,6 +155,18 @@ The implementation uses 1 stochastic (continuous) and 2 deterministic function a
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - \-
+
 API
 ^^^
 

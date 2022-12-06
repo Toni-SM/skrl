@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Set the running mode (training or evaluation) of the agents
 - Weights & Biases integration (by @juhannc)
 - Support for Gymnasium interface
+- Allow clipping the gradient norm for DDPG, TD3 and SAC agents
+- Initialize model biases
+- Add RNN (RNN, LSTM, GRU and any other variant) support for A2C, DDPG, PPO, SAC, TD3 and TRPO agents
 
 ### Changed
 - Forward model inputs as a Python dictionary [**breaking change**]
@@ -17,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
 - Call agents' method `record_transition` instead of parent method
 to allow storing samples in memories during evaluation
+- Move TRPO policy optimization out of the value optimization loop
 
 ### Removed
 - Deprecated method `start` in trainers

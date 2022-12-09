@@ -117,4 +117,4 @@ class CategoricalMixin:
             >>> print(distribution)
             Categorical(probs: torch.Size([4096, 2]), logits: torch.Size([4096, 2]))
         """
-        return self._c_distribution if role in self._c_distribution else self._c_distribution[""]
+        return self._c_distribution[role] if role in self._c_distribution else self._c_distribution[""]

@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Call agents' method `record_transition` instead of parent method
 to allow storing samples in memories during evaluation
 - Move TRPO policy optimization out of the value optimization loop
+- Access to the categorical model distribution
 
 ### Removed
 - Deprecated method `start` in trainers

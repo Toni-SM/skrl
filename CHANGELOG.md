@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 to allow storing samples in memories during evaluation
 - Move TRPO policy optimization out of the value optimization loop
 - Access to the categorical model distribution
+- Call reset only once for Gym/Gymnasium vectorized environments
 
 ### Removed
 - Deprecated method `start` in trainers

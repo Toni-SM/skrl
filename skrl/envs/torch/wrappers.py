@@ -275,6 +275,9 @@ class GymWrapper(Wrapper):
         try:
             if isinstance(env, gym.vector.SyncVectorEnv) or isinstance(env, gym.vector.AsyncVectorEnv):
                 self._vectorized = True
+                self._reset_once = True
+                self._obs_tensor = None
+                self._info_dict = None
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
 
@@ -387,12 +390,19 @@ class GymWrapper(Wrapper):
                     terminated = False
         else:
             observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
+
         # convert response to torch
-        return self._observation_to_tensor(observation), \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               info
+        observation = self._observation_to_tensor(observation)
+        reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+        truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+
+        # save observation and info for vectorized envs
+        if self._vectorized:
+            self._obs_tensor = observation
+            self._info_dict = info
+
+        return observation, reward, terminated, truncated, info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -400,6 +410,13 @@ class GymWrapper(Wrapper):
         :return: Observation, info
         :rtype: torch.Tensor and any other info
         """
+        # handle vectorized envs
+        if self._vectorized:
+            if not self._reset_once:
+                return self._obs_tensor, self._info_dict
+            self._reset_once = False
+
+        # reset the env/envs
         if self._drepecated_api:
             observation = self._env.reset()
             info = {}
@@ -431,6 +448,9 @@ class GymnasiumWrapper(Wrapper):
         try:
             if isinstance(env, gymnasium.vector.SyncVectorEnv) or isinstance(env, gymnasium.vector.AsyncVectorEnv):
                 self._vectorized = True
+                self._reset_once = True
+                self._obs_tensor = None
+                self._info_dict = None
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
 
@@ -528,12 +548,19 @@ class GymnasiumWrapper(Wrapper):
         :rtype: tuple of torch.Tensor and any other info
         """
         observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
+
         # convert response to torch
-        return self._observation_to_tensor(observation), \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               info
+        observation = self._observation_to_tensor(observation)
+        reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+        truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+
+        # save observation and info for vectorized envs
+        if self._vectorized:
+            self._obs_tensor = observation
+            self._info_dict = info
+
+        return observation, reward, terminated, truncated, info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -541,6 +568,13 @@ class GymnasiumWrapper(Wrapper):
         :return: Observation, info
         :rtype: torch.Tensor and any other info
         """
+        # handle vectorized envs
+        if self._vectorized:
+            if not self._reset_once:
+                return self._obs_tensor, self._info_dict
+            self._reset_once = False
+
+        # reset the env/envs
         observation, info = self._env.reset()
         return self._observation_to_tensor(observation), info
 

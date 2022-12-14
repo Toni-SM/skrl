@@ -4,6 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.9.0] - Unreleased
 ### Added
+- DeepMind robosuite environment wrapper
 - Set the running mode (training or evaluation) of the agents
 - Weights & Biases integration (by @juhannc)
 - Support for Gymnasium interface

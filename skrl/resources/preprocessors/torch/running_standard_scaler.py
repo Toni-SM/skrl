@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 
 import gym
 import gymnasium
@@ -13,7 +13,7 @@ class RunningStandardScaler(nn.Module):
                  size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
                  epsilon: float = 1e-8,
                  clip_threshold: float = 5.0,
-                 device: Union[str, torch.device] = "cuda:0") -> None:
+                 device: Optional[Union[str, torch.device]] = None) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation
 
         The implementation is adapted from the rl_games library
@@ -22,28 +22,33 @@ class RunningStandardScaler(nn.Module):
         Example::
 
             >>> running_standard_scaler = RunningStandardScaler(size=2)
-            >>> data = ...  # tensor of shape (N, 2)
+            >>> data = torch.rand(3, 2)  # tensor of shape (N, 2)
             >>> running_standard_scaler(data)
+            tensor([[0.1954, 0.3356],
+                    [0.9719, 0.4163],
+                    [0.8540, 0.1982]])
 
         :param size: Size of the input space
         :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
-        :param epsilon: Small number to avoid division by zero (default: 1e-8)
+        :param epsilon: Small number to avoid division by zero (default: ``1e-8``)
         :type epsilon: float
-        :param clip_threshold: Threshold to clip the data (default: 5.0)
+        :param clip_threshold: Threshold to clip the data (default: ``5.0``)
         :type clip_threshold: float
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         """
         super().__init__()
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
         size = self._get_space_size(size)
 
-        self.register_buffer("running_mean", torch.zeros(size, dtype = torch.float64, device=device))
-        self.register_buffer("running_variance", torch.ones(size, dtype = torch.float64, device=device))
-        self.register_buffer("current_count", torch.ones((), dtype = torch.float64, device=device))
+        self.register_buffer("running_mean", torch.zeros(size, dtype = torch.float64, device=self.device))
+        self.register_buffer("running_variance", torch.ones(size, dtype = torch.float64, device=self.device))
+        self.register_buffer("current_count", torch.ones((), dtype = torch.float64, device=self.device))
 
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
         """Get the size (number of elements) of a space
@@ -103,9 +108,9 @@ class RunningStandardScaler(nn.Module):
 
         :param x: Input tensor
         :type x: torch.Tensor
-        :param train: Whether to train the standardizer (default: False)
+        :param train: Whether to train the standardizer (default: ``False``)
         :type train: bool, optional
-        :param inverse: Whether to inverse the standardizer to scale back the data (default: False)
+        :param inverse: Whether to inverse the standardizer to scale back the data (default: ``False``)
         :type inverse: bool, optional
         """
         if train:
@@ -146,11 +151,11 @@ class RunningStandardScaler(nn.Module):
 
         :param x: Input tensor
         :type x: torch.Tensor
-        :param train: Whether to train the standardizer (default: False)
+        :param train: Whether to train the standardizer (default: ``False``)
         :type train: bool, optional
-        :param inverse: Whether to inverse the standardizer to scale back the data (default: False)
+        :param inverse: Whether to inverse the standardizer to scale back the data (default: ``False``)
         :type inverse: bool, optional
-        :param no_grad: Whether to disable the gradient computation (default: True)
+        :param no_grad: Whether to disable the gradient computation (default: ``True``)
         :type no_grad: bool, optional
         """
         if no_grad:

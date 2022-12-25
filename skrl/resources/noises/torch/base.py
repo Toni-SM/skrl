@@ -8,8 +8,20 @@ class Noise():
         """Base class representing a noise
 
         :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
+
+        Custom noises should override the ``sample`` method::
+
+            import torch
+            from skrl.resources.noises.torch import Noise
+
+            class CustomNoise(Noise):
+                def __init__(self, device=None):
+                    super().__init__(device)
+
+                def sample(self, size):
+                    return torch.rand(size, device=self.device)
         """
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
@@ -23,6 +35,14 @@ class Noise():
 
         :return: Sampled noise
         :rtype: torch.Tensor
+
+        Example::
+
+            >>> x = torch.rand(3, 2, device="cuda:0")
+            >>> noise.sample_like(x)
+            tensor([[-0.0423, -0.1325],
+                    [-0.0639, -0.0957],
+                    [-0.1367,  0.1031]], device='cuda:0')
         """
         return self.sample(tensor.size())
 

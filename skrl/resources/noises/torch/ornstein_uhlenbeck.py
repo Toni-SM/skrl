@@ -22,13 +22,17 @@ class OrnsteinUhlenbeckNoise(Noise):
         :type sigma: float
         :param base_scale: Factor to apply to returned noise
         :type base_scale: float
-        :param mean: Mean of the normal distribution (default: 0.0)
+        :param mean: Mean of the normal distribution (default: ``0.0``)
         :type mean: float, optional
-        :param std: Standard deviation of the normal distribution (default: 1.0)
+        :param std: Standard deviation of the normal distribution (default: ``1.0``)
         :type std: float, optional
         :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
+
+        Example::
+
+            >>> noise = OrnsteinUhlenbeckNoise(theta=0.1, sigma=0.2, base_scale=0.5)
         """
         super().__init__(device)
 
@@ -48,6 +52,19 @@ class OrnsteinUhlenbeckNoise(Noise):
 
         :return: Sampled noise
         :rtype: torch.Tensor
+
+        Example::
+
+            >>> noise.sample((3, 2))
+            tensor([[-0.0452,  0.0162],
+                    [ 0.0649, -0.0708],
+                    [-0.0211,  0.0066]], device='cuda:0')
+
+            >>> x = torch.rand(3, 2, device="cuda:0")
+            >>> noise.sample(x.shape)
+            tensor([[-0.0540,  0.0461],
+                    [ 0.1117, -0.1157],
+                    [-0.0074,  0.0420]], device='cuda:0')
         """
         if isinstance(self.state, torch.Tensor) and self.state.size() != torch.Size(size):
             self.state = 0

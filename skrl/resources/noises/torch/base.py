@@ -1,16 +1,17 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 
 import torch
 
 
 class Noise():
-    def __init__(self, device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self, device: Optional[Union[str, torch.device]] = None) -> None:
         """Base class representing a noise
 
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"
         :type device: str or torch.device, optional
         """
-        self.device = torch.device(device)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
     def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:
         """Sample a noise with the same size (shape) as the input tensor

@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 
 import torch
 from torch.distributions import Normal
@@ -13,7 +13,7 @@ class OrnsteinUhlenbeckNoise(Noise):
                  base_scale: float,
                  mean: float = 0,
                  std: float = 1,
-                 device: Union[str, torch.device] = "cuda:0") -> None:
+                 device: Optional[Union[str, torch.device]] = None) -> None:
         """Class representing an Ornstein-Uhlenbeck noise
 
         :param theta: Factor to apply to current internal state
@@ -26,7 +26,8 @@ class OrnsteinUhlenbeckNoise(Noise):
         :type mean: float, optional
         :param std: Standard deviation of the normal distribution (default: 1.0)
         :type std: float, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"
         :type device: str or torch.device, optional
         """
         super().__init__(device)

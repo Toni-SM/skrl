@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 
 import torch
 from torch.distributions import Normal
@@ -7,14 +7,15 @@ from . import Noise
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
         """Class representing a Gaussian noise
 
         :param mean: Mean of the normal distribution
         :type mean: float
         :param std: Standard deviation of the normal distribution
         :type std: float
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"
         :type device: str or torch.device, optional
         """
         super().__init__(device)

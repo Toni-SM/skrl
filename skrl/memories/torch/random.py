@@ -1,4 +1,4 @@
-from typing import Union, Tuple, List
+from typing import Optional, Union, Tuple, List
 
 import torch
 
@@ -9,7 +9,7 @@ class RandomMemory(Memory):
     def __init__(self,
                  memory_size: int,
                  num_envs: int = 1,
-                 device: Union[str, torch.device] = "cuda:0",
+                 device: Optional[Union[str, torch.device]] = None,
                  export: bool = False,
                  export_format: str = "pt",
                  export_directory: str = "",
@@ -22,7 +22,8 @@ class RandomMemory(Memory):
         :type memory_size: int
         :param num_envs: Number of parallel environments (default: 1)
         :type num_envs: int, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param export: Export the memory to a file (default: False).
                        If True, the memory will be exported when the memory is filled

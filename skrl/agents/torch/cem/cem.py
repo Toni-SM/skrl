@@ -50,7 +50,7 @@ class CEM(Agent):
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
                  observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Union[str, torch.device] = "cuda:0",
+                 device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Cross-Entropy Method (CEM)
 
@@ -66,7 +66,8 @@ class CEM(Agent):
         :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
         :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Computing device (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -282,7 +283,7 @@ class CEM(Agent):
         # compute policy loss
         policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
-        # optimize policy
+        # optimization step
         self.optimizer.zero_grad()
         policy_loss.backward()
         self.optimizer.step()

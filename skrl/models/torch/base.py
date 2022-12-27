@@ -14,7 +14,7 @@ class Model(torch.nn.Module):
     def __init__(self,
                  observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
                  action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 device: Union[str, torch.device] = "cuda:0") -> None:
+                 device: Optional[Union[str, torch.device]] = None) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
@@ -31,7 +31,8 @@ class Model(torch.nn.Module):
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
         :type action_space: int, sequence of int, gym.Space, gymnasium.Space
-        :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
 
         Custom models should override the ``act`` method::
@@ -53,7 +54,7 @@ class Model(torch.nn.Module):
         """
         super(Model, self).__init__()
 
-        self.device = torch.device(device)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
         self.observation_space = observation_space
         self.action_space = action_space

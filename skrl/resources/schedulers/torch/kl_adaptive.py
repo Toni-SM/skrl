@@ -36,19 +36,19 @@ class KLAdaptiveRL(_LRScheduler):
 
         :param optimizer: Wrapped optimizer
         :type optimizer: torch.optim.Optimizer
-        :param kl_threshold: Threshold for KL divergence (default: 0.008)
+        :param kl_threshold: Threshold for KL divergence (default: ``0.008``)
         :type kl_threshold: float, optional
-        :param min_lr: Lower bound for learning rate (default: 1e-6)
+        :param min_lr: Lower bound for learning rate (default: ``1e-6``)
         :type min_lr: float, optional
-        :param max_lr: Upper bound for learning rate (default: 1e-2)
+        :param max_lr: Upper bound for learning rate (default: ``1e-2``)
         :type max_lr: float, optional
-        :param kl_factor: The number used to modify the KL divergence threshold (default: 2)
+        :param kl_factor: The number used to modify the KL divergence threshold (default: ``2``)
         :type kl_factor: float, optional
-        :param lr_factor: The number used to modify the learning rate (default: 1.5)
+        :param lr_factor: The number used to modify the learning rate (default: ``1.5``)
         :type lr_factor: float, optional
-        :param last_epoch: The index of last epoch (default: -1)
+        :param last_epoch: The index of last epoch (default: ``-1``)
         :type last_epoch: int, optional
-        :param verbose: Verbose mode (default: False)
+        :param verbose: Verbose mode (default: ``False``)
         :type verbose: bool, optional
         """
         super().__init__(optimizer, last_epoch, verbose)

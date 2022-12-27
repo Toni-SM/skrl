@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Allow clipping the gradient norm for DDPG, TD3 and SAC agents
 - Initialize model biases
 - Add RNN (RNN, LSTM, GRU and any other variant) support for A2C, DDPG, PPO, SAC, TD3 and TRPO agents
+- Allow disabling training/evaluation progressbar
 
 ### Changed
 - Forward model inputs as a Python dictionary [**breaking change**]

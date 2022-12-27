@@ -4,6 +4,11 @@ Cross-Entropy Method (CEM)
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+| Main notation/symbols:
+|   - policy function approximator (:math:`\pi_\theta`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - loss (:math:`L`)
+
 **Decision making** (:literal:`act(...)`)
 
 | :math:`a \leftarrow \pi_\theta(s)`
@@ -13,17 +18,22 @@ Algorithm implementation
 | :green:`# sample all memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
 | :green:`# compute discounted return threshold`
-| :math:`[G] \leftarrow \sum_{t=0}^{E-1} \gamma^{t} r_t` for each episode
-| :math:`G_{_{bound}} \leftarrow q_{th_{percentile}}([G])`
+| :math:`[G] \leftarrow \sum_{t=0}^{E-1}` :guilabel:`discount_factor`:math:`^{t} \, r_t` for each episode
+| :math:`G_{_{bound}} \leftarrow q_{th_{quantile}}([G])` at the given :guilabel:`percentile`
 | :green:`# get elite states and actions`
 | :math:`s_{_{elite}} \leftarrow s[G \geq G_{_{bound}}]`
 | :math:`a_{_{elite}} \leftarrow a[G \geq G_{_{bound}}]`
 | :green:`# compute scores for the elite states`
 | :math:`scores \leftarrow \theta(s_{_{elite}})`
 | :green:`# compute policy loss`
-| :math:`{Loss}_{policy} \leftarrow -\sum_{i=1}^{N} a_{_{elite}} \log(scores)`
-| :green:`# optimize policy`
-| :math:`\nabla_{\theta} {Loss}_{policy}`
+| :math:`L_{\pi_\theta} \leftarrow -\sum_{i=1}^{N} a_{_{elite}} \log(scores)`
+| :green:`# optimization step`
+| reset :math:`\text{optimizer}_\theta`
+| :math:`\nabla_{\theta} L_{\pi_\theta}`
+| step :math:`\text{optimizer}_\theta`
+| :green:`# update learning rate`
+| **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
+|     step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -14,7 +14,7 @@ from skrl.utils import set_seed
 
 
 # set the seed for reproducibility
-set_seed(42)
+set_seed(40)
 
 
 # Define the shared model (stochastic and deterministic models) for the agent using mixins.

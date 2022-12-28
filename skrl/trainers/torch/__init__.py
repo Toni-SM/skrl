@@ -1,6 +1,6 @@
-from .base import Trainer
-from .base import generate_equally_spaced_scopes
+from skrl.trainers.torch.base import Trainer
+from skrl.trainers.torch.base import generate_equally_spaced_scopes
 
-from .sequential import SequentialTrainer
-from .parallel import ParallelTrainer
-from .manual import ManualTrainer
+from skrl.trainers.torch.sequential import SequentialTrainer
+from skrl.trainers.torch.parallel import ParallelTrainer
+from skrl.trainers.torch.manual import ManualTrainer

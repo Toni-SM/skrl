@@ -6,10 +6,10 @@ import tqdm
 import torch
 import torch.multiprocessing as mp
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
 
-from . import Trainer
+from skrl.trainers.torch import Trainer
 
 
 PARALLEL_TRAINER_DEFAULT_CONFIG = {

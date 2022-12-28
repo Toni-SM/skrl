@@ -8,11 +8,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ....memories.torch import Memory
-from ....models.torch import Model
-from ....resources.schedulers.torch import KLAdaptiveRL
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
+from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-from .. import Agent
+from skrl.agents.torch import Agent
 
 
 A2C_DEFAULT_CONFIG = {

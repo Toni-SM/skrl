@@ -2,7 +2,7 @@ from typing import Optional, Union, Tuple, List
 
 import torch
 
-from .base import Memory
+from skrl.memories.torch import Memory
 
 
 class RandomMemory(Memory):

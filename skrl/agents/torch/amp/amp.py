@@ -9,10 +9,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ....memories.torch import Memory
-from ....models.torch import Model
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
-from .. import Agent
+from skrl.agents.torch import Agent
 
 
 AMP_DEFAULT_CONFIG = {

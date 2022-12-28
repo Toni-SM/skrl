@@ -4,8 +4,8 @@ import tqdm
 
 import torch
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:

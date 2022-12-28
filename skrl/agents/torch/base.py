@@ -11,8 +11,8 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from skrl import logger
-from ...memories.torch import Memory
-from ...models.torch import Model
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
 
 class Agent:

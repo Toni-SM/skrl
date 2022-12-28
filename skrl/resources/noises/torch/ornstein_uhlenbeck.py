@@ -3,7 +3,7 @@ from typing import Optional, Union, Tuple
 import torch
 from torch.distributions import Normal
 
-from . import Noise
+from skrl.resources.noises.torch import Noise
 
 
 class OrnsteinUhlenbeckNoise(Noise):

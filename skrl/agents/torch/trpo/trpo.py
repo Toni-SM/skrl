@@ -9,10 +9,10 @@ import torch.nn.functional as F
 from torch.nn.utils.convert_parameters import parameters_to_vector
 from torch.nn.utils.convert_parameters import vector_to_parameters
 
-from ....memories.torch import Memory
-from ....models.torch import Model
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
-from .. import Agent
+from skrl.agents.torch import Agent
 
 
 TRPO_DEFAULT_CONFIG = {

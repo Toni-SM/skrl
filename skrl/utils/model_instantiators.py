@@ -7,11 +7,11 @@ from enum import Enum
 import torch
 import torch.nn as nn
 
-from ..models.torch import Model
-from ..models.torch import GaussianMixin
-from ..models.torch import CategoricalMixin
-from ..models.torch import DeterministicMixin
-from ..models.torch import MultivariateGaussianMixin
+from skrl.models.torch import Model
+from skrl.models.torch import GaussianMixin
+from skrl.models.torch import CategoricalMixin
+from skrl.models.torch import DeterministicMixin
+from skrl.models.torch import MultivariateGaussianMixin
 
 __all__ = ["categorical_model", "deterministic_model", "gaussian_model", "multivariate_gaussian_model", "Shape"]
 

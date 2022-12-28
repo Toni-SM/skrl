@@ -2,7 +2,7 @@ from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import torch
 
-from . import Model
+from skrl.models.torch import Model
 
 
 class TabularMixin:

@@ -5,10 +5,10 @@ import copy
 
 import torch
 
-from ....memories.torch import Memory
-from ....models.torch import Model
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
-from .. import Agent
+from skrl.agents.torch import Agent
 
 
 Q_LEARNING_DEFAULT_CONFIG = {

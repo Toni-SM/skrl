@@ -5,10 +5,10 @@ import tqdm
 
 import torch
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
 
-from . import Trainer
+from skrl.trainers.torch import Trainer
 
 
 MANUAL_TRAINER_DEFAULT_CONFIG = {

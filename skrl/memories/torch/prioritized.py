@@ -4,7 +4,7 @@ import numpy as np
 
 import torch
 
-from .base import Memory
+from skrl.memories.torch import Memory
 
 
 class PrioritizedMemory(Memory):

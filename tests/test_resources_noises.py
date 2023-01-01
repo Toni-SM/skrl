@@ -1,7 +1,10 @@
 import pytest
+import hypothesis
+import hypothesis.strategies as st
 
 import torch
 
+from skrl.resources.noises.torch import Noise
 from skrl.resources.noises.torch import GaussianNoise
 from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 
@@ -13,20 +16,27 @@ def classes_and_kwargs():
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
-def test_device(classes_and_kwargs, device):
+def test_device(capsys, classes_and_kwargs, device):
     _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for klass, kwargs in classes_and_kwargs:
-        noise = klass(device=device, **kwargs)
+        with capsys.disabled():
+            print(klass.__name__, device)
+
+        noise: Noise = klass(device=device, **kwargs)
 
         output = noise.sample((1,))
         assert noise.device == _device  # defined device
         assert output.device == _device  # runtime device
 
-@pytest.mark.parametrize("size", [(10,), [20, 1], torch.Size([30, 1, 2])])
-def test_sampling(classes_and_kwargs, size):
+@hypothesis.given(size=st.lists(st.integers(min_value=1, max_value=10), max_size=5))
+@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+def test_sample(capsys, classes_and_kwargs, size):
     for klass, kwargs in classes_and_kwargs:
-        noise = klass(**kwargs)
+        with capsys.disabled():
+            print(klass.__name__, size)
+
+        noise: Noise = klass(**kwargs)
 
         # sample
         output = noise.sample(size)

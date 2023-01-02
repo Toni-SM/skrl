@@ -11,12 +11,11 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 INSTALL_REQUIRES = [
     "gym",
     "gymnasium",
-    "torch",
+    "torch>=1.8",
     "tensorboard",
-    "tqdm",
-    "packaging",
-    "pre-commit",
     "wandb",
+    "tqdm",
+    "packaging"
 ]
 
 # installation

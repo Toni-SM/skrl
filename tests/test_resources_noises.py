@@ -21,7 +21,13 @@ def test_device(capsys, classes_and_kwargs, device):
     _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for klass, kwargs in classes_and_kwargs:
-        noise: Noise = klass(device=device, **kwargs)
+        try:
+            noise: Noise = klass(device=device, **kwargs)
+        except RuntimeError as e:
+            with capsys.disabled():
+                print(e)
+            warnings.warn(f"Invalid device: {device}. This test will be skipped")
+            continue
 
         output = noise.sample((1,))
         assert noise.device == _device  # defined device

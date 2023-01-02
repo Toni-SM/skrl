@@ -1,7 +1,9 @@
 import pytest
-import string
+import warnings
 import hypothesis
 import hypothesis.strategies as st
+
+import string
 
 import torch
 
@@ -19,9 +21,6 @@ def test_device(capsys, classes_and_kwargs, device):
     _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, device)
-
         memory: Memory = klass(memory_size=1, device=device, **kwargs)
 
         assert memory.device == _device  # defined device
@@ -30,9 +29,6 @@ def test_device(capsys, classes_and_kwargs, device):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_create_tensors(capsys, classes_and_kwargs, names):
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, names)
-
         memory: Memory = klass(memory_size=1, **kwargs)
 
         for name in names:
@@ -46,10 +42,8 @@ def test_create_tensors(capsys, classes_and_kwargs, names):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_add_samples(capsys, classes_and_kwargs, memory_size, num_envs, num_samples):
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, memory_size, num_envs, num_samples)
-
         memory: Memory = klass(memory_size=memory_size, num_envs=num_envs, **kwargs)
+
         memory.create_tensor(name="tensor_1", size=1, dtype=torch.float32)
         memory.create_tensor(name="tensor_2", size=2, dtype=torch.float32)
 

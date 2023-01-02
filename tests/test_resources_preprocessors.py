@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import hypothesis
 import hypothesis.strategies as st
 
@@ -20,9 +21,6 @@ def test_device(capsys, classes_and_kwargs, device):
     _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, device)
-
         preprocessor = klass(device=device, **kwargs)
 
         assert preprocessor.device == _device  # defined device
@@ -34,9 +32,6 @@ def test_device(capsys, classes_and_kwargs, device):
                                             (gymnasium.spaces.Discrete(n=3), 1)])
 def test_forward(capsys, classes_and_kwargs, space_and_size):
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, space_and_size)
-
         space, size = space_and_size
         preprocessor = klass(size=space, device="cpu")
 

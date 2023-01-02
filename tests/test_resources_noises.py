@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import hypothesis
 import hypothesis.strategies as st
 
@@ -20,9 +21,6 @@ def test_device(capsys, classes_and_kwargs, device):
     _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, device)
-
         noise: Noise = klass(device=device, **kwargs)
 
         output = noise.sample((1,))
@@ -33,9 +31,6 @@ def test_device(capsys, classes_and_kwargs, device):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_sample(capsys, classes_and_kwargs, size):
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, size)
-
         noise: Noise = klass(**kwargs)
 
         # sample

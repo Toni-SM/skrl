@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import hypothesis
 import hypothesis.strategies as st
 
@@ -16,9 +17,6 @@ def classes_and_kwargs():
                                        torch.optim.SGD([torch.ones((1,))], lr=0.1)])
 def test_step(capsys, classes_and_kwargs, optimizer):
     for klass, kwargs in classes_and_kwargs:
-        with capsys.disabled():
-            print(klass.__name__, optimizer)
-
         scheduler = klass(optimizer, **kwargs)
 
         scheduler.step(0.0)

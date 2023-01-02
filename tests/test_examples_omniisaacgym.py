@@ -1,8 +1,7 @@
 import pytest
+import warnings
 import hypothesis
 import hypothesis.strategies as st
-
-import warnings
 
 import os
 import subprocess
@@ -24,8 +23,5 @@ def test_scripts(capsys, command):
     except ImportError as e:
         warnings.warn(f"\n\nUnable to import omniisaacgymenvs ({e}).\nThis test will be skipped\n")
         return
-
-    with capsys.disabled():
-        print(command)
 
     subprocess.run(command, shell=True, check=True)

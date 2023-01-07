@@ -3,8 +3,30 @@
 Examples
 ========
 
+In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks. With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to solve your reinforcement learning problems
+
 .. contents:: Table of Contents
-   :depth: 1
+   :depth: 2
+   :local:
+   :backlinks: none
+
+.. raw:: html
+
+   <br>
+
+.. note::
+
+    It is recommended to use the Table of Contents in the sidebar or in this section to improve the browsing experience
+
+.. raw:: html
+
+   <hr><hr>
+
+Gym/Gymnasium
+-------------
+
+.. contents::
+   :depth: 2
    :local:
    :backlinks: none
 
@@ -12,8 +34,8 @@ Examples
 
    <hr>
 
-Gym/Gymnasium environment
--------------------------
+Gym/Gymnasium environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of one agent in a Gym/Gymnasium environment (**one agent, one environment**)
 
@@ -169,8 +191,8 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
-Gym/Gymnasium vectorized environment
-------------------------------------
+Gym/Gymnasium vectorized environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of one agent in a Gym/Gymnasium vectorized environment (**one agent, multiple independent copies of the same environment in parallel**)
 
@@ -237,7 +259,7 @@ The following components or practices are exemplified (highlighted):
    <hr>
 
 Farama Shimmy (converted environments)
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym) that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_ (API conversion tool) package
 
@@ -289,8 +311,24 @@ The following examples show the training in several popular environments (Atari,
                 .. literalinclude:: ../examples/shimmy/ddpg_openai_gym_compatibility_pendulum.py
                     :language: python
 
-DeepMind environment
+.. raw:: html
+
+   <hr><hr>
+
+Other supported APIs
 --------------------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
+
+.. raw:: html
+
+   <hr>
+
+DeepMind environments
+^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of one agent in an DeepMind environment (**one agent, one environment**)
 
@@ -336,10 +374,22 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
+   <hr><hr>
+
+Isaac Gym preview
+-----------------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
+
+.. raw:: html
+
    <hr>
 
-Isaac Gym environment
----------------------
+Isaac Gym environments
+^^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
 
@@ -537,8 +587,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
    <hr>
 
-Isaac Gym environment (learning by scopes)
-------------------------------------------
+Isaac Gym environments (learning by scopes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run (**multiple agents and environments**)
 
@@ -640,10 +690,22 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
+   <hr><hr>
+
+Omniverse Isaac Gym
+-------------------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
+
+.. raw:: html
+
    <hr>
 
-Omniverse Isaac Gym environment
--------------------------------
+Omniverse Isaac Gym environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
 
@@ -823,8 +885,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
    <hr>
 
-Omniverse Isaac Sim environment
--------------------------------
+Omniverse Isaac Sim (single environment)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the Gym interface (**one agent, one environment**)
 
@@ -913,8 +975,17 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
             :language: python
             :emphasize-lines: 24-39, 45, 53-68, 73
 
+.. raw:: html
+
+   <hr><hr>
+
 Real-world examples
 -------------------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
 
 These examples show basic real-world use cases to guide and support advanced RL implementations
 
@@ -1120,10 +1191,19 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                     TASK_CFG["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
 
+.. raw:: html
+
+   <hr><hr>
+
 .. _library_utilities:
 
 Library utilities (skrl.utils module)
 -------------------------------------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
 
 This example shows how to use the library utilities to carry out the post-processing of files and data generated by the experiments
 

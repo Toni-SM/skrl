@@ -26,7 +26,7 @@ setuptools.setup(
     description="Modular and flexible library for Reinforcement Learning",
     long_description=open(os.path.join(root_dir, "README.md")).read(),
     long_description_content_type="text/markdown",
-    keywords=["reinforcement learning", "machine learning", "rl", ""],
+    keywords=["reinforcement", "machine", "learning", "rl"],
     python_requires=">=3.6.*",
     install_requires=INSTALL_REQUIRES,
     url="https://github.com/Toni-SM/skrl",
@@ -43,4 +43,10 @@ setuptools.setup(
     ],
     license="MIT",
     zip_safe=False,
+    project_urls={
+        "Documentation": "https://skrl.readthedocs.io",
+        "Repository": "https://github.com/Toni-SM/skrl",
+        "Bug Tracker": "https://github.com/Toni-SM/skrl/issues",
+        "Discussions": "https://github.com/Toni-SM/skrl/discussions",
+    }
 )

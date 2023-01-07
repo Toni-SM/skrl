@@ -23,7 +23,7 @@ def test_device(capsys, classes_and_kwargs, device):
     for klass, kwargs in classes_and_kwargs:
         try:
             preprocessor = klass(device=device, **kwargs)
-        except RuntimeError as e:
+        except (RuntimeError, AssertionError) as e:
             with capsys.disabled():
                 print(e)
             warnings.warn(f"Invalid device: {device}. This test will be skipped")

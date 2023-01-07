@@ -236,6 +236,59 @@ The following components or practices are exemplified (highlighted):
 
    <hr>
 
+Farama Shimmy (converted environments)
+--------------------------------------
+
+The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym) that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_ (API conversion tool) package
+
+.. image:: ../_static/imgs/example_shimmy.png
+      :width: 100%
+      :align: center
+      :alt: Shimmy (converted environments)
+
+.. note::
+
+    From **skrl**, no extra implementation is necessary, since it fully supports Gymnasium API
+
+.. note::
+
+    Because the Gymnasium API requires that the rendering mode be specified during the initialization of the environment, it is not enough to set the :literal:`headless` option in the trainer configuration to render the environment. In this case, it is necessary to call the :literal:`gymnasium.make` function using :literal:`render_mode="human"` or any other supported option
+
+.. tabs::
+
+    .. tab:: Atari: Pong (DQN)
+
+        .. tabs::
+
+            .. group-tab:: Training
+
+                | :download:`dqn_shimmy_atari_pong.py <../examples/shimmy/dqn_shimmy_atari_pong.py>`
+
+                .. literalinclude:: ../examples/shimmy/dqn_shimmy_atari_pong.py
+                    :language: python
+
+    .. tab:: DeepMind: Acrobot (SAC)
+
+        .. tabs::
+
+            .. group-tab:: Training
+
+                | :download:`sac_shimmy_dm_control_acrobot_swingup_sparse.py <../examples/shimmy/sac_shimmy_dm_control_acrobot_swingup_sparse.py>`
+
+                .. literalinclude:: ../examples/shimmy/sac_shimmy_dm_control_acrobot_swingup_sparse.py
+                    :language: python
+
+    .. tab:: Gym compatibility (DDPG)
+
+        .. tabs::
+
+            .. group-tab:: Training
+
+                | :download:`ddpg_openai_gym_compatibility_pendulum.py <../examples/shimmy/ddpg_openai_gym_compatibility_pendulum.py>`
+
+                .. literalinclude:: ../examples/shimmy/ddpg_openai_gym_compatibility_pendulum.py
+                    :language: python
+
 DeepMind environment
 --------------------
 

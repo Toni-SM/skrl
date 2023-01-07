@@ -1,3 +1,11 @@
+[![license](https://img.shields.io/pypi/l/skrl)](https://github.com/Toni-SM/skrl)
+[![docs](https://readthedocs.org/projects/skrl/badge/?version=latest)](https://skrl.readthedocs.io/en/latest/?badge=latest)
+[![pypi](https://img.shields.io/pypi/v/skrl)](https://pypi.org/project/skrl)
+<span>&nbsp;&nbsp;</span>
+[![pytest](https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml)
+[![pre-commit](https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml)
+
+<br>
 <p align="center">
   <img width="300rem" src="https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/_static/data/skrl-up-transparent.png">
 </p>

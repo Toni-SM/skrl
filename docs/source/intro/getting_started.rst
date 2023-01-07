@@ -1,6 +1,11 @@
 Getting Started
 ===============
 
+In this section, you will learn how to use the various components of the **skrl** library to create reinforcement learning tasks. Whether you are a beginner or an experienced researcher, we hope this section will provide you with a solid foundation to build upon. We recommend visiting the :ref:`Examples <examples>` to see how the components can be integrated and applied in practice. Let's get started!
+
+Reinforcement Learning schema
+-----------------------------
+
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from its interaction with the environment as shown in the following schema:
 
 .. image:: ../_static/imgs/rl_schema.svg
@@ -14,7 +19,7 @@ Getting Started
 
 At each step (also called timestep) of interaction with the environment, the agent sees an observation :math:`o_t` of the complete description of the state :math:`s_t \in S` of the environment. Then, it decides which action :math:`a_t \in A` to take from the action space using a policy. The environment, which changes in response to the agent's action (or by itself), returns a reward signal :math:`r_t = R(s_t, a_t, s_{t+1})` as a measure of how good or bad the action was that moved it to its new state :math:`s_{t+1}`. The agent aims to maximize the cumulative reward (discounted or not by a factor :math:`\gamma \in (0,1]`) by adjusting the policy's behaviour via some optimization algorithm.
 
-**From this schema, this section is intended to guide in the creation of a RL system using skrl**. Visit the :ref:`Examples <examples>` section for training and evaluation demonstrations with different environment interfaces and highlighted practices, among others.
+**From this schema, this section is intended to guide in the creation of a RL system using skrl**
 
 1. Environments
 ---------------

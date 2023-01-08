@@ -5,6 +5,7 @@ This library works with a common API to interact with the following RL environme
 
 * OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_ (single and vectorized environments)
 * `DeepMind <https://github.com/deepmind/dm_env>`_
+* `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
 
@@ -220,6 +221,35 @@ Basic usage
             # wrap the environment
             env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
 
+    .. tab:: robosuite
+
+        .. code-block:: python
+            :linenos:
+
+            # import the environment wrapper and robosuite
+            from skrl.envs.torch import wrap_env
+            import robosuite
+            from robosuite.controllers import load_controller_config
+
+            # load environment
+            controller_config = load_controller_config(default_controller="OSC_POSE")
+            env = robosuite.make("TwoArmLift",
+                                 robots=["Sawyer", "Panda"],             # load a Sawyer robot and a Panda robot
+                                 gripper_types="default",                # use default grippers per robot arm
+                                 controller_configs=controller_config,   # each arm is controlled using OSC
+                                 env_configuration="single-arm-opposed", # (two-arm envs only) arms face each other
+                                 has_renderer=True,                      # on-screen rendering
+                                 render_camera="frontview",              # visualize the "frontview" camera
+                                 has_offscreen_renderer=False,           # no off-screen rendering
+                                 control_freq=20,                        # 20 hz control for applied actions
+                                 horizon=200,                            # each episode terminates after 200 steps
+                                 use_object_obs=True,                    # provide object observations to agent
+                                 use_camera_obs=False,                   # don't provide image observations to agent
+                                 reward_shaping=True)                    # use a dense reward signal for learning
+
+            # wrap the environment
+            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
+
 .. raw:: html
 
     <hr>
@@ -277,7 +307,22 @@ Internal API
 
     .. automethod:: __init__
 
+.. autoclass:: skrl.envs.torch.wrappers.GymnasiumWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
 .. autoclass:: skrl.envs.torch.wrappers.DeepMindWrapper
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.torch.wrappers.RobosuiteWrapper
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action

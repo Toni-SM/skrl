@@ -55,6 +55,8 @@ The following components or practices are exemplified (highlighted):
     - Create a tabular model (:math:`\epsilon`-greedy policy): **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
     - Load a checkpoint during evaluation: **Pendulum (DDPG)**, **CartPole (CEM)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
 
+**Benchmark results** are listed in `Benchmark results #32 (Gym/Gymnasium) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4308370>`_
+
 .. tabs::
 
     .. tab:: Pendulum (DDPG)
@@ -479,7 +481,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     # trainer
     timesteps = horizon_length * max_epochs
 
-**Benchmark results** for Isaac Gym are listed in `Benchmark results #32 <https://github.com/Toni-SM/skrl/discussions/32>`_.
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-3774815>`_
 
 .. note::
 
@@ -793,7 +795,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
     # trainer
     timesteps = horizon_length * max_epochs
 
-**Benchmark results** for Omniverse Isaac Gym are listed in `Benchmark results #32 <https://github.com/Toni-SM/skrl/discussions/32>`_.
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Omniverse Isaac Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-3774894>`_
 
 .. note::
 

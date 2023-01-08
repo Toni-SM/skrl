@@ -748,12 +748,12 @@ class DeepMindWrapper(Wrapper):
         self._env.close()
 
 
-class DeepMindRobosuiteWrapper(Wrapper):
+class RobosuiteWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """DeepMind robosuite environment wrapper
+        """Robosuite environment wrapper
 
         :param env: The environment to wrap
-        :type env: Any supported DeepMind robosuite environment
+        :type env: Any supported robosuite environment
         """
         super().__init__(env)
 
@@ -782,10 +782,10 @@ class DeepMindRobosuiteWrapper(Wrapper):
         return self._action_space
 
     def _spec_to_space(self, spec: Any) -> gym.Space:
-        """Convert the DeepMind robosuite spec to a Gym space
+        """Convert the robosuite spec to a Gym space
 
-        :param spec: The DeepMind robosuite spec to convert
-        :type spec: Any supported DeepMind robosuite spec
+        :param spec: The robosuite spec to convert
+        :type spec: Any supported robosuite spec
 
         :raises: ValueError if the spec type is not supported
 
@@ -808,10 +808,10 @@ class DeepMindRobosuiteWrapper(Wrapper):
             raise ValueError("Spec type {} not supported. Please report this issue".format(type(spec)))
 
     def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
-        """Convert the DeepMind observation to a flat tensor
+        """Convert the observation to a flat tensor
 
-        :param observation: The DeepMind observation to convert to a tensor
-        :type observation: Any supported DeepMind observation
+        :param observation: The observation to convert to a tensor
+        :type observation: Any supported observation
 
         :raises: ValueError if the observation spec type is not supported
 
@@ -829,15 +829,15 @@ class DeepMindRobosuiteWrapper(Wrapper):
             raise ValueError("Observation spec type {} not supported. Please report this issue".format(type(spec)))
 
     def _tensor_to_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the DeepMind robosuite expected format
+        """Convert the action to the robosuite expected format
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
         :raise ValueError: If the action space type is not supported
 
-        :return: The action in the DeepMind robosuite expected format
-        :rtype: Any supported DeepMind robosuite action
+        :return: The action in the robosuite expected format
+        :rtype: Any supported robosuite action
         """
         spec = self._env.action_spec
 
@@ -915,7 +915,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
                     +--------------------+-------------------------+
                     |DeepMind            |``"dm"``                 |
                     +--------------------+-------------------------+
-                    |DeepMind robosuite  |``"dm-robosuite"``       |
+                    |Robosuite           |``"robosuite"``          |
                     +--------------------+-------------------------+
                     |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
                     +--------------------+-------------------------+
@@ -958,8 +958,8 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
             return DeepMindWrapper(env)
         elif "<class 'robosuite.environments." in base_classes[0]:
             if verbose:
-                logger.info("Environment wrapper: DeepMind robosuite")
-            return DeepMindRobosuiteWrapper(env)
+                logger.info("Environment wrapper: Robosuite")
+            return RobosuiteWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             if verbose:
                 logger.info("Environment wrapper: Isaac Gym (preview 2)")
@@ -979,10 +979,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
         if verbose:
             logger.info("Environment wrapper: DeepMind")
         return DeepMindWrapper(env)
-    elif wrapper == "dm-robosuite":
+    elif wrapper == "robosuite":
         if verbose:
-            logger.info("Environment wrapper: DeepMind robosuite")
-        return DeepMindRobosuiteWrapper(env)
+            logger.info("Environment wrapper: Robosuite")
+        return RobosuiteWrapper(env)
     elif wrapper == "isaacgym-preview2":
         if verbose:
             logger.info("Environment wrapper: Isaac Gym (preview 2)")

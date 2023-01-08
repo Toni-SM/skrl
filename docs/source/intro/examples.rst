@@ -330,7 +330,7 @@ Other supported APIs
 DeepMind environments
 ^^^^^^^^^^^^^^^^^^^^^
 
-These examples perform the training of one agent in an DeepMind environment (**one agent, one environment**)
+These examples perform the training of one agent in a DeepMind environment (**one agent, one environment**)
 
 .. image:: ../_static/imgs/example_deepmind.png
       :width: 100%
@@ -371,6 +371,42 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/deepmind/dm_manipulation_stack_sac.py
                     :language: python
                     :emphasize-lines: 69, 82, 85-86, 118, 121, 124-125
+
+.. raw:: html
+
+   <hr>
+
+Robosuite environments
+^^^^^^^^^^^^^^^^^^^^^^
+
+These examples perform the training of one agent in a robosuite environment (**one agent, one environment**)
+
+.. image:: ../_static/imgs/example_robosuite.png
+      :width: 50%
+      :align: center
+      :alt: robosuite environments
+
+.. raw:: html
+
+   <br>
+
+The following components or practices are exemplified (highlighted):
+
+    - Load and wrap a robosuite environment: **TwoArmLift (TD3)**
+
+.. tabs::
+
+    .. tab:: robosuite:TwoArmLift (TD3)
+
+        .. tabs::
+
+            .. group-tab:: Training
+
+                :download:`td3_robosuite_two_arm_lift.py <../examples/robosuite/td3_robosuite_two_arm_lift.py>` (not tuned)
+
+                .. literalinclude:: ../examples/robosuite/td3_robosuite_two_arm_lift.py
+                    :language: python
+                    :emphasize-lines: 1-2, 51-65
 
 .. raw:: html
 

@@ -51,6 +51,7 @@ These examples perform the training of one agent in a Gym/Gymnasium environment 
 The following components or practices are exemplified (highlighted):
 
     - Load and wrap a Gym environment: **Pendulum (DDPG)**, **CartPole (CEM)**
+    - Recurrent neural network models (RNN, GRU, LSTM): **PendulumNoVel (DDPG)**
     - Instantiate models using the model instantiation utility: **CartPole (DQN)**
     - Create a tabular model (:math:`\epsilon`-greedy policy): **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
     - Load a checkpoint during evaluation: **Pendulum (DDPG)**, **CartPole (CEM)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
@@ -84,6 +85,52 @@ The following components or practices are exemplified (highlighted):
                 .. literalinclude:: ../examples/gym/ddpg_gym_pendulum_eval.py
                     :language: python
                     :emphasize-lines: 67
+
+    .. tab:: PendulumNoVel (DDPG)
+
+        .. note::
+
+            The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
+
+        More examples with other algorithms can be found in the repository documentation `example folder <https://github.com/Toni-SM/skrl/tree/main/docs/source/examples/gym>`_ and in the benchmark results indicated above
+
+        .. tabs::
+
+            .. tab:: RNN
+
+                .. tabs::
+
+                    .. group-tab:: Training
+
+                        | :download:`ddpg_gym_pendulumnovel_rnn.py <../examples/gym/ddpg_gym_pendulumnovel_rnn.py>`
+
+                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_rnn.py
+                            :language: python
+                            :emphasize-lines: 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
+
+            .. tab:: GRU
+
+                .. tabs::
+
+                    .. group-tab:: Training
+
+                        | :download:`ddpg_gym_pendulumnovel_gru.py <../examples/gym/ddpg_gym_pendulumnovel_gru.py>`
+
+                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_gru.py
+                            :language: python
+                            :emphasize-lines: 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
+
+            .. tab:: LSTM
+
+                .. tabs::
+
+                    .. group-tab:: Training
+
+                        | :download:`ddpg_gym_pendulumnovel_lstm.py <../examples/gym/ddpg_gym_pendulumnovel_lstm.py>`
+
+                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_lstm.py
+                            :language: python
+                            :emphasize-lines: 31-34, 40-44, 51-82, 91, 104-107, 113-117, 127-151, 159
 
     .. tab:: CartPole (CEM)
 

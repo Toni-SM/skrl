@@ -977,7 +977,7 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
 
 .. tabs::
 
-    .. tab:: Isaac Sim 2022.1.X (Cartpole)
+    .. tab:: Isaac Sim 2022.X.X (Cartpole)
 
         This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html>`_ tutorial
 

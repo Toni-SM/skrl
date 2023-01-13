@@ -1,6 +1,7 @@
 from typing import Union, Tuple, Any, Optional
 
 import gym
+import gymnasium
 import collections
 import numpy as np
 from packaging import version
@@ -43,17 +44,17 @@ class Wrapper(object):
         raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
             .format(self._env.__class__.__name__, key))
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
         :raises NotImplementedError: Not implemented
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         raise NotImplementedError
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -61,7 +62,7 @@ class Wrapper(object):
 
         :raises NotImplementedError: Not implemented
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         raise NotImplementedError
@@ -122,28 +123,29 @@ class IsaacGymPreview2Wrapper(Wrapper):
         self._reset_once = True
         self._obs_buf = None
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_buf, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_buf, rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_buf, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_buf, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_buf = self._env.reset()
             self._reset_once = False
-        return self._obs_buf
+        return self._obs_buf, {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -168,28 +170,29 @@ class IsaacGymPreview3Wrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_dict, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_dict["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_dict = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["obs"]
+        return self._obs_dict["obs"], {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -224,28 +227,29 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """
         self._env.run(trainer)
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, rew_buf, reset_buf, info = self._env.step(actions)
-        return self._obs_dict["obs"], rew_buf.view(-1, 1), reset_buf.view(-1, 1), info
+        self._obs_dict, reward, terminated, info = self._env.step(actions)
+        truncated = torch.zeros_like(terminated)
+        return self._obs_dict["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
             self._obs_dict = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["obs"]
+        return self._obs_dict["obs"], {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -271,6 +275,9 @@ class GymWrapper(Wrapper):
         try:
             if isinstance(env, gym.vector.SyncVectorEnv) or isinstance(env, gym.vector.AsyncVectorEnv):
                 self._vectorized = True
+                self._reset_once = True
+                self._obs_tensor = None
+                self._info_dict = None
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
 
@@ -304,7 +311,7 @@ class GymWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _observation_to_tensor(self, observation: Any, space: Union[gym.Space, None] = None) -> torch.Tensor:
+    def _observation_to_tensor(self, observation: Any, space: Optional[gym.Space] = None) -> torch.Tensor:
         """Convert the OpenAI Gym observation to a flat tensor
 
         :param observation: The OpenAI Gym observation to convert to a tensor
@@ -362,40 +369,214 @@ class GymWrapper(Wrapper):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         if self._drepecated_api:
-            observation, reward, done, info = self._env.step(self._tensor_to_action(actions))
-        else:
-            observation, reward, termination, truncation, info = self._env.step(self._tensor_to_action(actions))
-            if type(termination) is bool:
-                done = termination or truncation
+            observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
+            # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
+            if type(info) is list:
+                truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
+                terminated *= np.logical_not(truncated)
             else:
-                done = np.logical_or(termination, truncation)
-        # convert response to torch
-        return self._observation_to_tensor(observation), \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               info
+                truncated = info.get("TimeLimit.truncated", False)
+                if truncated:
+                    terminated = False
+        else:
+            observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
 
-    def reset(self) -> torch.Tensor:
+        # convert response to torch
+        observation = self._observation_to_tensor(observation)
+        reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+        truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+
+        # save observation and info for vectorized envs
+        if self._vectorized:
+            self._obs_tensor = observation
+            self._info_dict = info
+
+        return observation, reward, terminated, truncated, info
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
         """
+        # handle vectorized envs
+        if self._vectorized:
+            if not self._reset_once:
+                return self._obs_tensor, self._info_dict
+            self._reset_once = False
+
+        # reset the env/envs
         if self._drepecated_api:
             observation = self._env.reset()
+            info = {}
         else:
             observation, info = self._env.reset()
-        return self._observation_to_tensor(observation)
+        return self._observation_to_tensor(observation), info
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        self._env.render(*args, **kwargs)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
+
+
+class GymnasiumWrapper(Wrapper):
+    def __init__(self, env: Any) -> None:
+        """Gymnasium environment wrapper
+
+        :param env: The environment to wrap
+        :type env: Any supported Gymnasium environment
+        """
+        super().__init__(env)
+
+        self._vectorized = False
+        try:
+            if isinstance(env, gymnasium.vector.SyncVectorEnv) or isinstance(env, gymnasium.vector.AsyncVectorEnv):
+                self._vectorized = True
+                self._reset_once = True
+                self._obs_tensor = None
+                self._info_dict = None
+        except Exception as e:
+            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+
+    @property
+    def state_space(self) -> gymnasium.Space:
+        """State space
+
+        An alias for the ``observation_space`` property
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        if self._vectorized:
+            return self._env.single_observation_space
+        return self._env.observation_space
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        if self._vectorized:
+            return self._env.single_action_space
+        return self._env.action_space
+
+    def _observation_to_tensor(self, observation: Any, space: Optional[gymnasium.Space] = None) -> torch.Tensor:
+        """Convert the Gymnasium observation to a flat tensor
+
+        :param observation: The Gymnasium observation to convert to a tensor
+        :type observation: Any supported Gymnasium observation space
+
+        :raises: ValueError if the observation space type is not supported
+
+        :return: The observation as a flat tensor
+        :rtype: torch.Tensor
+        """
+        observation_space = self._env.observation_space if self._vectorized else self.observation_space
+        space = space if space is not None else observation_space
+
+        if self._vectorized and isinstance(space, gymnasium.spaces.MultiDiscrete):
+            return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
+        elif isinstance(observation, int):
+            return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
+        elif isinstance(observation, np.ndarray):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gymnasium.spaces.Discrete):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gymnasium.spaces.Box):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        elif isinstance(space, gymnasium.spaces.Dict):
+            tmp = torch.cat([self._observation_to_tensor(observation[k], space[k]) \
+                for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
+            return tmp
+        else:
+            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+
+    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
+        """Convert the action to the Gymnasium expected format
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :raise ValueError: If the action space type is not supported
+
+        :return: The action in the Gymnasium format
+        :rtype: Any supported Gymnasium action space
+        """
+        space = self._env.action_space if self._vectorized else self.action_space
+
+        if self._vectorized:
+            if isinstance(space, gymnasium.spaces.MultiDiscrete):
+                return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+            elif isinstance(space, gymnasium.spaces.Tuple):
+                if isinstance(space[0], gymnasium.spaces.Box):
+                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
+                elif isinstance(space[0], gymnasium.spaces.Discrete):
+                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(-1)
+        if isinstance(space, gymnasium.spaces.Discrete):
+            return actions.item()
+        elif isinstance(space, gymnasium.spaces.Box):
+            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
+        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of torch.Tensor and any other info
+        """
+        observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
+
+        # convert response to torch
+        observation = self._observation_to_tensor(observation)
+        reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+        terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+        truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
+
+        # save observation and info for vectorized envs
+        if self._vectorized:
+            self._obs_tensor = observation
+            self._info_dict = info
+
+        return observation, reward, terminated, truncated, info
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment
+
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
+        """
+        # handle vectorized envs
+        if self._vectorized:
+            if not self._reset_once:
+                return self._obs_tensor, self._info_dict
+            self._reset_once = False
+
+        # reset the env/envs
+        observation, info = self._env.reset()
+        return self._observation_to_tensor(observation), info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -472,7 +653,7 @@ class DeepMindWrapper(Wrapper):
         else:
             raise ValueError("Spec type {} not supported. Please report this issue".format(type(spec)))
 
-    def _observation_to_tensor(self, observation: Any, spec: Union[Any, None] = None) -> torch.Tensor:
+    def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
         """Convert the DeepMind observation to a flat tensor
 
         :param observation: The DeepMind observation to convert to a tensor
@@ -515,36 +696,38 @@ class DeepMindWrapper(Wrapper):
         else:
             raise ValueError("Action spec type {} not supported. Please report this issue".format(type(spec)))
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
         :type actions: torch.Tensor
 
-        :return: The state, the reward, the done flag, and the info
+        :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
         timestep = self._env.step(self._tensor_to_action(actions))
 
         observation = timestep.observation
         reward = timestep.reward if timestep.reward is not None else 0
-        done = timestep.last()
+        terminated = timestep.last()
+        truncated = False
         info = {}
 
         # convert response to torch
         return self._observation_to_tensor(observation), \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(done, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                info
 
-    def reset(self) -> torch.Tensor:
+    def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
 
         :return: The state of the environment
         :rtype: torch.Tensor
         """
         timestep = self._env.reset()
-        return self._observation_to_tensor(timestep.observation)
+        return self._observation_to_tensor(timestep.observation), {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -565,6 +748,144 @@ class DeepMindWrapper(Wrapper):
         self._env.close()
 
 
+class RobosuiteWrapper(Wrapper):
+    def __init__(self, env: Any) -> None:
+        """Robosuite environment wrapper
+
+        :param env: The environment to wrap
+        :type env: Any supported robosuite environment
+        """
+        super().__init__(env)
+
+        # observation and action spaces
+        self._observation_space = self._spec_to_space(self._env.observation_spec())
+        self._action_space = self._spec_to_space(self._env.action_spec)
+
+    @property
+    def state_space(self) -> gym.Space:
+        """State space
+
+        An alias for the ``observation_space`` property
+        """
+        return self._observation_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        """Observation space
+        """
+        return self._observation_space
+
+    @property
+    def action_space(self) -> gym.Space:
+        """Action space
+        """
+        return self._action_space
+
+    def _spec_to_space(self, spec: Any) -> gym.Space:
+        """Convert the robosuite spec to a Gym space
+
+        :param spec: The robosuite spec to convert
+        :type spec: Any supported robosuite spec
+
+        :raises: ValueError if the spec type is not supported
+
+        :return: The Gym space
+        :rtype: gym.Space
+        """
+        if type(spec) is tuple:
+            return gym.spaces.Box(shape=spec[0].shape,
+                                  dtype=np.float32,
+                                  low=spec[0],
+                                  high=spec[1])
+        elif isinstance(spec, np.ndarray):
+            return gym.spaces.Box(shape=spec.shape,
+                                  dtype=np.float32,
+                                  low=np.full(spec.shape, float("-inf")),
+                                  high=np.full(spec.shape, float("inf")))
+        elif isinstance(spec, collections.OrderedDict):
+            return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
+        else:
+            raise ValueError("Spec type {} not supported. Please report this issue".format(type(spec)))
+
+    def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
+        """Convert the observation to a flat tensor
+
+        :param observation: The observation to convert to a tensor
+        :type observation: Any supported observation
+
+        :raises: ValueError if the observation spec type is not supported
+
+        :return: The observation as a flat tensor
+        :rtype: torch.Tensor
+        """
+        spec = spec if spec is not None else self._env.observation_spec()
+
+        if isinstance(spec, np.ndarray):
+            return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
+        elif isinstance(spec, collections.OrderedDict):
+            return torch.cat([self._observation_to_tensor(observation[k], spec[k]) \
+                for k in sorted(spec.keys())], dim=-1).reshape(self.num_envs, -1)
+        else:
+            raise ValueError("Observation spec type {} not supported. Please report this issue".format(type(spec)))
+
+    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
+        """Convert the action to the robosuite expected format
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :raise ValueError: If the action space type is not supported
+
+        :return: The action in the robosuite expected format
+        :rtype: Any supported robosuite action
+        """
+        spec = self._env.action_spec
+
+        if type(spec) is tuple:
+            return np.array(actions.cpu().numpy(), dtype=np.float32).reshape(spec[0].shape)
+        else:
+            raise ValueError("Action spec type {} not supported. Please report this issue".format(type(spec)))
+
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of torch.Tensor and any other info
+        """
+        observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
+        truncated = False
+        info = {}
+
+        # convert response to torch
+        return self._observation_to_tensor(observation), \
+               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
+               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
+               info
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment
+
+        :return: The state of the environment
+        :rtype: torch.Tensor
+        """
+        observation = self._env.reset()
+        return self._observation_to_tensor(observation), {}
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        self._env.render(*args, **kwargs)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
+
+
 def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     """Wrap an environment to use a common interface
 
@@ -576,7 +897,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
         >>> env = wrap_env(env)
 
     :param env: The environment to be wrapped
-    :type env: gym.Env, dm_env.Environment or VecTask
+    :type env: gym.Env, gymnasium.Env, dm_env.Environment or VecTask
     :param wrapper: The type of wrapper to use (default: "auto").
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:
@@ -590,7 +911,11 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
                     +====================+=========================+
                     |OpenAI Gym          |``"gym"``                |
                     +--------------------+-------------------------+
+                    |Gymnasium           |``"gymnasium"``          |
+                    +--------------------+-------------------------+
                     |DeepMind            |``"dm"``                 |
+                    +--------------------+-------------------------+
+                    |Robosuite           |``"robosuite"``          |
                     +--------------------+-------------------------+
                     |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
                     +--------------------+-------------------------+
@@ -623,10 +948,18 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
             if verbose:
                 logger.info("Environment wrapper: Gym")
             return GymWrapper(env)
+        elif isinstance(env, gymnasium.core.Env) or isinstance(env, gymnasium.core.Wrapper):
+            if verbose:
+                logger.info("Environment wrapper: Gymnasium")
+            return GymnasiumWrapper(env)
         elif "<class 'dm_env._environment.Environment'>" in base_classes:
             if verbose:
                 logger.info("Environment wrapper: DeepMind")
             return DeepMindWrapper(env)
+        elif "<class 'robosuite.environments." in base_classes[0]:
+            if verbose:
+                logger.info("Environment wrapper: Robosuite")
+            return RobosuiteWrapper(env)
         elif "<class 'rlgpu.tasks.base.vec_task.VecTask'>" in base_classes:
             if verbose:
                 logger.info("Environment wrapper: Isaac Gym (preview 2)")
@@ -638,10 +971,18 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
         if verbose:
             logger.info("Environment wrapper: Gym")
         return GymWrapper(env)
+    elif wrapper == "gymnasium":
+        if verbose:
+            logger.info("Environment wrapper: gymnasium")
+        return GymnasiumWrapper(env)
     elif wrapper == "dm":
         if verbose:
             logger.info("Environment wrapper: DeepMind")
         return DeepMindWrapper(env)
+    elif wrapper == "robosuite":
+        if verbose:
+            logger.info("Environment wrapper: Robosuite")
+        return RobosuiteWrapper(env)
     elif wrapper == "isaacgym-preview2":
         if verbose:
             logger.info("Environment wrapper: Isaac Gym (preview 2)")

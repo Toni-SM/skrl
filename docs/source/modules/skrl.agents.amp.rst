@@ -71,7 +71,7 @@ Algorithm implementation
 |         :math:`{logit}_{_{AMP}}^{^B} \leftarrow D_\psi(s_{_{AMP}}^{^B}) \qquad` with :math:`s_{_{AMP}}^{^B}` of size :guilabel:`discriminator_batch_size`
 |         :math:`{logit}_{_{AMP}}^{^M} \leftarrow D_\psi(s_{_{AMP}}^{^M}) \qquad` with :math:`s_{_{AMP}}^{^M}` of size :guilabel:`discriminator_batch_size`
 |         :green:`# discriminator prediction loss`
-|         :math:`L_{D_\psi} \leftarrow \dfrac{1}{2}(BCE({logit}_{_{AMP}}` ++ :math:`{logit}_{_{AMP}}^{^B}, \, 0) + BCE({logit}_{_{AMP}}^{^M}, \, 1))` 
+|         :math:`L_{D_\psi} \leftarrow \dfrac{1}{2}(BCE({logit}_{_{AMP}}` ++ :math:`{logit}_{_{AMP}}^{^B}, \, 0) + BCE({logit}_{_{AMP}}^{^M}, \, 1))`
 |              with :math:`\; BCE(x,y)=-\frac{1}{N} \sum_{i=1}^N [y \; log(\hat{y}) + (1-y) \, log(1-\hat{y})] \;` and :math:`\; \hat{y} = \dfrac{1}{1 + e^{-x}}`
 |         :green:`# discriminator logit regularization`
 |         :math:`L_{D_\psi} \leftarrow L_{D_\psi} +` :guilabel:`discriminator_logit_regularization_scale` :math:`\sum_{i=1}^N \text{flatten}(\psi_w[-1])^2`
@@ -82,7 +82,7 @@ Algorithm implementation
 |         :green:`# optimization step`
 |         reset :math:`\text{optimizer}_{\theta, \phi, \psi}`
 |         :math:`\nabla_{\theta, \, \phi, \, \psi} (L^{clip}_{\pi_\theta} + {L}_{entropy} + L_{V_\phi} + L_{D_\psi})`
-|         :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi, \, \psi} \rVert)` with :guilabel:`grad_norm_clip` 
+|         :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi, \, \psi} \rVert)` with :guilabel:`grad_norm_clip`
 |         step :math:`\text{optimizer}_{\theta, \phi, \psi}`
 |     :green:`# update learning rate`
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
@@ -97,18 +97,18 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/amp/amp.py
    :language: python
-   :lines: 18-68
+   :lines: 18-71
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: AMP observation
      - .. centered:: Observation
      - .. centered:: Action
@@ -155,6 +155,18 @@ The implementation uses 1 stochastic (continuous) and 2 deterministic function a
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - \-
+
 API
 ^^^
 
@@ -163,5 +175,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

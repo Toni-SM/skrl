@@ -31,23 +31,23 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(128, 64),
                                  nn.ELU())
-        
+
         self.mean_layer = nn.Linear(64, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-        
+
         self.value_layer = nn.Linear(64, 1)
 
-    def act(self, states, taken_actions, role):
+    def act(self, inputs, role):
         if role == "policy":
-            return GaussianMixin.act(self, states, taken_actions, role)
+            return GaussianMixin.act(self, inputs, role)
         elif role == "value":
-            return DeterministicMixin.act(self, states, taken_actions, role)
+            return DeterministicMixin.act(self, inputs, role)
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         if role == "policy":
-            return self.mean_layer(self.net(states)), self.log_std_parameter
+            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
         elif role == "value":
-            return self.value_layer(self.net(states))
+            return self.value_layer(self.net(inputs["states"])), {}
 
 
 # Load and wrap the Omniverse Isaac Gym environment
@@ -75,7 +75,7 @@ models_ppo["value"] = models_ppo["policy"]  # same instance: shared model
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 16  # memory_size
 cfg_ppo["learning_epochs"] = 8
-cfg_ppo["mini_batches"] = 8  # 16 * 4096 / 8192    
+cfg_ppo["mini_batches"] = 8  # 16 * 4096 / 8192
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
 cfg_ppo["learning_rate"] = 5e-4
@@ -100,9 +100,9 @@ cfg_ppo["experiment"]["write_interval"] = 120
 cfg_ppo["experiment"]["checkpoint_interval"] = 1200
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

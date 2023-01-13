@@ -1,8 +1,8 @@
-from typing import Optional, Mapping, Sequence
+from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import torch
 
-from . import Model
+from skrl.models.torch import Model
 
 
 class TabularMixin:
@@ -19,23 +19,24 @@ class TabularMixin:
             # define the model
             >>> import torch
             >>> from skrl.models.torch import Model, TabularMixin
-            >>> 
+            >>>
             >>> class GreedyPolicy(TabularMixin, Model):
             ...     def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
             ...         Model.__init__(self, observation_space, action_space, device)
             ...         TabularMixin.__init__(self, num_envs)
             ...
-            ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions), 
+            ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
             ...                                 dtype=torch.float32, device=self.device)
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states], 
+            ...     def compute(self, inputs, role):
+            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
             ...                                dim=-1, keepdim=True).view(-1,1)
+            ...         return actions, {}
             ...
             >>> # given an observation_space: gym.spaces.Discrete with n=100
             >>> # and an action_space: gym.spaces.Discrete with n=5
             >>> model = GreedyPolicy(observation_space, action_space, num_envs=1)
-            >>> 
+            >>>
             >>> print(model)
             GreedyPolicy(
               (table): Tensor(shape=[1, 100, 5])
@@ -69,35 +70,33 @@ class TabularMixin:
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
-        :return: Action to be taken by the agent given the state of the environment.
-                 The sequence's components are the computed actions and None for the last two components
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is ``None``. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
 
         Example::
 
             >>> # given a batch of sample states with shape (1, 100)
-            >>> output = model.act(states)
-            >>> print(output[0], output[1], output[2])
-            tensor([[3]], device='cuda:0') None None
+            >>> actions, _, outputs = model.act({"states": states})
+            >>> print(actions[0], outputs)
+            tensor([[3]], device='cuda:0') {}
         """
-        actions = self.compute(states.to(self.device), 
-                               taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
-        return actions, None, None
-        
+        actions, outputs = self.compute(inputs, role)
+        return actions, None, outputs
+
     def table(self) -> torch.Tensor:
         """Return the Q-table
 
@@ -143,12 +142,12 @@ class TabularMixin:
 
         :param state_dict: A dict containing parameters and persistent buffers
         :type state_dict: dict
-        :param strict: Whether to strictly enforce that the keys in state_dict match the keys 
+        :param strict: Whether to strictly enforce that the keys in state_dict match the keys
                        returned by this module's state_dict() function (default: ``True``)
         :type strict: bool, optional
         """
         Model.load_state_dict(self, state_dict, strict=False)
-        
+
         for name, tensor in state_dict.items():
             if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
                 _tensor = getattr(self, name)
@@ -163,7 +162,7 @@ class TabularMixin:
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
         :param state_dict: State dictionary to save (default: ``None``).

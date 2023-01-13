@@ -1,21 +1,21 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the `OpenAI Gym <https://www.gymlibrary.dev>`_ and `DeepMind <https://github.com/deepmind/dm_env>`_ environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Support for OpenAI Gym (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4) and NVIDIA Omniverse Isaac Gym environments
-    * Simultaneous learning by scopes in OpenAI Gym (vectorized), NVIDIA Isaac Gym and NVIDIA Omniverse Isaac Gym
+    * Support for Gym/Gymnasium (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4), NVIDIA Omniverse Isaac Gym environments, among others
+    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), NVIDIA Isaac Gym and NVIDIA Omniverse Isaac Gym
 
 .. warning::
 
     **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
-| **GitHub repository:** https://github.com/Toni-SM/skrl 
-| **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions 
+| **GitHub repository:** https://github.com/Toni-SM/skrl
+| **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
 
 **Citing skrl:** To cite this library (created at `Mondragon Unibertsitatea <https://www.mondragon.edu/en/home>`_) use the following reference to its `article <https://arxiv.org/abs/2202.03825>`_: *"skrl: Modular and Flexible Library for Reinforcement Learning"*
 
@@ -90,9 +90,9 @@ Agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the OpenAI Gym, DeepMind, Isaac Gym and Omniverse Isaac Gym environments
+    Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Omniverse Isaac Gym environments, among others
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **OpenAI Gym**, **DeepMind**, **Isaac Gym** and **Omniverse Isaac Gym** environments
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Omniverse Isaac Gym** environments, among others
     * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
     * Loading :doc:`Omniverse Isaac Gym environments <modules/skrl.envs.omniverse_isaac_gym>`
 
@@ -157,7 +157,7 @@ Trainers
     :maxdepth: 1
     :caption: Trainers
     :hidden:
-        
+
     modules/skrl.trainers.base_class
     modules/skrl.trainers.sequential
     modules/skrl.trainers.parallel
@@ -185,7 +185,7 @@ Resources
     :maxdepth: 2
     :caption: Resources
     :hidden:
-    
+
     modules/skrl.resources.noises
     modules/skrl.resources.schedulers
     modules/skrl.resources.preprocessors
@@ -205,7 +205,7 @@ Utils
     :maxdepth: 1
     :caption: Utils
     :hidden:
-        
+
     modules/skrl.utils.utilities
     modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing

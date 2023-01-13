@@ -14,8 +14,8 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     """
     Set the seed for the random number generators
 
-    Due to NumPy's legacy seeding constraint the seed must be between 0 and 2**32 - 1. 
-    Otherwise a NumPy exception (``ValueError: Seed must be between 0 and 2**32 - 1``) will be raised 
+    Due to NumPy's legacy seeding constraint the seed must be between 0 and 2**32 - 1.
+    Otherwise a NumPy exception (``ValueError: Seed must be between 0 and 2**32 - 1``) will be raised
 
     Modified packages:
 
@@ -49,7 +49,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     :param seed: The seed to set. Is None, a random seed will be generated (default: ``None``)
     :type seed: int, optional
     :param deterministic: Whether PyTorch is configured to use deterministic algorithms (default: ``False``).
-                          The following environment variables should be established for CUDA 10.1 (``CUDA_LAUNCH_BLOCKING=1``) 
+                          The following environment variables should be established for CUDA 10.1 (``CUDA_LAUNCH_BLOCKING=1``)
                           and for CUDA 10.2 or later (``CUBLAS_WORKSPACE_CONFIG=:16:8`` or ``CUBLAS_WORKSPACE_CONFIG=:4096:2``).
                           See PyTorch `Reproducibility <https://pytorch.org/docs/stable/notes/randomness.html>`_ for details
     :type deterministic: bool, optional

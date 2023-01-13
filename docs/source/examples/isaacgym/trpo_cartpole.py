@@ -34,8 +34,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -48,8 +48,8 @@ class Value(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the Isaac Gym environment
@@ -70,28 +70,26 @@ models_trpo = {}
 models_trpo["policy"] = Policy(env.observation_space, env.action_space, device)
 models_trpo["value"] = Value(env.observation_space, env.action_space, device)
 
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_trpo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-
 
 # Configure and instantiate the agent.
 # Only modify some of the default configuration, visit its documentation to see all the options
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.trpo.html#configuration-and-hyperparameters
 cfg_trpo = TRPO_DEFAULT_CONFIG.copy()
 cfg_trpo["rollouts"] = 16  # memory_size
-cfg_trpo["learning_epochs"] = 6
-cfg_trpo["mini_batches"] = 2
-cfg_trpo["grad_norm_clip"] = 0.5
-cfg_trpo["value_loss_scale"] = 2.0
+cfg_trpo["learning_epochs"] = 8
+cfg_trpo["mini_batches"] = 1
+cfg_trpo["discount_factor"] = 0.99
 cfg_trpo["lambda"] = 0.95
+cfg_trpo["learning_rate"] = 3e-4
+cfg_trpo["grad_norm_clip"] = 1.0
+cfg_trpo["value_loss_scale"] = 2.0
 cfg_trpo["state_preprocessor"] = RunningStandardScaler
 cfg_trpo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg_trpo["value_preprocessor"] = RunningStandardScaler
 cfg_trpo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-# logging to TensorBoard and write checkpoints each 16 and 125 timesteps respectively
+# logging to TensorBoard and write checkpoints each 16 and 80 timesteps respectively
 cfg_trpo["experiment"]["write_interval"] = 16
-cfg_trpo["experiment"]["checkpoint_interval"] = 125
+cfg_trpo["experiment"]["checkpoint_interval"] = 80
 
 agent = TRPO(models=models_trpo,
             memory=memory,

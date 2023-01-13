@@ -5,15 +5,16 @@ import tqdm
 
 import torch
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
 
-from . import Trainer
+from skrl.trainers.torch import Trainer
 
 
 MANUAL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
 }
 
 
@@ -21,8 +22,8 @@ class ManualTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Manual trainer
 
         Train agents by manually controlling the training/evaluation loop
@@ -38,15 +39,16 @@ class ManualTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(MANUAL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
         if self.num_agents > 1:
             for agent in self.agents:
-                agent.init()
+                agent.init(trainer_cfg=self.cfg)
         else:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
 
         self._progress = None
 
@@ -74,12 +76,19 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
         self._progress.update(n=1)
+
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("train")
+        else:
+            self.agents.set_running_mode("train")
 
         # reset env
         if self.states is None:
-            self.states = self.env.reset()
+            self.states, infos = self.env.reset()
 
         if self.num_agents == 1:
             # pre-interaction
@@ -87,7 +96,7 @@ class ManualTrainer(Trainer):
 
             # compute actions
             with torch.no_grad():
-                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
+                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
 
         else:
             # pre-interaction
@@ -100,7 +109,7 @@ class ManualTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments
-        next_states, rewards, dones, infos = self.env.step(actions)
+        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
         # render scene
         if not self.headless:
@@ -113,7 +122,8 @@ class ManualTrainer(Trainer):
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=timesteps)
@@ -129,7 +139,8 @@ class ManualTrainer(Trainer):
                                             actions=actions[scope[0]:scope[1]],
                                             rewards=rewards[scope[0]:scope[1]],
                                             next_states=next_states[scope[0]:scope[1]],
-                                            dones=dones[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
@@ -140,8 +151,8 @@ class ManualTrainer(Trainer):
 
         # reset environments
         with torch.no_grad():
-            if dones.any():
-                self.states = self.env.reset()
+            if terminated.any() or truncated.any():
+                self.states, infos = self.env.reset()
             else:
                 self.states.copy_(next_states)
 
@@ -165,17 +176,24 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
         self._progress.update(n=1)
+
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("eval")
+        else:
+            self.agents.set_running_mode("eval")
 
         # reset env
         if self.states is None:
-            self.states = self.env.reset()
-        
+            self.states, infos = self.env.reset()
+
         with torch.no_grad():
             if self.num_agents == 1:
                 # compute actions
-                actions, _, _ = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)
+                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
 
             else:
                 # compute actions
@@ -183,7 +201,7 @@ class ManualTrainer(Trainer):
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
         # step the environments
-        next_states, rewards, dones, infos = self.env.step(actions)
+        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
         # render scene
         if not self.headless:
@@ -192,31 +210,33 @@ class ManualTrainer(Trainer):
         with torch.no_grad():
             if self.num_agents == 1:
                 # write data to TensorBoard
-                super(type(self.agents), self.agents).record_transition(states=self.states,
-                                                                        actions=actions,
-                                                                        rewards=rewards,
-                                                                        next_states=next_states,
-                                                                        dones=dones,
-                                                                        infos=infos,
-                                                                        timestep=timestep,
-                                                                        timesteps=timesteps)
+                self.agents.record_transition(states=self.states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
 
             else:
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
-                    super(type(agent), agent).record_transition(states=self.states[scope[0]:scope[1]],
-                                                                actions=actions[scope[0]:scope[1]],
-                                                                rewards=rewards[scope[0]:scope[1]],
-                                                                next_states=next_states[scope[0]:scope[1]],
-                                                                dones=dones[scope[0]:scope[1]],
-                                                                infos=infos,
-                                                                timestep=timestep,
-                                                                timesteps=timesteps)
+                    agent.record_transition(states=self.states[scope[0]:scope[1]],
+                                            actions=actions[scope[0]:scope[1]],
+                                            rewards=rewards[scope[0]:scope[1]],
+                                            next_states=next_states[scope[0]:scope[1]],
+                                            terminated=terminated[scope[0]:scope[1]],
+                                            truncated=truncated[scope[0]:scope[1]],
+                                            infos=infos,
+                                            timestep=timestep,
+                                            timesteps=timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
 
             # reset environments
-            if dones.any():
-                self.states = self.env.reset()
+            if terminated.any() or truncated.any():
+                self.states, infos = self.env.reset()
             else:
                 self.states.copy_(next_states)

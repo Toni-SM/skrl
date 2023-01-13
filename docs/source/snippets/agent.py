@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
 import gym
 
@@ -18,18 +18,21 @@ CUSTOM_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": False,             # whether to use Weights & Biases
+        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
 
 
 class CUSTOM(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 cfg: dict = {}) -> None:
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Optional[Memory] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
+                 device: Union[str, torch.device] = "cuda:0",
+                 cfg: Optional[dict] = None) -> None:
         """
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
@@ -44,12 +47,12 @@ class CUSTOM(Agent):
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
-        CUSTOM_DEFAULT_CONFIG.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        CUSTOM_DEFAULT_CONFIG.update(cfg if cfg is not None else {})
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=CUSTOM_DEFAULT_CONFIG)
         # =====================================================================
         # - get and process models from self.models
@@ -59,10 +62,10 @@ class CUSTOM(Agent):
         # - set up preprocessors
         # =====================================================================
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
         # =================================================================
         # - create tensors in memory if required
@@ -89,17 +92,17 @@ class CUSTOM(Agent):
         #   sample and return agent's actions
         # ======================================
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor,  
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          dones: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent

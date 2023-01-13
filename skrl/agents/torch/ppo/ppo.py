@@ -1,6 +1,6 @@
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 
-import gym
+import gym, gymnasium
 import copy
 import itertools
 
@@ -8,21 +8,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ....memories.torch import Memory
-from ....models.torch import Model
-from ....resources.schedulers.torch import KLAdaptiveRL
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
+from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-from .. import Agent
+from skrl.agents.torch import Agent
 
 
 PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
     "mini_batches": 2,              # number of mini batches during each learning epoch
-    
+
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-    
+
     "learning_rate": 1e-3,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
@@ -54,33 +54,37 @@ PPO_DEFAULT_CONFIG = {
 
         "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
+
+        "wandb": False,             # whether to use Weights & Biases
+        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
 
 
 class PPO(Agent):
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 cfg: dict = {}) -> None:
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 device: Optional[Union[str, torch.device]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Proximal Policy Optimization (PPO)
 
         https://arxiv.org/abs/1707.06347
-        
+
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
-        :param device: Computing device (default: "cuda:0")
+        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -88,12 +92,12 @@ class PPO(Agent):
         :raises KeyError: If the models dictionary is missing a required key
         """
         _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)
-        _cfg.update(cfg)
-        super().__init__(models=models, 
-                         memory=memory, 
-                         observation_space=observation_space, 
-                         action_space=action_space, 
-                         device=device, 
+        _cfg.update(cfg if cfg is not None else {})
+        super().__init__(models=models,
+                         memory=memory,
+                         observation_space=observation_space,
+                         action_space=action_space,
+                         device=device,
                          cfg=_cfg)
 
         # models
@@ -139,7 +143,7 @@ class PPO(Agent):
             if self.policy is self.value:
                 self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             else:
-                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()), 
+                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()),
                                                   lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -159,24 +163,56 @@ class PPO(Agent):
         else:
             self._value_preprocessor = self._empty_preprocessor
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
         """
-        super().init()
+        super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
-        
+
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memory.create_tensor(name="dones", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-        self.tensors_names = ["states", "actions", "rewards", "dones", "log_prob", "values", "returns", "advantages"]
+            # tensors sampled during training
+            self._tensors_names = ["states", "actions", "terminated", "log_prob", "values", "returns", "advantages"]
+
+        # RNN specifications
+        self._rnn = False  # flag to indicate whether RNN is available
+        self._rnn_tensors_names = []  # used for sampling during training
+        self._rnn_final_states = {"policy": [], "value": []}
+        self._rnn_initial_states = {"policy": [], "value": []}
+        self._rnn_sequence_length = self.policy.get_specification().get("rnn", {}).get("sequence_length", 1)
+
+        # policy
+        for i, size in enumerate(self.policy.get_specification().get("rnn", {}).get("sizes", [])):
+            self._rnn = True
+            # create tensors in memory
+            if self.memory is not None:
+                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                self._rnn_tensors_names.append(f"rnn_policy_{i}")
+            # default RNN states
+            self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
+
+        # value
+        if self.value is not None:
+            if self.policy is self.value:
+                self._rnn_initial_states["value"] = self._rnn_initial_states["policy"]
+            else:
+                for i, size in enumerate(self.value.get_specification().get("rnn", {}).get("sizes", [])):
+                    self._rnn = True
+                    # create tensors in memory
+                    if self.memory is not None:
+                        self.memory.create_tensor(name=f"rnn_value_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                        self._rnn_tensors_names.append(f"rnn_value_{i}")
+                    # default RNN states
+                    self._rnn_initial_states["value"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = None
@@ -195,30 +231,34 @@ class PPO(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
-        states = self._state_preprocessor(states)
+        rnn = {"rnn": self._rnn_initial_states["policy"]} if self._rnn else {}
 
         # sample random actions
-        # TODO, check for stochasticity
+        # TODO: fix for stochasticity, rnn and log_prob
         if timestep < self._random_timesteps:
-            return self.policy.random_act(states, taken_actions=None, role="policy")
+            return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, actions_mean = self.policy.act(states, taken_actions=None, role="policy")
+        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
         self._current_log_prob = log_prob
 
-        return actions, log_prob, actions_mean
+        if self._rnn:
+            self._rnn_final_states["policy"] = outputs.get("rnn", [])
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+        return actions, log_prob, outputs
+
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -227,8 +267,10 @@ class PPO(Agent):
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -236,24 +278,48 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, dones, infos, timestep, timesteps)
-
-        # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
-
-        self._current_next_states = next_states
+        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
         if self.memory is not None:
-            with torch.no_grad():
-                values, _, _ = self.value.act(states=self._state_preprocessor(states), taken_actions=None, role="value")
+            self._current_next_states = next_states
+
+            # reward shaping
+            if self._rewards_shaper is not None:
+                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+
+            # compute values
+            rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
+            values, _, outputs = self.value.act({"states": self._state_preprocessor(states), **rnn}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
-                                    log_prob=self._current_log_prob, values=values)
+            # package RNN states
+            rnn_states = {}
+            if self._rnn:
+                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
+                if self.policy is not self.value:
+                    rnn_states.update({f"rnn_value_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["value"])})
+
+            # storage transition in memory
+            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states, dones=dones, 
-                                   log_prob=self._current_log_prob, values=values)
+                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
+                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
+
+        # update RNN states
+        if self._rnn:
+            self._rnn_final_states["value"] = self._rnn_final_states["policy"] if self.policy is self.value else outputs.get("rnn", [])
+
+            # reset states if the episodes have ended
+            finished_episodes = terminated.nonzero(as_tuple=False)
+            if finished_episodes.numel():
+                for rnn_state in self._rnn_final_states["policy"]:
+                    rnn_state[:, finished_episodes[:, 0]] = 0
+                if self.policy is not self.value:
+                    for rnn_state in self._rnn_final_states["value"]:
+                        rnn_state[:, finished_episodes[:, 0]] = 0
+
+            self._rnn_initial_states = self._rnn_final_states
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -290,11 +356,11 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor, 
-                        dones: torch.Tensor, 
-                        values: torch.Tensor, 
-                        next_values: torch.Tensor, 
-                        discount_factor: float = 0.99, 
+        def compute_gae(rewards: torch.Tensor,
+                        dones: torch.Tensor,
+                        values: torch.Tensor,
+                        next_values: torch.Tensor,
+                        discount_factor: float = 0.99,
                         lambda_coefficient: float = 0.95) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
@@ -330,15 +396,18 @@ class PPO(Agent):
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
             return returns, advantages
-        
+
         # compute returns and advantages
         with torch.no_grad():
-            last_values, _, _ = self.value.act(self._state_preprocessor(self._current_next_states.float()), taken_actions=None, role="value")
+            self.value.train(False)
+            rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
+            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float()), **rnn}, role="value")
+            self.value.train(True)
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                          dones=self.memory.get_tensor_by_name("dones"),
+                                          dones=self.memory.get_tensor_by_name("terminated"),
                                           values=values,
                                           next_values=last_values,
                                           discount_factor=self._discount_factor,
@@ -349,7 +418,11 @@ class PPO(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
+
+        rnn_policy, rnn_value = {}, {}
+        if self._rnn:
+            sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -360,12 +433,19 @@ class PPO(Agent):
             kl_divergences = []
 
             # mini-batches loop
-            for sampled_states, sampled_actions, _, _, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages \
-                in sampled_batches:
+            for i, (sampled_states, sampled_actions, sampled_dones, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages) in enumerate(sampled_batches):
+
+                if self._rnn:
+                    if self.policy is self.value:
+                        rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]], "terminated": sampled_dones}
+                        rnn_value = rnn_policy
+                    else:
+                        rnn_policy = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "policy" in n], "terminated": sampled_dones}
+                        rnn_value = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "value" in n], "terminated": sampled_dones}
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
-                
-                _, next_log_prob, _ = self.policy.act(states=sampled_states, taken_actions=sampled_actions, role="policy")
+
+                _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="policy")
 
                 # compute aproximate KL divergence
                 with torch.no_grad():
@@ -382,20 +462,20 @@ class PPO(Agent):
                     entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
                 else:
                     entropy_loss = 0
-                
+
                 # compute policy loss
                 ratio = torch.exp(next_log_prob - sampled_log_prob)
                 surrogate = sampled_advantages * ratio
                 surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
-                
+
                 policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act(states=sampled_states, taken_actions=None, role="value")
+                predicted_values, _, _ = self.value.act({"states": sampled_states, **rnn_value}, role="value")
 
                 if self._clip_predicted_values:
-                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values, 
-                                                                   min=-self._value_clip, 
+                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
+                                                                   min=-self._value_clip,
                                                                    max=self._value_clip)
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
@@ -414,10 +494,10 @@ class PPO(Agent):
                 cumulative_value_loss += value_loss.item()
                 if self._entropy_loss_scale:
                     cumulative_entropy_loss += entropy_loss.item()
-            
+
             # update learning rate
             if self._learning_rate_scheduler:
-                if isinstance(self.scheduler, KLAdaptiveRL):                
+                if isinstance(self.scheduler, KLAdaptiveRL):
                     self.scheduler.step(torch.tensor(kl_divergences).mean())
                 else:
                     self.scheduler.step()

@@ -9,7 +9,7 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define only the policy for evaluation 
+# Define only the policy for evaluation
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
@@ -25,8 +25,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(64, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 
 # Load the environment
@@ -34,7 +34,7 @@ from reaching_franka_real_env import ReachingFranka
 
 control_space = "joint"   # joint or cartesian
 motion_type = "waypoint"  # waypoint or impedance
-camera_tracking = False   # True for USB-camera tracking 
+camera_tracking = False   # True for USB-camera tracking
 
 env = ReachingFranka(robot_ip="172.16.0.2",
                      device="cpu",
@@ -67,9 +67,9 @@ cfg_ppo["experiment"]["write_interval"] = 32
 cfg_ppo["experiment"]["checkpoint_interval"] = 0
 
 agent = PPO(models=models_ppo,
-            memory=None, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=None,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

@@ -1,7 +1,7 @@
 Twin-Delayed DDPG (TD3)
 =======================
 
-TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms 
+TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms
 
 Paper: `Addressing Function Approximation Error in Actor-Critic Methods <https://arxiv.org/abs/1802.09477>`_
 
@@ -28,7 +28,7 @@ Algorithm implementation
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
-|     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip` 
+|     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip`
 |     :math:`a' \leftarrow a' + noise`
 |     :math:`a' \leftarrow \text{clip}(a', {a'}_{Low}, {a'}_{High})`
 |     :green:`# compute target values`
@@ -43,6 +43,7 @@ Algorithm implementation
 |     :green:`# optimization step (critic)`
 |     reset :math:`\text{optimizer}_\phi`
 |     :math:`\nabla_{\phi} L_{Q_\phi}`
+|     :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\phi`
 |     :green:`# delayed update`
 |     **IF** it's time for the :guilabel:`policy_delay` update **THEN**
@@ -53,6 +54,7 @@ Algorithm implementation
 |         :green:`# optimization step (policy)`
 |         reset :math:`\text{optimizer}_\theta`
 |         :math:`\nabla_{\theta} L_{\mu_\theta}`
+|         :math:`\text{clip}(\lVert \nabla_{\theta} \rVert)` with :guilabel:`grad_norm_clip`
 |         step :math:`\text{optimizer}_\theta`
 |         :green:`# update target networks`
 |         :math:`\theta_{target} \leftarrow` :guilabel:`polyak` :math:`\theta + (1 \;-` :guilabel:`polyak` :math:`) \theta_{target}`
@@ -70,18 +72,18 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
    :language: python
-   :lines: 16-55
+   :lines: 17-61
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete
@@ -142,6 +144,18 @@ The implementation uses 6 deterministic function approximators. These function a
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - RNN, LSTM, GRU and any other variant
+
 API
 ^^^
 
@@ -150,5 +164,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

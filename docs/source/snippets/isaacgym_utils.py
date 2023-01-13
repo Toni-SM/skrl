@@ -48,7 +48,7 @@ for i in range(num_envs):
     cam_props.width, cam_props.height = 300, 300
     cam_handle = gym.create_camera_sensor(env, cam_props)
     gym.set_camera_location(cam_handle, env, gymapi.Vec3(1, 1, 1), gymapi.Vec3(0, 0, 0))
-    
+
     envs.append(env)
     cameras.append(cam_handle)
 
@@ -62,7 +62,7 @@ for i in range(100000):
     gym.simulate(sim)
 
     # render the scene
-    web_viewer.render(fetch_results=True, 
-                      step_graphics=True, 
-                      render_all_camera_sensors=True, 
+    web_viewer.render(fetch_results=True,
+                      step_graphics=True,
+                      render_all_camera_sensors=True,
                       wait_for_page_load=True)

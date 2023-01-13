@@ -2,11 +2,18 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,c,c++,visualstudiocode,cmake
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,c,c++,visualstudiocode,cmake
 
+### Other files ###
+*.xml
+*.mp4
+*.zip
+*_old.*
+
 ### Library experiments ###
 *.pt
 *.npz
 *.npy
 *.csv
+*.onnx
 events.out.tfevents.*
 runs
 

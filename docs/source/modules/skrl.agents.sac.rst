@@ -32,6 +32,7 @@ Algorithm implementation
 |     :green:`# optimization step (critic)`
 |     reset :math:`\text{optimizer}_\phi`
 |     :math:`\nabla_{\phi} L_{Q_\phi}`
+|     :math:`\text{clip}(\lVert \nabla_{\phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\phi`
 |     :green:`# compute policy (actor) loss`
 |     :math:`a,\; logp \leftarrow \pi_\theta(s)`
@@ -41,6 +42,7 @@ Algorithm implementation
 |     :green:`# optimization step (policy)`
 |     reset :math:`\text{optimizer}_\theta`
 |     :math:`\nabla_{\theta} L_{\pi_\theta}`
+|     :math:`\text{clip}(\lVert \nabla_{\theta} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_\theta`
 |     :green:`# entropy learning`
 |     **IF** :guilabel:`learn_entropy` is enabled **THEN**
@@ -67,18 +69,18 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
    :language: python
-   :lines: 17-50
+   :lines: 18-56
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete
@@ -133,6 +135,18 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - RNN, LSTM, GRU and any other variant
+
 API
 ^^^
 
@@ -141,5 +155,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

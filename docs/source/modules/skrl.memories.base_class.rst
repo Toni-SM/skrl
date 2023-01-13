@@ -11,13 +11,13 @@ Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. tabs::
-            
+
     .. tab:: Inheritance
 
         .. literalinclude:: ../snippets/memory.py
             :language: python
             :linenos:
-    
+
 API
 ^^^
 
@@ -25,6 +25,6 @@ API
    :undoc-members:
    :show-inheritance:
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __len__

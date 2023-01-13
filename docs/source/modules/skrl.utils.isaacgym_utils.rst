@@ -39,7 +39,7 @@ API
 Web viewer for development without X server
 -------------------------------------------
 
-This library provides an API for instantiating a lightweight web viewer useful, mostly, for designing Isaac Gym environments in remote workstations or docker containers without X server 
+This library provides an API for instantiating a lightweight web viewer useful, mostly, for designing Isaac Gym environments in remote workstations or docker containers without X server
 
 Gestures and actions
 ^^^^^^^^^^^^^^^^^^^^
@@ -85,7 +85,7 @@ Basic usage
 ^^^^^^^^^^^
 
 .. tabs::
-    
+
     .. tab:: Snippet
 
         .. literalinclude:: ../snippets/isaacgym_utils.py
@@ -102,5 +102,5 @@ API
    :inherited-members:
    :private-members: _route_index, _route_stream, _route_input_event, _stream
    :members:
-   
+
    .. automethod:: __init__

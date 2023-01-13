@@ -6,19 +6,19 @@ Saving, loading and logging
 Tracking metrics (TensorBoard)
 ------------------------------
 
+`TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
+
 Configuration
 ^^^^^^^^^^^^^
-
-`TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
 
 Each agent offers the following parameters under the :literal:`"experiment"` key:
 
 .. code-block:: python
-    :emphasize-lines: 5,6,7
+    :emphasize-lines: 5-7
 
     DEFAULT_CONFIG = {
         ...
-        
+
         "experiment": {
             "directory": "",            # experiment's parent directory
             "experiment_name": "",      # experiment name
@@ -26,6 +26,9 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
             "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
             "store_separately": False,          # whether to store checkpoints separately
+
+            "wandb": False,             # whether to use Weights & Biases
+            "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
         }
     }
 
@@ -128,6 +131,49 @@ Tracking custom metrics/scales
 
 ----------------
 
+Tracking metrics (Weights and Biases)
+-------------------------------------
+
+`Weights & Biases <https://wandb.ai>`_ is also supported for tracking and visualizing metrics and scalars. Its configuration is responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
+
+Follow the steps described in Weights & Biases documentation (`Set up wandb <https://docs.wandb.ai/quickstart#1.-set-up-wandb>`_) to login to the :literal:`wandb` library on the current machine.
+
+Configuration
+^^^^^^^^^^^^^
+
+Each agent offers the following parameters under the :literal:`"experiment"` key. Visit the Weights & Biases documentation for more details about the configuration parameters.
+
+.. code-block:: python
+    :emphasize-lines: 12-13
+
+    DEFAULT_CONFIG = {
+        ...
+
+        "experiment": {
+            "directory": "",            # experiment's parent directory
+            "experiment_name": "",      # experiment name
+            "write_interval": 250,      # TensorBoard writing interval (timesteps)
+
+            "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+            "store_separately": False,          # whether to store checkpoints separately
+
+            "wandb": False,             # whether to use Weights & Biases
+            "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
+        }
+    }
+
+* **wandb**: whether to enable support for Weights & Biases.
+
+* **wandb_kwargs**: keyword argument dictionary used to parameterize the `wandb.init <https://docs.wandb.ai/ref/python/init>`_ function. If no values are provided for the following parameters, the following values will be set for them:
+
+  * :literal:`"name"`: will be set to the name of the experiment directory.
+
+  * :literal:`"sync_tensorboard"`:  will be set to :literal:`True`.
+
+  * :literal:`"config"`: will be updated with the configuration dictionaries of both the agent (and its models) and the trainer. The update will be done even if a value has been set for the parameter.
+
+----------------
+
 Checkpoints
 -----------
 
@@ -143,7 +189,7 @@ The checkpoint management, as in the previous case, is the responsibility of the
 
     DEFAULT_CONFIG = {
         ...
-        
+
         "experiment": {
             "directory": "",            # experiment's parent directory
             "experiment_name": "",      # experiment name
@@ -151,6 +197,9 @@ The checkpoint management, as in the previous case, is the responsibility of the
 
             "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
             "store_separately": False,          # whether to store checkpoints separately
+
+            "wandb": False,             # whether to use Weights & Biases
+            "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
         }
     }
 
@@ -214,8 +263,8 @@ The following code snippets show how to load the checkpoints through the instant
                                              nn.ReLU(),
                                              nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
             # Instantiate the model
             policy = Policy(env.observation_space, env.action_space, env.device, clip_actions=True)
@@ -273,8 +322,8 @@ The following code snippets show how to migrate checkpoints from other libraries
                                              nn.ReLU(),
                                              nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
             # Instantiate the model
             policy = Policy(env.observation_space, env.action_space, env.device, clip_actions=True)
@@ -305,9 +354,9 @@ Memories can be automatically exported to files at each filling cycle (before da
     from skrl.memories.torch import RandomMemory
 
     # Instantiate a memory and enable its export
-    memory = RandomMemory(memory_size=16, 
-                          num_envs=env.num_envs, 
-                          device=device, 
+    memory = RandomMemory(memory_size=16,
+                          num_envs=env.num_envs,
+                          device=device,
                           export=True,
                           export_format="pt",
                           export_directory="./memories")

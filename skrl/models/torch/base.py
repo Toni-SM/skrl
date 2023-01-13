@@ -1,6 +1,7 @@
-from typing import Optional, Union, Mapping, Sequence
+from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import gym
+import gymnasium
 import collections
 import numpy as np
 
@@ -10,27 +11,28 @@ from skrl import logger
 
 
 class Model(torch.nn.Module):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
-                 device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self,
+                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 device: Optional[Union[str, torch.device]] = None) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
         - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, sequence of int, gym.Space): Observation/state space
-        - ``action_space`` (int, sequence of int, gym.Space): Action space
+        - ``observation_space`` (int, sequence of int, gym.Space, gymnasium.Space): Observation/state space
+        - ``action_space`` (int, sequence of int, gym.Space, gymnasium.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
         - ``num_actions`` (int): Number of elements in the action space
-        
+
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space
+        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space
-        :param device: Device on which a torch tensor is or will be allocated (default: ``"cuda:0"``)
+        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
 
         Custom models should override the ``act`` method::
@@ -45,14 +47,14 @@ class Model(torch.nn.Module):
                     self.layer_1 = nn.Linear(self.num_observations, 64)
                     self.layer_2 = nn.Linear(64, self.num_actions)
 
-                def act(self, states, taken_actions=None, role=""):
-                    x = F.relu(self.layer_1(states))
+                def act(self, inputs, role=""):
+                    x = F.relu(self.layer_1(inputs["states"]))
                     x = F.relu(self.layer_2(x))
-                    return x
+                    return x, None, {}
         """
         super(Model, self).__init__()
 
-        self.device = torch.device(device)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
         self.observation_space = observation_space
         self.action_space = action_space
@@ -61,14 +63,14 @@ class Model(torch.nn.Module):
 
         self._random_distribution = None
 
-    def _get_space_size(self, 
-                        space: Union[int, Sequence[int], gym.Space],
+    def _get_space_size(self,
+                        space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
                         number_of_elements: bool = True) -> int:
         """Get the size (number of elements) of a space
 
         :param space: Space or shape from which to obtain the number of elements
-        :type space: int, sequence of int, or gym.Space
-        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``). 
+        :type space: int, sequence of int, gym.Space, or gymnasium.Space
+        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``).
                                    If ``False``, the shape of the space is returned. It only affects Discrete spaces
         :type number_of_elements: bool, optional
 
@@ -100,7 +102,7 @@ class Model(torch.nn.Module):
             1
 
             # Dict space
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
             ...                          'b': gym.spaces.Discrete(4)})
             >>> model._get_space_size(space)
             10
@@ -122,27 +124,37 @@ class Model(torch.nn.Module):
                 size = np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
                 size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
+        elif issubclass(type(space), gymnasium.Space):
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                if number_of_elements:
+                    size = space.n
+                else:
+                    size = 1
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                size = np.prod(space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
+                size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
         if size is None:
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
-    def tensor_to_space(self, 
-                        tensor: torch.Tensor, 
-                        space: gym.Space, 
+    def tensor_to_space(self,
+                        tensor: torch.Tensor,
+                        space: Union[gym.Space, gymnasium.Space],
                         start: int = 0) -> Union[torch.Tensor, dict]:
-        """Map a flat tensor to a Gym space
+        """Map a flat tensor to a Gym/Gymnasium space
 
         The mapping is done in the following way:
 
         - Tensors belonging to Discrete spaces are returned without modification
-        - Tensors belonging to Box spaces are reshaped to the corresponding space shape 
+        - Tensors belonging to Box spaces are reshaped to the corresponding space shape
           keeping the first dimension (number of samples) as they are
         - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
 
         :param tensor: Tensor to map from
         :type tensor: torch.Tensor
         :param space: Space to map the tensor to
-        :type space: gym.Space
+        :type space: gym.Space or gymnasium.Space
         :param start: Index of the first element of the tensor to map (default: ``0``)
         :type start: int, optional
 
@@ -153,7 +165,7 @@ class Model(torch.nn.Module):
 
         Example::
 
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)), 
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
             ...                          'b': gym.spaces.Discrete(4)})
             >>> tensor = torch.tensor([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
             >>>
@@ -162,56 +174,68 @@ class Model(torch.nn.Module):
                            [ 0.1000,  0.2000,  0.3000]]]),
              'b': tensor([[2.]])}
         """
-        if issubclass(type(space), gym.spaces.Discrete):
-            return tensor
-        elif issubclass(type(space), gym.spaces.Box):
-            return tensor.view(tensor.shape[0], *space.shape)
-        elif issubclass(type(space), gym.spaces.Dict):
-            output = {}
-            for k in sorted(space.keys()):
-                end = start + self._get_space_size(space[k], number_of_elements=False)
-                output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
-                start = end
-            return output
+        if issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gym.spaces.Box):
+                return tensor.view(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
+        else:
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                return tensor.view(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
-    def random_act(self, 
-                   states: torch.Tensor, 
-                   taken_actions: Optional[torch.Tensor] = None, 
-                   role: str = "") -> Sequence[torch.Tensor]:
+    def random_act(self,
+                   inputs: Mapping[str, Union[torch.Tensor, Any]],
+                   role: str = "") -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
         """Act randomly according to the action space
 
-        :param states: Observation/state of the environment used to get the shape of the action space
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Unsupported action space
 
-        :return: Random actions to be taken by the agent
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent
+        :rtype: tuple of torch.Tensor, None, and dictionary
         """
         # discrete action space (Discrete)
-        if issubclass(type(self.action_space), gym.spaces.Discrete):
-             return torch.randint(self.action_space.n, (states.shape[0], 1), device=self.device), None, None
+        if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
         # continuous action space (Box)
-        elif issubclass(type(self.action_space), gym.spaces.Box):
+        elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             if self._random_distribution is None:
                 self._random_distribution = torch.distributions.uniform.Uniform(
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
                     high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
-            
-            return self._random_distribution.sample(sample_shape=(states.shape[0], self.num_actions)), None, None
+
+            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, {}
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"normal_"``)
@@ -234,13 +258,13 @@ class Model(torch.nn.Module):
 
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
-        
-        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module. 
+
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
         Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
 
         The following layers will be initialized:
         - torch.nn.Linear
-        
+
         :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"orthogonal_"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
@@ -262,69 +286,139 @@ class Model(torch.nn.Module):
                     _update_weights(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
                     exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
-        
+
         _update_weights(self.children(), method_name, args, kwargs)
 
-    def forward(self):
+    def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
+        """Initialize the model biases according to the specified method name
+
+        Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
+        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
+
+        The following layers will be initialized:
+        - torch.nn.Linear
+
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"constant_"``)
+        :type method_name: str, optional
+        :param args: Positional arguments of the method to be called
+        :type args: tuple, optional
+        :param kwargs: Key-value arguments of the method to be called
+        :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all biases with a constant value (0)
+            >>> model.init_biases(method_name="constant_", val=0)
+
+            # initialize all biases with normal distribution with mean 0 and standard deviation 0.25
+            >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
+        """
+        def _update_biases(module, method_name, args, kwargs):
+            for layer in module:
+                if isinstance(layer, torch.nn.Sequential):
+                    _update_biases(layer, method_name, args, kwargs)
+                elif isinstance(layer, torch.nn.Linear):
+                    exec("torch.nn.init.{}(layer.bias, *args, **kwargs)".format(method_name))
+
+        _update_biases(self.children(), method_name, args, kwargs)
+
+    def get_specification(self) -> Mapping[str, Any]:
+        """Returns the specification of the model
+
+        The following keys are used by the agents for initialization:
+
+        - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells
+
+          - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
+            There must be as many tuples as there are states in the recurrent layer/cell. E.g., LSTM has 2 states (hidden and cell).
+
+        :return: Dictionary containing advanced specification of the model
+        :rtype: dict
+
+        Example::
+
+            # model with a LSTM layer.
+            # - number of layers: 1
+            # - number of environments: 4
+            # - number of features in the RNN state: 64
+            >>> model.get_specification()
+            {'rnn': {'sizes': [(1, 4, 64), (1, 4, 64)]}}
+        """
+        return {}
+
+    def forward(self,
+                inputs: Mapping[str, Union[torch.Tensor, Any]],
+                role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
-        :raises NotImplementedError: Child class must ``.act()`` and ``.compute()`` methods
-        """
-        raise NotImplementedError("Implement .act() and .compute() methods instead of this")
+        This method calls the ``.act()`` method and returns its outputs
 
-    def compute(self, 
-                states: torch.Tensor, 
-                taken_actions: Optional[torch.Tensor] = None,
-                role: str = "") -> Union[torch.Tensor, Sequence[torch.Tensor]]:
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
+
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        """
+        return self.act(inputs, role)
+
+    def compute(self,
+                inputs: Mapping[str, Union[torch.Tensor, Any]],
+                role: str = "") -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
+
         :return: Computation performed by the models
-        :rtype: torch.Tensor or sequence of torch.Tensor
+        :rtype: tuple of torch.Tensor and dictionary
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
         This method is currently implemented by the helper models (**GaussianModel**, etc.).
         The classes that inherit from the latter must only implement the ``.compute()`` method
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
         :raises NotImplementedError: Child class must implement this method
-        
-        :return: Action to be taken by the agent given the state of the environment.
-                 The typical sequence's components are the actions, the log of the probability density function and mean actions.
-                 Deterministic agents must ignore the last two components and return empty tensors or None for them
-        :rtype: sequence of torch.Tensor
+
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
         logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
-        
+
     def set_mode(self, mode: str) -> None:
         """Set the model mode (training or evaluation)
 
-        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation. 
+        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation.
             See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
         :type mode: str
 
@@ -339,7 +433,7 @@ class Model(torch.nn.Module):
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
         :param state_dict: State dictionary to save (default: ``None``).
@@ -390,7 +484,7 @@ class Model(torch.nn.Module):
         The final storage device is determined by the constructor of the model
 
         Only one of ``state_dict`` or ``path`` can be specified.
-        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated 
+        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated
         by the *rl_games* and *stable-baselines3* libraries at the moment
 
         For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
@@ -580,13 +674,13 @@ class Model(torch.nn.Module):
         self.eval()
 
         return status
-    
+
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
 
         - Freeze: disable gradient computation (``parameters.requires_grad = False``)
-        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``) 
-        
+        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``)
+
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
         :type freeze: bool, optional
 

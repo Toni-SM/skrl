@@ -35,8 +35,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(128, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -51,8 +51,8 @@ class Value(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(128, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the Omniverse Isaac Gym environment
@@ -105,9 +105,9 @@ cfg_ppo["experiment"]["write_interval"] = 480
 cfg_ppo["experiment"]["checkpoint_interval"] = 4800
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

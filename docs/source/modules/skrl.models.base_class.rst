@@ -36,7 +36,7 @@ API
     :show-inheritance:
     :private-members: _get_space_size
     :members:
-   
+
     .. automethod:: __init__
 
     .. py:property:: device

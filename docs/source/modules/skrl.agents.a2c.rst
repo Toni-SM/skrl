@@ -62,7 +62,7 @@ Algorithm implementation
 |     :green:`# optimization step`
 |     reset :math:`\text{optimizer}_{\theta, \phi}`
 |     :math:`\nabla_{\theta, \, \phi} (L_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`
-|     :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip` 
+|     :math:`\text{clip}(\lVert \nabla_{\theta, \, \phi} \rVert)` with :guilabel:`grad_norm_clip`
 |     step :math:`\text{optimizer}_{\theta, \phi}`
 | :green:`# update learning rate`
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
@@ -76,18 +76,18 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/a2c/a2c.py
    :language: python
-   :lines: 17-50
+   :lines: 17-53
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete
@@ -124,6 +124,18 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
      - 1
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - for Policy and Value
+   * - RNN support
+     - RNN, LSTM, GRU and any other variant
+
 API
 ^^^
 
@@ -132,5 +144,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

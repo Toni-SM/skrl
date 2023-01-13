@@ -24,23 +24,23 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, 32),
                                  nn.ELU())
-        
+
         self.mean_layer = nn.Linear(32, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-        
+
         self.value_layer = nn.Linear(32, 1)
 
-    def act(self, states, taken_actions, role):
+    def act(self, inputs, role):
         if role == "policy":
-            return GaussianMixin.act(self, states, taken_actions, role)
+            return GaussianMixin.act(self, inputs, role)
         elif role == "value":
-            return DeterministicMixin.act(self, states, taken_actions, role)
+            return DeterministicMixin.act(self, inputs, role)
 
-    def compute(self, states, taken_actions, role):
+    def compute(self, inputs, role):
         if role == "policy":
-            return self.mean_layer(self.net(states)), self.log_std_parameter
+            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
         elif role == "value":
-            return self.value_layer(self.net(states))
+            return self.value_layer(self.net(inputs["states"])), {}
 
 
 # Load and wrap the Isaac Gym environment
@@ -68,9 +68,9 @@ cfg_ppo["experiment"]["write_interval"] = 16
 cfg_ppo["experiment"]["checkpoint_interval"] = 0
 
 agent = PPO(models=models_ppo,
-            memory=None, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=None,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

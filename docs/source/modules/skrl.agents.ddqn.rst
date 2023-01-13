@@ -16,13 +16,13 @@ Algorithm implementation
 **Learning algorithm** (:literal:`_update(...)`)
 
 | :green:`# sample a batch from memory`
-| :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
+| [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
-| **FOR** each gradient step **DO**
+| **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# compute target values`
 |     :math:`Q' \leftarrow Q_{\phi_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow Q'[\underset{a}{\arg\max} \; Q_\phi(s')] \qquad` :gray:`# the only difference with DQN`
-|     :math:`y \leftarrow r + \gamma \; \neg d \; Q_{_{target}}`
+|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q_{_{target}}`
 |     :green:`# compute Q-network loss`
 |     :math:`Q \leftarrow Q_\phi(s)[a]`
 |     :math:`{Loss}_{Q_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
@@ -30,7 +30,10 @@ Algorithm implementation
 |     :math:`\nabla_{\phi} {Loss}_{Q_\phi}`
 |     :green:`# update target network`
 |     **IF** it's time to update target network **THEN**
-|         :math:`\phi_{target} \leftarrow \tau \; \phi + (1 - \tau) \phi_{target}`
+|         :math:`\phi_{target} \leftarrow` :guilabel:`polyak` :math:`\phi + (1 \;-` :guilabel:`polyak` :math:`) \phi_{target}`
+|     :green:`# update learning rate`
+|     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
+|         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,18 +42,18 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../skrl/agents/torch/dqn/ddqn.py
    :language: python
-   :lines: 16-52
+   :lines: 16-55
    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/content/spaces>`_
+The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
    :header-rows: 1
 
-   * - Gym spaces
+   * - Gym/Gymnasium spaces
      - .. centered:: Observation
      - .. centered:: Action
    * - Discrete
@@ -87,6 +90,18 @@ The implementation uses 2 deterministic function approximators. These function a
      - action
      - :ref:`Deterministic <models_deterministic>`
 
+Support for advanced features is described in the next table
+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Support and remarks
+   * - Shared model
+     - \-
+   * - RNN support
+     - \-
+
 API
 ^^^
 
@@ -95,5 +110,5 @@ API
    :show-inheritance:
    :private-members: _update
    :members:
-   
+
    .. automethod:: __init__

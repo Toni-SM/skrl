@@ -12,7 +12,7 @@ Basic usage
 
       # create a random memory object
       memory = RandomMemory(memory_size=1000, num_envs=1, replacement=False)
-  
+
       # create tensors in memory
       memory.create_tensor(name="states", size=(64, 64, 3), dtype=torch.float32)
       memory.create_tensor(name="actions", size=(4,1), dtype=torch.float32)
@@ -39,6 +39,6 @@ API
    :show-inheritance:
    :inherited-members:
    :members:
-   
+
    .. automethod:: __init__
    .. automethod:: __len__

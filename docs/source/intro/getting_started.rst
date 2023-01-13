@@ -1,6 +1,11 @@
 Getting Started
 ===============
 
+In this section, you will learn how to use the various components of the **skrl** library to create reinforcement learning tasks. Whether you are a beginner or an experienced researcher, we hope this section will provide you with a solid foundation to build upon. We recommend visiting the :ref:`Examples <examples>` to see how the components can be integrated and applied in practice. Let's get started!
+
+Reinforcement Learning schema
+-----------------------------
+
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from its interaction with the environment as shown in the following schema:
 
 .. image:: ../_static/imgs/rl_schema.svg
@@ -14,14 +19,14 @@ Getting Started
 
 At each step (also called timestep) of interaction with the environment, the agent sees an observation :math:`o_t` of the complete description of the state :math:`s_t \in S` of the environment. Then, it decides which action :math:`a_t \in A` to take from the action space using a policy. The environment, which changes in response to the agent's action (or by itself), returns a reward signal :math:`r_t = R(s_t, a_t, s_{t+1})` as a measure of how good or bad the action was that moved it to its new state :math:`s_{t+1}`. The agent aims to maximize the cumulative reward (discounted or not by a factor :math:`\gamma \in (0,1]`) by adjusting the policy's behaviour via some optimization algorithm.
 
-**From this schema, this section is intended to guide in the creation of a RL system using skrl**. Visit the :ref:`Examples <examples>` section for training and evaluation demonstrations with different environment interfaces and highlighted practices, among others. 
+**From this schema, this section is intended to guide in the creation of a RL system using skrl**
 
 1. Environments
 ---------------
 
-The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym or DeepMind. However, each of them has a different API and work with non-compatible data types.
+The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-skrl offers a function to **wrap environments** based on the OpenAI Gym, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with OpenAI Gym) and offer, for library components, a common interface (based on OpenAI Gym) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
+skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
 
 .. image:: ../_static/imgs/wrapping.svg
     :width: 100%
@@ -69,7 +74,7 @@ Within the methods and properties defined in the wrapped environment, the observ
         .. tabs::
 
             .. tab:: Preview 4 (isaacgymenvs.make)
-            
+
                 .. code-block:: python
 
                     import isaacgymenvs
@@ -78,9 +83,9 @@ Within the methods and properties defined in the wrapped environment, the observ
                     from skrl.envs.torch import wrap_env
 
                     # create/load the environment using the easy-to-use API from NVIDIA
-                    env = isaacgymenvs.make(seed=0, 
-                                            task="Cartpole", 
-                                            num_envs=512, 
+                    env = isaacgymenvs.make(seed=0,
+                                            task="Cartpole",
+                                            num_envs=512,
                                             sim_device="cuda:0",
                                             rl_device="cuda:0",
                                             graphics_device_id=0,
@@ -90,7 +95,7 @@ Within the methods and properties defined in the wrapped environment, the observ
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
             .. tab:: Preview 4
-            
+
                 .. code-block:: python
 
                     # import the environment wrapper and loader
@@ -104,7 +109,7 @@ Within the methods and properties defined in the wrapped environment, the observ
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
             .. tab:: Preview 3
-            
+
                 .. code-block:: python
 
                     # import the environment wrapper and loader
@@ -118,7 +123,7 @@ Within the methods and properties defined in the wrapped environment, the observ
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 
             .. tab:: Preview 2
-            
+
                 .. code-block:: python
 
                     # import the environment wrapper and loader
@@ -131,42 +136,80 @@ Within the methods and properties defined in the wrapped environment, the observ
                     # wrap the environment
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
-    .. tab:: OpenAI Gym
-   
+    .. tab:: Gym / Gymnasium
+
         .. tabs::
 
-            .. tab:: Single environment
+            .. tab:: Gym
 
-                .. code-block:: python
+                .. tabs::
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                    .. tab:: Single environment
 
-                    # load environment
-                    env = gym.make('Pendulum-v1')
+                        .. code-block:: python
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
 
-            .. tab:: Vectorized environment
+                            # load environment
+                            env = gym.make('Pendulum-v1')
 
-                Visit the OpenAI Gym documentation (`Vector API <https://www.gymlibrary.dev/content/vector_api>`_) for more information about the creation and usage of vectorized environments.
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
-                .. code-block:: python
+                    .. tab:: Vectorized environment
 
-                    # import the environment wrapper and gym
-                    from skrl.envs.torch import wrap_env
-                    import gym
+                        Visit the OpenAI Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments.
 
-                    # load a vectorized environment
-                    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                        .. code-block:: python
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            # import the environment wrapper and gym
+                            from skrl.envs.torch import wrap_env
+                            import gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+
+            .. tab:: Gymnasium
+
+                .. tabs::
+
+                    .. tab:: Single environment
+
+                        .. code-block:: python
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load environment
+                            env = gym.make('Pendulum-v1')
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+
+                    .. tab:: Vectorized environment
+
+                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments.
+
+                        .. code-block:: python
+
+                            # import the environment wrapper and gymnasium
+                            from skrl.envs.torch import wrap_env
+                            import gymnasium as gym
+
+                            # load a vectorized environment
+                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+                            # wrap the environment
+                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
     .. tab:: DeepMind
-   
+
         .. code-block:: python
 
             # import the environment wrapper and the deepmind suite
@@ -243,8 +286,8 @@ The following code snippets show how to define a model, based on the concept of 
                                             nn.ELU(),
                                             nn.Linear(32, self.num_actions))
 
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
     .. tab:: Gaussian
 
@@ -262,23 +305,23 @@ The following code snippets show how to define a model, based on the concept of 
             import torch
             import torch.nn as nn
             from skrl.models.torch import Model, GaussianMixin
-            
+
             # define the model
             class Policy(GaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0", 
+                def __init__(self, observation_space, action_space, device="cuda:0",
                              clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
                     Model.__init__(self, observation_space, action_space, device)
                     GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
-                    
+
                     self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
                                              nn.ELU(),
                                              nn.Linear(32, 32),
                                              nn.ELU(),
                                              nn.Linear(32, self.num_actions))
                     self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-            
-                def compute(self, states, taken_actions, role):
-                    return self.net(states), self.log_std_parameter
+
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), self.log_std_parameter, {}
 
     .. tab:: Multivariate Gaussian
 
@@ -297,22 +340,22 @@ The following code snippets show how to define a model, based on the concept of 
             import torch.nn as nn
             from skrl.models.torch import Model, MultivariateGaussianMixin
 
-            # define the model            
+            # define the model
             class Policy(MultivariateGaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0", 
+                def __init__(self, observation_space, action_space, device="cuda:0",
                              clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
                     Model.__init__(self, observation_space, action_space, device)
                     MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
-            
+
                     self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
                                              nn.ELU(),
                                              nn.Linear(32, 32),
                                              nn.ELU(),
                                              nn.Linear(32, self.num_actions))
                     self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-            
-                def compute(self, states, taken_actions, role):
-                    return self.net(states), self.log_std_parameter
+
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), self.log_std_parameter, {}
 
     .. tab:: Deterministic
 
@@ -330,21 +373,21 @@ The following code snippets show how to define a model, based on the concept of 
             import torch
             import torch.nn as nn
             from skrl.models.torch import Model, DeterministicMixin
-            
+
             # define the model
             class Policy(DeterministicMixin, Model):
                 def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
                     Model.__init__(self, observation_space, action_space, device)
                     DeterministicMixin.__init__(self, clip_actions)
-            
+
                     self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
                                              nn.ELU(),
                                              nn.Linear(32, 32),
                                              nn.ELU(),
                                              nn.Linear(32, self.num_actions))
-            
-                def compute(self, states, taken_actions, role):
-                    return self.net(states)
+
+                def compute(self, inputs, role):
+                    return self.net(inputs["states"]), {}
 
     .. tab:: Tabular
 
@@ -359,12 +402,13 @@ The following code snippets show how to define a model, based on the concept of 
                     Model.__init__(self, observation_space, action_space, device)
                     TabularMixin.__init__(self, num_envs)
 
-                    self.table = torch.ones((num_envs, self.num_observations, self.num_actions), 
+                    self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
                                             dtype=torch.float32, device=self.device)
 
-                def compute(self, states, taken_actions, role):
-                    actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), states], 
+                def compute(self, inputs, role):
+                    actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
                                            dim=-1, keepdim=True).view(-1,1)
+                    return actions, {}
 
 Models must be collected in a dictionary and passed to the agent constructor during its instantiation under the argument :literal:`models`. The dictionary keys are specific to each agent. Visit their respective documentation for more details (under *Spaces and models* section). For example, the PPO agent requires the policy and value models as shown below:
 
@@ -379,7 +423,7 @@ Models can be saved and loaded to and from the file system. However, the recomme
 4. Noises
 ---------
 
-Noise plays a fundamental role in the exploration stage, especially in agents of a deterministic nature, such as DDPG or TD3, for example. 
+Noise plays a fundamental role in the exploration stage, especially in agents of a deterministic nature, such as DDPG or TD3, for example.
 
 skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :ref:`Noises <resources_noises>` documentation for more information.
 

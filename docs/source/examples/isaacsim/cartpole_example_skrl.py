@@ -1,4 +1,4 @@
-# Omniverse Isaac Sim tutorial: Creating New RL Environment 
+# Omniverse Isaac Sim tutorial: Creating New RL Environment
 # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html
 
 # Instance of VecEnvBase and create the task
@@ -38,8 +38,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(64, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return torch.tanh(self.net(states)), self.log_std_parameter
+    def compute(self, inputs, role):
+        return torch.tanh(self.net(inputs["states"])), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -52,8 +52,8 @@ class Value(DeterministicMixin, Model):
                                  nn.Tanh(),
                                  nn.Linear(64, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the environment
@@ -75,7 +75,7 @@ models_ppo["value"] = Value(env.observation_space, env.action_space, device)
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -101,9 +101,9 @@ cfg_ppo["experiment"]["write_interval"] = 1000
 cfg_ppo["experiment"]["checkpoint_interval"] = 10000
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

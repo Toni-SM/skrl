@@ -13,43 +13,43 @@ from tasks.base.vec_task import VecTask
 from skrl.utils import isaacgym_utils
 
 
-TASK_CFG = {"name": "ReachingFranka", 
-            "physics_engine": "physx", 
-            "rl_device": "cuda:0", 
-            "sim_device": "cuda:0", 
-            "graphics_device_id": 0, 
-            "headless": False, 
-            "virtual_screen_capture": False, 
+TASK_CFG = {"name": "ReachingFranka",
+            "physics_engine": "physx",
+            "rl_device": "cuda:0",
+            "sim_device": "cuda:0",
+            "graphics_device_id": 0,
+            "headless": False,
+            "virtual_screen_capture": False,
             "force_render": True,
-            "env": {"numEnvs": 1024, 
-                    "envSpacing": 1.5, 
-                    "episodeLength": 100, 
-                    "enableDebugVis": False, 
-                    "clipObservations": 1000.0, 
-                    "clipActions": 1.0, 
-                    "controlFrequencyInv": 4, 
-                    "actionScale": 2.5, 
-                    "dofVelocityScale": 0.1, 
+            "env": {"numEnvs": 1024,
+                    "envSpacing": 1.5,
+                    "episodeLength": 100,
+                    "enableDebugVis": False,
+                    "clipObservations": 1000.0,
+                    "clipActions": 1.0,
+                    "controlFrequencyInv": 4,
+                    "actionScale": 2.5,
+                    "dofVelocityScale": 0.1,
                     "controlSpace": "cartesian",
-                    "enableCameraSensors": False}, 
+                    "enableCameraSensors": False},
             "sim": {"dt": 0.0083,  # 1 / 120
-                    "substeps": 1, 
-                    "up_axis": "z", 
-                    "use_gpu_pipeline": True, 
-                    "gravity": [0.0, 0.0, -9.81], 
-                    "physx": {"num_threads": 4, 
-                              "solver_type": 1, 
-                              "use_gpu": True, 
-                              "num_position_iterations": 4, 
-                              "num_velocity_iterations": 1, 
-                              "contact_offset": 0.005, 
-                              "rest_offset": 0.0, 
-                              "bounce_threshold_velocity": 0.2, 
-                              "max_depenetration_velocity": 1000.0, 
-                              "default_buffer_size_multiplier": 5.0, 
-                              "max_gpu_contact_pairs": 1048576, 
-                              "num_subscenes": 4, 
-                              "contact_collection": 0}}, 
+                    "substeps": 1,
+                    "up_axis": "z",
+                    "use_gpu_pipeline": True,
+                    "gravity": [0.0, 0.0, -9.81],
+                    "physx": {"num_threads": 4,
+                              "solver_type": 1,
+                              "use_gpu": True,
+                              "num_position_iterations": 4,
+                              "num_velocity_iterations": 1,
+                              "contact_offset": 0.005,
+                              "rest_offset": 0.0,
+                              "bounce_threshold_velocity": 0.2,
+                              "max_depenetration_velocity": 1000.0,
+                              "default_buffer_size_multiplier": 5.0,
+                              "max_gpu_contact_pairs": 1048576,
+                              "num_subscenes": 4,
+                              "contact_collection": 0}},
             "task": {"randomize": False}}
 
 
@@ -84,12 +84,12 @@ class ReachingFrankaTask(VecTask):
         self._end_effector_link = "panda_leftfinger"
 
         # setup VecTask
-        super().__init__(config=self.cfg, 
-                         rl_device=rl_device, 
-                         sim_device=sim_device, 
-                         graphics_device_id=graphics_device_id, 
-                         headless=headless, 
-                         virtual_screen_capture=virtual_screen_capture, 
+        super().__init__(config=self.cfg,
+                         rl_device=rl_device,
+                         sim_device=sim_device,
+                         graphics_device_id=graphics_device_id,
+                         headless=headless,
+                         virtual_screen_capture=virtual_screen_capture,
                          force_render=force_render)
 
         # tensors and views: DOFs, roots, rigid bodies
@@ -195,7 +195,7 @@ class ReachingFrankaTask(VecTask):
         self.handle_targets = []
         self.handle_robots = []
         self.handle_envs = []
-        
+
         indexes_sim_robot = []
         indexes_sim_target = []
 
@@ -208,10 +208,10 @@ class ReachingFrankaTask(VecTask):
             pose.p = gymapi.Vec3(0.0, 0.0, 0.0)
             pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1)
 
-            robot_actor = self.gym.create_actor(env=env_ptr, 
-                                                asset=robot_asset, 
+            robot_actor = self.gym.create_actor(env=env_ptr,
+                                                asset=robot_asset,
                                                 pose=pose,
-                                                name="robot", 
+                                                name="robot",
                                                 group=i, # collision group
                                                 filter=1, # mask off collision
                                                 segmentationId=0)
@@ -224,9 +224,9 @@ class ReachingFrankaTask(VecTask):
             pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1)
 
             target_actor = self.gym.create_actor(env=env_ptr,
-                                                 asset=target_asset, 
+                                                 asset=target_asset,
                                                  pose=pose,
-                                                 name="target", 
+                                                 name="target",
                                                  group=i + 1, # collision group
                                                  filter=1, # mask off collision
                                                  segmentationId=1)
@@ -240,7 +240,7 @@ class ReachingFrankaTask(VecTask):
 
         self.indexes_sim_robot = torch.tensor(indexes_sim_robot, dtype=torch.int32, device=self.device)
         self.indexes_sim_target = torch.tensor(indexes_sim_target, dtype=torch.int32, device=self.device)
-        
+
         self.num_robot_dofs = self.gym.get_asset_dof_count(robot_asset)
         self.rigid_body_dict_robot = self.gym.get_asset_rigid_body_dict(robot_asset)
 
@@ -301,7 +301,7 @@ class ReachingFrankaTask(VecTask):
         pos = torch.clamp(self.robot_default_dof_pos.unsqueeze(0) + 0.25 * (torch.rand((len(env_ids), self.num_robot_dofs), device=self.device) - 0.5),
                           self.robot_dof_lower_limits, self.robot_dof_upper_limits)
         pos[:, 7:] = 0
-        
+
         self.robot_dof_targets[env_ids, :] = pos[:]
         self.dof_pos[env_ids, :] = pos[:]
         self.dof_vel[env_ids, :] = 0
@@ -309,14 +309,14 @@ class ReachingFrankaTask(VecTask):
         indexes = self.indexes_sim_robot[env_ids]
         self.gym.set_dof_position_target_tensor_indexed(self.sim,
                                                         gymtorch.unwrap_tensor(self.robot_dof_targets),
-                                                        gymtorch.unwrap_tensor(indexes), 
+                                                        gymtorch.unwrap_tensor(indexes),
                                                         len(env_ids))
 
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self.dof_state),
-                                              gymtorch.unwrap_tensor(indexes), 
+                                              gymtorch.unwrap_tensor(indexes),
                                               len(env_ids))
-        
+
         # reset targets
         pos = (torch.rand((len(env_ids), 3), device=self.device) - 0.5) * 2
         pos[:, 0] = 0.50 + pos[:, 0] * 0.25
@@ -328,7 +328,7 @@ class ReachingFrankaTask(VecTask):
         indexes = self.indexes_sim_target[env_ids]
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_state),
-                                                     gymtorch.unwrap_tensor(indexes), 
+                                                     gymtorch.unwrap_tensor(indexes),
                                                      len(env_ids))
 
         # bookkeeping

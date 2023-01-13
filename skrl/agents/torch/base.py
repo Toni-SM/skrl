@@ -1,7 +1,7 @@
-from typing import Union, Mapping, Tuple, Dict, Any
+from typing import Union, Mapping, Tuple, Dict, Any, Optional
 
 import os
-import gym
+import gym, gymnasium
 import copy
 import datetime
 import collections
@@ -11,31 +11,32 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from skrl import logger
-from ...memories.torch import Memory
-from ...models.torch import Model
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
 
 class Agent:
-    def __init__(self, 
-                 models: Dict[str, Model], 
-                 memory: Union[Memory, Tuple[Memory], None] = None, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0", 
-                 cfg: dict = {}) -> None:
+    def __init__(self,
+                 models: Dict[str, Model],
+                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 device: Optional[Union[str, torch.device]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL agent
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
         :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and 
+                       If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
+        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
-        :param device: Computing device (default: "cuda:0")
+        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -43,8 +44,8 @@ class Agent:
         self.models = models
         self.observation_space = observation_space
         self.action_space = action_space
-        self.device = torch.device(device)
-        self.cfg = cfg
+        self.cfg = cfg if cfg is not None else {}
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
         if type(memory) is list:
             self.memory = memory[0]
@@ -52,7 +53,7 @@ class Agent:
         else:
             self.memory = memory
             self.secondary_memories = []
-        
+
         # convert the models to their respective device
         for model in self.models.values():
             if model is not None:
@@ -66,11 +67,22 @@ class Agent:
         self._cumulative_rewards = None
         self._cumulative_timesteps = None
 
+        self.training = True
+
         # checkpoint
         self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
         self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
+
+        # experiment directory
+        directory = self.cfg.get("experiment", {}).get("directory", "")
+        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
+        if not directory:
+            directory = os.path.join(os.getcwd(), "runs")
+        if not experiment_name:
+            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
+        self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -104,29 +116,42 @@ class Agent:
     def _get_internal_value(self, _module: Any) -> Any:
         """Get internal module/variable state/value
 
-        :param _input: Module or variable
-        :type _input: Any
+        :param _module: Module or variable
+        :type _module: Any
 
         :return: Module/variable state/value
         :rtype: Any
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
-    def init(self) -> None:
+    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
 
         This method should be called before the agent is used.
-        It will initialize the TensoBoard writer and checkpoint directory
+        It will initialize the TensoBoard writer (and optionally Weights & Biases) and create the checkpoints directory
+
+        :param trainer_cfg: Trainer configuration
+        :type trainer_cfg: dict, optional
         """
-        # experiment directory
-        directory = self.cfg.get("experiment", {}).get("directory", "")
-        experiment_name = self.cfg.get("experiment", {}).get("experiment_name", "")
-        if not directory:
-            directory = os.path.join(os.getcwd(), "runs")
-        if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
-        self.experiment_dir = os.path.join(directory, experiment_name)
-        
+        # setup Weights & Biases
+        if self.cfg.get("experiment", {}).get("wandb", False):
+            # save experiment config
+            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+            try:
+                models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
+            except AttributeError:
+                models_cfg = {k: v._modules for (k, v) in self.models.items()}
+            config={**self.cfg, **trainer_cfg, **models_cfg}
+            # set default values
+            wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
+            wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
+            wandb_kwargs.setdefault("sync_tensorboard", True)
+            wandb_kwargs.setdefault("config", {})
+            wandb_kwargs["config"].update(config)
+            # init Weights & Biases
+            import wandb
+            wandb.init(**wandb_kwargs)
+
         # main entry to log data for consumption and visualization by TensorBoard
         self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
@@ -193,7 +218,7 @@ class Agent:
             # separated modules
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
-                    torch.save(self.checkpoint_best_modules["modules"][name], 
+                    torch.save(self.checkpoint_best_modules["modules"][name],
                                os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
             # whole agent
             else:
@@ -203,9 +228,9 @@ class Agent:
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, 
-            states: torch.Tensor, 
-            timestep: int, 
+    def act(self,
+            states: torch.Tensor,
+            timestep: int,
             timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
@@ -223,20 +248,21 @@ class Agent:
         """
         raise NotImplementedError
 
-    def record_transition(self, 
-                          states: torch.Tensor, 
-                          actions: torch.Tensor, 
-                          rewards: torch.Tensor, 
-                          next_states: torch.Tensor, 
-                          dones: torch.Tensor, 
-                          infos: Any, 
-                          timestep: int, 
+    def record_transition(self,
+                          states: torch.Tensor,
+                          actions: torch.Tensor,
+                          rewards: torch.Tensor,
+                          next_states: torch.Tensor,
+                          terminated: torch.Tensor,
+                          truncated: torch.Tensor,
+                          infos: Any,
+                          timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
         In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
-        
+
         :param states: Observations/states of the environment used to make the decision
         :type states: torch.Tensor
         :param actions: Actions taken by the agent
@@ -245,8 +271,10 @@ class Agent:
         :type rewards: torch.Tensor
         :param next_states: Next observations/states of the environment
         :type next_states: torch.Tensor
-        :param dones: Signals to indicate that episodes have ended
-        :type dones: torch.Tensor
+        :param terminated: Signals to indicate that episodes have terminated
+        :type terminated: torch.Tensor
+        :param truncated: Signals to indicate that episodes have been truncated
+        :type truncated: torch.Tensor
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep
@@ -258,12 +286,12 @@ class Agent:
         if self._cumulative_rewards is None:
             self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
             self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
-        
+
         self._cumulative_rewards.add_(rewards)
         self._cumulative_timesteps.add_(1)
 
         # check ended episodes
-        finished_episodes = dones.nonzero(as_tuple=False)
+        finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
         if finished_episodes.numel():
 
             # storage cumulative rewards and timesteps
@@ -273,7 +301,7 @@ class Agent:
             # reset the cumulative rewards and timesteps
             self._cumulative_rewards[finished_episodes] = 0
             self._cumulative_timesteps[finished_episodes] = 0
-        
+
         # record data
         if self.write_interval > 0:
             self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
@@ -301,6 +329,17 @@ class Agent:
         for model in self.models.values():
             if model is not None:
                 model.set_mode(mode)
+
+    def set_running_mode(self, mode: str) -> None:
+        """Set the current running mode (training or evaluation)
+
+        This method sets the value of the ``training`` property (boolean).
+        This property can be used to know if the agent is running in training or evaluation mode.
+
+        :param mode: Mode: 'train' for training or 'eval' for evaluation
+        :type mode: str
+        """
+        self.training = mode == "train"
 
     def save(self, path: str) -> None:
         """Save the agent to the specified path
@@ -565,9 +604,9 @@ class Agent:
             if module not in ["state_preprocessor", "value_preprocessor", "optimizer"] and hasattr(module, "migrate"):
                 if verbose:
                     logger.info("Model: {} ({})".format(name, type(module).__name__))
-                status *= module.migrate(state_dict=checkpoint["model"], 
-                                            name_map=name_map.get(name, {}), 
-                                            auto_mapping=auto_mapping, 
+                status *= module.migrate(state_dict=checkpoint["model"],
+                                            name_map=name_map.get(name, {}),
+                                            auto_mapping=auto_mapping,
                                             verbose=verbose)
 
         self.set_mode("eval")

@@ -36,8 +36,8 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(64, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -52,8 +52,8 @@ class Value(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(64, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # instantiate and configure the task
@@ -91,7 +91,7 @@ models_ppo["value"] = Value(env.observation_space, env.action_space, device)
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo["rollouts"] = 16
 cfg_ppo["learning_epochs"] = 8
-cfg_ppo["mini_batches"] = 8  
+cfg_ppo["mini_batches"] = 8
 cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
 cfg_ppo["learning_rate"] = 5e-4
@@ -115,9 +115,9 @@ cfg_ppo["experiment"]["write_interval"] = 5
 cfg_ppo["experiment"]["checkpoint_interval"] = 250
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

@@ -27,8 +27,8 @@ class StochasticActor(GaussianMixin, Model):
                                  nn.Linear(32, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states), self.log_std_parameter
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), self.log_std_parameter, {}
 
 class DeterministicActor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -41,8 +41,8 @@ class DeterministicActor(DeterministicMixin, Model):
                                  nn.ELU(),
                                  nn.Linear(32, self.num_actions))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the Isaac Gym environment
@@ -88,24 +88,24 @@ cfg_sac["random_timesteps"] = 0
 cfg_sac["experiment"]["write_interval"] = 25
 cfg_sac["experiment"]["checkpoint_interval"] = 0
 
-agent_ddpg = DDPG(models=models_ddpg, 
-                  memory=None, 
-                  cfg=cfg_ddpg, 
-                  observation_space=env.observation_space, 
+agent_ddpg = DDPG(models=models_ddpg,
+                  memory=None,
+                  cfg=cfg_ddpg,
+                  observation_space=env.observation_space,
                   action_space=env.action_space,
                   device=device)
 
-agent_td3 = TD3(models=models_td3, 
-                memory=None, 
-                cfg=cfg_td3, 
-                observation_space=env.observation_space, 
+agent_td3 = TD3(models=models_td3,
+                memory=None,
+                cfg=cfg_td3,
+                observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=device)
 
-agent_sac = SAC(models=models_sac, 
-                memory=None, 
-                cfg=cfg_sac, 
-                observation_space=env.observation_space, 
+agent_sac = SAC(models=models_sac,
+                memory=None,
+                cfg=cfg_sac,
+                observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=device)
 
@@ -117,8 +117,8 @@ agent_sac.load("./runs/22-09-12_22-30-58-987142_SAC/checkpoints/agent_8000.pt")
 
 # Configure and instantiate the RL trainer
 cfg = {"timesteps": 8000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg, 
-                            env=env, 
+trainer = SequentialTrainer(cfg=cfg,
+                            env=env,
                             agents=[agent_ddpg, agent_td3, agent_sac],
                             agents_scope=[])
 

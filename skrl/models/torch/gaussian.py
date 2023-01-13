@@ -1,16 +1,17 @@
-from typing import Optional, Sequence
+from typing import Union, Mapping, Tuple, Any
 
 import gym
+import gymnasium
 
 import torch
 from torch.distributions import Normal
 
 
 class GaussianMixin:
-    def __init__(self, 
-                 clip_actions: bool = False, 
-                 clip_log_std: bool = True, 
-                 min_log_std: float = -20, 
+    def __init__(self,
+                 clip_actions: bool = False,
+                 clip_log_std: bool = True,
+                 min_log_std: float = -20,
                  max_log_std: float = 2,
                  reduction: str = "sum",
                  role: str = "") -> None:
@@ -25,7 +26,7 @@ class GaussianMixin:
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True (default: ``2``)
         :type max_log_std: float, optional
         :param reduction: Reduction method for returning the log probability density function: (default: ``"sum"``).
-                          Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density 
+                          Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
                           function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
         :type reduction: str, optional
         :param role: Role play by the model (default: ``""``)
@@ -39,9 +40,9 @@ class GaussianMixin:
             >>> import torch
             >>> import torch.nn as nn
             >>> from skrl.models.torch import Model, GaussianMixin
-            >>> 
+            >>>
             >>> class Policy(GaussianMixin, Model):
-            ...     def __init__(self, observation_space, action_space, device="cuda:0", 
+            ...     def __init__(self, observation_space, action_space, device="cuda:0",
             ...                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
             ...         Model.__init__(self, observation_space, action_space, device)
             ...         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
@@ -53,13 +54,13 @@ class GaussianMixin:
             ...                                  nn.Linear(32, self.num_actions))
             ...         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
             ...
-            ...     def compute(self, states, taken_actions, role):
-            ...         return self.net(states), self.log_std_parameter
+            ...     def compute(self, inputs, role):
+            ...         return self.net(inputs["states"]), self.log_std_parameter, {}
             ...
             >>> # given an observation_space: gym.spaces.Box with shape (60,)
             >>> # and an action_space: gym.spaces.Box with shape (8,)
             >>> model = Policy(observation_space, action_space)
-            >>> 
+            >>>
             >>> print(model)
             Policy(
               (net): Sequential(
@@ -73,12 +74,13 @@ class GaussianMixin:
         """
         if not hasattr(self, "_g_clip_actions"):
             self._g_clip_actions = {}
-        self._g_clip_actions[role] = clip_actions and issubclass(type(self.action_space), gym.Space)
+        self._g_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+            issubclass(type(self.action_space), gymnasium.Space))
 
         if self._g_clip_actions[role]:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
-            
+
             # backward compatibility: torch < 1.9 clamp method does not support tensors
             self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
 
@@ -101,7 +103,7 @@ class GaussianMixin:
         if not hasattr(self, "_g_distribution"):
             self._g_distribution = {}
         self._g_distribution[role] = None
-        
+
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
         if not hasattr(self, "_g_reduction"):
@@ -109,46 +111,46 @@ class GaussianMixin:
         self._g_reduction[role] = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
             else torch.prod if reduction == "prod" else None
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
-        
-        :return: Action to be taken by the agent given the state of the environment.
-                 The sequence's components are the actions, the log of the probability density function and mean actions
-        :rtype: sequence of torch.Tensor
+
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function.
+                 The third component is a dictionary containing the mean actions ``"mean_actions"``
+                 and extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
 
         Example::
 
             >>> # given a batch of sample states with shape (4096, 60)
-            >>> action, log_prob, mean_action = model.act(states)
-            >>> print(action.shape, log_prob.shape, mean_action.shape)
+            >>> actions, log_prob, outputs = model.act({"states": states})
+            >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
         # map from states/observations to mean actions and log standard deviations
-        actions_mean, log_std = self.compute(states.to(self.device), 
-                                             taken_actions.to(self.device) if taken_actions is not None else taken_actions, role)
+        mean_actions, log_std, outputs = self.compute(inputs, role)
 
         # clamp log standard deviations
         if self._g_clip_log_std[role] if role in self._g_clip_log_std else self._g_clip_log_std[""]:
-            log_std = torch.clamp(log_std, 
+            log_std = torch.clamp(log_std,
                                   self._g_log_std_min[role] if role in self._g_log_std_min else self._g_log_std_min[""],
                                   self._g_log_std_max[role] if role in self._g_log_std_max else self._g_log_std_max[""])
 
         self._g_log_std[role] = log_std
-        self._g_num_samples[role] = actions_mean.shape[0]
+        self._g_num_samples[role] = mean_actions.shape[0]
 
         # distribution
-        self._g_distribution[role] = Normal(actions_mean, log_std.exp())
+        self._g_distribution[role] = Normal(mean_actions, log_std.exp())
 
         # sample using the reparameterization trick
         actions = self._g_distribution[role].rsample()
@@ -159,16 +161,17 @@ class GaussianMixin:
                 actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
             else:
                 actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
-        
+
         # log of the probability density function
-        log_prob = self._g_distribution[role].log_prob(actions if taken_actions is None else taken_actions)
+        log_prob = self._g_distribution[role].log_prob(inputs.get("taken_actions", actions))
         reduction = self._g_reduction[role] if role in self._g_reduction else self._g_reduction[""]
         if reduction is not None:
             log_prob = reduction(log_prob, dim=-1)
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
-        return actions, log_prob, actions_mean
+        outputs["mean_actions"] = mean_actions
+        return actions, log_prob, outputs
 
     def get_entropy(self, role: str = "") -> torch.Tensor:
         """Compute and return the entropy of the model
@@ -205,7 +208,7 @@ class GaussianMixin:
         """
         return (self._g_log_std[role] if role in self._g_log_std else self._g_log_std[""]) \
             .repeat(self._g_num_samples[role] if role in self._g_num_samples else self._g_num_samples[""], 1)
-    
+
     def distribution(self, role: str = "") -> torch.distributions.Normal:
         """Get the current distribution of the model
 

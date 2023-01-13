@@ -33,12 +33,12 @@ class Policy(GaussianMixin, Model):
                                  nn.Linear(1024, 512),
                                  nn.ReLU(),
                                  nn.Linear(512, self.num_actions))
-        
+
         # set a fixed log standard deviation for the policy
         self.log_std_parameter = nn.Parameter(torch.full((self.num_actions,), fill_value=-2.9), requires_grad=False)
 
-    def compute(self, states, taken_actions, role):
-        return torch.tanh(self.net(states)), self.log_std_parameter
+    def compute(self, inputs, role):
+        return torch.tanh(self.net(inputs["states"])), self.log_std_parameter, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -51,8 +51,8 @@ class Value(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(512, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 class Discriminator(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -65,8 +65,8 @@ class Discriminator(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(512, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the Isaac Gym environment
@@ -127,9 +127,9 @@ cfg_amp["experiment"]["write_interval"] = 160
 cfg_amp["experiment"]["checkpoint_interval"] = 4000
 
 agent = AMP(models=models_amp,
-            memory=memory, 
-            cfg=cfg_amp, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_amp,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device,
             amp_observation_space=env.amp_observation_space,

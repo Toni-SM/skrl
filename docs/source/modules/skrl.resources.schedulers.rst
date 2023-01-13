@@ -15,7 +15,7 @@ Basic usage
 The learning rate scheduler usage is defined in each agent's configuration dictionary. The scheduler class is set under the :literal:`"learning_rate_scheduler"` key and its arguments are set under the :literal:`"learning_rate_scheduler_kwargs"` key as a keyword argument dictionary, without specifying the optimizer (first argument). The following examples show how to set the scheduler for an agent:
 
 .. tabs::
-            
+
     .. tab:: PyTorch scheduler
 
         .. code-block:: python
@@ -66,5 +66,5 @@ API
     :show-inheritance:
     :inherited-members:
     :members:
-   
+
     .. automethod:: __init__

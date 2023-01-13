@@ -1,6 +1,5 @@
 # [start-model]
-from typing import Optional, Union, Sequence
-
+from typing import Union, Mapping, Sequence, Tuple, Any
 import gym
 
 import torch
@@ -9,9 +8,9 @@ from skrl.models.torch import Model     # from . import Model
 
 
 class CustomModel(Model):
-    def __init__(self, 
-                 observation_space: Union[int, Sequence[int], gym.Space], 
-                 action_space: Union[int, Sequence[int], gym.Space], 
+    def __init__(self,
+                 observation_space: Union[int, Sequence[int], gym.Space],
+                 action_space: Union[int, Sequence[int], gym.Space],
                  device: Union[str, torch.device] = "cuda:0") -> None:
         """
         :param observation_space: Observation/state space or shape.
@@ -24,27 +23,24 @@ class CustomModel(Model):
         :type device: str or torch.device, optional
         """
         super().__init__(observation_space, action_space, device)
-        
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
-            role: str = "") -> Sequence[torch.Tensor]:
+
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
-        :raises NotImplementedError: Child class must implement this method
-        
-        :return: Action to be taken by the agent given the state of the environment.
-                 The typical sequence's components are the actions, the log of the probability density function and mean actions.
-                 Deterministic agents must ignore the last two components and return empty tensors or None for them
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
         # ==============================
         # - act in response to the state
@@ -54,7 +50,7 @@ class CustomModel(Model):
 # =============================================================================
 
 # [start-mixin]
-from typing import Optional, Sequence
+from typing import Union, Mapping, Sequence, Tuple, Any
 
 import gym
 
@@ -74,26 +70,23 @@ class CustomMixin:
             self._custom_clip_actions = {}
         self._custom_clip_actions[role]
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Optional[torch.Tensor] = None, 
-            role: str = "") -> Sequence[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: ``None``).
-                              The use of these actions only makes sense in critical models, e.g.
-        :type taken_actions: torch.Tensor, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
-        :raises NotImplementedError: Child class must implement this method
-        
-        :return: Action to be taken by the agent given the state of the environment.
-                 The typical sequence's components are the actions, the log of the probability density function and mean actions.
-                 Deterministic agents must ignore the last two components and return empty tensors or None for them
-        :rtype: sequence of torch.Tensor
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is the log of the probability density function for stochastic models
+                 or None for deterministic models. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
         # ==============================
         # - act in response to the state

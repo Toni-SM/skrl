@@ -2,6 +2,35 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.0] - 2023-01-13
+### Added
+- Support for Farama Gymnasium interface
+- Wrapper for robosuite environments
+- Weights & Biases integration (by @juhannc)
+- Set the running mode (training or evaluation) of the agents
+- Allow clipping the gradient norm for DDPG, TD3 and SAC agents
+- Initialize model biases
+- Add RNN (RNN, LSTM, GRU and any other variant) support for A2C, DDPG, PPO, SAC, TD3 and TRPO agents
+- Allow disabling training/evaluation progressbar
+- Farama Shimmy and robosuite examples
+- KUKA LBR iiwa real-world example
+
+### Changed
+- Forward model inputs as a Python dictionary [**breaking change**]
+- Returns a Python dictionary with extra output values in model calls [**breaking change**]
+- Adopt the implementation of `terminated` and `truncated` over `done` for all environments
+
+### Fixed
+- Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
+- Call agents' method `record_transition` instead of parent method
+to allow storing samples in memories during evaluation
+- Move TRPO policy optimization out of the value optimization loop
+- Access to the categorical model distribution
+- Call reset only once for Gym/Gymnasium vectorized environments
+
+### Removed
+- Deprecated method `start` in trainers
+
 ## [0.8.0] - 2022-10-03
 ### Added
 - AMP agent for physics-based character animation
@@ -9,7 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Gaussian model mixin
 - Support for creating shared models
 - Parameter `role` to model methods
-- Wrapper compatibility with the new OpenAI Gym environment API (by @JohannLange)
+- Wrapper compatibility with the new OpenAI Gym environment API (by @juhannc)
 - Internal library colored logger
 - Migrate checkpoints/models from other RL libraries to skrl models/agents
 - Configuration parameter `store_separately` to agent configuration dict
@@ -22,7 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Models implementation as Python mixin [**breaking change**]
 - Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
-- Show training/evaluation display progress using `tqdm` (by @JohannLange)
+- Show training/evaluation display progress using `tqdm` (by @juhannc)
 - Update Isaac Gym and Omniverse Isaac Gym examples
 
 ### Fixed
@@ -100,7 +129,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - More examples and contents in the documentation
 
 ### Fixed
-- Clip actions using the whole space's limits 
+- Clip actions using the whole space's limits
 
 ## [0.2.0] - 2022-01-18
 ### Added

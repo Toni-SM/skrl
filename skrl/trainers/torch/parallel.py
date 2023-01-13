@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 
 import copy
 import tqdm
@@ -6,15 +6,16 @@ import tqdm
 import torch
 import torch.multiprocessing as mp
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
 
-from . import Trainer
+from skrl.trainers.torch import Trainer
 
 
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
 }
 
 
@@ -25,6 +26,7 @@ def fn_processor(process_index, *args):
     queue = args[1][process_index]
     barrier = args[2]
     scope = args[3][process_index]
+    trainer_cfg = args[4]
 
     agent = None
     _states = None
@@ -44,7 +46,7 @@ def fn_processor(process_index, *args):
         # initialize agent
         elif task == 'init':
             agent = queue.get()
-            agent.init()
+            agent.init(trainer_cfg=trainer_cfg)
             print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
             barrier.wait()
 
@@ -70,7 +72,8 @@ def fn_processor(process_index, *args):
                                         actions=_actions,
                                         rewards=queue.get()[scope[0]:scope[1]],
                                         next_states=queue.get()[scope[0]:scope[1]],
-                                        dones=queue.get()[scope[0]:scope[1]],
+                                        terminated=queue.get()[scope[0]:scope[1]],
+                                        truncated=queue.get()[scope[0]:scope[1]],
                                         infos=queue.get(),
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
@@ -84,14 +87,15 @@ def fn_processor(process_index, *args):
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
-                super(type(agent), agent).record_transition(states=_states,
-                                                            actions=_actions,
-                                                            rewards=queue.get()[scope[0]:scope[1]],
-                                                            next_states=queue.get()[scope[0]:scope[1]],
-                                                            dones=queue.get()[scope[0]:scope[1]],
-                                                            infos=queue.get(),
-                                                            timestep=msg['timestep'],
-                                                            timesteps=msg['timesteps'])
+                agent.record_transition(states=_states,
+                                        actions=_actions,
+                                        rewards=queue.get()[scope[0]:scope[1]],
+                                        next_states=queue.get()[scope[0]:scope[1]],
+                                        terminated=queue.get()[scope[0]:scope[1]],
+                                        truncated=queue.get()[scope[0]:scope[1]],
+                                        infos=queue.get(),
+                                        timestep=msg['timestep'],
+                                        timesteps=msg['timesteps'])
                 super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
                 barrier.wait()
 
@@ -100,8 +104,8 @@ class ParallelTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Parallel trainer
 
         Train agents in parallel using multiple processes
@@ -117,7 +121,8 @@ class ParallelTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         mp.set_start_method(method='spawn', force=True)
@@ -135,9 +140,16 @@ class ParallelTrainer(Trainer):
         - Post-interaction (in parallel)
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("train")
+        else:
+            self.agents.set_running_mode("train")
+
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_train()
             return
 
@@ -167,7 +179,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
             processes.append(process)
             process.start()
@@ -180,11 +192,11 @@ class ParallelTrainer(Trainer):
         barrier.wait()
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -201,7 +213,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -213,14 +225,17 @@ class ParallelTrainer(Trainer):
                     rewards.share_memory_()
                 if not next_states.is_cuda:
                     next_states.share_memory_()
-                if not dones.is_cuda:
-                    dones.share_memory_()
+                if not terminated.is_cuda:
+                    terminated.share_memory_()
+                if not truncated.is_cuda:
+                    truncated.share_memory_()
 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
-                    queue.put(dones)
+                    queue.put(terminated)
+                    queue.put(truncated)
                     queue.put(infos)
                 barrier.wait()
 
@@ -231,8 +246,8 @@ class ParallelTrainer(Trainer):
 
             # reset environments
             with torch.no_grad():
-                if dones.any():
-                    states = self.env.reset()
+                if terminated.any() or truncated.any():
+                    states, infos = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()
                 else:
@@ -259,9 +274,16 @@ class ParallelTrainer(Trainer):
         - Render scene
         - Reset environments
         """
+        # set running mode
+        if self.num_agents > 1:
+            for agent in self.agents:
+                agent.set_running_mode("eval")
+        else:
+            self.agents.set_running_mode("eval")
+
         # single agent
         if self.num_agents == 1:
-            self.agents.init()
+            self.agents.init(trainer_cfg=self.cfg)
             self.single_agent_eval()
             return
 
@@ -292,7 +314,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_agents):
             process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope),
+                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
             processes.append(process)
             process.start()
@@ -305,11 +327,11 @@ class ParallelTrainer(Trainer):
         barrier.wait()
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # compute actions
             with torch.no_grad():
@@ -321,7 +343,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -333,8 +355,10 @@ class ParallelTrainer(Trainer):
                     rewards.share_memory_()
                 if not next_states.is_cuda:
                     next_states.share_memory_()
-                if not dones.is_cuda:
-                    dones.share_memory_()
+                if not terminated.is_cuda:
+                    terminated.share_memory_()
+                if not truncated.is_cuda:
+                    truncated.share_memory_()
 
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "eval-record_transition-post_interaction",
@@ -342,13 +366,14 @@ class ParallelTrainer(Trainer):
                                "timesteps": self.timesteps})
                     queue.put(rewards)
                     queue.put(next_states)
-                    queue.put(dones)
+                    queue.put(terminated)
+                    queue.put(truncated)
                     queue.put(infos)
                 barrier.wait()
 
                 # reset environments
-                if dones.any():
-                    states = self.env.reset()
+                if terminated.any() or truncated.any():
+                    states, infos = self.env.reset()
                     if not states.is_cuda:
                         states.share_memory_()
                 else:

@@ -1,1 +1,1 @@
-from .kl_adaptive import KLAdaptiveRL
+from skrl.resources.schedulers.torch.kl_adaptive import KLAdaptiveRL

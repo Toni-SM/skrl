@@ -10,7 +10,7 @@ Preprocessors
 Basic usage
 -----------
 
-The preprocessors usage is defined in each agent's configuration dictionary. 
+The preprocessors usage is defined in each agent's configuration dictionary.
 
 The preprocessor class is set under the :literal:`"<variable>_preprocessor"` key and its arguments are set under the :literal:`"<variable>_preprocessor_kwargs"` key as a keyword argument dictionary. The following examples show how to set the preprocessors for an agent:
 
@@ -48,11 +48,11 @@ Algorithm implementation
 
 **Standardization by centering and scaling**
 
-| :math:`\text{clip}((x - \bar{x}_t) / (\sqrt{\sigma^2} \;+` :guilabel:`epsilon` :math:`), -c, c) \qquad` with :math:`c` as :guilabel:`clip_threshold` 
+| :math:`\text{clip}((x - \bar{x}_t) / (\sqrt{\sigma^2} \;+` :guilabel:`epsilon` :math:`), -c, c) \qquad` with :math:`c` as :guilabel:`clip_threshold`
 
 **Scale back the data to the original representation (inverse transform)**
 
-| :math:`\sqrt{\sigma^2_t} \; \text{clip}(x, -c, c) + \bar{x}_t \qquad` with :math:`c` as :guilabel:`clip_threshold` 
+| :math:`\sqrt{\sigma^2_t} \; \text{clip}(x, -c, c) + \bar{x}_t \qquad` with :math:`c` as :guilabel:`clip_threshold`
 
 **Update the running mean and variance** (See `parallel algorithm <https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm>`_)
 
@@ -69,5 +69,5 @@ API
 
 .. autoclass:: skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler
     :members:
-   
+
     .. automethod:: __init__

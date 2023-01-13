@@ -16,7 +16,7 @@ from skrl.envs.torch import wrap_env
 # Define the models (deterministic models) for the DDPG agent using mixins
 # and programming with two approaches (torch functional and torch.nn.Sequential class).
 # - Actor (policy): takes as input the environment's observation/state and returns an action
-# - Critic: takes the state and action as input and provides a value to guide the policy 
+# - Critic: takes the state and action as input and provides a value to guide the policy
 class DeterministicActor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
         Model.__init__(self, observation_space, action_space, device)
@@ -26,10 +26,10 @@ class DeterministicActor(DeterministicMixin, Model):
         self.linear_layer_2 = nn.Linear(400, 300)
         self.action_layer = nn.Linear(300, self.num_actions)
 
-    def compute(self, states, taken_actions, role):
-        x = F.relu(self.linear_layer_1(states))
+    def compute(self, inputs, role):
+        x = F.relu(self.linear_layer_1(inputs["states"]))
         x = F.relu(self.linear_layer_2(x))
-        return torch.tanh(self.action_layer(x))
+        return torch.tanh(self.action_layer(x)), {}
 
 class DeterministicCritic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
@@ -42,8 +42,8 @@ class DeterministicCritic(DeterministicMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(300, 1))
 
-    def compute(self, states, taken_actions, role):
-        return self.net(torch.cat([states, taken_actions], dim=1))
+    def compute(self, inputs, role):
+        return self.net(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)), {}
 
 
 # Load and wrap the DeepMind environment
@@ -83,10 +83,10 @@ cfg_ddpg["learning_starts"] = 100
 cfg_ddpg["experiment"]["write_interval"] = 1000
 cfg_ddpg["experiment"]["checkpoint_interval"] = 5000
 
-agent_ddpg = DDPG(models=models_ddpg, 
-                  memory=memory, 
-                  cfg=cfg_ddpg, 
-                  observation_space=env.observation_space, 
+agent_ddpg = DDPG(models=models_ddpg,
+                  memory=memory,
+                  cfg=cfg_ddpg,
+                  observation_space=env.observation_space,
                   action_space=env.action_space,
                   device=device)
 

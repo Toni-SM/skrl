@@ -31,7 +31,7 @@ Basic usage
 -----------
 
 .. tabs::
-    
+
     .. tab:: :math:`\epsilon`-greedy policy
 
         .. literalinclude:: ../snippets/tabular_model.py

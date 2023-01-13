@@ -21,7 +21,7 @@ Basic usage
     At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented
 
 .. tabs::
-            
+
     .. tab:: Snippet
 
         .. literalinclude:: ../snippets/trainer.py
@@ -37,7 +37,7 @@ Configuration
 
 .. literalinclude:: ../../../skrl/trainers/torch/parallel.py
     :language: python
-    :lines: 15-18
+    :lines: 15-19
     :linenos:
 
 API

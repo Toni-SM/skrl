@@ -1078,7 +1078,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
     .. tab:: Franka Emika Panda
 
-        **3D reaching task (Franka's gripper must reach a certain target point in space)**. The training was done in Omniverse Isaac Gym. The real robot control is performed through the Python API of a modified version of frankx (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_), a high-level motion library around libfranka. Training and evaluation is performed for both Cartesian and joint control space
+        **3D reaching task (Franka's gripper must reach a certain target point in space)**. The training was done in Omniverse Isaac Gym. The real robot control is performed through the Python API of a modified version of *frankx* (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_), a high-level motion library around *libfranka*. Training and evaluation is performed for both Cartesian and joint control space
 
         .. raw:: html
 
@@ -1092,7 +1092,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         * The instantaneous reward is the negative value of the Euclidean distance (:math:`\text{d}`) between the robot end-effector and the target point position. The episode terminates when this distance is less than 0.035 meters in simulation (0.075 meters in real-world) or when the defined maximum timestep is reached
 
-        * The target position lies within a rectangular cuboid of dimensions 0.5 x 0.5 x 0.2 meters centered at 0.5, 0.0, 0.2 meters with respect to the robot's base. The robot joints' positions are drawn from an initial configuration [0º, -45º, 0º, -135º, 0º, 90º, 45º] modified with uniform random values between -7º and 7º approximately
+        * The target position lies within a rectangular cuboid of dimensions 0.5 x 0.5 x 0.2 meters centered at (0.5, 0.0, 0.2) meters with respect to the robot's base. The robot joints' positions are drawn from an initial configuration [0º, -45º, 0º, -135º, 0º, 90º, 45º] modified with uniform random values between -7º and 7º approximately
 
         .. list-table::
             :header-rows: 1
@@ -1149,7 +1149,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                 **Prerequisites:**
 
-                A physical Franka robot with `Franka Control Interface (FCI) <https://frankaemika.github.io/docs/index.html>`_ is required. Additionally, the frankx library must be available in the python environment (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_ for the RL-compatible version installation)
+                A physical Franka Emika Panda robot with `Franka Control Interface (FCI) <https://frankaemika.github.io/docs/index.html>`_ is required. Additionally, the *frankx* library must be available in the python environment (see `frankx's pull request #44 <https://github.com/pantor/frankx/pull/44>`_ for the RL-compatible version installation)
 
                 **Files**
 
@@ -1182,7 +1182,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
                 .. raw:: html
 
                     <video width="100%" controls autoplay>
-                        <source src="https://user-images.githubusercontent.com/22400377/190926792-6e788eaf-1600-4b13-b8c8-e0e0a09e4827.mp4" type="video/mp4">
+                        <source src="https://user-images.githubusercontent.com/22400377/211668430-7cd4668b-e79a-46a9-bdbc-3212388b6b6d.mp4" type="video/mp4">
                     </video>
 
                 .. raw:: html
@@ -1275,6 +1275,205 @@ These examples show basic real-world use cases to guide and support advanced RL 
                 .. code-block:: python
 
                     TASK_CFG["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
+
+    .. tab:: Kuka LBR iiwa
+
+        **3D reaching task (iiwa's end-effector must reach a certain target point in space)**. The training was done in Omniverse Isaac Gym. The real robot control is performed through the Python, ROS and ROS2 APIs of `libiiwa <https://libiiwa.readthedocs.io>`_, a scalable multi-control framework for the KUKA LBR Iiwa robots. Training and evaluation is performed for both Cartesian and joint control space
+
+        .. raw:: html
+
+            <hr>
+
+        **Implementation** (see details in the table below):
+
+        * The observation space is composed of the episode's normalized progress, the robot joints' normalized positions (:math:`q`) in the interval -1 to 1, the robot joints' velocities (:math:`\dot{q}`) affected by a random uniform scale for generalization, and the target's position in space (:math:`target_{_{XYZ}}`) with respect to the robot's base
+
+        * The action space, bounded in the range -1 to 1, consists of the following. For the joint control it's robot joints' position scaled change. For the Cartesian control it's the end-effector's position (:math:`ee_{_{XYZ}}`) scaled change
+
+        * The instantaneous reward is the negative value of the Euclidean distance (:math:`\text{d}`) between the robot end-effector and the target point position. The episode terminates when this distance is less than 0.035 meters in simulation (0.075 meters in real-world) or when the defined maximum timestep is reached
+
+        * The target position lies within a rectangular cuboid of dimensions 0.2 x 0.4 x 0.4 meters centered at (0.6, 0.0, 0.4) meters with respect to the robot's base. The robot joints' positions are drawn from an initial configuration [0º, 0º, 0º, -90º, 0º, 90º, 0º] modified with uniform random values between -7º and 7º approximately
+
+        .. list-table::
+            :header-rows: 1
+
+            * - Variable
+              - Formula / value
+              - Size
+            * - Observation space
+              - :math:`\dfrac{t}{t_{max}},\; 2 \dfrac{q - q_{min}}{q_{max} - q_{min}} - 1,\; 0.1\,\dot{q}\,U(0.5,1.5),\; target_{_{XYZ}}`
+              - 18
+            * - Action space (joint)
+              - :math:`\dfrac{2.5}{120} \, \Delta q`
+              - 7
+            * - Action space (Cartesian)
+              - :math:`\dfrac{1}{100} \, \Delta ee_{_{XYZ}}`
+              - 3
+            * - Reward
+              - :math:`-\text{d}(ee_{_{XYZ}},\; target_{_{XYZ}})`
+              -
+            * - Episode termination
+              - :math:`\text{d}(ee_{_{XYZ}},\; target_{_{XYZ}}) \le 0.035 \quad` or :math:`\quad t \ge t_{max} - 1`
+              -
+            * - Maximum timesteps (:math:`t_{max}`)
+              - 100
+              -
+
+        .. raw:: html
+
+            <hr>
+
+        **Workflows**
+
+        .. tabs::
+
+            .. tab:: Real-world
+
+                .. warning::
+
+                    Make sure you have the smartHMI on hand in case something goes wrong in the run. **Control via RL can be dangerous and unsafe for both the operator and the robot**
+
+                .. raw:: html
+
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/212192766-9698bfba-af27-41b8-8a11-17ed3d22c020.mp4" type="video/mp4">
+                    </video>
+
+                **Prerequisites:**
+
+                A physical Kuka LBR iiwa robot is required. Additionally, the *libiiwa* library must be installed (visit the `libiiwa <https://libiiwa.readthedocs.io>`_ documentation for installation details)
+
+                **Files**
+
+                * Environment: :download:`reaching_iiwa_real_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_env.py>`
+                * Evaluation script: :download:`reaching_iiwa_real_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
+
+                **Evaluation:**
+
+                .. code-block:: bash
+
+                    python3 reaching_iiwa_real_skrl_eval.py
+
+                **Main environment configuration:**
+
+                The control space (Cartesian or joint) can be specified in the environment class constructor (from :literal:`reaching_iiwa_real_skrl_eval.py`) as follow:
+
+                .. code-block:: python
+
+                    control_space = "joint"   # joint or cartesian
+
+            .. tab:: Real-world (ROS/ROS2)
+
+                .. warning::
+
+                    Make sure you have the smartHMI on hand in case something goes wrong in the run. **Control via RL can be dangerous and unsafe for both the operator and the robot**
+
+                .. raw:: html
+
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/212192817-12115478-e6a8-4502-b33f-b072664b1959.mp4" type="video/mp4">
+                    </video>
+
+                **Prerequisites:**
+
+                A physical Kuka LBR iiwa robot is required. Additionally, the *libiiwa* library must be installed (visit the `libiiwa <https://libiiwa.readthedocs.io>`_ documentation for installation details) and a Robot Operating System (ROS or ROS2) distribution must be available
+
+                **Files**
+
+                * Environment (ROS): :download:`reaching_iiwa_real_ros_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_env.py>`
+                * Environment (ROS2): :download:`reaching_iiwa_real_ros2_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros2_env.py>`
+                * Evaluation script: :download:`reaching_iiwa_real_ros_ros2_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_ros2_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
+
+                .. note::
+
+                    Source the ROS/ROS2 distribution and the ROS/ROS workspace containing the libiiwa packages before executing the scripts
+
+                **Evaluation:**
+
+                .. code-block:: bash
+
+                    python3 reaching_iiwa_real_ros_ros2_skrl_eval.py
+
+                **Main environment configuration:**
+
+                The control space (Cartesian or joint) and the ROS/ROS version to use can be specified in the environment class constructor (from :literal:`reaching_iiwa_real_ros_ros2_skrl_eval.py`) as follow:
+
+                .. code-block:: python
+
+                    ros_version = 1   # 1 or 2
+                    control_space = "joint"   # joint or cartesian
+
+            .. tab:: Simulation (Omniverse Isaac Gym)
+
+                .. raw:: html
+
+                    <video width="100%" controls autoplay>
+                        <source src="https://user-images.githubusercontent.com/22400377/211668313-7bcbcd41-cde5-441e-abb4-82fff7616f06.mp4" type="video/mp4">
+                    </video>
+
+                .. raw:: html
+
+                    <img width="100%" src="https://user-images.githubusercontent.com/22400377/212194442-f6588b98-38af-4f29-92a3-3c853a7e31f4.png">
+
+                |
+
+                **Prerequisites:**
+
+                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
+
+                **Files** (the implementation is self-contained so no specific location is required):
+
+                * Environment: :download:`reaching_iiwa_omniverse_isaacgym_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_env.py>`
+                * Training script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_train.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_eval.py>`
+                * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
+                * Simulation files: (.usd assets and robot class): :download:`simulation_files.zip <https://github.com/Toni-SM/skrl/files/10409551/simulation_files.zip>`
+
+
+                Simulation files must be structured as follows:
+
+                .. code-block::
+
+                    <some_folder>
+                        ├── agent_cartesian.pt
+                        ├── agent_joint.pt
+                        ├── assets
+                        │   ├── iiwa14_instanceable_meshes.usd
+                        │   └── iiwa14.usd
+                        ├── reaching_iiwa_omniverse_isaacgym_env.py
+                        ├── reaching_iiwa_omniverse_isaacgym_skrl_eval.py
+                        ├── reaching_iiwa_omniverse_isaacgym_skrl_train.py
+                        ├── robots
+                        │   ├── iiwa14.py
+                        │   └── __init__.py
+
+                **Training and evaluation:**
+
+                .. code-block:: bash
+
+                    # training (local workstation)
+                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_iiwa_omniverse_isaacgym_skrl_train.py
+
+                    # training (docker container)
+                    /isaac-sim/python.sh reaching_iiwa_omniverse_isaacgym_skrl_train.py
+
+                .. code-block:: bash
+
+                    # evaluation (local workstation)
+                    ~/.local/share/ov/pkg/isaac_sim-*/python.sh reaching_iiwa_omniverse_isaacgym_skrl_eval.py
+
+                    # evaluation (docker container)
+                    /isaac-sim/python.sh reaching_iiwa_omniverse_isaacgym_skrl_eval.py
+
+                **Main environment configuration:**
+
+                The control space (Cartesian or joint) can be specified in the task configuration dictionary (from :literal:`reaching_iiwa_omniverse_isaacgym_skrl_train.py`) as follow:
+
+                .. code-block:: python
+
+                    TASK_CFG["task"]["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"
 
 .. raw:: html
 

@@ -346,22 +346,27 @@ class Model(torch.nn.Module):
         """
         return {}
 
-    def forward(self, *args, **kwargs) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def forward(self,
+                inputs: Mapping[str, Union[torch.Tensor, Any]],
+                role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
         This method calls the ``.act()`` method and returns its outputs
 
-        :param args: Positional arguments passed to the called method
-        :type args: tuple, optional
-        :param kwargs: Key-value arguments passed to the called method
-        :type kwargs: dict, optional
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is the log of the probability density function for stochastic models
                  or None for deterministic models. The third component is a dictionary containing extra output values
         :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
         """
-        return self.act(*args, **kwargs)
+        return self.act(inputs, role)
 
     def compute(self,
                 inputs: Mapping[str, Union[torch.Tensor, Any]],

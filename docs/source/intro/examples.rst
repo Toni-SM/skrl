@@ -1392,17 +1392,20 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
                 **Evaluation:**
 
+                .. note::
+
+                    The environment (:literal:`reaching_iiwa_real_ros_env.py` or :literal:`reaching_iiwa_real_ros2_env.py`) to be loaded will be automatically selected based on the sourced ROS distribution (ROS or ROS2) at script execution
+
                 .. code-block:: bash
 
                     python3 reaching_iiwa_real_ros_ros2_skrl_eval.py
 
                 **Main environment configuration:**
 
-                The control space (Cartesian or joint) and the ROS/ROS version to use can be specified in the environment class constructor (from :literal:`reaching_iiwa_real_ros_ros2_skrl_eval.py`) as follow:
+                The control space (Cartesian or joint) can be specified in the environment class constructor (from :literal:`reaching_iiwa_real_ros_ros2_skrl_eval.py`) as follow:
 
                 .. code-block:: python
 
-                    ros_version = 1   # 1 or 2
                     control_space = "joint"   # joint or cartesian
 
             .. tab:: Simulation (Omniverse Isaac Gym)

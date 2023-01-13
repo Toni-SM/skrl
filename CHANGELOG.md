@@ -4,14 +4,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.9.0] - Unreleased
 ### Added
-- DeepMind robosuite environment wrapper
-- Set the running mode (training or evaluation) of the agents
+- Support for Farama Gymnasium interface
+- Wrapper for robosuite environments
 - Weights & Biases integration (by @juhannc)
-- Support for Gymnasium interface
+- Set the running mode (training or evaluation) of the agents
 - Allow clipping the gradient norm for DDPG, TD3 and SAC agents
 - Initialize model biases
 - Add RNN (RNN, LSTM, GRU and any other variant) support for A2C, DDPG, PPO, SAC, TD3 and TRPO agents
 - Allow disabling training/evaluation progressbar
+- Farama Shimmy and robosuite examples
+- KUKA LBR iiwa real-world example
 
 ### Changed
 - Forward model inputs as a Python dictionary [**breaking change**]

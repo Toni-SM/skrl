@@ -11,6 +11,11 @@ class DummyEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(2)
         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
 
+    def __getattr__(self, key):
+        if key in ["_spec_to_space", "observation_spec"]:
+            return lambda *args, **kwargs: None
+        return None
+
     def step(self, action):
         observation = self.observation_space.sample()
         reward = random.random()
@@ -71,3 +76,20 @@ class DummyAgent(_DummyBaseAgent):
 
     def post_interaction(self, timestep, timesteps):
         pass
+
+
+class DummyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.device = torch.device("cpu")
+        self.layer = torch.nn.Linear(1, 1)
+
+    def set_mode(self, *args, **kwargs):
+        pass
+
+    def get_specification(self, *args, **kwargs):
+        return {}
+
+    def act(self, *args, **kwargs):
+        return torch.tensor([]), None, {}

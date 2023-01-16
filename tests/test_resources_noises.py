@@ -6,6 +6,7 @@ import hypothesis.strategies as st
 import torch
 
 from skrl.resources.noises.torch import Noise
+
 from skrl.resources.noises.torch import GaussianNoise
 from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 

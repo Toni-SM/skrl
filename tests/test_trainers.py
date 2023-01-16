@@ -6,6 +6,7 @@ import hypothesis.strategies as st
 import torch
 
 from skrl.trainers.torch import Trainer
+
 from skrl.trainers.torch import ManualTrainer
 from skrl.trainers.torch import ParallelTrainer
 from skrl.trainers.torch import SequentialTrainer

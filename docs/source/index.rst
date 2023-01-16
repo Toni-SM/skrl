@@ -1,6 +1,32 @@
 SKRL - Reinforcement Learning library (|version|)
 =================================================
 
+.. raw:: html
+
+    <a href="https://pypi.org/project/skrl">
+        <img alt="pypi" src="https://img.shields.io/pypi/v/skrl">
+    </a>
+    <a href="https://huggingface.co/skrl">
+        <img alt="huggingface" src="https://img.shields.io/badge/%F0%9F%A4%97%20Models-Huggingface-F8D521">
+    </a>
+    <a href="https://github.com/Toni-SM/skrl/discussions">
+        <img alt="discussions" src="https://img.shields.io/github/discussions/Toni-SM/skrl">
+    </a>
+    <br>
+    <a href="https://github.com/Toni-SM/skrl/blob/main/LICENSE">
+        <img alt="license" src="https://img.shields.io/github/license/Toni-SM/skrl">
+    </a>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="https://skrl.readthedocs.io">
+        <img alt="docs" src="https://readthedocs.org/projects/skrl/badge/?version=latest">
+    </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml">
+        <img alt="pytest" src="https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml/badge.svg">
+    </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml">
+        <img alt="pre-commit" src="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg">
+    </a>
+
 **skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**

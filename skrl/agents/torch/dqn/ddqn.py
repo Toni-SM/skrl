@@ -139,7 +139,7 @@ class DDQN(Agent):
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
-        self.checkpoint_modules["optimizer"] = self.optimizer
+            self.checkpoint_modules["optimizer"] = self.optimizer
 
         # set up preprocessors
         if self._state_preprocessor:

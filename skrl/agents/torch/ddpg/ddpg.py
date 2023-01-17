@@ -193,8 +193,9 @@ class DDPG(Agent):
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
 
         # clip noise bounds
-        self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
-        self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+        if self.action_space is not None:
+            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
+            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
         # backward compatibility: torch < 1.9 clamp method does not support tensors
         self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)

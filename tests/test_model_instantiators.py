@@ -16,9 +16,12 @@ from skrl.utils.model_instantiators import multivariate_gaussian_model
 
 @pytest.fixture
 def classes_and_kwargs():
-    return []
+    return [(categorical_model, {}),
+            (deterministic_model, {}),
+            (gaussian_model, {}),
+            (multivariate_gaussian_model, {})]
 
 
-@pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
-def test_device(capsys, classes_and_kwargs, device):
-    _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+def test_models(capsys, classes_and_kwargs):
+    for klass, kwargs in classes_and_kwargs:
+        model: Model = klass(observation_space=1, action_space=1, device="cpu", **kwargs)

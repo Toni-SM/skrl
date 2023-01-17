@@ -50,11 +50,12 @@ class ManualTrainer(Trainer):
         else:
             self.agents.init(trainer_cfg=self.cfg)
 
+        self._timestep = 0
         self._progress = None
 
         self.states = None
 
-    def train(self, timestep: int, timesteps: Optional[int] = None) -> None:
+    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
         """Execute a training iteration
 
         This method executes the following steps once:
@@ -68,11 +69,15 @@ class ManualTrainer(Trainer):
         - Reset environments
 
         :param timestep: Current timestep
-        :type timestep: int
+        :type timestep: int, optional (default: None).
+                        If None, the current timestep will be carried by an internal variable
         :param timesteps: Total number of timesteps (default: None).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
         """
+        if timestep is None:
+            self._timestep += 1
+            timestep = self._timestep
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
@@ -157,7 +162,7 @@ class ManualTrainer(Trainer):
                 self.states.copy_(next_states)
 
 
-    def eval(self, timestep: int, timesteps: Optional[int] = None) -> None:
+    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
@@ -168,11 +173,15 @@ class ManualTrainer(Trainer):
         - Reset environments
 
         :param timestep: Current timestep
-        :type timestep: int
+        :type timestep: int, optional (default: None).
+                        If None, the current timestep will be carried by an internal variable
         :param timesteps: Total number of timesteps (default: None).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
         """
+        if timestep is None:
+            self._timestep += 1
+            timestep = self._timestep
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:

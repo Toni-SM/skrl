@@ -2,6 +2,14 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.1] - 2023-01-17
+### Added
+- Utility for downloading models from Hugging Face Hub
+
+### Fixed
+- Initialization of agent components if they have not been defined
+- Manual trainer `train`/`eval` method default arguments
+
 ## [0.9.0] - 2023-01-13
 ### Added
 - Support for Farama Gymnasium interface

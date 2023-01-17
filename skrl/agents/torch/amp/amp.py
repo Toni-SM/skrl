@@ -239,12 +239,13 @@ class AMP(Agent):
             "log_prob", "values", "returns", "advantages", "amp_states", "next_values"]
 
         # create tensors for motion dataset and reply buffer
-        self.motion_dataset.create_tensor(name="states", size=self.amp_observation_space, dtype=torch.float32)
-        self.reply_buffer.create_tensor(name="states", size=self.amp_observation_space, dtype=torch.float32)
+        if self.motion_dataset is not None:
+            self.motion_dataset.create_tensor(name="states", size=self.amp_observation_space, dtype=torch.float32)
+            self.reply_buffer.create_tensor(name="states", size=self.amp_observation_space, dtype=torch.float32)
 
-        # initialize motion dataset
-        for _ in range(math.ceil(self.motion_dataset.memory_size / self._amp_batch_size)):
-            self.motion_dataset.add_samples(states=self.collect_reference_motions(self._amp_batch_size))
+            # initialize motion dataset
+            for _ in range(math.ceil(self.motion_dataset.memory_size / self._amp_batch_size)):
+                self.motion_dataset.add_samples(states=self.collect_reference_motions(self._amp_batch_size))
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = None

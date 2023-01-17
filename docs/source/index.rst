@@ -222,8 +222,9 @@ Utils
     Definition of helper functions and classes
 
     * :doc:`Utilities <modules/skrl.utils.utilities>`, e.g. setting the random seed
-    * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
     * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
+    * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
+    * :doc:`Hugging Face integration <modules/skrl.utils.huggingface>`
     * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
     * :doc:`Omniverse Isaac Gym utils <modules/skrl.utils.omniverse_isaacgym_utils>`
 
@@ -233,7 +234,8 @@ Utils
     :hidden:
 
     modules/skrl.utils.utilities
-    modules/skrl.utils.model_instantiators
     modules/skrl.utils.postprocessing
+    modules/skrl.utils.model_instantiators
+    modules/skrl.utils.huggingface
     modules/skrl.utils.isaacgym_utils
     modules/skrl.utils.omniverse_isaacgym_utils

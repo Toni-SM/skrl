@@ -272,6 +272,30 @@ The following code snippets show how to load the checkpoints through the instant
             # Load the checkpoint
             policy.load("./runs/22-09-29_22-48-49-816281_DDPG/checkpoints/2500_policy.pt")
 
+In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../modules/skrl.utils.huggingface>` for more information.
+
+.. tabs::
+
+    .. tab:: Agent (from Hugging Face Hub)
+
+        .. code-block:: python
+            :emphasize-lines: 2, 13-14
+
+            from skrl.agents.torch.ppo import PPO
+            from skrl.utils.huggingface import download_model_from_huggingface
+
+            # Instantiate the agent
+            agent = PPO(models=models,  # models dict
+                        memory=memory,  # memory instance, or None if not required
+                        cfg=agent_cfg,  # configuration dict (preprocessors, learning rate schedulers, etc.)
+                        observation_space=env.observation_space,
+                        action_space=env.action_space,
+                        device=env.device)
+
+            # Load the checkpoint from Hugging Face Hub
+            path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO")
+            agent.load(path)
+
 Migrating external checkpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -9,8 +9,23 @@ def download_model_from_huggingface(repo_id: str, filename: str = "agent.pt") ->
     :param filename: The name of the model file in the repo (default: ``"agent.pt"``)
     :type filename: str, optional
 
+    :raises ImportError: The Hugging Face Hub package (huggingface-hub) is not installed
+    :raises huggingface_hub.utils._errors.HfHubHTTPError: Any HTTP error raised in Hugging Face Hub
+
     :return: Local path of file or if networking is off, last version of file cached on disk
     :rtype: str
+
+    Example::
+
+        # download trained agent from the skrl organization (https://huggingface.co/skrl)
+        >>> from skrl.utils.huggingface import download_model_from_huggingface
+        >>> download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO")
+        '/home/user/.cache/huggingface/hub/models--skrl--OmniIsaacGymEnvs-Cartpole-PPO/snapshots/892e629903de6bf3ef102ae760406a5dd0f6f873/agent.pt'
+
+        # download model (e.g. "policy.pth") from another user/organization (e.g. "org/ddpg-Pendulum-v1")
+        >>> from skrl.utils.huggingface import download_model_from_huggingface
+        >>> download_model_from_huggingface("org/ddpg-Pendulum-v1", "policy.pth")
+        '/home/user/.cache/huggingface/hub/models--org--ddpg-Pendulum-v1/snapshots/b44ee96f93ff2e296156b002a2ca4646e197ba32/policy.pth'
     """
     try:
         import huggingface_hub

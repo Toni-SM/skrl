@@ -26,6 +26,8 @@ def test_wrap_env(capsys, classes_and_kwargs, wrapper):
         env: Wrapper = wrap_env(env=env, wrapper=wrapper)
     except ValueError as e:
         warnings.warn(f"{e}. This test will be skipped for '{wrapper}'")
+    except ModuleNotFoundError as e:
+        warnings.warn(f"{e}. The '{wrapper}' wrapper module is not found. This test will be skipped")
 
     env.observation_space
     env.action_space

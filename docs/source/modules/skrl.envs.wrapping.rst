@@ -7,6 +7,7 @@ This library works with a common API to interact with the following RL environme
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
+* `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
@@ -58,6 +59,21 @@ Basic usage
 
                     # wrap the environment
                     env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
+
+    .. tab:: Isaac Orbit
+
+        .. code-block:: python
+            :linenos:
+
+            # import the environment wrapper and loader
+            from skrl.envs.torch import wrap_env
+            from skrl.envs.torch import load_isaac_orbit_env
+
+            # load the environment
+            env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
+
+            # wrap the environment
+            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
 
     .. tab:: Isaac Gym
 
@@ -280,6 +296,13 @@ Internal API
         If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
 
 .. autoclass:: skrl.envs.torch.wrappers.OmniverseIsaacGymWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.torch.wrappers.IsaacOrbitWrapper
     :undoc-members:
     :show-inheritance:
     :members:

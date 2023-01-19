@@ -7,7 +7,7 @@ SKRL - Reinforcement Learning library (|version|)
         <img alt="pypi" src="https://img.shields.io/pypi/v/skrl">
     </a>
     <a href="https://huggingface.co/skrl">
-        <img alt="huggingface" src="https://img.shields.io/badge/%F0%9F%A4%97%20Models-Huggingface-F8D521">
+        <img alt="huggingface" src="https://img.shields.io/badge/%F0%9F%A4%97%20models-hugging%20face-F8D521">
     </a>
     <a href="https://github.com/Toni-SM/skrl/discussions">
         <img alt="discussions" src="https://img.shields.io/github/discussions/Toni-SM/skrl">
@@ -116,10 +116,11 @@ Agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Omniverse Isaac Gym environments, among others
+    Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Isaac Orbit, Omniverse Isaac Gym environments, among others
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Omniverse Isaac Gym** environments, among others
+    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
     * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
+    * Loading :doc:`Isaac Orbit environments <modules/skrl.envs.isaac_orbit>`
     * Loading :doc:`Omniverse Isaac Gym environments <modules/skrl.envs.omniverse_isaac_gym>`
 
 .. toctree::
@@ -129,6 +130,7 @@ Environments
 
     modules/skrl.envs.wrapping
     modules/skrl.envs.isaac_gym
+    modules/skrl.envs.isaac_orbit
     modules/skrl.envs.omniverse_isaac_gym
 
 Memories

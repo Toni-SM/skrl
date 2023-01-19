@@ -27,14 +27,14 @@ SKRL - Reinforcement Learning library (|version|)
         <img alt="pre-commit" src="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg">
     </a>
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_, `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
 **Main features:**
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Support for Gym/Gymnasium (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4), NVIDIA Omniverse Isaac Gym environments, among others
-    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), NVIDIA Isaac Gym and NVIDIA Omniverse Isaac Gym
+    * Support for Gym/Gymnasium (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4), NVIDIA Isaac Orbit, NVIDIA Omniverse Isaac Gym environments, among others
+    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), NVIDIA Isaac Gym, NVIDIA Isaac Orbit and NVIDIA Omniverse Isaac Gym
 
 .. warning::
 

@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.0] - Unreleased
+### Added
+- Isaac Orbit environment loader
+- Wrap an Isaac Orbit environment
+
 ## [0.9.1] - 2023-01-17
 ### Added
 - Utility for downloading models from Hugging Face Hub

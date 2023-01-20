@@ -42,7 +42,8 @@ def _get_activation_function(activation: str) -> nn.Module:
     - "softsign"
     - "tanh"
 
-    :param activation: activation function name
+    :param activation: activation function name.
+                       If activation is an empty string, a placeholder will be returned (``torch.nn.Identity()``)
     :type activation: str
 
     :raises: ValueError if activation is not a valid activation function
@@ -50,7 +51,9 @@ def _get_activation_function(activation: str) -> nn.Module:
     :return: activation function
     :rtype: nn.Module
     """
-    if activation == "relu":
+    if not activation:
+        return torch.nn.Identity()
+    elif activation == "relu":
         return torch.nn.ReLU()
     elif activation == "tanh":
         return torch.nn.Tanh()

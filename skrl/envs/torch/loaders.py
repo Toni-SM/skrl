@@ -537,7 +537,10 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
     # print config
     if show_cfg:
         print("\nIsaac Orbit environment ({})".format(args.task))
-        _print_cfg(cfg)
+        try:
+            _print_cfg(cfg)
+        except AttributeError as e:
+            pass
 
     # load environment
     env = gym.make(args.task, cfg=cfg, headless=args.headless)

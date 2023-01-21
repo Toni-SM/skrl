@@ -777,6 +777,125 @@ The following components or practices are exemplified (highlighted):
 
    <hr><hr>
 
+Isaac Orbit
+-----------
+
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
+
+.. raw:: html
+
+   <hr>
+
+Isaac Orbit environments
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+These examples perform the training of an agent in the `Isaac Orbit environments <https://isaac-orbit.github.io/orbit/index.html>`_ (**one agent, multiple environments**)
+
+.. image:: ../_static/imgs/example_isaac_orbit.png
+      :width: 100%
+      :align: center
+      :alt: Isaac Orbit environments
+
+.. raw:: html
+
+   <br>
+
+The following components or practices are exemplified (highlighted):
+
+    - Load and wrap an Isaac Orbit environment: **Ant**
+
+The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Orbit environments <https://github.com/NVIDIA-Omniverse/Orbit/tree/main/source/extensions/omni.isaac.orbit_envs/data/rl_games>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
+
+.. code-block:: bash
+
+    # memory
+    memory_size = horizon_length
+
+    # agent
+    rollouts = horizon_length
+    learning_epochs = mini_epochs
+    mini_batches = horizon_length * num_envs / minibatch_size
+    discount_factor = gamma
+    lambda = tau
+    learning_rate = learning_rate
+    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+    random_timesteps = 0
+    learning_starts = 0
+    grad_norm_clip = grad_norm
+    ratio_clip = e_clip
+    value_clip = e_clip
+    clip_predicted_values = clip_value
+    entropy_loss_scale = entropy_coef
+    value_loss_scale = 0.5 * critic_coef
+    kl_threshold = 0
+    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+    # trainer
+    timesteps = horizon_length * max_epochs
+
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Orbit) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
+
+.. note::
+
+    Isaac Orbit environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`orbit -p script.py --headless`
+
+.. tabs::
+
+    .. tab:: Isaac Orbit (training)
+
+        .. tabs::
+
+            .. tab:: Isaac-Ant-v0
+
+                :download:`ppo_ant.py <../examples/isaacorbit/ppo_ant.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_ant.py
+                    :language: python
+                    :emphasize-lines: 11-12, 54-55
+
+            .. tab:: Isaac-Cartpole-v0
+
+                :download:`ppo_cartpole.py <../examples/isaacorbit/ppo_cartpole.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_cartpole.py
+                    :language: python
+
+            .. tab:: Isaac-Humanoid-v0
+
+                :download:`ppo_humanoid.py <../examples/isaacorbit/ppo_humanoid.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_humanoid.py
+                    :language: python
+
+            .. tab:: Isaac-Lift-Franka-v0
+
+                :download:`ppo_lift_franka.py <../examples/isaacorbit/ppo_lift_franka.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_lift_franka.py
+                    :language: python
+
+            .. tab:: Isaac-Reach-Franka-v0
+
+                :download:`ppo_reach_franka.py <../examples/isaacorbit/ppo_reach_franka.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_reach_franka.py
+                    :language: python
+
+            .. tab:: Isaac-Velocity-Anymal-C-v0
+
+                :download:`ppo_velocity_anymal_c.py <../examples/isaacorbit/ppo_velocity_anymal_c.py>`
+
+                .. literalinclude:: ../examples/isaacorbit/ppo_velocity_anymal_c.py
+                    :language: python
+
+.. raw:: html
+
+   <hr><hr>
+
 Omniverse Isaac Gym
 -------------------
 

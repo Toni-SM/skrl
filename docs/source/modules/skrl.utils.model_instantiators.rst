@@ -41,3 +41,5 @@ API
 .. autofunction:: skrl.utils.model_instantiators.gaussian_model
 
 .. autofunction:: skrl.utils.model_instantiators.multivariate_gaussian_model
+
+.. autofunction:: skrl.utils.model_instantiators.shared_model

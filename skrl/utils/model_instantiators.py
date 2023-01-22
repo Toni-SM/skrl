@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, Sequence, Mapping, Any
 
 import gym
 import gymnasium
@@ -89,7 +89,10 @@ def _get_num_units_by_shape(model: Model, shape: Shape) -> int:
                  Shape.STATES: model.num_observations,
                  Shape.ACTIONS: model.num_actions,
                  Shape.STATES_ACTIONS: model.num_observations + model.num_actions}
-    return num_units[shape]
+    try:
+        return num_units[shape]
+    except:
+        return shape
 
 def _generate_sequential(model: Model,
                          input_shape: Shape = Shape.STATES,
@@ -336,7 +339,7 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                               If it is not None, the num_observations property will contain the size of that space
     :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
-                            If it is not None, the num_actions property will contain the size of that space
+                         If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
@@ -414,7 +417,7 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                               If it is not None, the num_observations property will contain the size of that space
     :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
-                            If it is not None, the num_actions property will contain the size of that space
+                         If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
     :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
@@ -473,3 +476,95 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                             device=device,
                             unnormalized_log_prob=unnormalized_log_prob,
                             metadata=metadata)
+
+def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 device: Optional[Union[str, torch.device]] = None,
+                 structure: str = "",
+                 roles: Sequence[str] = [],
+                 parameters: Sequence[Mapping[str, Any]] = []) -> Model:
+    """Instantiate a shared model
+
+    :param observation_space: Observation/state space or shape (default: None).
+                              If it is not None, the num_observations property will contain the size of that space
+    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :param action_space: Action space or shape (default: None).
+                         If it is not None, the num_actions property will contain the size of that space
+    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :type device: str or torch.device, optional
+    :param structure: Shared model structure (default: ``""``).
+                      Note: this parameter is ignored for the moment
+    :type structure: str, optional
+    :param roles: Organized list of model roles (default: ``[]``)
+    :type roles: sequence of strings, optional
+    :param parameters: Organized list of model instantiator parameters (default: ``[]``)
+    :type parameters: sequence of dict, optional
+
+    :return: Shared model instance
+    :rtype: Model
+    """
+    class GaussianDeterministicModel(GaussianMixin, DeterministicMixin, Model):
+        def __init__(self, observation_space, action_space, device, roles, metadata):
+            Model.__init__(self, observation_space, action_space, device)
+            GaussianMixin.__init__(self,
+                                   clip_actions=metadata[0]["clip_actions"],
+                                   clip_log_std=metadata[0]["clip_log_std"],
+                                   min_log_std=metadata[0]["min_log_std"],
+                                   max_log_std=metadata[0]["max_log_std"],
+                                   role=roles[0])
+            DeterministicMixin.__init__(self, clip_actions=metadata[1]["clip_actions"], role=roles[1])
+
+            self._roles = roles
+            self.instantiator_input_type = metadata[0]["input_shape"].value
+            self.instantiator_output_scales = [m["output_scale"] for m in metadata]
+
+            # shared layers/network
+            self.net = _generate_sequential(model=self,
+                                            input_shape=metadata[0]["input_shape"],
+                                            hiddens=metadata[0]["hiddens"][:-1],
+                                            hidden_activation=metadata[0]["hidden_activation"][:-1],
+                                            output_shape=metadata[0]["hiddens"][-1],
+                                            output_activation=metadata[0]["hidden_activation"][-1])
+
+            # separated layers ("policy")
+            mean_layers = [nn.Linear(metadata[0]["hiddens"][-1], _get_num_units_by_shape(self, metadata[0]["output_shape"]))]
+            if metadata[0]["output_activation"] is not None:
+                mean_layers.append(_get_activation_function(metadata[0]["output_activation"]))
+            self.mean_net = nn.Sequential(*mean_layers)
+
+            self.log_std_parameter = nn.Parameter(torch.zeros(_get_num_units_by_shape(self, metadata[0]["output_shape"])))
+
+            # separated layer ("value")
+            value_layers = [nn.Linear(metadata[1]["hiddens"][-1], _get_num_units_by_shape(self, metadata[1]["output_shape"]))]
+            if metadata[1]["output_activation"] is not None:
+                value_layers.append(_get_activation_function(metadata[1]["output_activation"]))
+            self.value_net = nn.Sequential(*value_layers)
+
+        def act(self, inputs, role):
+            if role == self._roles[0]:
+                return GaussianMixin.act(self, inputs, role)
+            elif role == self._roles[1]:
+                return DeterministicMixin.act(self, inputs, role)
+
+        def compute(self, inputs, role):
+            if self.instantiator_input_type == 0:
+                output = self.net(inputs["states"])
+            elif self.instantiator_input_type == -1:
+                output = self.net(inputs["taken_actions"])
+            elif self.instantiator_input_type == -2:
+                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
+
+            if role == self._roles[0]:
+                return self.instantiator_output_scales[0] * self.mean_net(output), self.log_std_parameter, {}
+            elif role == self._roles[1]:
+                return self.instantiator_output_scales[1] * self.value_net(output), {}
+
+    # TODO: define the model using the specified structure
+
+    return GaussianDeterministicModel(observation_space=observation_space,
+                                        action_space=action_space,
+                                        device=device,
+                                        roles=roles,
+                                        metadata=parameters)

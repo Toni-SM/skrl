@@ -30,13 +30,19 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx_tabs.tabs'
+    'sphinx_tabs.tabs',
+    'sphinx_copybutton'
 ]
 
+# generate links to the documentation of objects in external projects
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
+    'gym': ('https://www.gymlibrary.dev/', None),
+    'gymnasium': ('https://gymnasium.farama.org/', None),
+    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
 }
+
 intersphinx_disabled_domains = ['std']
 
 templates_path = ['_templates']
@@ -51,6 +57,8 @@ rst_prolog = """
 html_theme = 'sphinx_rtd_theme'
 
 html_logo = '_static/data/skrl-up.png'
+
+html_favicon = "_static/data/favicon.ico"
 
 html_static_path = ['_static']
 

@@ -61,7 +61,7 @@ TD3_DEFAULT_CONFIG = {
 }
 
 
-class TD3(Agent):
+class TD3_RNN(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
@@ -69,7 +69,7 @@ class TD3(Agent):
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Twin Delayed DDPG (TD3)
+        """Twin Delayed DDPG (TD3) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1802.09477
 

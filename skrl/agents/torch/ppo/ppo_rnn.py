@@ -61,7 +61,7 @@ PPO_DEFAULT_CONFIG = {
 }
 
 
-class PPO(Agent):
+class PPO_RNN(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
@@ -69,7 +69,7 @@ class PPO(Agent):
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Proximal Policy Optimization (PPO)
+        """Proximal Policy Optimization (PPO) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1707.06347
 

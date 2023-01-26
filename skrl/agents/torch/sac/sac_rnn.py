@@ -56,7 +56,7 @@ SAC_DEFAULT_CONFIG = {
 }
 
 
-class SAC(Agent):
+class SAC_RNN(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
@@ -64,7 +64,7 @@ class SAC(Agent):
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Soft Actor-Critic (SAC)
+        """Soft Actor-Critic (SAC) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1801.01290
 

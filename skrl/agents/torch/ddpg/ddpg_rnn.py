@@ -56,7 +56,7 @@ DDPG_DEFAULT_CONFIG = {
 }
 
 
-class DDPG(Agent):
+class DDPG_RNN(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
@@ -64,7 +64,7 @@ class DDPG(Agent):
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Deep Deterministic Policy Gradient (DDPG)
+        """Deep Deterministic Policy Gradient (DDPG) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1509.02971
 

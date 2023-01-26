@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.1] - 2023-01-26
+### Fixed
+- Tensorboard writer instantiation when `write_interval` is zero
+
 ## [0.10.0] - 2023-01-22
 ### Added
 - Isaac Orbit environment loader

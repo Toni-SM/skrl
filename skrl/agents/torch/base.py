@@ -153,7 +153,8 @@ class Agent:
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
-        self.writer = SummaryWriter(log_dir=self.experiment_dir)
+        if self.write_interval > 0:
+            self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)

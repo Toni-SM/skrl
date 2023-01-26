@@ -44,9 +44,7 @@ intersphinx_mapping = {
 }
 
 intersphinx_disabled_domains = ['std']
-
 templates_path = ['_templates']
-
 rst_prolog = """
  .. include:: <s5defs.txt>
 
@@ -55,15 +53,17 @@ rst_prolog = """
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
-
 html_logo = '_static/data/skrl-up.png'
-
 html_favicon = "_static/data/favicon.ico"
-
 html_static_path = ['_static']
-
 html_css_files = ['css/s5defs-roles.css',
                   'css/skrl.css']
 
 # -- Options for EPUB output
+
 epub_show_urls = 'footnote'
+
+# -- Options for copybutton ext
+
+copybutton_prompt_text = r'>>> |\.\.\. '
+copybutton_prompt_is_regexp = True

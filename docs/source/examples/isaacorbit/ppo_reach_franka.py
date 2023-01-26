@@ -80,7 +80,7 @@ cfg_ppo["discount_factor"] = 0.99
 cfg_ppo["lambda"] = 0.95
 cfg_ppo["learning_rate"] = 3e-4
 cfg_ppo["learning_rate_scheduler"] = KLAdaptiveRL
-cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg_ppo["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 cfg_ppo["random_timesteps"] = 0
 cfg_ppo["learning_starts"] = 0
 cfg_ppo["grad_norm_clip"] = 1.0
@@ -90,14 +90,14 @@ cfg_ppo["clip_predicted_values"] = True
 cfg_ppo["entropy_loss_scale"] = 0.0
 cfg_ppo["value_loss_scale"] = 2.0
 cfg_ppo["kl_threshold"] = 0
-cfg_ppo["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+cfg_ppo["rewards_shaper"] = None
 cfg_ppo["state_preprocessor"] = RunningStandardScaler
 cfg_ppo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg_ppo["value_preprocessor"] = RunningStandardScaler
 cfg_ppo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-# logging to TensorBoard and write checkpoints each 40 and 400 timesteps respectively
-cfg_ppo["experiment"]["write_interval"] = 40
-cfg_ppo["experiment"]["checkpoint_interval"] = 400
+# logging to TensorBoard and write checkpoints each 80 and 800 timesteps respectively
+cfg_ppo["experiment"]["write_interval"] = 80
+cfg_ppo["experiment"]["checkpoint_interval"] = 800
 
 agent = PPO(models=models_ppo,
             memory=memory,
@@ -108,7 +108,7 @@ agent = PPO(models=models_ppo,
 
 
 # Configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 8000, "headless": True}
+cfg_trainer = {"timesteps": 16000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

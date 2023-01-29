@@ -62,7 +62,7 @@ RPO_DEFAULT_CONFIG = {
 }
 
 
-class RPO(Agent):
+class RPO_RNN(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
@@ -70,7 +70,7 @@ class RPO(Agent):
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Robust Policy Optimization (RPO)
+        """Robust Policy Optimization (RPO) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/2212.07536
 

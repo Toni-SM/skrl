@@ -7,7 +7,7 @@ import numpy as np
 # Import the skrl components to build the RL system
 from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.memories.torch import RandomMemory
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.agents.torch.ppo import PPO_RNN as PPO, PPO_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL

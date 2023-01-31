@@ -8,7 +8,7 @@ import numpy as np
 # Import the skrl components to build the RL system
 from skrl.models.torch import Model, DeterministicMixin, GaussianMixin
 from skrl.memories.torch import RandomMemory
-from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
+from skrl.agents.torch.sac import SAC_RNN as SAC, SAC_DEFAULT_CONFIG
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 

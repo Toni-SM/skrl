@@ -8,7 +8,7 @@ import numpy as np
 # Import the skrl components to build the RL system
 from skrl.models.torch import Model, DeterministicMixin
 from skrl.memories.torch import RandomMemory
-from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
+from skrl.agents.torch.td3 import TD3_RNN as TD3, TD3_DEFAULT_CONFIG
 from skrl.resources.noises.torch import GaussianNoise
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env

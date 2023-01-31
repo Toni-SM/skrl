@@ -8,7 +8,7 @@ import numpy as np
 # Import the skrl components to build the RL system
 from skrl.models.torch import Model, DeterministicMixin
 from skrl.memories.torch import RandomMemory
-from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
+from skrl.agents.torch.ddpg import DDPG_RNN as DDPG, DDPG_DEFAULT_CONFIG
 from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env

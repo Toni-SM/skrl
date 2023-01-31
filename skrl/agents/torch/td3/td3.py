@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import logger
+
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
@@ -155,6 +157,8 @@ class TD3(Agent):
 
         self._smooth_regularization_noise = self.cfg["smooth_regularization_noise"]
         self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
+        if self._smooth_regularization_noise is None:
+            logger.warning("agents:TD3: No smooth regularization noise specified to reduce variance during training")
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
@@ -350,15 +354,16 @@ class TD3(Agent):
             with torch.no_grad():
                 # target policy smoothing
                 next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
-                noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape),
-                                     min=-self._smooth_regularization_clip,
-                                     max=self._smooth_regularization_clip)
-                next_actions.add_(noises)
+                if self._smooth_regularization_noise is not None:
+                    noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape),
+                                        min=-self._smooth_regularization_clip,
+                                        max=self._smooth_regularization_clip)
+                    next_actions.add_(noises)
 
-                if self._backward_compatibility:
-                    next_actions = torch.max(torch.min(next_actions, self.clip_actions_max), self.clip_actions_min)
-                else:
-                    next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                    if self._backward_compatibility:
+                        next_actions = torch.max(torch.min(next_actions, self.clip_actions_max), self.clip_actions_min)
+                    else:
+                        next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")

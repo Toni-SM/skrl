@@ -106,7 +106,7 @@ The following components or practices are exemplified (highlighted):
 
                         .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_rnn.py
                             :language: python
-                            :emphasize-lines: 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
+                            :emphasize-lines: 11, 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
 
             .. tab:: GRU
 
@@ -118,7 +118,7 @@ The following components or practices are exemplified (highlighted):
 
                         .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_gru.py
                             :language: python
-                            :emphasize-lines: 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
+                            :emphasize-lines: 11, 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
 
             .. tab:: LSTM
 
@@ -130,7 +130,7 @@ The following components or practices are exemplified (highlighted):
 
                         .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_lstm.py
                             :language: python
-                            :emphasize-lines: 31-34, 40-44, 51-82, 91, 104-107, 113-117, 127-151, 159
+                            :emphasize-lines: 11, 31-34, 40-44, 51-82, 91, 104-107, 113-117, 127-151, 159
 
     .. tab:: CartPole (CEM)
 

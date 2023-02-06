@@ -2,6 +2,13 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.11.0] - Unreleased
+### Added
+- RPO agent
+
+### Changed
+- Move the agent implementation with recurrent models to a separate file
+
 ## [0.10.1] - 2023-01-26
 ### Fixed
 - Tensorboard writer instantiation when `write_interval` is zero

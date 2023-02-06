@@ -35,6 +35,19 @@ Algorithm implementation
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |     step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 
+Basic usage
+^^^^^^^^^^^
+
+.. tabs::
+
+    .. tab:: Standard implementation
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-cem]
+            :end-before: [end-cem]
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

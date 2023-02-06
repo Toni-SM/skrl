@@ -90,6 +90,19 @@ Algorithm implementation
 | :green:`# update AMP repaly buffer`
 | :math:`s_{_{AMP}} \rightarrow\;` :math:`\text{append}(B)`
 
+Basic usage
+^^^^^^^^^^^
+
+.. tabs::
+
+    .. tab:: Standard implementation
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-amp]
+            :end-before: [end-amp]
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

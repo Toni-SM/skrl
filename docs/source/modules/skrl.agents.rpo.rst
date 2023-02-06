@@ -1,20 +1,54 @@
 Robust Policy Optimization (RPO)
 ================================
 
-RPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that alternates between sampling data through interaction with the environment, and optimizing a *surrogate* objective function while avoiding that the new policy does not move too far away from the old one
+RPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that adds a uniform random perturbation to a base parameterized distribution to help the agent maintain a certain level of stochasticity throughout the training process
 
 Paper: `Robust Policy Optimization in Deep Reinforcement Learning <https://arxiv.org/abs/2212.07536>`_
 
 Algorithm
 ^^^^^^^^^
 
-| For each iteration do:
-|     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
-|     :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d, V`]
-|     :math:`\bullet \;` Compute the entropy loss :math:`{L}_{entropy}`
-|     :math:`\bullet \;` Compute the clipped surrogate objective (policy loss) with :math:`ratio` as the probability ratio between the action under the current policy and the action under the previous policy: :math:`L^{clip}_{\pi_\theta} = \mathbb{E}[\min(A \; ratio, A \; \text{clip}(ratio, 1-c, 1+c))]`
-|     :math:`\bullet \;` Compute the value loss :math:`L_{V_\phi}` as the mean squared error (MSE) between the predicted values :math:`V_{_{predicted}}` and the estimated returns :math:`R`
-|     :math:`\bullet \;` Optimize the total loss :math:`L = L^{clip}_{\pi_\theta} - c_1 \, L_{V_\phi} + c_2 \, {L}_{entropy}`
+.. note::
+
+    This algorithm is built on top of the PPO algorithm and simply adds the :literal:`alpha` hyperparameter to the policy input dictionary. It is the responsibility of the user to make use of this hyper-parameter to modify the parameterized distribution.
+
+    .. tabs::
+
+        .. tab:: Within the RPO agent
+
+            .. code-block:: python
+                :emphasize-lines: 9-10
+
+                class Policy(GaussianMixin, Model):
+                    ...
+
+                    def compute(self, inputs, role):
+                        # compute the mean actions using the neural network
+                        mean_actions = self.net(inputs["states"])
+
+                        # perturb the mean actions by adding a randomized uniform sample
+                        rpo_alpha = inputs["alpha"]
+                        mean_actions += torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+
+                        return mean_actions, self.log_std_parameter, {}
+
+        .. tab:: With other agents (e.g. PPO, A2C, TRPO)
+
+            .. code-block:: python
+                :emphasize-lines: 9-10
+
+                class Policy(GaussianMixin, Model):
+                    ...
+
+                    def compute(self, inputs, role):
+                        # compute the mean actions using the neural network
+                        mean_actions = self.net(inputs["states"])
+
+                        # perturb the mean actions by adding a randomized uniform sample
+                        rpo_alpha = 0.5
+                        mean_actions += torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+
+                        return mean_actions, self.log_std_parameter, {}
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,6 +118,35 @@ Algorithm implementation
 |     :green:`# update learning rate`
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
+
+Basic usage
+^^^^^^^^^^^
+
+.. note::
+
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`rpo_rnn.py`) to maintain the readability of the standard implementation (:literal:`rpo.py`)
+
+.. tabs::
+
+    .. tab:: Standard implementation
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-rpo]
+            :end-before: [end-rpo]
+
+    .. tab:: RNN implementation
+
+        .. note::
+
+            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-rpo-rnn]
+            :end-before: [end-rpo-rnn]
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

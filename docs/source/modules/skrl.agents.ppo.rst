@@ -85,6 +85,35 @@ Algorithm implementation
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
+Basic usage
+^^^^^^^^^^^
+
+.. note::
+
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`ppo_rnn.py`) to maintain the readability of the standard implementation (:literal:`ppo.py`)
+
+.. tabs::
+
+    .. tab:: Standard implementation
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-ppo]
+            :end-before: [end-ppo]
+
+    .. tab:: RNN implementation
+
+        .. note::
+
+            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-ppo-rnn]
+            :end-before: [end-ppo-rnn]
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

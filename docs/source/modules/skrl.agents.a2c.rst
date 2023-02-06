@@ -69,6 +69,35 @@ Algorithm implementation
 |     step :math:`\text{scheduler}_{\theta} (\text{optimizer}_{\theta})`
 |     step :math:`\text{scheduler}_{\phi} (\text{optimizer}_{\phi})`
 
+Basic usage
+^^^^^^^^^^^
+
+.. note::
+
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`a2c_rnn.py`) to maintain the readability of the standard implementation (:literal:`a2c.py`)
+
+.. tabs::
+
+    .. tab:: Standard implementation
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-a2c]
+            :end-before: [end-a2c]
+
+    .. tab:: RNN implementation
+
+        .. note::
+
+            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+        .. literalinclude:: ../snippets/agents_basic_usage.py
+            :language: python
+            :emphasize-lines: 2
+            :start-after: [start-a2c-rnn]
+            :end-before: [end-a2c-rnn]
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -44,7 +44,7 @@ class ManualTrainer(Trainer):
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.init(trainer_cfg=self.cfg)
         else:
@@ -60,12 +60,12 @@ class ManualTrainer(Trainer):
 
         This method executes the following steps once:
 
-        - Pre-interaction (sequentially if num_agents > 1)
-        - Compute actions (sequentially if num_agents > 1)
+        - Pre-interaction (sequentially if num_simultaneous_agents > 1)
+        - Compute actions (sequentially if num_simultaneous_agents > 1)
         - Interact with the environments
         - Render scene
-        - Record transitions (sequentially if num_agents > 1)
-        - Post-interaction (sequentially if num_agents > 1)
+        - Record transitions (sequentially if num_simultaneous_agents > 1)
+        - Post-interaction (sequentially if num_simultaneous_agents > 1)
         - Reset environments
 
         :param timestep: Current timestep
@@ -85,7 +85,7 @@ class ManualTrainer(Trainer):
         self._progress.update(n=1)
 
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("train")
         else:
@@ -95,7 +95,7 @@ class ManualTrainer(Trainer):
         if self.states is None:
             self.states, infos = self.env.reset()
 
-        if self.num_agents == 1:
+        if self.num_simultaneous_agents == 1:
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=timesteps)
 
@@ -120,7 +120,7 @@ class ManualTrainer(Trainer):
         if not self.headless:
             self.env.render()
 
-        if self.num_agents == 1:
+        if self.num_simultaneous_agents == 1:
             # record the environments' transitions
             with torch.no_grad():
                 self.agents.record_transition(states=self.states,
@@ -167,7 +167,7 @@ class ManualTrainer(Trainer):
 
         This method executes the following steps in loop:
 
-        - Compute actions (sequentially if num_agents > 1)
+        - Compute actions (sequentially if num_simultaneous_agents > 1)
         - Interact with the environments
         - Render scene
         - Reset environments
@@ -189,7 +189,7 @@ class ManualTrainer(Trainer):
         self._progress.update(n=1)
 
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("eval")
         else:
@@ -200,7 +200,7 @@ class ManualTrainer(Trainer):
             self.states, infos = self.env.reset()
 
         with torch.no_grad():
-            if self.num_agents == 1:
+            if self.num_simultaneous_agents == 1:
                 # compute actions
                 actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
 
@@ -217,7 +217,7 @@ class ManualTrainer(Trainer):
             self.env.render()
 
         with torch.no_grad():
-            if self.num_agents == 1:
+            if self.num_simultaneous_agents == 1:
                 # write data to TensorBoard
                 self.agents.record_transition(states=self.states,
                                               actions=actions,

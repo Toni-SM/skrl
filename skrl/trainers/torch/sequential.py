@@ -44,7 +44,7 @@ class SequentialTrainer(Trainer):
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.init(trainer_cfg=self.cfg)
         else:
@@ -64,14 +64,14 @@ class SequentialTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("train")
         else:
             self.agents.set_running_mode("train")
 
-        # single agent
-        if self.num_agents == 1:
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
             self.single_agent_train()
             return
 
@@ -134,14 +134,14 @@ class SequentialTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("eval")
         else:
             self.agents.set_running_mode("eval")
 
-        # single agent
-        if self.num_agents == 1:
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
             self.single_agent_eval()
             return
 

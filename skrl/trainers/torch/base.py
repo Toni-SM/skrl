@@ -8,25 +8,25 @@ from skrl.envs.torch import Wrapper
 from skrl.agents.torch import Agent
 
 
-def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:
+def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
     """Generate a list of equally spaced scopes for the agents
 
     :param num_envs: Number of environments
     :type num_envs: int
-    :param num_agents: Number of agents
-    :type num_agents: int
+    :param num_simultaneous_agents: Number of simultaneous agents
+    :type num_simultaneous_agents: int
 
-    :raises ValueError: If the number of agents is greater than the number of environments
+    :raises ValueError: If the number of simultaneous agents is greater than the number of environments
 
     :return: List of equally spaced scopes
     :rtype: List[int]
     """
-    scopes = [int(num_envs / num_agents)] * num_agents
+    scopes = [int(num_envs / num_simultaneous_agents)] * num_simultaneous_agents
     if sum(scopes):
         scopes[-1] += num_envs - sum(scopes)
     else:
-        raise ValueError("The number of agents ({}) is greater than the number of environments ({})" \
-            .format(num_agents, num_envs))
+        raise ValueError("The number of simultaneous agents ({}) is greater than the number of environments ({})" \
+            .format(num_simultaneous_agents, num_envs))
     return scopes
 
 
@@ -60,7 +60,7 @@ class Trainer:
         self.initial_timestep = 0
 
         # setup agents
-        self.num_agents = 0
+        self.num_simultaneous_agents = 0
         self._setup_agents()
 
     def __str__(self) -> str:
@@ -71,9 +71,9 @@ class Trainer:
         """
         string = "Trainer: {}".format(repr(self))
         string += "\n  |-- Number of parallelizable environments: {}".format(self.env.num_envs)
-        string += "\n  |-- Number of agents: {}".format(self.num_agents)
+        string += "\n  |-- Number of simultaneous agents: {}".format(self.num_simultaneous_agents)
         string += "\n  |-- Agents and scopes:"
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent, scope in zip(self.agents, self.agents_scope):
                 string += "\n  |     |-- agent: {}".format(type(agent))
                 string += "\n  |     |     |-- scope: {} environments ({}:{})".format(scope[1] - scope[0], scope[0], scope[1])
@@ -91,12 +91,12 @@ class Trainer:
         if type(self.agents) in [tuple, list]:
             # single agent
             if len(self.agents) == 1:
-                self.num_agents = 1
+                self.num_simultaneous_agents = 1
                 self.agents = self.agents[0]
                 self.agents_scope = [1]
             # parallel agents
             elif len(self.agents) > 1:
-                self.num_agents = len(self.agents)
+                self.num_simultaneous_agents = len(self.agents)
                 # check scopes
                 if not len(self.agents_scope):
                     print("[WARNING] The agents' scopes are empty, they will be generated as equal as possible")
@@ -120,7 +120,7 @@ class Trainer:
             else:
                 raise ValueError("A list of agents is expected")
         else:
-            self.num_agents = 1
+            self.num_simultaneous_agents = 1
 
     def train(self) -> None:
         """Train the agents
@@ -149,7 +149,7 @@ class Trainer:
         - Post-interaction
         - Reset environments
         """
-        assert self.num_agents == 1, "This method is only valid for a single agent"
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 
         # reset env
         states, infos = self.env.reset()
@@ -205,7 +205,7 @@ class Trainer:
         - Render scene
         - Reset environments
         """
-        assert self.num_agents == 1, "This method is only valid for a single agent"
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 
         # reset env
         states, infos = self.env.reset()

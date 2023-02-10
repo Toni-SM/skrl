@@ -1,6 +1,6 @@
 from skrl.envs.torch.wrappers import wrap_env
 
-from skrl.envs.torch.wrappers.base import Wrapper
+from skrl.envs.torch.wrappers.base import Wrapper, MultiAgentEnvWrapper
 
 from skrl.envs.torch.loaders import load_isaacgym_env_preview2
 from skrl.envs.torch.loaders import load_isaacgym_env_preview3

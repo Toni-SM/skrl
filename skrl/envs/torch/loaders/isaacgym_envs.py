@@ -112,8 +112,8 @@ def load_isaacgym_env_preview2(task_name: str = "", isaacgymenvs_path: str = "",
 
     status = True
     try:
-        from utils.config import get_args, load_cfg, parse_sim_params
-        from utils.parse_task import parse_task
+        from utils.config import get_args, load_cfg, parse_sim_params  # type: ignore
+        from utils.parse_task import parse_task  # type: ignore
     except Exception as e:
         status = False
         print("[ERROR] Failed to import required packages: {}".format(e))
@@ -229,7 +229,7 @@ def load_isaacgym_env_preview3(task_name: str = "", isaacgymenvs_path: str = "",
 
     # load environment
     sys.path.append(isaacgymenvs_path)
-    from tasks import isaacgym_task_map
+    from tasks import isaacgym_task_map  # type: ignore
     try:
         env = isaacgym_task_map[config.task.name](cfg=cfg,
                                                   sim_device=config.sim_device,

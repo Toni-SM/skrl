@@ -72,10 +72,10 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     from omegaconf import OmegaConf
 
-    from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException
-    from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT
+    from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException  # type: ignore
+    from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT  # type: ignore
 
-    import omniisaacgymenvs
+    import omniisaacgymenvs  # type: ignore
 
     # check task from command line arguments
     defined = False
@@ -205,7 +205,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     # load environment
     sys.path.append(omniisaacgymenvs_path)
-    from utils.task_util import initialize_task
+    from utils.task_util import initialize_task  # type: ignore
 
     if multi_threaded:
         env = _OmniIsaacGymVecEnvMT(headless=config.headless)

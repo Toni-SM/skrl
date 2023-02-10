@@ -87,9 +87,9 @@ def load_bidexhands_env(task_name: str = "", bidexhands_path: str = "", show_cfg
 
     status = True
     try:
-        from utils.config import get_args, load_cfg, parse_sim_params
-        from utils.parse_task import parse_task
-        from utils.process_marl import get_AgentIndex
+        from utils.config import get_args, load_cfg, parse_sim_params  # type: ignore
+        from utils.parse_task import parse_task   # type: ignore
+        from utils.process_marl import get_AgentIndex  # type: ignore
     except Exception as e:
         status = False
         print("[ERROR] Failed to import required packages: {}".format(e))

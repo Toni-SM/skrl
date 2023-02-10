@@ -85,7 +85,7 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
         app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
 
     # launch the simulator
-    from omni.isaac.kit import SimulationApp
+    from omni.isaac.kit import SimulationApp  # type: ignore
 
     config = {"headless": args.headless}
     simulation_app = SimulationApp(config, experience=app_experience)
@@ -95,9 +95,9 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
         simulation_app.close()
 
     # import orbit extensions
-    import omni.isaac.contrib_envs  # noqa: F401
-    import omni.isaac.orbit_envs  # noqa: F401
-    from omni.isaac.orbit_envs.utils import parse_env_cfg
+    import omni.isaac.contrib_envs  # type: ignore
+    import omni.isaac.orbit_envs  # type: ignore
+    from omni.isaac.orbit_envs.utils import parse_env_cfg  # type: ignore
 
     cfg = parse_env_cfg(args.task, use_gpu=not args.cpu, num_envs=args.num_envs)
 

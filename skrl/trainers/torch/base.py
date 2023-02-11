@@ -137,7 +137,7 @@ class Trainer:
         raise NotImplementedError
 
     def single_agent_train(self) -> None:
-        """Train a single agent
+        """Train agent
 
         This method executes the following steps in loop:
 
@@ -150,6 +150,7 @@ class Trainer:
         - Reset environments
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
         # reset env
         states, infos = self.env.reset()
@@ -196,7 +197,7 @@ class Trainer:
         self.env.close()
 
     def single_agent_eval(self) -> None:
-        """Evaluate the agents sequentially
+        """Evaluate agent
 
         This method executes the following steps in loop:
 
@@ -206,6 +207,7 @@ class Trainer:
         - Reset environments
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
         # reset env
         states, infos = self.env.reset()
@@ -241,6 +243,129 @@ class Trainer:
                     states, infos = self.env.reset()
                 else:
                     states.copy_(next_states)
+
+        # close the environment
+        self.env.close()
+
+    def multi_agent_train(self) -> None:
+        """Train multi-agents
+
+        This method executes the following steps in loop:
+
+        - Pre-interaction
+        - Compute actions
+        - Interact with the environments
+        - Render scene
+        - Record transitions
+        - Post-interaction
+        - Reset environments
+        """
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents > 1, "This method is not allowed for single-agent"
+
+        # reset env
+        states, infos = self.env.reset()
+        shared_states = infos.get("shared_states", None)
+
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # compute actions
+            with torch.no_grad():
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            shared_next_states = infos.get("shared_states", None)
+            infos["shared_states"] = shared_states
+            infos["shared_next_states"] = shared_next_states
+
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            # record the environments' transitions
+            with torch.no_grad():
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
+
+            # post-interaction
+            self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            with torch.no_grad():
+                if not self.env.agents:
+                    states, infos = self.env.reset()
+                    shared_states = infos.get("shared_states", None)
+                else:
+                    states = next_states
+                    shared_states = shared_next_states
+
+        # close the environment
+        self.env.close()
+
+    def multi_agent_eval(self) -> None:
+        """Evaluate multi-agents
+
+        This method executes the following steps in loop:
+
+        - Compute actions (sequentially)
+        - Interact with the environments
+        - Render scene
+        - Reset environments
+        """
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents > 1, "This method is not allowed for single-agent"
+
+        # reset env
+        states, infos = self.env.reset()
+        shared_states = infos.get("shared_states", None)
+
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+
+            # compute actions
+            with torch.no_grad():
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            shared_next_states = infos.get("shared_states", None)
+            infos["shared_states"] = shared_states
+            infos["shared_next_states"] = shared_next_states
+
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            with torch.no_grad():
+                # write data to TensorBoard
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # reset environments
+                if not self.env.agents:
+                    states, infos = self.env.reset()
+                    shared_states = infos.get("shared_states", None)
+                else:
+                    states = next_states
+                    shared_states = shared_next_states
 
         # close the environment
         self.env.close()

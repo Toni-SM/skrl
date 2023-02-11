@@ -72,7 +72,12 @@ class SequentialTrainer(Trainer):
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
-            self.single_agent_train()
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_train()
+            # multi-agent
+            else:
+                self.multi_agent_train()
             return
 
         # reset env
@@ -142,7 +147,12 @@ class SequentialTrainer(Trainer):
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
-            self.single_agent_eval()
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_eval()
+            # multi-agent
+            else:
+                self.multi_agent_eval()
             return
 
         # reset env

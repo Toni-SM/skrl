@@ -161,7 +161,6 @@ class ManualTrainer(Trainer):
             else:
                 self.states.copy_(next_states)
 
-
     def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
         """Evaluate the agents sequentially
 

@@ -1,4 +1,4 @@
-from typing import Mapping, Tuple, Any
+from typing import Mapping, Sequence, Tuple, Any
 
 import gym
 
@@ -21,7 +21,14 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         self._shared_obs_buf = None
 
         self.possible_agents = [f"agent_{i}" for i in range(self.num_agents)]
-        self.agents = self.possible_agents
+
+    @property
+    def agents(self) -> Sequence[str]:
+        """Names of all current agents
+
+        These may be changed as an environment progresses (i.e. agents can be added or removed)
+        """
+        return self.possible_agents
 
     @property
     def observation_spaces(self) -> Mapping[str, gym.Space]:

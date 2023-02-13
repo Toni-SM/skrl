@@ -1,4 +1,4 @@
-from typing import Mapping, Tuple, Any
+from typing import Mapping, Sequence, Tuple, Any
 
 import gym
 
@@ -122,7 +122,6 @@ class MultiAgentEnvWrapper(object):
         else:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.agents = []
         self.possible_agents = []
 
     def __getattr__(self, key: str) -> Any:
@@ -191,6 +190,14 @@ class MultiAgentEnvWrapper(object):
         If the wrapped environment does not have the ``num_agents`` property, it will be set to 1
         """
         return self._env.num_agents if hasattr(self._env, "num_agents") else 1
+
+    @property
+    def agents(self) -> Sequence[str]:
+        """Names of all current agents
+
+        These may be changed as an environment progresses (i.e. agents can be added or removed)
+        """
+        raise NotImplementedError
 
     @property
     def state_spaces(self) -> Mapping[str, gym.Space]:

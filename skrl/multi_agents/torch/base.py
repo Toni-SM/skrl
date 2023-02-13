@@ -250,10 +250,7 @@ class MultiAgent:
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self,
-            states: Mapping[str, torch.Tensor],
-            timestep: int,
-            timesteps: int) -> torch.Tensor:
+    def act(self, states: Mapping[str, torch.Tensor], timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states

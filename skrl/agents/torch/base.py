@@ -633,8 +633,8 @@ class Agent:
         """
         timestep += 1
 
-        # update best models and write data to tensorboard
-        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
+        # update best models and write checkpoints
+        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
             if reward > self.checkpoint_best_modules["reward"]:
@@ -642,13 +642,12 @@ class Agent:
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
                 self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
-
-            # write to tensorboard
-            self.write_tracking_data(timestep, timesteps)
-
-        # write checkpoints
-        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+            # write checkpoints
             self.write_checkpoint(timestep, timesteps)
+
+        # write to tensorboard
+        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step

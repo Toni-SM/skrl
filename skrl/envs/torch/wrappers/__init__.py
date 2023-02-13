@@ -1,9 +1,9 @@
-from typing import Any
+from typing import Union, Any
 
 import gym
 import gymnasium
 
-from skrl.envs.torch.wrappers.base import Wrapper
+from skrl.envs.torch.wrappers.base import Wrapper, MultiAgentEnvWrapper
 
 from skrl.envs.torch.wrappers.deepmind_envs import DeepMindWrapper
 from skrl.envs.torch.wrappers.gym_envs import GymWrapper
@@ -13,12 +13,15 @@ from skrl.envs.torch.wrappers.isaacgym_envs import IsaacGymPreview2Wrapper, Isaa
 from skrl.envs.torch.wrappers.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.torch.wrappers.robosuite_envs import RobosuiteWrapper
 
+from skrl.envs.torch.wrappers.bidexhands_envs import BiDexHandsWrapper
+from skrl.envs.torch.wrappers.petting_zoo_envs import PettingZooWrapper
+
 from skrl import logger
 
 __all__ = ["wrap_env"]
 
 
-def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
+def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wrapper, MultiAgentEnvWrapper]:
     """Wrap an environment to use a common interface
 
     Example::
@@ -45,9 +48,13 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
                     +--------------------+-------------------------+
                     |Gymnasium           |``"gymnasium"``          |
                     +--------------------+-------------------------+
+                    |Petting Zoo         |``"pettingzoo"``         |
+                    +--------------------+-------------------------+
                     |DeepMind            |``"dm"``                 |
                     +--------------------+-------------------------+
                     |Robosuite           |``"robosuite"``          |
+                    +--------------------+-------------------------+
+                    |Bi-DexHands         |``"bidexhands"``         |
                     +--------------------+-------------------------+
                     |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
                     +--------------------+-------------------------+
@@ -66,7 +73,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
     :raises ValueError: Unknow wrapper type
 
     :return: Wrapped environment
-    :rtype: Wrapper
+    :rtype: Wrapper or MultiAgentEnvWrapper
     """
     if verbose:
         logger.info("Environment class: {}".format(", ".join([str(base).replace("<class '", "").replace("'>", "") \
@@ -92,6 +99,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
             if verbose:
                 logger.info("Environment wrapper: Gymnasium")
             return GymnasiumWrapper(env)
+        elif "<class 'pettingzoo.utils.env" in base_classes[0] or "<class 'pettingzoo.utils.wrappers" in base_classes[0]:
+            if verbose:
+                logger.info("Environment wrapper: Petting Zoo")
+            return PettingZooWrapper(env)
         elif "<class 'dm_env._environment.Environment'>" in base_classes:
             if verbose:
                 logger.info("Environment wrapper: DeepMind")
@@ -115,6 +126,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
         if verbose:
             logger.info("Environment wrapper: gymnasium")
         return GymnasiumWrapper(env)
+    elif wrapper == "pettingzoo":
+        if verbose:
+            logger.info("Environment wrapper: Petting Zoo")
+        return PettingZooWrapper(env)
     elif wrapper == "dm":
         if verbose:
             logger.info("Environment wrapper: DeepMind")
@@ -123,6 +138,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Wrapper:
         if verbose:
             logger.info("Environment wrapper: Robosuite")
         return RobosuiteWrapper(env)
+    elif wrapper == "bidexhands":
+        if verbose:
+            logger.info("Environment wrapper: Bi-DexHands")
+        return BiDexHandsWrapper(env)
     elif wrapper == "isaacgym-preview2":
         if verbose:
             logger.info("Environment wrapper: Isaac Gym (preview 2)")

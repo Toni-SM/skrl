@@ -60,8 +60,7 @@ html_title = f"<div style='text-align: center;'><strong>{project}</strong> ({ver
 
 html_static_path = ["_static"]
 html_favicon = "_static/data/favicon.ico"
-html_css_files = ["css/s5defs-roles.css",
-                  "css/skrl.css"]
+html_css_files = ["css/s5defs-roles.css"]
 
 html_theme_options = {
     # logo

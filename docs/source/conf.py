@@ -39,7 +39,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "gym": ("https://www.gymlibrary.dev/", None),
     "gymnasium": ("https://gymnasium.farama.org/", None),
-    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
 }
 

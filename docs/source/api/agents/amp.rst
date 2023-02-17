@@ -97,7 +97,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-amp]
@@ -108,7 +108,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.amp.amp.AMP_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/amp/amp.py
+.. literalinclude:: ../../../../skrl/agents/torch/amp/amp.py
     :language: python
     :lines: 18-71
     :linenos:

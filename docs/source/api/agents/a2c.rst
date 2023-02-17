@@ -80,7 +80,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-a2c]
@@ -92,7 +92,7 @@ Basic usage
 
             When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-a2c-rnn]
@@ -103,9 +103,9 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.a2c.a2c.A2C_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/a2c/a2c.py
+.. literalinclude:: ../../../../skrl/agents/torch/a2c/a2c.py
     :language: python
-    :lines: 17-53
+    :lines: 18-54
     :linenos:
 
 Spaces and models

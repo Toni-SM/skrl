@@ -66,7 +66,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-ddpg]
@@ -78,7 +78,7 @@ Basic usage
 
             When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-ddpg-rnn]
@@ -89,7 +89,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.ddpg.ddpg.DDPG_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/ddpg/ddpg.py
+.. literalinclude:: ../../../../skrl/agents/torch/ddpg/ddpg.py
     :language: python
     :lines: 16-56
     :linenos:

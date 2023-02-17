@@ -30,7 +30,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-q-learning]
@@ -41,7 +41,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.q_learning.q_learning.Q_LEARNING_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/q_learning/q_learning.py
+.. literalinclude:: ../../../../skrl/agents/torch/q_learning/q_learning.py
     :language: python
     :lines: 14-35
     :linenos:

@@ -73,7 +73,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-sac]
@@ -85,7 +85,7 @@ Basic usage
 
             When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-sac-rnn]
@@ -96,7 +96,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.sac.sac.SAC_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/sac/sac.py
+.. literalinclude:: ../../../../skrl/agents/torch/sac/sac.py
     :language: python
     :lines: 18-56
     :linenos:

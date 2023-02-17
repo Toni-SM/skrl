@@ -29,7 +29,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-sarsa]
@@ -40,7 +40,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.sarsa.sarsa.SARSA_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/sarsa/sarsa.py
+.. literalinclude:: ../../../../skrl/agents/torch/sarsa/sarsa.py
     :language: python
     :lines: 14-35
     :linenos:

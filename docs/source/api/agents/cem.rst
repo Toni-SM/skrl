@@ -42,7 +42,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-cem]
@@ -53,7 +53,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.cem.cem.CEM_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/cem/cem.py
+.. literalinclude:: ../../../../skrl/agents/torch/cem/cem.py
     :language: python
     :lines: 15-44
     :linenos:

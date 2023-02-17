@@ -109,7 +109,7 @@ Tracking custom metrics/scales
 
 * **Tracking custom data attached to the agent's control and timing logic (recommended)**
 
-  Although the TensorBoard's writing control and timing logic is controlled by the base class Agent, it is possible to track custom data. The :literal:`track_data` method can be used (see :doc:`Agent <../modules/skrl.agents.base_class>` class for more details), passing as arguments the data identification (tag) and the scalar value to be recorded.
+  Although the TensorBoard's writing control and timing logic is controlled by the base class Agent, it is possible to track custom data. The :literal:`track_data` method can be used (see :doc:`Agent <../api/agents>` class for more details), passing as arguments the data identification (tag) and the scalar value to be recorded.
 
   For example, to track the current CPU usage, the following code can be used:
 

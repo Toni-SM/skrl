@@ -96,7 +96,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-ppo]
@@ -108,7 +108,7 @@ Basic usage
 
             When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-ppo-rnn]
@@ -119,7 +119,7 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.ppo.ppo.PPO_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/ppo/ppo.py
+.. literalinclude:: ../../../../skrl/agents/torch/ppo/ppo.py
     :language: python
     :lines: 18-61
     :linenos:

@@ -76,7 +76,7 @@ Basic usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-td3]
@@ -88,7 +88,7 @@ Basic usage
 
             When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
 
-        .. literalinclude:: ../snippets/agents_basic_usage.py
+        .. literalinclude:: ../../snippets/agents_basic_usage.py
             :language: python
             :emphasize-lines: 2
             :start-after: [start-td3-rnn]
@@ -99,9 +99,9 @@ Configuration and hyperparameters
 
 .. py:data:: skrl.agents.torch.td3.td3.TD3_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/agents/torch/td3/td3.py
+.. literalinclude:: ../../../../skrl/agents/torch/td3/td3.py
     :language: python
-    :lines: 17-61
+    :lines: 19-63
     :linenos:
 
 Spaces and models

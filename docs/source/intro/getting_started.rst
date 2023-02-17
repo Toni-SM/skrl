@@ -542,18 +542,18 @@ Agents are the components in charge of decision making. They are much more than 
 
 skrl provides **state-of-the-art agent**. Its implementations are focused on readability, simplicity and code transparency. Each agent is implemented independently even when two or more agents may contain code in common. Refer to each agent documentation for more information about the models and spaces they support, their respective configurations, algorithm details and more.
 
-    * :doc:`Advantage Actor Critic <../modules/skrl.agents.a2c>` (**A2C**)
-    * :doc:`Adversarial Motion Priors <../modules/skrl.agents.amp>` (**AMP**)
-    * :doc:`Cross-Entropy Method <../modules/skrl.agents.cem>` (**CEM**)
-    * :doc:`Deep Deterministic Policy Gradient <../modules/skrl.agents.ddpg>` (**DDPG**)
-    * :doc:`Double Deep Q-Network <../modules/skrl.agents.ddqn>` (**DDQN**)
-    * :doc:`Deep Q-Network <../modules/skrl.agents.dqn>` (**DQN**)
-    * :doc:`Proximal Policy Optimization <../modules/skrl.agents.ppo>` (**PPO**)
-    * :doc:`Q-learning <../modules/skrl.agents.q_learning>` (**Q-learning**)
-    * :doc:`Soft Actor-Critic <../modules/skrl.agents.sac>` (**SAC**)
-    * :doc:`State Action Reward State Action <../modules/skrl.agents.sarsa>` (**SARSA**)
-    * :doc:`Twin-Delayed DDPG <../modules/skrl.agents.td3>` (**TD3**)
-    * :doc:`Trust Region Policy Optimization <../modules/skrl.agents.trpo>` (**TRPO**)
+    * :doc:`Advantage Actor Critic <../api/agents/a2c>` (**A2C**)
+    * :doc:`Adversarial Motion Priors <../api/agents/amp>` (**AMP**)
+    * :doc:`Cross-Entropy Method <../api/agents/cem>` (**CEM**)
+    * :doc:`Deep Deterministic Policy Gradient <../api/agents/ddpg>` (**DDPG**)
+    * :doc:`Double Deep Q-Network <../api/agents/ddqn>` (**DDQN**)
+    * :doc:`Deep Q-Network <../api/agents/dqn>` (**DQN**)
+    * :doc:`Proximal Policy Optimization <../api/agents/ppo>` (**PPO**)
+    * :doc:`Q-learning <../api/agents/q_learning>` (**Q-learning**)
+    * :doc:`Soft Actor-Critic <../api/agents/sac>` (**SAC**)
+    * :doc:`State Action Reward State Action <../api/agents/sarsa>` (**SARSA**)
+    * :doc:`Twin-Delayed DDPG <../api/agents/td3>` (**TD3**)
+    * :doc:`Trust Region Policy Optimization <../api/agents/trpo>` (**TRPO**)
 
 Agents generally expect, as arguments, the following components: models and memories, as well as the following variables: observation and action spaces, the device where their logic is executed and a configuration dictionary with hyperparameters and other values. The remaining components, mentioned above, are collected through the configuration dictionary. For example, the PPO agent can be instantiated as follows:
 

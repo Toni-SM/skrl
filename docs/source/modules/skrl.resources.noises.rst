@@ -57,7 +57,7 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 .. _gaussian-noise:
 
@@ -68,17 +68,17 @@ API
 ^^^
 
 .. autoclass:: skrl.resources.noises.torch.gaussian.GaussianNoise
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 .. _ornstein-uhlenbeck-noise:
 
@@ -89,17 +89,17 @@ API
 ^^^
 
 .. autoclass:: skrl.resources.noises.torch.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 .. _base-class-noise:
 
@@ -127,10 +127,10 @@ API
 ^^^
 
 .. autoclass:: skrl.resources.noises.torch.base.Noise
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__

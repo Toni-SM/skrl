@@ -54,9 +54,9 @@ Configuration and hyperparameters
 .. py:data:: skrl.agents.torch.cem.cem.CEM_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/cem/cem.py
-   :language: python
-   :lines: 15-44
-   :linenos:
+    :language: python
+    :lines: 15-44
+    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
@@ -64,56 +64,56 @@ Spaces and models
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Gym/Gymnasium spaces
-     - .. centered:: Observation
-     - .. centered:: Action
-   * - Discrete
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\blacksquare`
-   * - Box
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\square`
-   * - Dict
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\square`
+    * - Gym/Gymnasium spaces
+      - .. centered:: Observation
+      - .. centered:: Action
+    * - Discrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
+    * - Box
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - Dict
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Notation
-     - Concept
-     - Key
-     - Input shape
-     - Output shape
-     - Type
-   * - :math:`\pi(s)`
-     - Policy
-     - :literal:`"policy"`
-     - observation
-     - action
-     - :ref:`Categorical <models_categorical>`
+    * - Notation
+      - Concept
+      - Key
+      - Input shape
+      - Output shape
+      - Type
+    * - :math:`\pi(s)`
+      - Policy
+      - :literal:`"policy"`
+      - observation
+      - action
+      - :ref:`Categorical <models_categorical>`
 
 Support for advanced features is described in the next table
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Feature
-     - Support and remarks
-   * - RNN support
-     - \-
+    * - Feature
+      - Support and remarks
+    * - RNN support
+      - \-
 
 API
 ^^^
 
 .. autoclass:: skrl.agents.torch.cem.cem.CEM
-   :undoc-members:
-   :show-inheritance:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__

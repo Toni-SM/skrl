@@ -22,9 +22,9 @@ API
 ^^^
 
 .. autoclass:: skrl.memories.torch.base.Memory
-   :undoc-members:
-   :show-inheritance:
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :members:
 
-   .. automethod:: __init__
-   .. automethod:: __len__
+    .. automethod:: __init__
+    .. automethod:: __len__

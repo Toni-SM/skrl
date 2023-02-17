@@ -21,11 +21,11 @@ API
 ^^^
 
 .. autoclass:: skrl.agents.torch.base.Agent
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _update, _empty_preprocessor, _get_internal_value
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update, _empty_preprocessor, _get_internal_value
+    :members:
 
-   .. automethod:: __init__
-   .. automethod:: __str__
+    .. automethod:: __init__
+    .. automethod:: __str__

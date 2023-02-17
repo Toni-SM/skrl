@@ -8,7 +8,7 @@ Isaac Gym environments
 
 .. raw:: html
 
-     <hr>
+    <hr>
 
 Environments (preview 4)
 ------------------------
@@ -84,7 +84,7 @@ API
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 Environments (preview 3)
 ------------------------
@@ -141,7 +141,7 @@ API
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 Environments (preview 2)
 ------------------------

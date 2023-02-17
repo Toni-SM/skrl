@@ -109,9 +109,9 @@ Configuration and hyperparameters
 .. py:data:: skrl.agents.torch.amp.amp.AMP_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/amp/amp.py
-   :language: python
-   :lines: 18-71
-   :linenos:
+    :language: python
+    :lines: 18-71
+    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
@@ -119,74 +119,74 @@ Spaces and models
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Gym/Gymnasium spaces
-     - .. centered:: AMP observation
-     - .. centered:: Observation
-     - .. centered:: Action
-   * - Discrete
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\square`
-   * - Box
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\blacksquare`
-   * - Dict
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\square`
+    * - Gym/Gymnasium spaces
+      - .. centered:: AMP observation
+      - .. centered:: Observation
+      - .. centered:: Action
+    * - Discrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
+    * - Box
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - Dict
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 The implementation uses 1 stochastic (continuous) and 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Notation
-     - Concept
-     - Key
-     - Input shape
-     - Output shape
-     - Type
-   * - :math:`\pi_\theta(s)`
-     - Policy
-     - :literal:`"policy"`
-     - observation
-     - action
-     - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
-   * - :math:`V_\phi(s)`
-     - Value
-     - :literal:`"value"`
-     - observation
-     - 1
-     - :ref:`Deterministic <models_deterministic>`
-   * - :math:`D_\psi(s_{_{AMP}})`
-     - Discriminator
-     - :literal:`"discriminator"`
-     - AMP observation
-     - 1
-     - :ref:`Deterministic <models_deterministic>`
+    * - Notation
+      - Concept
+      - Key
+      - Input shape
+      - Output shape
+      - Type
+    * - :math:`\pi_\theta(s)`
+      - Policy
+      - :literal:`"policy"`
+      - observation
+      - action
+      - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
+    * - :math:`V_\phi(s)`
+      - Value
+      - :literal:`"value"`
+      - observation
+      - 1
+      - :ref:`Deterministic <models_deterministic>`
+    * - :math:`D_\psi(s_{_{AMP}})`
+      - Discriminator
+      - :literal:`"discriminator"`
+      - AMP observation
+      - 1
+      - :ref:`Deterministic <models_deterministic>`
 
 Support for advanced features is described in the next table
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Feature
-     - Support and remarks
-   * - Shared model
-     - \-
-   * - RNN support
-     - \-
+    * - Feature
+      - Support and remarks
+    * - Shared model
+      - \-
+    * - RNN support
+      - \-
 
 API
 ^^^
 
 .. autoclass:: skrl.agents.torch.amp.amp.AMP
-   :undoc-members:
-   :show-inheritance:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__

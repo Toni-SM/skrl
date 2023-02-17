@@ -42,15 +42,15 @@ API
 ^^^
 
 .. autoclass:: skrl.utils.postprocessing.MemoryFileIterator
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _format_numpy, _format_torch, _format_csv
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _format_numpy, _format_torch, _format_csv
+    :members:
 
-   .. automethod:: __init__
-   .. automethod:: __iter__
-   .. automethod:: __next__
+    .. automethod:: __init__
+    .. automethod:: __iter__
+    .. automethod:: __next__
 
 Tensorboard files
 -----------------
@@ -64,7 +64,7 @@ This utility requires the `TensorFlow <https://www.tensorflow.org/>`_ package to
 
 .. code-block:: bash
 
-   pip install tensorflow
+    pip install tensorflow
 
 Basic usage
 ^^^^^^^^^^^
@@ -84,11 +84,11 @@ API
 ^^^
 
 .. autoclass:: skrl.utils.postprocessing.TensorboardFileIterator
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-   .. automethod:: __init__
-   .. automethod:: __iter__
-   .. automethod:: __next__
+    .. automethod:: __init__
+    .. automethod:: __iter__
+    .. automethod:: __next__

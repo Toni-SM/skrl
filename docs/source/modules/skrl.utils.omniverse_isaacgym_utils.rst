@@ -31,6 +31,6 @@ OmniIsaacGymEnvs-like environment instance
 ------------------------------------------
 
 API
-"""
+^^^
 
 .. autofunction:: skrl.utils.omniverse_isaacgym_utils.get_env_instance

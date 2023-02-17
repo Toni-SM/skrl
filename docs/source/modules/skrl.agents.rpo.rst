@@ -154,9 +154,9 @@ Configuration and hyperparameters
 .. py:data:: skrl.agents.torch.rpo.rpo.RPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../skrl/agents/torch/rpo/rpo.py
-   :language: python
-   :lines: 18-62
-   :linenos:
+    :language: python
+    :lines: 18-62
+    :linenos:
 
 Spaces and models
 ^^^^^^^^^^^^^^^^^
@@ -164,64 +164,64 @@ Spaces and models
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Gym/Gymnasium spaces
-     - .. centered:: Observation
-     - .. centered:: Action
-   * - Discrete
-     - .. centered:: :math:`\square`
-     - .. centered:: :math:`\square`
-   * - Box
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\blacksquare`
-   * - Dict
-     - .. centered:: :math:`\blacksquare`
-     - .. centered:: :math:`\square`
+    * - Gym/Gymnasium spaces
+      - .. centered:: Observation
+      - .. centered:: Action
+    * - Discrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
+    * - Box
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - Dict
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 The implementation uses 1 continuous stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Notation
-     - Concept
-     - Key
-     - Input shape
-     - Output shape
-     - Type
-   * - :math:`\pi_\theta(s)`
-     - Policy
-     - :literal:`"policy"`
-     - observation
-     - action
-     - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
-   * - :math:`V_\phi(s)`
-     - Value
-     - :literal:`"value"`
-     - observation
-     - 1
-     - :ref:`Deterministic <models_deterministic>`
+    * - Notation
+      - Concept
+      - Key
+      - Input shape
+      - Output shape
+      - Type
+    * - :math:`\pi_\theta(s)`
+      - Policy
+      - :literal:`"policy"`
+      - observation
+      - action
+      - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
+    * - :math:`V_\phi(s)`
+      - Value
+      - :literal:`"value"`
+      - observation
+      - 1
+      - :ref:`Deterministic <models_deterministic>`
 
 Support for advanced features is described in the next table
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
 
-   * - Feature
-     - Support and remarks
-   * - Shared model
-     - for Policy and Value
-   * - RNN support
-     - RNN, LSTM, GRU and any other variant
+    * - Feature
+      - Support and remarks
+    * - Shared model
+      - for Policy and Value
+    * - RNN support
+      - RNN, LSTM, GRU and any other variant
 
 API
 ^^^
 
 .. autoclass:: skrl.agents.torch.rpo.rpo.RPO
-   :undoc-members:
-   :show-inheritance:
-   :private-members: _update
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__

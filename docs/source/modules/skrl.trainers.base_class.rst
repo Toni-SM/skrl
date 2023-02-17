@@ -24,11 +24,11 @@ API
 ^^^
 
 .. autoclass:: skrl.trainers.torch.base.Trainer
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _setup_agents
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _setup_agents
+    :members:
 
-   .. automethod:: __init__
-   .. automethod:: __str__
+    .. automethod:: __init__
+    .. automethod:: __str__

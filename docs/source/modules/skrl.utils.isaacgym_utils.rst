@@ -25,7 +25,7 @@ API
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 Web viewer for development without X server
 -------------------------------------------
@@ -55,9 +55,9 @@ Watch an animation of the gestures and actions in the following video
 
 .. raw:: html
 
-   <video width="100%" controls autoplay>
-      <source src="https://user-images.githubusercontent.com/22400377/157323911-40729895-6175-48d2-85d7-c1b30fe0ee9c.mp4" type="video/mp4">
-   </video>
+    <video width="100%" controls autoplay>
+        <source src="https://user-images.githubusercontent.com/22400377/157323911-40729895-6175-48d2-85d7-c1b30fe0ee9c.mp4" type="video/mp4">
+    </video>
 
 |
 
@@ -68,7 +68,7 @@ The web viewer is build on top of `Flask <https://flask.palletsprojects.com>`_ a
 
 .. code-block:: bash
 
-   pip install Flask
+    pip install Flask
 
 Also, to be launched in Visual Studio Code (Preview in Editor), the `Live Preview - VS Code Extension <https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server>`_ must be installed
 
@@ -88,10 +88,10 @@ API
 ^^^
 
 .. autoclass:: skrl.utils.isaacgym_utils.WebViewer
-   :undoc-members:
-   :show-inheritance:
-   :inherited-members:
-   :private-members: _route_index, _route_stream, _route_input_event, _stream
-   :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _route_index, _route_stream, _route_input_event, _stream
+    :members:
 
-   .. automethod:: __init__
+    .. automethod:: __init__

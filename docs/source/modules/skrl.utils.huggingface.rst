@@ -3,7 +3,7 @@ Hugging Face integration
 
 .. raw:: html
 
-   <hr>
+    <hr>
 
 Download model from Hugging Face Hub
 ------------------------------------

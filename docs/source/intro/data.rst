@@ -48,9 +48,9 @@ To visualize the tracked metrics/scales, during or after the training, TensorBoa
     tensorboard --logdir=PATH_TO_RUNS_DIRECTORY
 
 .. image:: ../_static/imgs/data_tensorboard.jpg
-      :width: 100%
-      :align: center
-      :alt: TensorBoard panel
+    :width: 100%
+    :align: center
+    :alt: TensorBoard panel
 
 |
 

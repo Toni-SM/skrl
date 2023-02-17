@@ -32,10 +32,17 @@ skrl provides a Python mixin (:literal:`MultivariateGaussianMixin`) to assist in
 Concept
 -------
 
-.. image:: ../_static/imgs/model_multivariate_gaussian.svg
-      :width: 100%
-      :align: center
-      :alt: Multivariate Gaussian model
+.. image:: ../_static/imgs/model_multivariate_gaussian-light.svg
+    :width: 100%
+    :align: center
+    :class: only-light
+    :alt: Multivariate Gaussian model
+
+.. image:: ../_static/imgs/model_multivariate_gaussian-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
+    :alt: Multivariate Gaussian model
 
 Basic usage
 -----------
@@ -50,9 +57,15 @@ Basic usage
 
     .. tab:: MLP
 
-        .. image:: ../_static/imgs/model_gaussian_mlp.svg
+        .. image:: ../_static/imgs/model_gaussian_mlp-light.svg
             :width: 42%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_gaussian_mlp-dark.svg
+            :width: 42%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -78,9 +91,15 @@ Basic usage
 
     .. tab:: CNN
 
-        .. image:: ../_static/imgs/model_gaussian_cnn.svg
+        .. image:: ../_static/imgs/model_gaussian_cnn-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_gaussian_cnn-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -106,9 +125,15 @@ Basic usage
 
     .. tab:: RNN
 
-        .. image:: ../_static/imgs/model_gaussian_rnn.svg
+        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -162,9 +187,15 @@ Basic usage
 
     .. tab:: GRU
 
-        .. image:: ../_static/imgs/model_gaussian_rnn.svg
+        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -218,9 +249,15 @@ Basic usage
 
     .. tab:: LSTM
 
-        .. image:: ../_static/imgs/model_gaussian_rnn.svg
+        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 

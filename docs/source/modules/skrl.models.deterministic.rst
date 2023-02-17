@@ -30,9 +30,16 @@ skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the cr
 Concept
 -------
 
-.. image:: ../_static/imgs/model_deterministic.svg
+.. image:: ../_static/imgs/model_deterministic-light.svg
     :width: 65%
     :align: center
+    :class: only-light
+    :alt: Deterministic model
+
+.. image:: ../_static/imgs/model_deterministic-dark.svg
+    :width: 65%
+    :align: center
+    :class: only-dark
     :alt: Deterministic model
 
 Basic usage
@@ -48,9 +55,15 @@ Basic usage
 
     .. tab:: MLP
 
-        .. image:: ../_static/imgs/model_deterministic_mlp.svg
+        .. image:: ../_static/imgs/model_deterministic_mlp-light.svg
             :width: 35%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_deterministic_mlp-dark.svg
+            :width: 35%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -76,9 +89,15 @@ Basic usage
 
     .. tab:: CNN
 
-        .. image:: ../_static/imgs/model_deterministic_cnn.svg
+        .. image:: ../_static/imgs/model_deterministic_cnn-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_deterministic_cnn-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -104,9 +123,15 @@ Basic usage
 
     .. tab:: RNN
 
-        .. image:: ../_static/imgs/model_deterministic_rnn.svg
+        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -160,9 +185,15 @@ Basic usage
 
     .. tab:: GRU
 
-        .. image:: ../_static/imgs/model_deterministic_rnn.svg
+        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -216,9 +247,15 @@ Basic usage
 
     .. tab:: LSTM
 
-        .. image:: ../_static/imgs/model_deterministic_rnn.svg
+        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 

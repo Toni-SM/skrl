@@ -12,10 +12,17 @@ This library works with a common API to interact with the following RL environme
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
-.. image:: ../_static/imgs/wrapping.svg
-      :width: 100%
-      :align: center
-      :alt: Environment wrapping
+.. image:: ../_static/imgs/wrapping-light.svg
+    :width: 100%
+    :align: center
+    :class: only-light
+    :alt: Environment wrapping
+
+.. image:: ../_static/imgs/wrapping-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
+    :alt: Environment wrapping
 
 .. raw:: html
 

@@ -4,9 +4,16 @@ Parallel trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/parallel_trainer.svg
+.. image:: ../_static/imgs/parallel_trainer-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Parallel trainer
+
+.. image:: ../_static/imgs/parallel_trainer-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Parallel trainer
 
 Basic usage

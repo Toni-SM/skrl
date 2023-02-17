@@ -4,9 +4,16 @@ Manual trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/manual_trainer.svg
+.. image:: ../_static/imgs/manual_trainer-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Manual trainer
+
+.. image:: ../_static/imgs/manual_trainer-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Manual trainer
 
 Basic usage

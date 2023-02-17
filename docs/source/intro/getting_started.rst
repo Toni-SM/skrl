@@ -8,9 +8,16 @@ Reinforcement Learning schema
 
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from its interaction with the environment as shown in the following schema:
 
-.. image:: ../_static/imgs/rl_schema.svg
+.. image:: ../_static/imgs/rl_schema-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Reinforcement Learning schema
+
+.. image:: ../_static/imgs/rl_schema-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Reinforcement Learning schema
 
 .. raw:: html
@@ -28,9 +35,16 @@ The environment plays a fundamental role in the definition of the RL schema. For
 
 skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
 
-.. image:: ../_static/imgs/wrapping.svg
+.. image:: ../_static/imgs/wrapping-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Environment wrapping
+
+.. image:: ../_static/imgs/wrapping-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Environment wrapping
 
 Within the methods and properties defined in the wrapped environment, the observation and action space are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
@@ -259,9 +273,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Categorical
 
-        .. image:: ../_static/imgs/model_categorical.svg
+        .. image:: ../_static/imgs/model_categorical-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Categorical model
+
+        .. image:: ../_static/imgs/model_categorical-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Categorical model
 
         .. raw:: html
@@ -291,9 +312,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Gaussian
 
-        .. image:: ../_static/imgs/model_gaussian.svg
+        .. image:: ../_static/imgs/model_gaussian-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Gaussian model
+
+        .. image:: ../_static/imgs/model_gaussian-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Gaussian model
 
         .. raw:: html
@@ -325,9 +353,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Multivariate Gaussian
 
-        .. image:: ../_static/imgs/model_multivariate_gaussian.svg
+        .. image:: ../_static/imgs/model_multivariate_gaussian-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Multivariate Gaussian model
+
+        .. image:: ../_static/imgs/model_multivariate_gaussian-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Multivariate Gaussian model
 
         .. raw:: html
@@ -359,9 +394,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Deterministic
 
-        .. image:: ../_static/imgs/model_deterministic.svg
+        .. image:: ../_static/imgs/model_deterministic-light.svg
             :width: 60%
             :align: center
+            :class: only-light
+            :alt: Deterministic model
+
+        .. image:: ../_static/imgs/model_deterministic-dark.svg
+            :width: 60%
+            :align: center
+            :class: only-dark
             :alt: Deterministic model
 
         .. raw:: html

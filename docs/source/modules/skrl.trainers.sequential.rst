@@ -4,9 +4,16 @@ Sequential trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/sequential_trainer.svg
+.. image:: ../_static/imgs/sequential_trainer-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Sequential trainer
+
+.. image:: ../_static/imgs/sequential_trainer-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Sequential trainer
 
 Basic usage

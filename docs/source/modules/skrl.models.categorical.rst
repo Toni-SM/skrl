@@ -30,9 +30,16 @@ skrl provides a Python mixin (:literal:`CategoricalMixin`) to assist in the crea
 Concept
 -------
 
-.. image:: ../_static/imgs/model_categorical.svg
+.. image:: ../_static/imgs/model_categorical-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Categorical model
+
+.. image:: ../_static/imgs/model_categorical-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Categorical model
 
 Basic usage
@@ -48,9 +55,15 @@ Basic usage
 
     .. tab:: MLP
 
-        .. image:: ../_static/imgs/model_categorical_mlp.svg
+        .. image:: ../_static/imgs/model_categorical_mlp-light.svg
             :width: 40%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_categorical_mlp-dark.svg
+            :width: 40%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -76,9 +89,15 @@ Basic usage
 
     .. tab:: CNN
 
-        .. image:: ../_static/imgs/model_categorical_cnn.svg
+        .. image:: ../_static/imgs/model_categorical_cnn-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_categorical_cnn-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
 
         .. raw:: html
 
@@ -104,9 +123,15 @@ Basic usage
 
     .. tab:: RNN
 
-        .. image:: ../_static/imgs/model_categorical_rnn.svg
+        .. image:: ../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_categorical_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -160,9 +185,15 @@ Basic usage
 
     .. tab:: GRU
 
-        .. image:: ../_static/imgs/model_categorical_rnn.svg
+        .. image:: ../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_categorical_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 
@@ -216,9 +247,15 @@ Basic usage
 
     .. tab:: LSTM
 
-        .. image:: ../_static/imgs/model_categorical_rnn.svg
+        .. image:: ../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
+            :class: only-light
+
+        .. image:: ../_static/imgs/model_categorical_rnn-dark.svg
+            :width: 90%
+            :align: center
+            :class: only-dark
 
         where:
 

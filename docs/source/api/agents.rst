@@ -1,5 +1,25 @@
+Agents
+======
+
+.. toctree::
+    :hidden:
+
+    A2C <agents/a2c>
+    AMP <agents/amp>
+    CEM <agents/cem>
+    DDPG <agents/ddpg>
+    DDQN <agents/ddqn>
+    DQN <agents/dqn>
+    PPO <agents/ppo>
+    Q-learning <agents/q_learning>
+    RPO <agents/rpo>
+    SAC <agents/sac>
+    SARSA <agents/sarsa>
+    TD3 <agents/td3>
+    TRPO <agents/trpo>
+
 Base class
-==========
+----------
 
 .. note::
 

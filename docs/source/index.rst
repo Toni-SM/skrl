@@ -79,41 +79,27 @@ Library components (overview)
 Agents
 ^^^^^^
 
-    Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <modules/skrl.agents.base_class>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
+    Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <api/agents>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
 
-    * :doc:`Advantage Actor Critic <modules/skrl.agents.a2c>` (**A2C**)
-    * :doc:`Adversarial Motion Priors <modules/skrl.agents.amp>` (**AMP**)
-    * :doc:`Cross-Entropy Method <modules/skrl.agents.cem>` (**CEM**)
-    * :doc:`Deep Deterministic Policy Gradient <modules/skrl.agents.ddpg>` (**DDPG**)
-    * :doc:`Double Deep Q-Network <modules/skrl.agents.ddqn>` (**DDQN**)
-    * :doc:`Deep Q-Network <modules/skrl.agents.dqn>` (**DQN**)
-    * :doc:`Proximal Policy Optimization <modules/skrl.agents.ppo>` (**PPO**)
-    * :doc:`Q-learning <modules/skrl.agents.q_learning>` (**Q-learning**)
-    * :doc:`Robust Policy Optimization <modules/skrl.agents.rpo>` (**RPO**)
-    * :doc:`Soft Actor-Critic <modules/skrl.agents.sac>` (**SAC**)
-    * :doc:`State Action Reward State Action <modules/skrl.agents.sarsa>` (**SARSA**)
-    * :doc:`Twin-Delayed DDPG <modules/skrl.agents.td3>` (**TD3**)
-    * :doc:`Trust Region Policy Optimization <modules/skrl.agents.trpo>` (**TRPO**)
+    * :doc:`Advantage Actor Critic <api/agents/a2c>` (**A2C**)
+    * :doc:`Adversarial Motion Priors <api/agents/amp>` (**AMP**)
+    * :doc:`Cross-Entropy Method <api/agents/cem>` (**CEM**)
+    * :doc:`Deep Deterministic Policy Gradient <api/agents/ddpg>` (**DDPG**)
+    * :doc:`Double Deep Q-Network <api/agents/ddqn>` (**DDQN**)
+    * :doc:`Deep Q-Network <api/agents/dqn>` (**DQN**)
+    * :doc:`Proximal Policy Optimization <api/agents/ppo>` (**PPO**)
+    * :doc:`Q-learning <api/agents/q_learning>` (**Q-learning**)
+    * :doc:`Robust Policy Optimization <api/agents/rpo>` (**RPO**)
+    * :doc:`Soft Actor-Critic <api/agents/sac>` (**SAC**)
+    * :doc:`State Action Reward State Action <api/agents/sarsa>` (**SARSA**)
+    * :doc:`Twin-Delayed DDPG <api/agents/td3>` (**TD3**)
+    * :doc:`Trust Region Policy Optimization <api/agents/trpo>` (**TRPO**)
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Agents
+    :caption: API
     :hidden:
 
-    modules/skrl.agents.base_class
-    A2C <modules/skrl.agents.a2c>
-    AMP <modules/skrl.agents.amp>
-    CEM <modules/skrl.agents.cem>
-    DDPG <modules/skrl.agents.ddpg>
-    DDQN <modules/skrl.agents.ddqn>
-    DQN <modules/skrl.agents.dqn>
-    PPO <modules/skrl.agents.ppo>
-    Q-learning <modules/skrl.agents.q_learning>
-    RPO <modules/skrl.agents.rpo>
-    SAC <modules/skrl.agents.sac>
-    SARSA <modules/skrl.agents.sarsa>
-    TD3 <modules/skrl.agents.td3>
-    TRPO <modules/skrl.agents.trpo>
+    api/agents
 
 Environments
 ^^^^^^^^^^^^

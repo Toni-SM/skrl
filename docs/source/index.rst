@@ -100,6 +100,7 @@ Agents
     :hidden:
 
     api/agents
+    api/models
 
 Environments
 ^^^^^^^^^^^^
@@ -139,26 +140,13 @@ Memories
 Models
 ^^^^^^
 
-    Definition of helper mixins for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper mixins to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <modules/skrl.models.base_class>` that defines a uniform interface and provides for common functionalities. In addition, it is possible to create :doc:`shared model <modules/skrl.models.shared_model>` by combining the implemented definitions
+    Definition of helper mixins for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper mixins to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <api/models>` that defines a uniform interface and provides for common functionalities. In addition, it is possible to create :doc:`shared model <api/models/shared_model>` by combining the implemented definitions
 
-    * :doc:`Tabular model <modules/skrl.models.tabular>` (discrete domain)
-    * :doc:`Categorical model <modules/skrl.models.categorical>` (discrete domain)
-    * :doc:`Gaussian model <modules/skrl.models.gaussian>` (continuous domain)
-    * :doc:`Multivariate Gaussian model <modules/skrl.models.multivariate_gaussian>` (continuous domain)
-    * :doc:`Deterministic model <modules/skrl.models.deterministic>` (continuous domain)
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Models
-    :hidden:
-
-    modules/skrl.models.base_class
-    modules/skrl.models.tabular
-    modules/skrl.models.categorical
-    modules/skrl.models.gaussian
-    modules/skrl.models.multivariate_gaussian
-    modules/skrl.models.deterministic
-    modules/skrl.models.shared_model
+    * :doc:`Tabular model <api/models/tabular>` (discrete domain)
+    * :doc:`Categorical model <api/models/categorical>` (discrete domain)
+    * :doc:`Gaussian model <api/models/gaussian>` (continuous domain)
+    * :doc:`Multivariate Gaussian model <api/models/multivariate_gaussian>` (continuous domain)
+    * :doc:`Deterministic model <api/models/deterministic>` (continuous domain)
 
 Trainers
 ^^^^^^^^

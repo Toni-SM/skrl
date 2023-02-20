@@ -30,13 +30,13 @@ skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the cr
 Concept
 -------
 
-.. image:: ../_static/imgs/model_deterministic-light.svg
+.. image:: ../../_static/imgs/model_deterministic-light.svg
     :width: 65%
     :align: center
     :class: only-light
     :alt: Deterministic model
 
-.. image:: ../_static/imgs/model_deterministic-dark.svg
+.. image:: ../../_static/imgs/model_deterministic-dark.svg
     :width: 65%
     :align: center
     :class: only-dark
@@ -55,12 +55,12 @@ Basic usage
 
     .. tab:: MLP
 
-        .. image:: ../_static/imgs/model_deterministic_mlp-light.svg
+        .. image:: ../../_static/imgs/model_deterministic_mlp-light.svg
             :width: 35%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_deterministic_mlp-dark.svg
+        .. image:: ../../_static/imgs/model_deterministic_mlp-dark.svg
             :width: 35%
             :align: center
             :class: only-dark
@@ -73,7 +73,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-mlp-sequential]
@@ -81,7 +81,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-mlp-functional]
@@ -89,12 +89,12 @@ Basic usage
 
     .. tab:: CNN
 
-        .. image:: ../_static/imgs/model_deterministic_cnn-light.svg
+        .. image:: ../../_static/imgs/model_deterministic_cnn-light.svg
             :width: 100%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_deterministic_cnn-dark.svg
+        .. image:: ../../_static/imgs/model_deterministic_cnn-dark.svg
             :width: 100%
             :align: center
             :class: only-dark
@@ -107,7 +107,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-cnn-sequential]
@@ -115,7 +115,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-cnn-functional]
@@ -123,12 +123,12 @@ Basic usage
 
     .. tab:: RNN
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -169,7 +169,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-rnn-sequential]
@@ -177,7 +177,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-rnn-functional]
@@ -185,12 +185,12 @@ Basic usage
 
     .. tab:: GRU
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -231,7 +231,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-gru-sequential]
@@ -239,7 +239,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-gru-functional]
@@ -247,12 +247,12 @@ Basic usage
 
     .. tab:: LSTM
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-light.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_deterministic_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_deterministic_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -294,7 +294,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-lstm-sequential]
@@ -302,7 +302,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/deterministic_model.py
+                .. literalinclude:: ../../snippets/deterministic_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-lstm-functional]

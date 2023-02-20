@@ -1,7 +1,20 @@
+Models
+======
+
+.. toctree::
+    :hidden:
+
+    Tabular <models/tabular>
+    Categorical <models/categorical>
+    Gaussian <models/gaussian>
+    Multivariate Gaussian <models/multivariate_gaussian>
+    Deterministic <models/deterministic>
+    Shared model <models/shared_model>
+
 .. _models_base_class:
 
 Base class
-==========
+----------
 
 .. note::
 

@@ -34,7 +34,7 @@ The code snippet below shows how to define a shared model. The following practic
 
     <br>
 
-.. literalinclude:: ../snippets/shared_model.py
+.. literalinclude:: ../../snippets/shared_model.py
     :language: python
     :linenos:
     :start-after: [start-mlp]

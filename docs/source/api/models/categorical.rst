@@ -1,48 +1,46 @@
-.. _models_gaussian:
+.. _models_categorical:
 
-Gaussian model
-==============
+Categorical model
+=================
 
-Gaussian models run **continuous-domain stochastic** policies.
+Categorical models run **discrete-domain stochastic** policies.
 
-skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
+skrl provides a Python mixin (:literal:`CategoricalMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
   .. code-block:: python
       :emphasize-lines: 1
 
-      class GaussianModel(GaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0",
-                       clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+      class CategoricalModel(CategoricalMixin, Model):
+          def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
               Model.__init__(self, observation_space, action_space, device)
-              GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+              CategoricalMixin.__init__(self, unnormalized_log_prob)
 
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
   .. code-block:: python
-      :emphasize-lines: 4-5
+      :emphasize-lines: 3-4
 
-      class GaussianModel(GaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0",
-                       clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+      class CategoricalModel(CategoricalMixin, Model):
+          def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
               Model.__init__(self, observation_space, action_space, device)
-              GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+              CategoricalMixin.__init__(self, unnormalized_log_prob)
 
 Concept
 -------
 
-.. image:: ../_static/imgs/model_gaussian-light.svg
+.. image:: ../../_static/imgs/model_categorical-light.svg
     :width: 100%
     :align: center
     :class: only-light
-    :alt: Gaussian model
+    :alt: Categorical model
 
-.. image:: ../_static/imgs/model_gaussian-dark.svg
+.. image:: ../../_static/imgs/model_categorical-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
-    :alt: Gaussian model
+    :alt: Categorical model
 
 Basic usage
 -----------
@@ -57,13 +55,13 @@ Basic usage
 
     .. tab:: MLP
 
-        .. image:: ../_static/imgs/model_gaussian_mlp-light.svg
-            :width: 42%
+        .. image:: ../../_static/imgs/model_categorical_mlp-light.svg
+            :width: 40%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_gaussian_mlp-dark.svg
-            :width: 42%
+        .. image:: ../../_static/imgs/model_categorical_mlp-dark.svg
+            :width: 40%
             :align: center
             :class: only-dark
 
@@ -75,7 +73,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-mlp-sequential]
@@ -83,7 +81,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-mlp-functional]
@@ -91,12 +89,12 @@ Basic usage
 
     .. tab:: CNN
 
-        .. image:: ../_static/imgs/model_gaussian_cnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_cnn-light.svg
             :width: 100%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_gaussian_cnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_cnn-dark.svg
             :width: 100%
             :align: center
             :class: only-dark
@@ -109,7 +107,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-cnn-sequential]
@@ -117,7 +115,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-cnn-functional]
@@ -125,12 +123,12 @@ Basic usage
 
     .. tab:: RNN
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -171,7 +169,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-rnn-sequential]
@@ -179,7 +177,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-rnn-functional]
@@ -187,12 +185,12 @@ Basic usage
 
     .. tab:: GRU
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -233,7 +231,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-gru-sequential]
@@ -241,7 +239,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-gru-functional]
@@ -249,12 +247,12 @@ Basic usage
 
     .. tab:: LSTM
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -296,7 +294,7 @@ Basic usage
 
             .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-lstm-sequential]
@@ -304,7 +302,7 @@ Basic usage
 
             .. group-tab:: nn.functional
 
-                .. literalinclude:: ../snippets/gaussian_model.py
+                .. literalinclude:: ../../snippets/categorical_model.py
                     :language: python
                     :linenos:
                     :start-after: [start-lstm-functional]
@@ -313,7 +311,7 @@ Basic usage
 API
 ---
 
-.. autoclass:: skrl.models.torch.gaussian.GaussianMixin
+.. autoclass:: skrl.models.torch.categorical.CategoricalMixin
     :show-inheritance:
     :members:
 

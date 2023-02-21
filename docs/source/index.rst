@@ -76,6 +76,14 @@ User guide
 Library components (overview)
 -----------------------------
 
+.. toctree::
+    :caption: API
+    :hidden:
+
+    api/agents
+    api/models
+    api/trainers
+
 Agents
 ^^^^^^
 
@@ -94,13 +102,6 @@ Agents
     * :doc:`State Action Reward State Action <api/agents/sarsa>` (**SARSA**)
     * :doc:`Twin-Delayed DDPG <api/agents/td3>` (**TD3**)
     * :doc:`Trust Region Policy Optimization <api/agents/trpo>` (**TRPO**)
-
-.. toctree::
-    :caption: API
-    :hidden:
-
-    api/agents
-    api/models
 
 Environments
 ^^^^^^^^^^^^
@@ -151,21 +152,11 @@ Models
 Trainers
 ^^^^^^^^
 
-    Definition of the procedures responsible for managing the agent's training and interaction with the environment. All trainers inherit from a :doc:`base class <modules/skrl.trainers.base_class>` that defines a uniform interface and provides for common functionalities
+    Definition of the procedures responsible for managing the agent's training and interaction with the environment. All trainers inherit from a :doc:`base class <api/trainers>` that defines a uniform interface and provides for common functionalities
 
-    * :doc:`Sequential trainer <modules/skrl.trainers.sequential>`
-    * :doc:`Parallel trainer <modules/skrl.trainers.parallel>`
-    * :doc:`Manual trainer <modules/skrl.trainers.manual>`
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Trainers
-    :hidden:
-
-    modules/skrl.trainers.base_class
-    modules/skrl.trainers.sequential
-    modules/skrl.trainers.parallel
-    modules/skrl.trainers.manual
+    * :doc:`Sequential trainer <api/trainers/sequential>`
+    * :doc:`Parallel trainer <api/trainers/parallel>`
+    * :doc:`Manual trainer <api/trainers/manual>`
 
 Resources
 ^^^^^^^^^

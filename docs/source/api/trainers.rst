@@ -1,5 +1,15 @@
+Trainers
+========
+
+.. toctree::
+    :hidden:
+
+    Sequential <trainers/sequential>
+    Parallel <trainers/parallel>
+    Manual <trainers/manual>
+
 Base class
-==========
+----------
 
 .. note::
 

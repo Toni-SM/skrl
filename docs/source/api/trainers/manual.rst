@@ -4,13 +4,13 @@ Manual trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/manual_trainer-light.svg
+.. image:: ../../_static/imgs/manual_trainer-light.svg
     :width: 100%
     :align: center
     :class: only-light
     :alt: Manual trainer
 
-.. image:: ../_static/imgs/manual_trainer-dark.svg
+.. image:: ../../_static/imgs/manual_trainer-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
@@ -23,7 +23,7 @@ Basic usage
 
     .. tab:: Snippet
 
-        .. literalinclude:: ../snippets/trainer.py
+        .. literalinclude:: ../../snippets/trainer.py
             :language: python
             :linenos:
             :start-after: [start-manual]
@@ -34,7 +34,7 @@ Configuration
 
 .. py:data:: skrl.trainers.torch.manual.MANUAL_TRAINER_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/trainers/torch/manual.py
+.. literalinclude:: ../../../../skrl/trainers/torch/manual.py
     :language: python
     :lines: 14-18
     :linenos:

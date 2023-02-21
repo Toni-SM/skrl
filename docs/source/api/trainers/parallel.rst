@@ -4,13 +4,13 @@ Parallel trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/parallel_trainer-light.svg
+.. image:: ../../_static/imgs/parallel_trainer-light.svg
     :width: 100%
     :align: center
     :class: only-light
     :alt: Parallel trainer
 
-.. image:: ../_static/imgs/parallel_trainer-dark.svg
+.. image:: ../../_static/imgs/parallel_trainer-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
@@ -31,7 +31,7 @@ Basic usage
 
     .. tab:: Snippet
 
-        .. literalinclude:: ../snippets/trainer.py
+        .. literalinclude:: ../../snippets/trainer.py
             :language: python
             :linenos:
             :start-after: [start-parallel]
@@ -42,7 +42,7 @@ Configuration
 
 .. py:data:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/trainers/torch/parallel.py
+.. literalinclude:: ../../../../skrl/trainers/torch/parallel.py
     :language: python
     :lines: 15-19
     :linenos:

@@ -4,13 +4,13 @@ Sequential trainer
 Concept
 ^^^^^^^
 
-.. image:: ../_static/imgs/sequential_trainer-light.svg
+.. image:: ../../_static/imgs/sequential_trainer-light.svg
     :width: 100%
     :align: center
     :class: only-light
     :alt: Sequential trainer
 
-.. image:: ../_static/imgs/sequential_trainer-dark.svg
+.. image:: ../../_static/imgs/sequential_trainer-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
@@ -23,7 +23,7 @@ Basic usage
 
     .. tab:: Snippet
 
-        .. literalinclude:: ../snippets/trainer.py
+        .. literalinclude:: ../../snippets/trainer.py
             :language: python
             :linenos:
             :start-after: [start-sequential]
@@ -34,7 +34,7 @@ Configuration
 
 .. py:data:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
 
-.. literalinclude:: ../../../skrl/trainers/torch/sequential.py
+.. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
     :language: python
     :lines: 14-18
     :linenos:

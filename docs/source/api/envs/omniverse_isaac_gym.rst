@@ -1,7 +1,7 @@
 Omniverse Isaac Gym environments
 ================================
 
-.. image:: ../_static/imgs/example_omniverse_isaacgym.png
+.. image:: ../../_static/imgs/example_omniverse_isaacgym.png
     :width: 100%
     :align: center
     :alt: Omniverse Isaac Gym environments

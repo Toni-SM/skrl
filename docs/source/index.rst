@@ -81,6 +81,7 @@ Library components (overview)
     :hidden:
 
     api/agents
+    api/envs
     api/memories
     api/models
     api/trainers
@@ -109,20 +110,10 @@ Environments
 
     Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Isaac Orbit, Omniverse Isaac Gym environments, among others
 
-    * :doc:`Wrapping <modules/skrl.envs.wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
-    * Loading :doc:`Isaac Gym environments <modules/skrl.envs.isaac_gym>`
-    * Loading :doc:`Isaac Orbit environments <modules/skrl.envs.isaac_orbit>`
-    * Loading :doc:`Omniverse Isaac Gym environments <modules/skrl.envs.omniverse_isaac_gym>`
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Environments
-    :hidden:
-
-    modules/skrl.envs.wrapping
-    modules/skrl.envs.isaac_gym
-    modules/skrl.envs.isaac_orbit
-    modules/skrl.envs.omniverse_isaac_gym
+    * :doc:`Wrapping <api/envs/wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
+    * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
+    * Loading :doc:`Isaac Orbit environments <api/envs/isaac_orbit>`
+    * Loading :doc:`Omniverse Isaac Gym environments <api/envs/omniverse_isaac_gym>`
 
 Memories
 ^^^^^^^^

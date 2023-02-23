@@ -272,7 +272,7 @@ The following code snippets show how to load the checkpoints through the instant
             # Load the checkpoint
             policy.load("./runs/22-09-29_22-48-49-816281_DDPG/checkpoints/2500_policy.pt")
 
-In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../modules/skrl.utils.huggingface>` for more information.
+In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../api/utils/huggingface>` for more information.
 
 .. tabs::
 

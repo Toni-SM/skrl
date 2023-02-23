@@ -33,7 +33,7 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
+skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../api/envs/wrapping>` section for more information.
 
 .. image:: ../_static/imgs/wrapping-light.svg
     :width: 100%

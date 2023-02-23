@@ -84,6 +84,7 @@ Library components (overview)
     api/envs
     api/memories
     api/models
+    api/resources
     api/trainers
     api/utils
 
@@ -148,27 +149,18 @@ Resources
 
     Definition of resources used by the agents during training and/or evaluation, such as exploration noises or learning rate schedulers
 
-    **Noises:** Definition of the noises used by the agents during the exploration stage. All noises inherit from a :ref:`base class <base-class-noise>` that defines a uniform interface
+    **Noises:** Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <api/resources/noises>` that defines a uniform interface
 
-        * :ref:`Gaussian <gaussian-noise>` noise
-        * :ref:`Ornstein-Uhlenbeck <ornstein-uhlenbeck-noise>` noise
+        * :doc:`Gaussian <api/resources/noises/gaussian>` noise
+        * :doc:`Ornstein-Uhlenbeck <api/resources/noises/ornstein_uhlenbeck>` noise
 
     **Learning rate schedulers:** Definition of learning rate schedulers. All schedulers inherit from the PyTorch :literal:`_LRScheduler` class (see `how to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details)
 
-        * :ref:`KL Adaptive <kl-adaptive-scheduler>`
+        * :doc:`KL Adaptive <api/resources/schedulers/kl_adaptive>`
 
     **Preprocessors:** Definition of preprocessors
 
-        * :ref:`Running standard scaler <running-standard-scaler-preprocessor>`
-
-.. toctree::
-    :maxdepth: 2
-    :caption: Resources
-    :hidden:
-
-    modules/skrl.resources.noises
-    modules/skrl.resources.schedulers
-    modules/skrl.resources.preprocessors
+        * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
 
 Utils
 ^^^^^

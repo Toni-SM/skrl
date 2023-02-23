@@ -1,14 +1,13 @@
-.. _resources_noises:
-
 Noises
 ======
 
-Definition of the noises used by the agents during the exploration stage. All noises inherit from a :ref:`base class <base-class-noise>` that defines a uniform interface
+.. toctree::
+    :hidden:
 
-**Implemented noises**
+    Gaussian noise <noises/gaussian>
+    Ornstein-Uhlenbeck <noises/ornstein_uhlenbeck>
 
-- :ref:`Gaussian noise <gaussian-noise>`
-- :ref:`Ornstein-Uhlenbeck noise <ornstein-uhlenbeck-noise>`
+Definition of the noises used by the agents during the exploration stage. All noises inherit from a base class that defines a uniform interface
 
 Basic usage
 -----------
@@ -19,7 +18,7 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
 
     .. tab:: Gaussian noise
 
-        .. image:: ../_static/imgs/noise_gaussian.png
+        .. image:: ../../_static/imgs/noise_gaussian.png
             :width: 90%
             :align: center
             :alt: Gaussian noise
@@ -37,8 +36,8 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
             cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2, device="cuda:0")
 
     .. tab:: Ornstein-Uhlenbeck noise
-
-        .. image:: ../_static/imgs/noise_ornstein_uhlenbeck.png
+ 
+        .. image:: ../../_static/imgs/noise_ornstein_uhlenbeck.png
             :width: 90%
             :align: center
             :alt: Ornstein-Uhlenbeck noise
@@ -59,50 +58,6 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
 
     <hr>
 
-.. _gaussian-noise:
-
-Gaussian noise
---------------
-
-API
-^^^
-
-.. autoclass:: skrl.resources.noises.torch.gaussian.GaussianNoise
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-    :private-members: _update
-    :members:
-
-    .. automethod:: __init__
-
-.. raw:: html
-
-    <hr>
-
-.. _ornstein-uhlenbeck-noise:
-
-Ornstein-Uhlenbeck noise
-------------------------
-
-API
-^^^
-
-.. autoclass:: skrl.resources.noises.torch.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-    :private-members: _update
-    :members:
-
-    .. automethod:: __init__
-
-.. raw:: html
-
-    <hr>
-
-.. _base-class-noise:
-
 Base class
 ----------
 
@@ -119,7 +74,7 @@ Basic inheritance usage
 
     .. tab:: Inheritance
 
-        .. literalinclude:: ../snippets/noise.py
+        .. literalinclude:: ../../snippets/noise.py
             :language: python
             :linenos:
 

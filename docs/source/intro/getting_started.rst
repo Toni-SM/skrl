@@ -467,7 +467,7 @@ Models can be saved and loaded to and from the file system. However, the recomme
 
 Noise plays a fundamental role in the exploration stage, especially in agents of a deterministic nature, such as DDPG or TD3, for example.
 
-skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :ref:`Noises <resources_noises>` documentation for more information.
+skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :doc:`Noises <../api/resources/noises>` documentation for more information.
 
 .. tabs::
 
@@ -503,7 +503,7 @@ Noise instances are passed to the agents in their respective configuration dicti
 
 Learning rate schedulers help RL system converge faster and improve accuracy.
 
-skrl **supports all PyTorch learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :ref:`Learning rate schedulers <resources_schedulers>` documentation for more information.
+skrl **supports all PyTorch learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :doc:`Learning rate schedulers <../api/resources/schedulers>` documentation for more information.
 
 Learning rate schedulers classes and their respective arguments (except the :literal:`optimizer` argument) are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the schedulers can be configured as shown below:
 
@@ -521,7 +521,7 @@ Learning rate schedulers classes and their respective arguments (except the :lit
 
 Data preprocessing can help increase the accuracy and efficiency of training by cleaning or making data suitable for machine learning models.
 
-skrl provides, as part of its resources, **preprocessors** classes. Refer to :ref:`Preprocessors <resources_preprocessors>` documentation for more information.
+skrl provides, as part of its resources, **preprocessors** classes. Refer to :doc:`Preprocessors <../api/resources/preprocessors>` documentation for more information.
 
 Preprocessors classes and their respective arguments are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the preprocessors can be configured as shown below:
 

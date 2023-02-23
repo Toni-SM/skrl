@@ -85,6 +85,7 @@ Library components (overview)
     api/memories
     api/models
     api/trainers
+    api/utils
 
 Agents
 ^^^^^^
@@ -174,21 +175,9 @@ Utils
 
     Definition of helper functions and classes
 
-    * :doc:`Utilities <modules/skrl.utils.utilities>`, e.g. setting the random seed
-    * Memory and Tensorboard :doc:`file post-processing <modules/skrl.utils.postprocessing>`
-    * :doc:`Model instantiators <modules/skrl.utils.model_instantiators>`
-    * :doc:`Hugging Face integration <modules/skrl.utils.huggingface>`
-    * :doc:`Isaac Gym utils <modules/skrl.utils.isaacgym_utils>`
-    * :doc:`Omniverse Isaac Gym utils <modules/skrl.utils.omniverse_isaacgym_utils>`
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Utils
-    :hidden:
-
-    modules/skrl.utils.utilities
-    modules/skrl.utils.postprocessing
-    modules/skrl.utils.model_instantiators
-    modules/skrl.utils.huggingface
-    modules/skrl.utils.isaacgym_utils
-    modules/skrl.utils.omniverse_isaacgym_utils
+    * :doc:`Utilities <api/utils>`, e.g. setting the random seed
+    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
+    * :doc:`Model instantiators <api/utils/model_instantiators>`
+    * :doc:`Hugging Face integration <api/utils/huggingface>`
+    * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
+    * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

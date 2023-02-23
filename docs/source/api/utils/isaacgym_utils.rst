@@ -79,7 +79,7 @@ Basic usage
 
     .. tab:: Snippet
 
-        .. literalinclude:: ../snippets/isaacgym_utils.py
+        .. literalinclude:: ../../snippets/isaacgym_utils.py
             :language: python
             :linenos:
             :emphasize-lines: 4, 8, 56, 65-68

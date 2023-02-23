@@ -13,7 +13,7 @@ Basic usage
 
     .. tab:: PyTorch (.pt)
 
-        .. literalinclude:: ../snippets/utils_postprocessing.py
+        .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
@@ -22,7 +22,7 @@ Basic usage
 
     .. tab:: NumPy (.npz)
 
-        .. literalinclude:: ../snippets/utils_postprocessing.py
+        .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
@@ -31,7 +31,7 @@ Basic usage
 
     .. tab:: Comma-separated values (.csv)
 
-        .. literalinclude:: ../snippets/utils_postprocessing.py
+        .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-6
@@ -73,7 +73,7 @@ Basic usage
 
     .. tab:: Tensorboard (events.out.tfevents.*)
 
-        .. literalinclude:: ../snippets/utils_postprocessing.py
+        .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
             :linenos:
             :emphasize-lines: 1, 5-7

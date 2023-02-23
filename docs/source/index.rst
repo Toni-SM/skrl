@@ -81,6 +81,7 @@ Library components (overview)
     :hidden:
 
     api/agents
+    api/memories
     api/models
     api/trainers
 
@@ -126,17 +127,9 @@ Environments
 Memories
 ^^^^^^^^
 
-    Generic memory definitions. Such memories are not bound to any agent and can be used for any role such as rollout buffer or experience replay memory, for example. All memories inherit from a :doc:`base class <modules/skrl.memories.base_class>` that defines a uniform interface and keeps track (in allocated tensors) of transitions with the environment or other defined data
+    Generic memory definitions. Such memories are not bound to any agent and can be used for any role such as rollout buffer or experience replay memory, for example. All memories inherit from a :doc:`base class <api/memories>` that defines a uniform interface and keeps track (in allocated tensors) of transitions with the environment or other defined data
 
-    * :doc:`Random memory <modules/skrl.memories.random>`
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Memories
-    :hidden:
-
-    modules/skrl.memories.base_class
-    modules/skrl.memories.random
+    * :doc:`Random memory <api/memories/random>`
 
 Models
 ^^^^^^

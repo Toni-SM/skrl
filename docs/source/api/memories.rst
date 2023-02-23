@@ -1,5 +1,13 @@
+Memories
+========
+
+.. toctree::
+    :hidden:
+
+    Random <memories/random>
+
 Base class
-==========
+----------
 
 .. note::
 

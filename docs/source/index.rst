@@ -26,6 +26,7 @@ SKRL - Reinforcement Learning library (|version|)
     <a href="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml">
         <img alt="pre-commit" src="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg">
     </a>
+    <br><br>
 
 **skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_, `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
 
@@ -36,12 +37,17 @@ SKRL - Reinforcement Learning library (|version|)
     * Support for Gym/Gymnasium (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4), NVIDIA Isaac Orbit, NVIDIA Omniverse Isaac Gym environments, among others
     * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), NVIDIA Isaac Gym, NVIDIA Isaac Orbit and NVIDIA Omniverse Isaac Gym
 
+.. raw:: html
+
+    <br>
+
 .. warning::
 
     **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
 | **GitHub repository:** https://github.com/Toni-SM/skrl
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
+|
 
 **Citing skrl:** To cite this library (created at `Mondragon Unibertsitatea <https://www.mondragon.edu/en/home>`_) use the following reference to its `article <https://arxiv.org/abs/2202.03825>`_: *"skrl: Modular and Flexible Library for Reinforcement Learning"*
 
@@ -56,13 +62,15 @@ SKRL - Reinforcement Learning library (|version|)
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 User guide
 ----------
 
+To start using the library, visit the following links:
+
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     intro/installation
     intro/getting_started
@@ -71,7 +79,7 @@ User guide
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Library components (overview)
 -----------------------------
@@ -110,7 +118,7 @@ Agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym (preview 2, 3 and 4) and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Isaac Orbit, Omniverse Isaac Gym environments, among others
+    Definition of the Isaac Gym (preview 2, 3 and 4), Isaac Orbit and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Isaac Orbit, Omniverse Isaac Gym environments, among others
 
     * :doc:`Wrapping <api/envs/wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
     * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`

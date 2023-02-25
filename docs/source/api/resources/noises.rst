@@ -36,7 +36,7 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
             cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2, device="cuda:0")
 
     .. tab:: Ornstein-Uhlenbeck noise
- 
+
         .. image:: ../../_static/imgs/noise_ornstein_uhlenbeck.png
             :width: 90%
             :align: center

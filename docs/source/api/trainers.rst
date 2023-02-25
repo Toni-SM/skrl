@@ -8,6 +8,12 @@ Trainers
     Parallel <trainers/parallel>
     Manual <trainers/manual>
 
+Trainers are responsible for orchestrating and managing the training/evaluation of agents and their interactions with the environment.
+
+.. raw:: html
+
+    <br><hr>
+
 Base class
 ----------
 
@@ -16,6 +22,10 @@ Base class
     This is the base class for all the other classes in this module.
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
+
+.. raw:: html
+
+    <br>
 
 Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -29,6 +39,10 @@ Basic inheritance usage
             :linenos:
             :start-after: [start-base]
             :end-before: [end-base]
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

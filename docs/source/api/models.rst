@@ -11,7 +11,11 @@ Models
     Deterministic <models/deterministic>
     Shared model <models/shared_model>
 
-.. _models_base_class:
+Models (or agent models) refer to a representation of the agent's policy, value function, etc. that the agent uses to make decisions. Agents can have one or more models, and their parameters are adjusted by the optimization algorithms.
+
+.. raw:: html
+
+    <br><hr>
 
 Base class
 ----------
@@ -21,6 +25,10 @@ Base class
     This is the base class for all the other classes in this module.
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
+
+.. raw:: html
+
+    <br>
 
 Mixin and inheritance
 ^^^^^^^^^^^^^^^^^^^^^
@@ -41,8 +49,14 @@ Mixin and inheritance
             :start-after: [start-model]
             :end-before: [end-model]
 
+.. raw:: html
+
+    <br>
+
 API
 ^^^
+
+.. _models_base_class:
 
 .. autoclass:: skrl.models.torch.base.Model
     :undoc-members:

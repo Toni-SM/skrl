@@ -18,6 +18,12 @@ Agents
     TD3 <agents/td3>
     TRPO <agents/trpo>
 
+Agents are autonomous entities that interact with the environment to learn and improve their behavior. Agents' goal is to learn an optimal policy, which is a correspondence between states and actions that maximizes the cumulative reward received from the environment over time.
+
+.. raw:: html
+
+    <br><hr>
+
 Base class
 ----------
 
@@ -26,6 +32,10 @@ Base class
     This is the base class for all the other classes in this module.
     It provides the basic functionality for the other classes.
     **It is not intended to be used directly**.
+
+.. raw:: html
+
+    <br>
 
 Basic inheritance usage
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -36,6 +46,10 @@ Basic inheritance usage
 
         .. literalinclude:: ../snippets/agent.py
             :language: python
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

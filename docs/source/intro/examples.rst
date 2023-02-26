@@ -1150,7 +1150,7 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
 Real-world examples
 -------------------
 
-These examples show basic real-world use cases to guide and support advanced RL implementations
+These examples show basic real-world and sim2real use cases to guide and support advanced RL implementations
 
 .. raw:: html
 

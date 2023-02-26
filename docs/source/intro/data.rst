@@ -248,7 +248,7 @@ The best models are updated internally on each TensorBoard writing interval :lit
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 
-Checkpoints can be loaded for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading).
+Checkpoints can be loaded (e.g. to resume or continue training) for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading).
 
 .. note::
 

@@ -31,7 +31,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx_tabs.tabs",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
+    "notfound.extension",
 ]
 
 # generate links to the documentation of objects in external projects
@@ -89,3 +90,14 @@ epub_show_urls = "footnote"
 
 copybutton_prompt_text = r">>> |\.\.\. "
 copybutton_prompt_is_regexp = True
+
+# notfound ext
+
+notfound_context = {
+    "title": "Page Not Found",
+    "body": """
+<h1>Page Not Found</h1>
+<p>Sorry, we couldn't find that page in skrl.</p>
+<p>Try using the search box or go to the homepage.</p>
+""",
+}

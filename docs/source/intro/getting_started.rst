@@ -1,16 +1,29 @@
 Getting Started
 ===============
 
-In this section, you will learn how to use the various components of the **skrl** library to create reinforcement learning tasks. Whether you are a beginner or an experienced researcher, we hope this section will provide you with a solid foundation to build upon. We recommend visiting the :ref:`Examples <examples>` to see how the components can be integrated and applied in practice. Let's get started!
+In this section, you will learn how to use the various components of the **skrl** library to create reinforcement learning tasks. Whether you are a beginner or an experienced researcher, we hope this section will provide you with a solid foundation to build upon.
+
+We recommend visiting the :doc:`Examples <examples>` to see how the components can be integrated and applied in practice. Let's get started!
+
+.. raw:: html
+
+    <br><hr>
 
 Reinforcement Learning schema
 -----------------------------
 
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from its interaction with the environment as shown in the following schema:
 
-.. image:: ../_static/imgs/rl_schema.svg
+.. image:: ../_static/imgs/rl_schema-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Reinforcement Learning schema
+
+.. image:: ../_static/imgs/rl_schema-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Reinforcement Learning schema
 
 .. raw:: html
@@ -21,16 +34,27 @@ At each step (also called timestep) of interaction with the environment, the age
 
 **From this schema, this section is intended to guide in the creation of a RL system using skrl**
 
+.. raw:: html
+
+    <br>
+
 1. Environments
----------------
+^^^^^^^^^^^^^^^
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../modules/skrl.envs.wrapping>` section for more information.
+skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../api/envs/wrapping>` section for more information.
 
-.. image:: ../_static/imgs/wrapping.svg
+.. image:: ../_static/imgs/wrapping-light.svg
     :width: 100%
     :align: center
+    :class: only-light
+    :alt: Environment wrapping
+
+.. image:: ../_static/imgs/wrapping-dark.svg
+    :width: 100%
+    :align: center
+    :class: only-dark
     :alt: Environment wrapping
 
 Within the methods and properties defined in the wrapped environment, the observation and action space are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
@@ -224,8 +248,12 @@ Within the methods and properties defined in the wrapped environment, the observ
 
 Once the environment is known (and instantiated), it is time to configure and instantiate the agent. Agents are composed, apart from the optimization algorithm, by several components, such as memories, models or noises, for example, according to their nature. The following subsections focus on those components.
 
+.. raw:: html
+
+    <br>
+
 2. Memories
------------
+^^^^^^^^^^^
 
 Memories are storage components that allow agents to collect and use/reuse recent or past experiences or other types of information. These can be large in size (such as replay buffers used by off-policy algorithms like DDPG, TD3 or SAC) or small in size (such as rollout buffers used by on-policy algorithms like PPO or TRPO to store batches that are discarded after use).
 
@@ -246,8 +274,12 @@ The following code snippets show how to instantiate a memory:
 
 Memories are passed directly to the agent constructor, if required (not all agents require memory, such as Q-learning or SARSA, for example), during its instantiation under the argument :literal:`memory`.
 
+.. raw:: html
+
+    <br>
+
 3. Models
----------
+^^^^^^^^^
 
 Models are the agents' brains. Agents can have one or several models and their parameters are adjusted via the optimization algorithms.
 
@@ -259,9 +291,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Categorical
 
-        .. image:: ../_static/imgs/model_categorical.svg
+        .. image:: ../_static/imgs/model_categorical-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Categorical model
+
+        .. image:: ../_static/imgs/model_categorical-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Categorical model
 
         .. raw:: html
@@ -291,9 +330,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Gaussian
 
-        .. image:: ../_static/imgs/model_gaussian.svg
+        .. image:: ../_static/imgs/model_gaussian-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Gaussian model
+
+        .. image:: ../_static/imgs/model_gaussian-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Gaussian model
 
         .. raw:: html
@@ -325,9 +371,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Multivariate Gaussian
 
-        .. image:: ../_static/imgs/model_multivariate_gaussian.svg
+        .. image:: ../_static/imgs/model_multivariate_gaussian-light.svg
             :width: 100%
             :align: center
+            :class: only-light
+            :alt: Multivariate Gaussian model
+
+        .. image:: ../_static/imgs/model_multivariate_gaussian-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
             :alt: Multivariate Gaussian model
 
         .. raw:: html
@@ -359,9 +412,16 @@ The following code snippets show how to define a model, based on the concept of 
 
     .. tab:: Deterministic
 
-        .. image:: ../_static/imgs/model_deterministic.svg
+        .. image:: ../_static/imgs/model_deterministic-light.svg
             :width: 60%
             :align: center
+            :class: only-light
+            :alt: Deterministic model
+
+        .. image:: ../_static/imgs/model_deterministic-dark.svg
+            :width: 60%
+            :align: center
+            :class: only-dark
             :alt: Deterministic model
 
         .. raw:: html
@@ -418,14 +478,18 @@ Models must be collected in a dictionary and passed to the agent constructor dur
     models["policy"] = Policy(env.observation_space, env.action_space, env.device)
     models["value"] = Value(env.observation_space, env.action_space, env.device)
 
-Models can be saved and loaded to and from the file system. However, the recommended practice for loading checkpoints to perform evaluations or continue an interrupted training is through the agents (they include, in addition to the models, other components and internal instances such as preprocessors or optimizers). Refer to :ref:`Saving, loading and logging <data>` (under *Checkpoints* section) for more information.
+Models can be saved and loaded to and from the file system. However, the recommended practice for loading checkpoints to perform evaluations or continue an interrupted training is through the agents (they include, in addition to the models, other components and internal instances such as preprocessors or optimizers). Refer to :doc:`Saving, loading and logging <data>` (under *Checkpoints* section) for more information.
+
+.. raw:: html
+
+    <br>
 
 4. Noises
----------
+^^^^^^^^^
 
 Noise plays a fundamental role in the exploration stage, especially in agents of a deterministic nature, such as DDPG or TD3, for example.
 
-skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :ref:`Noises <resources_noises>` documentation for more information.
+skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :doc:`Noises <../api/resources/noises>` documentation for more information.
 
 .. tabs::
 
@@ -456,12 +520,16 @@ Noise instances are passed to the agents in their respective configuration dicti
     agent_cfg = DDPG_DEFAULT_CONFIG.copy()
     agent_cfg["exploration"]["noise"] = noise
 
+.. raw:: html
+
+    <br>
+
 5. Learning rate schedulers
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Learning rate schedulers help RL system converge faster and improve accuracy.
 
-skrl **supports all PyTorch learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :ref:`Learning rate schedulers <resources_schedulers>` documentation for more information.
+skrl **supports all PyTorch learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :doc:`Learning rate schedulers <../api/resources/schedulers>` documentation for more information.
 
 Learning rate schedulers classes and their respective arguments (except the :literal:`optimizer` argument) are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the schedulers can be configured as shown below:
 
@@ -474,12 +542,16 @@ Learning rate schedulers classes and their respective arguments (except the :lit
     agent_cfg["learning_rate_scheduler"] = KLAdaptiveRL
     agent_cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
 
+.. raw:: html
+
+    <br>
+
 6. Preprocessors
-----------------
+^^^^^^^^^^^^^^^^
 
 Data preprocessing can help increase the accuracy and efficiency of training by cleaning or making data suitable for machine learning models.
 
-skrl provides, as part of its resources, **preprocessors** classes. Refer to :ref:`Preprocessors <resources_preprocessors>` documentation for more information.
+skrl provides, as part of its resources, **preprocessors** classes. Refer to :doc:`Preprocessors <../api/resources/preprocessors>` documentation for more information.
 
 Preprocessors classes and their respective arguments are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the preprocessors can be configured as shown below:
 
@@ -493,25 +565,29 @@ Preprocessors classes and their respective arguments are passed to the agents in
     agent_cfg["value_preprocessor"] = RunningStandardScaler
     agent_cfg["value_preprocessor_kwargs"] = {"size": 1, "device": env.device}
 
+.. raw:: html
+
+    <br>
+
 7. Agents
----------
+^^^^^^^^^
 
 Agents are the components in charge of decision making. They are much more than models (neural networks, for example) and include the optimization algorithms that compute the optimal policy
 
 skrl provides **state-of-the-art agent**. Its implementations are focused on readability, simplicity and code transparency. Each agent is implemented independently even when two or more agents may contain code in common. Refer to each agent documentation for more information about the models and spaces they support, their respective configurations, algorithm details and more.
 
-    * :doc:`Advantage Actor Critic <../modules/skrl.agents.a2c>` (**A2C**)
-    * :doc:`Adversarial Motion Priors <../modules/skrl.agents.amp>` (**AMP**)
-    * :doc:`Cross-Entropy Method <../modules/skrl.agents.cem>` (**CEM**)
-    * :doc:`Deep Deterministic Policy Gradient <../modules/skrl.agents.ddpg>` (**DDPG**)
-    * :doc:`Double Deep Q-Network <../modules/skrl.agents.ddqn>` (**DDQN**)
-    * :doc:`Deep Q-Network <../modules/skrl.agents.dqn>` (**DQN**)
-    * :doc:`Proximal Policy Optimization <../modules/skrl.agents.ppo>` (**PPO**)
-    * :doc:`Q-learning <../modules/skrl.agents.q_learning>` (**Q-learning**)
-    * :doc:`Soft Actor-Critic <../modules/skrl.agents.sac>` (**SAC**)
-    * :doc:`State Action Reward State Action <../modules/skrl.agents.sarsa>` (**SARSA**)
-    * :doc:`Twin-Delayed DDPG <../modules/skrl.agents.td3>` (**TD3**)
-    * :doc:`Trust Region Policy Optimization <../modules/skrl.agents.trpo>` (**TRPO**)
+    * :doc:`Advantage Actor Critic <../api/agents/a2c>` (**A2C**)
+    * :doc:`Adversarial Motion Priors <../api/agents/amp>` (**AMP**)
+    * :doc:`Cross-Entropy Method <../api/agents/cem>` (**CEM**)
+    * :doc:`Deep Deterministic Policy Gradient <../api/agents/ddpg>` (**DDPG**)
+    * :doc:`Double Deep Q-Network <../api/agents/ddqn>` (**DDQN**)
+    * :doc:`Deep Q-Network <../api/agents/dqn>` (**DQN**)
+    * :doc:`Proximal Policy Optimization <../api/agents/ppo>` (**PPO**)
+    * :doc:`Q-learning <../api/agents/q_learning>` (**Q-learning**)
+    * :doc:`Soft Actor-Critic <../api/agents/sac>` (**SAC**)
+    * :doc:`State Action Reward State Action <../api/agents/sarsa>` (**SARSA**)
+    * :doc:`Twin-Delayed DDPG <../api/agents/td3>` (**TD3**)
+    * :doc:`Trust Region Policy Optimization <../api/agents/trpo>` (**TRPO**)
 
 Agents generally expect, as arguments, the following components: models and memories, as well as the following variables: observation and action spaces, the device where their logic is executed and a configuration dictionary with hyperparameters and other values. The remaining components, mentioned above, are collected through the configuration dictionary. For example, the PPO agent can be instantiated as follows:
 
@@ -526,10 +602,14 @@ Agents generally expect, as arguments, the following components: models and memo
                 action_space=env.action_space,
                 device=env.device)
 
-Agents can be saved and loaded to and from the file system. This is the **recommended practice** for loading checkpoints to perform evaluations or to continue interrupted training (since they include, in addition to models, other internal components and instances such as preprocessors or optimizers). Refer to :ref:`Saving, loading and logging <data>` (under *Checkpoints* section) for more information.
+Agents can be saved and loaded to and from the file system. This is the **recommended practice** for loading checkpoints to perform evaluations or to continue interrupted training (since they include, in addition to models, other internal components and instances such as preprocessors or optimizers). Refer to :doc:`Saving, loading and logging <data>` (under *Checkpoints* section) for more information.
+
+.. raw:: html
+
+    <br>
 
 8. Trainers
------------
+^^^^^^^^^^^
 
 Now that both actors, the environment and the agent, are instantiated, it is time to put the RL system in motion.
 
@@ -589,8 +669,8 @@ The following code snippets show how to load and wrap environments based on the 
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 **What's next?**
 
-Visit the :ref:`Examples <examples>` section for training and evaluation demonstrations with different environment interfaces and highlighted practices, among others.
+Visit the :doc:`Examples <examples>` section for training and evaluation demonstrations with different environment interfaces and highlighted practices, among others.

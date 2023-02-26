@@ -1,38 +1,22 @@
-.. _examples:
-
 Examples
 ========
 
 In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks. With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to solve your reinforcement learning problems
 
-.. contents:: Table of Contents
-   :depth: 2
-   :local:
-   :backlinks: none
-
-.. raw:: html
-
-   <br>
-
 .. note::
 
-    It is recommended to use the Table of Contents in the sidebar or in this section to improve the browsing experience
+    It is recommended to use the table of contents in the right sidebar for a better browsing experience.
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Gym/Gymnasium
 -------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 .. raw:: html
 
-   <hr>
+    <br>
 
 Gym/Gymnasium environments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -40,13 +24,13 @@ Gym/Gymnasium environments
 These examples perform the training of one agent in a Gym/Gymnasium environment (**one agent, one environment**)
 
 .. image:: ../_static/imgs/example_gym.png
-      :width: 100%
-      :align: center
-      :alt: Gym/Gymnasium environments
+    :width: 100%
+    :align: center
+    :alt: Gym/Gymnasium environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -238,7 +222,7 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
-   <hr>
+    <br>
 
 Gym/Gymnasium vectorized environments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -305,7 +289,7 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
-   <hr>
+    <br>
 
 Farama Shimmy (converted environments)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -313,9 +297,9 @@ Farama Shimmy (converted environments)
 The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym) that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_ (API conversion tool) package
 
 .. image:: ../_static/imgs/example_shimmy.png
-      :width: 100%
-      :align: center
-      :alt: Shimmy (converted environments)
+    :width: 100%
+    :align: center
+    :alt: Shimmy (converted environments)
 
 .. note::
 
@@ -362,19 +346,14 @@ The following examples show the training in several popular environments (Atari,
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Other supported APIs
 --------------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 .. raw:: html
 
-   <hr>
+    <br>
 
 DeepMind environments
 ^^^^^^^^^^^^^^^^^^^^^
@@ -382,13 +361,13 @@ DeepMind environments
 These examples perform the training of one agent in a DeepMind environment (**one agent, one environment**)
 
 .. image:: ../_static/imgs/example_deepmind.png
-      :width: 100%
-      :align: center
-      :alt: DeepMind environments
+    :width: 100%
+    :align: center
+    :alt: DeepMind environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -423,7 +402,7 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
-   <hr>
+    <br>
 
 Robosuite environments
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -431,13 +410,13 @@ Robosuite environments
 These examples perform the training of one agent in a robosuite environment (**one agent, one environment**)
 
 .. image:: ../_static/imgs/example_robosuite.png
-      :width: 50%
-      :align: center
-      :alt: robosuite environments
+    :width: 50%
+    :align: center
+    :alt: robosuite environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -459,19 +438,14 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Isaac Gym preview
 -----------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 .. raw:: html
 
-   <hr>
+    <br>
 
 Isaac Gym environments
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -479,13 +453,13 @@ Isaac Gym environments
 These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaacgym.png
-      :width: 100%
-      :align: center
-      :alt: Isaac Gym environments
+    :width: 100%
+    :align: center
+    :alt: Isaac Gym environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -670,7 +644,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. raw:: html
 
-   <hr>
+    <br>
 
 Isaac Gym environments (learning by scopes)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -678,13 +652,13 @@ Isaac Gym environments (learning by scopes)
 These examples perform the training of 3 agents by scopes in Isaac Gym's Cartpole environment in the same run (**multiple agents and environments**)
 
 .. image:: ../_static/imgs/example_parallel.jpg
-      :width: 100%
-      :align: center
-      :alt: Simultaneous training
+    :width: 100%
+    :align: center
+    :alt: Simultaneous training
 
 .. raw:: html
 
-   <br>
+    <br>
 
 Two versions are presented:
 
@@ -775,19 +749,14 @@ The following components or practices are exemplified (highlighted):
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Isaac Orbit
 -----------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 .. raw:: html
 
-   <hr>
+    <br>
 
 Isaac Orbit environments
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -795,13 +764,13 @@ Isaac Orbit environments
 These examples perform the training of an agent in the `Isaac Orbit environments <https://isaac-orbit.github.io/orbit/index.html>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaac_orbit.png
-      :width: 100%
-      :align: center
-      :alt: Isaac Orbit environments
+    :width: 100%
+    :align: center
+    :alt: Isaac Orbit environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -894,19 +863,14 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Omniverse Isaac Gym
 -------------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 .. raw:: html
 
-   <hr>
+    <br>
 
 Omniverse Isaac Gym environments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -914,13 +878,13 @@ Omniverse Isaac Gym environments
 These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_omniverse_isaacgym.png
-      :width: 100%
-      :align: center
-      :alt: Isaac Gym environments
+    :width: 100%
+    :align: center
+    :alt: Isaac Gym environments
 
 .. raw:: html
 
-   <br>
+    <br>
 
 The following components or practices are exemplified (highlighted):
 
@@ -1087,7 +1051,7 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. raw:: html
 
-   <hr>
+    <br>
 
 Omniverse Isaac Sim (single environment)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1181,17 +1145,16 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 Real-world examples
 -------------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
+These examples show basic real-world and sim2real use cases to guide and support advanced RL implementations
 
-These examples show basic real-world use cases to guide and support advanced RL implementations
+.. raw:: html
+
+    <br>
 
 .. tabs::
 
@@ -1201,7 +1164,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
         **Implementation** (see details in the table below):
 
@@ -1240,9 +1203,9 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        **Workflows**
+        **Workflows:**
 
         .. tabs::
 
@@ -1401,7 +1364,7 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
         **Implementation** (see details in the table below):
 
@@ -1440,9 +1403,9 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        **Workflows**
+        **Workflows:**
 
         .. tabs::
 
@@ -1599,19 +1562,18 @@ These examples show basic real-world use cases to guide and support advanced RL 
 
 .. raw:: html
 
-   <hr><hr>
+    <br><hr>
 
 .. _library_utilities:
 
 Library utilities (skrl.utils module)
 -------------------------------------
 
-.. contents::
-   :depth: 2
-   :local:
-   :backlinks: none
-
 This example shows how to use the library utilities to carry out the post-processing of files and data generated by the experiments
+
+.. raw:: html
+
+    <br>
 
 .. tabs::
 

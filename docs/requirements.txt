@@ -1,8 +1,9 @@
+furo
 sphinx
-sphinx_rtd_theme
+sphinx-tabs
 sphinx-autobuild
-sphinx-tabs==3.2.0
 sphinx-copybutton
+sphinx-notfound-page
 gym
 gymnasium
 torch

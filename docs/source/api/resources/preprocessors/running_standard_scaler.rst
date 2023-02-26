@@ -7,7 +7,7 @@ Standardize input features by removing the mean and scaling to unit variance.
 
     <br><hr>
 
-Algorithm 
+Algorithm
 ---------
 
 .. raw:: html

@@ -1,13 +1,13 @@
 KL Adaptive
 ===========
 
-Adjust the learning rate according to the value of the Kullback-Leibler (KL) divergence. 
+Adjust the learning rate according to the value of the Kullback-Leibler (KL) divergence.
 
 .. raw:: html
 
     <br><hr>
 
-Algorithm 
+Algorithm
 ---------
 
 .. raw:: html

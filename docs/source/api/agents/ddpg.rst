@@ -5,6 +5,17 @@ DDPG is a **model-free**, **deterministic** **off-policy** **actor-critic** algo
 
 Paper: `Continuous control with deep reinforcement learning <https://arxiv.org/abs/1509.02971>`_
 
+.. raw:: html
+
+    <br><hr>
+
+Algorithm
+---------
+
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -13,14 +24,24 @@ Algorithm implementation
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
 |   - loss (:math:`L`)
 
-**Decision making** (:literal:`act(...)`)
+.. raw:: html
+
+    <br>
+
+Decision making: :literal:`act`
+"""""""""""""""""""""""""""""""
 
 | :math:`a \leftarrow \mu_\theta(s)`
 | :math:`noise \leftarrow` sample :guilabel:`noise`
 | :math:`scale \leftarrow (1 - \text{timestep} \;/` :guilabel:`timesteps` :math:`) \; (` :guilabel:`initial_scale` :math:`-` :guilabel:`final_scale` :math:`) \;+` :guilabel:`final_scale`
 | :math:`a \leftarrow \text{clip}(a + noise * scale, {a}_{Low}, {a}_{High})`
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :green:`# sample a batch from memory`
 | [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
@@ -55,8 +76,12 @@ Algorithm implementation
 |         step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -84,18 +109,24 @@ Basic usage
             :start-after: [start-ddpg-rnn]
             :end-before: [end-ddpg-rnn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.ddpg.ddpg.DDPG_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/ddpg/ddpg.py
     :language: python
     :lines: 16-56
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -114,6 +145,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -151,6 +189,13 @@ The implementation uses 4 deterministic function approximators. These function a
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -163,10 +208,24 @@ Support for advanced features is described in the next table
     * - RNN support
       - RNN, LSTM, GRU and any other variant
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.ddpg.ddpg.DDPG
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.ddpg.DDPG_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.ddpg.DDPG
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.agents.torch.ddpg.DDPG_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

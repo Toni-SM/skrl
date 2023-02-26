@@ -8,7 +8,7 @@ Isaac Gym environments
 
 .. raw:: html
 
-    <hr>
+    <br><br><hr>
 
 Environments (preview 4)
 ------------------------
@@ -44,8 +44,12 @@ Nevertheless, in order to maintain the loading style of previous versions, **skr
 
     Isaac Gym environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -77,6 +81,10 @@ Basic usage
 
             python main.py task=Cartpole
 
+.. raw:: html
+
+    <br>
+
 API
 ^^^
 
@@ -84,7 +92,7 @@ API
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Environments (preview 3)
 ------------------------
@@ -101,8 +109,12 @@ These environments can be easily loaded and configured by calling a single funct
 
     Isaac Gym environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -134,6 +146,10 @@ Basic usage
 
             python main.py task=Cartpole
 
+.. raw:: html
+
+    <br>
+
 API
 ^^^
 
@@ -141,7 +157,7 @@ API
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Environments (preview 2)
 ------------------------
@@ -154,8 +170,12 @@ These environments can be easily loaded and configured by calling a single funct
 
     Isaac Gym environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py --headless`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -186,6 +206,10 @@ Basic usage
         .. code-block::
 
             python main.py --task Cartpole
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

@@ -5,8 +5,12 @@ RPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algori
 
 Paper: `Robust Policy Optimization in Deep Reinforcement Learning <https://arxiv.org/abs/2212.07536>`_
 
+.. raw:: html
+
+    <br><hr>
+
 Algorithm
-^^^^^^^^^
+---------
 
 .. note::
 
@@ -50,6 +54,10 @@ Algorithm
 
                         return mean_actions, self.log_std_parameter, {}
 
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -60,7 +68,12 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
@@ -119,8 +132,12 @@ Algorithm implementation
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -148,18 +165,24 @@ Basic usage
             :start-after: [start-rpo-rnn]
             :end-before: [end-rpo-rnn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.rpo.rpo.RPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/rpo/rpo.py
     :language: python
     :lines: 18-62
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -178,6 +201,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 1 continuous stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -203,6 +233,13 @@ The implementation uses 1 continuous stochastic and 1 deterministic function app
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -215,10 +252,24 @@ Support for advanced features is described in the next table
     * - RNN support
       - RNN, LSTM, GRU and any other variant
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.rpo.rpo.RPO
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.rpo.RPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.rpo.RPO
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.agents.torch.rpo.RPO_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

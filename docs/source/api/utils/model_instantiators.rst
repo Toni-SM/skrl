@@ -1,13 +1,19 @@
 Model instantiators
 ===================
 
-Basic usage
-^^^^^^^^^^^
+Utilities for quickly creating model instances.
 
-TODO: add snippet
+.. raw:: html
+
+    <br><hr>
+
+.. Usage
+.. ^^^^^
+
+.. TODO: add snippet
 
 API
-^^^
+---
 
 .. autoclass:: skrl.utils.model_instantiators.Shape
 

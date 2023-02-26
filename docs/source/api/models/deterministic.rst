@@ -5,6 +5,10 @@ Deterministic model
 
 Deterministic models run **continuous-domain deterministic** policies.
 
+.. raw:: html
+
+    <br><hr>
+
 skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
@@ -27,6 +31,10 @@ skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the cr
               Model.__init__(self, observation_space, action_space, device)
               DeterministicMixin.__init__(self, clip_actions)
 
+.. raw:: html
+
+    <br>
+
 Concept
 -------
 
@@ -42,8 +50,12 @@ Concept
     :class: only-dark
     :alt: Deterministic model
 
-Basic usage
------------
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 * Multi-Layer Perceptron (**MLP**)
 * Convolutional Neural Network (**CNN**)
@@ -307,6 +319,10 @@ Basic usage
                     :linenos:
                     :start-after: [start-lstm-functional]
                     :end-before: [end-lstm-functional]
+
+.. raw:: html
+
+    <br>
 
 API
 ---

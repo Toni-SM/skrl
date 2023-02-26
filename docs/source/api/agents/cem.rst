@@ -1,6 +1,17 @@
 Cross-Entropy Method (CEM)
 ==========================
 
+.. raw:: html
+
+    <br><hr>
+
+Algorithm
+---------
+
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -9,11 +20,21 @@ Algorithm implementation
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
 |   - loss (:math:`L`)
 
-**Decision making** (:literal:`act(...)`)
+.. raw:: html
+
+    <br>
+
+Decision making: :literal:`act`
+"""""""""""""""""""""""""""""""
 
 | :math:`a \leftarrow \pi_\theta(s)`
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :green:`# sample all memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
@@ -35,8 +56,12 @@ Algorithm implementation
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |     step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. tabs::
 
@@ -48,18 +73,24 @@ Basic usage
             :start-after: [start-cem]
             :end-before: [end-cem]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.cem.cem.CEM_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/cem/cem.py
     :language: python
     :lines: 15-44
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -79,6 +110,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
+
 The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
 .. list-table::
@@ -97,6 +135,13 @@ The implementation uses 1 discrete function approximator. This function approxim
       - action
       - :ref:`Categorical <models_categorical>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -107,10 +152,16 @@ Support for advanced features is described in the next table
     * - RNN support
       - \-
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.cem.cem.CEM
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.cem.CEM_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.cem.CEM
     :undoc-members:
     :show-inheritance:
     :private-members: _update

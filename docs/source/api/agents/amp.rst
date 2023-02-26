@@ -5,6 +5,17 @@ AMP is a **model-free**, **stochastic** **on-policy** **policy gradient** algori
 
 Paper: `AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control <https://arxiv.org/abs/2104.02180>`_
 
+.. raw:: html
+
+    <br><hr>
+
+Algorithm
+---------
+
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -17,7 +28,12 @@ Algorithm implementation
 |   - reference motion dataset (:math:`M`), AMP replay buffer (:math:`B`)
 |   - AMP states (:math:`s_{_{AMP}}`), reference motion states (:math:`s_{_{AMP}}^{^M}`), AMP states from replay buffer (:math:`s_{_{AMP}}^{^B}`)
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V') \;\rightarrow\; R, A:`
@@ -90,8 +106,12 @@ Algorithm implementation
 | :green:`# update AMP repaly buffer`
 | :math:`s_{_{AMP}} \rightarrow\;` :math:`\text{append}(B)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. tabs::
 
@@ -103,18 +123,24 @@ Basic usage
             :start-after: [start-amp]
             :end-before: [end-amp]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.amp.amp.AMP_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/amp/amp.py
     :language: python
     :lines: 18-71
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -137,6 +163,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 1 stochastic (continuous) and 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -168,6 +201,13 @@ The implementation uses 1 stochastic (continuous) and 2 deterministic function a
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -180,10 +220,16 @@ Support for advanced features is described in the next table
     * - RNN support
       - \-
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.amp.amp.AMP
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.amp.AMP_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.amp.AMP
     :undoc-members:
     :show-inheritance:
     :private-members: _update

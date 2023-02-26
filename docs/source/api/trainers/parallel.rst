@@ -1,8 +1,14 @@
 Parallel trainer
 ================
 
+Train agents in parallel using multiple processes.
+
+.. raw:: html
+
+    <br><hr>
+
 Concept
-^^^^^^^
+-------
 
 .. image:: ../../_static/imgs/parallel_trainer-light.svg
     :width: 100%
@@ -16,8 +22,12 @@ Concept
     :class: only-dark
     :alt: Parallel trainer
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -37,18 +47,26 @@ Basic usage
             :start-after: [start-parallel]
             :end-before: [end-parallel]
 
-Configuration
-^^^^^^^^^^^^^
+.. raw:: html
 
-.. py:data:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
+    <br>
+
+Configuration
+-------------
 
 .. literalinclude:: ../../../../skrl/trainers/torch/parallel.py
     :language: python
     :lines: 15-19
     :linenos:
 
+.. raw:: html
+
+    <br>
+
 API
-^^^
+---
+
+.. autoclass:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
 
 .. autoclass:: skrl.trainers.torch.parallel.ParallelTrainer
     :undoc-members:

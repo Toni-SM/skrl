@@ -1,8 +1,18 @@
 Isaac Gym utils
 ===============
 
+Utilities for ease of programming of Isaac Gym environments.
+
+.. raw:: html
+
+    <br><hr>
+
 Control of robotic manipulators
 -------------------------------
+
+.. raw:: html
+
+    <br>
 
 Inverse kinematics using damped least squares method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -18,19 +28,27 @@ where
 | :math:`\qquad \lambda \;` is a non-zero damping constant
 | :math:`\qquad \vec{e} \;` is the Cartesian pose error (position and orientation)
 
+.. raw:: html
+
+    <br>
+
 API
-"""
+^^^
 
 .. autofunction:: skrl.utils.isaacgym_utils.ik
 
 .. raw:: html
 
-    <hr>
+    <br>
 
 Web viewer for development without X server
 -------------------------------------------
 
 This library provides an API for instantiating a lightweight web viewer useful, mostly, for designing Isaac Gym environments in remote workstations or docker containers without X server
+
+.. raw:: html
+
+    <br>
 
 Gestures and actions
 ^^^^^^^^^^^^^^^^^^^^
@@ -58,8 +76,12 @@ Watch an animation of the gestures and actions in the following video
     <video width="100%" controls autoplay>
         <source src="https://user-images.githubusercontent.com/22400377/157323911-40729895-6175-48d2-85d7-c1b30fe0ee9c.mp4" type="video/mp4">
     </video>
+    <br>
 
-|
+
+.. raw:: html
+
+    <br>
 
 Requirements
 ^^^^^^^^^^^^
@@ -72,8 +94,12 @@ The web viewer is build on top of `Flask <https://flask.palletsprojects.com>`_ a
 
 Also, to be launched in Visual Studio Code (Preview in Editor), the `Live Preview - VS Code Extension <https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server>`_ must be installed
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -83,6 +109,10 @@ Basic usage
             :language: python
             :linenos:
             :emphasize-lines: 4, 8, 56, 65-68
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

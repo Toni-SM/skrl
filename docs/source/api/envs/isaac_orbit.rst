@@ -8,7 +8,7 @@ Isaac Orbit environments
 
 .. raw:: html
 
-    <hr>
+    <br><br><hr>
 
 Environments
 ------------
@@ -23,10 +23,14 @@ These environments can be easily loaded and configured by calling a single funct
 
 .. note::
 
-    Isaac Orbit environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py --headless`
+    Isaac Orbit environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`orbit -p script.py --headless`
 
-Basic usage
------------
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -56,9 +60,13 @@ Basic usage
 
         .. code-block::
 
-            python main.py --task Isaac-Cartpole-v0
+            orbit -p main.py --task Isaac-Cartpole-v0
+
+.. raw:: html
+
+    <br>
 
 API
----
+^^^
 
 .. autofunction:: skrl.envs.torch.loaders.load_isaac_orbit_env

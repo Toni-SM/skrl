@@ -5,8 +5,12 @@ PPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algori
 
 Paper: `Proximal Policy Optimization Algorithms <https://arxiv.org/abs/1707.06347>`_
 
+.. raw:: html
+
+    <br><hr>
+
 Algorithm
-^^^^^^^^^
+---------
 
 | For each iteration do:
 |     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
@@ -15,6 +19,10 @@ Algorithm
 |     :math:`\bullet \;` Compute the clipped surrogate objective (policy loss) with :math:`ratio` as the probability ratio between the action under the current policy and the action under the previous policy: :math:`L^{clip}_{\pi_\theta} = \mathbb{E}[\min(A \; ratio, A \; \text{clip}(ratio, 1-c, 1+c))]`
 |     :math:`\bullet \;` Compute the value loss :math:`L_{V_\phi}` as the mean squared error (MSE) between the predicted values :math:`V_{_{predicted}}` and the estimated returns :math:`R`
 |     :math:`\bullet \;` Optimize the total loss :math:`L = L^{clip}_{\pi_\theta} - c_1 \, L_{V_\phi} + c_2 \, {L}_{entropy}`
+
+.. raw:: html
+
+    <br>
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -26,7 +34,12 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
@@ -85,8 +98,12 @@ Algorithm implementation
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -114,18 +131,24 @@ Basic usage
             :start-after: [start-ppo-rnn]
             :end-before: [end-ppo-rnn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.ppo.ppo.PPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/ppo/ppo.py
     :language: python
     :lines: 18-61
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -144,6 +167,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -169,6 +199,13 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -181,10 +218,24 @@ Support for advanced features is described in the next table
     * - RNN support
       - RNN, LSTM, GRU and any other variant
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.ppo.ppo.PPO
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.ppo.PPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.ppo.PPO
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.agents.torch.ppo.PPO_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

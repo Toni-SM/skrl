@@ -5,8 +5,12 @@ TRPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algor
 
 Paper: `Trust Region Policy Optimization <https://arxiv.org/abs/1502.05477>`_
 
+.. raw:: html
+
+    <br><hr>
+
 Algorithm
-^^^^^^^^^
+---------
 
 | For each iteration do
 |     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
@@ -17,10 +21,19 @@ Algorithm
 |     :math:`\bullet \;` Perform a backtracking line search with exponential decay to find the final policy update :math:`\; \theta_{new} = \theta + \alpha \; \beta \;` ensuring improvement of the surrogate objective and satisfaction of the :math:`KL` divergence constraint
 |     :math:`\bullet \;` Update the value function :math:`V_\phi` using the computed returns :math:`R`
 
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
@@ -125,8 +138,12 @@ Algorithm implementation
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_\phi(\text{optimizer}_\phi)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -154,18 +171,24 @@ Basic usage
             :start-after: [start-trpo-rnn]
             :end-before: [end-trpo-rnn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.trpo.trpo.TRPO_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/trpo/trpo.py
     :language: python
     :lines: 18-61
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -184,6 +207,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 1 stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -209,6 +239,13 @@ The implementation uses 1 stochastic and 1 deterministic function approximator. 
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -221,10 +258,24 @@ Support for advanced features is described in the next table
     * - RNN support
       - RNN, LSTM, GRU and any other variant
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.trpo.trpo.TRPO
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.trpo.TRPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.trpo.TRPO
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.agents.torch.trpo.TRPO_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

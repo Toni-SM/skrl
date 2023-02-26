@@ -1,8 +1,18 @@
 Omniverse Isaac Gym utils
 =========================
 
+Utilities for ease of programming of Omniverse Isaac Gym environments.
+
+.. raw:: html
+
+    <br><hr>
+
 Control of robotic manipulators
 -------------------------------
+
+.. raw:: html
+
+    <br>
 
 Inverse kinematics using damped least squares method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -18,17 +28,27 @@ where
 | :math:`\qquad \lambda \;` is a non-zero damping constant
 | :math:`\qquad \vec{e} \;` is the Cartesian pose error (position and orientation)
 
+.. raw:: html
+
+    <br>
+
 API
-"""
+^^^
 
 .. autofunction:: skrl.utils.omniverse_isaacgym_utils.ik
 
 .. raw:: html
 
-    <hr>
+    <br>
 
 OmniIsaacGymEnvs-like environment instance
 ------------------------------------------
+
+Instantiate a VecEnvBase-based object compatible with OmniIsaacGymEnvs for use outside of the OmniIsaacGymEnvs implementation.
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

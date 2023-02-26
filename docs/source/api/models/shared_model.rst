@@ -9,6 +9,10 @@ Sometimes it is desirable to define models that use shared layers or network to 
 
 * Make the computation more efficient.
 
+.. raw:: html
+
+    <br><hr>
+
 Implementation
 --------------
 

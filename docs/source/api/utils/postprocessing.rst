@@ -1,13 +1,23 @@
 File post-processing
 ====================
 
+Utilities for processing files generated during training/evaluation.
+
+.. raw:: html
+
+    <br><hr>
+
 Exported memories
 -----------------
 
 This library provides an implementation for quickly loading exported memory files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -38,6 +48,10 @@ Basic usage
             :start-after: [start-memory_file_iterator-csv]
             :end-before: [end-memory_file_iterator-csv]
 
+.. raw:: html
+
+    <br>
+
 API
 ^^^
 
@@ -52,10 +66,18 @@ API
     .. automethod:: __iter__
     .. automethod:: __next__
 
+.. raw:: html
+
+    <br>
+
 Tensorboard files
 -----------------
 
 This library provides an implementation for quickly loading Tensorboard files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
+
+.. raw:: html
+
+    <br>
 
 Requirements
 ^^^^^^^^^^^^
@@ -66,8 +88,12 @@ This utility requires the `TensorFlow <https://www.tensorflow.org/>`_ package to
 
     pip install tensorflow
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
 
 .. tabs::
 
@@ -79,6 +105,10 @@ Basic usage
             :emphasize-lines: 1, 5-7
             :start-after: [start-tensorboard_file_iterator-list]
             :end-before: [end-tensorboard_file_iterator-list]
+
+.. raw:: html
+
+    <br>
 
 API
 ^^^

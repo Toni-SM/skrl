@@ -1,5 +1,11 @@
+:tocdepth: 3
+
 Wrapping
 ========
+
+.. raw:: html
+
+    <br><hr>
 
 This library works with a common API to interact with the following RL environments:
 
@@ -26,10 +32,10 @@ To operate with them and to support interoperability between these non-compatibl
 
 .. raw:: html
 
-    <br><br>
+    <br>
 
-Basic usage
-^^^^^^^^^^^
+Usage
+-----
 
 .. tabs::
 
@@ -275,19 +281,19 @@ Basic usage
 
 .. raw:: html
 
-    <hr>
+    <br>
 
 API
-^^^
+---
 
 .. autofunction:: skrl.envs.torch.wrappers.wrap_env
 
 .. raw:: html
 
-    <hr>
+    <br>
 
 Internal API
-^^^^^^^^^^^^
+------------
 
 .. autoclass:: skrl.envs.torch.wrappers.Wrapper
     :undoc-members:

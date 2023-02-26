@@ -1,8 +1,14 @@
 Manual trainer
 ==============
 
+Train agents by manually controlling the training/evaluation loop.
+
+.. raw:: html
+
+    <br><hr>
+
 Concept
-^^^^^^^
+-------
 
 .. image:: ../../_static/imgs/manual_trainer-light.svg
     :width: 100%
@@ -16,8 +22,12 @@ Concept
     :class: only-dark
     :alt: Manual trainer
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. tabs::
 
@@ -29,18 +39,26 @@ Basic usage
             :start-after: [start-manual]
             :end-before: [end-manual]
 
-Configuration
-^^^^^^^^^^^^^
+.. raw:: html
 
-.. py:data:: skrl.trainers.torch.manual.MANUAL_TRAINER_DEFAULT_CONFIG
+    <br>
+
+Configuration
+-------------
 
 .. literalinclude:: ../../../../skrl/trainers/torch/manual.py
     :language: python
     :lines: 14-18
     :linenos:
 
+.. raw:: html
+
+    <br>
+
 API
-^^^
+---
+
+.. autoclass:: skrl.trainers.torch.manual.MANUAL_TRAINER_DEFAULT_CONFIG
 
 .. autoclass:: skrl.trainers.torch.manual.ManualTrainer
     :undoc-members:

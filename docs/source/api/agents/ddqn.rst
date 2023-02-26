@@ -5,15 +5,36 @@ DDQN is a **model-free**, **off-policy** algorithm that relies on double Q-learn
 
 Paper: `Deep Reinforcement Learning with Double Q-Learning <https://ojs.aaai.org/index.php/AAAI/article/view/10295>`_
 
+.. raw:: html
+
+    <br><hr>
+
+Algorithm
+---------
+
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Decision making** (:literal:`act(...)`)
+.. raw:: html
+
+    <br>
+
+Decision making: :literal:`act`
+"""""""""""""""""""""""""""""""
 
 | :math:`\epsilon \leftarrow \epsilon_{_{final}} + (\epsilon_{_{initial}} - \epsilon_{_{final}}) \; e^{-1 \; \frac{\text{timestep}}{\epsilon_{_{timesteps}}}}`
 | :math:`a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q_\phi(s) & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :green:`# sample a batch from memory`
 | [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
@@ -35,8 +56,12 @@ Algorithm implementation
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. tabs::
 
@@ -48,18 +73,24 @@ Basic usage
             :start-after: [start-ddqn]
             :end-before: [end-ddqn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.dqn.ddqn.DDQN_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/dqn/ddqn.py
     :language: python
     :lines: 16-55
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -78,6 +109,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -103,6 +141,13 @@ The implementation uses 2 deterministic function approximators. These function a
       - action
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -115,10 +160,16 @@ Support for advanced features is described in the next table
     * - RNN support
       - \-
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.dqn.ddqn.DDQN
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.dqn.DDQN_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.dqn.DDQN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

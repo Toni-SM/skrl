@@ -8,7 +8,7 @@ Omniverse Isaac Gym environments
 
 .. raw:: html
 
-    <hr>
+    <br><br><hr>
 
 Environments
 ------------
@@ -31,11 +31,19 @@ Additionally, multi-threaded environments can be loaded. These are designed to i
 
     Omniverse Isaac Gym environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`python script.py headless=True`
 
-Basic usage
------------
+.. raw:: html
+
+    <br>
+
+Usage
+^^^^^
+
+.. raw:: html
+
+    <br>
 
 Common environments
-^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""
 
 In this approach, the RL algorithm maintains the main execution loop
 
@@ -69,8 +77,12 @@ In this approach, the RL algorithm maintains the main execution loop
 
             python main.py task=Cartpole
 
+.. raw:: html
+
+    <br>
+
 Multi-threaded environments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""
 
 In this approach, the RL algorithm is executed on a secondary thread while the simulation and rendering is executed on the main thread
 
@@ -124,7 +136,11 @@ In this approach, the RL algorithm is executed on a secondary thread while the s
 
             python main.py task=Cartpole
 
+.. raw:: html
+
+    <br>
+
 API
----
+^^^
 
 .. autofunction:: skrl.envs.torch.loaders.load_omniverse_isaacgym_env

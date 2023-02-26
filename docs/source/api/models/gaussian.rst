@@ -5,6 +5,10 @@ Gaussian model
 
 Gaussian models run **continuous-domain stochastic** policies.
 
+.. raw:: html
+
+    <br><hr>
+
 skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
@@ -29,6 +33,10 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
               Model.__init__(self, observation_space, action_space, device)
               GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
+.. raw:: html
+
+    <br>
+
 Concept
 -------
 
@@ -44,8 +52,12 @@ Concept
     :class: only-dark
     :alt: Gaussian model
 
-Basic usage
------------
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 * Multi-Layer Perceptron (**MLP**)
 * Convolutional Neural Network (**CNN**)
@@ -309,6 +321,10 @@ Basic usage
                     :linenos:
                     :start-after: [start-lstm-functional]
                     :end-before: [end-lstm-functional]
+
+.. raw:: html
+
+    <br>
 
 API
 ---

@@ -1,8 +1,14 @@
 Sequential trainer
 ==================
 
+Train agents sequentially (i.e., one after the other in each interaction with the environment).
+
+.. raw:: html
+
+    <br><hr>
+
 Concept
-^^^^^^^
+-------
 
 .. image:: ../../_static/imgs/sequential_trainer-light.svg
     :width: 100%
@@ -16,8 +22,12 @@ Concept
     :class: only-dark
     :alt: Sequential trainer
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. tabs::
 
@@ -29,18 +39,26 @@ Basic usage
             :start-after: [start-sequential]
             :end-before: [end-sequential]
 
-Configuration
-^^^^^^^^^^^^^
+.. raw:: html
 
-.. py:data:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+    <br>
+
+Configuration
+-------------
 
 .. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
     :language: python
     :lines: 14-18
     :linenos:
 
+.. raw:: html
+
+    <br>
+
 API
-^^^
+---
+
+.. autoclass:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
 
 .. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
     :undoc-members:

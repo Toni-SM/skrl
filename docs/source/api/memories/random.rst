@@ -1,8 +1,14 @@
 Random memory
 =============
 
-Basic usage
-^^^^^^^^^^^
+Random sampling memory
+
+.. raw:: html
+
+    <br><hr>
+
+Usage
+-----
 
    .. code-block:: python
         :linenos:
@@ -31,8 +37,12 @@ Basic usage
         # sample a batch of data from the memory
         batch = memory.sample(batch_size=32, names=["states", "actions", "rewards", "next_states", "dones"])
 
+.. raw:: html
+
+    <br>
+
 API
-^^^
+---
 
 .. autoclass:: skrl.memories.torch.random.RandomMemory
     :undoc-members:

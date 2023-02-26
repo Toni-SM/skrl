@@ -5,6 +5,17 @@ SAC is a **model-free**, **stochastic** **off-policy** **actor-critic** algorith
 
 Paper: `Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor <https://arxiv.org/abs/1801.01290>`_
 
+.. raw:: html
+
+    <br><hr>
+
+Algorithm
+---------
+
+.. raw:: html
+
+    <br>
+
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 | Main notation/symbols:
@@ -13,7 +24,12 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`), entropy coefficient (:math:`\alpha`)
 |   - loss (:math:`L`)
 
-**Learning algorithm** (:literal:`_update(...)`)
+.. raw:: html
+
+    <br>
+
+Learning algorithm: :literal:`_update`
+""""""""""""""""""""""""""""""""""""""
 
 | :green:`# sample a batch from memory`
 | [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
@@ -62,8 +78,12 @@ Algorithm implementation
 |         step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-Basic usage
-^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Usage
+-----
 
 .. note::
 
@@ -91,18 +111,24 @@ Basic usage
             :start-after: [start-sac-rnn]
             :end-before: [end-sac-rnn]
 
+.. raw:: html
+
+    <br>
+
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. py:data:: skrl.agents.torch.sac.sac.SAC_DEFAULT_CONFIG
 
 .. literalinclude:: ../../../../skrl/agents/torch/sac/sac.py
     :language: python
     :lines: 18-56
     :linenos:
 
-Spaces and models
-^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <br>
+
+Spaces
+^^^^^^
 
 The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
 
@@ -121,6 +147,13 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Dict
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+
+.. raw:: html
+
+    <br>
+
+Models
+^^^^^^
 
 The implementation uses 1 stochastic and 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
 
@@ -164,6 +197,13 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
+.. raw:: html
+
+    <br>
+
+Features
+^^^^^^^^
+
 Support for advanced features is described in the next table
 
 .. list-table::
@@ -176,10 +216,25 @@ Support for advanced features is described in the next table
     * - RNN support
       - RNN, LSTM, GRU and any other variant
 
-API
-^^^
+.. raw:: html
 
-.. autoclass:: skrl.agents.torch.sac.sac.SAC
+    <br>
+
+API
+---
+
+.. autoclass:: skrl.agents.torch.sac.SAC_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.torch.sac.SAC
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+
+.. autoclass:: skrl.agents.torch.sac.SAC_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

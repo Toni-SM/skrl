@@ -1,12 +1,20 @@
-.. _data:
-
 Saving, loading and logging
 ===========================
 
-Tracking metrics (TensorBoard)
-------------------------------
+In this section, you will find the information you need to log data with TensorBoard or Weights & Biases and to save and load checkpoints and memories to and from persistent storage.
+
+.. raw:: html
+
+    <br><hr>
+
+TensorBoard integration
+-----------------------
 
 `TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
+
+.. raw:: html
+
+    <br>
 
 Configuration
 ^^^^^^^^^^^^^
@@ -38,6 +46,10 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
 * **write_interval**: interval for writing metrics and values to TensorBoard (default is 250 timesteps). A value equal to or less than 0 disables tracking and writing to TensorBoard.
 
+.. raw:: html
+
+    <br>
+
 Tracked metrics/scales visualization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -48,9 +60,9 @@ To visualize the tracked metrics/scales, during or after the training, TensorBoa
     tensorboard --logdir=PATH_TO_RUNS_DIRECTORY
 
 .. image:: ../_static/imgs/data_tensorboard.jpg
-      :width: 100%
-      :align: center
-      :alt: TensorBoard panel
+    :width: 100%
+    :align: center
+    :alt: TensorBoard panel
 
 |
 
@@ -104,12 +116,16 @@ The following table shows the metrics/scales tracked by each agent ([**+**] all 
 |Target     |Target              |                  |                  |                  |.. centered:: +   |.. centered:: +   |.. centered:: +   |                  |                         |.. centered:: +   |                    |.. centered:: +   |                  |
 +-----------+--------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+-------------------------+------------------+--------------------+------------------+------------------+
 
+.. raw:: html
+
+    <br>
+
 Tracking custom metrics/scales
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **Tracking custom data attached to the agent's control and timing logic (recommended)**
 
-  Although the TensorBoard's writing control and timing logic is controlled by the base class Agent, it is possible to track custom data. The :literal:`track_data` method can be used (see :doc:`Agent <../modules/skrl.agents.base_class>` class for more details), passing as arguments the data identification (tag) and the scalar value to be recorded.
+  Although the TensorBoard's writing control and timing logic is controlled by the base class Agent, it is possible to track custom data. The :literal:`track_data` method can be used (see :doc:`Agent <../api/agents>` class for more details), passing as arguments the data identification (tag) and the scalar value to be recorded.
 
   For example, to track the current CPU usage, the following code can be used:
 
@@ -129,14 +145,20 @@ Tracking custom metrics/scales
       # assuming agent is an instance of an Agent subclass
       agent.writer.add_scalar("Resource / CPU usage", psutil.cpu_percent(), global_step=1000)
 
-----------------
+.. raw:: html
 
-Tracking metrics (Weights and Biases)
--------------------------------------
+    <br><hr>
 
-`Weights & Biases <https://wandb.ai>`_ is also supported for tracking and visualizing metrics and scalars. Its configuration is responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
+Weights & Biases integration
+----------------------------
+
+`Weights & Biases (wandb) <https://wandb.ai>`_ is also supported for tracking and visualizing metrics and scalars. Its configuration is responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
 
 Follow the steps described in Weights & Biases documentation (`Set up wandb <https://docs.wandb.ai/quickstart#1.-set-up-wandb>`_) to login to the :literal:`wandb` library on the current machine.
+
+.. raw:: html
+
+    <br>
 
 Configuration
 ^^^^^^^^^^^^^
@@ -172,10 +194,16 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
   * :literal:`"config"`: will be updated with the configuration dictionaries of both the agent (and its models) and the trainer. The update will be done even if a value has been set for the parameter.
 
-----------------
+.. raw:: html
+
+    <br><hr>
 
 Checkpoints
 -----------
+
+.. raw:: html
+
+    <br>
 
 Saving checkpoints
 ^^^^^^^^^^^^^^^^^^
@@ -213,16 +241,20 @@ The best models, attending the mean total reward, will be saved in the :literal:
 
 The best models are updated internally on each TensorBoard writing interval :literal:`"write_interval"` and they are saved on each checkpoint interval :literal:`"checkpoint_interval"`. The :literal:`"store_separately"` key specifies whether the best modules are grouped and stored together or separately.
 
+.. raw:: html
+
+    <br>
+
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 
-Checkpoints can be loaded for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading).
+Checkpoints can be loaded (e.g. to resume or continue training) for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading).
 
 .. note::
 
     The agents or models instances must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's `state_dict <https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict>`_ directly.
 
-The following code snippets show how to load the checkpoints through the instantiated agent (recommended) or models. See the :ref:`Examples <examples>` section for showcases about how to load control points and use them to continue the training or evaluate experiments.
+The following code snippets show how to load the checkpoints through the instantiated agent (recommended) or models. See the :doc:`Examples <examples>` section for showcases about how to checkpoints and use them to continue the training or evaluate experiments.
 
 .. tabs::
 
@@ -272,7 +304,7 @@ The following code snippets show how to load the checkpoints through the instant
             # Load the checkpoint
             policy.load("./runs/22-09-29_22-48-49-816281_DDPG/checkpoints/2500_policy.pt")
 
-In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../modules/skrl.utils.huggingface>` for more information.
+In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../api/utils/huggingface>` for more information.
 
 .. tabs::
 
@@ -295,6 +327,10 @@ In addition, it is possible to load, through the library utilities, trained agen
             # Load the checkpoint from Hugging Face Hub
             path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO")
             agent.load(path)
+
+.. raw:: html
+
+    <br>
 
 Migrating external checkpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -362,10 +398,16 @@ The following code snippets show how to migrate checkpoints from other libraries
             state_dict = torch.load("./external_model.pt")
             policy.migrate(state_dict=state_dict)
 
---------------------
+.. raw:: html
+
+    <br><hr>
 
 Memory export/import
 --------------------
+
+.. raw:: html
+
+    <br>
 
 Exporting memories
 ^^^^^^^^^^^^^^^^^^
@@ -390,6 +432,10 @@ Memories can be automatically exported to files at each filling cycle (before da
 * **export_format**: the format of the exported memory (default is :literal:`"pt"`). Supported formats are PyTorch (:literal:`"pt"`), NumPy (:literal:`"np"`) and Comma-separated values (:literal:`"csv"`).
 
 * **export_directory**: the directory where the memory will be exported (default is :literal:`"memory"`).
+
+.. raw:: html
+
+    <br>
 
 Importing memories
 ^^^^^^^^^^^^^^^^^^

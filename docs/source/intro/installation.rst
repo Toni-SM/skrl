@@ -1,9 +1,11 @@
 Installation
 ============
 
+In this section, you will find the steps to install the library, troubleshoot known issues, review changes between versions, and more.
+
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Prerequisites
 -------------
@@ -18,10 +20,14 @@ Prerequisites
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Library Installation
 --------------------
+
+.. raw:: html
+
+    <br>
 
 Python Package Index (PyPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,6 +37,10 @@ To install **skrl** with pip, execute:
     .. code-block:: bash
 
         pip install skrl
+
+.. raw:: html
+
+    <br>
 
 GitHub repository
 ^^^^^^^^^^^^^^^^^
@@ -56,7 +66,7 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
 .. raw:: html
 
-    <hr>
+    <br><hr>
 
 Troubleshooting
 ---------------
@@ -69,6 +79,10 @@ Bug detection and/or correction, feature requests and everything else are more t
 
 .. centered:: https://github.com/Toni-SM/skrl/issues
 
+.. raw:: html
+
+    <br><hr>
+
 Known issues
 ------------
 
@@ -79,6 +93,10 @@ Known issues
     .. code-block:: text
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
+
+.. raw:: html
+
+    <br><hr>
 
 Changelog
 ---------

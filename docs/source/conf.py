@@ -93,6 +93,7 @@ copybutton_prompt_is_regexp = True
 
 # notfound ext
 
+notfound_template = "404.rst"
 notfound_context = {
     "title": "Page Not Found",
     "body": """

@@ -16,6 +16,7 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
+    "close_environment_at_exit": False,   # whether to close the environment on normal program termination
 }
 
 
@@ -261,9 +262,6 @@ class ParallelTrainer(Trainer):
         for process in processes:
             process.join()
 
-        # close the environment
-        self.env.close()
-
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -386,6 +384,3 @@ class ParallelTrainer(Trainer):
         # join processes
         for process in processes:
             process.join()
-
-        # close the environment
-        self.env.close()

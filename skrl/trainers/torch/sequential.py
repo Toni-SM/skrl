@@ -15,6 +15,7 @@ SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
+    "close_environment_at_exit": False,   # whether to close the environment on normal program termination
 }
 
 
@@ -120,9 +121,6 @@ class SequentialTrainer(Trainer):
                 else:
                     states.copy_(next_states)
 
-        # close the environment
-        self.env.close()
-
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -181,6 +179,3 @@ class SequentialTrainer(Trainer):
                     states, infos = self.env.reset()
                 else:
                     states.copy_(next_states)
-
-        # close the environment
-        self.env.close()

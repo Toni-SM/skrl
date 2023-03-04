@@ -48,7 +48,7 @@ Configuration
 
 .. literalinclude:: ../../../../skrl/trainers/torch/manual.py
     :language: python
-    :lines: 14-18
+    :lines: 14-19
     :linenos:
 
 .. raw:: html

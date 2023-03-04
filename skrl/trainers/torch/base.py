@@ -1,11 +1,14 @@
 from typing import Union, List, Optional
 
 import tqdm
+import atexit
 
 import torch
 
 from skrl.envs.torch import Wrapper
 from skrl.agents.torch import Agent
+
+from skrl import logger
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
@@ -56,12 +59,21 @@ class Trainer:
         self.timesteps = self.cfg.get("timesteps", 0)
         self.headless = self.cfg.get("headless", False)
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
+        self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
 
         self.initial_timestep = 0
 
         # setup agents
         self.num_simultaneous_agents = 0
         self._setup_agents()
+
+        # register environment closing if configured
+        if self.close_environment_at_exit:
+            @atexit.register
+            def close_env():
+                logger.info("Closing environment")
+                self.env.close()
+                logger.info("Environment closed")
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer
@@ -193,9 +205,6 @@ class Trainer:
                 else:
                     states.copy_(next_states)
 
-        # close the environment
-        self.env.close()
-
     def single_agent_eval(self) -> None:
         """Evaluate agent
 
@@ -244,8 +253,6 @@ class Trainer:
                 else:
                     states.copy_(next_states)
 
-        # close the environment
-        self.env.close()
 
     def multi_agent_train(self) -> None:
         """Train multi-agents
@@ -310,9 +317,6 @@ class Trainer:
                     states = next_states
                     shared_states = shared_next_states
 
-        # close the environment
-        self.env.close()
-
     def multi_agent_eval(self) -> None:
         """Evaluate multi-agents
 
@@ -366,6 +370,3 @@ class Trainer:
                 else:
                     states = next_states
                     shared_states = shared_next_states
-
-        # close the environment
-        self.env.close()

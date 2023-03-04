@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Move the agent implementation with recurrent models to a separate file
+- Allow closing the environment at the end of execution instead of after training/evaluation
+- Documentation theme from *sphinx_rtd_theme* to *furo*
 
 ## [0.10.1] - 2023-01-26
 ### Fixed

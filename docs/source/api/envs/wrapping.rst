@@ -1,7 +1,7 @@
 :tocdepth: 3
 
-Wrapping
-========
+Wrapping (single-agent)
+=======================
 
 .. raw:: html
 

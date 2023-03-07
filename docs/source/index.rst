@@ -54,10 +54,10 @@ SKRL - Reinforcement Learning library (|version|)
 .. code-block:: bibtex
 
     @article{serrano2022skrl,
-    title={skrl: Modular and Flexible Library for Reinforcement Learning},
-    author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
-    journal={arXiv preprint arXiv:2202.03825},
-    year={2022}
+      title={skrl: Modular and Flexible Library for Reinforcement Learning},
+      author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
+      journal={arXiv preprint arXiv:2202.03825},
+      year={2022}
     }
 
 .. raw:: html
@@ -120,7 +120,8 @@ Environments
 
     Definition of the Isaac Gym (preview 2, 3 and 4), Isaac Orbit and Omniverse Isaac Gym environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Isaac Orbit, Omniverse Isaac Gym environments, among others
 
-    * :doc:`Wrapping <api/envs/wrapping>` **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
+    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Isaac Orbit**, **Omniverse Isaac Gym** environments, among others
+    * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo** and **Bi-DexHands** environments
     * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
     * Loading :doc:`Isaac Orbit environments <api/envs/isaac_orbit>`
     * Loading :doc:`Omniverse Isaac Gym environments <api/envs/omniverse_isaac_gym>`

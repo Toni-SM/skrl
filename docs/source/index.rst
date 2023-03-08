@@ -89,6 +89,7 @@ Library components (overview)
     :hidden:
 
     api/agents
+    api/multi_agents
     api/envs
     api/memories
     api/models
@@ -114,6 +115,14 @@ Agents
     * :doc:`State Action Reward State Action <api/agents/sarsa>` (**SARSA**)
     * :doc:`Twin-Delayed DDPG <api/agents/td3>` (**TD3**)
     * :doc:`Trust Region Policy Optimization <api/agents/trpo>` (**TRPO**)
+
+Multi-agents
+^^^^^^^^^^^^
+
+    Definition of reinforcement learning algorithms that compute an optimal policies. All agents (multi-agents) inherit from one and only one :doc:`base class <api/multi_agents>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
+
+    * :doc:`Independent Proximal Policy Optimization <api/multi_agents/ippo>` (**IPPO**)
+    * :doc:`Multi-Agent Proximal Policy Optimization <api/multi_agents/mappo>` (**MAPPO**)
 
 Environments
 ^^^^^^^^^^^^

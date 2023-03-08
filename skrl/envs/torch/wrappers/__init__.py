@@ -14,7 +14,7 @@ from skrl.envs.torch.wrappers.omniverse_isaacgym_envs import OmniverseIsaacGymWr
 from skrl.envs.torch.wrappers.robosuite_envs import RobosuiteWrapper
 
 from skrl.envs.torch.wrappers.bidexhands_envs import BiDexHandsWrapper
-from skrl.envs.torch.wrappers.petting_zoo_envs import PettingZooWrapper
+from skrl.envs.torch.wrappers.pettingzoo_envs import PettingZooWrapper
 
 from skrl import logger
 

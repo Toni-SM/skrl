@@ -199,11 +199,14 @@ class Trainer:
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
-            with torch.no_grad():
+            if self.env.num_envs > 1:
+                states = next_states
+            else:
                 if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
+                    with torch.no_grad():
+                        states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
+                    states = next_states
 
     def single_agent_eval(self) -> None:
         """Evaluate agent
@@ -247,12 +250,15 @@ class Trainer:
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
-                # reset environments
+            # reset environments
+            if self.env.num_envs > 1:
+                states = next_states
+            else:
                 if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
+                    with torch.no_grad():
+                        states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
-
+                    states = next_states
 
     def multi_agent_train(self) -> None:
         """Train multi-agents

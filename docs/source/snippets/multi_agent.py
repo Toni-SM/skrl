@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Union, Dict, Any, Optional, Sequence, Mapping
 
 import gym, gymnasium
 import copy
@@ -8,7 +8,7 @@ import torch
 from skrl.memories.torch import Memory      # from ....memories.torch import Memory
 from skrl.models.torch import Model         # from ....models.torch import Model
 
-from skrl.agents.torch import Agent         # from .. import Agent
+from skrl.multi_agents.torch import MultiAgent      # from .. import MultiAgent
 
 
 CUSTOM_DEFAULT_CONFIG = {
@@ -26,34 +26,40 @@ CUSTOM_DEFAULT_CONFIG = {
 }
 
 
-class CUSTOM(Agent):
+class CUSTOM(MultiAgent):
     def __init__(self,
+                 possible_agents: Sequence[str],
                  models: Dict[str, Model],
-                 memory: Optional[Memory] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space]] = None,
-                 device: Union[str, torch.device] = "cuda:0",
+                 memories: Optional[Mapping[str, Memory]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions
-        :type memory: skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
-        :param device: Computing device (default: "cuda:0")
+        :param possible_agents: Name of all possible agents the environment could generate
+        :type possible_agents: list of str
+        :param models: Models used by the agents.
+                       External keys are environment agents' names. Internal keys are the models required by the algorithm
+        :type models: nested dictionary of skrl.models.torch.Model
+        :param memories: Memories to storage the transitions.
+        :type memories: dictionary of skrl.memory.torch.Memory, optional
+        :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
+        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :param action_spaces: Action spaces or shapes (default: ``None``)
+        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
         _cfg = copy.deepcopy(CUSTOM_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
+        super().__init__(possible_agents=possible_agents,
+                         models=models,
+                         memories=memories,
+                         observation_spaces=observation_spaces,
+                         action_spaces=action_spaces,
                          device=device,
                          cfg=_cfg)
         # =====================================================================
@@ -74,11 +80,11 @@ class CUSTOM(Agent):
         # - # create temporary variables needed for storage and computation
         # =================================================================
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(self, states: Mapping[str, torch.Tensor], timestep: int, timesteps: int) -> torch.Tensor:
+        """Process the environment's states to make a decision (actions) using the main policies
 
         :param states: Environment's states
-        :type states: torch.Tensor
+        :type states: dictionary of torch.Tensor
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
@@ -93,31 +99,31 @@ class CUSTOM(Agent):
         # ======================================
 
     def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
+                          states: Mapping[str, torch.Tensor],
+                          actions: Mapping[str, torch.Tensor],
+                          rewards: Mapping[str, torch.Tensor],
+                          next_states: Mapping[str, torch.Tensor],
+                          terminated: Mapping[str, torch.Tensor],
+                          truncated: Mapping[str, torch.Tensor],
+                          infos: Mapping[str, Any],
                           timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
+        :type states: dictionary of torch.Tensor
         :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
+        :type actions: dictionary of torch.Tensor
         :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
+        :type rewards: dictionary of torch.Tensor
         :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
+        :type next_states: dictionary of torch.Tensor
         :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
+        :type terminated: dictionary of torch.Tensor
         :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
+        :type truncated: dictionary of torch.Tensor
         :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
+        :type infos: dictionary of any supported type
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps

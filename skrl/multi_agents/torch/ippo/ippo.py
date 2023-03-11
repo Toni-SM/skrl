@@ -72,7 +72,7 @@ class IPPO(MultiAgent):
                  cfg: Optional[dict] = None) -> None:
         """Independent Proximal Policy Optimization (IPPO)
 
-        https://arxiv.org/abs/2103.01955
+        https://arxiv.org/abs/2011.09533
 
         :param possible_agents: Name of all possible agents the environment could generate
         :type possible_agents: list of str

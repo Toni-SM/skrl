@@ -42,7 +42,6 @@ Algorithm implementation
 Learning algorithm: :literal:`_update`
 """"""""""""""""""""""""""""""""""""""
 
-.. # TODO: Update algorithm
 :red:`Update algorithm`
 
 | :literal:`compute_gae(...)`

@@ -18,4 +18,4 @@ The environment plays a fundamental and crucial role in defining the RL setup. I
 
 Grouped in this section you will find how to load environments from NVIDIA Isaac Gym, Isaac Orbit and Omniverse Isaac Gym with a simple function.
 
-In addition, you will be able to :doc:`wrap <envs/wrapping>` different environment interfaces to perform RL tasks.
+In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :doc:`multi-agent <envs/multi_agents_wrapping>` RL environment interfaces.

@@ -1,5 +1,6 @@
-from typing import Optional, Union
+from typing import Optional
 
+import queue
 import torch
 import numpy as np
 

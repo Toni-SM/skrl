@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Mapping
 
 import queue
 import torch
@@ -60,9 +60,9 @@ def ik(jacobian_end_effector: torch.Tensor,
        current_orientation: torch.Tensor,
        goal_position: torch.Tensor,
        goal_orientation: Optional[torch.Tensor] = None,
-       damping_factor: float = 0.05,
-       squeeze_output: bool = True,
-       method: str = "damped least-squares") -> torch.Tensor:
+       method: str = "damped least-squares",
+       method_cfg: Mapping[str, float] = {"scale": 1, "damping": 0.05, "min_singular_value": 1e-5},
+       squeeze_output: bool = True,) -> torch.Tensor:
     """Differential inverse kinematics
 
     :param jacobian_end_effector: End effector's jacobian
@@ -73,27 +73,28 @@ def ik(jacobian_end_effector: torch.Tensor,
     :type current_orientation: torch.Tensor
     :param goal_position: End effector's goal position
     :type goal_position: torch.Tensor
-    :param goal_orientation: End effector's goal orientation (default: ``None``)
+    :param goal_orientation: End effector's goal orientation (default: ``None``).
+                             If not provided, the current orientation will be used instead.
     :type goal_orientation: torch.Tensor, optional
-    :param damping_factor: Damping factor (default: ``0.05``)
-    :type damping_factor: float, optional
-    :param squeeze_output: Squeeze output (default: ``True``)
-    :type squeeze_output: bool, optional
     :param method: Differential inverse kinematics formulation (default: ``"damped least-squares"``).
                    The supported methods are described in the following table:
 
-                   +---------------------------------------------------------+--------------------------+
-                   |IK Method                                                |Method tag                |
-                   +=========================================================+==========================+
-                   |Adaptive singular-vale decomposition (SVD) pseduoinverse |``"adaptive-svd"``        |
-                   +---------------------------------------------------------+--------------------------+
-                   |Moore-Penrose pseduoinverse                              |``"pseudoinverse"``       |
-                   +---------------------------------------------------------+--------------------------+
-                   |Tanspose pseudoinverse:                                  |``"transpose"``           |
-                   +---------------------------------------------------------+--------------------------+
-                   |Damped least-squares                                     |``"damped least-squares"``|
-                   +---------------------------------------------------------+--------------------------+
+                   +----------------------------------+----------------------------------+
+                   |IK Method                         |Method tag                        |
+                   +==================================+==================================+
+                   |Damped least-squares              |``"damped least-squares"``        |
+                   +----------------------------------+----------------------------------+
+                   |Tanspose                          |``"transpose"``                   |
+                   +----------------------------------+----------------------------------+
+                   |Pseduoinverse                     |``"pseudoinverse"``               |
+                   +----------------------------------+----------------------------------+
+                   |Singular-vale decomposition (SVD) |``"singular-vale decomposition"`` |
+                   +----------------------------------+----------------------------------+
     :type method: str, optional
+    :param method_cfg: Method configurations (default: ``{"scale": 1, "damping": 0.05, "min_singular_value": 1e-5}``)
+    :type method_cfg: dict, optional
+    :param squeeze_output: Squeeze output (default: ``True``)
+    :type squeeze_output: bool, optional
 
     :return: Change in joint angles
     :rtype: torch.Tensor
@@ -109,10 +110,11 @@ def ik(jacobian_end_effector: torch.Tensor,
                            q[:, 1:] * torch.sign(q[:, 0]).unsqueeze(-1)],  # orientation error
                           dim=-1).unsqueeze(-1)
 
+        scale = method_cfg.get("scale", 1.0)
+
         # adaptive Singular Value Decomposition (SVD)
-        if method == "adaptive-svd":
-            scale = 1.0
-            min_singular_value = 1e-5
+        if method == "singular-vale decomposition":
+            min_singular_value = method_cfg.get("min_singular_value", 1e-5)
             U, S, Vh = torch.linalg.svd(jacobian_end_effector)  # U: 6xd, S: dxd, V: d x num_dof
             inv_s = torch.where(S > min_singular_value, 1.0 / S, torch.zeros_like(S))
             pseudoinverse = torch.transpose(Vh, 1, 2)[:, :, :6] @ torch.diag_embed(inv_s) @ torch.transpose(U, 1, 2)
@@ -122,7 +124,6 @@ def ik(jacobian_end_effector: torch.Tensor,
                 return scale * pseudoinverse @ error
         # jacobian pseudoinverse
         elif method == "pseudoinverse":
-            scale = 1.0
             pseudoinverse = torch.linalg.pinv(jacobian_end_effector)
             if squeeze_output:
                 return (scale * pseudoinverse @ error).squeeze(dim=2)
@@ -130,7 +131,6 @@ def ik(jacobian_end_effector: torch.Tensor,
                 return scale * pseudoinverse @ error
         # jacobian transpose
         elif method == "transpose":
-            scale = 1.0
             transpose = torch.transpose(jacobian_end_effector, 1, 2)
             if squeeze_output:
                 return (scale * transpose @ error).squeeze(dim=2)
@@ -138,12 +138,13 @@ def ik(jacobian_end_effector: torch.Tensor,
                 return scale * transpose @ error
         # damped least-squares
         elif method == "damped least-squares":
+            damping = method_cfg.get("damping", 0.05)
             transpose = torch.transpose(jacobian_end_effector, 1, 2)
-            lmbda = torch.eye(jacobian_end_effector.shape[1], device=jacobian_end_effector.device) * (damping_factor ** 2)
+            lmbda = torch.eye(jacobian_end_effector.shape[1], device=jacobian_end_effector.device) * (damping ** 2)
             if squeeze_output:
-                return (transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(dim=2)
+                return (scale * transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(dim=2)
             else:
-                return transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error
+                return scale * transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error
         else:
             raise ValueError("Invalid IK method")
 
@@ -157,7 +158,7 @@ def ik(jacobian_end_effector: torch.Tensor,
 
         # solve damped least squares (dO = J.T * V)
         transpose = np.transpose(jacobian_end_effector, 1, 2)
-        lmbda = np.eye(6) * (damping_factor ** 2)
+        lmbda = np.eye(6) * (method_cfg.get("damping", 0.05) ** 2)
         if squeeze_output:
             return (transpose @ np.linalg.inv(jacobian_end_effector @ transpose + lmbda) @ error)
         else:

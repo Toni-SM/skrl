@@ -14,19 +14,25 @@ Control of robotic manipulators
 
     <br>
 
-Inverse kinematics using damped least squares method
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Differential inverse kinematics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This implementation attempts to unify under a single and reusable function the whole set of procedures used to calculate the inverse kinematics of a robotic manipulator shown originally in Isaac Gym's example: Franka IK Picking (:literal:`franka_cube_ik_osc.py`) but this time for Omniverse Isaac Gym
+This implementation attempts to unify under a single and reusable function the whole set of procedures used to compute the inverse kinematics of a robotic manipulator, originally shown in the Isaac Orbit framework's task space controllers section, but this time for Omniverse Isaac Gym.
 
-:math:`\Delta\theta = J^T (JJ^T + \lambda^2 I)^{-1} \, \vec{e}`
+:math:`\Delta\theta =` :guilabel:`scale` :math:`J^\dagger \, \vec{e}`
 
 where
 
 | :math:`\qquad \Delta\theta \;` is the change in joint angles
-| :math:`\qquad J \;` is the Jacobian
-| :math:`\qquad \lambda \;` is a non-zero damping constant
 | :math:`\qquad \vec{e} \;` is the Cartesian pose error (position and orientation)
+| :math:`\qquad J^\dagger \;` is the pseudoinverse of the Jacobian estimated as follows:
+
+The pseudoinverse of the Jacobian (:math:`J^\dagger`) is estimated as follows:
+
+* Tanspose: :math:`\; J^\dagger = J^T`
+* Pseduoinverse: :math:`\; J^\dagger = J^T(JJ^T)^{-1}`
+* Damped least-squares: :math:`\; J^\dagger = J^T(JJ^T \, +` :guilabel:`damping`:math:`{}^2 I)^{-1}`
+* Singular-vale decomposition: See `buss2004introduction <https://mathweb.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf>`_ (section 6)
 
 .. raw:: html
 

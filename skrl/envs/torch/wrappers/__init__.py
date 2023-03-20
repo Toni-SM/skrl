@@ -37,10 +37,6 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:
 
-                    .. raw:: html
-
-                        <br>
-
                     +--------------------+-------------------------+
                     |Environment         |Wrapper tag              |
                     +====================+=========================+

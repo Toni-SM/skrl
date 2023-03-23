@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.2] - 2023-03-23
+### Changed
+- Update loader and utils for OmniIsaacGymEnvs 2022.2.1.0
+- Update Omniverse Isaac Gym real-world examples
+
 ## [0.10.1] - 2023-01-26
 ### Fixed
 - Tensorboard writer instantiation when `write_interval` is zero

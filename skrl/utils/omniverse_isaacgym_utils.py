@@ -1,5 +1,6 @@
 from typing import Optional, Union
 
+import queue
 import torch
 import numpy as np
 
@@ -117,12 +118,19 @@ def ik(jacobian_end_effector: torch.Tensor,
         else:
             return transpose @ np.linalg.inv(jacobian_end_effector @ transpose + lmbda) @ error
 
-def get_env_instance(headless: bool = True, multi_threaded: bool = False) -> "omni.isaac.gym.vec_env.VecEnvBase":
+def get_env_instance(headless: bool = True,
+                     enable_livestream: bool = False,
+                     enable_viewport: bool = False,
+                     multi_threaded: bool = False) -> "omni.isaac.gym.vec_env.VecEnvBase":
     """
     Instantiate a VecEnvBase-based object compatible with OmniIsaacGymEnvs
 
     :param headless: Disable UI when running (default: ``True``)
     :type headless: bool, optional
+    :param enable_livestream: Whether to enable live streaming (default: ``False``)
+    :type enable_livestream: bool, optional
+    :param enable_viewport: Whether to enable viewport (default: ``False``)
+    :type enable_viewport: bool, optional
     :param multi_threaded: Whether to return a multi-threaded environment instance (default: ``False``)
     :type multi_threaded: bool, optional
 
@@ -142,7 +150,9 @@ def get_env_instance(headless: bool = True, multi_threaded: bool = False) -> "om
         sim_config = SimConfig({"test": False,
                                 "device_id": 0,
                                 "headless": True,
+                                "multi_gpu": False,
                                 "sim_device": "gpu",
+                                "enable_livestream": False,
                                 "task": {"name": "CustomTask",
                                          "physics_engine": "physx",
                                          "env": {"numEnvs": 512,
@@ -223,8 +233,8 @@ def get_env_instance(headless: bool = True, multi_threaded: bool = False) -> "om
             pass
 
     class _OmniIsaacGymVecEnvMT(VecEnvMT):
-        def __init__(self, headless):
-            super().__init__(headless)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
             self.action_queue = queue.Queue(1)
             self.data_queue = queue.Queue(1)
@@ -260,6 +270,6 @@ def get_env_instance(headless: bool = True, multi_threaded: bool = False) -> "om
             self.stop = True
 
     if multi_threaded:
-        return _OmniIsaacGymVecEnvMT(headless=headless)
+        return _OmniIsaacGymVecEnvMT(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
     else:
-        return _OmniIsaacGymVecEnv(headless=headless)
+        return _OmniIsaacGymVecEnv(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)

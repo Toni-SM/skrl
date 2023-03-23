@@ -1,6 +1,9 @@
 import torch
 import numpy as np
 
+from omni.isaac.core.utils.extensions import enable_extension
+enable_extension("omni.replicator.isaac")  # required by OIGE
+
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 
 from omni.isaac.core.prims import RigidPrimView
@@ -24,6 +27,7 @@ TASK_CFG = {"test": False,
             "device_id": 0,
             "headless": True,
             "sim_device": "gpu",
+            "enable_livestream": False,
             "task": {"name": "ReachingIiwa",
                      "physics_engine": "physx",
                      "env": {"numEnvs": 1024,

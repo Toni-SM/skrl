@@ -27,7 +27,7 @@ setuptools.setup(
     long_description=open(os.path.join(root_dir, "README.md")).read(),
     long_description_content_type="text/markdown",
     keywords=["reinforcement", "machine", "learning", "rl"],
-    python_requires=">=3.6.*",
+    python_requires=">=3.6",
     install_requires=INSTALL_REQUIRES,
     url="https://github.com/Toni-SM/skrl",
     packages=setuptools.find_packages(exclude=['tests']),

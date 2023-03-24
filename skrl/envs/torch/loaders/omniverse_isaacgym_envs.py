@@ -115,24 +115,9 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     hydra_object = Hydra.create_main_hydra2(task_name='load_omniisaacgymenv', config_search_path=search_path)
     config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
 
-    cfg = {}
-    cfg["task"] = _omegaconf_to_dict(config.task)
-    cfg["task_name"] = config.task_name
-    cfg["experiment"] = config.experiment
-    cfg["num_envs"] = config.num_envs
-    cfg["seed"] = config.seed
-    cfg["torch_deterministic"] = config.torch_deterministic
-    cfg["max_iterations"] = config.max_iterations
-    cfg["physics_engine"] = config.physics_engine
-    cfg["pipeline"] = config.pipeline
-    cfg["sim_device"] = config.sim_device
-    cfg["device_id"] = config.device_id
-    cfg["rl_device"] = config.rl_device
-    cfg["num_threads"] = config.num_threads
-    cfg["solver_type"] = config.solver_type
-    cfg["test"] = config.test
-    cfg["checkpoint"] = config.checkpoint
-    cfg["headless"] = config.headless
+    del config.hydra
+    cfg = _omegaconf_to_dict(config)
+    cfg["train"] = {}
 
     # print config
     if show_cfg:
@@ -167,8 +152,8 @@ def load_omniverse_isaacgym_env(task_name: str = "",
             pass
 
     class _OmniIsaacGymVecEnvMT(VecEnvMT):
-        def __init__(self, headless):
-            super().__init__(headless)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
             self.action_queue = queue.Queue(1)
             self.data_queue = queue.Queue(1)
@@ -207,12 +192,24 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     sys.path.append(omniisaacgymenvs_path)
     from utils.task_util import initialize_task  # type: ignore
 
+    if config.multi_gpu:
+        rank = int(os.getenv("LOCAL_RANK", "0"))
+        config.device_id = rank
+        config.rl_device = f"cuda:{rank}"
+    enable_viewport = "enable_cameras" in config.task.sim and config.task.sim.enable_cameras
+
     if multi_threaded:
-        env = _OmniIsaacGymVecEnvMT(headless=config.headless)
+        env = _OmniIsaacGymVecEnvMT(headless=config.headless,
+                                    sim_device=config.device_id,
+                                    enable_livestream=config.enable_livestream,
+                                    enable_viewport=enable_viewport)
         task = initialize_task(cfg, env, init_sim=False)
         env.initialize(env.action_queue, env.data_queue, timeout=timeout)
     else:
-        env = _OmniIsaacGymVecEnv(headless=config.headless)
+        env = _OmniIsaacGymVecEnv(headless=config.headless,
+                                  sim_device=config.device_id,
+                                  enable_livestream=config.enable_livestream,
+                                  enable_viewport=enable_viewport)
         task = initialize_task(cfg, env, init_sim=True)
 
     return env

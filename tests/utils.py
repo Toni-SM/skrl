@@ -6,6 +6,7 @@ import torch
 
 class DummyEnv(gym.Env):
     def __init__(self, num_envs, device = "cpu"):
+        self.num_agents = 1
         self.num_envs = num_envs
         self.device = torch.device(device)
         self.action_space = gym.spaces.Discrete(2)

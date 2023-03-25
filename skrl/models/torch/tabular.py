@@ -1,40 +1,68 @@
-from typing import Union, Tuple
-
-import gym
+from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
 import torch
 
-from . import Model
+from skrl.models.torch import Model
 
 
-class TabularModel(Model):
-    def __init__(self, 
-                 observation_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 action_space: Union[int, Tuple[int], gym.Space, None] = None, 
-                 device: Union[str, torch.device] = "cuda:0",
-                 num_envs: int = 1) -> None:
-        """Tabular model
+class TabularMixin:
+    def __init__(self, num_envs: int = 1, role: str = "") -> None:
+        """Tabular mixin model
 
-        :param observation_space: Observation/state space or shape (default: None).
-                                  If it is not None, the num_observations property will contain the size of that space
-        :type observation_space: int, tuple or list of integers, gym.Space or None, optional
-        :param action_space: Action space or shape (default: None).
-                             If it is not None, the num_actions property will contain the size of that space
-        :type action_space: int, tuple or list of integers, gym.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str or torch.device, optional
         :param num_envs: Number of environments (default: 1)
         :type num_envs: int, optional
-        """
-        super(TabularModel, self).__init__(observation_space, action_space, device)
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
+        Example::
+
+            # define the model
+            >>> import torch
+            >>> from skrl.models.torch import Model, TabularMixin
+            >>>
+            >>> class GreedyPolicy(TabularMixin, Model):
+            ...     def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
+            ...         Model.__init__(self, observation_space, action_space, device)
+            ...         TabularMixin.__init__(self, num_envs)
+            ...
+            ...         self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
+            ...                                 dtype=torch.float32, device=self.device)
+            ...
+            ...     def compute(self, inputs, role):
+            ...         actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
+            ...                                dim=-1, keepdim=True).view(-1,1)
+            ...         return actions, {}
+            ...
+            >>> # given an observation_space: gym.spaces.Discrete with n=100
+            >>> # and an action_space: gym.spaces.Discrete with n=5
+            >>> model = GreedyPolicy(observation_space, action_space, num_envs=1)
+            >>>
+            >>> print(model)
+            GreedyPolicy(
+              (table): Tensor(shape=[1, 100, 5])
+            )
+        """
         self.num_envs = num_envs
 
-    def _get_tensor_names(self) -> Tuple[str]:
+    def __repr__(self) -> str:
+        """String representation of an object as torch.nn.Module
+        """
+        lines = []
+        for name in self._get_tensor_names():
+            tensor = getattr(self, name)
+            lines.append("({}): {}(shape={})".format(name, tensor.__class__.__name__, list(tensor.shape)))
+
+        main_str = self.__class__.__name__ + '('
+        if lines:
+            main_str += "\n  {}\n".format("\n  ".join(lines))
+        main_str += ')'
+        return main_str
+
+    def _get_tensor_names(self) -> Sequence[str]:
         """Get the names of the tensors that the model is using
 
         :return: Tensor names
-        :rtype: tuple of str
+        :rtype: sequence of str
         """
         tensors = []
         for attr in dir(self):
@@ -42,33 +70,44 @@ class TabularModel(Model):
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self, 
-            states: torch.Tensor, 
-            taken_actions: Union[torch.Tensor, None] = None, 
-            inference=False) -> Tuple[torch.Tensor]:
+    def act(self,
+            inputs: Mapping[str, Union[torch.Tensor, Any]],
+            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act in response to the state of the environment
 
-        :param states: Observation/state of the environment used to make the decision
-        :type states: torch.Tensor
-        :param taken_actions: Actions taken by a policy to the given states (default: None)
-        :type taken_actions: torch.Tensor or None, optional
-        :param inference: Flag to indicate whether the model is making inference (default: False).
-                          If True, the returned tensors will be detached from the current graph
-        :type inference: bool, optional
+        :param inputs: Model inputs. The most common keys are:
 
-        :return: Action to be taken by the agent given the state of the environment.
-                 The tuple's components are the computed actions and None for the last two components
-        :rtype: tuple of torch.Tensor
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically torch.Tensor
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
+
+        :return: Model output. The first component is the action to be taken by the agent.
+                 The second component is ``None``. The third component is a dictionary containing extra output values
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+
+        Example::
+
+            >>> # given a batch of sample states with shape (1, 100)
+            >>> actions, _, outputs = model.act({"states": states})
+            >>> print(actions[0], outputs)
+            tensor([[3]], device='cuda:0') {}
         """
-        actions = self.compute(states.to(self.device), 
-                               taken_actions.to(self.device) if taken_actions is not None else taken_actions)
-        return actions, None, None
-        
+        actions, outputs = self.compute(inputs, role)
+        return actions, None, outputs
+
     def table(self) -> torch.Tensor:
         """Return the Q-table
 
         :return: Q-table
         :rtype: torch.Tensor
+
+        Example::
+
+            >>> output = model.table()
+            >>> print(output.shape)
+            torch.Size([1, 100, 5])
         """
         return self.q_table
 
@@ -83,29 +122,80 @@ class TabularModel(Model):
         :return: Model moved to the specified device
         :rtype: Model
         """
-        super(TabularModel, self).to(*args, **kwargs)
+        Model.to(self, *args, **kwargs)
         for name in self._get_tensor_names():
             setattr(self, name, getattr(self, name).to(*args, **kwargs))
         return self
 
-    def save(self, path: str, state_dict: Union[dict, None] = None) -> None:
+    def state_dict(self, *args, **kwargs) -> Mapping:
+        """Returns a dictionary containing a whole state of the module
+
+        :return: A dictionary containing a whole state of the module
+        :rtype: dict
+        """
+        _state_dict = {name: getattr(self, name) for name in self._get_tensor_names()}
+        Model.state_dict(self, destination=_state_dict)
+        return _state_dict
+
+    def load_state_dict(self, state_dict: Mapping, strict: bool = True) -> None:
+        """Copies parameters and buffers from state_dict into this module and its descendants
+
+        :param state_dict: A dict containing parameters and persistent buffers
+        :type state_dict: dict
+        :param strict: Whether to strictly enforce that the keys in state_dict match the keys
+                       returned by this module's state_dict() function (default: ``True``)
+        :type strict: bool, optional
+        """
+        Model.load_state_dict(self, state_dict, strict=False)
+
+        for name, tensor in state_dict.items():
+            if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
+                _tensor = getattr(self, name)
+                if isinstance(_tensor, torch.Tensor):
+                    if _tensor.shape == tensor.shape and _tensor.dtype == tensor.dtype:
+                        setattr(self, name, tensor)
+                    else:
+                        raise ValueError("Tensor shape ({} vs {}) or dtype ({} vs {}) mismatch"\
+                            .format(_tensor.shape, tensor.shape, _tensor.dtype, tensor.dtype))
+            else:
+                raise ValueError("{} is not a tensor of {}".format(name, self.__class__.__name__))
+
+    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
-            
+
         :param path: Path to save the model to
         :type path: str
-        :param state_dict: State dictionary to save (default: None).
+        :param state_dict: State dictionary to save (default: ``None``).
                            If None, the model's state_dict will be saved
         :type state_dict: dict, optional
+
+        Example::
+
+            # save the current model to the specified path
+            >>> model.save("/tmp/model.pt")
         """
+        # TODO: save state_dict
         torch.save({name: getattr(self, name) for name in self._get_tensor_names()}, path)
 
     def load(self, path: str) -> None:
         """Load the model from the specified path
-        
-        :raises ValueError: If the models are not compatible
+
+        The final storage device is determined by the constructor of the model
 
         :param path: Path to load the model from
         :type path: str
+
+        :raises ValueError: If the models are not compatible
+
+        Example::
+
+            # load the model onto the CPU
+            >>> model = Model(observation_space, action_space, device="cpu")
+            >>> model.load("model.pt")
+
+            # load the model onto the GPU 1
+            >>> model = Model(observation_space, action_space, device="cuda:1")
+            >>> model.load("model.pt")
         """
         tensors = torch.load(path)
         for name, tensor in tensors.items():

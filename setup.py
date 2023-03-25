@@ -10,9 +10,12 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 # dependencies
 INSTALL_REQUIRES = [
     "gym",
-    "torch",
+    "gymnasium",
+    "torch>=1.8",
     "tensorboard",
+    "wandb",
     "tqdm",
+    "packaging"
 ]
 
 # installation
@@ -23,8 +26,8 @@ setuptools.setup(
     description="Modular and flexible library for Reinforcement Learning",
     long_description=open(os.path.join(root_dir, "README.md")).read(),
     long_description_content_type="text/markdown",
-    keywords=["reinforcement learning", "machine learning", "rl", ""],
-    python_requires=">=3.6.*",
+    keywords=["reinforcement", "machine", "learning", "rl"],
+    python_requires=">=3.6",
     install_requires=INSTALL_REQUIRES,
     url="https://github.com/Toni-SM/skrl",
     packages=setuptools.find_packages(exclude=['tests']),
@@ -40,4 +43,10 @@ setuptools.setup(
     ],
     license="MIT",
     zip_safe=False,
+    project_urls={
+        "Documentation": "https://skrl.readthedocs.io",
+        "Repository": "https://github.com/Toni-SM/skrl",
+        "Bug Tracker": "https://github.com/Toni-SM/skrl/issues",
+        "Discussions": "https://github.com/Toni-SM/skrl/discussions",
+    }
 )

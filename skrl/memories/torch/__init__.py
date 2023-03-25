@@ -1,4 +1,3 @@
-from .base import Memory
+from skrl.memories.torch.base import Memory
 
-from .random import RandomMemory
-from .prioritized import PrioritizedMemory
+from skrl.memories.torch.random import RandomMemory

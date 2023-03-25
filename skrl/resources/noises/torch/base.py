@@ -1,16 +1,29 @@
-from typing import Union, Tuple
+from typing import Optional, Union, Tuple
 
 import torch
 
 
 class Noise():
-    def __init__(self, device: Union[str, torch.device] = "cuda:0") -> None:
+    def __init__(self, device: Optional[Union[str, torch.device]] = None) -> None:
         """Base class representing a noise
 
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
+        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
+
+        Custom noises should override the ``sample`` method::
+
+            import torch
+            from skrl.resources.noises.torch import Noise
+
+            class CustomNoise(Noise):
+                def __init__(self, device=None):
+                    super().__init__(device)
+
+                def sample(self, size):
+                    return torch.rand(size, device=self.device)
         """
-        self.device = torch.device(device)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
 
     def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:
         """Sample a noise with the same size (shape) as the input tensor
@@ -19,9 +32,17 @@ class Noise():
 
         :param tensor: Input tensor used to determine output tensor size (shape)
         :type tensor: torch.Tensor
-        
+
         :return: Sampled noise
         :rtype: torch.Tensor
+
+        Example::
+
+            >>> x = torch.rand(3, 2, device="cuda:0")
+            >>> noise.sample_like(x)
+            tensor([[-0.0423, -0.1325],
+                    [-0.0639, -0.0957],
+                    [-0.1367,  0.1031]], device='cuda:0')
         """
         return self.sample(tensor.size())
 
@@ -30,7 +51,7 @@ class Noise():
 
         :param size: Shape of the sampled tensor
         :type size: tuple or list of integers, or torch.Size
-        
+
         :raises NotImplementedError: The method is not implemented by the inheriting classes
 
         :return: Sampled noise

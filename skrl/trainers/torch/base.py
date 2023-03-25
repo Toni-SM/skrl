@@ -1,41 +1,44 @@
-from typing import Union, List
+from typing import Union, List, Optional
 
 import tqdm
+import atexit
 
 import torch
 
-from ...envs.torch import Wrapper
-from ...agents.torch import Agent
+from skrl.envs.torch import Wrapper
+from skrl.agents.torch import Agent
+
+from skrl import logger
 
 
-def generate_equally_spaced_scopes(num_envs: int, num_agents: int) -> List[int]:
+def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
     """Generate a list of equally spaced scopes for the agents
 
     :param num_envs: Number of environments
     :type num_envs: int
-    :param num_agents: Number of agents
-    :type num_agents: int
+    :param num_simultaneous_agents: Number of simultaneous agents
+    :type num_simultaneous_agents: int
 
-    :raises ValueError: If the number of agents is greater than the number of environments
+    :raises ValueError: If the number of simultaneous agents is greater than the number of environments
 
     :return: List of equally spaced scopes
     :rtype: List[int]
     """
-    scopes = [int(num_envs / num_agents)] * num_agents
+    scopes = [int(num_envs / num_simultaneous_agents)] * num_simultaneous_agents
     if sum(scopes):
         scopes[-1] += num_envs - sum(scopes)
     else:
-        raise ValueError("The number of agents ({}) is greater than the number of environments ({})" \
-            .format(num_agents, num_envs))
+        raise ValueError("The number of simultaneous agents ({}) is greater than the number of environments ({})" \
+            .format(num_simultaneous_agents, num_envs))
     return scopes
 
 
-class Trainer():
+class Trainer:
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """Base class for trainers
 
         :param env: Environment to train on
@@ -47,20 +50,30 @@ class Trainer():
         :param cfg: Configuration dictionary (default: {})
         :type cfg: dict, optional
         """
-        self.cfg = cfg
+        self.cfg = cfg if cfg is not None else {}
         self.env = env
         self.agents = agents
-        self.agents_scope = agents_scope
+        self.agents_scope = agents_scope if agents_scope is not None else []
 
         # get configuration
-        self.timesteps = self.cfg.get('timesteps', 0)
+        self.timesteps = self.cfg.get("timesteps", 0)
         self.headless = self.cfg.get("headless", False)
+        self.disable_progressbar = self.cfg.get("disable_progressbar", False)
+        self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
 
         self.initial_timestep = 0
 
         # setup agents
-        self.num_agents = 0
+        self.num_simultaneous_agents = 0
         self._setup_agents()
+
+        # register environment closing if configured
+        if self.close_environment_at_exit:
+            @atexit.register
+            def close_env():
+                logger.info("Closing environment")
+                self.env.close()
+                logger.info("Environment closed")
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer
@@ -70,9 +83,9 @@ class Trainer():
         """
         string = "Trainer: {}".format(repr(self))
         string += "\n  |-- Number of parallelizable environments: {}".format(self.env.num_envs)
-        string += "\n  |-- Number of agents: {}".format(self.num_agents)
+        string += "\n  |-- Number of simultaneous agents: {}".format(self.num_simultaneous_agents)
         string += "\n  |-- Agents and scopes:"
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent, scope in zip(self.agents, self.agents_scope):
                 string += "\n  |     |-- agent: {}".format(type(agent))
                 string += "\n  |     |     |-- scope: {} environments ({}:{})".format(scope[1] - scope[0], scope[0], scope[1])
@@ -90,12 +103,12 @@ class Trainer():
         if type(self.agents) in [tuple, list]:
             # single agent
             if len(self.agents) == 1:
-                self.num_agents = 1
+                self.num_simultaneous_agents = 1
                 self.agents = self.agents[0]
                 self.agents_scope = [1]
             # parallel agents
             elif len(self.agents) > 1:
-                self.num_agents = len(self.agents)
+                self.num_simultaneous_agents = len(self.agents)
                 # check scopes
                 if not len(self.agents_scope):
                     print("[WARNING] The agents' scopes are empty, they will be generated as equal as possible")
@@ -119,7 +132,7 @@ class Trainer():
             else:
                 raise ValueError("A list of agents is expected")
         else:
-            self.num_agents = 1
+            self.num_simultaneous_agents = 1
 
     def train(self) -> None:
         """Train the agents
@@ -135,16 +148,8 @@ class Trainer():
         """
         raise NotImplementedError
 
-    def start(self) -> None:
-        """Start training
-
-        This method is deprecated in favour of the '.train()' method
-        """
-        # TODO: remove this method in future versions
-        print("[WARNING] Trainer.start() method is deprecated in favour of the '.train()' method")
-
     def single_agent_train(self) -> None:
-        """Train a single agent
+        """Train agent
 
         This method executes the following steps in loop:
 
@@ -156,22 +161,23 @@ class Trainer():
         - Post-interaction
         - Reset environments
         """
-        assert self.num_agents == 1, "This method is only valid for a single agent"
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # compute actions
             with torch.no_grad():
-                actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
             # render scene
             if not self.headless:
@@ -183,7 +189,124 @@ class Trainer():
                                               actions=actions,
                                               rewards=rewards,
                                               next_states=next_states,
-                                              dones=dones,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
+
+            # post-interaction
+            self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            if self.env.num_envs > 1:
+                states = next_states
+            else:
+                if terminated.any() or truncated.any():
+                    with torch.no_grad():
+                        states, infos = self.env.reset()
+                else:
+                    states = next_states
+
+    def single_agent_eval(self) -> None:
+        """Evaluate agent
+
+        This method executes the following steps in loop:
+
+        - Compute actions (sequentially)
+        - Interact with the environments
+        - Render scene
+        - Reset environments
+        """
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
+
+        # reset env
+        states, infos = self.env.reset()
+
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+
+            # compute actions
+            with torch.no_grad():
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            with torch.no_grad():
+                # write data to TensorBoard
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            if self.env.num_envs > 1:
+                states = next_states
+            else:
+                if terminated.any() or truncated.any():
+                    with torch.no_grad():
+                        states, infos = self.env.reset()
+                else:
+                    states = next_states
+
+    def multi_agent_train(self) -> None:
+        """Train multi-agents
+
+        This method executes the following steps in loop:
+
+        - Pre-interaction
+        - Compute actions
+        - Interact with the environments
+        - Render scene
+        - Record transitions
+        - Post-interaction
+        - Reset environments
+        """
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents > 1, "This method is not allowed for single-agent"
+
+        # reset env
+        states, infos = self.env.reset()
+        shared_states = infos.get("shared_states", None)
+
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # compute actions
+            with torch.no_grad():
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            shared_next_states = infos.get("shared_states", None)
+            infos["shared_states"] = shared_states
+            infos["shared_next_states"] = shared_next_states
+
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            # record the environments' transitions
+            with torch.no_grad():
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
@@ -193,16 +316,15 @@ class Trainer():
 
             # reset environments
             with torch.no_grad():
-                if dones.any():
-                    states = self.env.reset()
+                if not self.env.agents:
+                    states, infos = self.env.reset()
+                    shared_states = infos.get("shared_states", None)
                 else:
-                    states.copy_(next_states)
+                    states = next_states
+                    shared_states = shared_next_states
 
-        # close the environment
-        self.env.close()
-
-    def single_agent_eval(self) -> None:
-        """Evaluate the agents sequentially
+    def multi_agent_eval(self) -> None:
+        """Evaluate multi-agents
 
         This method executes the following steps in loop:
 
@@ -211,19 +333,24 @@ class Trainer():
         - Render scene
         - Reset environments
         """
-        assert self.num_agents == 1, "This method is only valid for a single agent"
+        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
+        assert self.env.num_agents > 1, "This method is not allowed for single-agent"
 
         # reset env
-        states = self.env.reset()
+        states, infos = self.env.reset()
+        shared_states = infos.get("shared_states", None)
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps)):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
 
             # compute actions
             with torch.no_grad():
-                actions, _, _ = self.agents.act(states, inference=True, timestep=timestep, timesteps=self.timesteps)
+                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
             # step the environments
-            next_states, rewards, dones, infos = self.env.step(actions)
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            shared_next_states = infos.get("shared_states", None)
+            infos["shared_states"] = shared_states
+            infos["shared_next_states"] = shared_next_states
 
             # render scene
             if not self.headless:
@@ -231,21 +358,21 @@ class Trainer():
 
             with torch.no_grad():
                 # write data to TensorBoard
-                super(type(self.agents), self.agents).record_transition(states=states,
-                                                                        actions=actions,
-                                                                        rewards=rewards,
-                                                                        next_states=next_states,
-                                                                        dones=dones,
-                                                                        infos=infos,
-                                                                        timestep=timestep,
-                                                                        timesteps=self.timesteps)
+                self.agents.record_transition(states=states,
+                                              actions=actions,
+                                              rewards=rewards,
+                                              next_states=next_states,
+                                              terminated=terminated,
+                                              truncated=truncated,
+                                              infos=infos,
+                                              timestep=timestep,
+                                              timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
                 # reset environments
-                if dones.any():
-                    states = self.env.reset()
+                if not self.env.agents:
+                    states, infos = self.env.reset()
+                    shared_states = infos.get("shared_states", None)
                 else:
-                    states.copy_(next_states)
-
-        # close the environment
-        self.env.close()
+                    states = next_states
+                    shared_states = shared_next_states

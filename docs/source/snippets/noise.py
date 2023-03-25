@@ -18,7 +18,7 @@ class CustomNoise(Noise):
 
         :param size: Shape of the sampled tensor
         :type size: tuple or list of integers, or torch.Size
-        
+
         :return: Sampled noise
         :rtype: torch.Tensor
         """

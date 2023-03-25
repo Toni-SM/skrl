@@ -2,15 +2,98 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.8.0] - Unreleased
+## [0.11.0] - Unreleased
 ### Added
-- AMP agent for physics-based character animation
-- Gaussian model
-- Manual trainer
+- RPO agent
 
 ### Changed
-- Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianModel`
+- Move the agent implementation with recurrent models to a separate file
+- Allow closing the environment at the end of execution instead of after training/evaluation
+- Documentation theme from *sphinx_rtd_theme* to *furo*
+
+## [0.10.2] - 2023-03-23
+### Changed
+- Update loader and utils for OmniIsaacGymEnvs 2022.2.1.0
+- Update Omniverse Isaac Gym real-world examples
+
+## [0.10.1] - 2023-01-26
+### Fixed
+- Tensorboard writer instantiation when `write_interval` is zero
+
+## [0.10.0] - 2023-01-22
+### Added
+- Isaac Orbit environment loader
+- Wrap an Isaac Orbit environment
+- Gaussian-Deterministic shared model instantiator
+
+## [0.9.1] - 2023-01-17
+### Added
+- Utility for downloading models from Hugging Face Hub
+
+### Fixed
+- Initialization of agent components if they have not been defined
+- Manual trainer `train`/`eval` method default arguments
+
+## [0.9.0] - 2023-01-13
+### Added
+- Support for Farama Gymnasium interface
+- Wrapper for robosuite environments
+- Weights & Biases integration (by @juhannc)
+- Set the running mode (training or evaluation) of the agents
+- Allow clipping the gradient norm for DDPG, TD3 and SAC agents
+- Initialize model biases
+- Add RNN (RNN, LSTM, GRU and any other variant) support for A2C, DDPG, PPO, SAC, TD3 and TRPO agents
+- Allow disabling training/evaluation progressbar
+- Farama Shimmy and robosuite examples
+- KUKA LBR iiwa real-world example
+
+### Changed
+- Forward model inputs as a Python dictionary [**breaking change**]
+- Returns a Python dictionary with extra output values in model calls [**breaking change**]
+- Adopt the implementation of `terminated` and `truncated` over `done` for all environments
+
+### Fixed
+- Omniverse Isaac Gym simulation speed for the Franka Emika real-world example
+- Call agents' method `record_transition` instead of parent method
+to allow storing samples in memories during evaluation
+- Move TRPO policy optimization out of the value optimization loop
+- Access to the categorical model distribution
+- Call reset only once for Gym/Gymnasium vectorized environments
+
+### Removed
+- Deprecated method `start` in trainers
+
+## [0.8.0] - 2022-10-03
+### Added
+- AMP agent for physics-based character animation
+- Manual trainer
+- Gaussian model mixin
+- Support for creating shared models
+- Parameter `role` to model methods
+- Wrapper compatibility with the new OpenAI Gym environment API (by @juhannc)
+- Internal library colored logger
+- Migrate checkpoints/models from other RL libraries to skrl models/agents
+- Configuration parameter `store_separately` to agent configuration dict
+- Save/load agent modules (models, optimizers, preprocessors)
+- Set random seed and configure deterministic behavior for reproducibility
+- Benchmark results for Isaac Gym and Omniverse Isaac Gym on the GitHub discussion page
+- Franka Emika real-world example
+
+### Changed
+- Models implementation as Python mixin [**breaking change**]
+- Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
+- Show training/evaluation display progress using `tqdm` (by @juhannc)
+- Update Isaac Gym and Omniverse Isaac Gym examples
+
+### Fixed
+- Missing recursive arguments during model weights initialization
+- Tensor dimension when computing preprocessor parallel variance
+- Models' clip tensors dtype to `float32`
+
+### Removed
+- Parameter `inference` from model methods
+- Configuration parameter `checkpoint_policy_only` from agent configuration dict
 
 ## [0.7.0] - 2022-07-11
 ### Added
@@ -78,7 +161,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - More examples and contents in the documentation
 
 ### Fixed
-- Clip actions using the whole space's limits 
+- Clip actions using the whole space's limits
 
 ## [0.2.0] - 2022-01-18
 ### Added

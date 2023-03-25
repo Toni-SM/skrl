@@ -1,5 +1,5 @@
 # [start-base]
-from typing import Union, List
+from typing import Union, List, Optional
 
 import copy
 
@@ -10,17 +10,19 @@ from skrl.trainers.torch import Trainer       # from . import Trainer
 
 
 CUSTOM_DEFAULT_CONFIG = {
-    "timesteps": 100000,        # number of timesteps to train for
-    "headless": False,          # whether to use headless mode (no rendering)
+    "timesteps": 100000,            # number of timesteps to train for
+    "headless": False,              # whether to use headless mode (no rendering)
+    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
+    "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, 
-                 env: Wrapper, 
-                 agents: Union[Agent, List[Agent], List[List[Agent]]], 
-                 agents_scope : List[int] = [],
-                 cfg: dict = {}) -> None:
+    def __init__(self,
+                 env: Wrapper,
+                 agents: Union[Agent, List[Agent], List[List[Agent]]],
+                 agents_scope: Optional[List[int]] = None,
+                 cfg: Optional[dict] = None) -> None:
         """
         :param env: Environment to train on
         :type env: skrl.env.torch.Wrapper
@@ -32,7 +34,8 @@ class CustomTrainer(Trainer):
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(CUSTOM_DEFAULT_CONFIG)
-        _cfg.update(cfg)
+        _cfg.update(cfg if cfg is not None else {})
+        agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # ================================

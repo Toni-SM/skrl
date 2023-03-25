@@ -1,4 +1,4 @@
-# Omniverse Isaac Sim tutorial: Creating New RL Environment 
+# Omniverse Isaac Sim tutorial: Creating New RL Environment
 # https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html
 
 # Instance of VecEnvBase and create the task
@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 
 # Import the skrl components to build the RL system
-from skrl.models.torch import GaussianModel, DeterministicModel
+from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
 from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.resources.schedulers.torch import KLAdaptiveRL
@@ -22,14 +22,14 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
 
 
-# Define the models (stochastic and deterministic models) for the agent using helper classes.
+# Define the models (stochastic and deterministic models) for the agent using mixins.
 # - Policy: takes as input the environment's observation/state and returns an action
 # - Value: takes the state as input and provides a value to guide the policy
-class Policy(GaussianModel):
+class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2):
-        super().__init__(observation_space, action_space, device, clip_actions,
-                         clip_log_std, min_log_std, max_log_std)
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
                                  nn.Tanh(),
@@ -38,12 +38,13 @@ class Policy(GaussianModel):
                                  nn.Linear(64, self.num_actions))
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-    def compute(self, states, taken_actions):
-        return torch.tanh(self.net(states)), self.log_std_parameter
+    def compute(self, inputs, role):
+        return torch.tanh(self.net(inputs["states"])), self.log_std_parameter, {}
 
-class Value(DeterministicModel):
+class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False):
-        super().__init__(observation_space, action_space, device, clip_actions)
+        Model.__init__(self, observation_space, action_space, device)
+        DeterministicMixin.__init__(self, clip_actions)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
                                  nn.Tanh(),
@@ -51,8 +52,8 @@ class Value(DeterministicModel):
                                  nn.Tanh(),
                                  nn.Linear(64, 1))
 
-    def compute(self, states, taken_actions):
-        return self.net(states)
+    def compute(self, inputs, role):
+        return self.net(inputs["states"]), {}
 
 
 # Load and wrap the environment
@@ -68,12 +69,13 @@ memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=device)
 # Instantiate the agent's models (function approximators).
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html#spaces-and-models
-models_ppo = {"policy": Policy(env.observation_space, env.action_space, device, clip_actions=True),
-              "value": Value(env.observation_space, env.action_space, device)}
+models_ppo = {}
+models_ppo["policy"] = Policy(env.observation_space, env.action_space, device)
+models_ppo["value"] = Value(env.observation_space, env.action_space, device)
 
 # Initialize the models' parameters (weights and biases) using a Gaussian distribution
 for model in models_ppo.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)   
+    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
 # Configure and instantiate the agent.
@@ -99,9 +101,9 @@ cfg_ppo["experiment"]["write_interval"] = 1000
 cfg_ppo["experiment"]["checkpoint_interval"] = 10000
 
 agent = PPO(models=models_ppo,
-            memory=memory, 
-            cfg=cfg_ppo, 
-            observation_space=env.observation_space, 
+            memory=memory,
+            cfg=cfg_ppo,
+            observation_space=env.observation_space,
             action_space=env.action_space,
             device=device)
 

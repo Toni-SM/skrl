@@ -124,7 +124,7 @@ class GymnasiumWrapper(Wrapper):
         """
         observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
 
-        # convert response to jnp
+        # convert response to jax
         observation = self._observation_to_tensor(observation)
         reward = jnp.array(reward, dtype=jnp.float32).reshape(self.num_envs, -1)
         terminated = jnp.array(terminated, dtype=jnp.bool_).reshape(self.num_envs, -1)

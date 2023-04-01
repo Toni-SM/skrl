@@ -15,8 +15,23 @@ Prerequisites
     * `gym <https://www.gymlibrary.dev>`_ / `gymnasium <https://gymnasium.farama.org/>`_
     * `tqdm <https://tqdm.github.io>`_
     * `packaging <https://packaging.pypa.io>`_
-    * `torch <https://pytorch.org>`_ 1.8.0 or higher
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
+
+Machine learning (ML) framework
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+According to the specific ML frameworks, the following libraries are required:
+
+PyTorch
+"""""""
+
+    * `torch <https://pytorch.org>`_ 1.8.0 or higher
+
+Jax
+"""
+
+    * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_
+    * `flax <https://flax.readthedocs.io>`_
 
 .. raw:: html
 
@@ -34,9 +49,31 @@ Python Package Index (PyPI)
 
 To install **skrl** with pip, execute:
 
-    .. code-block:: bash
+.. tabs::
 
-        pip install skrl
+    .. group-tab:: PyTorch
+
+        .. code-block:: bash
+
+            pip install skrl["torch"]
+
+    .. group-tab:: Jax
+
+        .. code-block:: bash
+
+            pip install skrl["jax"]
+
+    .. group-tab:: All ML frameworks
+
+        .. code-block:: bash
+
+            pip install skrl["all"]
+
+    .. group-tab:: No ML framework
+
+        .. code-block:: bash
+
+            pip install skrl
 
 .. raw:: html
 
@@ -54,15 +91,59 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
 * **Install in editable/development mode** (links the package to its original location allowing any modifications to be reflected directly in its Python environment)
 
-    .. code-block:: bash
+    .. tabs::
 
-        pip install -e .
+        .. group-tab:: PyTorch
+
+            .. code-block:: bash
+
+                pip install -e .["torch"]
+
+        .. group-tab:: Jax
+
+            .. code-block:: bash
+
+                pip install -e .["jax"]
+
+        .. group-tab:: All ML frameworks
+
+            .. code-block:: bash
+
+                pip install -e .["all"]
+
+        .. group-tab:: No ML framework
+
+            .. code-block:: bash
+
+                pip install -e .
 
 * **Install in the current Python site-packages directory** (modifications to the code downloaded from GitHub will not be reflected in your Python environment)
 
-    .. code-block:: bash
+    .. tabs::
 
-        pip install .
+        .. group-tab:: PyTorch
+
+            .. code-block:: bash
+
+                pip install .["torch"]
+
+        .. group-tab:: Jax
+
+            .. code-block:: bash
+
+                pip install .["jax"]
+
+        .. group-tab:: All ML frameworks
+
+            .. code-block:: bash
+
+                pip install .["all"]
+
+        .. group-tab:: No ML framework
+
+            .. code-block:: bash
+
+                pip install .
 
 .. raw:: html
 

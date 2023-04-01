@@ -2,21 +2,29 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import itertools
 import setuptools
 
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
-# dependencies
+# default dependencies
 INSTALL_REQUIRES = [
     "gym",
     "gymnasium",
-    "torch>=1.8",
-    "tensorboard",
-    "wandb",
     "tqdm",
-    "packaging"
+    "packaging",
+    "tensorboard",
 ]
+
+# extra dependencies
+EXTRAS_REQUIRE = {
+    "torch": ["torch>=1.8"],
+    "jax": ["jax", "jaxlib", "flax"],
+}
+
+# extra dependencies (all)
+EXTRAS_REQUIRE["all"] = list(itertools.chain.from_iterable(EXTRAS_REQUIRE.values()))
 
 # installation
 setuptools.setup(
@@ -29,6 +37,7 @@ setuptools.setup(
     keywords=["reinforcement", "machine", "learning", "rl"],
     python_requires=">=3.6",
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRE,
     url="https://github.com/Toni-SM/skrl",
     packages=setuptools.find_packages(exclude=['tests']),
     package_data={'': ['version.txt']},

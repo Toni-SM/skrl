@@ -1,5 +1,7 @@
 from typing import Optional, Union, Tuple
 
+import numpy as np
+
 import jax
 import jaxlib
 import jax.numpy as jnp
@@ -30,16 +32,16 @@ class Noise():
         else:
             self.device = device if isinstance(device, jaxlib.xla_extension.Device) else jax.devices(device)[0]
 
-    def sample_like(self, tensor: jnp.ndarray) -> jnp.ndarray:
+    def sample_like(self, tensor: Union[np.ndarray, jnp.ndarray]) -> Union[np.ndarray, jnp.ndarray]:
         """Sample a noise with the same size (shape) as the input tensor
 
         This method will call the sampling method as follows ``.sample(tensor.size())``
 
         :param tensor: Input tensor used to determine output tensor size (shape)
-        :type tensor: jnp.ndarray
+        :type tensor: np.ndarray or jnp.ndarray
 
         :return: Sampled noise
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jnp.ndarray
 
         Example::
 
@@ -51,7 +53,7 @@ class Noise():
         """
         return self.sample(tensor.size())
 
-    def sample(self, size: Tuple[int]) -> jnp.ndarray:
+    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
         """Noise sampling method to be implemented by the inheriting classes
 
         :param size: Shape of the sampled tensor
@@ -60,6 +62,6 @@ class Noise():
         :raises NotImplementedError: The method is not implemented by the inheriting classes
 
         :return: Sampled noise
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jnp.ndarray
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")

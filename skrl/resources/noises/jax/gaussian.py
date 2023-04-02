@@ -1,9 +1,12 @@
 from typing import Optional, Union, Tuple
 
+import numpy as np
+
 import jax
 import jaxlib
 import jax.numpy as jnp
 
+from skrl import jax_backend
 from skrl.resources.noises.jax import Noise
 
 
@@ -25,29 +28,40 @@ class GaussianNoise(Noise):
         """
         super().__init__(device)
 
-        class Normal:
-            def __init__(self, loc, scale):
-                self._loc = loc
-                self._scale = scale
+        # normal distribution
+        if jax_backend == "jax":
+            class _Normal:
+                def __init__(self, loc, scale):
+                    self._loc = loc
+                    self._scale = scale
 
-                self._i = 0
-                self._key = jax.random.PRNGKey(0)
+                    self._i = 0
+                    self._key = jax.random.PRNGKey(0)
 
-            def sample(self, size):
-                self._i += 1
-                subkey = jax.random.fold_in(self._key, self._i)
-                return jax.random.normal(subkey, size, dtype=jnp.float32) * self._scale + self._loc
+                def sample(self, size):
+                    self._i += 1
+                    subkey = jax.random.fold_in(self._key, self._i)
+                    return jax.random.normal(subkey, size) * self._scale + self._loc
 
-        self.distribution = Normal(loc=mean, scale=std)
+        elif jax_backend == "numpy":
+            class _Normal:
+                def __init__(self, loc, scale):
+                    self._loc = loc
+                    self._scale = scale
 
-    def sample(self, size: Tuple[int]) -> jnp.ndarray:
+                def sample(self, size):
+                    return np.random.normal(self._loc, self._scale, size)
+
+        self.distribution = _Normal(loc=mean, scale=std)
+
+    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
         """Sample a Gaussian noise
 
         :param size: Shape of the sampled tensor
         :type size: tuple or list of integers
 
         :return: Sampled noise
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jnp.ndarray
 
         Example::
 

@@ -6,7 +6,7 @@ import jax
 import jaxlib
 import jax.numpy as jnp
 
-from skrl import jax_backend
+from skrl import config
 from skrl.resources.noises.jax import Noise
 
 
@@ -29,7 +29,7 @@ class GaussianNoise(Noise):
         super().__init__(device)
 
         # normal distribution
-        if jax_backend == "jax":
+        if config.jax.backend == "jax":
             class _Normal:
                 def __init__(self, loc, scale):
                     self._loc = loc
@@ -43,7 +43,10 @@ class GaussianNoise(Noise):
                     subkey = jax.random.fold_in(self._key, self._i)
                     return jax.random.normal(subkey, size) * self._scale + self._loc
 
-        elif jax_backend == "numpy":
+            # just-in-time compilation with XLA
+            self.sample = jax.jit(self.sample, static_argnames=("size"))
+
+        elif config.jax.backend == "numpy":
             class _Normal:
                 def __init__(self, loc, scale):
                     self._loc = loc

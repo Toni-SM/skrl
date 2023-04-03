@@ -1,7 +1,7 @@
 import os
 import logging
 
-__all__ = ["__version__", "logger"]
+__all__ = ["__version__", "logger", "config"]
 
 
 # read library version from file
@@ -29,3 +29,34 @@ _handler.setFormatter(_Formatter())
 logger = logging.getLogger("skrl")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(_handler)
+
+
+# machine learning framework configuration
+class _Config(object):
+    def __init__(self) -> None:
+        """Machine learning framework specific configuration
+        """
+        class JAX(object):
+            def __init__(self, backend: str) -> None:
+                """JAX configuration
+                """
+                self._backend = backend
+
+            @property
+            def backend(self) -> str:
+                """Backend used by the different components to operate and generate arrays
+
+                This configuration excludes models and optimizers.
+                Supported backend are: ``"numpy"`` and ``"jax"``
+                """
+                return self._backend
+
+            @backend.setter
+            def backend(self, value: str) -> None:
+                if value not in ["numpy", "jax"]:
+                    raise ValueError("Invalid jax backend. Supported values are: numpy, jax")
+                self._backend = value
+
+        self.jax = JAX("numpy")
+
+config = _Config()

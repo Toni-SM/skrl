@@ -8,6 +8,7 @@ import jax.numpy as jnp
 
 from skrl import config
 from skrl.resources.noises.jax import Noise
+from skrl.resources.distributions.jax import Normal
 
 
 class GaussianNoise(Noise):
@@ -27,35 +28,9 @@ class GaussianNoise(Noise):
             >>> noise = GaussianNoise(mean=0, std=1)
         """
         super().__init__(device)
+        self._jax = config.jax.backend == "jax"
 
-        # normal distribution
-        if config.jax.backend == "jax":
-            class _Normal:
-                def __init__(self, loc, scale):
-                    self._loc = loc
-                    self._scale = scale
-
-                    self._i = 0
-                    self._key = jax.random.PRNGKey(0)
-
-                def sample(self, size):
-                    self._i += 1
-                    subkey = jax.random.fold_in(self._key, self._i)
-                    return jax.random.normal(subkey, size) * self._scale + self._loc
-
-            # just-in-time compilation with XLA
-            self.sample = jax.jit(self.sample, static_argnames=("size"))
-
-        elif config.jax.backend == "numpy":
-            class _Normal:
-                def __init__(self, loc, scale):
-                    self._loc = loc
-                    self._scale = scale
-
-                def sample(self, size):
-                    return np.random.normal(self._loc, self._scale, size)
-
-        self.distribution = _Normal(loc=mean, scale=std)
+        self.distribution = Normal(loc=mean, scale=std)
 
     def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
         """Sample a Gaussian noise

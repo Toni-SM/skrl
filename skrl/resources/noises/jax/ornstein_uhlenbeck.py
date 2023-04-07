@@ -8,6 +8,13 @@ import jax.numpy as jnp
 
 from skrl import config
 from skrl.resources.noises.jax import Noise
+from skrl.resources.distributions.jax import Normal
+
+
+# https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
+@jax.jit
+def _sample(theta, sigma, state, samples):
+    return state * theta + sigma * samples
 
 
 class OrnsteinUhlenbeckNoise(Noise):
@@ -39,41 +46,14 @@ class OrnsteinUhlenbeckNoise(Noise):
             >>> noise = OrnsteinUhlenbeckNoise(theta=0.1, sigma=0.2, base_scale=0.5)
         """
         super().__init__(device)
+        self._jax = config.jax.backend == "jax"
 
         self.state = 0
         self.theta = theta
         self.sigma = sigma
         self.base_scale = base_scale
 
-        # normal distribution
-        if config.jax.backend == "jax":
-            class _Normal:
-                def __init__(self, loc, scale):
-                    self._loc = loc
-                    self._scale = scale
-
-                    self._i = 0
-                    self._key = jax.random.PRNGKey(0)
-
-                def sample(self, size):
-                    self._i += 1
-                    subkey = jax.random.fold_in(self._key, self._i)
-                    return jax.random.normal(subkey, size) * self._scale + self._loc
-
-            # just-in-time compilation with XLA
-            self.sample = jax.jit(self.sample, static_argnames=("size"))
-
-        elif config.jax.backend == "numpy":
-            class _Normal:
-                def __init__(self, loc, scale):
-                    self._loc = loc
-                    self._scale = scale
-
-                def sample(self, size):
-                    return np.random.normal(self._loc, self._scale, size)
-
-        self.distribution = _Normal(loc=mean, scale=std)
-
+        self.distribution = Normal(loc=mean, scale=std)
 
     def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
         """Sample an Ornstein-Uhlenbeck noise
@@ -99,6 +79,8 @@ class OrnsteinUhlenbeckNoise(Noise):
         """
         if hasattr(self.state, "shape") and self.state.shape != size:
             self.state = 0
-        self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
-
+        if self._jax:
+            self.state = _sample(self.theta, self.sigma, self.state, self.distribution.sample(size))
+        else:
+            self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
         return self.base_scale * self.state

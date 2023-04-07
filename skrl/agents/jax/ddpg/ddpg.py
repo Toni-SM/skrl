@@ -3,6 +3,7 @@ from typing import Union, Tuple, Dict, Any, Optional, Callable
 import gym, gymnasium
 import copy
 import contextlib
+from functools import partial
 
 import jax
 import jaxlib
@@ -10,7 +11,6 @@ import jax.numpy as jnp
 import optax
 import flax
 import flax.linen as nn
-from flax.training.train_state import TrainState
 
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -66,6 +66,8 @@ class Optimizer(flax.struct.PyTreeNode):
 
     This class is the result of isolating the Optax optimizer,
     which is mixed with the model parameters, from flax's TrainState class
+
+    https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state
     """
     transformation: optax.GradientTransformation = flax.struct.field(pytree_node=False)
     state: optax.OptState = flax.struct.field(pytree_node=True)
@@ -73,6 +75,13 @@ class Optimizer(flax.struct.PyTreeNode):
     @classmethod
     def create(cls, *, transformation, state, **kwargs):
         return cls(transformation=transformation, state=state, **kwargs)
+
+    @jax.jit
+    def step(self, grad, model: Model):
+        params, optimizer_state = self.transformation.update(grad, self.state, model.state_dict.params)
+        params = optax.apply_updates(model.state_dict.params, params)
+        model.state_dict = model.state_dict.replace(params=params)
+        return self.replace(state=optimizer_state)
 
 
 class DDPG(Agent):
@@ -385,10 +394,7 @@ class DDPG(Agent):
             (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(self.critic.state_dict.params)
 
             # optimization step (critic)
-            params, optimizer_state = self.critic_optimizer.transformation.update(grad, self.critic_optimizer.state, self.critic.state_dict.params)
-            params = optax.apply_updates(self.critic.state_dict.params, params)
-            self.critic.state_dict = self.critic.state_dict.replace(params=params)
-            self.critic_optimizer = self.critic_optimizer.replace(state=optimizer_state)
+            self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
             # self.critic_optimizer.zero_grad()
             # critic_loss.backward()
@@ -408,10 +414,7 @@ class DDPG(Agent):
             policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(self.policy.state_dict.params, self.critic.state_dict.params)
 
             # optimization step (policy)
-            params, optimizer_state = self.policy_optimizer.transformation.update(grad, self.policy_optimizer.state, self.policy.state_dict.params)
-            params = optax.apply_updates(self.policy.state_dict.params, params)
-            self.policy.state_dict = self.policy.state_dict.replace(params=params)
-            self.policy_optimizer = self.policy_optimizer.replace(state=optimizer_state)
+            self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
 
             # self.policy_optimizer.zero_grad()
             # policy_loss.backward()

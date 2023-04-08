@@ -1,5 +1,8 @@
+from typing import Union
+
 import os
 import logging
+import numpy as np
 
 __all__ = ["__version__", "logger", "config"]
 
@@ -37,10 +40,11 @@ class _Config(object):
         """Machine learning framework specific configuration
         """
         class JAX(object):
-            def __init__(self, backend: str) -> None:
+            def __init__(self) -> None:
                 """JAX configuration
                 """
-                self._backend = backend
+                self._backend = "numpy"
+                self._key = np.array([0, 0], dtype=np.uint32)
 
             @property
             def backend(self) -> str:
@@ -57,6 +61,28 @@ class _Config(object):
                     raise ValueError("Invalid jax backend. Supported values are: numpy, jax")
                 self._backend = value
 
-        self.jax = JAX("numpy")
+            @property
+            def key(self) -> "jnp.ndarray":
+                """Pseudo-random number generator (PRNG) key
+                """
+                if isinstance(self._key, np.ndarray):
+                    try:
+                        import jax
+                        self._key = jax.random.PRNGKey(self._key[1])
+                    except ImportError:
+                        pass
+                return self._key
+
+            @key.setter
+            def key(self, value: Union[int, "jnp.ndarray"]) -> None:
+                if type(value) is int:
+                    try:
+                        import jax
+                        value = jax.random.PRNGKey(value)
+                    except ImportError:
+                        value = np.array([0, value], dtype=np.uint32)
+                self._key = value
+
+        self.jax = JAX()
 
 config = _Config()

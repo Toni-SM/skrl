@@ -27,7 +27,7 @@ PyTorch
 
     * `torch <https://pytorch.org>`_ 1.8.0 or higher
 
-Jax
+JAX
 """
 
     * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_
@@ -57,7 +57,11 @@ To install **skrl** with pip, execute:
 
             pip install skrl["torch"]
 
-    .. group-tab:: Jax
+    .. group-tab:: JAX
+
+        .. warning::
+
+            JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
         .. code-block:: bash
 
@@ -99,7 +103,11 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install -e .["torch"]
 
-        .. group-tab:: Jax
+        .. group-tab:: JAX
+
+            .. warning::
+
+                JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
             .. code-block:: bash
 
@@ -127,7 +135,11 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install .["torch"]
 
-        .. group-tab:: Jax
+        .. group-tab:: JAX
+
+            .. warning::
+
+                JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
             .. code-block:: bash
 

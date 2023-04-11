@@ -3,11 +3,11 @@ from typing import Optional
 import os
 import sys
 import time
-import torch
 import random
 import numpy as np
 
 from skrl import logger
+from skrl import config
 
 
 def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
@@ -21,7 +21,8 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
 
     - random
     - numpy
-    - torch
+    - torch (if available)
+    - jax (skrl's PRNG key: ``config.jax.key``)
 
     Example::
 
@@ -65,21 +66,35 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
             seed = int(time.time() * 1000)
         seed %= 2 ** 31  # NumPy's legacy seeding seed must be between 0 and 2**32 - 1
 
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
+    seed = int(seed)
     logger.info("Seed: {}".format(seed))
 
-    if deterministic:
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
+    # numpy
+    random.seed(seed)
+    np.random.seed(seed)
 
-        # On CUDA 10.1, set environment variable CUDA_LAUNCH_BLOCKING=1
-        # On CUDA 10.2 or later, set environment variable CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:2
+    # torch
+    try:
+        import torch
 
-        logger.warning("PyTorch/cuDNN deterministic algorithms are enabled. This may affect performance")
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        if deterministic:
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
+
+            # On CUDA 10.1, set environment variable CUDA_LAUNCH_BLOCKING=1
+            # On CUDA 10.2 or later, set environment variable CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:2
+
+            logger.warning("PyTorch/cuDNN deterministic algorithms are enabled. This may affect performance")
+    except ImportError:
+        pass
+    except Exception as e:
+        logger.warning(f"PyTorch seeding error: {e}")
+
+    # jax
+    config.jax.key = seed
 
     return seed

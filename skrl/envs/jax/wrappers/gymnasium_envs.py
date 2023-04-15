@@ -1,4 +1,4 @@
-from typing import Tuple, Any, Optional
+from typing import Tuple, Any, Optional, Union
 
 import gymnasium
 import numpy as np
@@ -8,6 +8,9 @@ import jaxlib
 import jax.numpy as jnp
 
 from skrl.envs.jax.wrappers.base import Wrapper
+from skrl import config
+
+Array = Union[np.ndarray, jnp.ndarray]
 
 
 class GymnasiumWrapper(Wrapper):
@@ -18,6 +21,8 @@ class GymnasiumWrapper(Wrapper):
         :type env: Any supported Gymnasium environment
         """
         super().__init__(env)
+
+        self._jax = config.jax.backend == "jax"
 
         self._vectorized = False
         try:
@@ -55,7 +60,7 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _observation_to_tensor(self, observation: Any, space: Optional[gymnasium.Space] = None) -> jnp.ndarray:
+    def _observation_to_tensor(self, observation: Any, space: Optional[gymnasium.Space] = None) -> Array:
         """Convert the Gymnasium observation to a flat tensor
 
         :param observation: The Gymnasium observation to convert to a tensor
@@ -64,33 +69,33 @@ class GymnasiumWrapper(Wrapper):
         :raises: ValueError if the observation space type is not supported
 
         :return: The observation as a flat tensor
-        :rtype: jnp.ndarray
+        :rtype: array
         """
         observation_space = self._env.observation_space if self._vectorized else self.observation_space
         space = space if space is not None else observation_space
 
         if self._vectorized and isinstance(space, gymnasium.spaces.MultiDiscrete):
-            return jnp.array(observation, dtype=jnp.int64).reshape(self.num_envs, -1)
+            return observation.reshape(self.num_envs, -1).astype(np.int32)
         elif isinstance(observation, int):
-            return jnp.array(observation, dtype=jnp.int64).reshape(self.num_envs, -1)
+            return np.array(observation, dtype=np.int32).reshape(self.num_envs, -1)
         elif isinstance(observation, np.ndarray):
-            return jnp.array(observation, dtype=jnp.float32).reshape(self.num_envs, -1)
+            return observation.reshape(self.num_envs, -1).astype(np.float32)
         elif isinstance(space, gymnasium.spaces.Discrete):
-            return jnp.array(observation, dtype=jnp.float32).reshape(self.num_envs, -1)
+            return np.array(observation, dtype=np.float32).reshape(self.num_envs, -1)
         elif isinstance(space, gymnasium.spaces.Box):
-            return jnp.array(observation, dtype=jnp.float32).reshape(self.num_envs, -1)
+            return observation.reshape(self.num_envs, -1).astype(np.float32)
         elif isinstance(space, gymnasium.spaces.Dict):
-            tmp = jnp.concatenate([self._observation_to_tensor(observation[k], space[k]) \
+            tmp = np.concatenate([self._observation_to_tensor(observation[k], space[k]) \
                 for k in sorted(space.keys())], axis=-1).reshape(self.num_envs, -1)
             return tmp
         else:
             raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
 
-    def _tensor_to_action(self, actions: jnp.ndarray) -> Any:
+    def _tensor_to_action(self, actions: Array) -> Any:
         """Convert the action to the Gymnasium expected format
 
         :param actions: The actions to perform
-        :type actions: jnp.ndarray
+        :type actions: array
 
         :raise ValueError: If the action space type is not supported
 
@@ -113,22 +118,29 @@ class GymnasiumWrapper(Wrapper):
             return actions.astype(space.dtype).reshape(space.shape)
         raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
 
-    def step(self, actions: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, Any]:
+    def step(self, actions: Array) -> Tuple[Array, Array, Array, Array, Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: jnp.ndarray
+        :type actions: array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of jnp.ndarray and any other info
+        :rtype: tuple of arrays and any other info
         """
+        if self._jax:
+            actions = jax.device_get(actions)
         observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
 
-        # convert response to jax
+        # convert response to numpy or jax
         observation = self._observation_to_tensor(observation)
-        reward = jnp.array(reward, dtype=jnp.float32).reshape(self.num_envs, -1)
-        terminated = jnp.array(terminated, dtype=jnp.bool_).reshape(self.num_envs, -1)
-        truncated = jnp.array(truncated, dtype=jnp.bool_).reshape(self.num_envs, -1)
+        reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
+        terminated = np.array(terminated, dtype=np.bool_).reshape(self.num_envs, -1)
+        truncated = np.array(truncated, dtype=np.bool_).reshape(self.num_envs, -1)
+        # if self._jax:  # HACK: jax.device_put(...).block_until_ready()
+        #     observation = jax.device_put(observation)
+        #     reward = jax.device_put(reward)
+        #     terminated = jax.device_put(terminated)
+        #     truncated = jax.device_put(truncated)
 
         # save observation and info for vectorized envs
         if self._vectorized:
@@ -137,11 +149,11 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[jnp.ndarray, Any]:
+    def reset(self) -> Tuple[Array, Any]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: jnp.ndarray and any other info
+        :rtype: array and any other info
         """
         # handle vectorized envs
         if self._vectorized:
@@ -151,7 +163,13 @@ class GymnasiumWrapper(Wrapper):
 
         # reset the env/envs
         observation, info = self._env.reset()
-        return self._observation_to_tensor(observation), info
+
+        # convert response to numpy or jax
+        observation = self._observation_to_tensor(observation)
+        # if self._jax:  # HACK: jax.device_put(...).block_until_ready()
+        #     observation = jax.device_put(observation)
+
+        return observation, info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

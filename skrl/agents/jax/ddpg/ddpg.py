@@ -3,19 +3,20 @@ from typing import Union, Tuple, Dict, Any, Optional, Callable
 import gym, gymnasium
 import copy
 import contextlib
-from functools import partial
+import functools
 
 import jax
 import jaxlib
 import jax.numpy as jnp
 import optax
-import flax
-import flax.linen as nn
+import numpy as np
 
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
+from skrl.resources.optimizers.jax import Adam
 
 from skrl.agents.jax import Agent
+from skrl import config
 
 
 DDPG_DEFAULT_CONFIG = {
@@ -61,28 +62,37 @@ DDPG_DEFAULT_CONFIG = {
 }
 
 
-class Optimizer(flax.struct.PyTreeNode):
-    """Optimizer
+# https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
+@jax.jit
+def _apply_exploration_noise(actions: jnp.ndarray,
+                             noises: jnp.ndarray,
+                             clip_actions_min: jnp.ndarray,
+                             clip_actions_max: jnp.ndarray,
+                             scale: float) -> jnp.ndarray:
+    noises = noises.at[:].multiply(scale)
+    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
 
-    This class is the result of isolating the Optax optimizer,
-    which is mixed with the model parameters, from flax's TrainState class
+@functools.partial(jax.jit, static_argnames=('apply'))
+def _update_critic(apply,
+                   state_dict,
+                   target_q_values: jnp.ndarray,
+                   sampled_states: Union[np.ndarray, jnp.ndarray],
+                   sampled_actions: Union[np.ndarray, jnp.ndarray],
+                   sampled_rewards: Union[np.ndarray, jnp.ndarray],
+                   sampled_dones: Union[np.ndarray, jnp.ndarray],
+                   discount_factor: float):
+    # compute target values
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
 
-    https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state
-    """
-    transformation: optax.GradientTransformation = flax.struct.field(pytree_node=False)
-    state: optax.OptState = flax.struct.field(pytree_node=True)
+    # compute critic loss
+    def _critic_loss(params):
+        # critic_values, _, _ = critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
+        critic_values, _, _ = apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
+        return optax.l2_loss(critic_values, target_values).mean(), critic_values
 
-    @classmethod
-    def create(cls, *, transformation, state, **kwargs):
-        return cls(transformation=transformation, state=state, **kwargs)
+    (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(state_dict.params)
 
-    @jax.jit
-    def step(self, grad, model: Model):
-        params, optimizer_state = self.transformation.update(grad, self.state, model.state_dict.params)
-        params = optax.apply_updates(model.state_dict.params, params)
-        model.state_dict = model.state_dict.replace(params=params)
-        return self.replace(state=optimizer_state)
-
+    return grad, critic_loss, critic_values, target_values
 
 class DDPG(Agent):
     def __init__(self,
@@ -124,6 +134,8 @@ class DDPG(Agent):
                          device=device,
                          cfg=_cfg)
 
+        self._jax = config.jax.backend == "jax"
+
         # models
         self.policy = self.models.get("policy", None)
         self.target_policy = self.models.get("target_policy", None)
@@ -163,32 +175,14 @@ class DDPG(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
-            transformation = optax.adam(learning_rate=self._actor_learning_rate)
-            self.policy_optimizer = Optimizer.create(transformation=transformation,
-                                                     state=transformation.init(self.policy.state_dict.params))
-
-            transformation = optax.adam(learning_rate=self._critic_learning_rate)
-            self.critic_optimizer = Optimizer.create(transformation=transformation,
-                                                     state=transformation.init(self.critic.state_dict.params))
+            self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate)
+            self.critic_optimizer = Adam(model=self.critic, lr=self._critic_learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
-
-            # self.policy.state_dict = TrainState.create(self.policy.apply,
-            #                                            params=self.policy.init(jax.random.PRNGKey(0), ),
-            #                                            tx=self.policy_optimizer)
-            # self.critic.state_dict = TrainState.create(self.critic.apply,
-            #                                            params=self.critic.init(jax.random.PRNGKey(0), ),
-            #                                            tx=self.critic_optimizer)
-            # self.target_policy.state_dict = TrainState.create(self.target_policy.apply,
-            #                                                   params=self.target_policy.init(jax.random.PRNGKey(0)),
-            #                                                   tx=self.policy_optimizer)
-            # self.target_critic.state_dict = TrainState.create(self.target_critic.apply,
-            #                                                   params=self.target_critic.init(jax.random.PRNGKey(0)),
-            #                                                   tx=self.critic_optimizer)
 
         # set up target networks
         if self.target_policy is not None and self.target_critic is not None:
@@ -225,8 +219,12 @@ class DDPG(Agent):
 
         # clip noise bounds
         if self.action_space is not None:
-            self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-            self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+            if self._jax:
+                self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
+                self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+            else:
+                self.clip_actions_min = np.array(self.action_space.low, dtype=np.float32)
+                self.clip_actions_max = np.array(self.action_space.high, dtype=np.float32)
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -255,6 +253,8 @@ class DDPG(Agent):
 
         # sample deterministic actions
         actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        if not self._jax:
+            actions = jax.device_get(actions)  # numpy backend
 
         # add exloration noise
         if self._exploration_noise is not None:
@@ -271,10 +271,13 @@ class DDPG(Agent):
                 scale = (1 - timestep / self._exploration_timesteps) \
                       * (self._exploration_initial_scale - self._exploration_final_scale) \
                       + self._exploration_final_scale
-                noises *= scale
 
                 # modify actions
-                actions = jnp.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
+                if self._jax:
+                    actions, noises = _apply_exploration_noise(actions, noises, self.clip_actions_min, self.clip_actions_max, scale)
+                else:
+                    noises *= scale
+                    actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", noises.max().item())
@@ -379,28 +382,37 @@ class DDPG(Agent):
             sampled_next_states = self._state_preprocessor(sampled_next_states)
 
             # compute target values
-            with contextlib.nullcontext():
-                next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
+            next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
 
-                target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
-                target_values = sampled_rewards + self._discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+            target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
+            # target_values = sampled_rewards + self._discount_factor * jnp.logical_not(sampled_dones) * target_q_values
 
-            # compute critic loss
-            def _critic_loss(params):
-                # critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
-                critic_values, _, _ = self.critic.apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
-                return optax.l2_loss(critic_values, target_values).mean(), critic_values
+            grad, critic_loss, critic_values, target_values = _update_critic(self.critic.apply,
+                                                                             self.critic.state_dict,
+                                                                             target_q_values,
+                                                                             sampled_states,
+                                                                             sampled_actions,
+                                                                             sampled_rewards,
+                                                                             sampled_dones,
+                                                                             self._discount_factor)
 
-            (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(self.critic.state_dict.params)
 
-            # optimization step (critic)
+            # # compute critic loss
+            # def _critic_loss(params):
+            #     # critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
+            #     critic_values, _, _ = self.critic.apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
+            #     return optax.l2_loss(critic_values, target_values).mean(), critic_values
+
+            # (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(self.critic.state_dict.params)
+
+            # # optimization step (critic)
             self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
-            # self.critic_optimizer.zero_grad()
-            # critic_loss.backward()
-            # if self._grad_norm_clip > 0:
-            #     nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
-            # self.critic_optimizer.step()
+            # # self.critic_optimizer.zero_grad()
+            # # critic_loss.backward()
+            # # if self._grad_norm_clip > 0:
+            # #     nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
+            # # self.critic_optimizer.step()
 
             # compute policy (actor) loss
             def _policy_loss(params, params1):

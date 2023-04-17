@@ -1,8 +1,19 @@
+import functools
+
+import jax
 import flax
 import optax
 import jax.numpy as jnp
 
 from skrl.models.jax import Model
+
+
+# https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
+@functools.partial(jax.jit, static_argnames=("transformation"))
+def _step(transformation, grad, state, state_dict):
+    params, optimizer_state = transformation.update(grad, state, state_dict.params)
+    params = optax.apply_updates(state_dict.params, params)
+    return optimizer_state, state_dict.replace(params=params)
 
 
 class Adam:
@@ -43,9 +54,7 @@ class Adam:
                 :return: Optimizer
                 :rtype: flax.struct.PyTreeNode
                 """
-                params, optimizer_state = self.transformation.update(grad, self.state, model.state_dict.params)
-                params = optax.apply_updates(model.state_dict.params, params)
-                model.state_dict = model.state_dict.replace(params=params)
+                optimizer_state, model.state_dict = _step(self.transformation, grad, self.state, model.state_dict)
                 return self.replace(state=optimizer_state)
 
         transformation = optax.adam(learning_rate=lr)

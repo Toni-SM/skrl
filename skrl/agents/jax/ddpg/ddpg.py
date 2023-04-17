@@ -8,7 +8,6 @@ import functools
 import jax
 import jaxlib
 import jax.numpy as jnp
-import optax
 import numpy as np
 
 from skrl.memories.jax import Memory
@@ -72,9 +71,9 @@ def _apply_exploration_noise(actions: jnp.ndarray,
     noises = noises.at[:].multiply(scale)
     return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
 
-@functools.partial(jax.jit, static_argnames=('apply'))
-def _update_critic(apply,
-                   state_dict,
+@functools.partial(jax.jit, static_argnames=("critic_apply"))
+def _update_critic(critic_apply,
+                   critic_state_dict,
                    target_q_values: jnp.ndarray,
                    sampled_states: Union[np.ndarray, jnp.ndarray],
                    sampled_actions: Union[np.ndarray, jnp.ndarray],
@@ -87,12 +86,32 @@ def _update_critic(apply,
     # compute critic loss
     def _critic_loss(params):
         # critic_values, _, _ = critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
-        critic_values, _, _ = apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
-        return optax.l2_loss(critic_values, target_values).mean(), critic_values
+        critic_values, _, _ = critic_apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
+        critic_loss = ((critic_values - target_values) ** 2).mean()
+        return critic_loss, critic_values
 
-    (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(state_dict.params)
+    (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(critic_state_dict.params)
 
     return grad, critic_loss, critic_values, target_values
+
+@functools.partial(jax.jit, static_argnames=("policy_apply", "critic_apply"))
+def _update_policy(policy_apply,
+                   critic_apply,
+                   policy_state_dict,
+                   critic_state_dict,
+                   sampled_states):
+    # compute policy (actor) loss
+    def _policy_loss(params, params1):
+        # actions, _, _ = policy.act({"states": sampled_states}, role="policy")
+        # critic_values, _, _ = critic.act({"states": sampled_states, "taken_actions": actions}, role="critic")
+        actions, _, _ = policy_apply(params, {"states": sampled_states}, "policy")
+        critic_values, _, _ = critic_apply(params1, {"states": sampled_states, "taken_actions": actions}, "critic")
+
+        return -critic_values.mean()
+
+    policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params, critic_state_dict.params)
+
+    return grad, policy_loss
 
 class DDPG(Agent):
     def __init__(self,
@@ -385,8 +404,8 @@ class DDPG(Agent):
             next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
 
             target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
-            # target_values = sampled_rewards + self._discount_factor * jnp.logical_not(sampled_dones) * target_q_values
 
+            # compute critic loss
             grad, critic_loss, critic_values, target_values = _update_critic(self.critic.apply,
                                                                              self.critic.state_dict,
                                                                              target_q_values,
@@ -396,43 +415,18 @@ class DDPG(Agent):
                                                                              sampled_dones,
                                                                              self._discount_factor)
 
-
-            # # compute critic loss
-            # def _critic_loss(params):
-            #     # critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
-            #     critic_values, _, _ = self.critic.apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
-            #     return optax.l2_loss(critic_values, target_values).mean(), critic_values
-
-            # (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(self.critic.state_dict.params)
-
-            # # optimization step (critic)
+            # optimization step (critic)
             self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
-            # # self.critic_optimizer.zero_grad()
-            # # critic_loss.backward()
-            # # if self._grad_norm_clip > 0:
-            # #     nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
-            # # self.critic_optimizer.step()
-
             # compute policy (actor) loss
-            def _policy_loss(params, params1):
-                # actions, _, _ = self.policy.act({"states": sampled_states}, role="policy")
-                # critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": actions}, role="critic")
-                actions, _, _ = self.policy.apply(params, {"states": sampled_states}, "policy")
-                critic_values, _, _ = self.critic.apply(params1, {"states": sampled_states, "taken_actions": actions}, "critic")
-
-                return -critic_values.mean()
-
-            policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(self.policy.state_dict.params, self.critic.state_dict.params)
+            grad, policy_loss = _update_policy(self.policy.apply,
+                                               self.critic.apply,
+                                               self.policy.state_dict,
+                                               self.critic.state_dict,
+                                               sampled_states)
 
             # optimization step (policy)
             self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
-
-            # self.policy_optimizer.zero_grad()
-            # policy_loss.backward()
-            # if self._grad_norm_clip > 0:
-            #     nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-            # self.policy_optimizer.step()
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)

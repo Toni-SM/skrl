@@ -11,6 +11,7 @@ import jax.numpy as jnp
 import flax
 
 from skrl import logger
+from skrl import config
 
 
 class StateDict(flax.struct.PyTreeNode):
@@ -172,6 +173,34 @@ class Model(flax.linen.Module):
         if size is None:
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
+
+    def init_parameters(self, method_name: str = "normal", *args, **kwargs) -> None:
+        """Initialize the model parameters according to the specified method name
+
+        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ module.
+        Allowed method names are *uniform*, *normal*, *constant*, etc.
+
+        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ method name (default: ``"normal"``)
+        :type method_name: str, optional
+        :param args: Positional arguments of the method to be called
+        :type args: tuple, optional
+        :param kwargs: Key-value arguments of the method to be called
+        :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all parameters with an orthogonal distribution with a scale of 0.5
+            >>> model.init_parameters("orthogonal", scale=0.5)
+
+            # initialize all parameters as a normal distribution with a standard deviation of 0.1
+            >>> model.init_parameters("normal", stddev=0.1)
+        """
+        if method_name in ["ones", "zeros"]:
+            method = eval(f"flax.linen.initializers.{method_name}")
+        else:
+            method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
+        params = jax.tree_map(lambda param: method(config.jax.key, param.shape), self.state_dict.params)
+        self.state_dict = self.state_dict.replace(params=params)
 
     def get_specification(self) -> Mapping[str, Any]:
         """Returns the specification of the model

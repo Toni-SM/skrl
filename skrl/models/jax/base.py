@@ -4,7 +4,6 @@ import gym
 import gymnasium
 import collections
 import numpy as np
-import contextlib
 
 import jax
 import jaxlib
@@ -174,20 +173,29 @@ class Model(flax.linen.Module):
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
-    def set_mode(self, mode: str) -> None:
-        """Set the model mode (training or evaluation)
+    def get_specification(self) -> Mapping[str, Any]:
+        """Returns the specification of the model
 
-        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation
-        :type mode: str
+        The following keys are used by the agents for initialization:
 
-        :raises ValueError: If the mode is not ``"train"`` or ``"eval"``
+        - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells
+
+          - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
+            There must be as many tuples as there are states in the recurrent layer/cell. E.g., LSTM has 2 states (hidden and cell).
+
+        :return: Dictionary containing advanced specification of the model
+        :rtype: dict
+
+        Example::
+
+            # model with a LSTM layer.
+            # - number of layers: 1
+            # - number of environments: 4
+            # - number of features in the RNN state: 64
+            >>> model.get_specification()
+            {'rnn': {'sizes': [(1, 4, 64), (1, 4, 64)]}}
         """
-        if mode == "train":
-            self.training = True
-        elif mode == "eval":
-            self.training = False
-        else:
-            raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
+        return {}
 
     def act(self,
             inputs: Mapping[str, Union[jnp.ndarray, Any]],
@@ -195,8 +203,7 @@ class Model(flax.linen.Module):
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
-        This method is currently implemented by the helper models (**GaussianModel**, etc.).
-        The classes that inherit from the latter must only implement the ``.compute()`` method
+        The classes that inherit from the latter must only implement the ``.__call__()`` method
 
         :param inputs: Model inputs. The most common keys are:
 
@@ -215,11 +222,81 @@ class Model(flax.linen.Module):
         """
         return self.apply(self.state_dict.params, inputs, role)
 
+    def set_mode(self, mode: str) -> None:
+        """Set the model mode (training or evaluation)
+
+        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation
+        :type mode: str
+
+        :raises ValueError: If the mode is not ``"train"`` or ``"eval"``
+        """
+        if mode == "train":
+            self.training = True
+        elif mode == "eval":
+            self.training = False
+        else:
+            raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
+
+    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
+        """Save the model to the specified path
+
+        :param path: Path to save the model to
+        :type path: str
+        :param state_dict: State dictionary to save (default: ``None``).
+                           If None, the model's state_dict will be saved
+        :type state_dict: dict, optional
+
+        Example::
+
+            # save the current model to the specified path
+            >>> model.save("/tmp/model.flax")
+
+            # TODO: save an older version of the model to the specified path
+        """
+        # HACK: Does it make sense to use https://github.com/google/orbax
+        with open(path, "wb") as file:
+            file.write(flax.serialization.to_bytes(self.state_dict.params if state_dict is None else state_dict.params))
+
+    def load(self, path: str) -> None:
+        """Load the model from the specified path
+
+        :param path: Path to load the model from
+        :type path: str
+
+        Example::
+
+            # load the model
+            >>> model = Model(observation_space, action_space)
+            >>> model.load("model.flax")
+        """
+        # HACK: Does it make sense to use https://github.com/google/orbax
+        with open(path, "rb") as file:
+            params = flax.serialization.from_bytes(self.state_dict.params, file.read())
+        self.state_dict = self.state_dict.replace(params=params)
+        self.set_mode("eval")
+
+    def migrate(self,
+                state_dict: Optional[Mapping[str, Any]] = None,
+                path: Optional[str] = None,
+                name_map: Mapping[str, str] = {},
+                auto_mapping: bool = True,
+                verbose: bool = False) -> bool:
+        """Migrate the specified extrernal model's state dict to the current model
+
+        .. warning::
+
+            This method is not implemented yet, just maintains compatibility with other ML frameworks
+
+        :raises NotImplementedError: Not implemented
+        """
+        raise NotImplementedError
+
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters
 
-        - Freeze: disable gradient computation (``parameters.requires_grad = False``)
-        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``)
+        .. note::
+
+            This method does nothing, just maintains compatibility with other ML frameworks
 
         :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
         :type freeze: bool, optional
@@ -254,13 +331,12 @@ class Model(flax.linen.Module):
             # soft update (from source model)
             >>> model.update_parameters(source_model, polyak=0.005)
         """
-        with contextlib.nullcontext():
-            # hard update
-            if polyak == 1:
-                self.state_dict = self.state_dict.replace(params=model.state_dict.params)
-            # soft update
-            else:
-                # params = optax.incremental_update(model.state_dict.params, self.state_dict.params, polyak)
-                params = jax.tree_util.tree_map(lambda params, model_params: polyak * model_params + (1 - polyak) * params,
-                                                self.state_dict.params, model.state_dict.params)
-                self.state_dict = self.state_dict.replace(params=params)
+        # hard update
+        if polyak == 1:
+            self.state_dict = self.state_dict.replace(params=model.state_dict.params)
+        # soft update
+        else:
+            # HACK: Does it make sense to use https://optax.readthedocs.io/en/latest/api.html?#optax.incremental_update
+            params = jax.tree_util.tree_map(lambda params, model_params: polyak * model_params + (1 - polyak) * params,
+                                            self.state_dict.params, model.state_dict.params)
+            self.state_dict = self.state_dict.replace(params=params)

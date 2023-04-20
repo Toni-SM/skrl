@@ -174,6 +174,68 @@ class Model(flax.linen.Module):
             raise ValueError("Space type {} not supported".format(type(space)))
         return int(size)
 
+    def tensor_to_space(self,
+                        tensor: jnp.ndarray,
+                        space: Union[gym.Space, gymnasium.Space],
+                        start: int = 0) -> Union[jnp.ndarray, dict]:
+        """Map a flat tensor to a Gym/Gymnasium space
+
+        The mapping is done in the following way:
+
+        - Tensors belonging to Discrete spaces are returned without modification
+        - Tensors belonging to Box spaces are reshaped to the corresponding space shape
+          keeping the first dimension (number of samples) as they are
+        - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
+
+        :param tensor: Tensor to map from
+        :type tensor: jnp.ndarray
+        :param space: Space to map the tensor to
+        :type space: gym.Space or gymnasium.Space
+        :param start: Index of the first element of the tensor to map (default: ``0``)
+        :type start: int, optional
+
+        :raises ValueError: If the space is not supported
+
+        :return: Mapped tensor or dictionary
+        :rtype: jnp.ndarray or dict
+
+        Example::
+
+            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
+            ...                          'b': gym.spaces.Discrete(4)})
+            >>> tensor = jnp.array([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
+            >>>
+            >>> model.tensor_to_space(tensor, space)
+            {'a': Array([[[-0.3, -0.2, -0.1],
+                          [ 0.1,  0.2,  0.3]]], dtype=float32),
+             'b': Array([[2.]], dtype=float32)}
+        """
+        if issubclass(type(space), gym.Space):
+            if issubclass(type(space), gym.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gym.spaces.Box):
+                return tensor.reshape(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gym.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
+        else:
+            if issubclass(type(space), gymnasium.spaces.Discrete):
+                return tensor
+            elif issubclass(type(space), gymnasium.spaces.Box):
+                return tensor.reshape(tensor.shape[0], *space.shape)
+            elif issubclass(type(space), gymnasium.spaces.Dict):
+                output = {}
+                for k in sorted(space.keys()):
+                    end = start + self._get_space_size(space[k], number_of_elements=False)
+                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
+                    start = end
+                return output
+        raise ValueError("Space type {} not supported".format(type(space)))
+
     def init_parameters(self, method_name: str = "normal", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 

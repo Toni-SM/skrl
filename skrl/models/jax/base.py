@@ -231,6 +231,35 @@ class Model(flax.linen.Module):
                                                   self.state_dict.params)
         self.state_dict = self.state_dict.replace(params=params)
 
+    def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
+        """Initialize the model biases according to the specified method name
+
+        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ module.
+        Allowed method names are *uniform*, *normal*, *constant*, etc.
+
+        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ method name (default: ``"normal"``)
+        :type method_name: str, optional
+        :param args: Positional arguments of the method to be called
+        :type args: tuple, optional
+        :param kwargs: Key-value arguments of the method to be called
+        :type kwargs: dict, optional
+
+        Example::
+
+            # initialize all biases with a constant value (0)
+            >>> model.init_biases(method_name="constant_", val=0)
+
+            # initialize all biases with normal distribution with mean 0 and standard deviation 0.25
+            >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
+        """
+        if method_name in ["ones", "zeros"]:
+            method = eval(f"flax.linen.initializers.{method_name}")
+        else:
+            method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
+        params = jax.tree_util.tree_map_with_path(lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "bias" else param,
+                                                  self.state_dict.params)
+        self.state_dict = self.state_dict.replace(params=params)
+
     def get_specification(self) -> Mapping[str, Any]:
         """Returns the specification of the model
 

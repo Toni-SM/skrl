@@ -71,8 +71,8 @@ def _apply_exploration_noise(actions: jnp.ndarray,
     noises = noises.at[:].multiply(scale)
     return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
 
-@functools.partial(jax.jit, static_argnames=("critic_apply"))
-def _update_critic(critic_apply,
+@functools.partial(jax.jit, static_argnames=("critic_act"))
+def _update_critic(critic_act,
                    critic_state_dict,
                    target_q_values: jnp.ndarray,
                    sampled_states: Union[np.ndarray, jnp.ndarray],
@@ -85,8 +85,7 @@ def _update_critic(critic_apply,
 
     # compute critic loss
     def _critic_loss(params):
-        # critic_values, _, _ = critic.act({"states": sampled_states, "taken_actions": sampled_actions}, role="critic")
-        critic_values, _, _ = critic_apply(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
+        critic_values, _, _ = critic_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, "critic")
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
@@ -94,24 +93,22 @@ def _update_critic(critic_apply,
 
     return grad, critic_loss, critic_values, target_values
 
-@functools.partial(jax.jit, static_argnames=("policy_apply", "critic_apply"))
-def _update_policy(policy_apply,
-                   critic_apply,
+@functools.partial(jax.jit, static_argnames=("policy_act", "critic_act"))
+def _update_policy(policy_act,
+                   critic_act,
                    policy_state_dict,
                    critic_state_dict,
                    sampled_states):
     # compute policy (actor) loss
     def _policy_loss(params, params1):
-        # actions, _, _ = policy.act({"states": sampled_states}, role="policy")
-        # critic_values, _, _ = critic.act({"states": sampled_states, "taken_actions": actions}, role="critic")
-        actions, _, _ = policy_apply(params, {"states": sampled_states}, "policy")
-        critic_values, _, _ = critic_apply(params1, {"states": sampled_states, "taken_actions": actions}, "critic")
-
+        actions, _, _ = policy_act(params, {"states": sampled_states}, "policy")
+        critic_values, _, _ = critic_act(params1, {"states": sampled_states, "taken_actions": actions}, "critic")
         return -critic_values.mean()
 
     policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params, critic_state_dict.params)
 
     return grad, policy_loss
+
 
 class DDPG(Agent):
     def __init__(self,
@@ -271,7 +268,7 @@ class DDPG(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample deterministic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, _, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
         if not self._jax:
             actions = jax.device_get(actions)  # numpy backend
 
@@ -401,12 +398,12 @@ class DDPG(Agent):
             sampled_next_states = self._state_preprocessor(sampled_next_states)
 
             # compute target values
-            next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
+            next_actions, _, _ = self.target_policy.act(None, {"states": sampled_next_states}, role="target_policy")
 
-            target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
+            target_q_values, _, _ = self.target_critic.act(None, {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
 
             # compute critic loss
-            grad, critic_loss, critic_values, target_values = _update_critic(self.critic.apply,
+            grad, critic_loss, critic_values, target_values = _update_critic(self.critic.act,
                                                                              self.critic.state_dict,
                                                                              target_q_values,
                                                                              sampled_states,
@@ -419,8 +416,8 @@ class DDPG(Agent):
             self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
             # compute policy (actor) loss
-            grad, policy_loss = _update_policy(self.policy.apply,
-                                               self.critic.apply,
+            grad, policy_loss = _update_policy(self.policy.act,
+                                               self.critic.act,
                                                self.policy.state_dict,
                                                self.critic.state_dict,
                                                sampled_states)
@@ -441,13 +438,13 @@ class DDPG(Agent):
             self.track_data("Loss / Policy loss", policy_loss.item())
             self.track_data("Loss / Critic loss", critic_loss.item())
 
-            self.track_data("Q-network / Q1 (max)", jnp.max(critic_values).item())
-            self.track_data("Q-network / Q1 (min)", jnp.min(critic_values).item())
-            self.track_data("Q-network / Q1 (mean)", jnp.mean(critic_values).item())
+            self.track_data("Q-network / Q1 (max)", critic_values.max().item())
+            self.track_data("Q-network / Q1 (min)", critic_values.min().item())
+            self.track_data("Q-network / Q1 (mean)", critic_values.mean().item())
 
-            self.track_data("Target / Target (max)", jnp.max(target_values).item())
-            self.track_data("Target / Target (min)", jnp.min(target_values).item())
-            self.track_data("Target / Target (mean)", jnp.mean(target_values).item())
+            self.track_data("Target / Target (max)", target_values.max().item())
+            self.track_data("Target / Target (min)", target_values.min().item())
+            self.track_data("Target / Target (mean)", target_values.mean().item())
 
             if self._learning_rate_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])

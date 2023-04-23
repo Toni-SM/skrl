@@ -67,7 +67,10 @@ class Model(flax.linen.Module):
 
             class CustomModel(Model):
                 def __init__(self, observation_space, action_space, device=None, **kwargs):
-                    super().__init__(observation_space, action_space, device, **kwargs)
+                    Model.__init__(self, observation_space, action_space, device, **kwargs)
+
+                    # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
+                    flax.linen.Module.__post_init__(self)
 
                 @nn.compact
                 def __call__(self, inputs, role):
@@ -91,9 +94,6 @@ class Model(flax.linen.Module):
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.ReservedModuleAttributeError
         self.parent = parent
         self.name = name
-
-        # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
-        super().__post_init__()
 
     def init_state_dict(self, key, inputs, role):
         self.state_dict = StateDict.create(apply_fn=self.apply,
@@ -347,6 +347,7 @@ class Model(flax.linen.Module):
         return {}
 
     def act(self,
+            params: Union[jnp.ndarray, None],
             inputs: Mapping[str, Union[jnp.ndarray, Any]],
             role: str = "") -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
@@ -354,6 +355,9 @@ class Model(flax.linen.Module):
         Agents will call this method to obtain the decision to be taken given the state of the environment.
         The classes that inherit from the latter must only implement the ``.__call__()`` method
 
+        :param params: Parameters used to compute the output.
+                       If ``None``, internal parameters will be used
+        :type params: jnp.array or None
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
@@ -369,7 +373,7 @@ class Model(flax.linen.Module):
                  or None for deterministic models. The third component is a dictionary containing extra output values
         :rtype: tuple of jnp.ndarray, jnp.ndarray or None, and dictionary
         """
-        return self.apply(self.state_dict.params, inputs, role)
+        raise NotImplementedError
 
     def set_mode(self, mode: str) -> None:
         """Set the model mode (training or evaluation)

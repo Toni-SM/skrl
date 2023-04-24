@@ -308,8 +308,8 @@ class TD3(Agent):
 
         # sample deterministic actions
         actions, _, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
-        if not self._jax:
-            actions = jax.device_get(actions)  # numpy backend
+        if not self._jax:  # numpy backend
+            actions = jax.device_get(actions)
 
         # add exloration noise
         if self._exploration_noise is not None:
@@ -511,4 +511,5 @@ class TD3(Agent):
 
             if self._learning_rate_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
-                self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])
+                self.track_data("Learning / Critic 1 learning rate", self.critic_1_scheduler.get_last_lr()[0])
+                self.track_data("Learning / Critic 2 learning rate", self.critic_2_scheduler.get_last_lr()[0])

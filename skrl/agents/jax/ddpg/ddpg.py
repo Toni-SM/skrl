@@ -269,8 +269,8 @@ class DDPG(Agent):
 
         # sample deterministic actions
         actions, _, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
-        if not self._jax:
-            actions = jax.device_get(actions)  # numpy backend
+        if not self._jax:  # numpy backend
+            actions = jax.device_get(actions)
 
         # add exloration noise
         if self._exploration_noise is not None:

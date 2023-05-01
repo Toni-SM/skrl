@@ -5,14 +5,10 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 print("[DOCS] skrl library path: {}".format(sys.path[0]))
 
-try:
-    import isaacgym
-except Exception as e:
-    print("[DOCS] Isaac Gym import failed: {}".format(e))
 import skrl
 
-# -- Project information
 
+# project information
 project = "skrl"
 copyright = "2021, Toni-SM"
 author = "Toni-SM"
@@ -22,8 +18,7 @@ version = skrl.__version__
 
 master_doc = "index"
 
-# -- General configuration
-
+# general configuration
 extensions = [
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
@@ -42,6 +37,9 @@ intersphinx_mapping = {
     "gymnasium": ("https://gymnasium.farama.org/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
+    "jax": ("https://jax.readthedocs.io/en/latest/", None),
+    "flax": ("https://flax.readthedocs.io/en/latest/", None),
+    "optax": ("https://optax.readthedocs.io/en/latest/", None),
 }
 
 pygments_style = "tango"
@@ -55,7 +53,6 @@ rst_prolog = """
 """
 
 # HTML output
-
 html_theme = "furo"
 html_title = f"<div style='text-align: center;'><strong>{project}</strong> ({version})</div>"
 
@@ -83,16 +80,27 @@ html_theme_options = {
 }
 
 # EPUB output
-
 epub_show_urls = "footnote"
 
-# copybutton ext
+# autodoc ext
+autodoc_mock_imports = [
+    "gym",
+    "gymnasium",
+    "torch",
+    "jax",
+    "jaxlib",
+    "flax",
+    "tensorboard",
+    "tqdm",
+    "packaging",
+    "isaacgym",
+]
 
+# copybutton ext
 copybutton_prompt_text = r">>> |\.\.\. "
 copybutton_prompt_is_regexp = True
 
 # notfound ext
-
 notfound_template = "404.rst"
 notfound_context = {
     "title": "Page Not Found",

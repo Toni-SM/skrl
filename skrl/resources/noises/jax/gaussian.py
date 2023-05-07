@@ -1,14 +1,22 @@
 from typing import Optional, Union, Tuple
 
 import numpy as np
+from functools import partial
 
 import jax
 import jaxlib
 import jax.numpy as jnp
 
-from skrl import config
 from skrl.resources.noises.jax import Noise
-from skrl.resources.distributions.jax import Normal
+
+from skrl import config
+
+
+# https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
+@partial(jax.jit, static_argnames=("shape"))
+def _sample(mean, std, key, iterator, shape):
+    subkey = jax.random.fold_in(key, iterator)
+    return jax.random.normal(subkey, shape) * std + mean
 
 
 class GaussianNoise(Noise):
@@ -28,9 +36,16 @@ class GaussianNoise(Noise):
             >>> noise = GaussianNoise(mean=0, std=1)
         """
         super().__init__(device)
-        self._jax = config.jax.backend == "jax"
 
-        self.distribution = Normal(loc=mean, scale=std)
+        if self._jax:
+            self.mean = jnp.array(mean)
+            self.std = jnp.array(std)
+
+            self._i = 0
+            self._key = config.jax.key
+        else:
+            self.mean = np.array(mean)
+            self.std = np.array(std)
 
     def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
         """Sample a Gaussian noise
@@ -54,4 +69,7 @@ class GaussianNoise(Noise):
                    [ 0.6218886 ,  1.1961104 ],
                    [ 0.23410667, -0.11247082]], dtype=float32)
         """
-        return self.distribution.sample(size)
+        if self._jax:
+            self._i += 1
+            return _sample(self.mean, self.std, self._key, self._i, size)
+        return np.random.normal(self.mean, self.std, size)

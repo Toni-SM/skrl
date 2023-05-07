@@ -6,6 +6,8 @@ import jax
 import jaxlib
 import jax.numpy as jnp
 
+from skrl import config
+
 
 class Noise():
     def __init__(self, device: Optional[Union[str, jaxlib.xla_extension.Device]] = None) -> None:
@@ -27,6 +29,8 @@ class Noise():
                 def sample(self, size):
                     return jax.random.uniform(jax.random.PRNGKey(0), size)
         """
+        self._jax = config.jax.backend == "jax"
+
         if device is None:
             self.device = jax.devices()[0]
         else:

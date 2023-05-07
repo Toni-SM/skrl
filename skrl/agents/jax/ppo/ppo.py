@@ -391,9 +391,9 @@ class PPO(Agent):
 
             # compute values
             values, _, _ = self.value.act(None, {"states": self._state_preprocessor(states)}, role="value")
-            values = self._value_preprocessor(values, inverse=True)
             if not self._jax:  # numpy backend
                 values = jax.device_get(values)
+            values = self._value_preprocessor(values, inverse=True)
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -441,9 +441,9 @@ class PPO(Agent):
         self.value.training = False  # TODO: .train(False)
         last_values, _, _ = self.value.act(None, {"states": self._state_preprocessor(self._current_next_states)}, role="value")  # TODO: .float()
         self.value.training = True
-        last_values = self._value_preprocessor(last_values, inverse=True)
         if not self._jax:  # numpy backend
             last_values = jax.device_get(last_values)
+        last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),

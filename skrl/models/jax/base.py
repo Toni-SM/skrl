@@ -96,6 +96,8 @@ class Model(flax.linen.Module):
         self.name = name
 
     def init_state_dict(self, key, inputs, role):
+        if isinstance(inputs["states"], (int, np.int32, np.int64)):
+            inputs["states"] = np.array(inputs["states"]).reshape(-1,1)
         self.state_dict = StateDict.create(apply_fn=self.apply,
                                            params=self.init(key, inputs, role),)
 

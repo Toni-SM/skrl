@@ -8,7 +8,7 @@ import jaxlib
 import jax.numpy as jnp
 
 from skrl.envs.jax.wrappers.base import Wrapper
-from skrl import config
+
 
 Array = Union[np.ndarray, jnp.ndarray]
 
@@ -21,8 +21,6 @@ class GymnasiumWrapper(Wrapper):
         :type env: Any supported Gymnasium environment
         """
         super().__init__(env)
-
-        self._jax = config.jax.backend == "jax"
 
         self._vectorized = False
         try:

@@ -6,6 +6,8 @@ import jax
 import jaxlib
 import jax.numpy as jnp
 
+from skrl import config
+
 
 class Wrapper(object):
     def __init__(self, env: Any) -> None:
@@ -14,11 +16,13 @@ class Wrapper(object):
         :param env: The environment to wrap
         :type env: Any supported RL environment
         """
+        self._jax = config.jax.backend == "jax"
+
         self._env = env
 
         # device (faster than @property)
         if hasattr(self._env, "device"):
-            raise NotImplementedError  # TODO: get device from environment: jaxlib.xla_extension.Device
+            self.device = jax.devices(self._env.device.split(':')[0] if type(self._env.device) == str else self._env.device.type)[0]
         else:
             self.device = jax.devices()[0]
 

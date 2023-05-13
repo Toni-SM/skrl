@@ -50,6 +50,27 @@ templates_path = ["_templates"]
 rst_prolog = """
 .. include:: <s5defs.txt>
 
+.. |_1| unicode:: 0xA0
+    :trim:
+
+.. |_2| unicode:: 0xA0 0xA0
+    :trim:
+
+.. |_3| unicode:: 0xA0 0xA0 0xA0
+    :trim:
+
+.. |_4| unicode:: 0xA0 0xA0 0xA0 0xA0
+    :trim:
+
+.. |_5| unicode:: 0xA0 0xA0 0xA0 0xA0 0xA0
+    :trim:
+
+.. |jax| image:: /_static/data/logo-jax.svg
+    :width: 28
+
+.. |pytorch| image:: /_static/data/logo-torch.svg
+    :width: 16
+
 """
 
 # HTML output

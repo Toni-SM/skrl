@@ -14,6 +14,22 @@ Trainers are responsible for orchestrating and managing the training/evaluation 
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Trainers
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Sequential trainer <trainers/sequential>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Parallel trainer <trainers/parallel>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Manual trainer <trainers/manual>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+
 Base class
 ----------
 

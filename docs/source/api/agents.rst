@@ -24,6 +24,52 @@ Agents are autonomous entities that interact with the environment to learn and i
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Agents
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Advantage Actor Critic <agents/a2c>` (**A2C**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Adversarial Motion Priors <agents/amp>` (**AMP**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Cross-Entropy Method <agents/cem>` (**CEM**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Deep Deterministic Policy Gradient <agents/ddpg>` (**DDPG**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Double Deep Q-Network <agents/ddqn>` (**DDQN**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Deep Q-Network <agents/dqn>` (**DQN**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Proximal Policy Optimization <agents/ppo>` (**PPO**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Q-learning <agents/q_learning>` (**Q-learning**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Robust Policy Optimization <agents/rpo>` (**RPO**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Soft Actor-Critic <agents/sac>` (**SAC**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`State Action Reward State Action <agents/sarsa>` (**SARSA**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Twin-Delayed DDPG <agents/td3>` (**TD3**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Trust Region Policy Optimization <agents/trpo>` (**TRPO**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+
 Base class
 ----------
 

@@ -12,6 +12,16 @@ Memories are storage components that allow agents to collect and use/reuse curre
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Memories
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Random memory <memories/random>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+
 Base class
 ----------
 

@@ -17,6 +17,31 @@ Models (or agent models) refer to a representation of the agent's policy, value 
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Models
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Tabular model <models/tabular>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Categorical model <models/categorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Multivariate Gaussian model <models/multivariate_gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Deterministic model <models/deterministic>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Shared model <models/shared_model>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+
 Base class
 ----------
 

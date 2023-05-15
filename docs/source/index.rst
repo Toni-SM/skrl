@@ -180,12 +180,13 @@ Resources
 
         * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
 
-Utils
-^^^^^
+Utils and configurations
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Definition of helper functions and classes
+    Definition of utilities and configurations
 
-    * :doc:`Utilities <api/utils>`, e.g. setting the random seed
+    * :doc:`ML frameworks <api/config/frameworks>` configuration
+    * :doc:`Random seed <api/utils/seed>`
     * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`

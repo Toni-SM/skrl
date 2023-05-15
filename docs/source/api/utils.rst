@@ -1,9 +1,10 @@
-Utils
-=====
+Utils and configurations
+========================
 
 .. toctree::
     :hidden:
 
+    ML frameworks configuration <config/frameworks>
     Random seed <utils/seed>
     Memory and Tensorboard file post-processing <utils/postprocessing>
     Model instantiators <utils/model_instantiators>
@@ -11,11 +12,21 @@ Utils
     Isaac Gym utils <utils/isaacgym_utils>
     Omniverse Isaac Gym utils <utils/omniverse_isaacgym_utils>
 
-A set of utilities for handling an RL setup is provided as part of the library.
+A set of utilities and configurations for managing an RL setup is provided as part of the library.
 
 .. raw:: html
 
     <br><hr>
+
+.. list-table::
+    :header-rows: 1
+
+    * - Configurations
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`ML frameworks <config/frameworks>` configuration |_5| |_5| |_5| |_5| |_5| |_2|
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. list-table::
     :header-rows: 1

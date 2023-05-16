@@ -3,6 +3,7 @@ from typing import Union, Mapping, Tuple, Dict, Any, Optional
 import os
 import gym, gymnasium
 import copy
+import pickle
 import datetime
 import collections
 import numpy as np
@@ -10,6 +11,7 @@ import numpy as np
 import jax
 import jaxlib
 import jax.numpy as jnp
+import flax
 
 from skrl import logger
 from skrl.memories.jax import Memory
@@ -131,7 +133,7 @@ class Agent:
         :return: Module/variable state/value
         :rtype: Any
         """
-        return _module.state_dict() if hasattr(_module, "state_dict") else _module
+        return _module.state_dict.params if hasattr(_module, "state_dict") else _module
 
     def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the agent
@@ -398,28 +400,30 @@ class Agent:
         """
         modules = {}
         for name, module in self.checkpoint_modules.items():
-            modules[name] = self._get_internal_value(module)
-        torch.save(modules, path)
+            modules[name] = flax.serialization.to_bytes(self._get_internal_value(module))
+
+        # HACK: Does it make sense to use https://github.com/google/orbax
+        # file.write(flax.serialization.to_bytes(modules))
+        with open(path, "wb") as file:
+            pickle.dump(modules, file, protocol=4)
 
     def load(self, path: str) -> None:
         """Load the model from the specified path
 
-        The final storage device is determined by the constructor of the model
-
         :param path: Path to load the model from
         :type path: str
         """
-        modules = torch.load(path, map_location=self.device)
+        with open(path, "rb") as file:
+            modules = pickle.load(file)
         if type(modules) is dict:
             for name, data in modules.items():
                 module = self.checkpoint_modules.get(name, None)
                 if module is not None:
-                    if hasattr(module, "load_state_dict"):
-                        module.load_state_dict(data)
-                        if hasattr(module, "eval"):
-                            module.eval()
+                    if hasattr(module, "state_dict"):
+                        params = flax.serialization.from_bytes(module.state_dict.params, data)
+                        module.state_dict = module.state_dict.replace(params=params)
                     else:
-                        raise NotImplementedError
+                        pass  # TODO: raise NotImplementedError
                 else:
                     logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
 

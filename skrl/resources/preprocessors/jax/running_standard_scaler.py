@@ -14,6 +14,12 @@ from skrl import config
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
+def _copyto(dst, src):
+    """NumPy function copyto not yet implemented
+    """
+    return dst.at[:].set(src)
+
+@jax.jit
 def _parallel_variance(running_mean: jnp.ndarray,
                        running_variance: jnp.ndarray,
                        current_count: jnp.ndarray,
@@ -99,6 +105,30 @@ class RunningStandardScaler:
             self.running_mean = np.zeros(size, dtype=np.float32)
             self.running_variance = np.ones(size, dtype=np.float32)
             self.current_count = np.ones((), dtype=np.float32)
+
+    @property
+    def state_dict(self) -> jnp.ndarray:
+        class _StateDict:
+            def __init__(self, params):
+                self.params = params
+
+            def replace(self, params):
+                return params
+
+        return _StateDict({"running_mean": self.running_mean,
+                           "running_variance": self.running_variance,
+                           "current_count": self.current_count})
+
+    @state_dict.setter
+    def state_dict(self, value: jnp.ndarray) -> None:
+        if self._jax:
+            self.running_mean = _copyto(self.running_mean, value["running_mean"])
+            self.running_variance = _copyto(self.running_variance, value["running_variance"])
+            self.current_count = _copyto(self.current_count, value["current_count"])
+        else:
+            np.copyto(self.running_mean, value["running_mean"])
+            np.copyto(self.running_variance, value["running_variance"])
+            np.copyto(self.current_count, value["current_count"])
 
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
         """Get the size (number of elements) of a space

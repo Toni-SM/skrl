@@ -188,8 +188,6 @@ class Memory:
 
         :raises KeyError: The tensor does not exist
         """
-        if not self._views:
-            raise NotImplementedError
         if self._jax:
             self.tensors[name] = _copyto(self.tensors[name], tensor)
         else:
@@ -252,7 +250,7 @@ class Memory:
                     self.tensors[name].fill(float("nan"))
         # check views
         if self._jax:
-            raise NotImplementedError
+            self._views = False  # TODO: check if views are available
         else:
             self._views = self._views and self.tensors_view[name].base is self.tensors[name]
         return True

@@ -26,12 +26,13 @@ class KLAdaptiveRL:
 
         Example::
 
-            >>> scheduler = KLAdaptiveRL(optimizer, kl_threshold=0.01)
+            >>> scheduler = KLAdaptiveRL(init_value=1e-3, kl_threshold=0.01)
             >>> for epoch in range(100):
             >>>     train(...)
             >>>     validate(...)
             >>>     kl_divergence = ...
             >>>     scheduler.step(kl_divergence)
+            >>>     scheduler.rl  # get the updated learning rate
 
         :param init_value: Initial learning rate
         :type init_value: float
@@ -54,16 +55,22 @@ class KLAdaptiveRL:
 
         self._lr = init_value
 
+    @property
+    def lr(self) -> float:
+        """Learning rate
+        """
+        return self._lr
+
     def step(self, kl: Optional[Union[jnp.ndarray, float]] = None) -> None:
         """
         Step scheduler
 
         Example::
 
-            >>> kl = torch.distributions.kl_divergence(p, q)
+            >>> kl = [0.0332, 0.0500, 0.0383, 0.0456, 0.0076, 0.0240, 0.0164]
             >>> kl
-            tensor([0.0332, 0.0500, 0.0383,  ..., 0.0076, 0.0240, 0.0164])
-            >>> scheduler.step(kl.mean())
+            [0.0332, 0.05, 0.0383, 0.0456, 0.0076, 0.024, 0.0164]
+            >>> scheduler.step(np.mean(kl))
 
             >>> kl = 0.0046
             >>> scheduler.step(kl)

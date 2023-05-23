@@ -76,6 +76,7 @@ rst_prolog = """
 # HTML output
 html_theme = "furo"
 html_title = f"<div style='text-align: center;'><strong>{project}</strong> ({version})</div>"
+html_scaled_image_link = False
 
 html_static_path = ["_static"]
 html_favicon = "_static/data/favicon.ico"
@@ -111,6 +112,7 @@ autodoc_mock_imports = [
     "jax",
     "jaxlib",
     "flax",
+    "optax",
     "tensorboard",
     "tqdm",
     "packaging",

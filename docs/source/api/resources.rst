@@ -46,7 +46,7 @@ Available resources are :doc:`noises <resources/noises>`, input :doc:`preprocess
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`KL Adaptive <resources/schedulers/kl_adaptive>`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 .. list-table::
     :header-rows: 1

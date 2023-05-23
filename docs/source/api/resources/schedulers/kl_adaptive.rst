@@ -20,8 +20,8 @@ Algorithm implementation
 The learning rate (:math:`\eta`) at each step is modified as follows:
 
 | **IF** :math:`\; KL >` :guilabel:`kl_factor` :guilabel:`kl_threshold` **THEN**
-|     :math:`\eta_{t + 1} = \max(` :guilabel:`lr_factor` :math:`^{-1} \; \eta_t,` :guilabel:`min_lr` :math:`)`
-| **IF** :math:`\; KL <` :guilabel:`kl_factor` :math:`^{-1}` :guilabel:`kl_threshold` **THEN**
+|     :math:`\eta_{t + 1} = \max(\eta_t \,/` :guilabel:`lr_factor` :math:`,` :guilabel:`min_lr` :math:`)`
+| **IF** :math:`\; KL <` :guilabel:`kl_threshold` :math:`/` :guilabel:`kl_factor` **THEN**
 |     :math:`\eta_{t + 1} = \min(` :guilabel:`lr_factor` :math:`\eta_t,` :guilabel:`max_lr` :math:`)`
 
 .. raw:: html
@@ -35,13 +35,25 @@ The learning rate scheduler usage is defined in each agent's configuration dicti
 
 .. tabs::
 
-    .. tab:: Scheduler
+    .. group-tab:: |_4| |pytorch| |_4|
 
         .. code-block:: python
-            :emphasize-lines: 5-6
+            :emphasize-lines: 2, 5-6
 
             # import the scheduler class
             from skrl.resources.schedulers.torch import KLAdaptiveRL
+
+            cfg = DEFAULT_CONFIG.copy()
+            cfg["learning_rate_scheduler"] = KLAdaptiveRL
+            cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. code-block:: python
+            :emphasize-lines: 2, 5-6
+
+            # import the scheduler class
+            from skrl.resources.schedulers.jax import KLAdaptiveRL  # or kl_adaptive (Optax style)
 
             cfg = DEFAULT_CONFIG.copy()
             cfg["learning_rate_scheduler"] = KLAdaptiveRL
@@ -51,10 +63,24 @@ The learning rate scheduler usage is defined in each agent's configuration dicti
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.resources.schedulers.torch.kl_adaptive.KLAdaptiveRL
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveRL
     :show-inheritance:
     :inherited-members:
     :members:

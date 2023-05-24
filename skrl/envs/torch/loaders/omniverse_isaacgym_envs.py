@@ -2,6 +2,8 @@ import os
 import sys
 import queue
 
+from skrl import logger
+
 __all__ = ["load_omniverse_isaacgym_env"]
 
 
@@ -70,6 +72,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     from hydra._internal.hydra import Hydra
     from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
 
+    import omegaconf
     from omegaconf import OmegaConf
 
     from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException  # type: ignore
@@ -192,24 +195,35 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     sys.path.append(omniisaacgymenvs_path)
     from utils.task_util import initialize_task  # type: ignore
 
-    if config.multi_gpu:
-        rank = int(os.getenv("LOCAL_RANK", "0"))
-        config.device_id = rank
-        config.rl_device = f"cuda:{rank}"
+    try:
+        if config.multi_gpu:
+            rank = int(os.getenv("LOCAL_RANK", "0"))
+            config.device_id = rank
+            config.rl_device = f"cuda:{rank}"
+    except omegaconf.errors.ConfigAttributeError:
+        logger.warning("Using an older version of OmniIsaacGymEnvs (2022.2.0 or earlier)")
     enable_viewport = "enable_cameras" in config.task.sim and config.task.sim.enable_cameras
 
     if multi_threaded:
-        env = _OmniIsaacGymVecEnvMT(headless=config.headless,
-                                    sim_device=config.device_id,
-                                    enable_livestream=config.enable_livestream,
-                                    enable_viewport=enable_viewport)
+        try:
+            env = _OmniIsaacGymVecEnvMT(headless=config.headless,
+                                        sim_device=config.device_id,
+                                        enable_livestream=config.enable_livestream,
+                                        enable_viewport=enable_viewport)
+        except (TypeError, omegaconf.errors.ConfigAttributeError):
+            logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
+            env = _OmniIsaacGymVecEnvMT(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier
         task = initialize_task(cfg, env, init_sim=False)
         env.initialize(env.action_queue, env.data_queue, timeout=timeout)
     else:
-        env = _OmniIsaacGymVecEnv(headless=config.headless,
-                                  sim_device=config.device_id,
-                                  enable_livestream=config.enable_livestream,
-                                  enable_viewport=enable_viewport)
+        try:
+            env = _OmniIsaacGymVecEnv(headless=config.headless,
+                                      sim_device=config.device_id,
+                                      enable_livestream=config.enable_livestream,
+                                      enable_viewport=enable_viewport)
+        except (TypeError, omegaconf.errors.ConfigAttributeError):
+            logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
+            env = _OmniIsaacGymVecEnv(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier
         task = initialize_task(cfg, env, init_sim=True)
 
     return env

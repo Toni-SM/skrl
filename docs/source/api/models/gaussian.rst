@@ -13,25 +13,31 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
-  .. code-block:: python
-      :emphasize-lines: 1
-
-      class GaussianModel(GaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0",
-                       clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-              Model.__init__(self, observation_space, action_space, device)
-              GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
-
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
-  .. code-block:: python
-      :emphasize-lines: 4-5
+.. tabs::
 
-      class GaussianModel(GaussianMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0",
-                       clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-              Model.__init__(self, observation_space, action_space, device)
-              GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. code-block:: python
+            :emphasize-lines: 1, 4-5
+
+            class GaussianModel(GaussianMixin, Model):
+                def __init__(self, observation_space, action_space, device="cuda:0",
+                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+                    Model.__init__(self, observation_space, action_space, device)
+                    GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. code-block:: python
+            :emphasize-lines: 1, 4-5
+
+            class GaussianModel(GaussianMixin, Model):
+                def __init__(self, observation_space, action_space, device=None,
+                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+                    Model.__init__(self, observation_space, action_space, device, **kwargs)
+                    GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
 .. raw:: html
 
@@ -85,21 +91,41 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-mlp-sequential]
-                    :end-before: [end-mlp-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-mlp-functional]
-                    :end-before: [end-mlp-functional]
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-mlp-sequential]
+                            :end-before: [end-mlp-sequential]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-mlp-functional]
+                            :end-before: [end-mlp-functional]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. tabs::
+
+                    .. group-tab:: setup-style
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-jax-mlp-setup]
+                            :end-before: [end-jax-mlp-setup]
+
+                    .. group-tab:: compact-style
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-jax-mlp-compact]
+                            :end-before: [end-jax-mlp-compact]
 
     .. tab:: CNN
 
@@ -123,7 +149,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-cnn-sequential]
                     :end-before: [end-cnn-sequential]
 
@@ -131,7 +156,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-cnn-functional]
                     :end-before: [end-cnn-functional]
 
@@ -185,7 +209,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-rnn-sequential]
                     :end-before: [end-rnn-sequential]
 
@@ -193,7 +216,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-rnn-functional]
                     :end-before: [end-rnn-functional]
 
@@ -247,7 +269,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-gru-sequential]
                     :end-before: [end-gru-sequential]
 
@@ -255,7 +276,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-gru-functional]
                     :end-before: [end-gru-functional]
 
@@ -310,7 +330,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-lstm-sequential]
                     :end-before: [end-lstm-sequential]
 
@@ -318,7 +337,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/gaussian_model.py
                     :language: python
-                    :linenos:
                     :start-after: [start-lstm-functional]
                     :end-before: [end-lstm-functional]
 
@@ -326,10 +344,23 @@ Usage
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.models.torch.gaussian.GaussianMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.models.jax.gaussian.GaussianMixin
     :show-inheritance:
     :members:
 

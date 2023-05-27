@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, Mapping
 
 import gym
 import gymnasium
@@ -107,7 +107,9 @@ class RunningStandardScaler:
             self.current_count = np.ones((), dtype=np.float32)
 
     @property
-    def state_dict(self) -> jnp.ndarray:
+    def state_dict(self) -> Mapping[str, jnp.ndarray]:
+        """Dictionary containing references to the whole state of the module
+        """
         class _StateDict:
             def __init__(self, params):
                 self.params = params
@@ -120,7 +122,7 @@ class RunningStandardScaler:
                            "current_count": self.current_count})
 
     @state_dict.setter
-    def state_dict(self, value: jnp.ndarray) -> None:
+    def state_dict(self, value: Mapping[str, jnp.ndarray]) -> None:
         if self._jax:
             self.running_mean = _copyto(self.running_mean, value["running_mean"])
             self.running_variance = _copyto(self.running_variance, value["running_variance"])

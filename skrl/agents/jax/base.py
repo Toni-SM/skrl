@@ -333,28 +333,36 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # compute the cumulative sum of the rewards and timesteps
-        if self._cumulative_rewards is None:
-            self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
-            self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
-
-        self._cumulative_rewards += rewards
-        self._cumulative_timesteps += 1
-
-        # check ended episodes
-        finished_episodes = (terminated + truncated).nonzero()[0]
-        if finished_episodes.size:
-
-            # storage cumulative rewards and timesteps
-            self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-            self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
-
-            # reset the cumulative rewards and timesteps
-            self._cumulative_rewards[finished_episodes] = 0
-            self._cumulative_timesteps[finished_episodes] = 0
-
-        # record data
         if self.write_interval > 0:
+            # compute the cumulative sum of the rewards and timesteps
+            if self._cumulative_rewards is None:
+                if self._jax:
+                    self._cumulative_rewards = jnp.zeros_like(rewards, dtype=jnp.float32)
+                    self._cumulative_timesteps = jnp.zeros_like(rewards, dtype=jnp.int32)
+                else:
+                    self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
+                    self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
+
+            self._cumulative_rewards += rewards
+            self._cumulative_timesteps += 1
+
+            # check ended episodes
+            finished_episodes = (terminated + truncated).nonzero()[0]
+            if finished_episodes.size:
+
+                # storage cumulative rewards and timesteps
+                self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
+                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+
+                # reset the cumulative rewards and timesteps
+                if self._jax:
+                    self._cumulative_rewards = self._cumulative_rewards.at[finished_episodes].set(0)
+                    self._cumulative_timesteps = self._cumulative_timesteps.at[finished_episodes].set(0)
+                else:
+                    self._cumulative_rewards[finished_episodes] = 0
+                    self._cumulative_timesteps[finished_episodes] = 0
+
+            # record data
             self.tracking_data["Reward / Instantaneous reward (max)"].append(np.max(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (min)"].append(np.min(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (mean)"].append(np.mean(rewards).item())

@@ -109,30 +109,27 @@ def compute_gae(rewards: np.ndarray,
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _compute_gae(rewards: jnp.ndarray,
-                dones: jnp.ndarray,
-                values: jnp.ndarray,
-                next_values: jnp.ndarray,
-                discount_factor: float = 0.99,
-                lambda_coefficient: float = 0.95) -> jnp.ndarray:
-    """Compute the Generalized Advantage Estimator (GAE)
+                 dones: jnp.ndarray,
+                 values: jnp.ndarray,
+                 next_values: jnp.ndarray,
+                 discount_factor: float = 0.99,
+                 lambda_coefficient: float = 0.95) -> jnp.ndarray:
+    advantage = 0
+    advantages = jnp.zeros_like(rewards)
+    not_dones = jnp.logical_not(dones)
+    memory_size = rewards.shape[0]
 
-    :param rewards: Rewards obtained by the agent
-    :type rewards: jnp.ndarray
-    :param dones: Signals to indicate that episodes have ended
-    :type dones: jnp.ndarray
-    :param values: Values obtained by the agent
-    :type values: jnp.ndarray
-    :param next_values: Next values obtained by the agent
-    :type next_values: jnp.ndarray
-    :param discount_factor: Discount factor
-    :type discount_factor: float
-    :param lambda_coefficient: Lambda coefficient
-    :type lambda_coefficient: float
+    # advantages computation
+    for i in reversed(range(memory_size)):
+        next_values = values[i + 1] if i < memory_size - 1 else next_values
+        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantages = advantages.at[i].set(advantage)
+    # returns computation
+    returns = advantages + values
+    # normalize advantages
+    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-    :return: Generalized Advantage Estimator
-    :rtype: jnp.ndarray
-    """
-    raise NotImplementedError
+    return returns, advantages
 
 @functools.partial(jax.jit, static_argnames=("policy_act"))
 def _update_policy(policy_act,
@@ -161,6 +158,7 @@ def _update_policy(policy_act,
 
     return grad, policy_loss, kl_divergence
 
+@functools.partial(jax.jit, static_argnames=("value_act", "clip_predicted_values"))
 def _update_value(value_act,
                   value_state_dict,
                   sampled_states,
@@ -446,12 +444,20 @@ class PPO(Agent):
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
-        returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                          dones=self.memory.get_tensor_by_name("terminated"),
-                                          values=values,
-                                          next_values=last_values,
-                                          discount_factor=self._discount_factor,
-                                          lambda_coefficient=self._lambda)
+        if self._jax:
+            returns, advantages = _compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
+                                               dones=self.memory.get_tensor_by_name("terminated"),
+                                               values=values,
+                                               next_values=last_values,
+                                               discount_factor=self._discount_factor,
+                                               lambda_coefficient=self._lambda)
+        else:
+            returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
+                                              dones=self.memory.get_tensor_by_name("terminated"),
+                                              values=values,
+                                              next_values=last_values,
+                                              discount_factor=self._discount_factor,
+                                              lambda_coefficient=self._lambda)
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))

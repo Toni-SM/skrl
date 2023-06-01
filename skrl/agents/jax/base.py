@@ -336,12 +336,14 @@ class Agent:
         if self.write_interval > 0:
             # compute the cumulative sum of the rewards and timesteps
             if self._cumulative_rewards is None:
-                if self._jax:
-                    self._cumulative_rewards = jnp.zeros_like(rewards, dtype=jnp.float32)
-                    self._cumulative_timesteps = jnp.zeros_like(rewards, dtype=jnp.int32)
-                else:
-                    self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
-                    self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
+                self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
+                self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
+
+            # TODO: find a better way to avoid https://jax.readthedocs.io/en/latest/errors.html#jax.errors.ConcretizationTypeError
+            if self._jax:
+                rewards = jax.device_get(rewards)
+                terminated = jax.device_get(terminated)
+                truncated = jax.device_get(truncated)
 
             self._cumulative_rewards += rewards
             self._cumulative_timesteps += 1
@@ -355,12 +357,8 @@ class Agent:
                 self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
 
                 # reset the cumulative rewards and timesteps
-                if self._jax:
-                    self._cumulative_rewards = self._cumulative_rewards.at[finished_episodes].set(0)
-                    self._cumulative_timesteps = self._cumulative_timesteps.at[finished_episodes].set(0)
-                else:
-                    self._cumulative_rewards[finished_episodes] = 0
-                    self._cumulative_timesteps[finished_episodes] = 0
+                self._cumulative_rewards[finished_episodes] = 0
+                self._cumulative_timesteps[finished_episodes] = 0
 
             # record data
             self.tracking_data["Reward / Instantaneous reward (max)"].append(np.max(rewards).item())

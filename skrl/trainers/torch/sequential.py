@@ -124,7 +124,7 @@ class SequentialTrainer(Trainer):
                 if terminated.any() or truncated.any():
                     states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
+                    states = next_states
 
     def eval(self) -> None:
         """Evaluate the agents sequentially
@@ -188,4 +188,4 @@ class SequentialTrainer(Trainer):
                 if terminated.any() or truncated.any():
                     states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
+                    states = next_states

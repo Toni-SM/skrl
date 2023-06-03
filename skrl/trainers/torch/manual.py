@@ -160,7 +160,7 @@ class ManualTrainer(Trainer):
             if terminated.any() or truncated.any():
                 self.states, infos = self.env.reset()
             else:
-                self.states.copy_(next_states)
+                self.states = next_states
 
     def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
         """Evaluate the agents sequentially
@@ -248,4 +248,4 @@ class ManualTrainer(Trainer):
             if terminated.any() or truncated.any():
                 self.states, infos = self.env.reset()
             else:
-                self.states.copy_(next_states)
+                self.states = next_states

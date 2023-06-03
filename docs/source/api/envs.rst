@@ -28,13 +28,13 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`Isaac Gym environments <envs/isaac_gym>`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Isaac Orbit environments <envs/isaac_orbit>`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Omniverse Isaac Gym environments <envs/omniverse_isaac_gym>`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 .. list-table::
     :header-rows: 1
@@ -54,15 +54,15 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
     * - Gymnasium
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
-    * - Isaac Gym
+    * - Isaac Gym (previews)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - Isaac Orbit
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - Omniverse Isaac Gym |_5| |_5| |_5| |_5| |_2|
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - PettingZoo
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`

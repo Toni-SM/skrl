@@ -50,16 +50,16 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: :math:`\square`
     * - Gym
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - Gymnasium
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - Isaac Gym (previews)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - Isaac Orbit
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - Omniverse Isaac Gym |_5| |_5| |_5| |_5| |_2|
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

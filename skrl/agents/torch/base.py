@@ -283,28 +283,28 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # compute the cumulative sum of the rewards and timesteps
-        if self._cumulative_rewards is None:
-            self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
-            self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
-
-        self._cumulative_rewards.add_(rewards)
-        self._cumulative_timesteps.add_(1)
-
-        # check ended episodes
-        finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
-        if finished_episodes.numel():
-
-            # storage cumulative rewards and timesteps
-            self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-            self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
-
-            # reset the cumulative rewards and timesteps
-            self._cumulative_rewards[finished_episodes] = 0
-            self._cumulative_timesteps[finished_episodes] = 0
-
-        # record data
         if self.write_interval > 0:
+            # compute the cumulative sum of the rewards and timesteps
+            if self._cumulative_rewards is None:
+                self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
+                self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
+
+            self._cumulative_rewards.add_(rewards)
+            self._cumulative_timesteps.add_(1)
+
+            # check ended episodes
+            finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
+            if finished_episodes.numel():
+
+                # storage cumulative rewards and timesteps
+                self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
+                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+
+                # reset the cumulative rewards and timesteps
+                self._cumulative_rewards[finished_episodes] = 0
+                self._cumulative_timesteps[finished_episodes] = 0
+
+            # record data
             self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (min)"].append(torch.min(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (mean)"].append(torch.mean(rewards).item())

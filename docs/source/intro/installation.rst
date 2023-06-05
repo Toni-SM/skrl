@@ -161,8 +161,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
     <br><hr>
 
-Troubleshooting
----------------
+Discussions and issues
+----------------------
 
 To ask questions or discuss about the library visit skrl's GitHub discussions
 
@@ -176,8 +176,8 @@ Bug detection and/or correction, feature requests and everything else are more t
 
     <br><hr>
 
-Known issues
-------------
+Known issues and troubleshooting
+--------------------------------
 
 1. When using the parallel trainer with PyTorch 1.12
 
@@ -186,6 +186,19 @@ Known issues
     .. code-block:: text
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
+
+2. When using OmniIsaacGymEnvs in Isaac Sim 2022.2.1 (Python 3.7) and earlier
+
+    .. code-block:: text
+
+        TypeError: Failed to hash Flax Module. The module probably contains unhashable attributes
+
+    Overload the ``__hash__`` method for each defined model to avoid this issue:
+
+    .. code-block:: python
+
+        def __hash__(self):
+            return id(self)
 
 .. raw:: html
 

@@ -141,7 +141,7 @@ def _update_policy(policy_act,
                    ratio_clip):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, _ = policy_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
+        _, next_log_prob, outputs = policy_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
         # compute aproximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -152,11 +152,11 @@ def _update_policy(policy_act,
         surrogate = sampled_advantages * ratio
         surrogate_clipped = sampled_advantages * jnp.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
 
-        return -jnp.minimum(surrogate, surrogate_clipped).mean(), kl_divergence
+        return -jnp.minimum(surrogate, surrogate_clipped).mean(), (kl_divergence, outputs["stddev"])
 
-    (policy_loss, kl_divergence), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
+    (policy_loss, (kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
 
-    return grad, policy_loss, kl_divergence
+    return grad, policy_loss, kl_divergence, stddev
 
 @functools.partial(jax.jit, static_argnames=("value_act", "clip_predicted_values"))
 def _update_value(value_act,
@@ -436,7 +436,7 @@ class PPO(Agent):
         :type timesteps: int
         """
         # compute returns and advantages
-        self.value.training = False  # TODO: .train(False)
+        self.value.training = False
         last_values, _, _ = self.value.act(None, {"states": self._state_preprocessor(self._current_next_states)}, role="value")  # TODO: .float()
         self.value.training = True
         if not self._jax:  # numpy backend
@@ -480,13 +480,13 @@ class PPO(Agent):
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 # compute policy loss
-                grad, policy_loss, kl_divergence = _update_policy(self.policy.act,
-                                                                  self.policy.state_dict,
-                                                                  sampled_states,
-                                                                  sampled_actions,
-                                                                  sampled_log_prob,
-                                                                  sampled_advantages,
-                                                                  self._ratio_clip)
+                grad, policy_loss, kl_divergence, stddev = _update_policy(self.policy.act,
+                                                                          self.policy.state_dict,
+                                                                          sampled_states,
+                                                                          sampled_actions,
+                                                                          sampled_log_prob,
+                                                                          sampled_advantages,
+                                                                          self._ratio_clip)
 
                 kl_divergences.append(kl_divergence.item())
 
@@ -497,7 +497,7 @@ class PPO(Agent):
                 # compute entropy loss
                 if self._entropy_loss_scale:
                     # TODO
-                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
+                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(stddev, role="policy").mean()
                 else:
                     entropy_loss = 0
 
@@ -544,7 +544,7 @@ class PPO(Agent):
         if self._entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
 
-        # self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())  # TODO: this
+        self.track_data("Policy / Standard deviation", stddev.mean().item())
 
         if self._learning_rate_scheduler:
             self.track_data("Learning / Learning rate", self.scheduler._lr)

@@ -48,6 +48,10 @@ def _gaussian(loc,
 
     return actions, log_prob, log_std, scale
 
+@jax.jit
+def _entropy(scale):
+    return 0.5 + 0.5 * jnp.log(2 * jnp.pi) + jnp.log(scale)
+
 
 class GaussianMixin:
     def __init__(self,
@@ -193,56 +197,26 @@ class GaussianMixin:
                                                                   self._reduction)
 
         outputs["mean_actions"] = mean_actions
+        # avoid jax.errors.UnexpectedTracerError
+        outputs["log_std"] = self._log_std
+        outputs["stddev"] = self._scale
+
         return actions, log_prob, outputs
 
-    # def get_entropy(self, role: str = "") -> jnp.ndarray:
-    #     """Compute and return the entropy of the model
+    def get_entropy(self, stddev: jnp.ndarray, role: str = "") -> jnp.ndarray:
+        """Compute and return the entropy of the model
 
-    #     :return: Entropy of the model
-    #     :rtype: jnp.ndarray
-    #     :param role: Role play by the model (default: ``""``)
-    #     :type role: str, optional
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
 
-    #     Example::
+        :return: Entropy of the model
+        :rtype: jnp.ndarray
 
-    #         >>> entropy = model.get_entropy()
-    #         >>> print(entropy.shape)
-    #         (4096, 8)
-    #     """
-    #     distribution = self._g_distribution[role] if role in self._g_distribution else self._g_distribution[""]
-    #     if distribution is None:
-    #         return jnp.array(0.0)
-    #     return distribution.entropy()
+        Example::
 
-    # def get_log_std(self, role: str = "") -> jnp.ndarray:
-    #     """Return the log standard deviation of the model
-
-    #     :return: Log standard deviation of the model
-    #     :rtype: jnp.ndarray
-    #     :param role: Role play by the model (default: ``""``)
-    #     :type role: str, optional
-
-    #     Example::
-
-    #         >>> log_std = model.get_log_std()
-    #         >>> print(log_std.shape)
-    #         (4096, 8)
-    #     """
-    #     return (self._g_log_std[role] if role in self._g_log_std else self._g_log_std[""]) \
-    #         .repeat(self._g_num_samples[role] if role in self._g_num_samples else self._g_num_samples[""], 1)
-
-    # def distribution(self, role: str = "") -> "Normal":
-    #     """Get the current distribution of the model
-
-    #     :return: Distribution of the model
-    #     :rtype: from skrl.resources.distributions.jax import Normal
-    #     :param role: Role play by the model (default: ``""``)
-    #     :type role: str, optional
-
-    #     Example::
-
-    #         >>> distribution = model.distribution()
-    #         >>> print(distribution)
-    #         Normal(loc: (4096, 8), scale: (4096, 8))
-    #     """
-    #     return self._g_distribution[role] if role in self._g_distribution else self._g_distribution[""]
+            # given a standard deviation array: stddev
+            >>> entropy = model.get_entropy(stddev)
+            >>> print(entropy.shape)
+            (4096, 8)
+        """
+        return _entropy(stddev)

@@ -131,14 +131,16 @@ def _compute_gae(rewards: jnp.ndarray,
 
     return returns, advantages
 
-@functools.partial(jax.jit, static_argnames=("policy_act"))
+@functools.partial(jax.jit, static_argnames=("policy_act", "get_entropy", "entropy_loss_scale"))
 def _update_policy(policy_act,
                    policy_state_dict,
                    sampled_states,
                    sampled_actions,
                    sampled_log_prob,
                    sampled_advantages,
-                   ratio_clip):
+                   ratio_clip,
+                   get_entropy,
+                   entropy_loss_scale):
     # compute policy loss
     def _policy_loss(params):
         _, next_log_prob, outputs = policy_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
@@ -152,11 +154,16 @@ def _update_policy(policy_act,
         surrogate = sampled_advantages * ratio
         surrogate_clipped = sampled_advantages * jnp.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
 
-        return -jnp.minimum(surrogate, surrogate_clipped).mean(), (kl_divergence, outputs["stddev"])
+        # compute entropy loss
+        entropy_loss = 0
+        if entropy_loss_scale:
+            entropy_loss = -entropy_loss_scale * get_entropy(outputs["stddev"], role="policy").mean()
 
-    (policy_loss, (kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
+        return -jnp.minimum(surrogate, surrogate_clipped).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
 
-    return grad, policy_loss, kl_divergence, stddev
+    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
+
+    return grad, policy_loss, entropy_loss, kl_divergence, stddev
 
 @functools.partial(jax.jit, static_argnames=("value_act", "clip_predicted_values"))
 def _update_value(value_act,
@@ -480,26 +487,21 @@ class PPO(Agent):
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 # compute policy loss
-                grad, policy_loss, kl_divergence, stddev = _update_policy(self.policy.act,
-                                                                          self.policy.state_dict,
-                                                                          sampled_states,
-                                                                          sampled_actions,
-                                                                          sampled_log_prob,
-                                                                          sampled_advantages,
-                                                                          self._ratio_clip)
+                grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(self.policy.act,
+                                                                                        self.policy.state_dict,
+                                                                                        sampled_states,
+                                                                                        sampled_actions,
+                                                                                        sampled_log_prob,
+                                                                                        sampled_advantages,
+                                                                                        self._ratio_clip,
+                                                                                        self.policy.get_entropy,
+                                                                                        self._entropy_loss_scale)
 
                 kl_divergences.append(kl_divergence.item())
 
                 # early stopping with KL divergence
                 if self._kl_threshold and kl_divergence > self._kl_threshold:
                     break
-
-                # compute entropy loss
-                if self._entropy_loss_scale:
-                    # TODO
-                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(stddev, role="policy").mean()
-                else:
-                    entropy_loss = 0
 
                 # optimization step (policy)
                 self.policy_optimizer = self.policy_optimizer.step(grad, self.policy, self.scheduler._lr if self.scheduler else None)

@@ -9,6 +9,7 @@ import jax
 import jaxlib
 import jax.numpy as jnp
 import numpy as np
+import flax
 
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -109,6 +110,16 @@ def _update_policy(policy_act,
 
     return grad, policy_loss, log_prob
 
+@jax.jit
+def _update_entropy(log_entropy_coefficient_state_dict, target_entropy, log_prob):
+    # compute entropy loss
+    def _entropy_loss(params):
+        return -(params["params"] * (log_prob + target_entropy)).mean()
+
+    entropy_loss, grad = jax.value_and_grad(_entropy_loss, has_aux=False)(log_entropy_coefficient_state_dict.params)
+
+    return grad, entropy_loss
+
 
 class SAC(Agent):
     def __init__(self,
@@ -201,8 +212,18 @@ class SAC(Agent):
                 else:
                     self._target_entropy = 0
 
-            self.log_entropy_coefficient = torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient).requires_grad_(True)
-            self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
+            class _LogEntropyCoefficient:
+                def __init__(self, entropy_coefficient: float) -> None:
+                    class StateDict(flax.struct.PyTreeNode):
+                        params: flax.core.FrozenDict[str, Any] = flax.struct.field(pytree_node=True)
+                    self.state_dict = StateDict(flax.core.FrozenDict({"params": jnp.array([jnp.log(entropy_coefficient)])}))
+
+                @property
+                def value(self):
+                    return self.state_dict.params["params"]
+
+            self.log_entropy_coefficient = _LogEntropyCoefficient(self._entropy_coefficient)
+            self.entropy_optimizer = Adam(model=self.log_entropy_coefficient, lr=self._entropy_learning_rate)
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
@@ -417,15 +438,15 @@ class SAC(Agent):
             # entropy learning
             if self._learn_entropy:
                 # compute entropy loss
-                entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
+                grad, entropy_loss = _update_entropy(self.log_entropy_coefficient.state_dict,
+                                                     self._target_entropy,
+                                                     log_prob)
 
                 # optimization step (entropy)
-                self.entropy_optimizer.zero_grad()
-                entropy_loss.backward()
-                self.entropy_optimizer.step()
+                self.entropy_optimizer = self.entropy_optimizer.step(grad, self.log_entropy_coefficient)
 
                 # compute entropy coefficient
-                self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
+                self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)
 
             # update target networks
             self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)

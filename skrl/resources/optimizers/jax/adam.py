@@ -32,7 +32,7 @@ def _step_with_scale(transformation, grad, state, state_dict, scale):
 
 
 class Adam:
-    def __new__(cls, model: Model, lr: float = 1e-3, scale=True) -> "Optimizer":
+    def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
         """Adam optimizer
 
         Adapted from optax's adam to support custom scale (learning rate)
@@ -42,6 +42,8 @@ class Adam:
         :type model: skrl.models.jax.Model
         :param lr: Learning rate (default: 1e-3)
         :type lr: float, optional
+        :param grad_norm_clip: Clipping coefficient for the norm of the gradients (default: 0)
+        :type grad_norm_clip: float, optional
         :param scale: Whether to instantiate the optimizer as-is or remove the scaling step (default: ``True``)
         :type scale: bool, optional
 
@@ -89,5 +91,9 @@ class Adam:
         # optax transformation without scaling step
         else:
             transformation = optax.scale_by_adam()
+
+        # clip updates using their global norm
+        if grad_norm_clip > 0:
+            transformation = optax.chain(optax.clip_by_global_norm(grad_norm_clip), transformation)
 
         return Optimizer._create(transformation=transformation, state=transformation.init(model.state_dict.params))

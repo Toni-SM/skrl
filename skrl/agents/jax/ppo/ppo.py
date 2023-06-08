@@ -519,16 +519,6 @@ class PPO(Agent):
                 # optimization step (value)
                 self.value_optimizer = self.value_optimizer.step(grad, self.value, self.scheduler._lr if self.scheduler else None)
 
-                # # optimization step
-                # self.optimizer.zero_grad()
-                # (policy_loss + entropy_loss + value_loss).backward()
-                # if self._grad_norm_clip > 0:
-                #     if self.policy is self.value:
-                #         nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-                #     else:
-                #         nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
-                # self.optimizer.step()
-
                 # update cumulative losses
                 cumulative_policy_loss += policy_loss.item()
                 cumulative_value_loss += value_loss.item()

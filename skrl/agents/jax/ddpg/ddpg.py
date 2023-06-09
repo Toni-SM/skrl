@@ -191,8 +191,8 @@ class DDPG(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
-            self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate)
-            self.critic_optimizer = Adam(model=self.critic, lr=self._critic_learning_rate)
+            self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
+            self.critic_optimizer = Adam(model=self.critic, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])

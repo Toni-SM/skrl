@@ -32,7 +32,7 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`Advantage Actor Critic <agents/a2c>` (**A2C**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Adversarial Motion Priors <agents/amp>` (**AMP**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
@@ -41,7 +41,7 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: :math:`\square`
     * - :doc:`Deep Deterministic Policy Gradient <agents/ddpg>` (**DDPG**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Double Deep Q-Network <agents/ddqn>` (**DDQN**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
@@ -50,7 +50,7 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: :math:`\square`
     * - :doc:`Proximal Policy Optimization <agents/ppo>` (**PPO**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Q-learning <agents/q_learning>` (**Q-learning**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
@@ -59,13 +59,13 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: :math:`\square`
     * - :doc:`Soft Actor-Critic <agents/sac>` (**SAC**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`State Action Reward State Action <agents/sarsa>` (**SARSA**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - :doc:`Twin-Delayed DDPG <agents/td3>` (**TD3**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Trust Region Policy Optimization <agents/trpo>` (**TRPO**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`

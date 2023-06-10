@@ -15,7 +15,6 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 from skrl.agents.jax import Agent
-from skrl import config
 
 
 DDPG_DEFAULT_CONFIG = {
@@ -149,8 +148,6 @@ class DDPG(Agent):
                          action_space=action_space,
                          device=device,
                          cfg=_cfg)
-
-        self._jax = config.jax.backend == "jax"
 
         # models
         self.policy = self.models.get("policy", None)

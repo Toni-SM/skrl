@@ -22,7 +22,6 @@ def _gaussian(loc,
               clip_actions_max,
               taken_actions,
               key,
-              iterator,
               reduction):
     # clamp log standard deviations
     log_std = jnp.clip(log_std, a_min=log_std_min, a_max=log_std_max)
@@ -31,8 +30,7 @@ def _gaussian(loc,
     scale = jnp.exp(log_std)
 
     # sample actions
-    subkey = jax.random.fold_in(key, iterator)
-    actions = jax.random.normal(subkey, loc.shape) * scale + loc
+    actions = jax.random.normal(key, loc.shape) * scale + loc
 
     # clip actions
     actions = jnp.clip(actions, a_min=clip_actions_min, a_max=clip_actions_max)
@@ -134,9 +132,6 @@ class GaussianMixin:
             self._log_std_min = -jnp.inf
             self._log_std_max = jnp.inf
 
-        self._log_std = None
-        self._num_samples = None
-
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
         self._reduction = jnp.mean if reduction == "mean" else jnp.sum if reduction == "sum" \
@@ -178,28 +173,27 @@ class GaussianMixin:
             >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             (4096, 8) (4096, 1) (4096, 8)
         """
+        self._i += 1
+        subkey = jax.random.fold_in(self._key, self._i)
+        inputs["key"] = subkey
+
         # map from states/observations to mean actions and log standard deviations
         mean_actions, log_std, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
-        self._i += 1
-        self._loc = mean_actions
-        self._num_samples = mean_actions.shape[0]
-
-        actions, log_prob, self._log_std, self._scale = _gaussian(mean_actions,
-                                                                  log_std,
-                                                                  self._log_std_min,
-                                                                  self._log_std_max,
-                                                                  self.clip_actions_min,
-                                                                  self.clip_actions_max,
-                                                                  inputs.get("taken_actions", None),
-                                                                  self._key,
-                                                                  self._i,
-                                                                  self._reduction)
+        actions, log_prob, log_std, stddev = _gaussian(mean_actions,
+                                                       log_std,
+                                                       self._log_std_min,
+                                                       self._log_std_max,
+                                                       self.clip_actions_min,
+                                                       self.clip_actions_max,
+                                                       inputs.get("taken_actions", None),
+                                                       subkey,
+                                                       self._reduction)
 
         outputs["mean_actions"] = mean_actions
         # avoid jax.errors.UnexpectedTracerError
-        outputs["log_std"] = self._log_std
-        outputs["stddev"] = self._scale
+        outputs["log_std"] = log_std
+        outputs["stddev"] = stddev
 
         return actions, log_prob, outputs
 

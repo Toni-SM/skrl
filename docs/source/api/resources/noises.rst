@@ -13,6 +13,19 @@ Definition of the noises used by the agents during the exploration stage. All no
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Noises
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Gaussian <noises/gaussian>` noise
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`Ornstein-Uhlenbeck <noises/ornstein_uhlenbeck>` noise |_2|
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+
 Base class
 ----------
 
@@ -33,9 +46,11 @@ Basic inheritance usage
 
     .. tab:: Inheritance
 
-        .. literalinclude:: ../../snippets/noise.py
+        .. literalinclude:: ../../snippets/noises.py
             :language: python
-            :linenos:
+            :start-after: [torch-start-base-class]
+            :end-before: [torch-end-base-class]
+
 
 .. raw:: html
 

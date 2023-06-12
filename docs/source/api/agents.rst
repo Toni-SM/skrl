@@ -56,7 +56,7 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: :math:`\square`
     * - :doc:`Robust Policy Optimization <agents/rpo>` (**RPO**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Soft Actor-Critic <agents/sac>` (**SAC**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

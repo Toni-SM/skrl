@@ -20,18 +20,18 @@ Algorithm implementation
 | Main notation/symbols:
 |   - mean (:math:`\bar{x}`), standard deviation (:math:`\sigma`), variance (:math:`\sigma^2`)
 |   - running mean (:math:`\bar{x}_t`), running variance (:math:`\sigma^2_t`)
-
 |
+
 **Standardization by centering and scaling**
 
 | :math:`\text{clip}((x - \bar{x}_t) / (\sqrt{\sigma^2} \;+` :guilabel:`epsilon` :math:`), -c, c) \qquad` with :math:`c` as :guilabel:`clip_threshold`
-
 |
+
 **Scale back the data to the original representation (inverse transform)**
 
 | :math:`\sqrt{\sigma^2_t} \; \text{clip}(x, -c, c) + \bar{x}_t \qquad` with :math:`c` as :guilabel:`clip_threshold`
-
 |
+
 **Update the running mean and variance** (See `parallel algorithm <https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm>`_)
 
 | :math:`\delta \leftarrow x - \bar{x}_t`

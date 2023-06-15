@@ -15,6 +15,7 @@ Usage
 The noise usage is defined in each agent's configuration dictionary. A noise instance is set under the :literal:`"noise"` sub-key. The following examples show how to set the noise for an agent:
 
 |
+
 .. image:: ../../../_static/imgs/noise_ornstein_uhlenbeck.png
     :width: 75%
     :align: center

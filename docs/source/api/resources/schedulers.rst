@@ -23,6 +23,7 @@ Learning rate schedulers are techniques that adjust the learning rate over time 
       - .. centered:: :math:`\blacksquare`
 
 |
+
 **Implementation according to the ML framework:**
 
 - **PyTorch**: The implemented schedulers inherit from the PyTorch :literal:`_LRScheduler` class. Visit `How to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details.

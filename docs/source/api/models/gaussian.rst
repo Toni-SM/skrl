@@ -145,19 +145,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-cnn-sequential]
-                    :end-before: [end-cnn-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-cnn-functional]
-                    :end-before: [end-cnn-functional]
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-cnn-sequential]
+                            :end-before: [end-cnn-sequential]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-cnn-functional]
+                            :end-before: [end-cnn-functional]
 
     .. tab:: RNN
 
@@ -205,19 +209,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-rnn-sequential]
-                    :end-before: [end-rnn-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-rnn-functional]
-                    :end-before: [end-rnn-functional]
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-rnn-sequential]
+                            :end-before: [end-rnn-sequential]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-rnn-functional]
+                            :end-before: [end-rnn-functional]
 
     .. tab:: GRU
 
@@ -265,19 +273,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-gru-sequential]
-                    :end-before: [end-gru-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-gru-functional]
-                    :end-before: [end-gru-functional]
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-gru-sequential]
+                            :end-before: [end-gru-sequential]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-gru-functional]
+                            :end-before: [end-gru-functional]
 
     .. tab:: LSTM
 
@@ -326,19 +338,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-lstm-sequential]
-                    :end-before: [end-lstm-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/gaussian_model.py
-                    :language: python
-                    :start-after: [start-lstm-functional]
-                    :end-before: [end-lstm-functional]
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-lstm-sequential]
+                            :end-before: [end-lstm-sequential]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/gaussian_model.py
+                            :language: python
+                            :start-after: [start-lstm-functional]
+                            :end-before: [end-lstm-functional]
 
 .. raw:: html
 

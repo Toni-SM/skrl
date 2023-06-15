@@ -28,16 +28,16 @@ Models (or agent models) refer to a representation of the agent's policy, value 
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Multivariate Gaussian model <models/multivariate_gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - :doc:`Deterministic model <models/deterministic>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Shared model <models/shared_model>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`

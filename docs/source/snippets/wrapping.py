@@ -10,6 +10,18 @@ env = load_omniverse_isaacgym_env(task_name="Cartpole")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 # [pytorch-end-omniverse-isaacgym]
 
+# [jax-start-omniverse-isaacgym]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_omniverse_isaacgym_env
+
+# load the environment
+env = load_omniverse_isaacgym_env(task_name="Cartpole")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
+# [jax-end-omniverse-isaacgym]
+
 
 # [pytorch-start-omniverse-isaacgym-mt]
 # import the environment wrapper and loader
@@ -24,6 +36,19 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 # [pytorch-end-omniverse-isaacgym-mt]
 
 
+# [jax-start-omniverse-isaacgym-mt]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_omniverse_isaacgym_env
+
+# load the multi-threaded environment
+env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
+# [jax-end-omniverse-isaacgym-mt]
+
+
 # [pytorch-start-isaac-orbit]
 # import the environment wrapper and loader
 from skrl.envs.torch import wrap_env
@@ -35,6 +60,19 @@ env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
 # [pytorch-end-isaac-orbit]
+
+
+# [jax-start-isaac-orbit]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_isaac_orbit_env
+
+# load the environment
+env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
+# [jax-end-isaac-orbit]
 
 
 # [pytorch-start-isaacgym-preview4-make]
@@ -57,6 +95,26 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 # [pytorch-end-isaacgym-preview4-make]
 
 
+# [jax-start-isaacgym-preview4-make]
+import isaacgymenvs
+
+# import the environment wrapper
+from skrl.envs.jax import wrap_env
+
+# create/load the environment using the easy-to-use API from NVIDIA
+env = isaacgymenvs.make(seed=0,
+                        task="Cartpole",
+                        num_envs=512,
+                        sim_device="cuda:0",
+                        rl_device="cuda:0",
+                        graphics_device_id=0,
+                        headless=False)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+# [jax-end-isaacgym-preview4-make]
+
+
 # [pytorch-start-isaacgym-preview4]
 # import the environment wrapper and loader
 from skrl.envs.torch import wrap_env
@@ -68,6 +126,19 @@ env = load_isaacgym_env_preview4(task_name="Cartpole")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 # [pytorch-end-isaacgym-preview4]
+
+
+# [jax-start-isaacgym-preview4]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_isaacgym_env_preview4
+
+# load the environment
+env = load_isaacgym_env_preview4(task_name="Cartpole")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+# [jax-end-isaacgym-preview4]
 
 
 # [pytorch-start-isaacgym-preview3]
@@ -83,6 +154,19 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 # [pytorch-end-isaacgym-preview3]
 
 
+# [jax-start-isaacgym-preview3]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_isaacgym_env_preview3
+
+# load the environment
+env = load_isaacgym_env_preview3(task_name="Cartpole")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
+# [jax-end-isaacgym-preview3]
+
+
 # [pytorch-start-isaacgym-preview2]
 # import the environment wrapper and loader
 from skrl.envs.torch import wrap_env
@@ -94,6 +178,19 @@ env = load_isaacgym_env_preview2(task_name="Cartpole")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 # [pytorch-end-isaacgym-preview2]
+
+
+# [jax-start-isaacgym-preview2]
+# import the environment wrapper and loader
+from skrl.envs.jax import wrap_env
+from skrl.envs.jax import load_isaacgym_env_preview2
+
+# load the environment
+env = load_isaacgym_env_preview2(task_name="Cartpole")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
+# [jax-end-isaacgym-preview2]
 
 
 # [pytorch-start-gym]
@@ -109,6 +206,19 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 # [pytorch-end-gym]
 
 
+# [jax-start-gym]
+# import the environment wrapper and gym
+from skrl.envs.jax import wrap_env
+import gym
+
+# load environment
+env = gym.make('Pendulum-v1')
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+# [jax-end-gym]
+
+
 # [pytorch-start-gym-vectorized]
 # import the environment wrapper and gym
 from skrl.envs.torch import wrap_env
@@ -120,6 +230,19 @@ env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 # [pytorch-end-gym-vectorized]
+
+
+# [jax-start-gym-vectorized]
+# import the environment wrapper and gym
+from skrl.envs.jax import wrap_env
+import gym
+
+# load a vectorized environment
+env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+# [jax-end-gym-vectorized]
 
 
 # [pytorch-start-gymnasium]
@@ -135,6 +258,19 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [pytorch-end-gymnasium]
 
 
+# [jax-start-gymnasium]
+# import the environment wrapper and gymnasium
+from skrl.envs.jax import wrap_env
+import gymnasium as gym
+
+# load environment
+env = gym.make('Pendulum-v1')
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [jax-end-gymnasium]
+
+
 # [pytorch-start-gymnasium-vectorized]
 # import the environment wrapper and gymnasium
 from skrl.envs.torch import wrap_env
@@ -146,6 +282,19 @@ env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [pytorch-end-gymnasium-vectorized]
+
+
+# [jax-start-gymnasium-vectorized]
+# import the environment wrapper and gymnasium
+from skrl.envs.jax import wrap_env
+import gymnasium as gym
+
+# load a vectorized environment
+env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [jax-end-gymnasium-vectorized]
 
 
 # [pytorch-start-deepmind]

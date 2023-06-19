@@ -35,8 +35,7 @@ class Adam:
     def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
         """Adam optimizer
 
-        Adapted from optax's adam to support custom scale (learning rate)
-        https://optax.readthedocs.io/en/latest/api.html?#adam
+        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api.html?#adam>`_ to support custom scale (learning rate)
 
         :param model: Model
         :type model: skrl.models.jax.Model
@@ -54,7 +53,7 @@ class Adam:
             """Optimizer
 
             This class is the result of isolating the Optax optimizer,
-            which is mixed with the model parameters, from flax's TrainState class
+            which is mixed with the model parameters, from Flax's TrainState class
 
             https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state
             """

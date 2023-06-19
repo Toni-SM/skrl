@@ -180,6 +180,10 @@ Resources
 
         * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
 
+    **Optimizers:** Definition of optimizers
+
+        * :doc:`Adam <api/resources/optimizers/adam>`
+
 Utils and configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

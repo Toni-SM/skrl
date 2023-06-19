@@ -7,6 +7,7 @@ Resources
     Noises <resources/noises>
     Preprocessors <resources/preprocessors>
     Learning rate schedulers <resources/schedulers>
+    Optimizers <resources/optimizers>
 
 Resources groups a variety of components that may be used to improve the agents' performance.
 

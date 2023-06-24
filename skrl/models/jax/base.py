@@ -349,17 +349,14 @@ class Model(flax.linen.Module):
         return {}
 
     def act(self,
-            params: Union[jnp.ndarray, None],
             inputs: Mapping[str, Union[jnp.ndarray, Any]],
-            role: str = "") -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+            role: str = "",
+            params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
         The classes that inherit from the latter must only implement the ``.__call__()`` method
 
-        :param params: Parameters used to compute the output.
-                       If ``None``, internal parameters will be used
-        :type params: jnp.array or None
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
@@ -367,6 +364,9 @@ class Model(flax.linen.Module):
         :type inputs: dict where the values are typically jnp.ndarray
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
+        :param params: Parameters used to compute the output (default: ``None``).
+                       If ``None``, internal parameters will be used
+        :type params: jnp.array
 
         :raises NotImplementedError: Child class must implement this method
 

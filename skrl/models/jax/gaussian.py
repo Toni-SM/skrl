@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Any
+from typing import Optional, Union, Mapping, Tuple, Any
 
 import gym
 import gymnasium
@@ -144,14 +144,11 @@ class GaussianMixin:
         flax.linen.Module.__post_init__(self)
 
     def act(self,
-            params: Union[jnp.ndarray, None],
             inputs: Mapping[str, Union[jnp.ndarray, Any]],
-            role: str = "") -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+            role: str = "",
+            params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
         """Act stochastically in response to the state of the environment
 
-        :param params: Parameters used to compute the output.
-                       If ``None``, internal parameters will be used
-        :type params: jnp.array or None
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
@@ -159,6 +156,9 @@ class GaussianMixin:
         :type inputs: dict where the values are typically jnp.ndarray
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
+        :param params: Parameters used to compute the output (default: ``None``).
+                       If ``None``, internal parameters will be used
+        :type params: jnp.array
 
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is the log of the probability density function.

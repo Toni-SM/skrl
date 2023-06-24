@@ -80,7 +80,7 @@ def _update_critic(critic_1_act,
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
-        critic_values, _, _ = critic_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role)
+        critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, role, params)
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
@@ -99,10 +99,10 @@ def _update_policy(policy_act,
                    entropy_coefficient,
                    sampled_states):
     # compute policy (actor) loss
-    def _policy_loss(params, params_1, params_2):
-        actions, log_prob, _ = policy_act(params, {"states": sampled_states}, "policy")
-        critic_1_values, _, _ = critic_1_act(params_1, {"states": sampled_states, "taken_actions": actions}, "critic_1")
-        critic_2_values, _, _ = critic_2_act(params_2, {"states": sampled_states, "taken_actions": actions}, "critic_2")
+    def _policy_loss(policy_params, critic_1_params, critic_2_params):
+        actions, log_prob, _ = policy_act({"states": sampled_states}, "policy", policy_params)
+        critic_1_values, _, _ = critic_1_act({"states": sampled_states, "taken_actions": actions}, "critic_1", critic_1_params)
+        critic_2_values, _, _ = critic_2_act({"states": sampled_states, "taken_actions": actions}, "critic_2", critic_2_params)
         return (entropy_coefficient * log_prob - jnp.minimum(critic_1_values, critic_2_values)).mean(), log_prob
 
     (policy_loss, log_prob), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params, critic_1_state_dict.params, critic_2_state_dict.params)
@@ -299,7 +299,7 @@ class SAC(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
+        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
 
@@ -394,11 +394,11 @@ class SAC(Agent):
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
-            next_actions, next_log_prob, _ = self.policy.act(None, {"states": sampled_next_states}, role="policy")
+            next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
 
             # compute target values
-            target_q1_values, _, _ = self.target_critic_1.act(None, {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")
-            target_q2_values, _, _ = self.target_critic_2.act(None, {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2")
+            target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")
+            target_q2_values, _, _ = self.target_critic_2.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2")
 
             # compute critic loss
             grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(self.critic_1.act,

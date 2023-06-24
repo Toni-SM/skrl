@@ -142,7 +142,7 @@ def _update_policy(policy_act,
                    entropy_loss_scale):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, outputs = policy_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
+        _, next_log_prob, outputs = policy_act({"states": sampled_states, "taken_actions": sampled_actions}, "policy", params)
 
         # compute aproximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -175,7 +175,7 @@ def _update_value(value_act,
                   value_clip):
     # compute value loss
     def _value_loss(params):
-        predicted_values, _, _ = value_act(params, {"states": sampled_states}, role="value")
+        predicted_values, _, _ = value_act({"states": sampled_states}, "value", params)
         if clip_predicted_values:
             predicted_values = sampled_values + jnp.clip(predicted_values - sampled_values, -value_clip, value_clip)
         return value_loss_scale * ((sampled_returns - predicted_values) ** 2).mean()
@@ -342,7 +342,7 @@ class PPO(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
+        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
             log_prob = jax.device_get(log_prob)
@@ -392,7 +392,7 @@ class PPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            values, _, _ = self.value.act(None, {"states": self._state_preprocessor(states)}, role="value")
+            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             if not self._jax:  # numpy backend
                 values = jax.device_get(values)
             values = self._value_preprocessor(values, inverse=True)
@@ -441,7 +441,7 @@ class PPO(Agent):
         """
         # compute returns and advantages
         self.value.training = False
-        last_values, _, _ = self.value.act(None, {"states": self._state_preprocessor(self._current_next_states)}, role="value")  # TODO: .float()
+        last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states)}, role="value")  # TODO: .float()
         self.value.training = True
         if not self._jax:  # numpy backend
             last_values = jax.device_get(last_values)

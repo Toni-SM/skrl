@@ -103,7 +103,7 @@ def _update_critic(critic_1_act,
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
-        critic_values, _, _ = critic_act(params, {"states": sampled_states, "taken_actions": sampled_actions}, role)
+        critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, role, params)
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
@@ -119,9 +119,9 @@ def _update_policy(policy_act,
                    critic_1_state_dict,
                    sampled_states):
     # compute policy (actor) loss
-    def _policy_loss(params, params1):
-        actions, _, _ = policy_act(params, {"states": sampled_states}, "policy")
-        critic_values, _, _ = critic_1_act(params1, {"states": sampled_states, "taken_actions": actions}, "critic_1")
+    def _policy_loss(policy_params, critic_1_params):
+        actions, _, _ = policy_act({"states": sampled_states}, "policy", policy_params)
+        critic_values, _, _ = critic_1_act({"states": sampled_states, "taken_actions": actions}, "critic_1", critic_1_params)
         return -critic_values.mean()
 
     policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params, critic_1_state_dict.params)
@@ -304,7 +304,7 @@ class TD3(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample deterministic actions
-        actions, _, outputs = self.policy.act(None, {"states": self._state_preprocessor(states)}, role="policy")
+        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
 
@@ -434,7 +434,7 @@ class TD3(Agent):
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
             # target policy smoothing
-            next_actions, _, _ = self.target_policy.act(None, {"states": sampled_next_states}, role="target_policy")
+            next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
             if self._smooth_regularization_noise is not None:
                 noises = self._smooth_regularization_noise.sample(next_actions.shape)
                 if self._jax:
@@ -444,8 +444,8 @@ class TD3(Agent):
                     next_actions = np.clip(next_actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
 
             # compute target values
-            target_q1_values, _, _ = self.target_critic_1.act(None, {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")
-            target_q2_values, _, _ = self.target_critic_2.act(None, {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2")
+            target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")
+            target_q2_values, _, _ = self.target_critic_2.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2")
 
             # compute critic loss
             grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(self.critic_1.act,

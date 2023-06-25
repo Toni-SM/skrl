@@ -100,11 +100,11 @@ class RunningStandardScaler:
         if self._jax:
             self.running_mean = jnp.zeros(size, dtype=jnp.float32)
             self.running_variance = jnp.ones(size, dtype=jnp.float32)
-            self.current_count = jnp.ones((), dtype=jnp.float32)
+            self.current_count = jnp.ones((1,), dtype=jnp.float32)
         else:
             self.running_mean = np.zeros(size, dtype=np.float32)
             self.running_variance = np.ones(size, dtype=np.float32)
-            self.current_count = np.ones((), dtype=np.float32)
+            self.current_count = np.ones((1,), dtype=np.float32)
 
     @property
     def state_dict(self) -> Mapping[str, jnp.ndarray]:

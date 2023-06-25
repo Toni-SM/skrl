@@ -256,27 +256,31 @@ class Agent:
         # separated modules
         if self.checkpoint_store_separately:
             for name, module in self.checkpoint_modules.items():
-                torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+                with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pickle".format(name, tag)), "wb") as file:
+                    pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
         # whole agent
         else:
             modules = {}
             for name, module in self.checkpoint_modules.items():
-                modules[name] = self._get_internal_value(module)
-            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
+                modules[name] = flax.serialization.to_bytes(self._get_internal_value(module))
+
+            with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pickle".format("agent", tag)), "wb") as file:
+                pickle.dump(modules, file, protocol=4)
 
         # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
             # separated modules
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
-                    torch.save(self.checkpoint_best_modules["modules"][name],
-                               os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
+                    with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pickle".format(name)), "wb") as file:
+                        pickle.dump(flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name]), file, protocol=4)
             # whole agent
             else:
                 modules = {}
                 for name, module in self.checkpoint_modules.items():
-                    modules[name] = self.checkpoint_best_modules["modules"][name]
-                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+                    modules[name] = flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name])
+                with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pickle".format("agent")), "wb") as file:
+                    pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
     def act(self,

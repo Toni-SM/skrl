@@ -238,6 +238,37 @@ class Model(flax.linen.Module):
                 return output
         raise ValueError("Space type {} not supported".format(type(space)))
 
+    def random_act(self,
+                   inputs: Mapping[str, Union[jnp.ndarray, Any]],
+                   role: str = "",
+                   params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+        """Act randomly according to the action space
+
+        :param inputs: Model inputs. The most common keys are:
+
+                       - ``"states"``: state of the environment used to make the decision
+                       - ``"taken_actions"``: actions taken by the policy for the given states
+        :type inputs: dict where the values are typically jnp.ndarray
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
+        :param params: Parameters used to compute the output (default: ``None``).
+                       If ``None``, internal parameters will be used
+        :type params: jnp.array
+
+        :raises NotImplementedError: Unsupported action space
+
+        :return: Model output. The first component is the action to be taken by the agent
+        :rtype: tuple of jnp.ndarray, None, and dictionary
+        """
+        # discrete action space (Discrete)
+        if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+             return np.random.randint(self.action_space.n, size=(inputs["states"].shape[0], 1)), None, {}
+        # continuous action space (Box)
+        elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
+            return np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions)), None, {}
+        else:
+            raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
+
     def init_parameters(self, method_name: str = "normal", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 

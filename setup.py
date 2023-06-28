@@ -20,7 +20,7 @@ INSTALL_REQUIRES = [
 # extra dependencies
 EXTRAS_REQUIRE = {
     "torch": ["torch>=1.8"],
-    "jax": ["jax", "jaxlib", "flax"],
+    "jax": ["jax", "jaxlib", "flax", "optax"],
 }
 
 # extra dependencies (all)

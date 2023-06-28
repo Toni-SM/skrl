@@ -32,6 +32,7 @@ JAX
 
     * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_
     * `flax <https://flax.readthedocs.io>`_
+    * `optax <https://optax.readthedocs.io>`_
 
 .. raw:: html
 

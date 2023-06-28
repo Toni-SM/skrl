@@ -69,6 +69,7 @@ agent = A2C(models=models,
             device=env.device)
 # [torch-end-a2c-rnn]
 
+# =============================================================================
 
 # [torch-start-amp]
 # import the agent and its default configuration
@@ -101,6 +102,7 @@ agent = AMP(models=models,
             collect_observation=collect_observation)
 # [torch-end-amp]
 
+# =============================================================================
 
 # [torch-start-cem]
 # import the agent and its default configuration
@@ -124,6 +126,30 @@ agent = CEM(models=models,
             device=env.device)
 # [torch-end-cem]
 
+
+# [jax-start-cem]
+# import the agent and its default configuration
+from skrl.agents.jax.cem import CEM, CEM_DEFAULT_CONFIG
+
+# instantiate the agent's models
+models = {}
+models["policy"] = ...
+
+# adjust some configuration if necessary
+cfg_agent = CEM_DEFAULT_CONFIG.copy()
+cfg_agent["<KEY>"] = ...
+
+# instantiate the agent
+# (assuming a defined environment <env> and memory <memory>)
+agent = CEM(models=models,
+            memory=memory,  # only required during training
+            cfg=cfg_agent,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=env.device)
+# [jax-end-cem]
+
+# =============================================================================
 
 # [torch-start-ddpg]
 # import the agent and its default configuration
@@ -202,6 +228,7 @@ agent = DDPG(models=models,
              device=env.device)
 # [torch-end-ddpg-rnn]
 
+# =============================================================================
 
 # [torch-start-ddqn]
 # import the agent and its default configuration
@@ -227,6 +254,31 @@ agent = DDQN(models=models,
 # [torch-end-ddqn]
 
 
+# [jax-start-ddqn]
+# import the agent and its default configuration
+from skrl.agents.jax.dqn import DDQN, DDQN_DEFAULT_CONFIG
+
+# instantiate the agent's models
+models = {}
+models["q_network"] = ...
+models["target_q_network"] = ...  # only required during training
+
+# adjust some configuration if necessary
+cfg_agent = DDQN_DEFAULT_CONFIG.copy()
+cfg_agent["<KEY>"] = ...
+
+# instantiate the agent
+# (assuming a defined environment <env> and memory <memory>)
+agent = DDQN(models=models,
+             memory=memory,  # only required during training
+             cfg=cfg_agent,
+             observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device)
+# [jax-end-ddqn]
+
+# =============================================================================
+
 # [torch-start-dqn]
 # import the agent and its default configuration
 from skrl.agents.torch.dqn import DQN, DQN_DEFAULT_CONFIG
@@ -250,6 +302,31 @@ agent = DQN(models=models,
             device=env.device)
 # [torch-end-dqn]
 
+
+# [jax-start-dqn]
+# import the agent and its default configuration
+from skrl.agents.jax.dqn import DQN, DQN_DEFAULT_CONFIG
+
+# instantiate the agent's models
+models = {}
+models["q_network"] = ...
+models["target_q_network"] = ...  # only required during training
+
+# adjust some configuration if necessary
+cfg_agent = DQN_DEFAULT_CONFIG.copy()
+cfg_agent["<KEY>"] = ...
+
+# instantiate the agent
+# (assuming a defined environment <env> and memory <memory>)
+agent = DQN(models=models,
+            memory=memory,  # only required during training
+            cfg=cfg_agent,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=env.device)
+# [jax-end-dqn]
+
+# =============================================================================
 
 # [torch-start-ppo]
 # import the agent and its default configuration
@@ -322,6 +399,7 @@ agent = PPO(models=models,
             device=env.device)
 # [torch-end-ppo-rnn]
 
+# =============================================================================
 
 # [torch-start-q-learning]
 # import the agent and its default configuration
@@ -344,6 +422,77 @@ agent = Q_LEARNING(models=models,
                    action_space=env.action_space,
                    device=env.device)
 # [torch-end-q-learning]
+
+# =============================================================================
+
+# [torch-start-rpo-with-rpo]
+class Policy(GaussianMixin, Model):
+    ...
+
+    def compute(self, inputs, role):
+        # compute the mean actions using the neural network
+        mean_actions = self.net(inputs["states"])
+
+        # perturb the mean actions by adding a randomized uniform sample
+        rpo_alpha = inputs["alpha"]
+        perturbation = torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+        mean_actions += perturbation
+
+        return mean_actions, self.log_std_parameter, {}
+# [torch-end-rpo-with-rpo]
+
+
+# [jax-start-rpo-with-rpo]
+class Policy(GaussianMixin, Model):
+    ...
+
+    def __call__(self, inputs, role):
+        # compute the mean actions using the neural network
+        mean_actions = ...
+        log_std = ...
+
+        # perturb the mean actions by adding a randomized uniform sample
+        rpo_alpha = inputs["alpha"]
+        perturbation = jax.random.uniform(inputs["key"], mean_actions.shape, minval=-rpo_alpha, maxval=rpo_alpha)
+        mean_actions += perturbation
+
+        return mean_actions, log_std, {}
+# [jax-end-rpo-with-rpo]
+
+
+# [torch-start-rpo-without-rpo]
+class Policy(GaussianMixin, Model):
+    ...
+
+    def compute(self, inputs, role):
+        # compute the mean actions using the neural network
+        mean_actions = self.net(inputs["states"])
+
+        # perturb the mean actions by adding a randomized uniform sample
+        rpo_alpha = 0.5
+        perturbation = torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+        mean_actions += perturbation
+
+        return mean_actions, self.log_std_parameter, {}
+# [torch-end-rpo-without-rpo]
+
+
+# [jax-start-rpo-without-rpo]
+class Policy(GaussianMixin, Model):
+    ...
+
+    def __call__(self, inputs, role):
+        # compute the mean actions using the neural network
+        mean_actions = ...
+        log_std = ...
+
+        # perturb the mean actions by adding a randomized uniform sample
+        rpo_alpha = 0.5
+        perturbation = jax.random.uniform(inputs["key"], mean_actions.shape, minval=-rpo_alpha, maxval=rpo_alpha)
+        mean_actions += perturbation
+
+        return mean_actions, log_std, {}
+# [jax-end-rpo-without-rpo]
 
 
 # [torch-start-rpo]
@@ -417,6 +566,7 @@ agent = RPO(models=models,
             device=env.device)
 # [torch-end-rpo-rnn]
 
+# =============================================================================
 
 # [torch-start-sac]
 # import the agent and its default configuration
@@ -498,6 +648,7 @@ agent = SAC(models=models,
             device=env.device)
 # [torch-end-sac-rnn]
 
+# =============================================================================
 
 # [torch-start-sarsa]
 # import the agent and its default configuration
@@ -521,6 +672,7 @@ agent = SARSA(models=models,
               device=env.device)
 # [torch-end-sarsa]
 
+# =============================================================================
 
 # [torch-start-td3]
 # import the agent and its default configuration
@@ -605,6 +757,7 @@ agent = TD3(models=models,
             device=env.device)
 # [torch-end-td3-rnn]
 
+# =============================================================================
 
 # [torch-start-trpo]
 # import the agent and its default configuration

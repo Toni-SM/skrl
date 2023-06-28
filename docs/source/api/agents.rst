@@ -38,16 +38,16 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: :math:`\square`
     * - :doc:`Cross-Entropy Method <agents/cem>` (**CEM**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Deep Deterministic Policy Gradient <agents/ddpg>` (**DDPG**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Double Deep Q-Network <agents/ddqn>` (**DDQN**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Deep Q-Network <agents/dqn>` (**DQN**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Proximal Policy Optimization <agents/ppo>` (**PPO**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

@@ -428,8 +428,9 @@ class Memory:
         # default order
         if mini_batches > 1:
             indexes = np.arange(self.memory_size * self.num_envs)
-            batches = np.array_split(indexes, len(indexes) // mini_batches)
-            return [[self._get_tensors_view(name)[batch] for name in names] for batch in batches]
+            batches = np.array_split(indexes, mini_batches)
+            views = [self._get_tensors_view(name) for name in names]
+            return [[view[batch] for view in views] for batch in batches]
         return [[self._get_tensors_view(name) for name in names]]
 
     def get_sampling_indexes(self) -> Union[tuple, np.ndarray, jnp.ndarray]:

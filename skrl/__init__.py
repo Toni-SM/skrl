@@ -1,6 +1,7 @@
 from typing import Union
 
 import os
+import sys
 import logging
 import numpy as np
 
@@ -76,10 +77,11 @@ class _Config(object):
             @key.setter
             def key(self, value: Union[int, "jnp.ndarray"]) -> None:
                 if type(value) is int:
-                    try:
+                    # don't import JAX if it has not been imported before
+                    if "jax" in sys.modules:
                         import jax
                         value = jax.random.PRNGKey(value)
-                    except ImportError:
+                    else:
                         value = np.array([0, value], dtype=np.uint32)
                 self._key = value
 

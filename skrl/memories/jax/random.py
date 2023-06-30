@@ -3,18 +3,19 @@ from typing import Optional, Union, Tuple, List
 import numpy as np
 
 import jaxlib
+import jax.numpy as jnp
 
 from .base import Memory
 
 
 class RandomMemory(Memory):
-    def __init__(self, 
-                 memory_size: int, 
-                 num_envs: int = 1, 
-                 device: Optional[jaxlib.xla_extension.Device] = None, 
-                 export: bool = False, 
-                 export_format: str = "pt", 
-                 export_directory: str = "", 
+    def __init__(self,
+                 memory_size: int,
+                 num_envs: int = 1,
+                 device: Optional[jaxlib.xla_extension.Device] = None,
+                 export: bool = False,
+                 export_format: str = "pt",
+                 export_directory: str = "",
                  replacement=True) -> None:
         """Random sampling memory
 
@@ -35,7 +36,7 @@ class RandomMemory(Memory):
         :param export_directory: Directory where the memory will be exported (default: "").
                                  If empty, the agent's experiment directory will be used
         :type export_directory: str, optional
-        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True). 
+        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True).
                             Replacement implies that a value can be selected multiple times (the batch size is always guaranteed).
                             Sampling without replacement will return a batch of maximum memory size if the memory size is less than the requested batch size
         :type replacement: bool, optional
@@ -46,7 +47,7 @@ class RandomMemory(Memory):
 
         self._replacement = replacement
 
-    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[jaxlib.xla_extension.DeviceArray]]:
+    def sample(self, names: Tuple[str], batch_size: int, mini_batches: int = 1) -> List[List[jnp.ndarray]]:
         """Sample a batch from memory randomly
 
         :param names: Tensors names from which to obtain the samples
@@ -58,7 +59,7 @@ class RandomMemory(Memory):
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
                  The sampled tensors will have the following shape: (batch size, data size)
-        :rtype: list of jaxlib.xla_extension.DeviceArray list
+        :rtype: list of jnp.ndarray list
         """
         # generate random indexes
         if self._replacement:

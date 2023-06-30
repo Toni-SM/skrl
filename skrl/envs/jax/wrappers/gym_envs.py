@@ -150,8 +150,8 @@ class GymWrapper(Wrapper):
         # convert response to numpy or jax
         observation = self._observation_to_tensor(observation)
         reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
-        terminated = np.array(terminated, dtype=np.bool_).reshape(self.num_envs, -1)
-        truncated = np.array(truncated, dtype=np.bool_).reshape(self.num_envs, -1)
+        terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
+        truncated = np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1)
 
         # save observation and info for vectorized envs
         if self._vectorized:

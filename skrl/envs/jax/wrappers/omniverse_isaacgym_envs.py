@@ -53,12 +53,12 @@ class OmniverseIsaacGymWrapper(Wrapper):
         actions = _jax2torch(actions, self._env._task.device, self._jax)
 
         self._obs_dict, reward, terminated, info = self._env.step(actions)
-        truncated = torch.zeros_like(terminated)
+        terminated = terminated.to(dtype=torch.int8).view(-1, 1)
 
         return _torch2jax(self._obs_dict["obs"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \
-               _torch2jax(terminated.view(-1, 1), self._jax), \
-               _torch2jax(truncated.view(-1, 1), self._jax), \
+               _torch2jax(terminated, self._jax), \
+               _torch2jax(terminated, self._jax), \
                info
 
     def reset(self) -> Tuple[jnp.ndarray, Any]:

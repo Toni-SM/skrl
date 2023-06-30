@@ -132,8 +132,8 @@ class GymnasiumWrapper(Wrapper):
         # convert response to numpy or jax
         observation = self._observation_to_tensor(observation)
         reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
-        terminated = np.array(terminated, dtype=np.bool_).reshape(self.num_envs, -1)
-        truncated = np.array(truncated, dtype=np.bool_).reshape(self.num_envs, -1)
+        terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
+        truncated = np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1)
         # if self._jax:  # HACK: jax.device_put(...).block_until_ready()
         #     observation = jax.device_put(observation)
         #     reward = jax.device_put(reward)

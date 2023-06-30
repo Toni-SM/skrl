@@ -226,7 +226,7 @@ class DDPG(Agent):
             self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=jnp.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
-            self.memory.create_tensor(name="terminated", size=1, dtype=jnp.bool_)
+            self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
 
             self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
 

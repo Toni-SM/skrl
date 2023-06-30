@@ -305,7 +305,7 @@ class PPO(Agent):
             self.memory.create_tensor(name="states", size=self.observation_space, dtype=jnp.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
-            self.memory.create_tensor(name="terminated", size=1, dtype=jnp.bool_)
+            self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
             self.memory.create_tensor(name="log_prob", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="values", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=jnp.float32)

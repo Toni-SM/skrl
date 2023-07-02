@@ -152,7 +152,7 @@ agent = PPO(models=models,  # models dict
             device=env.device)
 
 # Load the checkpoint from Hugging Face Hub
-path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO")
+path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO", filename="agent.pt")
 agent.load(path)
 # [end-checkpoint-load-huggingface-torch]
 
@@ -170,7 +170,7 @@ agent = PPO(models=models,  # models dict
             device=env.device)
 
 # Load the checkpoint from Hugging Face Hub
-path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO")
+path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Cartpole-PPO", filename="agent.pickle")
 agent.load(path)
 # [end-checkpoint-load-huggingface-jax]
 

@@ -52,13 +52,13 @@ To install **skrl** with pip, execute:
 
 .. tabs::
 
-    .. group-tab:: PyTorch
+    .. group-tab:: |_4| |pytorch| |_4|
 
         .. code-block:: bash
 
             pip install skrl["torch"]
 
-    .. group-tab:: JAX
+    .. group-tab:: |_4| |jax| |_4|
 
         .. warning::
 
@@ -98,13 +98,13 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
     .. tabs::
 
-        .. group-tab:: PyTorch
+        .. group-tab:: |_4| |pytorch| |_4|
 
             .. code-block:: bash
 
                 pip install -e .["torch"]
 
-        .. group-tab:: JAX
+        .. group-tab:: |_4| |jax| |_4|
 
             .. warning::
 
@@ -130,13 +130,13 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
     .. tabs::
 
-        .. group-tab:: PyTorch
+        .. group-tab:: |_4| |pytorch| |_4|
 
             .. code-block:: bash
 
                 pip install .["torch"]
 
-        .. group-tab:: JAX
+        .. group-tab:: |_4| |jax| |_4|
 
             .. warning::
 

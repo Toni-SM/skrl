@@ -230,7 +230,11 @@ Checkpoints can be loaded (e.g. to resume or continue training) for each of the 
 
 .. note::
 
-    The agents or models instances must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's `state_dict <https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict>`_ directly.
+    The agents or models instances must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's state-dict directly.
+
+.. note::
+
+    Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems during evaluation. The reason for this is that during the evaluation not all components, such as optimizers or other models apart from the policy, may be defined.
 
 The following code snippets show how to load the checkpoints through the instantiated agent (recommended) or models. See the :doc:`Examples <examples>` section for showcases about how to checkpoints and use them to continue the training or evaluate experiments.
 

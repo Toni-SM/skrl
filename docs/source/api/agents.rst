@@ -75,8 +75,7 @@ Base class
 
 .. note::
 
-    This is the base class for all the other classes in this module.
-    It provides the basic functionality for the other classes.
+    This is the base class for all agents in this module and provides only basic functionality that is not tied to any implementation of the optimization algorithms.
     **It is not intended to be used directly**.
 
 .. raw:: html
@@ -90,17 +89,47 @@ Basic inheritance usage
 
     .. tab:: Inheritance
 
-        .. literalinclude:: ../snippets/agent.py
-            :language: python
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../snippets/agent.py
+                    :language: python
+                    :start-after: [start-agent-base-class-torch]
+                    :end-before: [end-agent-base-class-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../snippets/agent.py
+                    :language: python
+                    :start-after: [start-agent-base-class-jax]
+                    :end-before: [end-agent-base-class-jax]
 
 .. raw:: html
 
     <br>
 
-API
-^^^
+API (PyTorch)
+^^^^^^^^^^^^^
 
 .. autoclass:: skrl.agents.torch.base.Agent
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update, _empty_preprocessor, _get_internal_value
+    :members:
+
+    .. automethod:: __init__
+    .. automethod:: __str__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+^^^^^^^^^
+
+.. autoclass:: skrl.agents.jax.base.Agent
     :undoc-members:
     :show-inheritance:
     :inherited-members:

@@ -19,25 +19,19 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. code-block:: python
+        .. literalinclude:: ../../snippets/gaussian_model.py
+            :language: python
             :emphasize-lines: 1, 4-5
-
-            class GaussianModel(GaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0",
-                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-                    Model.__init__(self, observation_space, action_space, device)
-                    GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+            :start-after: [start-definition-torch]
+            :end-before: [end-definition-torch]
 
     .. group-tab:: |_4| |jax| |_4|
 
-        .. code-block:: python
+        .. literalinclude:: ../../snippets/gaussian_model.py
+            :language: python
             :emphasize-lines: 1, 4-5
-
-            class GaussianModel(GaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device=None,
-                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
-                    Model.__init__(self, observation_space, action_space, device, **kwargs)
-                    GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+            :start-after: [start-definition-jax]
+            :end-before: [end-definition-jax]
 
 .. raw:: html
 
@@ -99,15 +93,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-mlp-sequential]
-                            :end-before: [end-mlp-sequential]
+                            :start-after: [start-mlp-sequential-torch]
+                            :end-before: [end-mlp-sequential-torch]
 
                     .. group-tab:: nn.functional
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-mlp-functional]
-                            :end-before: [end-mlp-functional]
+                            :start-after: [start-mlp-functional-torch]
+                            :end-before: [end-mlp-functional-torch]
 
             .. group-tab:: |_4| |jax| |_4|
 
@@ -117,15 +111,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-jax-mlp-setup]
-                            :end-before: [end-jax-mlp-setup]
+                            :start-after: [start-mlp-setup-jax]
+                            :end-before: [end-mlp-setup-jax]
 
                     .. group-tab:: compact-style
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-jax-mlp-compact]
-                            :end-before: [end-jax-mlp-compact]
+                            :start-after: [start-mlp-compact-jax]
+                            :end-before: [end-mlp-compact-jax]
 
     .. tab:: CNN
 
@@ -153,15 +147,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-cnn-sequential]
-                            :end-before: [end-cnn-sequential]
+                            :start-after: [start-cnn-sequential-torch]
+                            :end-before: [end-cnn-sequential-torch]
 
                     .. group-tab:: nn.functional
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-cnn-functional]
-                            :end-before: [end-cnn-functional]
+                            :start-after: [start-cnn-functional-torch]
+                            :end-before: [end-cnn-functional-torch]
 
     .. tab:: RNN
 
@@ -217,15 +211,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-rnn-sequential]
-                            :end-before: [end-rnn-sequential]
+                            :start-after: [start-rnn-sequential-torch]
+                            :end-before: [end-rnn-sequential-torch]
 
                     .. group-tab:: nn.functional
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-rnn-functional]
-                            :end-before: [end-rnn-functional]
+                            :start-after: [start-rnn-functional-torch]
+                            :end-before: [end-rnn-functional-torch]
 
     .. tab:: GRU
 
@@ -281,15 +275,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-gru-sequential]
-                            :end-before: [end-gru-sequential]
+                            :start-after: [start-gru-sequential-torch]
+                            :end-before: [end-gru-sequential-torch]
 
                     .. group-tab:: nn.functional
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-gru-functional]
-                            :end-before: [end-gru-functional]
+                            :start-after: [start-gru-functional-torch]
+                            :end-before: [end-gru-functional-torch]
 
     .. tab:: LSTM
 
@@ -346,15 +340,15 @@ Usage
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-lstm-sequential]
-                            :end-before: [end-lstm-sequential]
+                            :start-after: [start-lstm-sequential-torch]
+                            :end-before: [end-lstm-sequential-torch]
 
                     .. group-tab:: nn.functional
 
                         .. literalinclude:: ../../snippets/gaussian_model.py
                             :language: python
-                            :start-after: [start-lstm-functional]
-                            :end-before: [end-lstm-functional]
+                            :start-after: [start-lstm-functional-torch]
+                            :end-before: [end-lstm-functional-torch]
 
 .. raw:: html
 

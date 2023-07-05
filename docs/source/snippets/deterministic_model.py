@@ -1,4 +1,21 @@
-# [start-mlp-sequential]
+# [start-definition-torch]
+class DeterministicModel(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False):
+        Model.__init__(self, observation_space, action_space, device)
+        DeterministicMixin.__init__(self, clip_actions)
+# [end-definition-torch]
+
+
+# [start-definition-jax]
+class DeterministicModel(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        DeterministicMixin.__init__(self, clip_actions)
+# [end-definition-jax]
+
+# =============================================================================
+
+# [start-mlp-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -26,9 +43,9 @@ critic = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
-# [end-mlp-sequential]
+# [end-mlp-sequential-torch]
 
-# [start-mlp-functional]
+# [start-mlp-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -59,11 +76,75 @@ critic = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
-# [end-mlp-functional]
+# [end-mlp-functional-torch]
+
+# [start-mlp-setup-jax]
+import jax.numpy as jnp
+import flax.linen as nn
+
+from skrl.models.jax import Model, DeterministicMixin
+
+
+# define the model
+class MLP(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        DeterministicMixin.__init__(self, clip_actions)
+
+    def setup(self):
+        self.fc1 = nn.Dense(64)
+        self.fc2 = nn.Dense(32)
+        self.fc3 = nn.Dense(1)
+
+    def __call__(self, inputs, role):
+        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
+        x = self.fc1(x)
+        x = nn.relu(x)
+        x = self.fc2(x)
+        x = nn.relu(x)
+        x = self.fc3(x)
+        return x, {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             clip_actions=False)
+# [end-mlp-setup-jax]
+
+# [start-mlp-compact-jax]
+import jax.numpy as jnp
+import flax.linen as nn
+
+from skrl.models.jax import Model, DeterministicMixin
+
+
+# define the model
+class MLP(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        DeterministicMixin.__init__(self, clip_actions)
+
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
+        x = nn.relu(nn.Dense(64)(x))
+        x = nn.relu(nn.Dense(32)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             clip_actions=False)
+# [end-mlp-compact-jax]
 
 # =============================================================================
 
-# [start-cnn-sequential]
+# [start-cnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -105,9 +186,9 @@ critic = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
-# [end-cnn-sequential]
+# [end-cnn-sequential-torch]
 
-# [start-cnn-functional]
+# [start-cnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -157,11 +238,11 @@ critic = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
-# [end-cnn-functional]
+# [end-cnn-functional-torch]
 
 # =============================================================================
 
-# [start-rnn-sequential]
+# [start-rnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -241,9 +322,9 @@ critic = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-sequential]
+# [end-rnn-sequential-torch]
 
-# [start-rnn-functional]
+# [start-rnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -327,11 +408,11 @@ critic = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-functional]
+# [end-rnn-functional-torch]
 
 # =============================================================================
 
-# [start-gru-sequential]
+# [start-gru-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -411,9 +492,9 @@ critic = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-sequential]
+# [end-gru-sequential-torch]
 
-# [start-gru-functional]
+# [start-gru-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -497,11 +578,11 @@ critic = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-functional]
+# [end-gru-functional-torch]
 
 # =============================================================================
 
-# [start-lstm-sequential]
+# [start-lstm-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -586,9 +667,9 @@ critic = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-sequential]
+# [end-lstm-sequential-torch]
 
-# [start-lstm-functional]
+# [start-lstm-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -677,4 +758,4 @@ critic = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-functional]
+# [end-lstm-functional-torch]

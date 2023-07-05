@@ -1,4 +1,14 @@
-# [start-mlp-sequential]
+# [start-definition-torch]
+class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None,
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
+        Model.__init__(self, observation_space, action_space, device)
+        MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
+# [end-definition-torch]
+
+# =============================================================================
+
+# [start-mlp-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -33,9 +43,9 @@ policy = MLP(observation_space=env.observation_space,
              clip_log_std=True,
              min_log_std=-20,
              max_log_std=2)
-# [end-mlp-sequential]
+# [end-mlp-sequential-torch]
 
-# [start-mlp-functional]
+# [start-mlp-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -73,11 +83,11 @@ policy = MLP(observation_space=env.observation_space,
              clip_log_std=True,
              min_log_std=-20,
              max_log_std=2)
-# [end-mlp-functional]
+# [end-mlp-functional-torch]
 
 # =============================================================================
 
-# [start-cnn-sequential]
+# [start-cnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -123,9 +133,9 @@ policy = CNN(observation_space=env.observation_space,
              clip_log_std=True,
              min_log_std=-20,
              max_log_std=2)
-# [end-cnn-sequential]
+# [end-cnn-sequential-torch]
 
-# [start-cnn-functional]
+# [start-cnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -181,11 +191,11 @@ policy = CNN(observation_space=env.observation_space,
              clip_log_std=True,
              min_log_std=-20,
              max_log_std=2)
-# [end-cnn-functional]
+# [end-cnn-functional-torch]
 
 # =============================================================================
 
-# [start-rnn-sequential]
+# [start-rnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -275,9 +285,9 @@ policy = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-sequential]
+# [end-rnn-sequential-torch]
 
-# [start-rnn-functional]
+# [start-rnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -371,11 +381,11 @@ policy = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-functional]
+# [end-rnn-functional-torch]
 
 # =============================================================================
 
-# [start-gru-sequential]
+# [start-gru-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -465,9 +475,9 @@ policy = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-sequential]
+# [end-gru-sequential-torch]
 
-# [start-gru-functional]
+# [start-gru-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -561,11 +571,11 @@ policy = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-functional]
+# [end-gru-functional-torch]
 
 # =============================================================================
 
-# [start-lstm-sequential]
+# [start-lstm-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -660,9 +670,9 @@ policy = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-sequential]
+# [end-lstm-sequential-torch]
 
-# [start-lstm-functional]
+# [start-lstm-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -761,4 +771,4 @@ policy = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-functional]
+# [end-lstm-functional-torch]

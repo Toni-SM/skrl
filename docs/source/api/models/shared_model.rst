@@ -38,8 +38,11 @@ The code snippet below shows how to define a shared model. The following practic
 
     <br>
 
-.. literalinclude:: ../../snippets/shared_model.py
-    :language: python
-    :linenos:
-    :start-after: [start-mlp]
-    :end-before: [end-mlp]
+.. tabs::
+
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. literalinclude:: ../../snippets/shared_model.py
+            :language: python
+            :start-after: [start-mlp-torch]
+            :end-before: [end-mlp-torch]

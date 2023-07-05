@@ -47,8 +47,7 @@ Base class
 
 .. note::
 
-    This is the base class for all the other classes in this module.
-    It provides the basic functionality for the other classes.
+    This is the base class for all models in this module and provides only basic functionality that is not tied to any specific implementation.
     **It is not intended to be used directly**.
 
 .. raw:: html
@@ -62,28 +61,85 @@ Mixin and inheritance
 
     .. tab:: Mixin
 
-        .. literalinclude:: ../snippets/model_mixin.py
-            :language: python
-            :start-after: [start-mixin]
-            :end-before: [end-mixin]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../snippets/model_mixin.py
+                    :language: python
+                    :start-after: [start-mixin-torch]
+                    :end-before: [end-mixin-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../snippets/model_mixin.py
+                    :language: python
+                    :start-after: [start-mixin-jax]
+                    :end-before: [end-mixin-jax]
 
     .. tab:: Model inheritance
 
-        .. literalinclude:: ../snippets/model_mixin.py
-            :language: python
-            :start-after: [start-model]
-            :end-before: [end-model]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../snippets/model_mixin.py
+                    :language: python
+                    :start-after: [start-model-torch]
+                    :end-before: [end-model-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../snippets/model_mixin.py
+                    :language: python
+                    :start-after: [start-model-jax]
+                    :end-before: [end-model-jax]
 
 .. raw:: html
 
     <br>
 
-API
-^^^
-
 .. _models_base_class:
 
+API (PyTorch)
+^^^^^^^^^^^^^
+
 .. autoclass:: skrl.models.torch.base.Model
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _get_space_size
+    :members:
+
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        Device to be used for the computations
+
+    .. py:property:: observation_space
+
+        Observation/state space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: action_space
+
+        Action space. It is a replica of the class constructor parameter of the same name
+
+    .. py:property:: num_observations
+
+        Number of elements in the observation/state space
+
+    .. py:property:: num_actions
+
+        Number of elements in the action space
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+^^^^^^^^^
+
+.. autoclass:: skrl.models.jax.base.Model
     :undoc-members:
     :show-inheritance:
     :private-members: _get_space_size

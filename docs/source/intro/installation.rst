@@ -180,7 +180,7 @@ Bug detection and/or correction, feature requests and everything else are more t
 Known issues and troubleshooting
 --------------------------------
 
-1. When using the parallel trainer with PyTorch 1.12
+1. When using the parallel trainer with PyTorch 1.12.
 
     See PyTorch issue `#80831 <https://github.com/pytorch/pytorch/issues/80831>`_
 
@@ -188,7 +188,7 @@ Known issues and troubleshooting
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
 
-2. When using OmniIsaacGymEnvs in Isaac Sim 2022.2.1 (Python 3.7) and earlier
+2. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs on Isaac Sim 2022.2.1 and earlier).
 
     .. code-block:: text
 
@@ -200,6 +200,19 @@ Known issues and troubleshooting
 
         def __hash__(self):
             return id(self)
+
+3. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Isaac Orbit or Omniverse Isaac Gym environments.
+
+    .. code-block:: text
+
+        PxgCudaDeviceMemoryAllocator fail to allocate memory XXXXXX bytes!! Result = 2
+        RuntimeError: CUDA error: an illegal memory access was encountered
+
+    NVIDIA environments use PyTorch as a backend, and both PyTorch (for CUDA kernels, among others) and JAX preallocate GPU memory, which can lead to out-of-memory (OOM) problems. Reduce or disable GPU memory preallocation as indicated in JAX `GPU memory allocation <https://jax.readthedocs.io/en/latest/gpu_memory_allocation.html>`_ to avoid this issue. For example:
+
+    .. code-block:: bash
+
+        export XLA_PYTHON_CLIENT_MEM_FRACTION=.50  # lowering preallocated GPU memory to 50%
 
 .. raw:: html
 

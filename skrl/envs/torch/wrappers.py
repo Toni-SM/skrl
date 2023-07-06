@@ -625,10 +625,11 @@ class GymnasiumWrapper(Wrapper):
         observation, info = self._env.reset()
         return self._observation_to_tensor(observation), info
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> gymnasium.core.RenderFrame | list[gymnasium.core.RenderFrame] | None:
         """Render the environment
         """
-        self._env.render(*args, **kwargs)
+        return self._env.render(*args, **kwargs)
+
 
     def close(self) -> None:
         """Close the environment

@@ -40,7 +40,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
 
         # enable deterministic. The following environment variables should be established:
         # - CUDA 10.1: CUDA_LAUNCH_BLOCKING=1
-        # - CUDA 10.2 or later: CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:2
+        # - CUDA 10.2 or later: CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:8
         >>> from skrl.utils import set_seed
         >>> set_seed(42, deterministic=True)
         [skrl:INFO] Seed: 42
@@ -51,7 +51,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     :type seed: int, optional
     :param deterministic: Whether PyTorch is configured to use deterministic algorithms (default: ``False``).
                           The following environment variables should be established for CUDA 10.1 (``CUDA_LAUNCH_BLOCKING=1``)
-                          and for CUDA 10.2 or later (``CUBLAS_WORKSPACE_CONFIG=:16:8`` or ``CUBLAS_WORKSPACE_CONFIG=:4096:2``).
+                          and for CUDA 10.2 or later (``CUBLAS_WORKSPACE_CONFIG=:16:8`` or ``CUBLAS_WORKSPACE_CONFIG=:4096:8``).
                           See PyTorch `Reproducibility <https://pytorch.org/docs/stable/notes/randomness.html>`_ for details
     :type deterministic: bool, optional
 
@@ -86,7 +86,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
             torch.backends.cudnn.deterministic = True
 
             # On CUDA 10.1, set environment variable CUDA_LAUNCH_BLOCKING=1
-            # On CUDA 10.2 or later, set environment variable CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:2
+            # On CUDA 10.2 or later, set environment variable CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:8
 
             logger.warning("PyTorch/cuDNN deterministic algorithms are enabled. This may affect performance")
     except ImportError:

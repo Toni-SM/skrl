@@ -46,24 +46,48 @@ Basic inheritance usage
 
     .. tab:: Inheritance
 
-        .. literalinclude:: ../../snippets/noises.py
-            :language: python
-            :start-after: [torch-start-base-class]
-            :end-before: [torch-end-base-class]
+        .. tabs::
 
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/noises.py
+                    :language: python
+                    :start-after: [start-base-class-torch]
+                    :end-before: [end-base-class-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/noises.py
+                    :language: python
+                    :start-after: [start-base-class-jax]
+                    :end-before: [end-base-class-jax]
 
 .. raw:: html
 
     <br>
 
-API
-^^^
+API (PyTorch)
+^^^^^^^^^^^^^
 
 .. autoclass:: skrl.resources.noises.torch.base.Noise
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+^^^^^^^^^
+
+.. autoclass:: skrl.resources.noises.jax.base.Noise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:
 
     .. automethod:: __init__

@@ -1,4 +1,4 @@
-# [torch-start-base-class]
+# [start-base-class-torch]
 from typing import Union, Tuple
 
 import torch
@@ -26,7 +26,43 @@ class CustomNoise(Noise):
         # ================================
         # - sample noise
         # ================================
-# [torch-end-base-class]
+# [end-base-class-torch]
+
+
+# [start-base-class-jax]
+from typing import Optional, Union, Tuple
+
+import numpy as np
+
+import jaxlib
+import jax.numpy as jnp
+
+from skrl.resources.noises.torch import Noise
+
+
+class CustomNoise(Noise):
+    def __init__(self, device: Optional[Union[str, jaxlib.xla_extension.Device]] = None) -> None:
+        """Custom noise
+
+        :param device: Device on which a jax array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :type device: str or jaxlib.xla_extension.Device, optional
+        """
+        super().__init__(device)
+
+    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
+        """Sample noise
+
+        :param size: Shape of the sampled tensor
+        :type size: tuple or list of integers
+
+        :return: Sampled noise
+        :rtype: np.ndarray or jnp.ndarray
+        """
+        # ================================
+        # - sample noise
+        # ================================
+# [end-base-class-jax]
 
 # =============================================================================
 

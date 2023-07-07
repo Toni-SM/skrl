@@ -5,7 +5,7 @@ import optax
 import jax.numpy as jnp
 
 
-class KLAdaptiveRL:
+class KLAdaptiveLR:
     def __init__(self,
                  init_value: float,
                  kl_threshold: float = 0.008,
@@ -26,7 +26,7 @@ class KLAdaptiveRL:
 
         Example::
 
-            >>> scheduler = KLAdaptiveRL(init_value=1e-3, kl_threshold=0.01)
+            >>> scheduler = KLAdaptiveLR(init_value=1e-3, kl_threshold=0.01)
             >>> for epoch in range(100):
             >>>     train(...)
             >>>     validate(...)
@@ -91,4 +91,4 @@ class KLAdaptiveRL:
 
 # Alias to maintain naming compatibility with Optax schedulers
 # https://optax.readthedocs.io/en/latest/api.html#schedules
-kl_adaptive = KLAdaptiveRL
+kl_adaptive = KLAdaptiveLR

@@ -12,7 +12,7 @@ import numpy as np
 
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
-from skrl.resources.schedulers.jax import KLAdaptiveRL
+from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.resources.optimizers.jax import Adam
 
 from skrl.agents.jax import Agent
@@ -243,7 +243,7 @@ class A2C(Agent):
             scale = True
             self.scheduler = None
             if self._learning_rate_scheduler is not None:
-                if self._learning_rate_scheduler == KLAdaptiveRL:
+                if self._learning_rate_scheduler == KLAdaptiveLR:
                     scale = False
                     self.scheduler = self._learning_rate_scheduler(self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"])
                 else:
@@ -487,7 +487,7 @@ class A2C(Agent):
 
         # update learning rate
         if self._learning_rate_scheduler:
-            if isinstance(self.scheduler, KLAdaptiveRL):
+            if isinstance(self.scheduler, KLAdaptiveLR):
                 self.scheduler.step(np.mean(kl_divergences))
 
         # record data

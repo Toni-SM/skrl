@@ -1,1 +1,2 @@
-from skrl.resources.schedulers.jax.kl_adaptive import KLAdaptiveRL, kl_adaptive
+from skrl.resources.schedulers.jax.kl_adaptive import KLAdaptiveLR, kl_adaptive
+KLAdaptiveRL = KLAdaptiveLR

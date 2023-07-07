@@ -4,7 +4,7 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 
-class KLAdaptiveRL(_LRScheduler):
+class KLAdaptiveLR(_LRScheduler):
     def __init__(self,
                  optimizer: torch.optim.Optimizer,
                  kl_threshold: float = 0.008,
@@ -27,7 +27,7 @@ class KLAdaptiveRL(_LRScheduler):
 
         Example::
 
-            >>> scheduler = KLAdaptiveRL(optimizer, kl_threshold=0.01)
+            >>> scheduler = KLAdaptiveLR(optimizer, kl_threshold=0.01)
             >>> for epoch in range(100):
             >>>     train(...)
             >>>     validate(...)

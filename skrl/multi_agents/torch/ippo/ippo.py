@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 from skrl.multi_agents.torch import MultiAgent
 
@@ -443,7 +443,7 @@ class IPPO(MultiAgent):
 
                 # update learning rate
                 if self._learning_rate_scheduler[uid]:
-                    if isinstance(self.schedulers[uid], KLAdaptiveRL):
+                    if isinstance(self.schedulers[uid], KLAdaptiveLR):
                         self.schedulers[uid].step(torch.tensor(kl_divergences).mean())
                     else:
                         self.schedulers[uid].step()

@@ -65,10 +65,10 @@ The following examples show how to set the scheduler for an agent:
                     :emphasize-lines: 2, 5-6
 
                     # import the scheduler class
-                    from skrl.resources.schedulers.torch import KLAdaptiveRL
+                    from skrl.resources.schedulers.torch import KLAdaptiveLR
 
                     cfg = DEFAULT_CONFIG.copy()
-                    cfg["learning_rate_scheduler"] = KLAdaptiveRL
+                    cfg["learning_rate_scheduler"] = KLAdaptiveLR
                     cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 
     .. group-tab:: |_4| |jax| |_4|
@@ -93,8 +93,8 @@ The following examples show how to set the scheduler for an agent:
                     :emphasize-lines: 2, 5-6
 
                     # import the scheduler class
-                    from skrl.resources.schedulers.jax import KLAdaptiveRL  # or kl_adaptive (Optax style)
+                    from skrl.resources.schedulers.jax import KLAdaptiveLR  # or kl_adaptive (Optax style)
 
                     cfg = DEFAULT_CONFIG.copy()
-                    cfg["learning_rate_scheduler"] = KLAdaptiveRL
+                    cfg["learning_rate_scheduler"] = KLAdaptiveLR
                     cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}

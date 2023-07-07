@@ -15,7 +15,7 @@ Resources groups a variety of components that may be used to improve the agents'
 
     <br><hr>
 
-Available resources are :doc:`noises <resources/noises>`, input :doc:`preprocessors <resources/preprocessors>`, and learning rate :doc:`schedulers <resources/schedulers>`.
+Available resources are :doc:`noises <resources/noises>`, input :doc:`preprocessors <resources/preprocessors>`, learning rate :doc:`schedulers <resources/schedulers>` and :doc:`optimizers <resources/optimizers>` (this last one only for JAX).
 
 .. list-table::
     :header-rows: 1

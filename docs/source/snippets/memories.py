@@ -83,3 +83,22 @@ class CustomMemory(Memory):
         #   It is possible to generate only the sampling indexes and call self.sample_by_index(...)
         # ================================
 # [end-base-class-jax]
+
+# =============================================================================
+
+# [start-random-torch]
+# import the memory class
+from skrl.memories.torch import RandomMemory
+
+# instantiate the memory (assumes there is a wrapped environment: env)
+memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)
+# [end-random-torch]
+
+
+# [start-random-jax]
+# import the memory class
+from skrl.memories.jax import RandomMemory
+
+# instantiate the memory (assumes there is a wrapped environment: env)
+memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)
+# [end-random-jax]

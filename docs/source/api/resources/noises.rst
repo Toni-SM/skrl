@@ -44,23 +44,19 @@ Basic inheritance usage
 
 .. tabs::
 
-    .. tab:: Inheritance
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. literalinclude:: ../../snippets/noises.py
+            :language: python
+            :start-after: [start-base-class-torch]
+            :end-before: [end-base-class-torch]
 
-            .. group-tab:: |_4| |pytorch| |_4|
+    .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../../snippets/noises.py
-                    :language: python
-                    :start-after: [start-base-class-torch]
-                    :end-before: [end-base-class-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/noises.py
-                    :language: python
-                    :start-after: [start-base-class-jax]
-                    :end-before: [end-base-class-jax]
+        .. literalinclude:: ../../snippets/noises.py
+            :language: python
+            :start-after: [start-base-class-jax]
+            :end-before: [end-base-class-jax]
 
 .. raw:: html
 

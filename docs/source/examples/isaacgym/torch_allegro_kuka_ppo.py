@@ -27,17 +27,19 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 1024),
                                  nn.ELU(),
-                                 nn.Linear(512, 256),
+                                 nn.Linear(1024, 1024),
                                  nn.ELU(),
-                                 nn.Linear(256, 128),
+                                 nn.Linear(1024, 512),
+                                 nn.ELU(),
+                                 nn.Linear(512, 512),
                                  nn.ELU())
 
-        self.mean_layer = nn.Linear(128, self.num_actions)
+        self.mean_layer = nn.Linear(512, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
-        self.value_layer = nn.Linear(128, 1)
+        self.value_layer = nn.Linear(512, 1)
 
     def act(self, inputs, role):
         if role == "policy":
@@ -54,8 +56,8 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
 # load and wrap the Isaac Gym environment using the easy-to-use API from NVIDIA
 env = isaacgymenvs.make(seed=seed,
-                        task="AllegroHand",
-                        num_envs=16384,
+                        task="AllegroKuka",
+                        num_envs=8192,
                         sim_device="cuda:0",
                         rl_device="cuda:0",
                         graphics_device_id=0,
@@ -66,7 +68,7 @@ device = env.device
 
 
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=8, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
@@ -80,19 +82,19 @@ models["value"] = models["policy"]  # same instance: shared model
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
 cfg = PPO_DEFAULT_CONFIG.copy()
-cfg["rollouts"] = 8  # memory_size
-cfg["learning_epochs"] = 5
-cfg["mini_batches"] = 4  # 8 * 16384 / 32768
+cfg["rollouts"] = 16  # memory_size
+cfg["learning_epochs"] = 4
+cfg["mini_batches"] = 4  # 16 * 8192 / 32768
 cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
-cfg["learning_rate"] = 5e-4
+cfg["learning_rate"] = 1e-4
 cfg["learning_rate_scheduler"] = KLAdaptiveRL
 cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.016}
 cfg["random_timesteps"] = 0
 cfg["learning_starts"] = 0
 cfg["grad_norm_clip"] = 1.0
-cfg["ratio_clip"] = 0.2
-cfg["value_clip"] = 0.2
+cfg["ratio_clip"] = 0.1
+cfg["value_clip"] = 0.1
 cfg["clip_predicted_values"] = True
 cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 2.0
@@ -105,7 +107,7 @@ cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 200
 cfg["experiment"]["checkpoint_interval"] = 2000
-cfg["experiment"]["directory"] = "runs/torch/AllegroHand"
+cfg["experiment"]["directory"] = "runs/torch/AllegroKuka"
 
 agent = PPO(models=models,
             memory=memory,
@@ -116,7 +118,7 @@ agent = PPO(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 40000, "headless": True}
+cfg_trainer = {"timesteps": 1600000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

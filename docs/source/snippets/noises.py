@@ -3,7 +3,7 @@ from typing import Union, Tuple
 
 import torch
 
-from skrl.resources.noises.torch import Noise     # from . import Noise
+from skrl.resources.noises.torch import Noise
 
 
 class CustomNoise(Noise):

@@ -122,6 +122,8 @@ class MultiAgentEnvWrapper(object):
         :param env: The multi-agent environment to wrap
         :type env: Any supported multi-agent environment
         """
+        self._jax = config.jax.backend == "jax"
+
         self._env = env
 
         # device (faster than @property)

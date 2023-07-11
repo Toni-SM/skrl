@@ -176,15 +176,14 @@ class Trainer:
             with torch.no_grad():
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with torch.no_grad():
+                # record the environments' transitions
                 self.agents.record_transition(states=states,
                                               actions=actions,
                                               rewards=rewards,
@@ -230,14 +229,13 @@ class Trainer:
             with torch.no_grad():
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with torch.no_grad():
                 # write data to TensorBoard
                 self.agents.record_transition(states=states,
                                               actions=actions,
@@ -289,18 +287,17 @@ class Trainer:
             with torch.no_grad():
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
-            infos["shared_states"] = shared_states
-            infos["shared_next_states"] = shared_next_states
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                shared_next_states = infos.get("shared_states", None)
+                infos["shared_states"] = shared_states
+                infos["shared_next_states"] = shared_next_states
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with torch.no_grad():
+                # record the environments' transitions
                 self.agents.record_transition(states=states,
                                               actions=actions,
                                               rewards=rewards,
@@ -346,17 +343,16 @@ class Trainer:
             with torch.no_grad():
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
-            infos["shared_states"] = shared_states
-            infos["shared_next_states"] = shared_next_states
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                shared_next_states = infos.get("shared_states", None)
+                infos["shared_states"] = shared_states
+                infos["shared_next_states"] = shared_next_states
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with torch.no_grad():
                 # write data to TensorBoard
                 self.agents.record_transition(states=states,
                                               actions=actions,

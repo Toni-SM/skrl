@@ -396,12 +396,10 @@ class Memory:
                  The sampled tensors will have the following shape: (number of indexes, data size)
         :rtype: list of np.ndarray or jnp.ndarray list
         """
-        if self._jax:
-            raise NotImplementedError
-            # FIXME: convert tuple or list to array
         if mini_batches > 1:
             batches = np.array_split(indexes, mini_batches)
-            return [[self._get_tensors_view(name)[batch] for name in names] for batch in batches]
+            views = [self._get_tensors_view(name) for name in names]
+            return [[view[batch] for view in views] for batch in batches]
         return [[self._get_tensors_view(name)[indexes] for name in names]]
 
     def sample_all(self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1) -> List[List[Union[np.ndarray, jnp.ndarray]]]:

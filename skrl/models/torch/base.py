@@ -220,7 +220,7 @@ class Model(torch.nn.Module):
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
-             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
+            return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
         # continuous action space (Box)
         elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             if self._random_distribution is None:

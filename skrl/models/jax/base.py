@@ -78,6 +78,8 @@ class Model(flax.linen.Module):
                     x = nn.relu(nn.Dense(self.num_actions)(x))
                     return x, None, {}
         """
+        self._jax = config.jax.backend == "jax"
+
         if device is None:
             self.device = jax.devices()[0]
         else:
@@ -262,12 +264,16 @@ class Model(flax.linen.Module):
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
-             return np.random.randint(self.action_space.n, size=(inputs["states"].shape[0], 1)), None, {}
+            actions = np.random.randint(self.action_space.n, size=(inputs["states"].shape[0], 1))
         # continuous action space (Box)
         elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
-            return np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions)), None, {}
+            actions = np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions))
         else:
             raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
+
+        if self._jax:
+            return jax.device_put(actions), None, {}
+        return actions, None, {}
 
     def init_parameters(self, method_name: str = "normal", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name

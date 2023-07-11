@@ -71,6 +71,10 @@ rst_prolog = """
 .. |pytorch| image:: /_static/data/logo-torch.svg
     :width: 16
 
+.. |br| raw:: html
+
+            <br>
+
 """
 
 # HTML output
@@ -80,7 +84,7 @@ html_scaled_image_link = False
 
 html_static_path = ["_static"]
 html_favicon = "_static/data/favicon.ico"
-html_css_files = ["css/s5defs-roles.css"]
+html_css_files = ["css/skrl.css", "css/s5defs-roles.css"]
 
 html_theme_options = {
     # logo
@@ -133,3 +137,8 @@ notfound_context = {
 <p>Try using the search box or go to the homepage.</p>
 """,
 }
+
+# suppress warning messages
+suppress_warnings = [
+    "ref.python",  # more than one target found for cross-reference
+]

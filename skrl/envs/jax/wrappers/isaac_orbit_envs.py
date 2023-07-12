@@ -42,8 +42,9 @@ class IsaacOrbitWrapper(Wrapper):
         """
         actions = _jax2torch(actions, self._env.device, self._jax)
 
-        self._obs_dict, reward, terminated, info = self._env.step(actions)
-        terminated = terminated.to(dtype=torch.int8).view(-1, 1)
+        with torch.no_grad():
+            self._obs_dict, reward, terminated, info = self._env.step(actions)
+            terminated = terminated.to(dtype=torch.int8).view(-1, 1)
 
         return _torch2jax(self._obs_dict["policy"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \

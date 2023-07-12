@@ -75,7 +75,8 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         """
         actions = [_jax2torch(actions[uid], self.device, self._jax) for uid in self.possible_agents]
 
-        obs_buf, shared_obs_buf, reward_buf, terminated_buf, info, _ = self._env.step(actions)
+        with torch.no_grad():
+            obs_buf, shared_obs_buf, reward_buf, terminated_buf, info, _ = self._env.step(actions)
 
         obs_buf = _torch2jax(obs_buf, self._jax)
         shared_obs_buf = _torch2jax(shared_obs_buf, self._jax)

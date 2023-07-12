@@ -42,8 +42,9 @@ class IsaacGymPreview2Wrapper(Wrapper):
         """
         actions = _jax2torch(actions, self._env.device, self._jax)
 
-        self._obs_buf, reward, terminated, info = self._env.step(actions)
-        terminated = terminated.to(dtype=torch.int8).view(-1, 1)
+        with torch.no_grad():
+            self._obs_buf, reward, terminated, info = self._env.step(actions)
+            terminated = terminated.to(dtype=torch.int8).view(-1, 1)
 
         return _torch2jax(self._obs_buf, self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \
@@ -96,8 +97,9 @@ class IsaacGymPreview3Wrapper(Wrapper):
         """
         actions = _jax2torch(actions, self._env.device, self._jax)
 
-        self._obs_dict, reward, terminated, info = self._env.step(actions)
-        terminated = terminated.to(dtype=torch.int8).view(-1, 1)
+        with torch.no_grad():
+            self._obs_dict, reward, terminated, info = self._env.step(actions)
+            terminated = terminated.to(dtype=torch.int8).view(-1, 1)
 
         return _torch2jax(self._obs_dict["obs"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \

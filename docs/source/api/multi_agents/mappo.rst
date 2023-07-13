@@ -31,6 +31,7 @@ Algorithm implementation
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - shared states (:math:`s_{_{shared}}`), shared next states (:math:`s'_{_{shared}}`)
 |   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
@@ -39,11 +40,10 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
-:red:`Update algorithm`
-
+|
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
 |     :math:`adv \leftarrow 0`
@@ -61,9 +61,11 @@ Learning algorithm: :literal:`_update`
 |     :green:`# normalize advantages`
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
+|
+| :literal:`_update(...)`
 | **FOR** each agent **DO**
 |     :green:`# compute returns and advantages`
-|     :math:`V_{_{last}}' \leftarrow V_\phi(s')`
+|     :math:`V_{_{last}}' \leftarrow V_\phi(s'_{_{shared}})`
 |     :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
 |     :green:`# sample mini-batches from memory`
 |     [[:math:`s, a, logp, V, R, A`]] :math:`\leftarrow` states, actions, log_prob, values, returns, advantages
@@ -89,7 +91,7 @@ Learning algorithm: :literal:`_update`
 |             :math:`L_{_{clipped\,surrogate}} \leftarrow A \; \text{clip}(ratio, 1 - c, 1 + c) \qquad` with :math:`c` as :guilabel:`ratio_clip`
 |             :math:`L^{clip}_{\pi_\theta} \leftarrow - \frac{1}{N} \sum_{i=1}^N \min(L_{_{surrogate}}, L_{_{clipped\,surrogate}})`
 |             :green:`# compute value loss`
-|             :math:`V_{_{predicted}} \leftarrow V_\phi(s)`
+|             :math:`V_{_{predicted}} \leftarrow V_\phi(s_{_{shared}})`
 |             **IF** :guilabel:`clip_predicted_values` is enabled **THEN**
 |                 :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
 |             :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
@@ -113,11 +115,23 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-mappo]
-            :end-before: [end-mappo]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [start-mappo-torch]
+                    :end-before: [end-mappo-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [start-mappo-jax]
+                    :end-before: [end-mappo-jax]
 
 .. raw:: html
 
@@ -210,21 +224,44 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - for Policy and Value
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.multi_agents.torch.mappo.MAPPO_DEFAULT_CONFIG
 
 .. autoclass:: skrl.multi_agents.torch.mappo.MAPPO
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.multi_agents.jax.mappo.MAPPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.multi_agents.jax.mappo.MAPPO
     :undoc-members:
     :show-inheritance:
     :private-members: _update

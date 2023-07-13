@@ -18,6 +18,10 @@ This library works with a common API to interact with the following RL environme
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
+.. raw:: html
+
+    <br>
+
 .. image:: ../../_static/imgs/wrapping-light.svg
     :width: 100%
     :align: center
@@ -272,12 +276,12 @@ Usage
                     :start-after: [pytorch-start-deepmind]
                     :end-before: [pytorch-end-deepmind]
 
-            .. group-tab:: |_4| |jax| |_4|
+            .. .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-deepmind]
-                    :end-before: [jax-end-deepmind]
+            ..     .. literalinclude:: ../../snippets/wrapping.py
+            ..         :language: python
+            ..         :start-after: [jax-start-deepmind]
+            ..         :end-before: [jax-end-deepmind]
 
     .. tab:: robosuite
 
@@ -290,12 +294,12 @@ Usage
                     :start-after: [pytorch-start-robosuite]
                     :end-before: [pytorch-end-robosuite]
 
-            .. group-tab:: |_4| |jax| |_4|
+            .. .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-robosuite]
-                    :end-before: [jax-end-robosuite]
+            ..     .. literalinclude:: ../../snippets/wrapping.py
+            ..         :language: python
+            ..         :start-after: [jax-start-robosuite]
+            ..         :end-before: [jax-end-robosuite]
 
 .. raw:: html
 
@@ -399,6 +403,19 @@ Internal API (PyTorch)
 
 Internal API (JAX)
 ------------------
+
+.. autoclass:: skrl.envs.jax.wrappers.Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda"`` or ``"cpu"`` depending on the device availability
 
 .. autoclass:: skrl.envs.jax.wrappers.OmniverseIsaacGymWrapper
     :undoc-members:

@@ -198,7 +198,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 from skrl.envs.torch import wrap_env
 import gym
 
-# load environment
+# load the environment
 env = gym.make('Pendulum-v1')
 
 # wrap the environment
@@ -211,7 +211,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 from skrl.envs.jax import wrap_env
 import gym
 
-# load environment
+# load the environment
 env = gym.make('Pendulum-v1')
 
 # wrap the environment
@@ -250,7 +250,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 from skrl.envs.torch import wrap_env
 import gymnasium as gym
 
-# load environment
+# load the environment
 env = gym.make('Pendulum-v1')
 
 # wrap the environment
@@ -263,7 +263,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 from skrl.envs.jax import wrap_env
 import gymnasium as gym
 
-# load environment
+# load the environment
 env = gym.make('Pendulum-v1')
 
 # wrap the environment
@@ -302,7 +302,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 from skrl.envs.torch import wrap_env
 from dm_control import suite
 
-# load environment
+# load the environment
 env = suite.load(domain_name="cartpole", task_name="swingup")
 
 # wrap the environment
@@ -311,12 +311,14 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
 
 
 # [pytorch-start-robosuite]
-# import the environment wrapper and robosuite
+# import the environment wrapper
 from skrl.envs.torch import wrap_env
+
+# import the robosuite wrapper
 import robosuite
 from robosuite.controllers import load_controller_config
 
-# load environment
+# load the environment
 controller_config = load_controller_config(default_controller="OSC_POSE")
 env = robosuite.make("TwoArmLift",
                      robots=["Sawyer", "Panda"],             # load a Sawyer robot and a Panda robot
@@ -335,3 +337,44 @@ env = robosuite.make("TwoArmLift",
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
 # [pytorch-end-robosuite]
+
+
+# [start-bidexhands-torch]
+# import the environment wrapper and loader
+from skrl.envs.torch.wrappers import wrap_env
+from skrl.envs.torch.loaders import load_bidexhands_env
+
+# load the environment
+env = load_bidexhands_env(task_name="ShadowHandOver")
+
+# wrap the environment
+env = wrap_env(env, wrapper="bidexhands")
+# [end-bidexhands-torch]
+
+
+# [start-bidexhands-jax]
+# import the environment wrapper and loader
+from skrl.envs.jax.wrappers import wrap_env
+from skrl.envs.jax.loaders import load_bidexhands_env
+
+# load the environment
+env = load_bidexhands_env(task_name="ShadowHandOver")
+
+# wrap the environment
+env = wrap_env(env, wrapper="bidexhands")
+# [end-bidexhands-jax]
+
+
+# [start-pettingzoo-torch]
+# import the environment wrapper
+from skrl.envs.torch.wrappers import wrap_env
+
+# import a PettingZoo environment
+from pettingzoo.butterfly import pistonball_v6
+
+# load the environment
+env = pistonball_v6.parallel_env(continuous=False, max_cycles=125)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [end-pettingzoo-torch]

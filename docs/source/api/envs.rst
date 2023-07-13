@@ -44,7 +44,7 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: |_4| |jax| |_4|
     * - Bi-DexHands
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - DeepMind
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`

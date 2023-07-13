@@ -21,10 +21,10 @@ Agents are autonomous entities that interact with the environment to learn and i
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`Independent Proximal Policy Optimization <multi_agents/ippo>` (**IPPO**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Multi-Agent Proximal Policy Optimization <multi_agents/mappo>` (**MAPPO**)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 Base class
 ----------

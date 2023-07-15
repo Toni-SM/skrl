@@ -7,5 +7,6 @@
 }
 
 tbody > tr > th.stub {
-    font-weight: normal
+    font-weight: normal;
+    text-align: left;
 }

@@ -38,7 +38,7 @@ class TestCase(unittest.TestCase):
             memory = Memory(memory_size=memory_size, num_envs=num_envs)
 
             # create tensors
-            for name, size, dtype in zip(self.names, self.raw_sizes, self.raw_dtypes): 
+            for name, size, dtype in zip(self.names, self.raw_sizes, self.raw_dtypes):
                 memory.create_tensor(name, size, dtype)
 
             # test memory.get_tensor_names
@@ -64,7 +64,7 @@ class TestCase(unittest.TestCase):
             memory = Memory(memory_size=memory_size, num_envs=num_envs)
 
             # create tensors
-            for name, size, dtype in zip(self.names, self.raw_sizes, self.raw_dtypes): 
+            for name, size, dtype in zip(self.names, self.raw_sizes, self.raw_dtypes):
                 memory.create_tensor(name, size, dtype)
 
             # fill memory
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     if not sys.argv[-1] == '--debug':
         raise RuntimeError('Test can only be runned manually with --debug flag')
-    
+
     test = TestCase()
     test.setUp()
     for method in dir(test):

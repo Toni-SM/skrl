@@ -1,6 +1,5 @@
 from typing import Union
 
-import os
 import sys
 import logging
 import numpy as np
@@ -8,10 +7,12 @@ import numpy as np
 __all__ = ["__version__", "logger", "config"]
 
 
-# read library version from file
-path = os.path.join(os.path.dirname(__file__), "version.txt")
-with open(path, "r") as file:
-    __version__ = file.read().strip()
+# read library version from metadata
+try:
+    import importlib.metadata
+    __version__ = importlib.metadata.version("skrl")
+except ImportError:
+    __version__ = "unknown"
 
 
 # logger with format

@@ -1,0 +1,55 @@
+[project]
+name = "skrl"
+version = "1.0.0-preview.1"
+description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT License"}
+authors = [
+  {name = "Toni-SM"},
+]
+maintainers = [
+  {name = "Toni-SM"},
+]
+keywords = ["reinforcement-learning", "machine-learning", "reinforcement", "machine", "learning", "rl"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+# dependencies / optional-dependencies
+dependencies = [
+  "gym",
+  "gymnasium",
+  "tqdm",
+  "packaging",
+  "tensorboard",
+]
+[project.optional-dependencies]
+torch = [
+  "torch>=1.8",
+]
+jax = [
+  "jax",
+  "jaxlib",
+  "flax",
+  "optax",
+]
+all = [
+  "torch>=1.8",
+  "jax",
+  "jaxlib",
+  "flax",
+  "optax",
+]
+# urls
+[project.urls]
+"Homepage" = "https://github.com/Toni-SM/skrl"
+"Documentation" = "https://skrl.readthedocs.io"
+"Discussions" = "https://github.com/Toni-SM/skrl/discussions"
+"Bug Reports" = "https://github.com/Toni-SM/skrl/issues"
+"Say Thanks!" = "https://github.com/Toni-SM"
+"Source" = "https://github.com/Toni-SM/skrl"

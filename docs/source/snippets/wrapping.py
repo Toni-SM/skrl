@@ -370,11 +370,26 @@ env = wrap_env(env, wrapper="bidexhands")
 from skrl.envs.torch.wrappers import wrap_env
 
 # import a PettingZoo environment
-from pettingzoo.butterfly import pistonball_v6
+from pettingzoo.sisl import multiwalker_v9
 
 # load the environment
-env = pistonball_v6.parallel_env(continuous=False, max_cycles=125)
+env = multiwalker_v9.parallel_env()
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
 # [end-pettingzoo-torch]
+
+
+# [start-pettingzoo-jax]
+# import the environment wrapper
+from skrl.envs.jax.wrappers import wrap_env
+
+# import a PettingZoo environment
+from pettingzoo.sisl import multiwalker_v9
+
+# load the environment
+env = multiwalker_v9.parallel_env()
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [end-pettingzoo-jax]

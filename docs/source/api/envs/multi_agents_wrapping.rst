@@ -50,6 +50,13 @@ Usage
                     :start-after: [start-pettingzoo-torch]
                     :end-before: [end-pettingzoo-torch]
 
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [start-pettingzoo-jax]
+                    :end-before: [end-pettingzoo-jax]
+
     .. tab:: Bi-DexHands
 
         .. tabs::
@@ -149,6 +156,13 @@ Internal API (JAX)
         A list of all possible_agents the environment could generate
 
 .. autoclass:: skrl.envs.jax.wrappers.BiDexHandsWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:

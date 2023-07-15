@@ -14,7 +14,7 @@ from skrl.envs.jax.wrappers.omniverse_isaacgym_envs import OmniverseIsaacGymWrap
 # from skrl.envs.jax.wrappers.robosuite_envs import RobosuiteWrapper
 
 from skrl.envs.jax.wrappers.bidexhands_envs import BiDexHandsWrapper
-# from skrl.envs.jax.wrappers.pettingzoo_envs import PettingZooWrapper
+from skrl.envs.jax.wrappers.pettingzoo_envs import PettingZooWrapper
 
 from skrl import logger
 

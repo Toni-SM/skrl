@@ -1,3 +1,7 @@
 .nowrap {
     white-space: nowrap;
 }
+
+.sidebar-brand-text {
+    font-size: 1.25rem !important;
+}

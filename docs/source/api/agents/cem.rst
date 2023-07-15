@@ -24,18 +24,22 @@ Algorithm implementation
 
     <br>
 
-Decision making: :literal:`act`
-"""""""""""""""""""""""""""""""
+Decision making
+"""""""""""""""
 
+|
+| :literal:`act(...)`
 | :math:`a \leftarrow \pi_\theta(s)`
 
 .. raw:: html
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
+| :literal:`_update(...)`
 | :green:`# sample all memory`
 | :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
 | :green:`# compute discounted return threshold`
@@ -67,11 +71,23 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-cem]
-            :end-before: [end-cem]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-cem]
+                    :end-before: [torch-end-cem]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [jax-start-cem]
+                    :end-before: [jax-end-cem]
 
 .. raw:: html
 
@@ -149,19 +165,40 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.cem.CEM_DEFAULT_CONFIG
 
 .. autoclass:: skrl.agents.torch.cem.CEM
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.agents.jax.cem.CEM_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.jax.cem.CEM
     :undoc-members:
     :show-inheritance:
     :private-members: _update

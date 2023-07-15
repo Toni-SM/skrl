@@ -1,6 +1,10 @@
+from typing import Union, Sequence, Optional
+
 import os
 import sys
 import queue
+
+from skrl import logger
 
 __all__ = ["load_omniverse_isaacgym_env"]
 
@@ -37,11 +41,14 @@ def _print_cfg(d, indent=0) -> None:
             print('  |   ' * indent + "  |-- {}: {}".format(key, value))
 
 def load_omniverse_isaacgym_env(task_name: str = "",
+                                num_envs: Optional[int] = None,
+                                headless: Optional[bool] = None,
+                                cli_args: Sequence[str] = [],
                                 omniisaacgymenvs_path: str = "",
                                 show_cfg: bool = True,
                                 multi_threaded: bool = False,
-                                timeout: int = 30):
-    """Load an Omniverse Isaac Gym environment
+                                timeout: int = 30) -> Union["VecEnvBase", "VecEnvMT"]:
+    """Load an Omniverse Isaac Gym environment (OIGE)
 
     Omniverse Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
 
@@ -49,6 +56,16 @@ def load_omniverse_isaacgym_env(task_name: str = "",
                       If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
                       Command line argument has priority over function parameter if both are specified
     :type task_name: str, optional
+    :param num_envs: Number of parallel environments to create (default: None).
+                     If not specified, the default number of environments defined in the task configuration is used.
+                     Command line argument has priority over function parameter if both are specified
+    :type num_envs: int, optional
+    :param headless: Whether to use headless mode (no rendering) (default: None).
+                     If not specified, the default task configuration is used.
+                     Command line argument has priority over function parameter if both are specified
+    :type headless: bool, optional
+    :param cli_args: OIGE configuration and command line arguments (default: [])
+    :type cli_args: list of str, optional
     :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory (default: "").
                               If empty, the path will obtained from omniisaacgymenvs package metadata
     :type omniisaacgymenvs_path: str, optional
@@ -70,6 +87,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     from hydra._internal.hydra import Hydra
     from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
 
+    import omegaconf
     from omegaconf import OmegaConf
 
     from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException  # type: ignore
@@ -86,7 +104,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # get task name from command line arguments
     if defined:
         if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
-            print("[WARNING] Overriding task name ({}) with command line argument ({})" \
+            logger.warning("Overriding task name ({}) with command line argument (task={})" \
                 .format(task_name, arg.split("task=")[1].split(" ")[0]))
     # get task name from function arguments
     else:
@@ -94,6 +112,39 @@ def load_omniverse_isaacgym_env(task_name: str = "",
             sys.argv.append("task={}".format(task_name))
         else:
             raise ValueError("No task name defined. Set task_name parameter or use task=<task_name> as command line argument")
+
+    # check num_envs from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("num_envs="):
+            defined = True
+            break
+    # get num_envs from command line arguments
+    if defined:
+        if num_envs is not None and num_envs != int(arg.split("num_envs=")[1].split(" ")[0]):
+            logger.warning("Overriding num_envs ({}) with command line argument (num_envs={})" \
+                .format(num_envs, arg.split("num_envs=")[1].split(" ")[0]))
+    # get num_envs from function arguments
+    elif num_envs is not None and num_envs > 0:
+        sys.argv.append("num_envs={}".format(num_envs))
+
+    # check headless from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("headless="):
+            defined = True
+            break
+    # get headless from command line arguments
+    if defined:
+        if headless is not None and str(headless).lower() != arg.split("headless=")[1].split(" ")[0].lower():
+            logger.warning("Overriding headless ({}) with command line argument (headless={})" \
+                .format(headless, arg.split("headless=")[1].split(" ")[0]))
+    # get headless from function arguments
+    elif headless is not None:
+        sys.argv.append("headless={}".format(headless))
+
+    # others command line arguments
+    sys.argv += cli_args
 
     # get omniisaacgymenvs path from omniisaacgymenvs package metadata
     if omniisaacgymenvs_path == "":
@@ -192,24 +243,35 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     sys.path.append(omniisaacgymenvs_path)
     from utils.task_util import initialize_task  # type: ignore
 
-    if config.multi_gpu:
-        rank = int(os.getenv("LOCAL_RANK", "0"))
-        config.device_id = rank
-        config.rl_device = f"cuda:{rank}"
+    try:
+        if config.multi_gpu:
+            rank = int(os.getenv("LOCAL_RANK", "0"))
+            config.device_id = rank
+            config.rl_device = f"cuda:{rank}"
+    except omegaconf.errors.ConfigAttributeError:
+        logger.warning("Using an older version of OmniIsaacGymEnvs (2022.2.0 or earlier)")
     enable_viewport = "enable_cameras" in config.task.sim and config.task.sim.enable_cameras
 
     if multi_threaded:
-        env = _OmniIsaacGymVecEnvMT(headless=config.headless,
-                                    sim_device=config.device_id,
-                                    enable_livestream=config.enable_livestream,
-                                    enable_viewport=enable_viewport)
+        try:
+            env = _OmniIsaacGymVecEnvMT(headless=config.headless,
+                                        sim_device=config.device_id,
+                                        enable_livestream=config.enable_livestream,
+                                        enable_viewport=enable_viewport)
+        except (TypeError, omegaconf.errors.ConfigAttributeError):
+            logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
+            env = _OmniIsaacGymVecEnvMT(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier
         task = initialize_task(cfg, env, init_sim=False)
         env.initialize(env.action_queue, env.data_queue, timeout=timeout)
     else:
-        env = _OmniIsaacGymVecEnv(headless=config.headless,
-                                  sim_device=config.device_id,
-                                  enable_livestream=config.enable_livestream,
-                                  enable_viewport=enable_viewport)
+        try:
+            env = _OmniIsaacGymVecEnv(headless=config.headless,
+                                      sim_device=config.device_id,
+                                      enable_livestream=config.enable_livestream,
+                                      enable_viewport=enable_viewport)
+        except (TypeError, omegaconf.errors.ConfigAttributeError):
+            logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
+            env = _OmniIsaacGymVecEnv(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier
         task = initialize_task(cfg, env, init_sim=True)
 
     return env

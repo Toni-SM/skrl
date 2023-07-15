@@ -39,9 +39,10 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
 |     :math:`adv \leftarrow 0`
@@ -59,6 +60,8 @@ Learning algorithm: :literal:`_update`
 |     :green:`# normalize advantages`
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
+|
+| :literal:`_update(...)`
 | **FOR** each agent **DO**
 |     :green:`# compute returns and advantages`
 |     :math:`V_{_{last}}' \leftarrow V_\phi(s')`
@@ -111,11 +114,23 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-ippo]
-            :end-before: [end-ippo]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [start-ippo-torch]
+                    :end-before: [end-ippo-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/multi_agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [start-ippo-jax]
+                    :end-before: [end-ippo-jax]
 
 .. raw:: html
 
@@ -208,21 +223,44 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - for Policy and Value
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.multi_agents.torch.ippo.IPPO_DEFAULT_CONFIG
 
 .. autoclass:: skrl.multi_agents.torch.ippo.IPPO
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.multi_agents.jax.ippo.IPPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.multi_agents.jax.ippo.IPPO
     :undoc-members:
     :show-inheritance:
     :private-members: _update

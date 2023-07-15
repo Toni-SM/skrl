@@ -18,6 +18,7 @@ Algorithm
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
 | Main notation/symbols:
 |   - action-value function (:math:`Q`)
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
@@ -26,18 +27,22 @@ Algorithm implementation
 
     <br>
 
-Decision making: :literal:`act`
-"""""""""""""""""""""""""""""""
+Decision making
+"""""""""""""""
 
+|
+| :literal:`act(...)`
 | :math:`a \leftarrow \pi_{Q[s,a]}(s) \qquad` where :math:`\; a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q[s] & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
 .. raw:: html
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
+| :literal:`_update(...)`
 | :green:`# compute next actions`
 | :math:`a' \leftarrow \pi_{Q[s,a]}(s') \qquad` :gray:`# the only difference with Q-learning`
 | :green:`# update Q-table`
@@ -54,11 +59,15 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-sarsa]
-            :end-before: [end-sarsa]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-sarsa]
+                    :end-before: [torch-end-sarsa]
 
 .. raw:: html
 
@@ -126,8 +135,8 @@ The implementation uses 1 table. This table (model) must be collected in a dicti
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.sarsa.SARSA_DEFAULT_CONFIG
 

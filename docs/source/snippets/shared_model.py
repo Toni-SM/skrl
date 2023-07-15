@@ -1,4 +1,4 @@
-# [start-mlp]
+# [start-mlp-torch]
 import torch
 import torch.nn as nn
 
@@ -45,4 +45,4 @@ class SharedModel(GaussianMixin, DeterministicMixin, Model):
 models = {}
 models["policy"] = SharedModel(env.observation_space, env.action_space, env.device)
 models["value"] = models["policy"]
-# [end-mlp]
+# [end-mlp-torch]

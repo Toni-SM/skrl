@@ -344,8 +344,8 @@ class SAC_RNN(Agent):
         # gradient steps
         for gradient_step in range(self._gradient_steps):
 
-            sampled_states = self._state_preprocessor(sampled_states, train=not gradient_step)
-            sampled_next_states = self._state_preprocessor(sampled_next_states)
+            sampled_states = self._state_preprocessor(sampled_states, train=True)
+            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
             # compute target values
             with torch.no_grad():

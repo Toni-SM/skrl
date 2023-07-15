@@ -32,9 +32,10 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
 |     :math:`adv \leftarrow 0`
@@ -52,11 +53,13 @@ Learning algorithm: :literal:`_update`
 |     :green:`# normalize advantages`
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
+|
 | :literal:`surrogate_loss(...)`
 | :blue:`def` :math:`\;f_{Loss} (\pi_\theta, s, a, logp, A) \;\rightarrow\; L_{\pi_\theta}:`
 |     :math:`logp' \leftarrow \pi_\theta(s, a)`
 |     :math:`L_{\pi_\theta} \leftarrow \frac{1}{N} \sum_{i=1}^N A \; e^{(logp' - logp)}`
 
+|
 | :literal:`conjugate_gradient(...)` (See `conjugate gradient method <https://en.wikipedia.org/wiki/Conjugate_gradient_method#As_an_iterative_method>`_)
 | :blue:`def` :math:`\;f_{CG} (\pi_\theta, s, b) \;\rightarrow\; x:`
 |     :math:`x \leftarrow \text{zeros}(b)`
@@ -73,6 +76,7 @@ Learning algorithm: :literal:`_update`
 |         :math:`p \leftarrow r + \dfrac{rr_{new}}{rr_{old}} \; p`
 |         :math:`rr_{old} \leftarrow rr_{new}`
 
+|
 | :literal:`fisher_vector_product(...)` (See `fisher vector product in TRPO <https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/>`_)
 | :blue:`def` :math:`\;f_{Ax} (\pi_\theta, s, v) \;\rightarrow\; hv:`
 |     :math:`kl \leftarrow f_{KL}(\pi_\theta, \pi_\theta, s)`
@@ -82,6 +86,7 @@ Learning algorithm: :literal:`_update`
 |     :math:`g_{hv_{flat}} \leftarrow \text{flatten}(g_{hv})`
 |     :math:`hv \leftarrow g_{hv_{flat}} +` :guilabel:`damping` :math:`v`
 
+|
 | :literal:`kl_divergence(...)` (See `Kullback–Leibler divergence for normal distribution <https://en.wikipedia.org/wiki/Normal_distribution#Other_properties>`_)
 | :blue:`def` :math:`\;f_{KL} (\pi_{\theta 1}, \pi_{\theta 2}, s) \;\rightarrow\; kl:`
 |     :math:`\mu_1, \log\sigma_1 \leftarrow \pi_{\theta 1}(s)`
@@ -89,6 +94,8 @@ Learning algorithm: :literal:`_update`
 |     :math:`kl \leftarrow \log\sigma_1 - \log\sigma_2 + \frac{1}{2} \dfrac{(e^{\log\sigma_1})^2 + (\mu_1 - \mu_2)^2}{(e^{\log\sigma_2})^2} - \frac{1}{2}`
 |     :math:`kl \leftarrow \frac{1}{N} \sum_{i=1}^N \, (\sum_{dim} kl)`
 
+|
+| :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
 | :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
@@ -153,23 +160,31 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-trpo]
-            :end-before: [end-trpo]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-trpo]
+                    :end-before: [torch-end-trpo]
 
     .. tab:: RNN implementation
 
-        .. note::
+        .. tabs::
 
-            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+            .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-trpo-rnn]
-            :end-before: [end-trpo-rnn]
+                .. note::
+
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-trpo-rnn]
+                    :end-before: [torch-end-trpo-rnn]
 
 .. raw:: html
 
@@ -253,17 +268,23 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.trpo.TRPO_DEFAULT_CONFIG
 

@@ -13,23 +13,17 @@ skrl provides a Python mixin (:literal:`TabularMixin`) to assist in the creation
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
-  .. code-block:: python
-      :emphasize-lines: 1
-
-      class TabularModel(TabularMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
-              Model.__init__(self, observation_space, action_space, device)
-              TabularMixin.__init__(self, num_envs)
-
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
-  .. code-block:: python
-      :emphasize-lines: 3-4
+.. tabs::
 
-      class TabularModel(TabularMixin, Model):
-          def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
-              Model.__init__(self, observation_space, action_space, device)
-              TabularMixin.__init__(self, num_envs)
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. literalinclude:: ../../snippets/tabular_model.py
+            :language: python
+            :emphasize-lines: 1, 3-4
+            :start-after: [start-definition-torch]
+            :end-before: [end-definition-torch]
 
 .. raw:: html
 
@@ -42,18 +36,21 @@ Usage
 
     .. tab:: :math:`\epsilon`-greedy policy
 
-        .. literalinclude:: ../../snippets/tabular_model.py
-            :language: python
-            :linenos:
-            :start-after: [start-epsilon-greedy]
-            :end-before: [end-epsilon-greedy]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/tabular_model.py
+                    :language: python
+                    :start-after: [start-epsilon-greedy-torch]
+                    :end-before: [end-epsilon-greedy-torch]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.models.torch.tabular.TabularMixin
     :show-inheritance:

@@ -31,13 +31,19 @@ Usage
 
 .. tabs::
 
-    .. tab:: Snippet
+    .. group-tab:: |_4| |pytorch| |_4|
 
         .. literalinclude:: ../../snippets/trainer.py
             :language: python
-            :linenos:
-            :start-after: [start-manual]
-            :end-before: [end-manual]
+            :start-after: [pytorch-start-manual]
+            :end-before: [pytorch-end-manual]
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. literalinclude:: ../../snippets/trainer.py
+            :language: python
+            :start-after: [jax-start-manual]
+            :end-before: [jax-end-manual]
 
 .. raw:: html
 
@@ -55,12 +61,29 @@ Configuration
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.trainers.torch.manual.MANUAL_TRAINER_DEFAULT_CONFIG
 
 .. autoclass:: skrl.trainers.torch.manual.ManualTrainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.trainers.jax.manual.MANUAL_TRAINER_DEFAULT_CONFIG
+
+.. autoclass:: skrl.trainers.jax.manual.ManualTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

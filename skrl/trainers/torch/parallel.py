@@ -218,15 +218,14 @@ class ParallelTrainer(Trainer):
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with torch.no_grad():
+                # record the environments' transitions
                 if not rewards.is_cuda:
                     rewards.share_memory_()
                 if not next_states.is_cuda:
@@ -350,14 +349,13 @@ class ParallelTrainer(Trainer):
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with torch.no_grad():
                 # write data to TensorBoard
                 if not rewards.is_cuda:
                     rewards.share_memory_()

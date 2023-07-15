@@ -46,9 +46,9 @@ class RunningStandardScaler(nn.Module):
 
         size = self._get_space_size(size)
 
-        self.register_buffer("running_mean", torch.zeros(size, dtype = torch.float64, device=self.device))
-        self.register_buffer("running_variance", torch.ones(size, dtype = torch.float64, device=self.device))
-        self.register_buffer("current_count", torch.ones((), dtype = torch.float64, device=self.device))
+        self.register_buffer("running_mean", torch.zeros(size, dtype=torch.float64, device=self.device))
+        self.register_buffer("running_variance", torch.ones(size, dtype=torch.float64, device=self.device))
+        self.register_buffer("current_count", torch.ones((), dtype=torch.float64, device=self.device))
 
     def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
         """Get the size (number of elements) of a space
@@ -124,9 +124,8 @@ class RunningStandardScaler(nn.Module):
             return torch.sqrt(self.running_variance.float()) \
                 * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
         # standardization by centering and scaling
-        else:
-            return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
-                                min=-self.clip_threshold, max=self.clip_threshold)
+        return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
+                            min=-self.clip_threshold, max=self.clip_threshold)
 
     def forward(self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True) -> torch.Tensor:
         """Forward pass of the standardizer
@@ -161,5 +160,4 @@ class RunningStandardScaler(nn.Module):
         if no_grad:
             with torch.no_grad():
                 return self._compute(x, train, inverse)
-        else:
-            return self._compute(x, train, inverse)
+        return self._compute(x, train, inverse)

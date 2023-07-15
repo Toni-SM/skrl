@@ -7,12 +7,16 @@ Wrapping (multi-agents)
 
     <br><hr>
 
-This library works with a common API to interact with the following RL environments:
+This library works with a common API to interact with the following RL multi-agent environments:
 
 * Farama `PettingZoo <https://pettingzoo.farama.org>`_ (parallel API)
 * `Bi-DexHands <https://github.com/PKU-MARL/DexterousHands>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
+
+.. raw:: html
+
+    <br>
 
 .. image:: ../../_static/imgs/multi_agent_wrapping-light.svg
     :width: 100%
@@ -37,52 +41,64 @@ Usage
 
     .. tab:: PettingZoo
 
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper
-            from skrl.envs.torch.wrappers import wrap_env
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # import a PettingZoo environment
-            from pettingzoo.butterfly import pistonball_v6
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [start-pettingzoo-torch]
+                    :end-before: [end-pettingzoo-torch]
 
-            # load the environment
-            env = pistonball_v6.parallel_env(continuous=False, max_cycles=125)
+            .. group-tab:: |_4| |jax| |_4|
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [start-pettingzoo-jax]
+                    :end-before: [end-pettingzoo-jax]
 
     .. tab:: Bi-DexHands
 
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and loader
-            from skrl.envs.torch.wrappers import wrap_env
-            from skrl.envs.torch.loaders import load_bidexhands_env
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # load the environment
-            env = load_bidexhands_env(task_name="ShadowHandOver")
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [start-bidexhands-torch]
+                    :end-before: [end-bidexhands-torch]
 
-            # wrap the environment
-            env = wrap_env(env, wrapper="bidexhands")
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [start-bidexhands-jax]
+                    :end-before: [end-bidexhands-jax]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autofunction:: skrl.envs.torch.wrappers.wrap_env
-    :noindex:
 
 .. raw:: html
 
     <br>
 
-Internal API
-------------
+API (JAX)
+---------
+
+.. autofunction:: skrl.envs.jax.wrappers.wrap_env
+
+.. raw:: html
+
+    <br>
+
+Internal API (PyTorch)
+----------------------
 
 .. autoclass:: skrl.envs.torch.wrappers.MultiAgentEnvWrapper
     :undoc-members:
@@ -109,6 +125,44 @@ Internal API
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.torch.wrappers.PettingZooWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+Internal API (JAX)
+------------------
+
+.. autoclass:: skrl.envs.jax.wrappers.MultiAgentEnvWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
+
+    .. py:property:: possible_agents
+
+        A list of all possible_agents the environment could generate
+
+.. autoclass:: skrl.envs.jax.wrappers.BiDexHandsWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:

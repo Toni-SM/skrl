@@ -30,8 +30,8 @@ class GymWrapper(Wrapper):
         except Exception as e:
             print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
 
-        self._drepecated_api = version.parse(gym.__version__) < version.parse(" 0.25.0")
-        if self._drepecated_api:
+        self._deprecated_api = version.parse(gym.__version__) < version.parse("0.25.0")
+        if self._deprecated_api:
             logger.warning("Using a deprecated version of OpenAI Gym's API: {}".format(gym.__version__))
 
     @property
@@ -127,7 +127,7 @@ class GymWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        if self._drepecated_api:
+        if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
             if type(info) is list:
@@ -166,7 +166,7 @@ class GymWrapper(Wrapper):
             self._reset_once = False
 
         # reset the env/envs
-        if self._drepecated_api:
+        if self._deprecated_api:
             observation = self._env.reset()
             info = {}
         else:

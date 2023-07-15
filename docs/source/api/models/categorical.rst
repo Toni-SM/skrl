@@ -13,23 +13,25 @@ skrl provides a Python mixin (:literal:`CategoricalMixin`) to assist in the crea
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
-  .. code-block:: python
-      :emphasize-lines: 1
-
-      class CategoricalModel(CategoricalMixin, Model):
-          def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-              Model.__init__(self, observation_space, action_space, device)
-              CategoricalMixin.__init__(self, unnormalized_log_prob)
-
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
-  .. code-block:: python
-      :emphasize-lines: 3-4
+.. tabs::
 
-      class CategoricalModel(CategoricalMixin, Model):
-          def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-              Model.__init__(self, observation_space, action_space, device)
-              CategoricalMixin.__init__(self, unnormalized_log_prob)
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. literalinclude:: ../../snippets/categorical_model.py
+            :language: python
+            :emphasize-lines: 1, 3-4
+            :start-after: [start-definition-torch]
+            :end-before: [end-definition-torch]
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. literalinclude:: ../../snippets/categorical_model.py
+            :language: python
+            :emphasize-lines: 1, 3-4
+            :start-after: [start-definition-jax]
+            :end-before: [end-definition-jax]
 
 .. raw:: html
 
@@ -83,21 +85,41 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-mlp-sequential]
-                    :end-before: [end-mlp-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-mlp-functional]
-                    :end-before: [end-mlp-functional]
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-mlp-sequential-torch]
+                            :end-before: [end-mlp-sequential-torch]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-mlp-functional-torch]
+                            :end-before: [end-mlp-functional-torch]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. tabs::
+
+                    .. group-tab:: setup-style
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-mlp-setup-jax]
+                            :end-before: [end-mlp-setup-jax]
+
+                    .. group-tab:: compact-style
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-mlp-compact-jax]
+                            :end-before: [end-mlp-compact-jax]
 
     .. tab:: CNN
 
@@ -117,21 +139,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-cnn-sequential]
-                    :end-before: [end-cnn-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-cnn-functional]
-                    :end-before: [end-cnn-functional]
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-cnn-sequential-torch]
+                            :end-before: [end-cnn-sequential-torch]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-cnn-functional-torch]
+                            :end-before: [end-cnn-functional-torch]
 
     .. tab:: RNN
 
@@ -179,21 +203,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-rnn-sequential]
-                    :end-before: [end-rnn-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-rnn-functional]
-                    :end-before: [end-rnn-functional]
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-rnn-sequential-torch]
+                            :end-before: [end-rnn-sequential-torch]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-rnn-functional-torch]
+                            :end-before: [end-rnn-functional-torch]
 
     .. tab:: GRU
 
@@ -241,21 +267,23 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-gru-sequential]
-                    :end-before: [end-gru-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-gru-functional]
-                    :end-before: [end-gru-functional]
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-gru-sequential-torch]
+                            :end-before: [end-gru-sequential-torch]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-gru-functional-torch]
+                            :end-before: [end-gru-functional-torch]
 
     .. tab:: LSTM
 
@@ -304,30 +332,45 @@ Usage
 
         .. tabs::
 
-            .. group-tab:: nn.Sequential
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-lstm-sequential]
-                    :end-before: [end-lstm-sequential]
+                .. tabs::
 
-            .. group-tab:: nn.functional
+                    .. group-tab:: nn.Sequential
 
-                .. literalinclude:: ../../snippets/categorical_model.py
-                    :language: python
-                    :linenos:
-                    :start-after: [start-lstm-functional]
-                    :end-before: [end-lstm-functional]
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-lstm-sequential-torch]
+                            :end-before: [end-lstm-sequential-torch]
+
+                    .. group-tab:: nn.functional
+
+                        .. literalinclude:: ../../snippets/categorical_model.py
+                            :language: python
+                            :start-after: [start-lstm-functional-torch]
+                            :end-before: [end-lstm-functional-torch]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.models.torch.categorical.CategoricalMixin
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.models.jax.categorical.CategoricalMixin
     :show-inheritance:
     :members:
 

@@ -114,12 +114,13 @@ class ManualTrainer(Trainer):
                 actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
-        # step the environments
-        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+        with torch.no_grad():
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-        # render scene
-        if not self.headless:
-            self.env.render()
+            # render scene
+            if not self.headless:
+                self.env.render()
 
         if self.num_simultaneous_agents == 1:
             # record the environments' transitions
@@ -160,7 +161,7 @@ class ManualTrainer(Trainer):
             if terminated.any() or truncated.any():
                 self.states, infos = self.env.reset()
             else:
-                self.states.copy_(next_states)
+                self.states = next_states
 
     def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
         """Evaluate the agents sequentially
@@ -209,14 +210,13 @@ class ManualTrainer(Trainer):
                 actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
-        # step the environments
-        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-        # render scene
-        if not self.headless:
-            self.env.render()
+            # render scene
+            if not self.headless:
+                self.env.render()
 
-        with torch.no_grad():
             if self.num_simultaneous_agents == 1:
                 # write data to TensorBoard
                 self.agents.record_transition(states=self.states,
@@ -248,4 +248,4 @@ class ManualTrainer(Trainer):
             if terminated.any() or truncated.any():
                 self.states, infos = self.env.reset()
             else:
-                self.states.copy_(next_states)
+                self.states = next_states

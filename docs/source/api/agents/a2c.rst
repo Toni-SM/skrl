@@ -34,9 +34,10 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
 |     :math:`adv \leftarrow 0`
@@ -54,6 +55,8 @@ Learning algorithm: :literal:`_update`
 |     :green:`# normalize advantages`
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
+|
+| :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
 | :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
@@ -97,23 +100,39 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-a2c]
-            :end-before: [end-a2c]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-a2c]
+                    :end-before: [torch-end-a2c]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [jax-start-a2c]
+                    :end-before: [jax-end-a2c]
 
     .. tab:: RNN implementation
 
-        .. note::
+        .. tabs::
 
-            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+            .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-a2c-rnn]
-            :end-before: [end-a2c-rnn]
+                .. note::
+
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-a2c-rnn]
+                    :end-before: [torch-end-a2c-rnn]
 
 .. raw:: html
 
@@ -197,17 +216,23 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - for Policy and Value
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.a2c.A2C_DEFAULT_CONFIG
 
@@ -220,6 +245,23 @@ API
     .. automethod:: __init__
 
 .. autoclass:: skrl.agents.torch.a2c.A2C_RNN
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.agents.jax.a2c.A2C_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.jax.a2c.A2C
     :undoc-members:
     :show-inheritance:
     :private-members: _update

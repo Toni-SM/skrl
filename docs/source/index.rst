@@ -28,9 +28,10 @@ SKRL - Reinforcement Learning library (|version|)
     </a>
     <br><br>
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (using `PyTorch <https://pytorch.org/>`_) and designed with a focus on readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_, `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run
+**skrl** is an open-source library for Reinforcement Learning written in Python (on top of `PyTorch <https://pytorch.org/>`_ and `JAX <https://jax.readthedocs.io>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_, `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_ and `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
 
 **Main features:**
+    * PyTorch (|_1| |pytorch| |_1|) and JAX (|_1| |jax| |_1|)
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
@@ -180,12 +181,17 @@ Resources
 
         * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
 
-Utils
-^^^^^
+    **Optimizers:** Definition of optimizers
 
-    Definition of helper functions and classes
+        * :doc:`Adam <api/resources/optimizers/adam>`
 
-    * :doc:`Utilities <api/utils>`, e.g. setting the random seed
+Utils and configurations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Definition of utilities and configurations
+
+    * :doc:`ML frameworks <api/config/frameworks>` configuration
+    * :doc:`Random seed <api/utils/seed>`
     * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`

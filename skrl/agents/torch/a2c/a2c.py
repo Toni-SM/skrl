@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 from skrl.agents.torch import Agent
 
@@ -359,11 +359,12 @@ class A2C(Agent):
             _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
             # compute aproximate KL divergence for KLAdaptive learning rate scheduler
-            if isinstance(self.scheduler, KLAdaptiveRL):
-                with torch.no_grad():
-                    ratio = next_log_prob - sampled_log_prob
-                    kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
-                    kl_divergences.append(kl_divergence)
+            if self._learning_rate_scheduler:
+                if isinstance(self.scheduler, KLAdaptiveLR):
+                    with torch.no_grad():
+                        ratio = next_log_prob - sampled_log_prob
+                        kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                        kl_divergences.append(kl_divergence)
 
             # compute entropy loss
             if self._entropy_loss_scale:
@@ -397,7 +398,7 @@ class A2C(Agent):
 
         # update learning rate
         if self._learning_rate_scheduler:
-            if isinstance(self.scheduler, KLAdaptiveRL):
+            if isinstance(self.scheduler, KLAdaptiveLR):
                 self.scheduler.step(torch.tensor(kl_divergences).mean())
             else:
                 self.scheduler.step()

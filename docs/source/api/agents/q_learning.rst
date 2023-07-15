@@ -27,18 +27,22 @@ Algorithm implementation
 
     <br>
 
-Decision making: :literal:`act`
-"""""""""""""""""""""""""""""""
+Decision making
+"""""""""""""""
 
+|
+| :literal:`act(...)`
 | :math:`a \leftarrow \pi_{Q[s,a]}(s) \qquad` where :math:`\; a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q[s] & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
 .. raw:: html
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
+| :literal:`_update(...)`
 | :green:`# compute next actions`
 | :math:`a' \leftarrow \underset{a}{\arg\max} \; Q[s'] \qquad` :gray:`# the only difference with SARSA`
 | :green:`# update Q-table`
@@ -55,11 +59,15 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-q-learning]
-            :end-before: [end-q-learning]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-q-learning]
+                    :end-before: [torch-end-q-learning]
 
 .. raw:: html
 
@@ -127,8 +135,8 @@ The implementation uses 1 table. This table (model) must be collected in a dicti
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.q_learning.Q_LEARNING_DEFAULT_CONFIG
 

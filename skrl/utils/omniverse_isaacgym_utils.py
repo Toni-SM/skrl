@@ -4,6 +4,8 @@ import queue
 import torch
 import numpy as np
 
+from skrl import logger
+
 
 def _np_quat_mul(a, b):
     assert a.shape == b.shape
@@ -316,6 +318,14 @@ def get_env_instance(headless: bool = True,
             self.stop = True
 
     if multi_threaded:
-        return _OmniIsaacGymVecEnvMT(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+        try:
+            return _OmniIsaacGymVecEnvMT(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+        except TypeError:
+            logger.warning("Using an older version of Isaac Sim (2022.2.0 or earlier)")
+            return _OmniIsaacGymVecEnvMT(headless=headless)  # Isaac Sim 2022.2.0 and earlier
     else:
-        return _OmniIsaacGymVecEnv(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+        try:
+            return _OmniIsaacGymVecEnv(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+        except TypeError:
+            logger.warning("Using an older version of Isaac Sim (2022.2.0 or earlier)")
+            return _OmniIsaacGymVecEnv(headless=headless)  # Isaac Sim 2022.2.0 and earlier

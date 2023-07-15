@@ -1,5 +1,9 @@
+from typing import Sequence, Optional
+
 import os
 import sys
+
+from skrl import logger
 
 __all__ = ["load_isaac_orbit_env"]
 
@@ -19,7 +23,11 @@ def _print_cfg(d, indent=0) -> None:
             print('  |   ' * indent + "  |-- {}: {}".format(key, value))
 
 
-def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
+def load_isaac_orbit_env(task_name: str = "",
+                         num_envs: Optional[int] = None,
+                         headless: Optional[bool] = None,
+                         cli_args: Sequence[str] = [],
+                         show_cfg: bool = True):
     """Load an Isaac Orbit environment
 
     Isaac Orbit: https://isaac-orbit.github.io/orbit/index.html
@@ -36,6 +44,16 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
                       If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
                       Command line argument has priority over function parameter if both are specified
     :type task_name: str, optional
+    :param num_envs: Number of parallel environments to create (default: None).
+                     If not specified, the default number of environments defined in the task configuration is used.
+                     Command line argument has priority over function parameter if both are specified
+    :type num_envs: int, optional
+    :param headless: Whether to use headless mode (no rendering) (default: None).
+                     If not specified, the default task configuration is used.
+                     Command line argument has priority over function parameter if both are specified
+    :type headless: bool, optional
+    :param cli_args: Isaac Orbit configuration and command line arguments (default: [])
+    :type cli_args: list of str, optional
     :param show_cfg: Whether to print the configuration (default: True)
     :type show_cfg: bool, optional
 
@@ -60,7 +78,7 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
         if arg_index >= len(sys.argv):
             raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
         if task_name and task_name != sys.argv[arg_index]:
-            print("[WARNING] Overriding task ({}) with command line argument ({})".format(task_name, sys.argv[arg_index]))
+            logger("Overriding task ({}) with command line argument ({})".format(task_name, sys.argv[arg_index]))
     # get task name from function arguments
     else:
         if task_name:
@@ -68,6 +86,38 @@ def load_isaac_orbit_env(task_name: str = "", show_cfg: bool = True):
             sys.argv.append(task_name)
         else:
             raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+
+    # check num_envs from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("--num_envs"):
+            defined = True
+            break
+    # get num_envs from command line arguments
+    if defined:
+        if num_envs is not None:
+            logger.warning("Overriding num_envs with command line argument (--num_envs)")
+    # get num_envs from function arguments
+    elif num_envs is not None and num_envs > 0:
+        sys.argv.append("--num_envs")
+        sys.argv.append(str(num_envs))
+
+    # check headless from command line arguments
+    defined = False
+    for arg in sys.argv:
+        if arg.startswith("--headless"):
+            defined = True
+            break
+    # get headless from command line arguments
+    if defined:
+        if headless is not None:
+            logger.warning("Overriding headless with command line argument (--headless)")
+    # get headless from function arguments
+    elif headless is not None:
+        sys.argv.append("--headless")
+
+    # others command line arguments
+    sys.argv += cli_args
 
     # parse arguments
     parser = argparse.ArgumentParser("Welcome to Orbit: Omniverse Robotics Environments!")

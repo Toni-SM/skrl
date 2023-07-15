@@ -2,14 +2,25 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.11.0] - Unreleased
+## [1.0.0-preview.1] - Unreleased
 ### Added
+- JAX support (with Flax and Optax)
 - RPO agent
+- IPPO and MAPPO multi-agent
+- Bi-DexHands environment loader
+- Wrap PettingZoo and Bi-DexHands environments
+- Parameters `num_envs`, `headless` and `cli_args` for configuring Isaac Gym, Isaac Orbit
+and Omniverse Isaac Gym environments when they are loaded
 
 ### Changed
-- Move the agent implementation with recurrent models to a separate file
+- Move agent implementations with recurrent models to a separate file
 - Allow closing the environment at the end of execution instead of after training/evaluation
 - Documentation theme from *sphinx_rtd_theme* to *furo*
+
+### Fixed
+- Compatibility for Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)
+- Disable PyTorch gradient computation during the environment stepping
+- Get categorical models' entropy
 
 ## [0.10.2] - 2023-03-23
 ### Changed

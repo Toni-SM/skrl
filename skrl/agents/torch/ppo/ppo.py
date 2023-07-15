@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 from skrl.agents.torch import Agent
 
@@ -425,7 +425,7 @@ class PPO(Agent):
 
             # update learning rate
             if self._learning_rate_scheduler:
-                if isinstance(self.scheduler, KLAdaptiveRL):
+                if isinstance(self.scheduler, KLAdaptiveLR):
                     self.scheduler.step(torch.tensor(kl_divergences).mean())
                 else:
                     self.scheduler.step()

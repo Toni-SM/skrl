@@ -39,13 +39,12 @@ Usage
 
 .. tabs::
 
-    .. tab:: Snippet
+    .. group-tab:: |_4| |pytorch| |_4|
 
         .. literalinclude:: ../../snippets/trainer.py
             :language: python
-            :linenos:
-            :start-after: [start-parallel]
-            :end-before: [end-parallel]
+            :start-after: [pytorch-start-parallel]
+            :end-before: [pytorch-end-parallel]
 
 .. raw:: html
 
@@ -63,8 +62,8 @@ Configuration
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
 

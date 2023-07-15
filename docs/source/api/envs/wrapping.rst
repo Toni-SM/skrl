@@ -18,6 +18,10 @@ This library works with a common API to interact with the following RL environme
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
+.. raw:: html
+
+    <br>
+
 .. image:: ../../_static/imgs/wrapping-light.svg
     :width: 100%
     :align: center
@@ -45,48 +49,57 @@ Usage
 
             .. tab:: Common environment
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_omniverse_isaacgym_env
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # load the environment
-                    env = load_omniverse_isaacgym_env(task_name="Cartpole")
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-omniverse-isaacgym]
+                            :end-before: [pytorch-end-omniverse-isaacgym]
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-omniverse-isaacgym]
+                            :end-before: [jax-end-omniverse-isaacgym]
 
             .. tab:: Multi-threaded environment
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_omniverse_isaacgym_env
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # load the multi-threaded environment
-                    env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-omniverse-isaacgym-mt]
+                            :end-before: [pytorch-end-omniverse-isaacgym-mt]
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-omniverse-isaacgym-mt]
+                            :end-before: [jax-end-omniverse-isaacgym-mt]
 
     .. tab:: Isaac Orbit
 
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and loader
-            from skrl.envs.torch import wrap_env
-            from skrl.envs.torch import load_isaac_orbit_env
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # load the environment
-            env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-isaac-orbit]
+                    :end-before: [pytorch-end-isaac-orbit]
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-isaac-orbit]
+                    :end-before: [jax-end-isaac-orbit]
 
     .. tab:: Isaac Gym
 
@@ -94,70 +107,75 @@ Usage
 
             .. tab:: Preview 4 (isaacgymenvs.make)
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    import isaacgymenvs
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # import the environment wrapper
-                    from skrl.envs.torch import wrap_env
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaacgym-preview4-make]
+                            :end-before: [pytorch-end-isaacgym-preview4-make]
 
-                    # create/load the environment using the easy-to-use API from NVIDIA
-                    env = isaacgymenvs.make(seed=0,
-                                            task="Cartpole",
-                                            num_envs=512,
-                                            sim_device="cuda:0",
-                                            rl_device="cuda:0",
-                                            graphics_device_id=0,
-                                            headless=False)
+                    .. group-tab:: |_4| |jax| |_4|
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaacgym-preview4-make]
+                            :end-before: [jax-end-isaacgym-preview4-make]
 
             .. tab:: Preview 4
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview4
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # load the environment
-                    env = load_isaacgym_env_preview4(task_name="Cartpole")
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaacgym-preview4]
+                            :end-before: [pytorch-end-isaacgym-preview4]
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaacgym-preview4]
+                            :end-before: [jax-end-isaacgym-preview4]
 
             .. tab:: Preview 3
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview3
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # load the environment
-                    env = load_isaacgym_env_preview3(task_name="Cartpole")
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaacgym-preview3]
+                            :end-before: [pytorch-end-isaacgym-preview3]
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaacgym-preview3]
+                            :end-before: [jax-end-isaacgym-preview3]
 
             .. tab:: Preview 2
 
-                .. code-block:: python
-                    :linenos:
+                .. tabs::
 
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview2
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                    # load the environment
-                    env = load_isaacgym_env_preview2(task_name="Cartpole")
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaacgym-preview2]
+                            :end-before: [pytorch-end-isaacgym-preview2]
 
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaacgym-preview2]
+                            :end-before: [jax-end-isaacgym-preview2]
 
     .. tab:: Gym / Gymnasium
 
@@ -169,35 +187,41 @@ Usage
 
                     .. tab:: Single environment
 
-                        .. code-block:: python
-                            :linenos:
+                        .. tabs::
 
-                            # import the environment wrapper and gym
-                            from skrl.envs.torch import wrap_env
-                            import gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load environment
-                            env = gym.make('Pendulum-v1')
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gym]
+                                    :end-before: [pytorch-end-gym]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gym]
+                                    :end-before: [jax-end-gym]
 
                     .. tab:: Vectorized environment
 
                         Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
 
-                        .. code-block:: python
-                            :linenos:
+                        .. tabs::
 
-                            # import the environment wrapper and gym
-                            from skrl.envs.torch import wrap_env
-                            import gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load a vectorized environment
-                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gym-vectorized]
+                                    :end-before: [pytorch-end-gym-vectorized]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gym-vectorized]
+                                    :end-before: [jax-end-gym-vectorized]
 
             .. tab:: Gymnasium
 
@@ -205,86 +229,84 @@ Usage
 
                     .. tab:: Single environment
 
-                        .. code-block:: python
-                            :linenos:
+                        .. tabs::
 
-                            # import the environment wrapper and gymnasium
-                            from skrl.envs.torch import wrap_env
-                            import gymnasium as gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load environment
-                            env = gym.make('Pendulum-v1')
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gymnasium]
+                                    :end-before: [pytorch-end-gymnasium]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gymnasium]
+                                    :end-before: [jax-end-gymnasium]
 
                     .. tab:: Vectorized environment
 
                         Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
 
-                        .. code-block:: python
-                            :linenos:
+                        .. tabs::
 
-                            # import the environment wrapper and gymnasium
-                            from skrl.envs.torch import wrap_env
-                            import gymnasium as gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load a vectorized environment
-                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gymnasium-vectorized]
+                                    :end-before: [pytorch-end-gymnasium-vectorized]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gymnasium-vectorized]
+                                    :end-before: [jax-end-gymnasium-vectorized]
 
     .. tab:: DeepMind
 
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and the deepmind suite
-            from skrl.envs.torch import wrap_env
-            from dm_control import suite
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # load environment
-            env = suite.load(domain_name="cartpole", task_name="swingup")
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-deepmind]
+                    :end-before: [pytorch-end-deepmind]
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
+            .. .. group-tab:: |_4| |jax| |_4|
+
+            ..     .. literalinclude:: ../../snippets/wrapping.py
+            ..         :language: python
+            ..         :start-after: [jax-start-deepmind]
+            ..         :end-before: [jax-end-deepmind]
 
     .. tab:: robosuite
 
-        .. code-block:: python
-            :linenos:
+        .. tabs::
 
-            # import the environment wrapper and robosuite
-            from skrl.envs.torch import wrap_env
-            import robosuite
-            from robosuite.controllers import load_controller_config
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # load environment
-            controller_config = load_controller_config(default_controller="OSC_POSE")
-            env = robosuite.make("TwoArmLift",
-                                 robots=["Sawyer", "Panda"],             # load a Sawyer robot and a Panda robot
-                                 gripper_types="default",                # use default grippers per robot arm
-                                 controller_configs=controller_config,   # each arm is controlled using OSC
-                                 env_configuration="single-arm-opposed", # (two-arm envs only) arms face each other
-                                 has_renderer=True,                      # on-screen rendering
-                                 render_camera="frontview",              # visualize the "frontview" camera
-                                 has_offscreen_renderer=False,           # no off-screen rendering
-                                 control_freq=20,                        # 20 hz control for applied actions
-                                 horizon=200,                            # each episode terminates after 200 steps
-                                 use_object_obs=True,                    # provide object observations to agent
-                                 use_camera_obs=False,                   # don't provide image observations to agent
-                                 reward_shaping=True)                    # use a dense reward signal for learning
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-robosuite]
+                    :end-before: [pytorch-end-robosuite]
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
+            .. .. group-tab:: |_4| |jax| |_4|
+
+            ..     .. literalinclude:: ../../snippets/wrapping.py
+            ..         :language: python
+            ..         :start-after: [jax-start-robosuite]
+            ..         :end-before: [jax-end-robosuite]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autofunction:: skrl.envs.torch.wrappers.wrap_env
 
@@ -292,8 +314,17 @@ API
 
     <br>
 
-Internal API
-------------
+API (JAX)
+---------
+
+.. autofunction:: skrl.envs.jax.wrappers.wrap_env
+
+.. raw:: html
+
+    <br>
+
+Internal API (PyTorch)
+----------------------
 
 .. autoclass:: skrl.envs.torch.wrappers.Wrapper
     :undoc-members:
@@ -362,6 +393,61 @@ Internal API
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+Internal API (JAX)
+------------------
+
+.. autoclass:: skrl.envs.jax.wrappers.Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+    .. py:property:: device
+
+        The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+
+.. autoclass:: skrl.envs.jax.wrappers.OmniverseIsaacGymWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.IsaacOrbitWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.IsaacGymPreview3Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.IsaacGymPreview2Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.jax.wrappers.GymnasiumWrapper
+    :undoc-members:
+    :show-inheritance:
     :members:
 
     .. automethod:: __init__

@@ -23,9 +23,11 @@ Algorithm implementation
 
     <br>
 
-Decision making: :literal:`act`
-"""""""""""""""""""""""""""""""
+Decision making
+"""""""""""""""
 
+|
+| :literal:`act(...)`
 | :math:`\epsilon \leftarrow \epsilon_{_{final}} + (\epsilon_{_{initial}} - \epsilon_{_{final}}) \; e^{-1 \; \frac{\text{timestep}}{\epsilon_{_{timesteps}}}}`
 | :math:`a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q_\phi(s) & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
@@ -33,9 +35,11 @@ Decision making: :literal:`act`
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
+| :literal:`_update(...)`
 | :green:`# sample a batch from memory`
 | [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
@@ -67,11 +71,23 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-dqn]
-            :end-before: [end-dqn]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-dqn]
+                    :end-before: [torch-end-dqn]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [jax-start-dqn]
+                    :end-before: [jax-end-dqn]
 
 .. raw:: html
 
@@ -155,21 +171,44 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.dqn.DQN_DEFAULT_CONFIG
 
 .. autoclass:: skrl.agents.torch.dqn.DQN
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.agents.jax.dqn.DQN_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.jax.dqn.DQN
     :undoc-members:
     :show-inheritance:
     :private-members: _update

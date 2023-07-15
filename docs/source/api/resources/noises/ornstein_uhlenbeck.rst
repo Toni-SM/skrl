@@ -14,35 +14,59 @@ Usage
 
 The noise usage is defined in each agent's configuration dictionary. A noise instance is set under the :literal:`"noise"` sub-key. The following examples show how to set the noise for an agent:
 
+|
+
+.. image:: ../../../_static/imgs/noise_ornstein_uhlenbeck.png
+    :width: 75%
+    :align: center
+    :alt: Ornstein-Uhlenbeck noise
+
+.. raw:: html
+
+    <br><br>
+
 .. tabs::
 
-    .. tab:: Ornstein-Uhlenbeck noise
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. image:: ../../../_static/imgs/noise_ornstein_uhlenbeck.png
-            :width: 90%
-            :align: center
-            :alt: Ornstein-Uhlenbeck noise
+        .. literalinclude:: ../../../snippets/noises.py
+            :language: python
+            :emphasize-lines: 1, 4
+            :start-after: [torch-start-ornstein-uhlenbeck]
+            :end-before: [torch-end-ornstein-uhlenbeck]
 
-        .. raw:: html
+    .. group-tab:: |_4| |jax| |_4|
 
-            <br>
-
-        .. code-block:: python
-            :emphasize-lines: 4
-
-            from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
-
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device="cuda:0")
+        .. literalinclude:: ../../../snippets/noises.py
+            :language: python
+            :emphasize-lines: 1, 4
+            :start-after: [jax-start-ornstein-uhlenbeck]
+            :end-before: [jax-end-ornstein-uhlenbeck]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.resources.noises.torch.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.resources.noises.jax.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
     :undoc-members:
     :show-inheritance:
     :inherited-members:

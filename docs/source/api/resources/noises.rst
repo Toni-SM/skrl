@@ -13,6 +13,19 @@ Definition of the noises used by the agents during the exploration stage. All no
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Noises
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Gaussian <noises/gaussian>` noise
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`Ornstein-Uhlenbeck <noises/ornstein_uhlenbeck>` noise |_2|
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+
 Base class
 ----------
 
@@ -31,24 +44,46 @@ Basic inheritance usage
 
 .. tabs::
 
-    .. tab:: Inheritance
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/noise.py
+        .. literalinclude:: ../../snippets/noises.py
             :language: python
-            :linenos:
+            :start-after: [start-base-class-torch]
+            :end-before: [end-base-class-torch]
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. literalinclude:: ../../snippets/noises.py
+            :language: python
+            :start-after: [start-base-class-jax]
+            :end-before: [end-base-class-jax]
 
 .. raw:: html
 
     <br>
 
-API
-^^^
+API (PyTorch)
+^^^^^^^^^^^^^
 
 .. autoclass:: skrl.resources.noises.torch.base.Noise
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+^^^^^^^^^
+
+.. autoclass:: skrl.resources.noises.jax.base.Noise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:
 
     .. automethod:: __init__

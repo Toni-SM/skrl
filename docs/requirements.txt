@@ -4,9 +4,4 @@ sphinx-tabs
 sphinx-autobuild
 sphinx-copybutton
 sphinx-notfound-page
-gym
-gymnasium
-torch
-tensorboard
-tqdm
-packaging
+numpy

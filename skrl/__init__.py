@@ -1,7 +1,11 @@
-import os
-import logging
+from typing import Union
 
-__all__ = ["__version__", "logger"]
+import os
+import sys
+import logging
+import numpy as np
+
+__all__ = ["__version__", "logger", "config"]
 
 
 # read library version from file
@@ -29,3 +33,58 @@ _handler.setFormatter(_Formatter())
 logger = logging.getLogger("skrl")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(_handler)
+
+
+# machine learning framework configuration
+class _Config(object):
+    def __init__(self) -> None:
+        """Machine learning framework specific configuration
+        """
+        class JAX(object):
+            def __init__(self) -> None:
+                """JAX configuration
+                """
+                self._backend = "numpy"
+                self._key = np.array([0, 0], dtype=np.uint32)
+
+            @property
+            def backend(self) -> str:
+                """Backend used by the different components to operate and generate arrays
+
+                This configuration excludes models and optimizers.
+                Supported backend are: ``"numpy"`` and ``"jax"``
+                """
+                return self._backend
+
+            @backend.setter
+            def backend(self, value: str) -> None:
+                if value not in ["numpy", "jax"]:
+                    raise ValueError("Invalid jax backend. Supported values are: numpy, jax")
+                self._backend = value
+
+            @property
+            def key(self) -> "jnp.ndarray":
+                """Pseudo-random number generator (PRNG) key
+                """
+                if isinstance(self._key, np.ndarray):
+                    try:
+                        import jax
+                        self._key = jax.random.PRNGKey(self._key[1])
+                    except ImportError:
+                        pass
+                return self._key
+
+            @key.setter
+            def key(self, value: Union[int, "jnp.ndarray"]) -> None:
+                if type(value) is int:
+                    # don't import JAX if it has not been imported before
+                    if "jax" in sys.modules:
+                        import jax
+                        value = jax.random.PRNGKey(value)
+                    else:
+                        value = np.array([0, value], dtype=np.uint32)
+                self._key = value
+
+        self.jax = JAX()
+
+config = _Config()

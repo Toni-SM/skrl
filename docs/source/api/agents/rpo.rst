@@ -20,39 +20,44 @@ Algorithm
 
         .. tab:: Within the RPO agent
 
-            .. code-block:: python
-                :emphasize-lines: 9-10
+            .. tabs::
 
-                class Policy(GaussianMixin, Model):
-                    ...
+                .. group-tab:: |_4| |pytorch| |_4|
 
-                    def compute(self, inputs, role):
-                        # compute the mean actions using the neural network
-                        mean_actions = self.net(inputs["states"])
+                    .. literalinclude:: ../../snippets/agents_basic_usage.py
+                        :language: python
+                        :emphasize-lines: 9-11
+                        :start-after: [torch-start-rpo-with-rpo]
+                        :end-before: [torch-end-rpo-with-rpo]
 
-                        # perturb the mean actions by adding a randomized uniform sample
-                        rpo_alpha = inputs["alpha"]
-                        mean_actions += torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+                .. group-tab:: |_4| |jax| |_4|
 
-                        return mean_actions, self.log_std_parameter, {}
+                    .. literalinclude:: ../../snippets/agents_basic_usage.py
+                        :language: python
+                        :emphasize-lines: 10-12
+                        :start-after: [jax-start-rpo-with-rpo]
+                        :end-before: [jax-end-rpo-with-rpo]
 
         .. tab:: With other agents (e.g. PPO, A2C, TRPO)
 
-            .. code-block:: python
-                :emphasize-lines: 9-10
+            .. tabs::
 
-                class Policy(GaussianMixin, Model):
-                    ...
+                .. group-tab:: |_4| |pytorch| |_4|
 
-                    def compute(self, inputs, role):
-                        # compute the mean actions using the neural network
-                        mean_actions = self.net(inputs["states"])
+                    .. literalinclude:: ../../snippets/agents_basic_usage.py
+                        :language: python
+                        :emphasize-lines: 9-11
+                        :start-after: [torch-start-rpo-without-rpo]
+                        :end-before: [torch-end-rpo-without-rpo]
 
-                        # perturb the mean actions by adding a randomized uniform sample
-                        rpo_alpha = 0.5
-                        mean_actions += torch.zeros_like(mean_actions).uniform_(-rpo_alpha, rpo_alpha)
+                .. group-tab:: |_4| |jax| |_4|
 
-                        return mean_actions, self.log_std_parameter, {}
+                    .. literalinclude:: ../../snippets/agents_basic_usage.py
+                        :language: python
+                        :emphasize-lines: 10-12
+                        :start-after: [jax-start-rpo-without-rpo]
+                        :end-before: [jax-end-rpo-without-rpo]
+
 
 .. raw:: html
 
@@ -72,9 +77,10 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
 | :literal:`compute_gae(...)`
 | :blue:`def` :math:`\;f_{GAE} (r, d, V, V_{_{last}}') \;\rightarrow\; R, A:`
 |     :math:`adv \leftarrow 0`
@@ -92,6 +98,8 @@ Learning algorithm: :literal:`_update`
 |     :green:`# normalize advantages`
 |     :math:`A \leftarrow \dfrac{A - \bar{A}}{A_\sigma + 10^{-8}}`
 
+|
+| :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
 | :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
@@ -147,23 +155,39 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-rpo]
-            :end-before: [end-rpo]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-rpo]
+                    :end-before: [torch-end-rpo]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [jax-start-rpo]
+                    :end-before: [jax-end-rpo]
 
     .. tab:: RNN implementation
 
-        .. note::
+        .. tabs::
 
-            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+            .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-rpo-rnn]
-            :end-before: [end-rpo-rnn]
+                .. note::
+
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-rpo-rnn]
+                    :end-before: [torch-end-rpo-rnn]
 
 .. raw:: html
 
@@ -247,17 +271,23 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - for Policy and Value
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.rpo.RPO_DEFAULT_CONFIG
 
@@ -270,6 +300,23 @@ API
     .. automethod:: __init__
 
 .. autoclass:: skrl.agents.torch.rpo.RPO_RNN
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.agents.jax.rpo.RPO_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.jax.rpo.RPO
     :undoc-members:
     :show-inheritance:
     :private-members: _update

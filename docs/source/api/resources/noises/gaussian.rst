@@ -14,35 +14,59 @@ Usage
 
 The noise usage is defined in each agent's configuration dictionary. A noise instance is set under the :literal:`"noise"` sub-key. The following examples show how to set the noise for an agent:
 
+|
+
+.. image:: ../../../_static/imgs/noise_gaussian.png
+    :width: 75%
+    :align: center
+    :alt: Gaussian noise
+
+.. raw:: html
+
+    <br><br>
+
 .. tabs::
 
-    .. tab:: Gaussian noise
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. image:: ../../../_static/imgs/noise_gaussian.png
-            :width: 100%
-            :align: center
-            :alt: Gaussian noise
+        .. literalinclude:: ../../../snippets/noises.py
+            :language: python
+            :emphasize-lines: 1, 4
+            :start-after: [torch-start-gaussian]
+            :end-before: [torch-end-gaussian]
 
-        .. raw:: html
+    .. group-tab:: |_4| |jax| |_4|
 
-            <br>
-
-        .. code-block:: python
-            :emphasize-lines: 4
-
-            from skrl.resources.noises.torch import GaussianNoise
-
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2, device="cuda:0")
+        .. literalinclude:: ../../../snippets/noises.py
+            :language: python
+            :emphasize-lines: 1, 4
+            :start-after: [jax-start-gaussian]
+            :end-before: [jax-end-gaussian]
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.resources.noises.torch.gaussian.GaussianNoise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.resources.noises.jax.gaussian.GaussianNoise
     :undoc-members:
     :show-inheritance:
     :inherited-members:

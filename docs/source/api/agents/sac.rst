@@ -18,6 +18,7 @@ Algorithm
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), critic function approximator (:math:`Q_\phi`)
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
@@ -28,9 +29,11 @@ Algorithm implementation
 
     <br>
 
-Learning algorithm: :literal:`_update`
-""""""""""""""""""""""""""""""""""""""
+Learning algorithm
+""""""""""""""""""
 
+|
+| :literal:`_update(...)`
 | :green:`# sample a batch from memory`
 | [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
@@ -93,23 +96,39 @@ Usage
 
     .. tab:: Standard implementation
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-sac]
-            :end-before: [end-sac]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-sac]
+                    :end-before: [torch-end-sac]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [jax-start-sac]
+                    :end-before: [jax-end-sac]
 
     .. tab:: RNN implementation
 
-        .. note::
+        .. tabs::
 
-            When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+            .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/agents_basic_usage.py
-            :language: python
-            :emphasize-lines: 2
-            :start-after: [start-sac-rnn]
-            :end-before: [end-sac-rnn]
+                .. note::
+
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [torch-start-sac-rnn]
+                    :end-before: [torch-end-sac-rnn]
 
 .. raw:: html
 
@@ -211,17 +230,23 @@ Support for advanced features is described in the next table
 
     * - Feature
       - Support and remarks
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 
     <br>
 
-API
----
+API (PyTorch)
+-------------
 
 .. autoclass:: skrl.agents.torch.sac.SAC_DEFAULT_CONFIG
 
@@ -235,6 +260,23 @@ API
 
 
 .. autoclass:: skrl.agents.torch.sac.SAC_RNN
+    :undoc-members:
+    :show-inheritance:
+    :private-members: _update
+    :members:
+
+    .. automethod:: __init__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autoclass:: skrl.agents.jax.sac.SAC_DEFAULT_CONFIG
+
+.. autoclass:: skrl.agents.jax.sac.SAC
     :undoc-members:
     :show-inheritance:
     :private-members: _update

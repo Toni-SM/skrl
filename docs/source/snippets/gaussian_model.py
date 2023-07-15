@@ -1,4 +1,23 @@
-# [start-mlp-sequential]
+# [start-definition-torch]
+class GaussianModel(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None,
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+# [end-definition-torch]
+
+
+# [start-definition-jax]
+class GaussianModel(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None,
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+# [end-definition-jax]
+
+# =============================================================================
+
+# [start-mlp-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -34,9 +53,9 @@ policy = MLP(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
-# [end-mlp-sequential]
+# [end-mlp-sequential-torch]
 
-# [start-mlp-functional]
+# [start-mlp-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -75,11 +94,88 @@ policy = MLP(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
-# [end-mlp-functional]
+# [end-mlp-functional-torch]
+
+# [start-mlp-setup-jax]
+import jax.numpy as jnp
+import flax.linen as nn
+
+from skrl.models.jax import Model, GaussianMixin
+
+
+# define the model
+class MLP(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None,
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+
+    def setup(self):
+        self.fc1 = nn.Dense(64)
+        self.fc2 = nn.Dense(32)
+        self.fc3 = nn.Dense(self.num_actions)
+
+        self.log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
+
+    def __call__(self, inputs, role):
+        x = self.fc1(inputs["states"])
+        x = nn.relu(x)
+        x = self.fc2(x)
+        x = nn.relu(x)
+        x = self.fc3(x)
+        return nn.tanh(x), self.log_std_parameter, {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             clip_actions=True,
+             clip_log_std=True,
+             min_log_std=-20,
+             max_log_std=2,
+             reduction="sum")
+# [end-mlp-setup-jax]
+
+# [start-mlp-compact-jax]
+import jax.numpy as jnp
+import flax.linen as nn
+
+from skrl.models.jax import Model, GaussianMixin
+
+
+# define the model
+class MLP(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None,
+                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.Dense(64)(inputs["states"])
+        x = nn.relu(x)
+        x = nn.Dense(32)(x)
+        x = nn.relu(x)
+        x = nn.Dense(self.num_actions)(x)
+        log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
+        return nn.tanh(x), log_std_parameter, {}
+
+
+# instantiate the model (assumes there is a wrapped environment: env)
+policy = MLP(observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=env.device,
+             clip_actions=True,
+             clip_log_std=True,
+             min_log_std=-20,
+             max_log_std=2,
+             reduction="sum")
+# [end-mlp-compact-jax]
 
 # =============================================================================
 
-# [start-cnn-sequential]
+# [start-cnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -126,9 +222,9 @@ policy = CNN(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
-# [end-cnn-sequential]
+# [end-cnn-sequential-torch]
 
-# [start-cnn-functional]
+# [start-cnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -185,11 +281,11 @@ policy = CNN(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
-# [end-cnn-functional]
+# [end-cnn-functional-torch]
 
 # =============================================================================
 
-# [start-rnn-sequential]
+# [start-rnn-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -280,9 +376,9 @@ policy = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-sequential]
+# [end-rnn-sequential-torch]
 
-# [start-rnn-functional]
+# [start-rnn-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -377,11 +473,11 @@ policy = RNN(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-rnn-functional]
+# [end-rnn-functional-torch]
 
 # =============================================================================
 
-# [start-gru-sequential]
+# [start-gru-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -472,9 +568,9 @@ policy = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-sequential]
+# [end-gru-sequential-torch]
 
-# [start-gru-functional]
+# [start-gru-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -569,11 +665,11 @@ policy = GRU(observation_space=env.observation_space,
              num_layers=1,
              hidden_size=64,
              sequence_length=10)
-# [end-gru-functional]
+# [end-gru-functional-torch]
 
 # =============================================================================
 
-# [start-lstm-sequential]
+# [start-lstm-sequential-torch]
 import torch
 import torch.nn as nn
 
@@ -669,9 +765,9 @@ policy = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-sequential]
+# [end-lstm-sequential-torch]
 
-# [start-lstm-functional]
+# [start-lstm-functional-torch]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -771,4 +867,4 @@ policy = LSTM(observation_space=env.observation_space,
               num_layers=1,
               hidden_size=64,
               sequence_length=10)
-# [end-lstm-functional]
+# [end-lstm-functional-torch]

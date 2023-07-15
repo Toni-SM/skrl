@@ -1,11 +1,11 @@
 Examples
 ========
 
-In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks. With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to solve your reinforcement learning problems
+In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks. With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to solve your reinforcement learning problems.
 
 .. note::
 
-    It is recommended to use the table of contents in the right sidebar for a better browsing experience.
+    It is recommended to use the table of contents in the right sidebar for better navigation.
 
 .. raw:: html
 
@@ -440,8 +440,8 @@ The following components or practices are exemplified (highlighted):
 
     <br><hr>
 
-Isaac Gym preview
------------------
+NVIDIA Isaac Gym preview
+------------------------
 
 .. raw:: html
 
@@ -450,7 +450,7 @@ Isaac Gym preview
 Isaac Gym environments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-These examples perform the training of an agent in the `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
+Training/evaluation of an agent in `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaacgym.png
     :width: 100%
@@ -461,46 +461,65 @@ These examples perform the training of an agent in the `Isaac Gym environments <
 
     <br>
 
-The following components or practices are exemplified (highlighted):
+The agent configuration is mapped, as far as possible, from the `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
-    - Load an Isaac Gym environment (easy-to-use API from NVIDIA): **AllegroHand**, **Ingenuity**
-    - Load and wrap an Isaac Gym environment: **Ant**, **Anymal**
-    - Set an input preprocessor: **AnymalTerrain**, **BallBalance**
-    - Set a random seed for reproducibility: **Cartpole**
-    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
-    - Define a reward shaping function: **Quadcopter**, **ShadowHand**, **Trifinger**
-    - Access to environment-specific properties and methods: **Humanoid (AMP)**
-    - Load a checkpoint during evaluation: **Cartpole**
+.. tabs::
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+    .. tab:: PPO
 
-.. code-block:: bash
+        .. code-block:: bash
 
-    # memory
-    memory_size = horizon_length
+            # memory
+            memory_size = horizon_length
 
-    # agent
-    rollouts = horizon_length
-    learning_epochs = mini_epochs
-    mini_batches = horizon_length * num_actors / minibatch_size
-    discount_factor = gamma
-    lambda = tau
-    learning_rate = learning_rate
-    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
-    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
-    random_timesteps = 0
-    learning_starts = 0
-    grad_norm_clip = grad_norm
-    ratio_clip = e_clip
-    value_clip = e_clip
-    clip_predicted_values = clip_value
-    entropy_loss_scale = entropy_coef
-    value_loss_scale = 0.5 * critic_coef
-    kl_threshold = 0
-    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+            # agent
+            rollouts = horizon_length
+            learning_epochs = mini_epochs
+            mini_batches = horizon_length * num_actors / minibatch_size
+            discount_factor = gamma
+            lambda = tau
+            learning_rate = learning_rate
+            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+            learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+            random_timesteps = 0
+            learning_starts = 0
+            grad_norm_clip = grad_norm  # if truncate_grads else 0
+            ratio_clip = e_clip
+            value_clip = e_clip
+            clip_predicted_values = clip_value
+            entropy_loss_scale = entropy_coef
+            value_loss_scale = 0.5 * critic_coef
+            kl_threshold = 0
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
 
-    # trainer
-    timesteps = horizon_length * max_epochs
+            # trainer
+            timesteps = horizon_length * max_epochs
+
+    .. tab:: DDPG / TD3 / SAC
+
+        .. code-block:: bash
+
+            # memory
+            memory_size = replay_buffer_size / num_envs
+
+            # agent
+            gradient_steps = 1
+            batch_size = batch_size
+            discount_factor = gamma
+            polyak = critic_tau
+            actor_learning_rate = actor_lr
+            critic_learning_rate = critic_lr
+            random_timesteps = num_warmup_steps * num_steps_per_episode
+            learning_starts = num_warmup_steps * num_steps_per_episode
+            grad_norm_clip = 0
+            learn_entropy = learnable_temperature
+            entropy_learning_rate = alpha_lr
+            initial_entropy_value = init_alpha
+            target_entropy = None
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+            # trainer
+            timesteps = num_steps_per_episode * max_epochs
 
 **Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-3774815>`_
 
@@ -510,137 +529,143 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
 .. tabs::
 
-    .. tab:: Isaac Gym environments (training)
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. tab:: AllegroHand
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - AllegroHand
+              - :download:`torch_allegro_hand_ppo.py <../examples/isaacgym/torch_allegro_hand_ppo.py>`
+              -
+            * - Ant
+              - :download:`torch_ant_ppo.py <../examples/isaacgym/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../examples/isaacgym/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../examples/isaacgym/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../examples/isaacgym/torch_ant_sac.py>`
+              - `IsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ant-PPO>`_
+                |br|
+                |br|
+                |br|
+            * - Anymal
+              - :download:`torch_anymal_ppo.py <../examples/isaacgym/torch_anymal_ppo.py>`
+              - `IsaacGymEnvs-Anymal-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Anymal-PPO>`_
+            * - AnymalTerrain
+              - :download:`torch_anymal_terrain_ppo.py <../examples/isaacgym/torch_anymal_terrain_ppo.py>`
+              - `IsaacGymEnvs-AnymalTerrain-PPO <https://huggingface.co/skrl/IsaacGymEnvs-AnymalTerrain-PPO>`_
+            * - BallBalance
+              - :download:`torch_ball_balance_ppo.py <../examples/isaacgym/torch_ball_balance_ppo.py>`
+              - `IsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/IsaacGymEnvs-BallBalance-PPO>`_
+            * - Cartpole
+              - :download:`torch_cartpole_ppo.py <../examples/isaacgym/torch_cartpole_ppo.py>`
+              - `IsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Cartpole-PPO>`_
+            * - FactoryTaskNutBoltPick
+              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltPick-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPick-PPO>`_
+            * - FactoryTaskNutBoltPlace
+              - :download:`torch_factory_task_nut_bolt_place_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_place_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO>`_
+            * - FactoryTaskNutBoltScrew
+              - :download:`torch_factory_task_nut_bolt_screw_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_screw_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO>`_
+            * - FrankaCabinet
+              - :download:`torch_franka_cabinet_ppo.py <../examples/isaacgym/torch_franka_cabinet_ppo.py>`
+              - `IsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FrankaCabinet-PPO>`_
+            * - FrankaCubeStack
+              - :download:`torch_franka_cube_stack_ppo.py <../examples/isaacgym/torch_franka_cube_stack_ppo.py>`
+              -
+            * - Humanoid
+              - :download:`torch_humanoid_ppo.py <../examples/isaacgym/torch_humanoid_ppo.py>`
+              - `IsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Humanoid-PPO>`_
+            * - Humanoid-AMP
+              - :download:`torch_humanoid_amp.py <../examples/isaacgym/torch_humanoid_amp.py>`
+              -
+            * - Ingenuity
+              - :download:`torch_ingenuity_ppo.py <../examples/isaacgym/torch_ingenuity_ppo.py>`
+              - `IsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ingenuity-PPO>`_
+            * - Quadcopter
+              - :download:`torch_quadcopter_ppo.py <../examples/isaacgym/torch_quadcopter_ppo.py>`
+              - `IsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Quadcopter-PPO>`_
+            * - ShadowHand
+              - :download:`torch_shadow_hand_ppo.py <../examples/isaacgym/torch_shadow_hand_ppo.py>`
+              -
+            * - Trifinger
+              - :download:`torch_trifinger_ppo.py <../examples/isaacgym/torch_trifinger_ppo.py>`
+              -
 
-                :download:`ppo_allegro_hand.py <../examples/isaacgym/ppo_allegro_hand.py>`
+    .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../examples/isaacgym/ppo_allegro_hand.py
-                    :language: python
-                    :emphasize-lines: 2, 19, 56-62
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. tab:: Ant
-
-                :download:`ppo_ant.py <../examples/isaacgym/ppo_ant.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_ant.py
-                    :language: python
-                    :emphasize-lines: 13-14, 56-57
-
-            .. tab:: Anymal
-
-                :download:`ppo_anymal.py <../examples/isaacgym/ppo_anymal.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_anymal.py
-                    :language: python
-                    :emphasize-lines: 13-14, 56-57
-
-            .. tab:: AnymalTerrain
-
-                :download:`ppo_anymal_terrain.py <../examples/isaacgym/ppo_anymal_terrain.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_anymal_terrain.py
-                    :language: python
-                    :emphasize-lines: 11, 101-104
-
-            .. tab:: BallBalance
-
-                :download:`ppo_ball_balance.py <../examples/isaacgym/ppo_ball_balance.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_ball_balance.py
-                    :language: python
-                    :emphasize-lines: 11, 96-99
-
-            .. tab:: Cartpole
-
-                :download:`ppo_cartpole.py <../examples/isaacgym/ppo_cartpole.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_cartpole.py
-                    :language: python
-                    :emphasize-lines: 15, 19
-
-            .. tab:: Cartpole (TRPO)
-
-                :download:`trpo_cartpole.py <../examples/isaacgym/trpo_cartpole.py>`
-
-                .. literalinclude:: ../examples/isaacgym/trpo_cartpole.py
-                    :language: python
-                    :emphasize-lines: 14, 18
-
-            .. tab:: FrankaCabinet
-
-                :download:`ppo_franka_cabinet.py <../examples/isaacgym/ppo_franka_cabinet.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_franka_cabinet.py
-                    :language: python
-                    :emphasize-lines: 10, 84-85
-
-            .. tab:: Humanoid
-
-                :download:`ppo_humanoid.py <../examples/isaacgym/ppo_humanoid.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_humanoid.py
-                    :language: python
-                    :emphasize-lines: 10, 84-85
-
-            .. tab:: Humanoid (AMP)
-
-                :download:`amp_humanoid.py <../examples/isaacgym/amp_humanoid.py>`
-
-                .. literalinclude:: ../examples/isaacgym/amp_humanoid.py
-                    :language: python
-                    :emphasize-lines: 89, 124, 135, 138-139
-
-            .. tab:: Ingenuity
-
-                :download:`ppo_ingenuity.py <../examples/isaacgym/ppo_ingenuity.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_ingenuity.py
-                    :language: python
-                    :emphasize-lines: 2, 19, 56-62
-
-            .. tab:: Quadcopter
-
-                :download:`ppo_quadcopter.py <../examples/isaacgym/ppo_quadcopter.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_quadcopter.py
-                    :language: python
-                    :emphasize-lines: 95
-
-            .. tab:: ShadowHand
-
-                :download:`ppo_shadow_hand.py <../examples/isaacgym/ppo_shadow_hand.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_shadow_hand.py
-                    :language: python
-                    :emphasize-lines: 97
-
-            .. tab:: Trifinger
-
-                :download:`ppo_trifinger.py <../examples/isaacgym/ppo_trifinger.py>`
-
-                .. literalinclude:: ../examples/isaacgym/ppo_trifinger.py
-                    :language: python
-                    :emphasize-lines: 95
-
-    .. tab:: Isaac Gym environments (evaluation)
-
-        .. tabs::
-
-            .. tab:: Cartpole
-
-                :download:`ppo_cartpole_eval.py <../examples/isaacgym/ppo_cartpole_eval.py>`
-
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
-
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
-
-                .. literalinclude:: ../examples/isaacgym/ppo_cartpole_eval.py
-                    :language: python
-                    :emphasize-lines: 65
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - AllegroHand
+              - :download:`jax_allegro_hand_ppo.py <../examples/isaacgym/jax_allegro_hand_ppo.py>`
+              -
+            * - Ant
+              - :download:`jax_ant_ppo.py <../examples/isaacgym/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../examples/isaacgym/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../examples/isaacgym/jax_ant_sac.py>`
+                |br| :download:`jax_ant_sac.py <../examples/isaacgym/jax_ant_td3.py>`
+              - `IsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ant-PPO>`_
+                |br|
+                |br|
+                |br|
+            * - Anymal
+              - :download:`jax_anymal_ppo.py <../examples/isaacgym/jax_anymal_ppo.py>`
+              - `IsaacGymEnvs-Anymal-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Anymal-PPO>`_
+            * - AnymalTerrain
+              - :download:`jax_anymal_terrain_ppo.py <../examples/isaacgym/jax_anymal_terrain_ppo.py>`
+              - `IsaacGymEnvs-AnymalTerrain-PPO <https://huggingface.co/skrl/IsaacGymEnvs-AnymalTerrain-PPO>`_
+            * - BallBalance
+              - :download:`jax_ball_balance_ppo.py <../examples/isaacgym/jax_ball_balance_ppo.py>`
+              - `IsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/IsaacGymEnvs-BallBalance-PPO>`_
+            * - Cartpole
+              - :download:`jax_cartpole_ppo.py <../examples/isaacgym/jax_cartpole_ppo.py>`
+              - `IsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Cartpole-PPO>`_
+            * - FactoryTaskNutBoltPick
+              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltPick-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPick-PPO>`_
+            * - FactoryTaskNutBoltPlace
+              - :download:`jax_factory_task_nut_bolt_place_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_place_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO>`_
+            * - FactoryTaskNutBoltScrew
+              - :download:`jax_factory_task_nut_bolt_screw_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_screw_ppo.py>`
+              - `IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO>`_
+            * - FrankaCabinet
+              - :download:`jax_franka_cabinet_ppo.py <../examples/isaacgym/jax_franka_cabinet_ppo.py>`
+              - `IsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FrankaCabinet-PPO>`_
+            * - FrankaCubeStack
+              - :download:`jax_franka_cube_stack_ppo.py <../examples/isaacgym/jax_franka_cube_stack_ppo.py>`
+              -
+            * - Humanoid
+              - :download:`jax_humanoid_ppo.py <../examples/isaacgym/jax_humanoid_ppo.py>`
+              - `IsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Humanoid-PPO>`_
+            * - Humanoid-AMP
+              -
+              -
+            * - Ingenuity
+              - :download:`jax_ingenuity_ppo.py <../examples/isaacgym/jax_ingenuity_ppo.py>`
+              - `IsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ingenuity-PPO>`_
+            * - Quadcopter
+              - :download:`jax_quadcopter_ppo.py <../examples/isaacgym/jax_quadcopter_ppo.py>`
+              - `IsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Quadcopter-PPO>`_
+            * - ShadowHand
+              - :download:`jax_shadow_hand_ppo.py <../examples/isaacgym/jax_shadow_hand_ppo.py>`
+              -
+            * - Trifinger
+              - :download:`jax_trifinger_ppo.py <../examples/isaacgym/jax_trifinger_ppo.py>`
+              -
 
 .. raw:: html
 
@@ -895,35 +920,65 @@ The following components or practices are exemplified (highlighted):
     - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
     - Define a reward shaping function: **Ingenuity**, **Quadcopter**, **ShadowHand**
 
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
+The agent configuration is mapped, as far as possible, from the `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
 
-.. code-block:: bash
+.. tabs::
 
-    # memory
-    memory_size = horizon_length
+    .. tab:: PPO
 
-    # agent
-    rollouts = horizon_length
-    learning_epochs = mini_epochs
-    mini_batches = horizon_length * num_actors / minibatch_size
-    discount_factor = gamma
-    lambda = tau
-    learning_rate = learning_rate
-    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
-    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
-    random_timesteps = 0
-    learning_starts = 0
-    grad_norm_clip = grad_norm
-    ratio_clip = e_clip
-    value_clip = e_clip
-    clip_predicted_values = clip_value
-    entropy_loss_scale = entropy_coef
-    value_loss_scale = 0.5 * critic_coef
-    kl_threshold = 0
-    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+        .. code-block:: bash
 
-    # trainer
-    timesteps = horizon_length * max_epochs
+            # memory
+            memory_size = horizon_length
+
+            # agent
+            rollouts = horizon_length
+            learning_epochs = mini_epochs
+            mini_batches = horizon_length * num_actors / minibatch_size
+            discount_factor = gamma
+            lambda = tau
+            learning_rate = learning_rate
+            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+            learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+            random_timesteps = 0
+            learning_starts = 0
+            grad_norm_clip = grad_norm  # if truncate_grads else 0
+            ratio_clip = e_clip
+            value_clip = e_clip
+            clip_predicted_values = clip_value
+            entropy_loss_scale = entropy_coef
+            value_loss_scale = 0.5 * critic_coef
+            kl_threshold = 0
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+            # trainer
+            timesteps = horizon_length * max_epochs
+
+    .. tab:: DDPG / TD3 / SAC
+
+        .. code-block:: bash
+
+            # memory
+            memory_size = replay_buffer_size / num_envs
+
+            # agent
+            gradient_steps = 1
+            batch_size = batch_size
+            discount_factor = gamma
+            polyak = critic_tau
+            actor_learning_rate = actor_lr
+            critic_learning_rate = critic_lr
+            random_timesteps = num_warmup_steps * num_steps_per_episode
+            learning_starts = num_warmup_steps * num_steps_per_episode
+            grad_norm_clip = 0
+            learn_entropy = learnable_temperature
+            entropy_learning_rate = alpha_lr
+            initial_entropy_value = init_alpha
+            target_entropy = None
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+            # trainer
+            timesteps = num_steps_per_episode * max_epochs
 
 **Benchmark results** are listed in `Benchmark results #32 (NVIDIA Omniverse Isaac Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-3774894>`_
 

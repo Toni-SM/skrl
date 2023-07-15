@@ -23,3 +23,7 @@ Page not found
         <p style="margin: 0;">Did you look under the sofa cushions?</p>
     </div>
     <br>
+    <br>
+
+Since version 1.0.0, the documentation structure has changed to improve content organization and to provide a better browsing experience.
+Navigate using the left sidebar or type in the search box to find what you are looking for.

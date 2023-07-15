@@ -45,7 +45,7 @@ class SequentialTrainer(Trainer):
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
         # init agents
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.init(trainer_cfg=self.cfg)
         else:
@@ -65,15 +65,20 @@ class SequentialTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("train")
         else:
             self.agents.set_running_mode("train")
 
-        # single agent
-        if self.num_agents == 1:
-            self.single_agent_train()
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_train()
+            # multi-agent
+            else:
+                self.multi_agent_train()
             return
 
         # reset env
@@ -90,15 +95,14 @@ class SequentialTrainer(Trainer):
                 actions = torch.vstack([agent.act(states[scope[0]:scope[1]], timestep=timestep, timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with torch.no_grad():
+                # record the environments' transitions
                 for agent, scope in zip(self.agents, self.agents_scope):
                     agent.record_transition(states=states[scope[0]:scope[1]],
                                             actions=actions[scope[0]:scope[1]],
@@ -119,7 +123,7 @@ class SequentialTrainer(Trainer):
                 if terminated.any() or truncated.any():
                     states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
+                    states = next_states
 
     def eval(self) -> None:
         """Evaluate the agents sequentially
@@ -132,15 +136,20 @@ class SequentialTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("eval")
         else:
             self.agents.set_running_mode("eval")
 
-        # single agent
-        if self.num_agents == 1:
-            self.single_agent_eval()
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_eval()
+            # multi-agent
+            else:
+                self.multi_agent_eval()
             return
 
         # reset env
@@ -153,14 +162,13 @@ class SequentialTrainer(Trainer):
                 actions = torch.vstack([agent.act(states[scope[0]:scope[1]], timestep=timestep, timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with torch.no_grad():
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
                     agent.record_transition(states=states[scope[0]:scope[1]],
@@ -178,4 +186,4 @@ class SequentialTrainer(Trainer):
                 if terminated.any() or truncated.any():
                     states, infos = self.env.reset()
                 else:
-                    states.copy_(next_states)
+                    states = next_states

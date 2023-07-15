@@ -14,6 +14,22 @@ Trainers are responsible for orchestrating and managing the training/evaluation 
 
     <br><hr>
 
+.. list-table::
+    :header-rows: 1
+
+    * - Trainers
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - :doc:`Sequential trainer <trainers/sequential>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`Parallel trainer <trainers/parallel>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Manual trainer <trainers/manual>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+
 Base class
 ----------
 
@@ -32,22 +48,45 @@ Basic inheritance usage
 
 .. tabs::
 
-    .. tab:: Inheritance
+    .. group-tab:: |_4| |pytorch| |_4|
 
         .. literalinclude:: ../snippets/trainer.py
             :language: python
-            :linenos:
-            :start-after: [start-base]
-            :end-before: [end-base]
+            :start-after: [pytorch-start-base]
+            :end-before: [pytorch-end-base]
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. literalinclude:: ../snippets/trainer.py
+            :language: python
+            :start-after: [jax-start-base]
+            :end-before: [jax-end-base]
 
 .. raw:: html
 
     <br>
 
-API
-^^^
+API (PyTorch)
+^^^^^^^^^^^^^
 
 .. autoclass:: skrl.trainers.torch.base.Trainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _setup_agents
+    :members:
+
+    .. automethod:: __init__
+    .. automethod:: __str__
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+^^^^^^^^^
+
+.. autoclass:: skrl.trainers.jax.base.Trainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

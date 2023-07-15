@@ -5,3 +5,7 @@
 .sidebar-brand-text {
     font-size: 1.25rem !important;
 }
+
+tbody > tr > th.stub {
+    font-weight: normal
+}

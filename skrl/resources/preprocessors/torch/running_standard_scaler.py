@@ -115,6 +115,9 @@ class RunningStandardScaler(nn.Module):
         :type train: bool, optional
         :param inverse: Whether to inverse the standardizer to scale back the data (default: ``False``)
         :type inverse: bool, optional
+
+        :return: Standardized tensor
+        :rtype: torch.Tensor
         """
         if train:
             if x.dim() == 3:
@@ -164,6 +167,9 @@ class RunningStandardScaler(nn.Module):
         :type inverse: bool, optional
         :param no_grad: Whether to disable the gradient computation (default: ``True``)
         :type no_grad: bool, optional
+
+        :return: Standardized tensor
+        :rtype: torch.Tensor
         """
         if no_grad:
             with torch.no_grad():

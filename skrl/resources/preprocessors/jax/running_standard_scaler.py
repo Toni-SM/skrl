@@ -109,7 +109,7 @@ class RunningStandardScaler:
             self.current_count = np.ones((1,), dtype=np.float32)
 
     @property
-    def state_dict(self) -> Mapping[str, jax.Array]:
+    def state_dict(self) -> Mapping[str, Union[np.ndarray, jax.Array]]:
         """Dictionary containing references to the whole state of the module
         """
         class _StateDict:
@@ -126,7 +126,7 @@ class RunningStandardScaler:
         })
 
     @state_dict.setter
-    def state_dict(self, value: Mapping[str, jax.Array]) -> None:
+    def state_dict(self, value: Mapping[str, Union[np.ndarray, jax.Array]]) -> None:
         if self._jax:
             self.running_mean = _copyto(self.running_mean, value["running_mean"])
             self.running_variance = _copyto(self.running_variance, value["running_variance"])
@@ -167,15 +167,18 @@ class RunningStandardScaler:
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
         raise ValueError(f"Space type {type(space)} not supported")
 
-    def _parallel_variance(self, input_mean: jax.Array, input_var: jax.Array, input_count: int) -> None:
+    def _parallel_variance(self,
+                           input_mean: Union[np.ndarray, jax.Array],
+                           input_var: Union[np.ndarray, jax.Array],
+                           input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
 
         :param input_mean: Mean of the input data
-        :type input_mean: jax.Array
+        :type input_mean: np.ndarray or jax.Array
         :param input_var: Variance of the input data
-        :type input_var: jax.Array
+        :type input_var: np.ndarray or jax.Array
         :param input_count: Batch size of the input data
         :type input_count: int
         """
@@ -189,7 +192,10 @@ class RunningStandardScaler:
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def __call__(self, x: jax.Array, train: bool = False, inverse: bool = False) -> jax.Array:
+    def __call__(self,
+                 x: Union[np.ndarray, jax.Array],
+                 train: bool = False,
+                 inverse: bool = False) -> Union[np.ndarray, jax.Array]:
         """Forward pass of the standardizer
 
         Example::
@@ -211,11 +217,14 @@ class RunningStandardScaler:
                    [0.8211585 , 0.6385405 ]], dtype=float32)
 
         :param x: Input tensor
-        :type x: jax.Array
+        :type x: np.ndarray or jax.Array
         :param train: Whether to train the standardizer (default: ``False``)
         :type train: bool, optional
         :param inverse: Whether to inverse the standardizer to scale back the data (default: ``False``)
         :type inverse: bool, optional
+
+        :return: Standardized tensor
+        :rtype: np.ndarray or jax.Array
         """
         if train:
             if self._jax:

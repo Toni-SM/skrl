@@ -4,7 +4,6 @@ import functools
 
 import flax
 import jax
-import jax.numpy as jnp
 import optax
 
 from skrl.models.jax import Model
@@ -79,11 +78,11 @@ class Adam:
             def _create(cls, *, transformation, state, **kwargs):
                 return cls(transformation=transformation, state=state, **kwargs)
 
-            def step(self, grad: jnp.ndarray, model: Model, lr: Optional[float] = None) -> "Optimizer":
+            def step(self, grad: jax.Array, model: Model, lr: Optional[float] = None) -> "Optimizer":
                 """Performs a single optimization step
 
                 :param grad: Gradients
-                :type grad: jnp.ndarray
+                :type grad: jax.Array
                 :param model: Model
                 :type model: skrl.models.jax.Model
                 :param lr: Learning rate.

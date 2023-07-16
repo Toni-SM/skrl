@@ -1,9 +1,9 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
 import gym
 import gymnasium
-import numpy as np
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -34,15 +34,18 @@ class RunningStandardScaler(nn.Module):
         :type epsilon: float
         :param clip_threshold: Threshold to clip the data (default: ``5.0``)
         :type clip_threshold: float
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         """
         super().__init__()
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        if device is None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device(device)
 
         size = self._get_space_size(size)
 
@@ -79,7 +82,7 @@ class RunningStandardScaler(nn.Module):
                 return np.prod(space.shape)
             elif issubclass(type(space), gymnasium.spaces.Dict):
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError("Space type {} not supported".format(type(space)))
+        raise ValueError(f"Space type {type(space)} not supported")
 
     def _parallel_variance(self, input_mean: torch.Tensor, input_var: torch.Tensor, input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance
@@ -115,7 +118,7 @@ class RunningStandardScaler(nn.Module):
         """
         if train:
             if x.dim() == 3:
-                self._parallel_variance(torch.mean(x, dim=(0,1)), torch.var(x, dim=(0,1)), x.shape[0] * x.shape[1])
+                self._parallel_variance(torch.mean(x, dim=(0, 1)), torch.var(x, dim=(0, 1)), x.shape[0] * x.shape[1])
             else:
                 self._parallel_variance(torch.mean(x, dim=0), torch.var(x, dim=0), x.shape[0])
 
@@ -125,9 +128,14 @@ class RunningStandardScaler(nn.Module):
                 * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
         # standardization by centering and scaling
         return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
-                            min=-self.clip_threshold, max=self.clip_threshold)
+                           min=-self.clip_threshold,
+                           max=self.clip_threshold)
 
-    def forward(self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True) -> torch.Tensor:
+    def forward(self,
+                x: torch.Tensor,
+                train: bool = False,
+                inverse: bool = False,
+                no_grad: bool = True) -> torch.Tensor:
         """Forward pass of the standardizer
 
         Example::

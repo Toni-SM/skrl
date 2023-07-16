@@ -1,9 +1,13 @@
 from typing import List, Optional
 
-import math
 import logging
+import math
 import threading
+
 import numpy as np
+import torch
+
+
 try:
     import flask
 except ImportError:
@@ -19,8 +23,6 @@ except ImportError:
     isaacgym = None
     torch_utils = None
     gymapi = None
-
-import torch
 
 
 class WebViewer:

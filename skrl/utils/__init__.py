@@ -1,13 +1,13 @@
 from typing import Optional
 
 import os
+import random
 import sys
 import time
-import random
+
 import numpy as np
 
-from skrl import logger
-from skrl import config
+from skrl import config, logger
 
 
 def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:

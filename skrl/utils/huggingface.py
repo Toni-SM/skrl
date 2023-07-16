@@ -1,4 +1,4 @@
-from skrl import logger, __version__
+from skrl import __version__, logger
 
 
 def download_model_from_huggingface(repo_id: str, filename: str = "agent.pt") -> str:

@@ -1,8 +1,9 @@
-from typing import Optional, Mapping
+from typing import Mapping, Optional
 
 import queue
-import torch
+
 import numpy as np
+import torch
 
 from skrl import logger
 
@@ -251,7 +252,7 @@ def get_env_instance(headless: bool = True,
         # wrap the environment
         env = wrap_env(env, "omniverse-isaacgym")
     """
-    from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException
+    from omni.isaac.gym.vec_env import TaskStopException, VecEnvBase, VecEnvMT
     from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT
 
     class _OmniIsaacGymVecEnv(VecEnvBase):

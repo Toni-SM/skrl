@@ -1,16 +1,12 @@
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
-import tqdm
 import atexit
 import contextlib
-
-import jax
-import jax.numpy as jnp
-
-from skrl.envs.jax import Wrapper
-from skrl.agents.jax import Agent
+import tqdm
 
 from skrl import logger
+from skrl.agents.jax import Agent
+from skrl.envs.jax import Wrapper
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:

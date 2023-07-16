@@ -1,8 +1,10 @@
 from typing import Union
 
-import sys
 import logging
+import sys
+
 import numpy as np
+
 
 __all__ = ["__version__", "logger", "config"]
 
@@ -64,7 +66,7 @@ class _Config(object):
                 self._backend = value
 
             @property
-            def key(self) -> "jnp.ndarray":
+            def key(self) -> "jax.Array":
                 """Pseudo-random number generator (PRNG) key
                 """
                 if isinstance(self._key, np.ndarray):
@@ -76,7 +78,7 @@ class _Config(object):
                 return self._key
 
             @key.setter
-            def key(self, value: Union[int, "jnp.ndarray"]) -> None:
+            def key(self, value: Union[int, "jax.Array"]) -> None:
                 if type(value) is int:
                     # don't import JAX if it has not been imported before
                     if "jax" in sys.modules:

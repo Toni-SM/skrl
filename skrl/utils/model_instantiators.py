@@ -1,17 +1,15 @@
-from typing import Union, Tuple, Optional, Sequence, Mapping, Any
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+from enum import Enum
 import gym
 import gymnasium
-from enum import Enum
 
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model
-from skrl.models.torch import GaussianMixin
-from skrl.models.torch import CategoricalMixin
-from skrl.models.torch import DeterministicMixin
-from skrl.models.torch import MultivariateGaussianMixin
+from skrl.models.torch import Model  # noqa
+from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
+
 
 __all__ = ["categorical_model", "deterministic_model", "gaussian_model", "multivariate_gaussian_model", "Shape"]
 

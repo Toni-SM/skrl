@@ -1,15 +1,13 @@
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
+import contextlib
 import copy
 import tqdm
-import contextlib
 
-import jax
 import jax.numpy as jnp
 
-from skrl.envs.jax import Wrapper
 from skrl.agents.jax import Agent
-
+from skrl.envs.jax import Wrapper
 from skrl.trainers.jax import Trainer
 
 

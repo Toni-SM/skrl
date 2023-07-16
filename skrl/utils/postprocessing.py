@@ -1,12 +1,12 @@
-from typing import Union, Tuple, List
+from typing import List, Tuple, Union
 
-import os
+import collections
 import csv
 import glob
-import numpy as np
+import os
 
+import numpy as np
 import torch
-import collections
 
 
 class MemoryFileIterator():

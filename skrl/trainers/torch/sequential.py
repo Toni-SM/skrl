@@ -1,13 +1,12 @@
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 import copy
 import tqdm
 
 import torch
 
-from skrl.envs.torch import Wrapper
 from skrl.agents.torch import Agent
-
+from skrl.envs.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 

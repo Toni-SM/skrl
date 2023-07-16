@@ -1,14 +1,13 @@
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
-import tqdm
 import atexit
+import tqdm
 
 import torch
 
-from skrl.envs.torch import Wrapper
-from skrl.agents.torch import Agent
-
 from skrl import logger
+from skrl.agents.torch import Agent
+from skrl.envs.torch import Wrapper
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:

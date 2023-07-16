@@ -2,10 +2,10 @@ from typing import Optional
 
 import functools
 
-import jax
 import flax
-import optax
+import jax
 import jax.numpy as jnp
+import optax
 
 from skrl.models.jax import Model
 
@@ -18,6 +18,7 @@ def _step(transformation, grad, state, state_dict):
     # apply transformation
     params = optax.apply_updates(state_dict.params, params)
     return optimizer_state, state_dict.replace(params=params)
+
 
 @functools.partial(jax.jit, static_argnames=("transformation"))
 def _step_with_scale(transformation, grad, state, state_dict, scale):
@@ -35,19 +36,33 @@ class Adam:
     def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
         """Adam optimizer
 
-        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api.html?#adam>`_ to support custom scale (learning rate)
+        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api.html?#adam>`_
+        to support custom scale (learning rate)
 
         :param model: Model
         :type model: skrl.models.jax.Model
-        :param lr: Learning rate (default: 1e-3)
+        :param lr: Learning rate (default: ``1e-3``)
         :type lr: float, optional
-        :param grad_norm_clip: Clipping coefficient for the norm of the gradients (default: 0)
+        :param grad_norm_clip: Clipping coefficient for the norm of the gradients (default: ``0``).
+                               Disabled if less than or equal to zero
         :type grad_norm_clip: float, optional
-        :param scale: Whether to instantiate the optimizer as-is or remove the scaling step (default: ``True``)
+        :param scale: Whether to instantiate the optimizer as-is or remove the scaling step (default: ``True``).
+                      Remove the scaling step if a custom learning rate is to be applied during optimization steps
         :type scale: bool, optional
 
         :return: Adam optimizer
         :rtype: flax.struct.PyTreeNode
+
+        Example::
+
+            >>> optimizer = Adam(model=policy, lr=5e-4)
+            >>> # step the optimizer given a computed gradiend (grad)
+            >>> optimizer = optimizer.step(grad, policy)
+
+            # apply custom learning rate during optimization steps
+            >>> optimizer = Adam(model=policy, lr=5e-4, scale=False)
+            >>> # step the optimizer given a computed gradiend and an updated learning rate (lr)
+            >>> optimizer = optimizer.step(grad, policy, lr)
         """
         class Optimizer(flax.struct.PyTreeNode):
             """Optimizer

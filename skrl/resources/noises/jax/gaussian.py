@@ -1,15 +1,13 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
-import numpy as np
 from functools import partial
 
 import jax
-import jaxlib
 import jax.numpy as jnp
-
-from skrl.resources.noises.jax import Noise
+import numpy as np
 
 from skrl import config
+from skrl.resources.noises.jax import Noise
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -20,16 +18,16 @@ def _sample(mean, std, key, iterator, shape):
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: Optional[Union[str, jaxlib.xla_extension.Device]] = None) -> None:
+    def __init__(self, mean: float, std: float, device: Optional[Union[str, jax.Device]] = None) -> None:
         """Class representing a Gaussian noise
 
         :param mean: Mean of the normal distribution
         :type mean: float
         :param std: Standard deviation of the normal distribution
         :type std: float
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
 
         Example::
 
@@ -38,23 +36,22 @@ class GaussianNoise(Noise):
         super().__init__(device)
 
         if self._jax:
-            self.mean = jnp.array(mean)
-            self.std = jnp.array(std)
-
             self._i = 0
             self._key = config.jax.key
+            self.mean = jnp.array(mean)
+            self.std = jnp.array(std)
         else:
             self.mean = np.array(mean)
             self.std = np.array(std)
 
-    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
+    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jax.Array]:
         """Sample a Gaussian noise
 
         :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers
+        :type size: tuple or list of int
 
         :return: Sampled noise
-        :rtype: np.ndarray or jnp.ndarray
+        :rtype: np.ndarray or jax.Array
 
         Example::
 

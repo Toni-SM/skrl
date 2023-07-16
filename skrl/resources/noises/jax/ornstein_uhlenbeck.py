@@ -1,15 +1,13 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
-import numpy as np
 from functools import partial
 
 import jax
-import jaxlib
 import jax.numpy as jnp
-
-from skrl.resources.noises.jax import Noise
+import numpy as np
 
 from skrl import config
+from skrl.resources.noises.jax import Noise
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -26,7 +24,7 @@ class OrnsteinUhlenbeckNoise(Noise):
                  base_scale: float,
                  mean: float = 0,
                  std: float = 1,
-                 device: Optional[Union[str, jaxlib.xla_extension.Device]] = None) -> None:
+                 device: Optional[Union[str, jax.Device]] = None) -> None:
         """Class representing an Ornstein-Uhlenbeck noise
 
         :param theta: Factor to apply to current internal state
@@ -39,9 +37,9 @@ class OrnsteinUhlenbeckNoise(Noise):
         :type mean: float, optional
         :param std: Standard deviation of the normal distribution (default: ``1.0``)
         :type std: float, optional
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
 
         Example::
 
@@ -64,14 +62,14 @@ class OrnsteinUhlenbeckNoise(Noise):
             self.mean = np.array(mean)
             self.std = np.array(std)
 
-    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
+    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jax.Array]:
         """Sample an Ornstein-Uhlenbeck noise
 
         :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers
+        :type size: tuple or list of int
 
         :return: Sampled noise
-        :rtype: np.ndarray or jnp.ndarray
+        :rtype: np.ndarray or jax.Array
 
         Example::
 

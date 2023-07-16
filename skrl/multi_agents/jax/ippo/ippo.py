@@ -1,21 +1,19 @@
-from typing import Union, Dict, Any, Optional, Sequence, Mapping
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
-import gym, gymnasium
 import copy
-import itertools
 import functools
+import gym
+import gymnasium
 
 import jax
-import jaxlib
 import jax.numpy as jnp
 import numpy as np
 
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
-from skrl.resources.schedulers.jax import KLAdaptiveLR
-from skrl.resources.optimizers.jax import Adam
-
 from skrl.multi_agents.jax import MultiAgent
+from skrl.resources.optimizers.jax import Adam
+from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
 IPPO_DEFAULT_CONFIG = {
@@ -107,12 +105,12 @@ def compute_gae(rewards: np.ndarray,
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
-def _compute_gae(rewards: jnp.ndarray,
-                 dones: jnp.ndarray,
-                 values: jnp.ndarray,
-                 next_values: jnp.ndarray,
+def _compute_gae(rewards: jax.Array,
+                 dones: jax.Array,
+                 values: jax.Array,
+                 next_values: jax.Array,
                  discount_factor: float = 0.99,
-                 lambda_coefficient: float = 0.95) -> jnp.ndarray:
+                 lambda_coefficient: float = 0.95) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
     not_dones = jnp.logical_not(dones)
@@ -192,7 +190,7 @@ class IPPO(MultiAgent):
                  memories: Optional[Mapping[str, Memory]] = None,
                  observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
                  action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
+                 device: Optional[Union[str, jax.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Independent Proximal Policy Optimization (IPPO)
 
@@ -209,14 +207,14 @@ class IPPO(MultiAgent):
         :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
         :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
-        # _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jaxlib.xla_extension.Device' object
-        _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)
+        # _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
+        _cfg = IPPO_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
         super().__init__(possible_agents=possible_agents,
                          models=models,
@@ -336,18 +334,18 @@ class IPPO(MultiAgent):
             if self.values[uid] is not None:
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
-    def act(self, states: Mapping[str, jnp.ndarray], timestep: int, timesteps: int) -> jnp.ndarray:
+    def act(self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policies
 
         :param states: Environment's states
-        :type states: dictionary of jnp.ndarray
+        :type states: dictionary of np.ndarray or jax.Array
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
 
         :return: Actions
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jax.Array
         """
         # # sample random actions
         # # TODO: fix for stochasticity, rnn and log_prob
@@ -370,29 +368,29 @@ class IPPO(MultiAgent):
         return actions, log_prob, outputs
 
     def record_transition(self,
-                          states: Mapping[str, jnp.ndarray],
-                          actions: Mapping[str, jnp.ndarray],
-                          rewards: Mapping[str, jnp.ndarray],
-                          next_states: Mapping[str, jnp.ndarray],
-                          terminated: Mapping[str, jnp.ndarray],
-                          truncated: Mapping[str, jnp.ndarray],
+                          states: Mapping[str, Union[np.ndarray, jax.Array]],
+                          actions: Mapping[str, Union[np.ndarray, jax.Array]],
+                          rewards: Mapping[str, Union[np.ndarray, jax.Array]],
+                          next_states: Mapping[str, Union[np.ndarray, jax.Array]],
+                          terminated: Mapping[str, Union[np.ndarray, jax.Array]],
+                          truncated: Mapping[str, Union[np.ndarray, jax.Array]],
                           infos: Mapping[str, Any],
                           timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
-        :type states: dictionary of jnp.ndarray
+        :type states: dictionary of np.ndarray or jax.Array
         :param actions: Actions taken by the agent
-        :type actions: dictionary of jnp.ndarray
+        :type actions: dictionary of np.ndarray or jax.Array
         :param rewards: Instant rewards achieved by the current actions
-        :type rewards: dictionary of jnp.ndarray
+        :type rewards: dictionary of np.ndarray or jax.Array
         :param next_states: Next observations/states of the environment
-        :type next_states: dictionary of jnp.ndarray
+        :type next_states: dictionary of np.ndarray or jax.Array
         :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: dictionary of jnp.ndarray
+        :type terminated: dictionary of np.ndarray or jax.Array
         :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: dictionary of jnp.ndarray
+        :type truncated: dictionary of np.ndarray or jax.Array
         :param infos: Additional information about the environment
         :type infos: dictionary of any type supported by the environment
         :param timestep: Current timestep

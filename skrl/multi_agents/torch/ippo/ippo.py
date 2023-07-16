@@ -1,8 +1,9 @@
-from typing import Union, Dict, Any, Optional, Sequence, Mapping
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
-import gym, gymnasium
 import copy
 import itertools
+import gym
+import gymnasium
 
 import torch
 import torch.nn as nn
@@ -10,9 +11,8 @@ import torch.nn.functional as F
 
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.resources.schedulers.torch import KLAdaptiveLR
-
 from skrl.multi_agents.torch import MultiAgent
+from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
 IPPO_DEFAULT_CONFIG = {
@@ -85,8 +85,8 @@ class IPPO(MultiAgent):
         :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
         :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict

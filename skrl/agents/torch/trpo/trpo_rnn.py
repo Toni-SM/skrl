@@ -1,18 +1,17 @@
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
-import gym, gymnasium
 import copy
+import gym
+import gymnasium
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils.convert_parameters import parameters_to_vector
-from torch.nn.utils.convert_parameters import vector_to_parameters
-
-from skrl.memories.torch import Memory
-from skrl.models.torch import Model
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 
 from skrl.agents.torch import Agent
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
 
 TRPO_DEFAULT_CONFIG = {
@@ -79,12 +78,12 @@ class TRPO_RNN(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -434,9 +433,9 @@ class TRPO_RNN(Agent):
             :type states: torch.Tensor
             :param b: Vector b
             :type b: torch.Tensor
-            :param num_iterations: Number of iterations (default: 10)
+            :param num_iterations: Number of iterations (default: ``10``)
             :type num_iterations: float, optional
-            :param residual_tolerance: Residual tolerance (default: 1e-10)
+            :param residual_tolerance: Residual tolerance (default: ``1e-10``)
             :type residual_tolerance: float, optional
 
             :return: Conjugate vector
@@ -472,7 +471,7 @@ class TRPO_RNN(Agent):
             :type states: torch.Tensor
             :param vector: Vector
             :type vector: torch.Tensor
-            :param damping: Damping (default: 0.1)
+            :param damping: Damping (default: ``0.1``)
             :type damping: float, optional
 
             :return: Hessian vector product

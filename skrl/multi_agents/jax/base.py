@@ -1,23 +1,20 @@
-from typing import Optional, Union, Mapping, Sequence, Any
+from typing import Any, Mapping, Optional, Sequence, Union
 
-import os
-import gym, gymnasium
-import copy
-import pickle
-import datetime
 import collections
+import copy
+import datetime
+import os
+import pickle
+import gym
+import gymnasium
+
+import flax
+import jax
 import numpy as np
 
-import jax
-import jaxlib
-import jax.numpy as jnp
-import flax
-
-from skrl import logger
+from skrl import config, logger
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
-
-from skrl import config
 
 
 class MultiAgent:
@@ -27,7 +24,7 @@ class MultiAgent:
                  memories: Optional[Mapping[str, Memory]] = None,
                  observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
                  action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
-                 device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
+                 device: Optional[Union[str, jax.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL multi-agent
 
@@ -42,9 +39,9 @@ class MultiAgent:
         :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
         :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         """
@@ -63,7 +60,7 @@ class MultiAgent:
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jaxlib.xla_extension.Device) else jax.devices(device)[0]
+            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
 
         # convert the models to their respective device
         for _models in self.models.values():
@@ -306,11 +303,11 @@ class MultiAgent:
                     pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, states: Mapping[str, jnp.ndarray], timestep: int, timesteps: int) -> jnp.ndarray:
+    def act(self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
-        :type states: dictionary of jnp.ndarray
+        :type states: dictionary of np.ndarray or jax.Array
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
@@ -319,17 +316,17 @@ class MultiAgent:
         :raises NotImplementedError: The method is not implemented by the inheriting classes
 
         :return: Actions
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jax.Array
         """
         raise NotImplementedError
 
     def record_transition(self,
-                          states: Mapping[str, jnp.ndarray],
-                          actions: Mapping[str, jnp.ndarray],
-                          rewards: Mapping[str, jnp.ndarray],
-                          next_states: Mapping[str, jnp.ndarray],
-                          terminated: Mapping[str, jnp.ndarray],
-                          truncated: Mapping[str, jnp.ndarray],
+                          states: Mapping[str, Union[np.ndarray, jax.Array]],
+                          actions: Mapping[str, Union[np.ndarray, jax.Array]],
+                          rewards: Mapping[str, Union[np.ndarray, jax.Array]],
+                          next_states: Mapping[str, Union[np.ndarray, jax.Array]],
+                          terminated: Mapping[str, Union[np.ndarray, jax.Array]],
+                          truncated: Mapping[str, Union[np.ndarray, jax.Array]],
                           infos: Mapping[str, Any],
                           timestep: int,
                           timesteps: int) -> None:
@@ -339,17 +336,17 @@ class MultiAgent:
         In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
 
         :param states: Observations/states of the environment used to make the decision
-        :type states: dictionary of jnp.ndarray
+        :type states: dictionary of np.ndarray or jax.Array
         :param actions: Actions taken by the agent
-        :type actions: dictionary of jnp.ndarray
+        :type actions: dictionary of np.ndarray or jax.Array
         :param rewards: Instant rewards achieved by the current actions
-        :type rewards: dictionary of jnp.ndarray
+        :type rewards: dictionary of np.ndarray or jax.Array
         :param next_states: Next observations/states of the environment
-        :type next_states: dictionary of jnp.ndarray
+        :type next_states: dictionary of np.ndarray or jax.Array
         :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: dictionary of jnp.ndarray
+        :type terminated: dictionary of np.ndarray or jax.Array
         :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: dictionary of jnp.ndarray
+        :type truncated: dictionary of np.ndarray or jax.Array
         :param infos: Additional information about the environment
         :type infos: dictionary of any type supported by the environment
         :param timestep: Current timestep

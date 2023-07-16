@@ -1,20 +1,18 @@
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
-import gym, gymnasium
 import copy
-import functools
+import gym
+import gymnasium
 
 import jax
-import jaxlib
 import jax.numpy as jnp
 import numpy as np
 import optax
 
+from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
-
-from skrl.agents.jax import Agent
 
 
 CEM_DEFAULT_CONFIG = {
@@ -55,7 +53,7 @@ class CEM(Agent):
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
                  observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
+                 device: Optional[Union[str, jax.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Cross-Entropy Method (CEM)
 
@@ -67,19 +65,19 @@ class CEM(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
 
         :raises KeyError: If the models dictionary is missing a required key
         """
-        # _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jaxlib.xla_extension.Device' object
+        # _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = CEM_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
         super().__init__(models=models,
@@ -148,18 +146,18 @@ class CEM(Agent):
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
 
-    def act(self, states: jnp.ndarray, timestep: int, timesteps: int) -> jnp.ndarray:
+    def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
-        :type states: jnp.ndarray
+        :type states: np.ndarray or jax.Array
         :param timestep: Current timestep
         :type timestep: int
         :param timesteps: Number of timesteps
         :type timesteps: int
 
         :return: Actions
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray or jax.Array
         """
         # sample random actions
         # TODO, check for stochasticity
@@ -174,29 +172,29 @@ class CEM(Agent):
         return actions, None, outputs
 
     def record_transition(self,
-                          states: jnp.ndarray,
-                          actions: jnp.ndarray,
-                          rewards: jnp.ndarray,
-                          next_states: jnp.ndarray,
-                          terminated: jnp.ndarray,
-                          truncated: jnp.ndarray,
+                          states: Union[np.ndarray, jax.Array],
+                          actions: Union[np.ndarray, jax.Array],
+                          rewards: Union[np.ndarray, jax.Array],
+                          next_states: Union[np.ndarray, jax.Array],
+                          terminated: Union[np.ndarray, jax.Array],
+                          truncated: Union[np.ndarray, jax.Array],
                           infos: Any,
                           timestep: int,
                           timesteps: int) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
-        :type states: jnp.ndarray
+        :type states: np.ndarray or jax.Array
         :param actions: Actions taken by the agent
-        :type actions: jnp.ndarray
+        :type actions: np.ndarray or jax.Array
         :param rewards: Instant rewards achieved by the current actions
-        :type rewards: jnp.ndarray
+        :type rewards: np.ndarray or jax.Array
         :param next_states: Next observations/states of the environment
-        :type next_states: jnp.ndarray
+        :type next_states: np.ndarray or jax.Array
         :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: jnp.ndarray
+        :type terminated: np.ndarray or jax.Array
         :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: jnp.ndarray
+        :type truncated: np.ndarray or jax.Array
         :param infos: Additional information about the environment
         :type infos: Any type supported by the environment
         :param timestep: Current timestep

@@ -1,19 +1,19 @@
-from typing import Optional, Union, Mapping, Sequence, Any
+from typing import Any, Mapping, Optional, Sequence, Union
 
-import os
-import gym, gymnasium
+import collections
 import copy
 import datetime
-import collections
-import numpy as np
+import os
+import gym
+import gymnasium
 
+import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+from skrl import logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-
-from skrl import logger
 
 
 class MultiAgent:
@@ -38,8 +38,8 @@ class MultiAgent:
         :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
         :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict

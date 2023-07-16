@@ -1,18 +1,18 @@
-from typing import Callable, Union, Tuple, Dict, Any, Optional
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-import gym, gymnasium
-import math
 import copy
 import itertools
+import math
+import gym
+import gymnasium
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-
-from skrl.agents.torch import Agent
 
 
 AMP_DEFAULT_CONFIG = {
@@ -97,24 +97,24 @@ class AMP(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
-        :param amp_observation_space: AMP observation/state space or shape (default: None)
-        :type amp_observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None
-        :param motion_dataset: Reference motion dataset: M (default: None)
+        :param amp_observation_space: AMP observation/state space or shape (default: ``None``)
+        :type amp_observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None
+        :param motion_dataset: Reference motion dataset: M (default: ``None``)
         :type motion_dataset: skrl.memory.torch.Memory or None
-        :param reply_buffer: Reply buffer for preventing discriminator overfitting: B (default: None)
+        :param reply_buffer: Reply buffer for preventing discriminator overfitting: B (default: ``None``)
         :type reply_buffer: skrl.memory.torch.Memory or None
-        :param collect_reference_motions: Callable to collect reference motions (default: None)
+        :param collect_reference_motions: Callable to collect reference motions (default: ``None``)
         :type collect_reference_motions: Callable[[int], torch.Tensor] or None
-        :param collect_observation: Callable to collect observation (default: None)
+        :param collect_observation: Callable to collect observation (default: ``None``)
         :type collect_observation: Callable[[], torch.Tensor] or None
 
         :raises KeyError: If the models dictionary is missing a required key

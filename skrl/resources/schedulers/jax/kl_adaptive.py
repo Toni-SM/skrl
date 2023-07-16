@@ -1,8 +1,6 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
-import jax
-import optax
-import jax.numpy as jnp
+import numpy as np
 
 
 class KLAdaptiveLR:
@@ -28,11 +26,10 @@ class KLAdaptiveLR:
 
             >>> scheduler = KLAdaptiveLR(init_value=1e-3, kl_threshold=0.01)
             >>> for epoch in range(100):
-            >>>     train(...)
-            >>>     validate(...)
+            >>>     # ...
             >>>     kl_divergence = ...
             >>>     scheduler.step(kl_divergence)
-            >>>     scheduler.rl  # get the updated learning rate
+            >>>     scheduler.lr  # get the updated learning rate
 
         :param init_value: Initial learning rate
         :type init_value: float
@@ -61,7 +58,7 @@ class KLAdaptiveLR:
         """
         return self._lr
 
-    def step(self, kl: Optional[Union[jnp.ndarray, float]] = None) -> None:
+    def step(self, kl: Optional[Union[np.ndarray, float]] = None) -> None:
         """
         Step scheduler
 
@@ -75,15 +72,13 @@ class KLAdaptiveLR:
             >>> kl = 0.0046
             >>> scheduler.step(kl)
 
-        :param kl: KL divergence (default: None)
+        :param kl: KL divergence (default: ``None``)
                    If None, no adjustment is made.
                    If array, the number of elements must be 1
-        :type kl: jnp.ndarray, float, None, optional
-        :param epoch: Epoch (default: None)
-        :type epoch: int, optional
+        :type kl: np.ndarray, float or None, optional
         """
         if kl is not None:
-            if kl >  self.kl_threshold * self._kl_factor:
+            if kl > self.kl_threshold * self._kl_factor:
                 self._lr = max(self._lr / self._lr_factor, self.min_lr)
             elif kl < self.kl_threshold / self._kl_factor:
                 self._lr = min(self._lr * self._lr_factor, self.max_lr)

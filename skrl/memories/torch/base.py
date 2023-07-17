@@ -1,14 +1,14 @@
-from typing import Optional, Union, Tuple, List
+from typing import List, Optional, Tuple, Union
 
-import os
 import csv
-import gym
-import gymnasium
-import operator
 import datetime
 import functools
-import numpy as np
+import operator
+import os
+import gym
+import gymnasium
 
+import numpy as np
 import torch
 from torch.utils.data.sampler import BatchSampler
 
@@ -28,18 +28,18 @@ class Memory:
 
         :param memory_size: Maximum number of elements in the first dimension of each internal storage
         :type memory_size: int
-        :param num_envs: Number of parallel environments (default: 1)
+        :param num_envs: Number of parallel environments (default: ``1``)
         :type num_envs: int, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
-        :param export: Export the memory to a file (default: False).
+        :param export: Export the memory to a file (default: ``False``).
                        If True, the memory will be exported when the memory is filled
         :type export: bool, optional
-        :param export_format: Export format (default: "pt").
+        :param export_format: Export format (default: ``"pt"``).
                               Supported formats: torch (pt), numpy (np), comma separated values (csv)
         :type export_format: str, optional
-        :param export_directory: Directory where the memory will be exported (default: "").
+        :param export_directory: Directory where the memory will be exported (default: ``""``).
                                  If empty, the agent's experiment directory will be used
         :type export_directory: str, optional
 
@@ -67,7 +67,7 @@ class Memory:
         self.export_directory = export_directory
 
         if not self.export_format in ["pt", "np", "csv"]:
-            raise ValueError("Export format not supported ({})".format(self.export_format))
+            raise ValueError(f"Export format not supported ({self.export_format})")
 
     def __len__(self) -> int:
         """Compute and return the current (valid) size of the memory
@@ -87,12 +87,12 @@ class Memory:
 
         :param space: Space or shape from which to obtain the number of elements
         :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
-        :param keep_dimensions: Whether or not to keep the space dimensions (default: False)
-        :type keep_dimensions: bool
+        :param keep_dimensions: Whether or not to keep the space dimensions (default: ``False``)
+        :type keep_dimensions: bool, optional
 
         :raises ValueError: If the space is not supported
 
-        :return: Size of the space. If keep_dimensions is True, the space size will be a tuple
+        :return: Size of the space. If ``keep_dimensions`` is True, the space size will be a tuple
         :rtype: int or tuple of int
         """
         if type(space) in [int, float]:
@@ -117,7 +117,7 @@ class Memory:
                 if keep_dimensions:
                     raise ValueError("keep_dimensions=True cannot be used with Dict spaces")
                 return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError("Space type {} not supported".format(type(space)))
+        raise ValueError(f"Space type {type(space)} not supported")
 
     def share_memory(self) -> None:
         """Share the tensors between processes
@@ -139,7 +139,7 @@ class Memory:
 
         :param name: Name of the tensor to retrieve
         :type name: str
-        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: True)
+        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: ``True``)
                         If False, the returned tensor will have a shape of (memory size * number of environments, size)
         :type keepdim: bool, optional
 
@@ -178,11 +178,11 @@ class Memory:
         :param size: Number of elements in the last dimension (effective data size).
                      The product of the elements will be computed for sequences or gym/gymnasium spaces
         :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
-        :param dtype: Data type (torch.dtype).
-                      If None, the global default torch data type will be used (default)
+        :param dtype: Data type (torch.dtype) (default: ``None``).
+                      If None, the global default torch data type will be used
         :type dtype: torch.dtype or None, optional
-        :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: False)
-        :type keep_dimensions: bool
+        :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: ``False``)
+        :type keep_dimensions: bool, optional
 
         :raises ValueError: The tensor name exists already but the size or dtype are different
 
@@ -195,17 +195,17 @@ class Memory:
         if name in self.tensors:
             tensor = self.tensors[name]
             if tensor.size(-1) != size:
-                raise ValueError("The size of the tensor {} ({}) doesn't match the existing one ({})".format(name, size, tensor.size(-1)))
+                raise ValueError(f"Size of tensor {name} ({size}) doesn't match the existing one ({tensor.size(-1)})")
             if dtype is not None and tensor.dtype != dtype:
-                raise ValueError("The dtype of the tensor {} ({}) doesn't match the existing one ({})".format(name, dtype, tensor.dtype))
+                raise ValueError(f"Dtype of tensor {name} ({dtype}) doesn't match the existing one ({tensor.dtype})")
             return False
         # define tensor shape
         tensor_shape = (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
         view_shape = (-1, *size) if keep_dimensions else (-1, size)
         # create tensor (_tensor_<name>) and add it to the internal storage
-        setattr(self, "_tensor_{}".format(name), torch.zeros(tensor_shape, device=self.device, dtype=dtype))
+        setattr(self, f"_tensor_{name}", torch.zeros(tensor_shape, device=self.device, dtype=dtype))
         # update internal variables
-        self.tensors[name] = getattr(self, "_tensor_{}".format(name))
+        self.tensors[name] = getattr(self, f"_tensor_{name}")
         self.tensors_view[name] = self.tensors[name].view(*view_shape)
         self.tensors_keep_dimensions[name] = keep_dimensions
         # fill the tensors (float tensors) with NaN
@@ -291,7 +291,7 @@ class Memory:
                     self.tensors[name][self.memory_index, self.env_index].copy_(tensor)
             self.env_index += 1
         else:
-            raise ValueError("Expected tensors with 2-components shape (number of environments = {}, data size), got {}".format(self.num_envs, shape))
+            raise ValueError(f"Expected shape (number of environments = {self.num_envs}, data size), got {shape}")
 
         # update indexes and flags
         if self.env_index >= self.num_envs:
@@ -316,9 +316,9 @@ class Memory:
         :type names: tuple or list of strings
         :param batch_size: Number of element to sample
         :type batch_size: int
-        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
         :type mini_batches: int, optional
-        :param sequence_length: Length of each sequence (default: 1)
+        :param sequence_length: Length of each sequence (default: ``1``)
         :type sequence_length: int, optional
 
         :raises NotImplementedError: The method has not been implemented
@@ -336,7 +336,7 @@ class Memory:
         :type names: tuple or list of strings
         :param indexes: Indexes used for sampling
         :type indexes: tuple or list, numpy.ndarray or torch.Tensor
-        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
         :type mini_batches: int, optional
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
@@ -353,9 +353,9 @@ class Memory:
 
         :param names: Tensors names from which to obtain the samples
         :type names: tuple or list of strings
-        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
         :type mini_batches: int, optional
-        :param sequence_length: Length of each sequence (default: 1)
+        :param sequence_length: Length of each sequence (default: ``1``)
         :type sequence_length: int, optional
 
         :return: Sampled data from memory.
@@ -396,7 +396,7 @@ class Memory:
         :param directory: Path to the folder where the memory will be saved.
                           If not provided, the directory defined in the constructor will be used
         :type directory: str
-        :param format: Format of the file where the memory will be saved (default: "pt")
+        :param format: Format of the file where the memory will be saved (default: ``"pt"``)
         :type format: str, optional
 
         :raises ValueError: If the format is not supported
@@ -420,14 +420,14 @@ class Memory:
                 writer = csv.writer(file)
                 names = self.get_tensor_names()
                 # write headers
-                headers = [["{}.{}".format(name, i) for i in range(self.tensors_view[name].shape[-1])] for name in names]
+                headers = [[f"{name}.{i}" for i in range(self.tensors_view[name].shape[-1])] for name in names]
                 writer.writerow([item for sublist in headers for item in sublist])
                 # write rows
                 for i in range(len(self)):
                     writer.writerow(functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], []))
         # unsupported format
         else:
-            raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))
+            raise ValueError(f"Unsupported format: {format}. Available formats: pt, csv, npz")
 
     def load(self, path: str) -> None:
         """Load the memory from a file
@@ -446,13 +446,13 @@ class Memory:
         if path.endswith(".pt"):
             data = torch.load(path)
             for name in self.get_tensor_names():
-                setattr(self, "_tensor_{}".format(name), data[name])
+                setattr(self, f"_tensor_{name}", data[name])
 
         # numpy
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
-                setattr(self, "_tensor_{}".format(name), torch.tensor(data[name]))
+                setattr(self, f"_tensor_{name}", torch.tensor(data[name]))
 
         # comma-separated values
         elif path.endswith(".csv"):
@@ -461,4 +461,4 @@ class Memory:
 
         # unsupported format
         else:
-            raise ValueError("Unsupported format: {}".format(path))
+            raise ValueError(f"Unsupported format: {path}")

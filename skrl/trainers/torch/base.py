@@ -27,8 +27,7 @@ def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) 
     if sum(scopes):
         scopes[-1] += num_envs - sum(scopes)
     else:
-        raise ValueError("The number of simultaneous agents ({}) is greater than the number of environments ({})" \
-            .format(num_simultaneous_agents, num_envs))
+        raise ValueError(f"The number of simultaneous agents ({num_simultaneous_agents}) is greater than the number of environments ({num_envs})")
     return scopes
 
 
@@ -44,9 +43,9 @@ class Trainer:
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: [])
-        :type agents_scope: tuple or list of integers
-        :param cfg: Configuration dictionary (default: {})
+        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
+        :type agents_scope: tuple or list of int, optional
+        :param cfg: Configuration dictionary (default: ``None``)
         :type cfg: dict, optional
         """
         self.cfg = cfg if cfg is not None else {}
@@ -80,17 +79,17 @@ class Trainer:
         :return: Representation of the trainer as string
         :rtype: str
         """
-        string = "Trainer: {}".format(repr(self))
-        string += "\n  |-- Number of parallelizable environments: {}".format(self.env.num_envs)
-        string += "\n  |-- Number of simultaneous agents: {}".format(self.num_simultaneous_agents)
+        string = f"Trainer: {self}"
+        string += f"\n  |-- Number of parallelizable environments: {self.env.num_envs}"
+        string += f"\n  |-- Number of simultaneous agents: {self.num_simultaneous_agents}"
         string += "\n  |-- Agents and scopes:"
         if self.num_simultaneous_agents > 1:
             for agent, scope in zip(self.agents, self.agents_scope):
-                string += "\n  |     |-- agent: {}".format(type(agent))
-                string += "\n  |     |     |-- scope: {} environments ({}:{})".format(scope[1] - scope[0], scope[0], scope[1])
+                string += f"\n  |     |-- agent: {type(agent)}"
+                string += f"\n  |     |     |-- scope: {scope[1] - scope[0]} environments ({scope[0]}:{scope[1]})"
         else:
-            string += "\n  |     |-- agent: {}".format(type(self.agents))
-            string += "\n  |     |     |-- scope: {} environment(s)".format(self.env.num_envs)
+            string += f"\n  |     |-- agent: {type(self.agents)}"
+            string += f"\n  |     |     |-- scope: {self.env.num_envs} environment(s)"
         return string
 
     def _setup_agents(self) -> None:
@@ -115,14 +114,11 @@ class Trainer:
                     if sum(self.agents_scope):
                         self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)
                     else:
-                        raise ValueError("The number of agents ({}) is greater than the number of parallelizable environments ({})" \
-                            .format(len(self.agents), self.env.num_envs))
+                        raise ValueError(f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})")
                 elif len(self.agents_scope) != len(self.agents):
-                    raise ValueError("The number of agents ({}) doesn't match the number of scopes ({})" \
-                        .format(len(self.agents), len(self.agents_scope)))
+                    raise ValueError(f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})")
                 elif sum(self.agents_scope) != self.env.num_envs:
-                    raise ValueError("The scopes ({}) don't cover the number of parallelizable environments ({})" \
-                        .format(sum(self.agents_scope), self.env.num_envs))
+                    raise ValueError(f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})")
                 # generate agents' scopes
                 index = 0
                 for i in range(len(self.agents_scope)):

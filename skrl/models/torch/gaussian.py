@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Any
+from typing import Any, Mapping, Tuple, Union
 
 import gym
 import gymnasium
@@ -128,7 +128,7 @@ class GaussianMixin:
                  The second component is the log of the probability density function.
                  The third component is a dictionary containing the mean actions ``"mean_actions"``
                  and extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
 
         Example::
 

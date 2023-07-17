@@ -32,9 +32,9 @@ class SequentialTrainer(Trainer):
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: [])
-        :type agents_scope: tuple or list of integers
-        :param cfg: Configuration dictionary (default: {}).
+        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
+        :type agents_scope: tuple or list of int, optional
+        :param cfg: Configuration dictionary (default: ``None``).
                     See SEQUENTIAL_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """

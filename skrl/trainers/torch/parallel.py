@@ -20,7 +20,7 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
 
 
 def fn_processor(process_index, *args):
-    print("[INFO] Processor {}: started".format(process_index))
+    print(f"[INFO] Processor {process_index}: started")
 
     pipe = args[0][process_index]
     queue = args[1][process_index]
@@ -47,7 +47,7 @@ def fn_processor(process_index, *args):
         elif task == 'init':
             agent = queue.get()
             agent.init(trainer_cfg=trainer_cfg)
-            print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
+            print(f"[INFO] Processor {process_index}: init agent {type(agent).__name__} with scope {scope}")
             barrier.wait()
 
         # execute agent's pre-interaction step
@@ -114,9 +114,9 @@ class ParallelTrainer(Trainer):
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: [])
-        :type agents_scope: tuple or list of integers
-        :param cfg: Configuration dictionary (default: {}).
+        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
+        :type agents_scope: tuple or list of int, optional
+        :param cfg: Configuration dictionary (default: ``None``).
                     See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """

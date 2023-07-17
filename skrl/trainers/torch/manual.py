@@ -32,9 +32,9 @@ class ManualTrainer(Trainer):
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: [])
-        :type agents_scope: tuple or list of integers
-        :param cfg: Configuration dictionary (default: {}).
+        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
+        :type agents_scope: tuple or list of int, optional
+        :param cfg: Configuration dictionary (default: ``None``).
                     See MANUAL_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """
@@ -68,10 +68,10 @@ class ManualTrainer(Trainer):
         - Post-interaction (sequentially if num_simultaneous_agents > 1)
         - Reset environments
 
-        :param timestep: Current timestep
-        :type timestep: int, optional (default: None).
-                        If None, the current timestep will be carried by an internal variable
-        :param timesteps: Total number of timesteps (default: None).
+        :param timestep: Current timestep (default: ``None``).
+                         If None, the current timestep will be carried by an internal variable
+        :type timestep: int, optional
+        :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
         """
@@ -172,10 +172,10 @@ class ManualTrainer(Trainer):
         - Render scene
         - Reset environments
 
-        :param timestep: Current timestep
-        :type timestep: int, optional (default: None).
-                        If None, the current timestep will be carried by an internal variable
-        :param timesteps: Total number of timesteps (default: None).
+        :param timestep: Current timestep (default: ``None``).
+                         If None, the current timestep will be carried by an internal variable
+        :type timestep: int, optional
+        :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
         """

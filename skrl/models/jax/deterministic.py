@@ -1,12 +1,12 @@
-from typing import Optional, Union, Mapping, Tuple, Any
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import gym
 import gymnasium
 
-import jax
-import jaxlib
-import jax.numpy as jnp
 import flax
+import jax
+import jax.numpy as jnp
+import numpy as np
 
 
 class DeterministicMixin:
@@ -61,16 +61,16 @@ class DeterministicMixin:
         flax.linen.Module.__post_init__(self)
 
     def act(self,
-            inputs: Mapping[str, Union[jnp.ndarray, Any]],
+            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
             role: str = "",
-            params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act deterministically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically jnp.ndarray
+        :type inputs: dict where the values are typically np.ndarray or jax.Array
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
         :param params: Parameters used to compute the output (default: ``None``).
@@ -79,7 +79,7 @@ class DeterministicMixin:
 
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is ``None``. The third component is a dictionary containing extra output values
-        :rtype: tuple of jnp.ndarray, jnp.ndarray or None, and dictionary
+        :rtype: tuple of jax.Array, jax.Array or None, and dict
 
         Example::
 

@@ -1,16 +1,12 @@
-from typing import Optional, Union, Mapping, Sequence, Tuple, Any, Callable
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
 import gym
 import gymnasium
-import collections
+
+import flax
+import jax
 import numpy as np
 
-import jax
-import jaxlib
-import jax.numpy as jnp
-import flax
-
-from skrl import logger
 from skrl import config
 
 
@@ -26,19 +22,19 @@ class StateDict(flax.struct.PyTreeNode):
 class Model(flax.linen.Module):
     observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space]
     action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space]
-    device: Optional[Union[str, jaxlib.xla_extension.Device]] = None
+    device: Optional[Union[str, jax.Device]] = None
 
     def __init__(self,
                  observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
                  action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
+                 device: Optional[Union[str, jax.Device]] = None,
                  parent: Optional[Any] = None,
                  name: Optional[str] = None) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
-        - ``device`` (jaxlib.xla_extension.Device): Device to be used for the computations
+        - ``device`` (jax.Device): Device to be used for the computations
         - ``observation_space`` (int, sequence of int, gym.Space, gymnasium.Space): Observation/state space
         - ``action_space`` (int, sequence of int, gym.Space, gymnasium.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
@@ -50,9 +46,9 @@ class Model(flax.linen.Module):
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
         :type action_space: int, sequence of int, gym.Space, gymnasium.Space
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
         :param parent: The parent Module of this Module (default: ``None``).
                        It is a Flax reserved attribute
         :type parent: str, optional
@@ -83,7 +79,7 @@ class Model(flax.linen.Module):
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jaxlib.xla_extension.Device) else jax.devices(device)[0]
+            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
 
         self.observation_space = observation_space
         self.action_space = action_space
@@ -175,13 +171,13 @@ class Model(flax.linen.Module):
             elif issubclass(type(space), gymnasium.spaces.Dict):
                 size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
         if size is None:
-            raise ValueError("Space type {} not supported".format(type(space)))
+            raise ValueError(f"Space type {type(space)} not supported")
         return int(size)
 
     def tensor_to_space(self,
-                        tensor: jnp.ndarray,
+                        tensor: Union[np.ndarray, jax.Array],
                         space: Union[gym.Space, gymnasium.Space],
-                        start: int = 0) -> Union[jnp.ndarray, dict]:
+                        start: int = 0) -> Union[Union[np.ndarray, jax.Array], dict]:
         """Map a flat tensor to a Gym/Gymnasium space
 
         The mapping is done in the following way:
@@ -192,7 +188,7 @@ class Model(flax.linen.Module):
         - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
 
         :param tensor: Tensor to map from
-        :type tensor: jnp.ndarray
+        :type tensor: np.ndarray or jax.Array
         :param space: Space to map the tensor to
         :type space: gym.Space or gymnasium.Space
         :param start: Index of the first element of the tensor to map (default: ``0``)
@@ -201,7 +197,7 @@ class Model(flax.linen.Module):
         :raises ValueError: If the space is not supported
 
         :return: Mapped tensor or dictionary
-        :rtype: jnp.ndarray or dict
+        :rtype: np.ndarray or jax.Array, or dict
 
         Example::
 
@@ -238,19 +234,19 @@ class Model(flax.linen.Module):
                     output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
                     start = end
                 return output
-        raise ValueError("Space type {} not supported".format(type(space)))
+        raise ValueError(f"Space type {type(space)} not supported")
 
     def random_act(self,
-                   inputs: Mapping[str, Union[jnp.ndarray, Any]],
+                   inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
                    role: str = "",
-                   params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+                   params: Optional[jax.Array] = None) -> Tuple[Union[np.ndarray, jax.Array], Union[Union[np.ndarray, jax.Array], None], Mapping[str, Union[Union[np.ndarray, jax.Array], Any]]]:
         """Act randomly according to the action space
 
         :param inputs: Model inputs. The most common keys are:
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically jnp.ndarray
+        :type inputs: dict where the values are typically np.ndarray or jax.Array
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
         :param params: Parameters used to compute the output (default: ``None``).
@@ -260,7 +256,7 @@ class Model(flax.linen.Module):
         :raises NotImplementedError: Unsupported action space
 
         :return: Model output. The first component is the action to be taken by the agent
-        :rtype: tuple of jnp.ndarray, None, and dictionary
+        :rtype: tuple of np.ndarray or jax.Array, None, and dict
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
@@ -269,7 +265,7 @@ class Model(flax.linen.Module):
         elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
             actions = np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions))
         else:
-            raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
+            raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
 
         if self._jax:
             return jax.device_put(actions), None, {}
@@ -386,9 +382,9 @@ class Model(flax.linen.Module):
         return {}
 
     def act(self,
-            inputs: Mapping[str, Union[jnp.ndarray, Any]],
+            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
             role: str = "",
-            params: Optional[jnp.ndarray] = None) -> Tuple[jnp.ndarray, Union[jnp.ndarray, None], Mapping[str, Union[jnp.ndarray, Any]]]:
+            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -398,7 +394,7 @@ class Model(flax.linen.Module):
 
                        - ``"states"``: state of the environment used to make the decision
                        - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically jnp.ndarray
+        :type inputs: dict where the values are typically np.ndarray or jax.Array
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
         :param params: Parameters used to compute the output (default: ``None``).
@@ -410,7 +406,7 @@ class Model(flax.linen.Module):
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is the log of the probability density function for stochastic models
                  or None for deterministic models. The third component is a dictionary containing extra output values
-        :rtype: tuple of jnp.ndarray, jnp.ndarray or None, and dictionary
+        :rtype: tuple of jax.Array, jax.Array or None, and dict
         """
         raise NotImplementedError
 

@@ -1,10 +1,10 @@
-from typing import Optional, Union, Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+import collections
 import gym
 import gymnasium
-import collections
-import numpy as np
 
+import numpy as np
 import torch
 
 from skrl import logger
@@ -31,8 +31,8 @@ class Model(torch.nn.Module):
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
         :type action_space: int, sequence of int, gym.Space, gymnasium.Space
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
 
         Custom models should override the ``act`` method::
@@ -135,7 +135,7 @@ class Model(torch.nn.Module):
             elif issubclass(type(space), gymnasium.spaces.Dict):
                 size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
         if size is None:
-            raise ValueError("Space type {} not supported".format(type(space)))
+            raise ValueError(f"Space type {type(space)} not supported")
         return int(size)
 
     def tensor_to_space(self,
@@ -198,7 +198,7 @@ class Model(torch.nn.Module):
                     output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
                     start = end
                 return output
-        raise ValueError("Space type {} not supported".format(type(space)))
+        raise ValueError(f"Space type {type(space)} not supported")
 
     def random_act(self,
                    inputs: Mapping[str, Union[torch.Tensor, Any]],
@@ -216,7 +216,7 @@ class Model(torch.nn.Module):
         :raises NotImplementedError: Unsupported action space
 
         :return: Model output. The first component is the action to be taken by the agent
-        :rtype: tuple of torch.Tensor, None, and dictionary
+        :rtype: tuple of torch.Tensor, None, and dict
         """
         # discrete action space (Discrete)
         if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
@@ -230,7 +230,7 @@ class Model(torch.nn.Module):
 
             return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, {}
         else:
-            raise NotImplementedError("Action space type ({}) not supported".format(type(self.action_space)))
+            raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
@@ -254,7 +254,7 @@ class Model(torch.nn.Module):
             >>> model.init_parameters("sparse_", sparsity=0.1)
         """
         for parameters in self.parameters():
-            exec("torch.nn.init.{}(parameters, *args, **kwargs)".format(method_name))
+            exec(f"torch.nn.init.{method_name}(parameters, *args, **kwargs)")
 
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
@@ -285,7 +285,7 @@ class Model(torch.nn.Module):
                 if isinstance(layer, torch.nn.Sequential):
                     _update_weights(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
-                    exec("torch.nn.init.{}(layer.weight, *args, **kwargs)".format(method_name))
+                    exec(f"torch.nn.init.{method_name}(layer.weight, *args, **kwargs)")
 
         _update_weights(self.children(), method_name, args, kwargs)
 
@@ -318,7 +318,7 @@ class Model(torch.nn.Module):
                 if isinstance(layer, torch.nn.Sequential):
                     _update_biases(layer, method_name, args, kwargs)
                 elif isinstance(layer, torch.nn.Linear):
-                    exec("torch.nn.init.{}(layer.bias, *args, **kwargs)".format(method_name))
+                    exec(f"torch.nn.init.{method_name}(layer.bias, *args, **kwargs)")
 
         _update_biases(self.children(), method_name, args, kwargs)
 
@@ -364,7 +364,7 @@ class Model(torch.nn.Module):
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is the log of the probability density function for stochastic models
                  or None for deterministic models. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
         """
         return self.act(inputs, role)
 
@@ -384,7 +384,7 @@ class Model(torch.nn.Module):
         :raises NotImplementedError: Child class must implement this method
 
         :return: Computation performed by the models
-        :rtype: tuple of torch.Tensor and dictionary
+        :rtype: tuple of torch.Tensor and dict
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
@@ -410,7 +410,7 @@ class Model(torch.nn.Module):
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is the log of the probability density function for stochastic models
                  or None for deterministic models. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
         """
         logger.warning("Make sure to place Mixins before Model during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
@@ -602,12 +602,12 @@ class Model(torch.nn.Module):
         # show state_dict
         if verbose:
             logger.info("Models")
-            logger.info("  |-- current: {} items".format(len(self.state_dict().keys())))
+            logger.info(f"  |-- current: {len(self.state_dict().keys())} items")
             for name, tensor in self.state_dict().items():
-                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
-            logger.info("  |-- source: {} items".format(len(state_dict.keys())))
+                logger.info(f"  |    |-- {name} : {list(tensor.shape)}")
+            logger.info(f"  |-- source: {len(state_dict.keys())} items")
             for name, tensor in state_dict.items():
-                logger.info("  |    |-- {} : {}".format(name, list(tensor.shape)))
+                logger.info(f"  |    |-- {name} : {list(tensor.shape)}")
             logger.info("Migration")
 
         # migrate the state_dict to current model
@@ -623,10 +623,10 @@ class Model(torch.nn.Module):
                         match_counter[name].append(external_name)
                         used_counter[external_name].append(name)
                         if verbose:
-                            logger.info("  |-- map:  {} <- {}".format(name, external_name))
+                            logger.info(f"  |-- map:  {name} <- {external_name}")
                         break
                     else:
-                        logger.warning("Shape mismatch for {} <- {} : {} != {}".format(name, external_name, tensor.shape, external_tensor.shape))
+                        logger.warning(f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}")
                 # auto-mapped names
                 if auto_mapping and name not in name_map:
                     if tensor.shape == external_tensor.shape:
@@ -636,21 +636,21 @@ class Model(torch.nn.Module):
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
                                 if verbose:
-                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+                                    logger.info(f"  |-- auto: {name} <- {external_name}")
                         elif name.endswith(".bias"):
                             if external_name.endswith(".bias"):
                                 new_state_dict[name] = external_tensor
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
                                 if verbose:
-                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+                                    logger.info(f"  |-- auto: {name} <- {external_name}")
                         else:
                             if not external_name.endswith(".weight") and not external_name.endswith(".bias"):
                                 new_state_dict[name] = external_tensor
                                 match_counter[name].append(external_name)
                                 used_counter[external_name].append(name)
                                 if verbose:
-                                    logger.info("  |-- auto: {} <- {}".format(name, external_name))
+                                    logger.info(f"  |-- auto: {name} <- {external_name}")
 
         # show ambiguous matches
         status = True
@@ -661,7 +661,7 @@ class Model(torch.nn.Module):
         # show missing matches
         for name, tensor in self.state_dict().items():
             if not match_counter.get(name, []):
-                logger.warning("Missing match for {}".format(name))
+                logger.warning(f"Missing match for {name}")
                 status = False
         # show multiple uses
         for name, tensor in state_dict.items():

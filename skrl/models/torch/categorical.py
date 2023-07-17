@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Any
+from typing import Any, Mapping, Tuple, Union
 
 import torch
 from torch.distributions import Categorical
@@ -77,7 +77,7 @@ class CategoricalMixin:
                  The second component is the log of the probability density function.
                  The third component is a dictionary containing the network output ``"net_output"``
                  and extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
 
         Example::
 

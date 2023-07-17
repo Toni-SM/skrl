@@ -58,7 +58,7 @@ class MemoryFileIterator():
         elif self.file_paths[self.n].endswith(".csv"):
             return self._format_csv()
         else:
-            raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))
+            raise ValueError(f"Unsupported format for {self.file_paths[self.n]}. Available formats: .pt, .csv, .npz")
 
     def _format_numpy(self) -> Tuple[str, dict]:
         """Load numpy array from file

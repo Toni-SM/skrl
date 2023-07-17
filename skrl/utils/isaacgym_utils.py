@@ -57,7 +57,7 @@ class WebViewer:
         self._thread = threading.Thread(target=lambda: \
             self._app.run(host=host, port=port, debug=False, use_reloader=False), daemon=True)
         self._thread.start()
-        print("\nStarting web viewer on http://{}:{}/\n".format(host, port))
+        print(f"\nStarting web viewer on http://{host}:{port}/\n")
 
     def _route_index(self) -> 'flask.Response':
         """Render the web page
@@ -430,7 +430,7 @@ def print_arguments(args):
     print("")
     print("Arguments")
     for a in args.__dict__:
-        print("  |-- {}: {}".format(a, args.__getattribute__(a)))
+        print(f"  |-- {a}: {args.__getattribute__(a)}")
 
 def print_asset_options(asset_options: 'isaacgym.gymapi.AssetOptions', asset_name: str = ""):
     attrs = ["angular_damping", "armature", "collapse_fixed_joints", "convex_decomposition_from_submeshes",
@@ -438,7 +438,7 @@ def print_asset_options(asset_options: 'isaacgym.gymapi.AssetOptions', asset_nam
              "linear_damping", "max_angular_velocity", "max_linear_velocity", "mesh_normal_mode", "min_particle_mass",
              "override_com", "override_inertia", "replace_cylinder_with_capsule", "tendon_limit_stiffness", "thickness",
              "use_mesh_materials", "use_physx_armature", "vhacd_enabled"]  # vhacd_params
-    print("\nAsset options{}".format(" ({})".format(asset_name) if asset_name else ""))
+    print("\nAsset options{}".format(f" ({asset_name})" if asset_name else ""))
     for attr in attrs:
         print("  |-- {}: {}".format(attr, getattr(asset_options, attr) if hasattr(asset_options, attr) else "--"))
         # vhacd attributes
@@ -450,7 +450,6 @@ def print_asset_options(asset_options: 'isaacgym.gymapi.AssetOptions', asset_nam
             for vhacd_attr in vhacd_attrs:
                 print("  |   |-- {}: {}".format(vhacd_attr, getattr(asset_options.vhacd_params, vhacd_attr) \
                     if hasattr(asset_options.vhacd_params, vhacd_attr) else "--"))
-
 
 def print_sim_components(gym, sim):
     print("")
@@ -506,7 +505,7 @@ def print_links_and_dofs(gym, asset):
     print("")
     print("Links")
     for k in link_dict:
-        print("  |-- {}: {}".format(k, link_dict[k]))
+        print(f"  |-- {k}: {link_dict[k]}")
     print("DOFs")
     for k in dof_dict:
-        print("  |-- {}: {}".format(k, dof_dict[k]))
+        print(f"  |-- {k}: {dof_dict[k]}")

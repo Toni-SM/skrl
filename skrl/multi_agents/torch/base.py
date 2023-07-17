@@ -228,12 +228,13 @@ class MultiAgent:
         if self.checkpoint_store_separately:
             for uid in self.possible_agents:
                 for name, module in self.checkpoint_modules[uid].items():
-                    torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}_{}.pt".format(uid, name, tag)))
+                    torch.save(self._get_internal_value(module),
+                               os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pt"))
         # whole agent
         else:
             modules = {uid: {name: self._get_internal_value(module) for name, module in self.checkpoint_modules[uid].items()} \
                        for uid in self.possible_agents}
-            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
+            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
@@ -242,12 +243,12 @@ class MultiAgent:
                 for uid in self.possible_agents:
                     for name in self.checkpoint_modules[uid].keys():
                         torch.save(self.checkpoint_best_modules["modules"][uid][name],
-                                os.path.join(self.experiment_dir, "checkpoints", "best_{}_{}.pt".format(uid, name)))
+                                os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pt"))
             # whole agent
             else:
                 modules = {uid: {name: self.checkpoint_best_modules["modules"][uid][name] \
                                  for name in self.checkpoint_modules[uid].keys()} for uid in self.possible_agents}
-                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
     def act(self, states: Mapping[str, torch.Tensor], timestep: int, timesteps: int) -> torch.Tensor:
@@ -385,7 +386,7 @@ class MultiAgent:
         if type(modules) is dict:
             for uid in self.possible_agents:
                 if uid not in modules:
-                    logger.warning("Cannot load modules for {}. The agent doesn't have such an instance".format(uid))
+                    logger.warning(f"Cannot load modules for {uid}. The agent doesn't have such an instance")
                     continue
                 for name, data in modules[uid].items():
                     module = self.checkpoint_modules[uid].get(name, None)
@@ -397,7 +398,7 @@ class MultiAgent:
                         else:
                             raise NotImplementedError
                     else:
-                        logger.warning("Cannot load the {}:{} module. The agent doesn't have such an instance".format(uid, name))
+                        logger.warning(f"Cannot load the {uid}:{name} module. The agent doesn't have such an instance")
 
     def migrate(self,
                 path: str,

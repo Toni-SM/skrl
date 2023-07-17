@@ -91,14 +91,14 @@ class Agent:
         :return: Representation of the agent as string
         :rtype: str
         """
-        string = "Agent: {}".format(repr(self))
+        string = f"Agent: {repr(self)}"
         for k, v in self.cfg.items():
             if type(v) is dict:
-                string += "\n  |-- {}".format(k)
+                string += f"\n  |-- {k}"
                 for k1, v1 in v.items():
-                    string += "\n  |     |-- {}: {}".format(k1, v1)
+                    string += f"\n  |     |-- {k1}: {v1}"
             else:
-                string += "\n  |-- {}: {}".format(k, v)
+                string += f"\n  |-- {k}: {v}"
         return string
 
     def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
@@ -207,13 +207,14 @@ class Agent:
         # separated modules
         if self.checkpoint_store_separately:
             for name, module in self.checkpoint_modules.items():
-                torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+                torch.save(self._get_internal_value(module),
+                           os.path.join(self.experiment_dir, "checkpoints", f"{name}_{tag}.pt"))
         # whole agent
         else:
             modules = {}
             for name, module in self.checkpoint_modules.items():
                 modules[name] = self._get_internal_value(module)
-            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
+            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
@@ -221,13 +222,13 @@ class Agent:
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
                     torch.save(self.checkpoint_best_modules["modules"][name],
-                               os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
+                               os.path.join(self.experiment_dir, "checkpoints", f"best_{name}.pt"))
             # whole agent
             else:
                 modules = {}
                 for name, module in self.checkpoint_modules.items():
                     modules[name] = self.checkpoint_best_modules["modules"][name]
-                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
     def act(self,
@@ -374,7 +375,7 @@ class Agent:
                     else:
                         raise NotImplementedError
                 else:
-                    logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
+                    logger.warning(f"Cannot load the {name} module. The agent doesn't have such an instance")
 
     def migrate(self,
                 path: str,
@@ -551,26 +552,26 @@ class Agent:
             logger.info("Modules")
             logger.info("  |-- current")
             for name, module in self.checkpoint_modules.items():
-                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                logger.info(f"  |    |-- {name} ({type(module).__name__})")
                 if hasattr(module, "state_dict"):
                     for k, v in module.state_dict().items():
                         if hasattr(v, "shape"):
-                            logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                            logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                         else:
-                            logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+                            logger.info(f"  |    |    |-- {k} ({type(v).__name__})")
             logger.info("  |-- source")
             for name, module in checkpoint.items():
-                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                logger.info(f"  |    |-- {name} ({type(module).__name__})")
                 if name == "model":
                     for k, v in module.items():
-                        logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                        logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                 else:
                     if hasattr(module, "state_dict"):
                         for k, v in module.state_dict().items():
                             if hasattr(v, "shape"):
-                                logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                                logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                             else:
-                                logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+                                logger.info(f"  |    |    |-- {k} ({type(v).__name__})")
             logger.info("Migration")
 
         if "optimizer" in self.checkpoint_modules:
@@ -605,7 +606,7 @@ class Agent:
         for name, module in self.checkpoint_modules.items():
             if module not in ["state_preprocessor", "value_preprocessor", "optimizer"] and hasattr(module, "migrate"):
                 if verbose:
-                    logger.info("Model: {} ({})".format(name, type(module).__name__))
+                    logger.info(f"Model: {name} ({type(module).__name__})")
                 status *= module.migrate(state_dict=checkpoint["model"],
                                             name_map=name_map.get(name, {}),
                                             auto_mapping=auto_mapping,

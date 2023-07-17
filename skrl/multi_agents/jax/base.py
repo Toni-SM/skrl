@@ -277,14 +277,14 @@ class MultiAgent:
         if self.checkpoint_store_separately:
             for uid in self.possible_agents:
                 for name, module in self.checkpoint_modules[uid].items():
-                    with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}_{}.pickle".format(uid, name, tag)), "wb") as file:
+                    with open(os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pickle"), "wb") as file:
                         pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
         # whole agent
         else:
             modules = {uid: {name: flax.serialization.to_bytes(self._get_internal_value(module)) for name, module in self.checkpoint_modules[uid].items()} \
                        for uid in self.possible_agents}
 
-            with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pickle".format("agent", tag)), "wb") as file:
+            with open(os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pickle"), "wb") as file:
                 pickle.dump(modules, file, protocol=4)
 
         # best modules
@@ -293,13 +293,13 @@ class MultiAgent:
             if self.checkpoint_store_separately:
                 for uid in self.possible_agents:
                     for name, module in self.checkpoint_modules.items():
-                        with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}_{}.pickle".format(uid, name)), "wb") as file:
+                        with open(os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pickle"), "wb") as file:
                             pickle.dump(flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name]), file, protocol=4)
             # whole agent
             else:
                 modules = {uid: {name: flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name]) \
                                  for name in self.checkpoint_modules[uid].keys()} for uid in self.possible_agents}
-                with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pickle".format("agent")), "wb") as file:
+                with open(os.path.join(self.experiment_dir, "checkpoints", "best_agent.pickle"), "wb") as file:
                     pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
@@ -449,7 +449,7 @@ class MultiAgent:
         if type(modules) is dict:
             for uid in self.possible_agents:
                 if uid not in modules:
-                    logger.warning("Cannot load modules for {}. The agent doesn't have such an instance".format(uid))
+                    logger.warning(f"Cannot load modules for {uid}. The agent doesn't have such an instance")
                     continue
                 for name, data in modules[uid].items():
                     module = self.checkpoint_modules[uid].get(name, None)
@@ -460,7 +460,7 @@ class MultiAgent:
                         else:
                             pass  # TODO:raise NotImplementedError
                     else:
-                        logger.warning("Cannot load the {}:{} module. The agent doesn't have such an instance".format(uid, name))
+                        logger.warning(f"Cannot load the {uid}:{name} module. The agent doesn't have such an instance")
 
     def migrate(self,
                 path: str,

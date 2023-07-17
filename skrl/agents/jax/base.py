@@ -98,14 +98,14 @@ class Agent:
         :return: Representation of the agent as string
         :rtype: str
         """
-        string = "Agent: {}".format(repr(self))
+        string = f"Agent: {repr(self)}"
         for k, v in self.cfg.items():
             if type(v) is dict:
-                string += "\n  |-- {}".format(k)
+                string += f"\n  |-- {k}"
                 for k1, v1 in v.items():
-                    string += "\n  |     |-- {}: {}".format(k1, v1)
+                    string += f"\n  |     |-- {k1}: {v1}"
             else:
-                string += "\n  |-- {}: {}".format(k, v)
+                string += f"\n  |-- {k}: {v}"
         return string
 
     def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
@@ -253,7 +253,7 @@ class Agent:
         # separated modules
         if self.checkpoint_store_separately:
             for name, module in self.checkpoint_modules.items():
-                with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pickle".format(name, tag)), "wb") as file:
+                with open(os.path.join(self.experiment_dir, "checkpoints", f"{name}_{tag}.pickle"), "wb") as file:
                     pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
         # whole agent
         else:
@@ -261,7 +261,7 @@ class Agent:
             for name, module in self.checkpoint_modules.items():
                 modules[name] = flax.serialization.to_bytes(self._get_internal_value(module))
 
-            with open(os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pickle".format("agent", tag)), "wb") as file:
+            with open(os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pickle"), "wb") as file:
                 pickle.dump(modules, file, protocol=4)
 
         # best modules
@@ -269,14 +269,14 @@ class Agent:
             # separated modules
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
-                    with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pickle".format(name)), "wb") as file:
+                    with open(os.path.join(self.experiment_dir, "checkpoints", f"best_{name}.pickle"), "wb") as file:
                         pickle.dump(flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name]), file, protocol=4)
             # whole agent
             else:
                 modules = {}
                 for name, module in self.checkpoint_modules.items():
                     modules[name] = flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name])
-                with open(os.path.join(self.experiment_dir, "checkpoints", "best_{}.pickle".format("agent")), "wb") as file:
+                with open(os.path.join(self.experiment_dir, "checkpoints", "best_agent.pickle"), "wb") as file:
                     pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
@@ -429,7 +429,7 @@ class Agent:
                     else:
                         pass  # TODO: raise NotImplementedError
                 else:
-                    logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
+                    logger.warning(f"Cannot load the {name} module. The agent doesn't have such an instance")
 
     def migrate(self,
                 path: str,

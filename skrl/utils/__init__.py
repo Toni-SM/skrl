@@ -67,7 +67,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
         seed %= 2 ** 31  # NumPy's legacy seeding seed must be between 0 and 2**32 - 1
 
     seed = int(seed)
-    logger.info("Seed: {}".format(seed))
+    logger.info(f"Seed: {seed}")
 
     # numpy
     random.seed(seed)

@@ -70,7 +70,7 @@ def _get_activation_function(activation: str) -> nn.Module:
     elif activation == "softmax":
         return torch.nn.Softmax()
     else:
-        raise ValueError("Unknown activation function: {}".format(activation))
+        raise ValueError(f"Unknown activation function: {activation}")
 
 def _get_num_units_by_shape(model: Model, shape: Shape) -> int:
     """Get the number of units in a layer by shape

@@ -1,11 +1,10 @@
-import unittest
 import math
-
+import unittest
 import gym
-import numpy as np
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from skrl.memories.jax import Memory
 

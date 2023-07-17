@@ -1,17 +1,16 @@
-import pytest
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import torch
 
 from skrl.agents.torch import Agent
-
 from skrl.agents.torch.a2c import A2C
 from skrl.agents.torch.amp import AMP
 from skrl.agents.torch.cem import CEM
 from skrl.agents.torch.ddpg import DDPG
-from skrl.agents.torch.dqn import DQN, DDQN
+from skrl.agents.torch.dqn import DDQN, DQN
 from skrl.agents.torch.ppo import PPO
 from skrl.agents.torch.q_learning import Q_LEARNING
 from skrl.agents.torch.sac import SAC

@@ -1,14 +1,11 @@
-import pytest
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import torch
 
-from skrl.resources.noises.torch import Noise
-
-from skrl.resources.noises.torch import GaussianNoise
-from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
+from skrl.resources.noises.torch import GaussianNoise, Noise, OrnsteinUhlenbeckNoise
 
 
 @pytest.fixture

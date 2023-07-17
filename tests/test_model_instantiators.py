@@ -1,17 +1,18 @@
-import pytest
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import torch
 
 from skrl.models.torch import Model
-
-from skrl.utils.model_instantiators import Shape
-from skrl.utils.model_instantiators import categorical_model
-from skrl.utils.model_instantiators import deterministic_model
-from skrl.utils.model_instantiators import gaussian_model
-from skrl.utils.model_instantiators import multivariate_gaussian_model
+from skrl.utils.model_instantiators import (
+    Shape,
+    categorical_model,
+    deterministic_model,
+    gaussian_model,
+    multivariate_gaussian_model
+)
 
 
 @pytest.fixture

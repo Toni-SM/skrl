@@ -1,13 +1,11 @@
-import pytest
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import torch
 
-from skrl.envs.torch import Wrapper
-
-from skrl.envs.torch import wrap_env
+from skrl.envs.torch import Wrapper, wrap_env
 
 from .utils import DummyEnv
 

@@ -96,3 +96,4 @@ sections = [
   "LOCALFOLDER",
 ]
 no_lines_before = "THIRDPARTY"
+skip = ["docs"]

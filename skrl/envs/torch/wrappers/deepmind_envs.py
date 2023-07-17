@@ -1,9 +1,9 @@
-from typing import Tuple, Any, Optional
+from typing import Any, Optional, Tuple
 
-import gym
 import collections
-import numpy as np
+import gym
 
+import numpy as np
 import torch
 
 from skrl.envs.torch.wrappers.base import Wrapper
@@ -71,7 +71,7 @@ class DeepMindWrapper(Wrapper):
         elif isinstance(spec, collections.OrderedDict):
             return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
-            raise ValueError("Spec type {} not supported. Please report this issue".format(type(spec)))
+            raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
 
     def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
         """Convert the DeepMind observation to a flat tensor
@@ -94,7 +94,7 @@ class DeepMindWrapper(Wrapper):
             return torch.cat([self._observation_to_tensor(observation[k], spec[k]) \
                 for k in sorted(spec.keys())], dim=-1).reshape(self.num_envs, -1)
         else:
-            raise ValueError("Observation spec type {} not supported. Please report this issue".format(type(spec)))
+            raise ValueError(f"Observation spec type {type(spec)} not supported. Please report this issue")
 
     def _tensor_to_action(self, actions: torch.Tensor) -> Any:
         """Convert the action to the DeepMind expected format
@@ -114,7 +114,7 @@ class DeepMindWrapper(Wrapper):
         elif isinstance(spec, self._specs.Array):  # includes BoundedArray
             return np.array(actions.cpu().numpy(), dtype=spec.dtype).reshape(spec.shape)
         else:
-            raise ValueError("Action spec type {} not supported. Please report this issue".format(type(spec)))
+            raise ValueError(f"Action spec type {type(spec)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

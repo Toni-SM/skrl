@@ -1,10 +1,11 @@
-from typing import Tuple, Any, Optional
+from typing import Any, Optional, Tuple
 
 import gymnasium
-import numpy as np
 
+import numpy as np
 import torch
 
+from skrl import logger
 from skrl.envs.torch.wrappers.base import Wrapper
 
 
@@ -25,7 +26,7 @@ class GymnasiumWrapper(Wrapper):
                 self._obs_tensor = None
                 self._info_dict = None
         except Exception as e:
-            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+            logger.warning(f"Failed to check for a vectorized environment: {e}")
 
     @property
     def state_space(self) -> gymnasium.Space:
@@ -82,7 +83,7 @@ class GymnasiumWrapper(Wrapper):
                 for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
     def _tensor_to_action(self, actions: torch.Tensor) -> Any:
         """Convert the action to the Gymnasium expected format
@@ -109,7 +110,7 @@ class GymnasiumWrapper(Wrapper):
             return actions.item()
         elif isinstance(space, gymnasium.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

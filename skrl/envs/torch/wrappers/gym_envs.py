@@ -1,14 +1,13 @@
-from typing import Tuple, Any, Optional
+from typing import Any, Optional, Tuple
 
 import gym
-import numpy as np
 from packaging import version
 
+import numpy as np
 import torch
 
-from skrl.envs.torch.wrappers.base import Wrapper
-
 from skrl import logger
+from skrl.envs.torch.wrappers.base import Wrapper
 
 
 class GymWrapper(Wrapper):
@@ -28,11 +27,11 @@ class GymWrapper(Wrapper):
                 self._obs_tensor = None
                 self._info_dict = None
         except Exception as e:
-            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+            logger.warning(f"Failed to check for a vectorized environment: {e}")
 
         self._deprecated_api = version.parse(gym.__version__) < version.parse("0.25.0")
         if self._deprecated_api:
-            logger.warning("Using a deprecated version of OpenAI Gym's API: {}".format(gym.__version__))
+            logger.warning(f"Using a deprecated version of OpenAI Gym's API: {gym.__version__}")
 
     @property
     def state_space(self) -> gym.Space:
@@ -89,7 +88,7 @@ class GymWrapper(Wrapper):
                 for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
     def _tensor_to_action(self, actions: torch.Tensor) -> Any:
         """Convert the action to the OpenAI Gym expected format
@@ -116,7 +115,7 @@ class GymWrapper(Wrapper):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

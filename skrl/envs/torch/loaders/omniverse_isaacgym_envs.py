@@ -1,10 +1,11 @@
-from typing import Union, Sequence, Optional
+from typing import Optional, Sequence, Union
 
 import os
-import sys
 import queue
+import sys
 
 from skrl import logger
+
 
 __all__ = ["load_omniverse_isaacgym_env"]
 
@@ -31,14 +32,14 @@ def _print_cfg(d, indent=0) -> None:
 
     :param d: The dictionary to print
     :type d: dict
-    :param indent: The indentation level (default: 0)
+    :param indent: The indentation level (default: ``0``)
     :type indent: int, optional
     """
     for key, value in d.items():
         if isinstance(value, dict):
             _print_cfg(value, indent + 1)
         else:
-            print('  |   ' * indent + "  |-- {}: {}".format(key, value))
+            print("  |   " * indent + f"  |-- {key}: {value}")
 
 def load_omniverse_isaacgym_env(task_name: str = "",
                                 num_envs: Optional[int] = None,
@@ -52,28 +53,28 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     Omniverse Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
 
-    :param task_name: The name of the task (default: "").
+    :param task_name: The name of the task (default: ``""``).
                       If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
                       Command line argument has priority over function parameter if both are specified
     :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: None).
+    :param num_envs: Number of parallel environments to create (default: ``None``).
                      If not specified, the default number of environments defined in the task configuration is used.
                      Command line argument has priority over function parameter if both are specified
     :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: None).
+    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
                      If not specified, the default task configuration is used.
                      Command line argument has priority over function parameter if both are specified
     :type headless: bool, optional
-    :param cli_args: OIGE configuration and command line arguments (default: [])
+    :param cli_args: OIGE configuration and command line arguments (default: ``[]``)
     :type cli_args: list of str, optional
-    :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory (default: "").
+    :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory (default: ``""``).
                               If empty, the path will obtained from omniisaacgymenvs package metadata
     :type omniisaacgymenvs_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: True)
+    :param show_cfg: Whether to print the configuration (default: ``True``)
     :type show_cfg: bool, optional
-    :param multi_threaded: Whether to use multi-threaded environment (default: False)
+    :param multi_threaded: Whether to use multi-threaded environment (default: ``False``)
     :type multi_threaded: bool, optional
-    :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment (default: 30)
+    :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment (default: ``30``)
     :type timeout: int, optional
 
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
@@ -82,18 +83,16 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     :return: Omniverse Isaac Gym environment
     :rtype: omni.isaac.gym.vec_env.vec_env_base.VecEnvBase or omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT
     """
-    import torch
-    from hydra.types import RunMode
+    import omegaconf
+    import omniisaacgymenvs  # type: ignore
     from hydra._internal.hydra import Hydra
     from hydra._internal.utils import create_automatic_config_search_path, get_args_parser
-
-    import omegaconf
+    from hydra.types import RunMode
     from omegaconf import OmegaConf
-
-    from omni.isaac.gym.vec_env import VecEnvBase, VecEnvMT, TaskStopException  # type: ignore
+    from omni.isaac.gym.vec_env import TaskStopException, VecEnvBase, VecEnvMT  # type: ignore
     from omni.isaac.gym.vec_env.vec_env_mt import TrainerMT  # type: ignore
 
-    import omniisaacgymenvs  # type: ignore
+    import torch
 
     # check task from command line arguments
     defined = False
@@ -109,7 +108,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # get task name from function arguments
     else:
         if task_name:
-            sys.argv.append("task={}".format(task_name))
+            sys.argv.append(f"task={task_name}")
         else:
             raise ValueError("No task name defined. Set task_name parameter or use task=<task_name> as command line argument")
 
@@ -126,7 +125,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
                 .format(num_envs, arg.split("num_envs=")[1].split(" ")[0]))
     # get num_envs from function arguments
     elif num_envs is not None and num_envs > 0:
-        sys.argv.append("num_envs={}".format(num_envs))
+        sys.argv.append(f"num_envs={num_envs}")
 
     # check headless from command line arguments
     defined = False
@@ -141,7 +140,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
                 .format(headless, arg.split("headless=")[1].split(" ")[0]))
     # get headless from function arguments
     elif headless is not None:
-        sys.argv.append("headless={}".format(headless))
+        sys.argv.append(f"headless={headless}")
 
     # others command line arguments
     sys.argv += cli_args
@@ -172,7 +171,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     # print config
     if show_cfg:
-        print("\nOmniverse Isaac Gym environment ({})".format(config.task.name))
+        print(f"\nOmniverse Isaac Gym environment ({config.task.name})")
         _print_cfg(cfg)
 
     # internal classes

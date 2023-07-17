@@ -1,16 +1,12 @@
-from typing import Tuple, Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 import gymnasium
-import numpy as np
 
 import jax
-import jaxlib
-import jax.numpy as jnp
+import numpy as np
 
+from skrl import logger
 from skrl.envs.jax.wrappers.base import Wrapper
-
-
-Array = Union[np.ndarray, jnp.ndarray]
 
 
 class GymnasiumWrapper(Wrapper):
@@ -30,7 +26,7 @@ class GymnasiumWrapper(Wrapper):
                 self._obs_tensor = None
                 self._info_dict = None
         except Exception as e:
-            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+            logger.warning(f"Failed to check for a vectorized environment: {e}")
 
     @property
     def state_space(self) -> gymnasium.Space:
@@ -58,7 +54,7 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _observation_to_tensor(self, observation: Any, space: Optional[gymnasium.Space] = None) -> Array:
+    def _observation_to_tensor(self, observation: Any, space: Optional[gymnasium.Space] = None) -> np.ndarray:
         """Convert the Gymnasium observation to a flat tensor
 
         :param observation: The Gymnasium observation to convert to a tensor
@@ -67,7 +63,7 @@ class GymnasiumWrapper(Wrapper):
         :raises: ValueError if the observation space type is not supported
 
         :return: The observation as a flat tensor
-        :rtype: array
+        :rtype: np.ndarray
         """
         observation_space = self._env.observation_space if self._vectorized else self.observation_space
         space = space if space is not None else observation_space
@@ -87,13 +83,13 @@ class GymnasiumWrapper(Wrapper):
                 for k in sorted(space.keys())], axis=-1).reshape(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
-    def _tensor_to_action(self, actions: Array) -> Any:
+    def _tensor_to_action(self, actions: np.ndarray) -> Any:
         """Convert the action to the Gymnasium expected format
 
         :param actions: The actions to perform
-        :type actions: array
+        :type actions: np.ndarray
 
         :raise ValueError: If the action space type is not supported
 
@@ -114,16 +110,18 @@ class GymnasiumWrapper(Wrapper):
             return actions.item()
         elif isinstance(space, gymnasium.spaces.Box):
             return actions.astype(space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
-    def step(self, actions: Array) -> Tuple[Array, Array, Array, Array, Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: array
+        :type actions: np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of arrays and any other info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         if self._jax:
             actions = jax.device_get(actions)
@@ -147,11 +145,11 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[Array, Any]:
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: array and any other info
+        :rtype: np.ndarray or jax.Array and any other info
         """
         # handle vectorized envs
         if self._vectorized:

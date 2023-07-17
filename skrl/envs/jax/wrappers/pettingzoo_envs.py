@@ -1,12 +1,10 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple, Union
 
-import gymnasium
 import collections
-import numpy as np
+import gymnasium
 
 import jax
-import jaxlib
-import jax.numpy as jnp
+import numpy as np
 
 from skrl.envs.jax.wrappers.base import MultiAgentEnvWrapper
 
@@ -63,7 +61,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         return {uid: self._shared_observation_space for uid in self.possible_agents}
 
-    def _observation_to_tensor(self, observation: Any, space: gymnasium.Space) -> jnp.ndarray:
+    def _observation_to_tensor(self, observation: Any, space: gymnasium.Space) -> np.ndarray:
         """Convert the Gymnasium observation to a flat tensor
 
         :param observation: The Gymnasium observation to convert to a tensor
@@ -72,7 +70,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :raises: ValueError if the observation space type is not supported
 
         :return: The observation as a flat tensor
-        :rtype: jnp.ndarray
+        :rtype: np.ndarray
         """
         if isinstance(observation, int):
             return np.array(observation, dtype=np.int32).view(self.num_envs, -1)
@@ -87,13 +85,13 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
                 for k in sorted(space.keys())], axis=-1).view(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
-    def _tensor_to_action(self, actions: jnp.ndarray, space: gymnasium.Space) -> Any:
+    def _tensor_to_action(self, actions: np.ndarray, space: gymnasium.Space) -> Any:
         """Convert the action to the Gymnasium expected format
 
         :param actions: The actions to perform
-        :type actions: jnp.ndarray
+        :type actions: np.ndarray
 
         :raise ValueError: If the action space type is not supported
 
@@ -104,18 +102,19 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             return actions.item()
         elif isinstance(space, gymnasium.spaces.Box):
             return actions.astype(space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
-    def step(self, actions: Mapping[str, jnp.ndarray]) -> \
-        Tuple[Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray],
-              Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
+        Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Any]]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: dictionary of jnp.ndarray
+        :type actions: dict of np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries jnp.ndarray and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         if self._jax:
             actions = jax.device_get(actions)
@@ -134,11 +133,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         truncated = {uid: np.array(value, dtype=np.int8).reshape(self.num_envs, -1) for uid, value in truncated.items()}
         return observations, rewards, terminated, truncated, infos
 
-    def reset(self) -> Tuple[Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: tuple of dictionaries of jnp.ndarray and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         outputs = self._env.reset()
         if isinstance(outputs, collections.abc.Mapping):

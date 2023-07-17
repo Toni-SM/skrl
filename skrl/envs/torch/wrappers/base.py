@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple
 
 import gym
 
@@ -33,8 +33,7 @@ class Wrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
-            .format(self._env.__class__.__name__, key))
+        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -137,8 +136,7 @@ class MultiAgentEnvWrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
-            .format(self._env.__class__.__name__, key))
+        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
         """Reset the environment

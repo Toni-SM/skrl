@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple
 
 import gym
 

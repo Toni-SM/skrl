@@ -1,9 +1,9 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple
 
-import gymnasium
 import collections
-import numpy as np
+import gymnasium
 
+import numpy as np
 import torch
 
 from skrl.envs.torch.wrappers.base import MultiAgentEnvWrapper
@@ -85,7 +85,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
                 for k in sorted(space.keys())], dim=-1).view(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
     def _tensor_to_action(self, actions: torch.Tensor, space: gymnasium.Space) -> Any:
         """Convert the action to the Gymnasium expected format
@@ -102,7 +102,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             return actions.item()
         elif isinstance(space, gymnasium.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
     def step(self, actions: Mapping[str, torch.Tensor]) -> \
         Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],

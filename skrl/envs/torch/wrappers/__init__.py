@@ -1,22 +1,20 @@
-from typing import Union, Any
+from typing import Any, Union
 
 import gym
 import gymnasium
 
-from skrl.envs.torch.wrappers.base import Wrapper, MultiAgentEnvWrapper
-
+from skrl import logger
+from skrl.envs.torch.wrappers.base import MultiAgentEnvWrapper, Wrapper
+from skrl.envs.torch.wrappers.bidexhands_envs import BiDexHandsWrapper
 from skrl.envs.torch.wrappers.deepmind_envs import DeepMindWrapper
 from skrl.envs.torch.wrappers.gym_envs import GymWrapper
 from skrl.envs.torch.wrappers.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.torch.wrappers.isaac_orbit_envs import IsaacOrbitWrapper
 from skrl.envs.torch.wrappers.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
 from skrl.envs.torch.wrappers.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
+from skrl.envs.torch.wrappers.pettingzoo_envs import PettingZooWrapper
 from skrl.envs.torch.wrappers.robosuite_envs import RobosuiteWrapper
 
-from skrl.envs.torch.wrappers.bidexhands_envs import BiDexHandsWrapper
-from skrl.envs.torch.wrappers.pettingzoo_envs import PettingZooWrapper
-
-from skrl import logger
 
 __all__ = ["wrap_env"]
 
@@ -33,7 +31,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
 
     :param env: The environment to be wrapped
     :type env: gym.Env, gymnasium.Env, dm_env.Environment or VecTask
-    :param wrapper: The type of wrapper to use (default: "auto").
+    :param wrapper: The type of wrapper to use (default: ``"auto"``).
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:
 
@@ -63,7 +61,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                     |Isaac Sim (orbit)   |``"isaac-orbit"``        |
                     +--------------------+-------------------------+
     :type wrapper: str, optional
-    :param verbose: Whether to print the wrapper type (default: True)
+    :param verbose: Whether to print the wrapper type (default: ``True``)
     :type verbose: bool, optional
 
     :raises ValueError: Unknow wrapper type
@@ -159,4 +157,4 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             logger.info("Environment wrapper: Isaac Orbit")
         return IsaacOrbitWrapper(env)
     else:
-        raise ValueError("Unknown {} wrapper type".format(wrapper))
+        raise ValueError(f"Unknown wrapper type: {wrapper}")

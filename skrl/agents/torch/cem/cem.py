@@ -7,6 +7,7 @@ import gymnasium
 import torch
 import torch.nn.functional as F
 
+from skrl import logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -265,7 +266,7 @@ class CEM(Agent):
                         torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())))
 
             if not len(returns):
-                print("[WARNING] No returns to update. Consider increasing the number of rollouts")
+                logger.warning("No returns to update. Consider increasing the number of rollouts")
                 return
 
             returns = torch.tensor(returns)

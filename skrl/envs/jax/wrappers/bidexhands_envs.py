@@ -1,15 +1,12 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 import gym
 
-import torch
-import torch.utils.dlpack
 import jax
 import jax.dlpack
-
-import jax
-import jaxlib
-import jax.numpy as jnp
+import numpy as np
+import torch
+import torch.utils.dlpack
 
 from skrl.envs.jax.wrappers.base import MultiAgentEnvWrapper
 
@@ -62,16 +59,17 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         """
         return {uid: space for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
 
-    def step(self, actions: Mapping[str, jnp.ndarray]) -> \
-        Tuple[Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray],
-              Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
+        Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Any]]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: dictionary of jnp.ndarray
+        :type actions: dict of nd.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries jnp.ndarray and any other info
+        :rtype: tuple of dict of nd.ndarray or jax.Array and any other info
         """
         actions = [_jax2torch(actions[uid], self.device, self._jax) for uid in self.possible_agents]
 
@@ -92,11 +90,11 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
 
         return self._obs_buf, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: tuple of dictionaries of jnp.ndarray and any other info
+        :rtype: tuple of dict of np.ndarray of jax.Array and any other info
         """
         if self._reset_once:
             obs_buf, shared_obs_buf, _ = self._env.reset()

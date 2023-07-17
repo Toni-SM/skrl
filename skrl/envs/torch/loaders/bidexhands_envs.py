@@ -6,6 +6,7 @@ from contextlib import contextmanager
 
 from skrl import logger
 
+
 __all__ = ["load_bidexhands_env"]
 
 
@@ -30,14 +31,14 @@ def _print_cfg(d, indent=0) -> None:
 
     :param d: The dictionary to print
     :type d: dict
-    :param indent: The indentation level (default: 0)
+    :param indent: The indentation level (default: ``0``)
     :type indent: int, optional
     """
     for key, value in d.items():
         if isinstance(value, dict):
             _print_cfg(value, indent + 1)
         else:
-            print('  |   ' * indent + "  |-- {}: {}".format(key, value))
+            print("  |   " * indent + f"  |-- {key}: {value}")
 
 
 def load_bidexhands_env(task_name: str = "",
@@ -48,24 +49,24 @@ def load_bidexhands_env(task_name: str = "",
                         show_cfg: bool = True):
     """Load a Bi-DexHands environment
 
-    :param task_name: The name of the task (default: "").
+    :param task_name: The name of the task (default: ``""``).
                       If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
                       Command line argument has priority over function parameter if both are specified
     :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: None).
+    :param num_envs: Number of parallel environments to create (default: ``None``).
                      If not specified, the default number of environments defined in the task configuration is used.
                      Command line argument has priority over function parameter if both are specified
     :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: None).
+    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
                      If not specified, the default task configuration is used.
                      Command line argument has priority over function parameter if both are specified
     :type headless: bool, optional
-    :param cli_args: Isaac Gym environment configuration and command line arguments (default: [])
+    :param cli_args: Isaac Gym environment configuration and command line arguments (default: ``[]``)
     :type cli_args: list of str, optional
-    :param bidexhands_path: The path to the ``bidexhands`` directory (default: "").
+    :param bidexhands_path: The path to the ``bidexhands`` directory (default: ``""``).
                             If empty, the path will obtained from bidexhands package metadata
     :type bidexhands_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: True)
+    :param show_cfg: Whether to print the configuration (default: ``True``)
     :type show_cfg: bool, optional
 
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
@@ -74,7 +75,7 @@ def load_bidexhands_env(task_name: str = "",
     :return: Bi-DexHands environment (preview 4)
     :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
     """
-    import isaacgym
+    import isaacgym  # isort:skip
     import bidexhands
 
     # check task from command line arguments
@@ -89,7 +90,7 @@ def load_bidexhands_env(task_name: str = "",
         if arg_index >= len(sys.argv):
             raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
         if task_name and task_name != sys.argv[arg_index]:
-            logger.warning("Overriding task ({}) with command line argument ({})".format(task_name, sys.argv[arg_index]))
+            logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
     # get task name from function arguments
     else:
         if task_name:
@@ -143,19 +144,19 @@ def load_bidexhands_env(task_name: str = "",
     status = True
     try:
         from utils.config import get_args, load_cfg, parse_sim_params  # type: ignore
-        from utils.parse_task import parse_task   # type: ignore
+        from utils.parse_task import parse_task  # type: ignore
         from utils.process_marl import get_AgentIndex  # type: ignore
     except Exception as e:
         status = False
-        print("[ERROR] Failed to import required packages: {}".format(e))
+        logger.error(f"Failed to import required packages: {e}")
     if not status:
-        raise RuntimeError("The path ({}) is not valid".format(path))
+        raise RuntimeError(f"The path ({path}) is not valid")
 
     args = get_args()
 
     # print config
     if show_cfg:
-        print("\nBi-DexHands environment ({})".format(args.task))
+        print(f"\nBi-DexHands environment ({args.task})")
         _print_cfg(vars(args))
 
     # update task arguments

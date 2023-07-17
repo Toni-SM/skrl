@@ -1,13 +1,10 @@
-from typing import Tuple, Any, Optional
+from typing import Any, Optional, Tuple, Union
 
-import torch
-import torch.utils.dlpack
 import jax
 import jax.dlpack
-
-import jax
-import jaxlib
-import jax.numpy as jnp
+import numpy as np
+import torch
+import torch.utils.dlpack
 
 from skrl.envs.jax.wrappers.base import Wrapper
 
@@ -41,14 +38,16 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """
         self._env.run(trainer)
 
-    def step(self, actions: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: jnp.ndarray
+        :type actions: np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of jnp.ndarray and any other info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         actions = _jax2torch(actions, self._env._task.device, self._jax)
 
@@ -62,11 +61,11 @@ class OmniverseIsaacGymWrapper(Wrapper):
                _torch2jax(terminated, self._jax), \
                info
 
-    def reset(self) -> Tuple[jnp.ndarray, Any]:
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: jnp.ndarray and any other info
+        :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
             self._obs_dict = self._env.reset()

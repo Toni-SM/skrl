@@ -1,19 +1,13 @@
-from typing import Tuple, Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 import gym
-import numpy as np
 from packaging import version
 
 import jax
-import jaxlib
-import jax.numpy as jnp
-
-from skrl.envs.jax.wrappers.base import Wrapper
+import numpy as np
 
 from skrl import logger
-
-
-Array = Union[np.ndarray, jnp.ndarray]
+from skrl.envs.jax.wrappers.base import Wrapper
 
 
 class GymWrapper(Wrapper):
@@ -33,11 +27,11 @@ class GymWrapper(Wrapper):
                 self._obs_tensor = None
                 self._info_dict = None
         except Exception as e:
-            print("[WARNING] Failed to check for a vectorized environment: {}".format(e))
+            logger.warning(f"Failed to check for a vectorized environment: {e}")
 
         self._deprecated_api = version.parse(gym.__version__) < version.parse("0.25.0")
         if self._deprecated_api:
-            logger.warning("Using a deprecated version of OpenAI Gym's API: {}".format(gym.__version__))
+            logger.warning(f"Using a deprecated version of OpenAI Gym's API: {gym.__version__}")
 
     @property
     def state_space(self) -> gym.Space:
@@ -65,7 +59,7 @@ class GymWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _observation_to_tensor(self, observation: Any, space: Optional[gym.Space] = None) -> Array:
+    def _observation_to_tensor(self, observation: Any, space: Optional[gym.Space] = None) -> np.ndarray:
         """Convert the OpenAI Gym observation to a flat tensor
 
         :param observation: The OpenAI Gym observation to convert to a tensor
@@ -74,7 +68,7 @@ class GymWrapper(Wrapper):
         :raises: ValueError if the observation space type is not supported
 
         :return: The observation as a flat tensor
-        :rtype: array
+        :rtype: np.ndarray
         """
         observation_space = self._env.observation_space if self._vectorized else self.observation_space
         space = space if space is not None else observation_space
@@ -94,13 +88,13 @@ class GymWrapper(Wrapper):
                 for k in sorted(space.keys())], axis=-1).reshape(self.num_envs, -1)
             return tmp
         else:
-            raise ValueError("Observation space type {} not supported. Please report this issue".format(type(space)))
+            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
 
-    def _tensor_to_action(self, actions: Array) -> Any:
+    def _tensor_to_action(self, actions: np.ndarray) -> Any:
         """Convert the action to the OpenAI Gym expected format
 
         :param actions: The actions to perform
-        :type actions: array
+        :type actions: np.ndarray
 
         :raise ValueError: If the action space type is not supported
 
@@ -121,16 +115,18 @@ class GymWrapper(Wrapper):
             return actions.item()
         elif isinstance(space, gym.spaces.Box):
             return actions.astype(space.dtype).reshape(space.shape)
-        raise ValueError("Action space type {} not supported. Please report this issue".format(type(space)))
+        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
-    def step(self, actions: Array) -> Tuple[Array, Array, Array, Array, Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: array
+        :type actions: np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of arrays and any other info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         if self._jax:
             actions = jax.device_get(actions)
@@ -160,11 +156,11 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[Array, Any]:
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
 
         :return: Observation, info
-        :rtype: array and any other info
+        :rtype: np.ndarray or jax.Array and any other info
         """
         # handle vectorized envs
         if self._vectorized:

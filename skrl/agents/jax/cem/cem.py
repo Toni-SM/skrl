@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
+from skrl import logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -282,7 +283,7 @@ class CEM(Agent):
                     np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)))
 
         if not len(returns):
-            print("[WARNING] No returns to update. Consider increasing the number of rollouts")
+            logger.warning("No returns to update. Consider increasing the number of rollouts")
             return
 
         returns = np.array(returns)

@@ -1,10 +1,9 @@
-from typing import Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 import gym
 
 import jax
-import jaxlib
-import jax.numpy as jnp
+import numpy as np
 
 from skrl import config
 
@@ -41,29 +40,30 @@ class Wrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
-            .format(self._env.__class__.__name__, key))
+        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
 
-    def reset(self) -> Tuple[jnp.ndarray, Any]:
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
 
         :raises NotImplementedError: Not implemented
 
         :return: Observation, info
-        :rtype: jnp.ndarray and any other info
+        :rtype: np.ndarray or jax.Array and any other info
         """
         raise NotImplementedError
 
-    def step(self, actions: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: jnp.ndarray
+        :type actions: np.ndarray or jax.Array
 
         :raises NotImplementedError: Not implemented
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of jnp.ndarray and any other info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         raise NotImplementedError
 
@@ -149,31 +149,31 @@ class MultiAgentEnvWrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError("Wrapped environment ({}) does not have attribute '{}'" \
-            .format(self._env.__class__.__name__, key))
+        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
 
-    def reset(self) -> Tuple[Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
 
         :raises NotImplementedError: Not implemented
 
         :return: Observation, info
-        :rtype: tuple of dictionaries of jnp.ndarray and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         raise NotImplementedError
 
-    def step(self, actions: Mapping[str, jnp.ndarray]) -> \
-        Tuple[Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray],
-              Mapping[str, jnp.ndarray], Mapping[str, jnp.ndarray], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
+        Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
+              Mapping[str, Any]]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: dictionary of jnp.ndarray
+        :type actions: dict of np.ndarray or jax.Array
 
         :raises NotImplementedError: Not implemented
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries of jnp.ndarray and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         raise NotImplementedError
 

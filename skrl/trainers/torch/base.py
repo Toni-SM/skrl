@@ -109,7 +109,7 @@ class Trainer:
                 self.num_simultaneous_agents = len(self.agents)
                 # check scopes
                 if not len(self.agents_scope):
-                    print("[WARNING] The agents' scopes are empty, they will be generated as equal as possible")
+                    logger.warning("The agents' scopes are empty, they will be generated as equal as possible")
                     self.agents_scope = [int(self.env.num_envs / len(self.agents))] * len(self.agents)
                     if sum(self.agents_scope):
                         self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)

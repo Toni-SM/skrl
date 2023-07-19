@@ -5,18 +5,18 @@ import torch
 import torch.nn as nn
 
 # import the skrl components to build the RL system
-from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
-from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
+from skrl.memories.torch import RandomMemory
+from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.torch import RunningStandardScaler
+from skrl.resources.schedulers.torch import KLAdaptiveRL
+from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
 
 # seed for reproducibility
-seed = set_seed()
+seed = set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define shared model (stochastic and deterministic models) using mixins
@@ -121,3 +121,17 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
+
+
+# # ---------------------------------------------------------
+# # comment the code above: `trainer.train()`, and...
+# # uncomment the following lines to evaluate a trained agent
+# # ---------------------------------------------------------
+# from skrl.utils.huggingface import download_model_from_huggingface
+
+# # download the trained agent's checkpoint from Hugging Face Hub and load it
+# path = download_model_from_huggingface("skrl/IsaacGymEnvs-Ingenuity-PPO", filename="agent.pt")
+# agent.load(path)
+
+# # start evaluation
+# trainer.eval()

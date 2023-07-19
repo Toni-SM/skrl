@@ -1,26 +1,26 @@
 import isaacgym
 
+import flax.linen as nn
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
 
 # import the skrl components to build the RL system
-from skrl.models.jax import Model, DeterministicMixin
-from skrl.memories.jax import RandomMemory
-from skrl.agents.jax.td3 import TD3, TD3_DEFAULT_CONFIG
-from skrl.resources.preprocessors.jax import RunningStandardScaler
-from skrl.resources.noises.jax import GaussianNoise
-from skrl.trainers.jax import SequentialTrainer
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaacgym_env_preview4
-from skrl.utils import set_seed
 from skrl import config
+from skrl.agents.jax.td3 import TD3, TD3_DEFAULT_CONFIG
+from skrl.envs.jax import load_isaacgym_env_preview4, wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, Model
+from skrl.resources.noises.jax import GaussianNoise
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.trainers.jax import SequentialTrainer
+from skrl.utils import set_seed
+
 
 config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
-set_seed()
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (deterministic models) using mixins

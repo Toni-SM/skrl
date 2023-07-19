@@ -1,26 +1,27 @@
 import isaacgym
 import isaacgymenvs
 
+import flax.linen as nn
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
 
 # import the skrl components to build the RL system
-from skrl.models.jax import Model, GaussianMixin, DeterministicMixin
-from skrl.memories.jax import RandomMemory
-from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.resources.schedulers.jax import KLAdaptiveRL
-from skrl.resources.preprocessors.jax import RunningStandardScaler
-from skrl.trainers.jax import SequentialTrainer
-from skrl.envs.jax import wrap_env
-from skrl.utils import set_seed
 from skrl import config
+from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveRL
+from skrl.trainers.jax import SequentialTrainer
+from skrl.utils import set_seed
+
 
 config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
-seed = set_seed()
+seed = set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins

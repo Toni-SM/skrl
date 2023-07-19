@@ -1,25 +1,25 @@
 import isaacgym
 
+import flax.linen as nn
 import jax
 import jax.numpy as jnp
-import flax.linen as nn
 
 # import the skrl components to build the RL system
-from skrl.models.jax import Model, GaussianMixin, DeterministicMixin
-from skrl.memories.jax import RandomMemory
+from skrl import config
 from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.jax import load_isaacgym_env_preview4, wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.trainers.jax import SequentialTrainer
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaacgym_env_preview4
 from skrl.utils import set_seed
-from skrl import config
+
 
 config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
-set_seed()
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins
@@ -117,3 +117,17 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
+
+
+# # ---------------------------------------------------------
+# # comment the code above: `trainer.train()`, and...
+# # uncomment the following lines to evaluate a trained agent
+# # ---------------------------------------------------------
+# from skrl.utils.huggingface import download_model_from_huggingface
+
+# # download the trained agent's checkpoint from Hugging Face Hub and load it
+# path = download_model_from_huggingface("skrl/IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO", filename="agent.pickle")
+# agent.load(path)
+
+# # start evaluation
+# trainer.eval()

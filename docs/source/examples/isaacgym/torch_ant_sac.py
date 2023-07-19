@@ -4,18 +4,17 @@ import torch
 import torch.nn as nn
 
 # import the skrl components to build the RL system
-from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
-from skrl.memories.torch import RandomMemory
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
+from skrl.envs.torch import load_isaacgym_env_preview4, wrap_env
+from skrl.memories.torch import RandomMemory
+from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview4
 from skrl.utils import set_seed
 
 
 # seed for reproducibility
-set_seed()
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins

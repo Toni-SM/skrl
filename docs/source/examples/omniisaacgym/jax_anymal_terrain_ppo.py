@@ -1,15 +1,20 @@
-import torch
-import torch.nn as nn
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.torch import load_omniverse_isaacgym_env, wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.jax import load_omniverse_isaacgym_env, wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveRL
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
@@ -18,38 +23,32 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define models (stochastic and deterministic models) using mixins
 class Policy(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
-                                 nn.ELU(),
-                                 nn.Linear(512, 256),
-                                 nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, self.num_actions))
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-    def compute(self, inputs, role):
-        return self.net(inputs["states"]), self.log_std_parameter, {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.elu(nn.Dense(512)(inputs["states"]))
+        x = nn.elu(nn.Dense(256)(x))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.Dense(self.num_actions)(x)
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        return x, log_std, {}
 
 class Value(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 512),
-                                 nn.ELU(),
-                                 nn.Linear(512, 256),
-                                 nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 1))
-
-    def compute(self, inputs, role):
-        return self.net(inputs["states"]), {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.elu(nn.Dense(512)(inputs["states"]))
+        x = nn.elu(nn.Dense(256)(x))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
 
 # load and wrap the Omniverse Isaac Gym environment
@@ -69,6 +68,10 @@ memory = RandomMemory(memory_size=48, num_envs=env.num_envs, device=device)
 models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device)
 models["value"] = Value(env.observation_space, env.action_space, device)
+
+key = jax.random.PRNGKey(0)
+models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+models["value"].init_state_dict(key, {"states": env.observation_space.sample()}, "value")
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -99,7 +102,7 @@ cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 480
 cfg["experiment"]["checkpoint_interval"] = 4800
-cfg["experiment"]["directory"] = "runs/torch/AnymalTerrain"
+cfg["experiment"]["directory"] = "runs/jax/AnymalTerrain"
 
 agent = PPO(models=models,
             memory=memory,
@@ -115,17 +118,3 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
-
-
-# # ---------------------------------------------------------
-# # comment the code above: `trainer.train()`, and...
-# # uncomment the following lines to evaluate a trained agent
-# # ---------------------------------------------------------
-# from skrl.utils.huggingface import download_model_from_huggingface
-
-# # download the trained agent's checkpoint from Hugging Face Hub and load it
-# path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-AnymalTerrain-PPO", filename="agent.pt")
-# agent.load(path)
-
-# # start evaluation
-# trainer.eval()

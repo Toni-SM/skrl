@@ -33,15 +33,15 @@ torch = [
   "torch>=1.8",
 ]
 jax = [
-  "jax",
-  "jaxlib",
+  "jax>=0.4.3",
+  "jaxlib>=0.4.3",
   "flax",
   "optax",
 ]
 all = [
   "torch>=1.8",
-  "jax",
-  "jaxlib",
+  "jax>=0.4.3",
+  "jaxlib>=0.4.3",
   "flax",
   "optax",
 ]

@@ -9,6 +9,8 @@ Notes for Isaac Sim 2022.2.1 or earlier (Python 3.7 environment):
   * Models require overloading the `__hash__` method to avoid "TypeError: Failed to hash Flax Module".
 """
 
+import threading
+
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
@@ -31,7 +33,7 @@ config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
-set_seed()  # e.g. `set_seed(42)` for fixed seed
+set_seed()  # e.g. `set_seed(40)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins
@@ -46,9 +48,8 @@ class Policy(GaussianMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(512)(inputs["states"]))
-        x = nn.elu(nn.Dense(256)(x))
-        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(32)(inputs["states"]))
+        x = nn.elu(nn.Dense(32)(x))
         x = nn.Dense(self.num_actions)(x)
         log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         return x, log_std, {}
@@ -63,22 +64,21 @@ class Value(DeterministicMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(512)(inputs["states"]))
-        x = nn.elu(nn.Dense(256)(x))
-        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(32)(inputs["states"]))
+        x = nn.elu(nn.Dense(32)(x))
         x = nn.Dense(1)(x)
         return x, {}
 
 
-# load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="AnymalTerrain")
+# load and wrap the multi-threaded Omniverse Isaac Gym environment
+env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=48, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
@@ -96,9 +96,9 @@ models["value"].init_state_dict(key, {"states": env.observation_space.sample()},
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
 cfg = PPO_DEFAULT_CONFIG.copy()
-cfg["rollouts"] = 48  # memory_size
-cfg["learning_epochs"] = 5
-cfg["mini_batches"] = 6  # 48 * 2048 / 16384
+cfg["rollouts"] = 16  # memory_size
+cfg["learning_epochs"] = 8
+cfg["mini_batches"] = 1  # 16 * 512 / 8192
 cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
@@ -110,18 +110,18 @@ cfg["grad_norm_clip"] = 1.0
 cfg["ratio_clip"] = 0.2
 cfg["value_clip"] = 0.2
 cfg["clip_predicted_values"] = True
-cfg["entropy_loss_scale"] = 0.001
-cfg["value_loss_scale"] = 1.0
+cfg["entropy_loss_scale"] = 0.0
+cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
-cfg["rewards_shaper"] = None
+cfg["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.1
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
 cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 480
-cfg["experiment"]["checkpoint_interval"] = 4800
-cfg["experiment"]["directory"] = "runs/jax/AnymalTerrain"
+cfg["experiment"]["write_interval"] = 16
+cfg["experiment"]["checkpoint_interval"] = 80
+cfg["experiment"]["directory"] = "runs/jax/Cartpole"
 
 agent = PPO(models=models,
             memory=memory,
@@ -132,8 +132,12 @@ agent = PPO(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 96000, "headless": True}
+cfg_trainer = {"timesteps": 1600, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
-# start training
-trainer.train()
+# start training in a separate thread
+threading.Thread(target=trainer.train).start()
+
+
+# run the simulation in the main thread
+env.run()

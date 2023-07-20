@@ -49,7 +49,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
             return self.value_layer(self.net(inputs["states"])), {}
 
 
-# Load and wrap the multi-threaded Omniverse Isaac Gym environment
+# load and wrap the multi-threaded Omniverse Isaac Gym environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
 env = wrap_env(env)
 

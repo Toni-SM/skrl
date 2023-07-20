@@ -1,19 +1,30 @@
 from typing import Any, Tuple, Union
 
 import jax
-import jax.dlpack
+import jax.dlpack as jax_dlpack
 import numpy as np
 import torch
-import torch.utils.dlpack
+import torch.utils.dlpack as torch_dlpack
 
+from skrl import logger
 from skrl.envs.jax.wrappers.base import Wrapper
 
 
+# ML frameworks conversion utilities
+# jaxlib.xla_extension.XlaRuntimeError: INVALID_ARGUMENT: DLPack tensor is on GPU, but no GPU backend was provided.
+_CPU = jax.devices()[0].device_kind.lower() == "cpu"
+if _CPU:
+    logger.warning("IsaacGymEnvs runs on GPU, but there is no GPU backend for JAX. JAX operations will run on CPU.")
+
 def _jax2torch(array, device, from_jax=True):
-    return torch.utils.dlpack.from_dlpack(jax.dlpack.to_dlpack(array)) if from_jax else torch.tensor(array, device=device)
+    if from_jax:
+        return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
+    return torch.tensor(array, device=device)
 
 def _torch2jax(tensor, to_jax=True):
-    return jax.dlpack.from_dlpack(torch.utils.dlpack.to_dlpack(tensor.contiguous())) if to_jax else tensor.cpu().numpy()
+    if to_jax:
+        return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
+    return tensor.cpu().numpy()
 
 
 class IsaacGymPreview2Wrapper(Wrapper):

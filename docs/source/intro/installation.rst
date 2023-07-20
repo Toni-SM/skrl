@@ -30,7 +30,7 @@ PyTorch
 JAX
 """
 
-    * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_
+    * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ 0.4.3 or higher
     * `flax <https://flax.readthedocs.io>`_
     * `optax <https://optax.readthedocs.io>`_
 

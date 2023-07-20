@@ -461,7 +461,7 @@ Training/evaluation of an agent in `Isaac Gym environments <https://github.com/N
 
     <br>
 
-The agent configuration is mapped, as far as possible, from the `configuration for Isaac Gym preview environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. tabs::
 
@@ -890,8 +890,8 @@ The PPO agent configuration is mapped, as far as possible, from the rl_games' A2
 
     <br><hr>
 
-Omniverse Isaac Gym
--------------------
+NVIDIA Omniverse Isaac Gym
+--------------------------
 
 .. raw:: html
 
@@ -911,16 +911,7 @@ These examples perform the training of an agent in the `Omniverse Isaac Gym envi
 
     <br>
 
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap an Omniverse Isaac Gym environment: **AllegroHand**, **Ant**, **Anymal**
-    - Load and wrap an Omniverse Isaac Gym multi-threaded environment: **Ant (multi-threaded)**, **Cartpole (multi-threaded)**
-    - Set an input preprocessor: **AnymalTerrain**, **BallBalance**
-    - Set a random seed for reproducibility: **Cartpole**, **Crazyflie**
-    - Set a learning rate scheduler: **FrankaCabinet**, **Humanoid**
-    - Define a reward shaping function: **Ingenuity**, **Quadcopter**, **ShadowHand**
-
-The agent configuration is mapped, as far as possible, from the `configuration for Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
+The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
 
 .. tabs::
 
@@ -988,121 +979,131 @@ The agent configuration is mapped, as far as possible, from the `configuration f
 
 .. tabs::
 
-    .. tab:: Omniverse Isaac Gym (training)
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. tab:: AllegroHand
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - AllegroHand
+              - :download:`torch_allegro_hand_ppo.py <../examples/omniisaacgym/torch_allegro_hand_ppo.py>`
+              - `OmniIsaacGymEnvs-AllegroHand-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-AllegroHand-PPO>`_
+            * - Ant
+              - :download:`torch_ant_ppo.py <../examples/omniisaacgym/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../examples/omniisaacgym/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../examples/omniisaacgym/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../examples/omniisaacgym/torch_ant_sac.py>`
+              - `OmniIsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ant-PPO>`_
+                |br|
+                |br|
+                |br|
+            * - Ant (multi-threaded)
+              - :download:`torch_ant_mt_ppo.py <../examples/omniisaacgym/torch_ant_mt_ppo.py>`
+              - `OmniIsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ant-PPO>`_
+            * - Anymal
+              - :download:`torch_anymal_ppo.py <../examples/omniisaacgym/torch_anymal_ppo.py>`
+              -
+            * - AnymalTerrain
+              - :download:`torch_anymal_terrain_ppo.py <../examples/omniisaacgym/torch_anymal_terrain_ppo.py>`
+              -
+            * - BallBalance
+              - :download:`torch_ball_balance_ppo.py <../examples/omniisaacgym/torch_ball_balance_ppo.py>`
+              - `OmniIsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-BallBalance-PPO>`_
+            * - Cartpole
+              - :download:`torch_cartpole_ppo.py <../examples/omniisaacgym/torch_cartpole_ppo.py>`
+              - `OmniIsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Cartpole-PPO>`_
+            * - Cartpole (multi-threaded)
+              - :download:`torch_cartpole_mt_ppo.py <../examples/omniisaacgym/torch_cartpole_mt_ppo.py>`
+              - `OmniIsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Cartpole-PPO>`_
+            * - Crazyflie
+              - :download:`torch_crazyflie_ppo.py <../examples/omniisaacgym/torch_crazyflie_ppo.py>`
+              - `OmniIsaacGymEnvs-Crazyflie-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Crazyflie-PPO>`_
+            * - FactoryTaskNutBoltPick
+              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../examples/omniisaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
+              -
+            * - FrankaCabinet
+              - :download:`torch_franka_cabinet_ppo.py <../examples/omniisaacgym/torch_franka_cabinet_ppo.py>`
+              - `OmniIsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-FrankaCabinet-PPO>`_
+            * - Humanoid
+              - :download:`torch_humanoid_ppo.py <../examples/omniisaacgym/torch_humanoid_ppo.py>`
+              - `OmniIsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Humanoid-PPO>`_
+            * - Ingenuity
+              - :download:`torch_ingenuity_ppo.py <../examples/omniisaacgym/torch_ingenuity_ppo.py>`
+              - `OmniIsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ingenuity-PPO>`_
+            * - Quadcopter
+              - :download:`torch_quadcopter_ppo.py <../examples/omniisaacgym/torch_quadcopter_ppo.py>`
+              - `OmniIsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Quadcopter-PPO>`_
+            * - ShadowHand
+              - :download:`torch_shadow_hand_ppo.py <../examples/omniisaacgym/torch_shadow_hand_ppo.py>`
+              - `OmniIsaacGymEnvs-ShadowHand-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-ShadowHand-PPO>`_
 
-                :download:`ppo_allegro_hand.py <../examples/omniisaacgym/ppo_allegro_hand.py>`
+    .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../examples/omniisaacgym/ppo_allegro_hand.py
-                    :language: python
-                    :emphasize-lines: 11-12, 54-55
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. tab:: Ant
-
-                :download:`ppo_ant.py <../examples/omniisaacgym/ppo_ant.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_ant.py
-                    :language: python
-                    :emphasize-lines: 11-12, 54-55
-
-            .. tab:: Ant (multi-threaded)
-
-                :download:`ppo_ant_mt.py <../examples/omniisaacgym/ppo_ant_mt.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_ant_mt.py
-                    :language: python
-                    :emphasize-lines: 1, 13-14, 56-57, 117, 121
-
-            .. tab:: Anymal
-
-                :download:`ppo_anymal.py <../examples/omniisaacgym/ppo_anymal.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_anymal.py
-                    :language: python
-                    :emphasize-lines: 11-12, 54-55
-
-            .. tab:: AnymalTerrain
-
-                :download:`ppo_anymal_terrain.py <../examples/omniisaacgym/ppo_anymal_terrain.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_anymal_terrain.py
-                    :language: python
-                    :emphasize-lines: 9, 99-102
-
-            .. tab:: BallBalance
-
-                :download:`ppo_ball_balance.py <../examples/omniisaacgym/ppo_ball_balance.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_ball_balance.py
-                    :language: python
-                    :emphasize-lines: 9, 94-97
-
-            .. tab:: Cartpole
-
-                :download:`ppo_cartpole.py <../examples/omniisaacgym/ppo_cartpole.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole.py
-                    :language: python
-                    :emphasize-lines: 13, 17
-
-            .. tab:: Cartpole (multi-threaded)
-
-                :download:`ppo_cartpole_mt.py <../examples/omniisaacgym/ppo_cartpole_mt.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_cartpole_mt.py
-                    :language: python
-                    :emphasize-lines: 1, 13-14, 54-55, 115, 119
-
-            .. tab:: Crazyflie
-
-                :download:`ppo_crazy_flie.py <../examples/omniisaacgym/ppo_crazy_flie.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_crazy_flie.py
-                    :language: python
-                    :emphasize-lines: 13, 17
-
-            .. tab:: FrankaCabinet
-
-                :download:`ppo_franka_cabinet.py <../examples/omniisaacgym/ppo_franka_cabinet.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_franka_cabinet.py
-                    :language: python
-                    :emphasize-lines: 8, 82-83
-
-            .. tab:: Humanoid
-
-                :download:`ppo_humanoid.py <../examples/omniisaacgym/ppo_humanoid.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_humanoid.py
-                    :language: python
-                    :emphasize-lines: 8, 82-83
-
-            .. tab:: Ingenuity
-
-                :download:`ppo_ingenuity.py <../examples/omniisaacgym/ppo_ingenuity.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_ingenuity.py
-                    :language: python
-                    :emphasize-lines: 93
-
-            .. tab:: Quadcopter
-
-                :download:`ppo_quadcopter.py <../examples/omniisaacgym/ppo_quadcopter.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_quadcopter.py
-                    :language: python
-                    :emphasize-lines: 93
-
-            .. tab:: ShadowHand
-
-                :download:`ppo_shadow_hand.py <../examples/omniisaacgym/ppo_shadow_hand.py>`
-
-                .. literalinclude:: ../examples/omniisaacgym/ppo_shadow_hand.py
-                    :language: python
-                    :emphasize-lines: 95
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - AllegroHand
+              - :download:`jax_allegro_hand_ppo.py <../examples/omniisaacgym/jax_allegro_hand_ppo.py>`
+              -
+            * - Ant
+              - :download:`jax_ant_ppo.py <../examples/omniisaacgym/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../examples/omniisaacgym/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../examples/omniisaacgym/jax_ant_sac.py>`
+                |br| :download:`jax_ant_sac.py <../examples/omniisaacgym/jax_ant_td3.py>`
+              - |br|
+                |br|
+                |br|
+                |br|
+            * - Ant (multi-threaded)
+              - :download:`jax_ant_mt_ppo.py <../examples/omniisaacgym/jax_ant_mt_ppo.py>`
+              -
+            * - Anymal
+              - :download:`jax_anymal_ppo.py <../examples/omniisaacgym/jax_anymal_ppo.py>`
+              -
+            * - AnymalTerrain
+              - :download:`jax_anymal_terrain_ppo.py <../examples/omniisaacgym/jax_anymal_terrain_ppo.py>`
+              -
+            * - BallBalance
+              - :download:`jax_ball_balance_ppo.py <../examples/omniisaacgym/jax_ball_balance_ppo.py>`
+              -
+            * - Cartpole
+              - :download:`jax_cartpole_ppo.py <../examples/omniisaacgym/jax_cartpole_ppo.py>`
+              -
+            * - Cartpole (multi-threaded)
+              - :download:`jax_cartpole_mt_ppo.py <../examples/omniisaacgym/jax_cartpole_mt_ppo.py>`
+              -
+            * - Crazyflie
+              - :download:`jax_crazyflie_ppo.py <../examples/omniisaacgym/jax_crazyflie_ppo.py>`
+              -
+            * - FactoryTaskNutBoltPick
+              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../examples/omniisaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
+              -
+            * - FrankaCabinet
+              - :download:`jax_franka_cabinet_ppo.py <../examples/omniisaacgym/jax_franka_cabinet_ppo.py>`
+              -
+            * - Humanoid
+              - :download:`jax_humanoid_ppo.py <../examples/omniisaacgym/jax_humanoid_ppo.py>`
+              -
+            * - Ingenuity
+              - :download:`jax_ingenuity_ppo.py <../examples/omniisaacgym/jax_ingenuity_ppo.py>`
+              -
+            * - Quadcopter
+              - :download:`jax_quadcopter_ppo.py <../examples/omniisaacgym/jax_quadcopter_ppo.py>`
+              -
+            * - ShadowHand
+              - :download:`jax_shadow_hand_ppo.py <../examples/omniisaacgym/jax_shadow_hand_ppo.py>`
+              -
 
 .. raw:: html
 

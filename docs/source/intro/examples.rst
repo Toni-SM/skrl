@@ -479,7 +479,7 @@ The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs co
             discount_factor = gamma
             lambda = tau
             learning_rate = learning_rate
-            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveLR
             learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
             random_timesteps = 0
             learning_starts = 0
@@ -776,8 +776,8 @@ The following components or practices are exemplified (highlighted):
 
     <br><hr>
 
-Isaac Orbit
------------
+NVIDIA Isaac Orbit
+------------------
 
 .. raw:: html
 
@@ -786,7 +786,7 @@ Isaac Orbit
 Isaac Orbit environments
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-These examples perform the training of an agent in the `Isaac Orbit environments <https://isaac-orbit.github.io/orbit/index.html>`_ (**one agent, multiple environments**)
+Training/evaluation of an agent in `Isaac Orbit environments <https://isaac-orbit.github.io/orbit/index.html>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaac_orbit.png
     :width: 100%
@@ -797,121 +797,7 @@ These examples perform the training of an agent in the `Isaac Orbit environments
 
     <br>
 
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap an Isaac Orbit environment: **Ant**
-
-The PPO agent configuration is mapped, as far as possible, from the rl_games' A2C-PPO `configuration for Isaac Orbit environments <https://github.com/NVIDIA-Omniverse/Orbit/tree/main/source/extensions/omni.isaac.orbit_envs/data/rl_games>`_. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
-
-.. code-block:: bash
-
-    # memory
-    memory_size = horizon_length
-
-    # agent
-    rollouts = horizon_length
-    learning_epochs = mini_epochs
-    mini_batches = horizon_length * num_envs / minibatch_size
-    discount_factor = gamma
-    lambda = tau
-    learning_rate = learning_rate
-    learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
-    learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
-    random_timesteps = 0
-    learning_starts = 0
-    grad_norm_clip = grad_norm
-    ratio_clip = e_clip
-    value_clip = e_clip
-    clip_predicted_values = clip_value
-    entropy_loss_scale = entropy_coef
-    value_loss_scale = 0.5 * critic_coef
-    kl_threshold = 0
-    rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
-
-    # trainer
-    timesteps = horizon_length * max_epochs
-
-**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Orbit) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
-
-.. note::
-
-    Isaac Orbit environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`orbit -p script.py --headless`
-
-.. tabs::
-
-    .. tab:: Isaac Orbit (training)
-
-        .. tabs::
-
-            .. tab:: Isaac-Ant-v0
-
-                :download:`ppo_ant.py <../examples/isaacorbit/ppo_ant.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_ant.py
-                    :language: python
-                    :emphasize-lines: 11-12, 54-55
-
-            .. tab:: Isaac-Cartpole-v0
-
-                :download:`ppo_cartpole.py <../examples/isaacorbit/ppo_cartpole.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_cartpole.py
-                    :language: python
-
-            .. tab:: Isaac-Humanoid-v0
-
-                :download:`ppo_humanoid.py <../examples/isaacorbit/ppo_humanoid.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_humanoid.py
-                    :language: python
-
-            .. tab:: Isaac-Lift-Franka-v0
-
-                :download:`ppo_lift_franka.py <../examples/isaacorbit/ppo_lift_franka.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_lift_franka.py
-                    :language: python
-
-            .. tab:: Isaac-Reach-Franka-v0
-
-                :download:`ppo_reach_franka.py <../examples/isaacorbit/ppo_reach_franka.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_reach_franka.py
-                    :language: python
-
-            .. tab:: Isaac-Velocity-Anymal-C-v0
-
-                :download:`ppo_velocity_anymal_c.py <../examples/isaacorbit/ppo_velocity_anymal_c.py>`
-
-                .. literalinclude:: ../examples/isaacorbit/ppo_velocity_anymal_c.py
-                    :language: python
-
-.. raw:: html
-
-    <br><hr>
-
-NVIDIA Omniverse Isaac Gym
---------------------------
-
-.. raw:: html
-
-    <br>
-
-Omniverse Isaac Gym environments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-These examples perform the training of an agent in the `Omniverse Isaac Gym environments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
-
-.. image:: ../_static/imgs/example_omniverse_isaacgym.png
-    :width: 100%
-    :align: center
-    :alt: Isaac Gym environments
-
-.. raw:: html
-
-    <br>
-
-The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:configurations
+The agent configuration is mapped, as far as possible, from the `Isaac Orbit configuration <https://github.com/NVIDIA-Omniverse/Orbit/tree/main/source/extensions/omni.isaac.orbit_envs/data/rl_games>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. tabs::
 
@@ -929,7 +815,172 @@ The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnv
             discount_factor = gamma
             lambda = tau
             learning_rate = learning_rate
-            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveRL
+            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveLR
+            learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
+            random_timesteps = 0
+            learning_starts = 0
+            grad_norm_clip = grad_norm  # if truncate_grads else 0
+            ratio_clip = e_clip
+            value_clip = e_clip
+            clip_predicted_values = clip_value
+            entropy_loss_scale = entropy_coef
+            value_loss_scale = 0.5 * critic_coef
+            kl_threshold = 0
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+            # trainer
+            timesteps = horizon_length * max_epochs
+
+    .. tab:: DDPG / TD3 / SAC
+
+        .. code-block:: bash
+
+            # memory
+            memory_size = replay_buffer_size / num_envs
+
+            # agent
+            gradient_steps = 1
+            batch_size = batch_size
+            discount_factor = gamma
+            polyak = critic_tau
+            actor_learning_rate = actor_lr
+            critic_learning_rate = critic_lr
+            random_timesteps = num_warmup_steps * num_steps_per_episode
+            learning_starts = num_warmup_steps * num_steps_per_episode
+            grad_norm_clip = 0
+            learn_entropy = learnable_temperature
+            entropy_learning_rate = alpha_lr
+            initial_entropy_value = init_alpha
+            target_entropy = None
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
+
+            # trainer
+            timesteps = num_steps_per_episode * max_epochs
+
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Orbit) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
+
+.. note::
+
+    Isaac Orbit environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`orbit -p script.py --headless`
+
+.. tabs::
+
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Isaac-Ant-v0
+              - :download:`torch_ant_ppo.py <../examples/isaacorbit/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../examples/isaacorbit/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../examples/isaacorbit/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../examples/isaacorbit/torch_ant_sac.py>`
+              - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
+                |br|
+                |br|
+                |br|
+            * - Isaac-Cartpole-v0
+              - :download:`torch_cartpole_ppo.py <../examples/isaacorbit/torch_cartpole_ppo.py>`
+              - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
+            * - Isaac-Humanoid-v0
+              - :download:`torch_humanoid_ppo.py <../examples/isaacorbit/torch_humanoid_ppo.py>`
+              - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
+            * - Isaac-Lift-Franka-v0
+              - :download:`torch_lift_franka_ppo.py <../examples/isaacorbit/torch_lift_franka_ppo.py>`
+              -
+            * - Isaac-Reach-Franka-v0
+              - :download:`torch_reach_franka_ppo.py <../examples/isaacorbit/torch_reach_franka_ppo.py>`
+              - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
+            * - Isaac-Velocity-Anymal-C-v0
+              - :download:`torch_velocity_anymal_c_ppo.py <../examples/isaacorbit/torch_velocity_anymal_c_ppo.py>`
+              -
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Isaac-Ant-v0
+              - :download:`jax_ant_ppo.py <../examples/isaacorbit/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../examples/isaacorbit/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../examples/isaacorbit/jax_ant_td3.py>`
+                |br| :download:`jax_ant_sac.py <../examples/isaacorbit/jax_ant_sac.py>`
+              - |br|
+                |br|
+                |br|
+                |br|
+            * - Isaac-Cartpole-v0
+              - :download:`jax_cartpole_ppo.py <../examples/isaacorbit/jax_cartpole_ppo.py>`
+              -
+            * - Isaac-Humanoid-v0
+              - :download:`jax_humanoid_ppo.py <../examples/isaacorbit/jax_humanoid_ppo.py>`
+              -
+            * - Isaac-Lift-Franka-v0
+              - :download:`jax_lift_franka_ppo.py <../examples/isaacorbit/jax_lift_franka_ppo.py>`
+              -
+            * - Isaac-Reach-Franka-v0
+              - :download:`jax_reach_franka_ppo.py <../examples/isaacorbit/jax_reach_franka_ppo.py>`
+              -
+            * - Isaac-Velocity-Anymal-C-v0
+              - :download:`jax_velocity_anymal_c_ppo.py <../examples/isaacorbit/jax_velocity_anymal_c_ppo.py>`
+              -
+
+.. raw:: html
+
+    <br><hr>
+
+NVIDIA Omniverse Isaac Gym
+--------------------------
+
+.. raw:: html
+
+    <br>
+
+Omniverse Isaac Gym environments (OIGE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Training/evaluation of an agent in `Omniverse Isaac Gym environments (OIGE) <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
+
+.. image:: ../_static/imgs/example_omniverse_isaacgym.png
+    :width: 100%
+    :align: center
+    :alt: Isaac Gym environments
+
+.. raw:: html
+
+    <br>
+
+The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+
+.. tabs::
+
+    .. tab:: PPO
+
+        .. code-block:: bash
+
+            # memory
+            memory_size = horizon_length
+
+            # agent
+            rollouts = horizon_length
+            learning_epochs = mini_epochs
+            mini_batches = horizon_length * num_actors / minibatch_size
+            discount_factor = gamma
+            lambda = tau
+            learning_rate = learning_rate
+            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveLR
             learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
             random_timesteps = 0
             learning_starts = 0

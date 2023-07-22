@@ -9,8 +9,8 @@ We recommend visiting the :doc:`Examples <examples>` to see how the components c
 
     <br><hr>
 
-Reinforcement Learning schema
------------------------------
+**Reinforcement Learning schema**
+---------------------------------
 
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from its interaction with the environment as shown in the following schema:
 

@@ -7,8 +7,8 @@ In this section, you will find the steps to install the library, troubleshoot kn
 
     <br><hr>
 
-Prerequisites
--------------
+**Dependencies**
+----------------
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
@@ -38,8 +38,8 @@ JAX
 
     <br><hr>
 
-Library Installation
---------------------
+**Library Installation**
+------------------------
 
 .. raw:: html
 
@@ -162,8 +162,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
     <br><hr>
 
-Discussions and issues
-----------------------
+**Discussions and issues**
+--------------------------
 
 To ask questions or discuss about the library visit skrl's GitHub discussions
 
@@ -177,8 +177,8 @@ Bug detection and/or correction, feature requests and everything else are more t
 
     <br><hr>
 
-Known issues and troubleshooting
---------------------------------
+**Known issues and troubleshooting**
+------------------------------------
 
 1. When using the parallel trainer with PyTorch 1.12.
 
@@ -218,8 +218,8 @@ Known issues and troubleshooting
 
     <br><hr>
 
-Changelog
----------
+**Changelog**
+-------------
 
 .. literalinclude:: ../../../CHANGELOG.md
     :language: markdown

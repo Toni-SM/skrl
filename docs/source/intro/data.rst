@@ -7,8 +7,8 @@ In this section, you will find the information you need to log data with TensorB
 
     <br><hr>
 
-TensorBoard integration
------------------------
+**TensorBoard integration**
+---------------------------
 
 `TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
 
@@ -145,8 +145,8 @@ Tracking custom metrics/scales
 
     <br><hr>
 
-Weights & Biases integration
-----------------------------
+**Weights & Biases integration**
+--------------------------------
 
 `Weights & Biases (wandb) <https://wandb.ai>`_ is also supported for tracking and visualizing metrics and scalars. Its configuration is responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
 
@@ -189,8 +189,8 @@ Each agent offers the following parameters under the :literal:`"experiment"` key
 
     <br><hr>
 
-Checkpoints
------------
+**Checkpoints**
+---------------
 
 .. raw:: html
 
@@ -349,8 +349,8 @@ The following code snippets show how to migrate checkpoints from other libraries
 
     <br><hr>
 
-Memory export/import
---------------------
+**Memory export/import**
+------------------------
 
 .. raw:: html
 

@@ -1,21 +1,19 @@
 import gym
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
-# Import the skrl components to build the RL system
-from skrl.models.torch import Model, GaussianMixin, DeterministicMixin
-from skrl.memories.torch import RandomMemory
+# import the skrl components to build the RL system
 from skrl.agents.torch.trpo import TRPO, TRPO_DEFAULT_CONFIG
-from skrl.trainers.torch import SequentialTrainer
-from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.envs.torch import wrap_env
+from skrl.memories.torch import RandomMemory
+from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.torch import RunningStandardScaler
+from skrl.trainers.torch import SequentialTrainer
 
 
-# Define the models (stochastic and deterministic models) for the agent using mixins.
-# - Policy: takes as input the environment's observation/state and returns an action
-# - Value: takes the state as input and provides a value to guide the policy
+# define models (stochastic and deterministic models) using mixins
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
                  clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
@@ -48,7 +46,7 @@ class Value(DeterministicMixin, Model):
         return self.net(inputs["states"]), {}
 
 
-# Gym environment observation wrapper used to mask velocity. Adapted from rl_zoo3 (rl_zoo3/wrappers.py)
+# environment observation wrapper used to mask velocity. Adapted from rl_zoo3 (rl_zoo3/wrappers.py)
 class NoVelocityWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         # observation: x, y, angular velocity
@@ -56,55 +54,54 @@ class NoVelocityWrapper(gym.ObservationWrapper):
 
 gym.envs.registration.register(id="PendulumNoVel-v1", entry_point=lambda: NoVelocityWrapper(gym.make("Pendulum-v1")))
 
-# Load and wrap the Gym environment
+# load and wrap the gym environment
 env = gym.vector.make("PendulumNoVel-v1", num_envs=4, asynchronous=False)
 env = wrap_env(env)
 
 device = env.device
 
 
-# Instantiate a RandomMemory as rollout buffer (any memory can be used for this)
+# instantiate a memory as rollout buffer (any memory can be used for this)
 memory = RandomMemory(memory_size=1024, num_envs=env.num_envs, device=device)
 
 
-# Instantiate the agent's models (function approximators).
+# instantiate the agent's models (function approximators).
 # TRPO requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.trpo.html#spaces-and-models
-models_trpo = {}
-models_trpo["policy"] = Policy(env.observation_space, env.action_space, device, clip_actions=True)
-models_trpo["value"] = Value(env.observation_space, env.action_space, device)
+# https://skrl.readthedocs.io/en/latest/api/agents/trpo.html#models
+models = {}
+models["policy"] = Policy(env.observation_space, env.action_space, device, clip_actions=True)
+models["value"] = Value(env.observation_space, env.action_space, device)
 
 
-# Configure and instantiate the agent.
-# Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.trpo.html#configuration-and-hyperparameters
-cfg_trpo = TRPO_DEFAULT_CONFIG.copy()
-cfg_trpo["rollouts"] = 1024  # memory_size
-cfg_trpo["learning_epochs"] = 10
-cfg_trpo["mini_batches"] = 32
-cfg_trpo["discount_factor"] = 0.99
-cfg_trpo["lambda"] = 0.95
-cfg_trpo["learning_rate"] = 1e-3
-cfg_trpo["grad_norm_clip"] = 0.5
-cfg_trpo["state_preprocessor"] = RunningStandardScaler
-cfg_trpo["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
-cfg_trpo["value_preprocessor"] = RunningStandardScaler
-cfg_trpo["value_preprocessor_kwargs"] = {"size": 1, "device": device}
-# logging to TensorBoard and write checkpoints each 500 and 5000 timesteps respectively
-cfg_trpo["experiment"]["write_interval"] = 500
-cfg_trpo["experiment"]["checkpoint_interval"] = 5000
+# configure and instantiate the agent (visit its documentation to see all the options)
+# https://skrl.readthedocs.io/en/latest/api/agents/trpo.html#configuration-and-hyperparameters
+cfg = TRPO_DEFAULT_CONFIG.copy()
+cfg["rollouts"] = 1024  # memory_size
+cfg["learning_epochs"] = 10
+cfg["mini_batches"] = 32
+cfg["discount_factor"] = 0.99
+cfg["lambda"] = 0.95
+cfg["learning_rate"] = 1e-3
+cfg["grad_norm_clip"] = 0.5
+cfg["state_preprocessor"] = RunningStandardScaler
+cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg["value_preprocessor"] = RunningStandardScaler
+cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
+# logging to TensorBoard and write checkpoints (in timesteps)
+cfg["experiment"]["write_interval"] = 500
+cfg["experiment"]["checkpoint_interval"] = 5000
 
-agent_trpo = TRPO(models=models_trpo,
-                  memory=memory,
-                  cfg=cfg_trpo,
-                  observation_space=env.observation_space,
-                  action_space=env.action_space,
-                  device=device)
+agent = TRPO(models=models,
+             memory=memory,
+             cfg=cfg,
+             observation_space=env.observation_space,
+             action_space=env.action_space,
+             device=device)
 
 
-# Configure and instantiate the RL trainer
+# configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 100000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_trpo)
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
 # start training
 trainer.train()

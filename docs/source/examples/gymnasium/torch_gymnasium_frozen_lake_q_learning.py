@@ -2,14 +2,14 @@ import gymnasium as gym
 
 import torch
 
-# Import the skrl components to build the RL system
-from skrl.models.torch import Model, TabularMixin
+# import the skrl components to build the RL system
 from skrl.agents.torch.q_learning import Q_LEARNING, Q_LEARNING_DEFAULT_CONFIG
-from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
+from skrl.models.torch import Model, TabularMixin
+from skrl.trainers.torch import SequentialTrainer
 
 
-# Define the model (tabular model) for the SARSA agent using mixin
+# define model (tabular model) using mixin
 class EpilonGreedyPolicy(TabularMixin, Model):
     def __init__(self, observation_space, action_space, device, num_envs=1, epsilon=0.1):
         Model.__init__(self, observation_space, action_space, device)
@@ -30,8 +30,8 @@ class EpilonGreedyPolicy(TabularMixin, Model):
         return actions, {}
 
 
-# Load and wrap the Gymnasium environment.
-# Note: the environment version may change depending on the gymnasium version
+# load and wrap the gymnasium environment.
+# note: the environment version may change depending on the gymnasium version
 try:
     env = gym.make("FrozenLake-v0")
 except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
@@ -43,34 +43,33 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instantiate the agent's models (table)
+# instantiate the agent's model (table)
 # Q-learning requires 1 model, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.q_learning.html#spaces-and-models
-models_q_learning = {}
-models_q_learning["policy"] = EpilonGreedyPolicy(env.observation_space, env.action_space, device, num_envs=env.num_envs, epsilon=0.1)
+# https://skrl.readthedocs.io/en/latest/api/agents/q_learning.html#models
+models = {}
+models["policy"] = EpilonGreedyPolicy(env.observation_space, env.action_space, device, num_envs=env.num_envs, epsilon=0.1)
 
 
-# Configure and instantiate the agent.
-# Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.q_learning.html#configuration-and-hyperparameters
-cfg_q_learning = Q_LEARNING_DEFAULT_CONFIG.copy()
-cfg_q_learning["discount_factor"] = 0.999
-cfg_q_learning["alpha"] = 0.4
-# logging to TensorBoard and write checkpoints each 1600 and 8000 timesteps respectively
-cfg_q_learning["experiment"]["write_interval"] = 1600
-cfg_q_learning["experiment"]["checkpoint_interval"] = 8000
+# configure and instantiate the agent (visit its documentation to see all the options)
+# https://skrl.readthedocs.io/en/latest/api/agents/q_learning.html#configuration-and-hyperparameters
+cfg = Q_LEARNING_DEFAULT_CONFIG.copy()
+cfg["discount_factor"] = 0.999
+cfg["alpha"] = 0.4
+# logging to TensorBoard and write checkpoints (in timesteps)
+cfg["experiment"]["write_interval"] = 1600
+cfg["experiment"]["checkpoint_interval"] = 8000
 
-agent_q_learning = Q_LEARNING(models=models_q_learning,
-                              memory=None,
-                              cfg=cfg_q_learning,
-                              observation_space=env.observation_space,
-                              action_space=env.action_space,
-                              device=device)
+agent = Q_LEARNING(models=models,
+                   memory=None,
+                   cfg=cfg,
+                   observation_space=env.observation_space,
+                   action_space=env.action_space,
+                   device=device)
 
 
-# Configure and instantiate the RL trainer
+# configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 80000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_q_learning)
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
 # start training
 trainer.train()

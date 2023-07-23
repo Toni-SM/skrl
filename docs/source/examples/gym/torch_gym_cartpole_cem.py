@@ -3,16 +3,15 @@ import gym
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Import the skrl components to build the RL system
-from skrl.models.torch import Model, CategoricalMixin
-from skrl.memories.torch import RandomMemory
+# import the skrl components to build the RL system
 from skrl.agents.torch.cem import CEM, CEM_DEFAULT_CONFIG
-from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
+from skrl.memories.torch import RandomMemory
+from skrl.models.torch import CategoricalMixin, Model
+from skrl.trainers.torch import SequentialTrainer
 
 
-# Define the model (categorical model) for the CEM agent using mixin
-# - Policy: takes as input the environment's observation/state and returns an action
+# define model (categorical model) using mixin
 class Policy(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
         Model.__init__(self, observation_space, action_space, device)
@@ -28,8 +27,8 @@ class Policy(CategoricalMixin, Model):
         return self.output_layer(x), {}
 
 
-# Load and wrap the Gym environment.
-# Note: the environment version may change depending on the gym version
+# load and wrap the gym environment.
+# note: the environment version may change depending on the gym version
 try:
     env = gym.make("CartPole-v0")
 except gym.error.DeprecatedEnv as e:
@@ -41,42 +40,41 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instantiate a RandomMemory (without replacement) as experience replay memory
+# instantiate a memory as experience replay
 memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# Instantiate the agent's model (function approximator).
+# instantiate the agent's model (function approximator).
 # CEM requires 1 model, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.cem.html#spaces-and-models
-models_cem = {}
-models_cem["policy"] = Policy(env.observation_space, env.action_space, device)
+# https://skrl.readthedocs.io/en/latest/api/agents/cem.html#models
+models = {}
+models["policy"] = Policy(env.observation_space, env.action_space, device)
 
-# Initialize the models' parameters (weights and biases) using a Gaussian distribution
-for model in models_cem.values():
+# initialize models' parameters (weights and biases)
+for model in models.values():
     model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
 
-# Configure and instantiate the agent.
-# Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.cem.html#configuration-and-hyperparameters
-cfg_cem = CEM_DEFAULT_CONFIG.copy()
-cfg_cem["rollouts"] = 1000
-cfg_cem["learning_starts"] = 100
-# logging to TensorBoard and write checkpoints each 1000 and 5000 timesteps respectively
-cfg_cem["experiment"]["write_interval"] = 1000
-cfg_cem["experiment"]["checkpoint_interval"] = 5000
+# configure and instantiate the agent (visit its documentation to see all the options)
+# https://skrl.readthedocs.io/en/latest/api/agents/cem.html#configuration-and-hyperparameters
+cfg = CEM_DEFAULT_CONFIG.copy()
+cfg["rollouts"] = 1000
+cfg["learning_starts"] = 100
+# logging to TensorBoard and write checkpoints (in timesteps)
+cfg["experiment"]["write_interval"] = 1000
+cfg["experiment"]["checkpoint_interval"] = 5000
 
-agent_cem = CEM(models=models_cem,
-                memory=memory,
-                cfg=cfg_cem,
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=device)
+agent = CEM(models=models,
+            memory=memory,
+            cfg=cfg,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=device)
 
 
-# Configure and instantiate the RL trainer
+# configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 100000, "headless": True}
-trainer = SequentialTrainer(env=env, agents=[agent_cem], cfg=cfg_trainer)
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
 # start training
 trainer.train()

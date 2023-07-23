@@ -2,14 +2,14 @@ import gym
 
 import torch
 
-# Import the skrl components to build the RL system
-from skrl.models.torch import Model, TabularMixin
+# import the skrl components to build the RL system
 from skrl.agents.torch.sarsa import SARSA, SARSA_DEFAULT_CONFIG
-from skrl.trainers.torch import SequentialTrainer
 from skrl.envs.torch import wrap_env
+from skrl.models.torch import Model, TabularMixin
+from skrl.trainers.torch import SequentialTrainer
 
 
-# Define the model (tabular model) for the SARSA agent using mixin
+# define model (tabular model) using mixin
 class EpilonGreedyPolicy(TabularMixin, Model):
     def __init__(self, observation_space, action_space, device, num_envs=1, epsilon=0.1):
         Model.__init__(self, observation_space, action_space, device)
@@ -30,8 +30,8 @@ class EpilonGreedyPolicy(TabularMixin, Model):
         return actions, {}
 
 
-# Load and wrap the Gym environment.
-# Note: the environment version may change depending on the gym version
+# load and wrap the gym environment.
+# note: the environment version may change depending on the gym version
 try:
     env = gym.vector.make("Taxi-v3", num_envs=10, asynchronous=False)
 except gym.error.DeprecatedEnv as e:
@@ -43,34 +43,33 @@ env = wrap_env(env)
 device = env.device
 
 
-# Instantiate the agent's models (table)
+# instantiate the agent's model (table)
 # SARSA requires 1 model, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sarsa.html#spaces-and-models
-models_sarsa = {}
-models_sarsa["policy"] = EpilonGreedyPolicy(env.observation_space, env.action_space, device, num_envs=env.num_envs, epsilon=0.1)
+# https://skrl.readthedocs.io/en/latest/api/agents/sarsa.html#models
+models = {}
+models["policy"] = EpilonGreedyPolicy(env.observation_space, env.action_space, device, num_envs=env.num_envs, epsilon=0.1)
 
 
-# Configure and instantiate the agent.
-# Only modify some of the default configuration, visit its documentation to see all the options
-# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.sarsa.html#configuration-and-hyperparameters
-cfg_sarsa = SARSA_DEFAULT_CONFIG.copy()
-cfg_sarsa["discount_factor"] = 0.999
-cfg_sarsa["alpha"] = 0.4
-# logging to TensorBoard and write checkpoints each 1600 and 8000 timesteps respectively
-cfg_sarsa["experiment"]["write_interval"] = 1600
-cfg_sarsa["experiment"]["checkpoint_interval"] = 8000
+# configure and instantiate the agent (visit its documentation to see all the options)
+# https://skrl.readthedocs.io/en/latest/api/agents/sarsa.html#configuration-and-hyperparameters
+cfg = SARSA_DEFAULT_CONFIG.copy()
+cfg["discount_factor"] = 0.999
+cfg["alpha"] = 0.4
+# logging to TensorBoard and write checkpoints (in timesteps)
+cfg["experiment"]["write_interval"] = 1600
+cfg["experiment"]["checkpoint_interval"] = 8000
 
-agent_sarsa = SARSA(models=models_sarsa,
-                    memory=None,
-                    cfg=cfg_sarsa,
-                    observation_space=env.observation_space,
-                    action_space=env.action_space,
-                    device=device)
+agent = SARSA(models=models,
+              memory=None,
+              cfg=cfg,
+              observation_space=env.observation_space,
+              action_space=env.action_space,
+              device=device)
 
 
-# Configure and instantiate the RL trainer
+# configure and instantiate the RL trainer
 cfg_trainer = {"timesteps": 80000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent_sarsa)
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
 # start training
 trainer.train()

@@ -274,10 +274,10 @@ class Model(flax.linen.Module):
     def init_parameters(self, method_name: str = "normal", *args, **kwargs) -> None:
         """Initialize the model parameters according to the specified method name
 
-        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ module.
+        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ module.
         Allowed method names are *uniform*, *normal*, *constant*, etc.
 
-        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ method name (default: ``"normal"``)
+        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ method name (default: ``"normal"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -302,10 +302,10 @@ class Model(flax.linen.Module):
     def init_weights(self, method_name: str = "normal", *args, **kwargs) -> None:
         """Initialize the model weights according to the specified method name
 
-        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ module.
+        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ module.
         Allowed method names are *uniform*, *normal*, *constant*, etc.
 
-        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ method name (default: ``"normal"``)
+        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ method name (default: ``"normal"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional
@@ -331,10 +331,10 @@ class Model(flax.linen.Module):
     def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
         """Initialize the model biases according to the specified method name
 
-        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ module.
+        Method names are from the `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ module.
         Allowed method names are *uniform*, *normal*, *constant*, etc.
 
-        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen.html#module-flax.linen.initializers>`_ method name (default: ``"normal"``)
+        :param method_name: `flax.linen.initializers <https://flax.readthedocs.io/en/latest/api_reference/flax.linen/initializers.html>`_ method name (default: ``"normal"``)
         :type method_name: str, optional
         :param args: Positional arguments of the method to be called
         :type args: tuple, optional

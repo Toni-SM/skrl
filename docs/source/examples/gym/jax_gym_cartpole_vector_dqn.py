@@ -38,18 +38,18 @@ class QNetwork(DeterministicMixin, Model):
 # load and wrap the gym environment.
 # note: the environment version may change depending on the gym version
 try:
-    env = gym.make("CartPole-v0")
+    env = gym.vector.make("CartPole-v0", num_envs=5, asynchronous=False)
 except gym.error.DeprecatedEnv as e:
     env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
     print("CartPole-v0 not found. Trying {}".format(env_id))
-    env = gym.make(env_id)
+    env = gym.vector.make(env_id, num_envs=5, asynchronous=False)
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as experience replay
-memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=200000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # instantiate the agent's models (function approximators).

@@ -22,7 +22,7 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define model (deterministic model) using mixins
-class Q_Network(DeterministicMixin, Model):
+class QNetwork(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
@@ -56,8 +56,8 @@ memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, r
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/dqn.html#models
 models = {}
-models["q_network"] = Q_Network(env.observation_space, env.action_space, device)
-models["target_q_network"] = Q_Network(env.observation_space, env.action_space, device)
+models["q_network"] = QNetwork(env.observation_space, env.action_space, device)
+models["target_q_network"] = QNetwork(env.observation_space, env.action_space, device)
 
 key = jax.random.PRNGKey(0)
 models["q_network"].init_state_dict(key, {"states": env.observation_space.sample()}, "q_network")

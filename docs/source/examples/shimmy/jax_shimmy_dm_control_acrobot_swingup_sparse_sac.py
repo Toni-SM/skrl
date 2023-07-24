@@ -33,8 +33,7 @@ class Actor(DeterministicMixin, Model):
         x = nn.relu(nn.Dense(400)(inputs["states"]))
         x = nn.relu(nn.Dense(300)(x))
         x = nn.Dense(self.num_actions)(x)
-        # Pendulum-v1 action_space is -2 to 2
-        return 2 * nn.tanh(x), {}
+        return nn.tanh(x), {}
 
 class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
@@ -51,14 +50,14 @@ class Critic(DeterministicMixin, Model):
 
 
 # load and wrap the environment
-env = gym.make("GymV21Environment-v0", env_id="Pendulum-v1")
+env = gym.make("dm_control/acrobot-swingup_sparse-v0")
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as experience replay
-memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # instantiate the agent's models (function approximators).
@@ -85,13 +84,14 @@ for model in models.values():
 # https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#configuration-and-hyperparameters
 cfg = DDPG_DEFAULT_CONFIG.copy()
 cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1, base_scale=1.0, device=device)
+cfg["discount_factor"] = 0.98
 cfg["batch_size"] = 100
-cfg["random_timesteps"] = 100
-cfg["learning_starts"] = 100
+cfg["random_timesteps"] = 1000
+cfg["learning_starts"] = 1000
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 300
-cfg["experiment"]["checkpoint_interval"] = 1500
-cfg["experiment"]["directory"] = "runs/torch/GymV21Environment_Pendulum"
+cfg["experiment"]["write_interval"] = 75
+cfg["experiment"]["checkpoint_interval"] = 750
+cfg["experiment"]["directory"] = "runs/torch/dm_control_acrobot_swingup_sparse"
 
 agent = DDPG(models=models,
              memory=memory,

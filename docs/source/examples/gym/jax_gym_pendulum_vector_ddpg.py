@@ -1,4 +1,4 @@
-import gymnasium as gym
+import gym
 
 import flax.linen as nn
 import jax
@@ -22,7 +22,7 @@ config.jax.backend = "numpy"  # or "jax"
 set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
-# define models (deterministic models) using mixin
+# define models (deterministic models) using mixins
 class Actor(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
@@ -50,15 +50,21 @@ class Critic(DeterministicMixin, Model):
         return x, {}
 
 
-# load and wrap the environment
-env = gym.make("GymV21Environment-v0", env_id="Pendulum-v1")
+# load and wrap the gym environment.
+# note: the environment version may change depending on the gym version
+try:
+    env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+except gym.error.DeprecatedEnv as e:
+    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
+    print("Pendulum-v1 not found. Trying {}".format(env_id))
+    env = gym.vector.make(env_id, num_envs=10, asynchronous=False)
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as experience replay
-memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=100000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # instantiate the agent's models (function approximators).
@@ -89,9 +95,9 @@ cfg["batch_size"] = 100
 cfg["random_timesteps"] = 100
 cfg["learning_starts"] = 100
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 300
-cfg["experiment"]["checkpoint_interval"] = 1500
-cfg["experiment"]["directory"] = "runs/torch/GymV21Environment_Pendulum"
+cfg["experiment"]["write_interval"] = 75
+cfg["experiment"]["checkpoint_interval"] = 750
+cfg["experiment"]["directory"] = "runs/jax/Pendulum"
 
 agent = DDPG(models=models,
              memory=memory,

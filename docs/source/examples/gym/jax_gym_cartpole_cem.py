@@ -38,7 +38,7 @@ class Policy(CategoricalMixin, Model):
 # load and wrap the gym environment.
 # note: the environment version may change depending on the gym version
 try:
-    env = gym.make("CartPole-v1")
+    env = gym.make("CartPole-v0")
 except gym.error.DeprecatedEnv as e:
     env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
     print("CartPole-v0 not found. Trying {}".format(env_id))

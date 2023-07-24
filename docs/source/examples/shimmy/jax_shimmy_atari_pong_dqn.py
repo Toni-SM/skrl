@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 
 import flax.linen as nn
 import jax
@@ -21,7 +21,7 @@ config.jax.backend = "numpy"  # or "jax"
 set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
-# define model (deterministic model) using mixins
+# define model (deterministic model) using mixin
 class QNetwork(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
@@ -35,21 +35,15 @@ class QNetwork(DeterministicMixin, Model):
         return x, {}
 
 
-# load and wrap the gym environment.
-# note: the environment version may change depending on the gym version
-try:
-    env = gym.make("CartPole-v0")
-except gym.error.DeprecatedEnv as e:
-    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
-    print("CartPole-v0 not found. Trying {}".format(env_id))
-    env = gym.make(env_id)
+# load and wrap the environment
+env = gym.make("ALE/Pong-v5")
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as experience replay
-memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device, replacement=False)
 
 
 # instantiate the agent's models (function approximators).
@@ -77,7 +71,7 @@ cfg["exploration"]["timesteps"] = 1500
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 1000
 cfg["experiment"]["checkpoint_interval"] = 5000
-cfg["experiment"]["directory"] = "runs/jax/CartPole"
+cfg["experiment"]["directory"] = "runs/torch/ALE_Pong"
 
 agent = DQN(models=models,
             memory=memory,

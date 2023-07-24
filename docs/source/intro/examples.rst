@@ -11,295 +11,293 @@ In this section, you will find a variety of examples that demonstrate how to use
 
     <br><hr>
 
-**Gym/Gymnasium**
------------------
+**Gymnasium / Gym**
+-------------------
 
 .. raw:: html
 
     <br>
 
-Gym/Gymnasium environments
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Gymnasium / Gym environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These examples perform the training of one agent in a Gym/Gymnasium environment (**one agent, one environment**)
+Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ / `Gym <https://www.gymlibrary.dev/>`_ environments (**one agent, one environment**)
 
 .. image:: ../_static/imgs/example_gym.png
     :width: 100%
     :align: center
-    :alt: Gym/Gymnasium environments
+    :alt: Gymnasium / Gym environments
 
 .. raw:: html
 
     <br>
 
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap a Gym environment: **Pendulum (DDPG)**, **CartPole (CEM)**
-    - Recurrent neural network models (RNN, GRU, LSTM): **PendulumNoVel (DDPG)**
-    - Instantiate models using the model instantiation utility: **CartPole (DQN)**
-    - Create a tabular model (:math:`\epsilon`-greedy policy): **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
-    - Load a checkpoint during evaluation: **Pendulum (DDPG)**, **CartPole (CEM)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
-
-**Benchmark results** are listed in `Benchmark results #32 (Gym/Gymnasium) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4308370>`_
+**Benchmark results** are listed in `Benchmark results #32 (Gymnasium/Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4308370>`_
 
 .. tabs::
 
-    .. tab:: Pendulum (DDPG)
+    .. group-tab:: Gymnasium
 
         .. tabs::
 
-            .. group-tab:: Training
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                | :download:`ddpg_gym_pendulum.py <../examples/gym/ddpg_gym_pendulum.py>`
-                | :download:`ddpg_gymnasium_pendulum.py <../examples/gymnasium/ddpg_gymnasium_pendulum.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                .. literalinclude:: ../examples/gym/ddpg_gym_pendulum.py
-                    :language: python
-                    :emphasize-lines: 1, 13, 51-57
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`torch_gymnasium_cartpole_cem.py <../examples/gymnasium/torch_gymnasium_cartpole_cem.py>`
+                        |br| :download:`torch_gymnasium_cartpole_dqn.py <../examples/gymnasium/torch_gymnasium_cartpole_dqn.py>`
+                      -
+                    * - FrozenLake
+                      - :download:`torch_gymnasium_frozen_lake_q_learning.py <../examples/gymnasium/torch_gymnasium_frozen_lake_q_learning.py>`
+                      -
+                    * - Pendulum
+                      - :download:`torch_gymnasium_pendulum_ddpg.py <../examples/gymnasium/torch_gymnasium_pendulum_ddpg.py>`
+                        |br| :download:`torch_gymnasium_pendulum_ppo.py <../examples/gymnasium/torch_gymnasium_pendulum_ppo.py>`
+                        |br| :download:`torch_gymnasium_pendulum_sac.py <../examples/gymnasium/torch_gymnasium_pendulum_sac.py>`
+                        |br| :download:`torch_gymnasium_pendulum_td3.py <../examples/gymnasium/torch_gymnasium_pendulum_td3.py>`
+                      -
+                    * - PendulumNoVel*
+                        |br| (RNN / GRU / LSTM)
+                      - :download:`torch_gymnasium_pendulumnovel_ddpg_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_lstm.py>`
+                      -
+                    * - Taxi
+                      - :download:`torch_gymnasium_taxi_sarsa.py <../examples/gymnasium/torch_gymnasium_taxi_sarsa.py>`
+                      -
 
-            .. group-tab:: Evaluation
+            .. group-tab:: |_4| |jax| |_4|
 
-                | :download:`ddpg_gym_pendulum_eval.py <../examples/gym/ddpg_gym_pendulum_eval.py>`
-                | :download:`ddpg_gymnasium_pendulum_eval.py <../examples/gymnasium/ddpg_gymnasium_pendulum_eval.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
-
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
-
-                .. literalinclude:: ../examples/gym/ddpg_gym_pendulum_eval.py
-                    :language: python
-                    :emphasize-lines: 67
-
-    .. tab:: PendulumNoVel (DDPG)
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`jax_gymnasium_cartpole_cem.py <../examples/gymnasium/jax_gymnasium_cartpole_cem.py>`
+                        |br| :download:`jax_gymnasium_cartpole_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_dqn.py>`
+                      -
+                    * - Pendulum
+                      - :download:`jax_gymnasium_pendulum_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_ddpg.py>`
+                        |br| :download:`jax_gymnasium_pendulum_ppo.py <../examples/gymnasium/jax_gymnasium_pendulum_ppo.py>`
+                        |br| :download:`jax_gymnasium_pendulum_sac.py <../examples/gymnasium/jax_gymnasium_pendulum_sac.py>`
+                        |br| :download:`jax_gymnasium_pendulum_td3.py <../examples/gymnasium/jax_gymnasium_pendulum_td3.py>`
+                      -
 
         .. note::
 
-            The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
+            (*) The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
 
-        More examples with other algorithms can be found in the repository documentation `example folder <https://github.com/Toni-SM/skrl/tree/main/docs/source/examples/gym>`_ and in the benchmark results indicated above
-
-        .. tabs::
-
-            .. tab:: RNN
-
-                .. tabs::
-
-                    .. group-tab:: Training
-
-                        | :download:`ddpg_gym_pendulumnovel_rnn.py <../examples/gym/ddpg_gym_pendulumnovel_rnn.py>`
-
-                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_rnn.py
-                            :language: python
-                            :emphasize-lines: 11, 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
-
-            .. tab:: GRU
-
-                .. tabs::
-
-                    .. group-tab:: Training
-
-                        | :download:`ddpg_gym_pendulumnovel_gru.py <../examples/gym/ddpg_gym_pendulumnovel_gru.py>`
-
-                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_gru.py
-                            :language: python
-                            :emphasize-lines: 11, 31-34, 40-43, 50-77, 86, 99-102, 108-111, 118-141, 149
-
-            .. tab:: LSTM
-
-                .. tabs::
-
-                    .. group-tab:: Training
-
-                        | :download:`ddpg_gym_pendulumnovel_lstm.py <../examples/gym/ddpg_gym_pendulumnovel_lstm.py>`
-
-                        .. literalinclude:: ../examples/gym/ddpg_gym_pendulumnovel_lstm.py
-                            :language: python
-                            :emphasize-lines: 11, 31-34, 40-44, 51-82, 91, 104-107, 113-117, 127-151, 159
-
-    .. tab:: CartPole (CEM)
+    .. group-tab:: Gym
 
         .. tabs::
 
-            .. group-tab:: Training
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                | :download:`cem_gym_cartpole.py <../examples/gym/cem_gym_cartpole.py>`
-                | :download:`cem_gymnasium_cartpole.py <../examples/gymnasium/cem_gymnasium_cartpole.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                .. literalinclude:: ../examples/gym/cem_gym_cartpole.py
-                    :language: python
-                    :emphasize-lines: 1, 11, 33-39
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`torch_gym_cartpole_cem.py <../examples/gym/torch_gym_cartpole_cem.py>`
+                        |br| :download:`torch_gym_cartpole_dqn.py <../examples/gym/torch_gym_cartpole_dqn.py>`
+                      -
+                    * - FrozenLake
+                      - :download:`torch_gym_frozen_lake_q_learning.py <../examples/gym/torch_gym_frozen_lake_q_learning.py>`
+                      -
+                    * - Pendulum
+                      - :download:`torch_gym_pendulum_ddpg.py <../examples/gym/torch_gym_pendulum_ddpg.py>`
+                        |br| :download:`torch_gym_pendulum_ppo.py <../examples/gym/torch_gym_pendulum_ppo.py>`
+                        |br| :download:`torch_gym_pendulum_sac.py <../examples/gym/torch_gym_pendulum_sac.py>`
+                        |br| :download:`torch_gym_pendulum_td3.py <../examples/gym/torch_gym_pendulum_td3.py>`
+                      -
+                    * - PendulumNoVel*
+                        |br| (RNN / GRU / LSTM)
+                      - :download:`torch_gym_pendulumnovel_ddpg_rnn.py <../examples/gym/torch_gym_pendulumnovel_ddpg_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ddpg_gru.py <../examples/gym/torch_gym_pendulumnovel_ddpg_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ddpg_lstm.py <../examples/gym/torch_gym_pendulumnovel_ddpg_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_rnn.py <../examples/gym/torch_gym_pendulumnovel_ppo_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_gru.py <../examples/gym/torch_gym_pendulumnovel_ppo_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_lstm.py <../examples/gym/torch_gym_pendulumnovel_ppo_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_rnn.py <../examples/gym/torch_gym_pendulumnovel_sac_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_gru.py <../examples/gym/torch_gym_pendulumnovel_sac_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_lstm.py <../examples/gym/torch_gym_pendulumnovel_sac_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_rnn.py <../examples/gym/torch_gym_pendulumnovel_td3_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_gru.py <../examples/gym/torch_gym_pendulumnovel_td3_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_lstm.py <../examples/gym/torch_gym_pendulumnovel_td3_lstm.py>`
+                      -
+                    * - Taxi
+                      - :download:`torch_gym_taxi_sarsa.py <../examples/gym/torch_gym_taxi_sarsa.py>`
+                      -
 
-            .. group-tab:: Evaluation
+            .. group-tab:: |_4| |jax| |_4|
 
-                | :download:`cem_gym_cartpole_eval.py <../examples/gym/cem_gym_cartpole_eval.py>`
-                | :download:`cem_gymnasium_cartpole_eval.py <../examples/gymnasium/cem_gymnasium_cartpole_eval.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`jax_gym_cartpole_cem.py <../examples/gym/jax_gym_cartpole_cem.py>`
+                        |br| :download:`jax_gym_cartpole_dqn.py <../examples/gym/jax_gym_cartpole_dqn.py>`
+                      -
+                    * - Pendulum
+                      - :download:`jax_gym_pendulum_ddpg.py <../examples/gym/jax_gym_pendulum_ddpg.py>`
+                        |br| :download:`jax_gym_pendulum_ppo.py <../examples/gym/jax_gym_pendulum_ppo.py>`
+                        |br| :download:`jax_gym_pendulum_sac.py <../examples/gym/jax_gym_pendulum_sac.py>`
+                        |br| :download:`jax_gym_pendulum_td3.py <../examples/gym/jax_gym_pendulum_td3.py>`
+                      -
 
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
+        .. note::
 
-                .. literalinclude:: ../examples/gym/cem_gym_cartpole_eval.py
-                    :language: python
-                    :emphasize-lines: 68
-
-    .. tab:: CartPole (DQN)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`dqn_gym_cartpole.py <../examples/gym/dqn_gym_cartpole.py>`
-                | :download:`dqn_gymnasium_cartpole.py <../examples/gymnasium/dqn_gymnasium_cartpole.py>`
-
-                .. literalinclude:: ../examples/gym/dqn_gym_cartpole.py
-                    :language: python
-                    :emphasize-lines: 4, 31-51
-
-            .. group-tab:: Evaluation
-
-                | :download:`dqn_gym_cartpole_eval.py <../examples/gym/dqn_gym_cartpole_eval.py>`
-                | :download:`dqn_gymnasium_cartpole_eval.py <../examples/gymnasium/dqn_gymnasium_cartpole_eval.py>`
-
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
-
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
-
-                .. literalinclude:: ../examples/gym/dqn_gym_cartpole_eval.py
-                    :language: python
-                    :emphasize-lines: 56
-
-    .. tab:: Taxi (SARSA)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`sarsa_gym_taxi.py <../examples/gym/sarsa_gym_taxi.py>`
-                | :download:`sarsa_gymnasium_taxi.py <../examples/gymnasium/sarsa_gymnasium_taxi.py>`
-
-                .. literalinclude:: ../examples/gym/sarsa_gym_taxi.py
-                    :language: python
-                    :emphasize-lines: 6, 13-30
-
-            .. group-tab:: Evaluation
-
-                | :download:`sarsa_gym_taxi_eval.py <../examples/gym/sarsa_gym_taxi_eval.py>`
-                | :download:`sarsa_gymnasium_taxi_eval.py <../examples/gymnasium/sarsa_gymnasium_taxi_eval.py>`
-
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
-
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
-
-                .. literalinclude:: ../examples/gym/sarsa_gym_taxi_eval.py
-                    :language: python
-                    :emphasize-lines: 70
-
-    .. tab:: FrozenLake (Q-learning)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`q_learning_gym_frozen_lake.py <../examples/gym/q_learning_gym_frozen_lake.py>`
-                | :download:`q_learning_gymnasium_frozen_lake.py <../examples/gymnasium/q_learning_gymnasium_frozen_lake.py>`
-
-                .. literalinclude:: ../examples/gym/q_learning_gym_frozen_lake.py
-                    :language: python
-                    :emphasize-lines: 6, 13-30
-
-            .. group-tab:: Evaluation
-
-                | :download:`q_learning_gym_frozen_lake_eval.py <../examples/gym/q_learning_gym_frozen_lake_eval.py>`
-                | :download:`q_learning_gymnasium_frozen_lake_eval.py <../examples/gymnasium/q_learning_gymnasium_frozen_lake_eval.py>`
-
-                **Note:** It is necessary to adjust the checkpoint path according to the directories generated by the new experiments
-
-                **Note:** Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems. The reason for this is that during the evaluation, not all components such as optimizers or other models apart from the policy are defined
-
-                .. literalinclude:: ../examples/gym/q_learning_gym_frozen_lake_eval.py
-                    :language: python
-                    :emphasize-lines: 70
+            (*) The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
 
 .. raw:: html
 
     <br>
 
-Gym/Gymnasium vectorized environments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Gymnasium / Gym vectorized environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These examples perform the training of one agent in a Gym/Gymnasium vectorized environment (**one agent, multiple independent copies of the same environment in parallel**)
-
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap a Gym vectorized environment: **Pendulum (DDPG)**, **CartPole (DQN)**, **Taxi (SARSA)**, **FrozenLake (Q-Learning)**
+Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ / `Gym <https://www.gymlibrary.dev/>`_ vectorized environments (**one agent, multiple independent copies of the same environment in parallel**)
 
 .. tabs::
 
-    .. tab:: Pendulum (DDPG)
+    .. group-tab:: Gymnasium
 
         .. tabs::
 
-            .. group-tab:: Training
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                | :download:`ddpg_gym_pendulum_vector.py <../examples/gym/ddpg_gym_pendulum_vector.py>`
-                | :download:`ddpg_gymnasium_pendulum_vector.py <../examples/gymnasium/ddpg_gymnasium_pendulum_vector.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                .. literalinclude:: ../examples/gym/ddpg_gym_pendulum_vector.py
-                    :language: python
-                    :emphasize-lines: 1, 13, 50-56
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`torch_gymnasium_cartpole_vector_dqn.py <../examples/gymnasium/torch_gymnasium_cartpole_vector_dqn.py>`
+                      -
+                    * - FrozenLake
+                      - :download:`torch_gymnasium_frozen_lake_vector_q_learning.py <../examples/gymnasium/torch_gymnasium_frozen_lake_vector_q_learning.py>`
+                      -
+                    * - Pendulum
+                      - :download:`torch_gymnasium_pendulum_vector_ddpg.py <../examples/gymnasium/torch_gymnasium_pendulum_vector_ddpg.py>`
+                      -
+                    * - Taxi
+                      - :download:`torch_gymnasium_taxi_vector_sarsa.py <../examples/gymnasium/torch_gymnasium_taxi_vector_sarsa.py>`
+                      -
 
-    .. tab:: CartPole (DQN)
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
+
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`jax_gymnasium_cartpole_vector_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_vector_dqn.py>`
+                      -
+                    * - Pendulum
+                      - :download:`jax_gymnasium_pendulum_vector_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_vector_ddpg.py>`
+                      -
+
+    .. group-tab:: Gym
 
         .. tabs::
 
-            .. group-tab:: Training
+            .. group-tab:: |_4| |pytorch| |_4|
 
-                | :download:`dqn_gym_cartpole_vector.py <../examples/gym/dqn_gym_cartpole_vector.py>`
-                | :download:`dqn_gymnasium_cartpole_vector.py <../examples/gymnasium/dqn_gymnasium_cartpole_vector.py>`
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-                .. literalinclude:: ../examples/gym/dqn_gym_cartpole_vector.py
-                    :language: python
-                    :emphasize-lines: 1, 8, 13-19
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`torch_gym_cartpole_vector_dqn.py <../examples/gym/torch_gym_cartpole_vector_dqn.py>`
+                      -
+                    * - FrozenLake
+                      - :download:`torch_gym_frozen_lake_vector_q_learning.py <../examples/gym/torch_gym_frozen_lake_vector_q_learning.py>`
+                      -
+                    * - Pendulum
+                      - :download:`torch_gym_pendulum_vector_ddpg.py <../examples/gym/torch_gym_pendulum_vector_ddpg.py>`
+                      -
+                    * - Taxi
+                      - :download:`torch_gym_taxi_vector_sarsa.py <../examples/gym/torch_gym_taxi_vector_sarsa.py>`
+                      -
 
-    .. tab:: Taxi (SARSA)
+            .. group-tab:: |_4| |jax| |_4|
 
-        .. tabs::
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
 
-            .. group-tab:: Training
-
-                | :download:`sarsa_gym_taxi_vector.py <../examples/gym/sarsa_gym_taxi_vector.py>`
-                | :download:`sarsa_gymnasium_taxi_vector.py <../examples/gymnasium/sarsa_gymnasium_taxi_vector.py>`
-
-                .. literalinclude:: ../examples/gym/sarsa_gym_taxi_vector.py
-                    :language: python
-                    :emphasize-lines: 1, 9, 35-41
-
-    .. tab:: FrozenLake (Q-learning)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`q_learning_gym_frozen_lake_vector.py <../examples/gym/q_learning_gym_frozen_lake_vector.py>`
-                | :download:`q_learning_gymnasium_frozen_lake_vector.py <../examples/gymnasium/q_learning_gymnasium_frozen_lake_vector.py>`
-
-                .. literalinclude:: ../examples/gym/q_learning_gym_frozen_lake_vector.py
-                    :language: python
-                    :emphasize-lines: 1, 9, 35-41
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - :download:`jax_gym_cartpole_vector_dqn.py <../examples/gym/jax_gym_cartpole_vector_dqn.py>`
+                      -
+                    * - Pendulum
+                      - :download:`jax_gym_pendulum_vector_ddpg.py <../examples/gym/jax_gym_pendulum_vector_ddpg.py>`
+                      -
 
 .. raw:: html
 
     <br>
 
-Farama Shimmy (converted environments)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Shimmy (API conversion)
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym) that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_ (API conversion tool) package
 
 .. image:: ../_static/imgs/example_shimmy.png
     :width: 100%
     :align: center
-    :alt: Shimmy (converted environments)
+    :alt: Shimmy (API conversion)
 
 .. note::
 
@@ -311,38 +309,47 @@ The following examples show the training in several popular environments (Atari,
 
 .. tabs::
 
-    .. tab:: Atari: Pong (DQN)
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. group-tab:: Training
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Atari: Pong
+              - :download:`torch_shimmy_atari_pong_dqn.py <../examples/shimmy/torch_shimmy_atari_pong_dqn.py>`
+              -
+            * - DeepMind: Acrobot
+              - :download:`torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../examples/shimmy/torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
+              -
+            * - Gym-v21 compatibility
+              - :download:`torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../examples/shimmy/torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
+              -
 
-                | :download:`dqn_shimmy_atari_pong.py <../examples/shimmy/dqn_shimmy_atari_pong.py>`
+    .. group-tab:: |_4| |jax| |_4|
 
-                .. literalinclude:: ../examples/shimmy/dqn_shimmy_atari_pong.py
-                    :language: python
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-    .. tab:: DeepMind: Acrobot (SAC)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`sac_shimmy_dm_control_acrobot_swingup_sparse.py <../examples/shimmy/sac_shimmy_dm_control_acrobot_swingup_sparse.py>`
-
-                .. literalinclude:: ../examples/shimmy/sac_shimmy_dm_control_acrobot_swingup_sparse.py
-                    :language: python
-
-    .. tab:: Gym compatibility (DDPG)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                | :download:`ddpg_openai_gym_compatibility_pendulum.py <../examples/shimmy/ddpg_openai_gym_compatibility_pendulum.py>`
-
-                .. literalinclude:: ../examples/shimmy/ddpg_openai_gym_compatibility_pendulum.py
-                    :language: python
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Atari: Pong
+              - :download:`jax_shimmy_atari_pong_dqn.py <../examples/shimmy/jax_shimmy_atari_pong_dqn.py>`
+              -
+            * - DeepMind: Acrobot
+              - :download:`jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../examples/shimmy/jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
+              -
+            * - Gym-v21 compatibility
+              - :download:`jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../examples/shimmy/jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
+              -
 
 .. raw:: html
 

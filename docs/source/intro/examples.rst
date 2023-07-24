@@ -376,36 +376,25 @@ These examples perform the training of one agent in a DeepMind environment (**on
 
     <br>
 
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap a DeepMind environment: **cartpole (DDPG)**
-    - Map the observation/state space (flat tensor) to the original environment space to be used by the model: **reach_site_vision (SAC)**
-
 .. tabs::
 
-    .. tab:: suite:cartpole (DDPG)
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. group-tab:: Training
-
-                :download:`dm_suite_cartpole_swingup_ddpg.py <../examples/deepmind/dm_suite_cartpole_swingup_ddpg.py>`
-
-                .. literalinclude:: ../examples/deepmind/dm_suite_cartpole_swingup_ddpg.py
-                    :language: python
-                    :emphasize-lines: 1, 13, 50-51
-
-    .. tab:: manipulation:reach_site_vision (SAC)
-
-        .. tabs::
-
-            .. group-tab:: Training
-
-                :download:`dm_manipulation_stack_sac.py <../examples/deepmind/dm_manipulation_stack_sac.py>`
-
-                .. literalinclude:: ../examples/deepmind/dm_manipulation_stack_sac.py
-                    :language: python
-                    :emphasize-lines: 69, 82, 85-86, 118, 121, 124-125
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Control: Cartpole SwingUp
+              - :download:`dm_suite_cartpole_swingup_ddpg.py <../examples/deepmind/dm_suite_cartpole_swingup_ddpg.py>`
+              -
+            * - Manipulation: Reach Site Vision
+              - :download:`dm_manipulation_stack_sac.py <../examples/deepmind/dm_manipulation_stack_sac.py>`
+              -
 
 .. raw:: html
 
@@ -425,23 +414,22 @@ These examples perform the training of one agent in a robosuite environment (**o
 
     <br>
 
-The following components or practices are exemplified (highlighted):
-
-    - Load and wrap a robosuite environment: **TwoArmLift (TD3)**
-
 .. tabs::
 
-    .. tab:: robosuite:TwoArmLift (TD3)
+    .. group-tab:: |_4| |pytorch| |_4|
 
-        .. tabs::
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
 
-            .. group-tab:: Training
-
-                :download:`td3_robosuite_two_arm_lift.py <../examples/robosuite/td3_robosuite_two_arm_lift.py>` (not tuned)
-
-                .. literalinclude:: ../examples/robosuite/td3_robosuite_two_arm_lift.py
-                    :language: python
-                    :emphasize-lines: 1-2, 51-65
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - TwoArmLift
+              - :download:`td3_robosuite_two_arm_lift.py <../examples/robosuite/td3_robosuite_two_arm_lift.py>`
+              -
 
 .. raw:: html
 

@@ -12,6 +12,11 @@ from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, Model
 from skrl.resources.noises.torch import GaussianNoise
 from skrl.trainers.torch import SequentialTrainer
+from skrl.utils import set_seed
+
+
+# seed for reproducibility
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (deterministic models) using mixin
@@ -93,6 +98,7 @@ cfg["learning_starts"] = 1000
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 75
 cfg["experiment"]["checkpoint_interval"] = 750
+cfg["experiment"]["directory"] = "runs/torch/PendulumNoVel"
 
 agent = TD3(models=models,
             memory=memory,

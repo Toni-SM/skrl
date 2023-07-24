@@ -1,17 +1,21 @@
-import gym
+import gymnasium as gym
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, Model
-from skrl.resources.noises.torch import GaussianNoise
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.td3 import TD3, TD3_DEFAULT_CONFIG
+from skrl.envs.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, Model
+from skrl.resources.noises.jax import GaussianNoise
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "numpy"  # or "jax"
 
 
 # seed for reproducibility
@@ -20,41 +24,38 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define models (deterministic models) using mixin
 class Actor(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.action_layer = nn.Linear(300, self.num_actions)
-
-    def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(inputs["states"]))
-        x = F.relu(self.linear_layer_2(x))
+    @nn.compact
+    def __call__(self, inputs, role):
+        x = nn.relu(nn.Dense(400)(inputs["states"]))
+        x = nn.relu(nn.Dense(300)(x))
+        x = nn.Dense(self.num_actions)(x)
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.action_layer(x)), {}
+        return 2 * nn.tanh(x), {}
 
 class Critic(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations + self.num_actions, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.linear_layer_3 = nn.Linear(300, 1)
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
+        x = nn.relu(nn.Dense(400)(x))
+        x = nn.relu(nn.Dense(300)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
-    def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)))
-        x = F.relu(self.linear_layer_2(x))
-        return self.linear_layer_3(x), {}
 
-
-# load and wrap the gym environment.
-# note: the environment version may change depending on the gym version
+# load and wrap the gymnasium environment.
+# note: the environment version may change depending on the gymnasium version
 try:
     env = gym.make("Pendulum-v1")
-except gym.error.DeprecatedEnv as e:
-    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
+except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
+    env_id = [spec for spec in gym.envs.registry if spec.startswith("Pendulum-v")][0]
     print("Pendulum-v1 not found. Trying {}".format(env_id))
     env = gym.make(env_id)
 env = wrap_env(env)
@@ -77,9 +78,17 @@ models["critic_2"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
+key = jax.random.PRNGKey(0)
+models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+models["target_policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "target_policy")
+models["critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_1")
+models["critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_2")
+models["target_critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_1")
+models["target_critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_2")
+
 # initialize models' parameters (weights and biases)
 for model in models.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+    model.init_parameters(method_name="normal", stddev=0.1)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -95,7 +104,7 @@ cfg["learning_starts"] = 1000
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 75
 cfg["experiment"]["checkpoint_interval"] = 750
-cfg["experiment"]["directory"] = "runs/torch/Pendulum"
+cfg["experiment"]["directory"] = "runs/jax/Pendulum"
 
 agent = TD3(models=models,
             memory=memory,

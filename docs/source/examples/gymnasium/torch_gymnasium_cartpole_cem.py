@@ -9,6 +9,11 @@ from skrl.envs.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import CategoricalMixin, Model
 from skrl.trainers.torch import SequentialTrainer
+from skrl.utils import set_seed
+
+
+# seed for reproducibility
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define model (categorical model) using mixin
@@ -63,6 +68,7 @@ cfg["learning_starts"] = 100
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 1000
 cfg["experiment"]["checkpoint_interval"] = 5000
+cfg["experiment"]["directory"] = "runs/torch/CartPole"
 
 agent = CEM(models=models,
             memory=memory,

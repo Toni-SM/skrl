@@ -5,7 +5,12 @@ from skrl.agents.torch.dqn import DQN, DQN_DEFAULT_CONFIG
 from skrl.envs.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
+from skrl.utils import set_seed
 from skrl.utils.model_instantiators import Shape, deterministic_model
+
+
+# seed for reproducibility
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # load and wrap the gym environment.
@@ -30,25 +35,25 @@ memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, r
 # https://skrl.readthedocs.io/en/latest/api/agents/dqn.html#models
 models = {}
 models["q_network"] = deterministic_model(observation_space=env.observation_space,
-                                              action_space=env.action_space,
-                                              device=device,
-                                              clip_actions=False,
-                                              input_shape=Shape.OBSERVATIONS,
-                                              hiddens=[64, 64],
-                                              hidden_activation=["relu", "relu"],
-                                              output_shape=Shape.ACTIONS,
-                                              output_activation=None,
-                                              output_scale=1.0)
+                                          action_space=env.action_space,
+                                          device=device,
+                                          clip_actions=False,
+                                          input_shape=Shape.OBSERVATIONS,
+                                          hiddens=[64, 64],
+                                          hidden_activation=["relu", "relu"],
+                                          output_shape=Shape.ACTIONS,
+                                          output_activation=None,
+                                          output_scale=1.0)
 models["target_q_network"] = deterministic_model(observation_space=env.observation_space,
-                                                     action_space=env.action_space,
-                                                     device=device,
-                                                     clip_actions=False,
-                                                     input_shape=Shape.OBSERVATIONS,
-                                                     hiddens=[64, 64],
-                                                     hidden_activation=["relu", "relu"],
-                                                     output_shape=Shape.ACTIONS,
-                                                     output_activation=None,
-                                                     output_scale=1.0)
+                                                 action_space=env.action_space,
+                                                 device=device,
+                                                 clip_actions=False,
+                                                 input_shape=Shape.OBSERVATIONS,
+                                                 hiddens=[64, 64],
+                                                 hidden_activation=["relu", "relu"],
+                                                 output_shape=Shape.ACTIONS,
+                                                 output_activation=None,
+                                                 output_scale=1.0)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():
@@ -64,6 +69,7 @@ cfg["exploration"]["timesteps"] = 1500
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 1000
 cfg["experiment"]["checkpoint_interval"] = 5000
+cfg["experiment"]["directory"] = "runs/torch/CartPole"
 
 agent = DQN(models=models,
             memory=memory,

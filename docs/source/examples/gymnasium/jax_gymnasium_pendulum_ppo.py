@@ -1,18 +1,22 @@
 import gymnasium as gym
 
-import numpy as np
-import torch
-import torch.nn as nn
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveRL
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "numpy"  # or "jax"
 
 
 # seed for reproducibility
@@ -21,47 +25,41 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define models (stochastic and deterministic models) using mixins
 class Policy(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, self.num_actions))
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-    def compute(self, inputs, role):
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.relu(nn.Dense(64)(inputs["states"]))
+        x = nn.relu(nn.Dense(64)(x))
+        x = nn.Dense(self.num_actions)(x)
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.net(inputs["states"])), self.log_std_parameter, {}
+        return 2 * nn.tanh(x), log_std, {}
 
 class Value(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 1))
-
-    def compute(self, inputs, role):
-        return self.net(inputs["states"]), {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.relu(nn.Dense(64)(inputs["states"]))
+        x = nn.relu(nn.Dense(64)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
 
-# environment observation wrapper used to mask velocity. Adapted from rl_zoo3 (rl_zoo3/wrappers.py)
-class NoVelocityWrapper(gym.ObservationWrapper):
-    def observation(self, observation):
-        # observation: x, y, angular velocity
-        return observation * np.array([1, 1, 0])
-
-gym.envs.registration.register(id="PendulumNoVel-v1", entry_point=lambda: NoVelocityWrapper(gym.make("Pendulum-v1")))
-
-# load and wrap the gymnasium environment
-env = gym.vector.make("PendulumNoVel-v1", num_envs=4, asynchronous=False)
+# load and wrap the gymnasium environment.
+# note: the environment version may change depending on the gymnasium version
+try:
+    env = gym.vector.make("Pendulum-v1", num_envs=4, asynchronous=False)
+except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
+    env_id = [spec for spec in gym.envs.registry if spec.startswith("Pendulum-v")][0]
+    print("Pendulum-v1 not found. Trying {}".format(env_id))
+    env = gym.vector.make(env_id, num_envs=4, asynchronous=False)
 env = wrap_env(env)
 
 device = env.device
@@ -77,6 +75,10 @@ memory = RandomMemory(memory_size=1024, num_envs=env.num_envs, device=device)
 models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device, clip_actions=True)
 models["value"] = Value(env.observation_space, env.action_space, device)
+
+key = jax.random.PRNGKey(0)
+models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+models["value"].init_state_dict(key, {"states": env.observation_space.sample()}, "value")
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -104,7 +106,7 @@ cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 500
 cfg["experiment"]["checkpoint_interval"] = 5000
-cfg["experiment"]["directory"] = "runs/torch/PendulumNoVel"
+cfg["experiment"]["directory"] = "runs/jax/Pendulum"
 
 agent = PPO(models=models,
             memory=memory,

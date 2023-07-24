@@ -1,16 +1,20 @@
 import gym
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.sac import SAC, SAC_DEFAULT_CONFIG
+from skrl.envs.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "numpy"  # or "jax"
 
 
 # seed for reproducibility
@@ -19,36 +23,32 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define models (stochastic and deterministic models) using mixins
 class Actor(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
+                 clip_log_std=True, min_log_std=-5, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.action_layer = nn.Linear(300, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-    def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(inputs["states"]))
-        x = F.relu(self.linear_layer_2(x))
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.relu(nn.Dense(400)(inputs["states"]))
+        x = nn.relu(nn.Dense(300)(x))
+        x = nn.Dense(self.num_actions)(x)
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.action_layer(x)), self.log_std_parameter, {}
+        return 2 * nn.tanh(x), log_std, {}
 
 class Critic(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations + self.num_actions, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.linear_layer_3 = nn.Linear(300, 1)
-
-    def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)))
-        x = F.relu(self.linear_layer_2(x))
-        return self.linear_layer_3(x), {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
+        x = nn.relu(nn.Dense(400)(x))
+        x = nn.relu(nn.Dense(300)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
 
 # load and wrap the gym environment.
@@ -78,9 +78,16 @@ models["critic_2"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
+key = jax.random.PRNGKey(0)
+models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+models["critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_1")
+models["critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_2")
+models["target_critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_1")
+models["target_critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_2")
+
 # initialize models' parameters (weights and biases)
 for model in models.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+    model.init_parameters(method_name="normal", stddev=0.1)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -94,7 +101,7 @@ cfg["learn_entropy"] = True
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 75
 cfg["experiment"]["checkpoint_interval"] = 750
-cfg["experiment"]["directory"] = "runs/torch/Pendulum"
+cfg["experiment"]["directory"] = "runs/jax/Pendulum"
 
 agent = SAC(models=models,
             memory=memory,

@@ -12,6 +12,11 @@ from skrl.envs.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.trainers.torch import SequentialTrainer
+from skrl.utils import set_seed
+
+
+# seed for reproducibility
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins
@@ -194,6 +199,7 @@ cfg["learn_entropy"] = True
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 75
 cfg["experiment"]["checkpoint_interval"] = 750
+cfg["experiment"]["directory"] = "runs/torch/PendulumNoVel"
 
 agent = SAC(models=models,
             memory=memory,

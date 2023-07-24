@@ -1,15 +1,20 @@
 import gym
 
-import torch.nn as nn
-import torch.nn.functional as F
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.cem import CEM, CEM_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import CategoricalMixin, Model
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.cem import CEM, CEM_DEFAULT_CONFIG
+from skrl.envs.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import CategoricalMixin, Model
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "numpy"  # or "jax"
 
 
 # seed for reproducibility
@@ -18,24 +23,22 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define model (categorical model) using mixin
 class Policy(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         CategoricalMixin.__init__(self, unnormalized_log_prob)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 64)
-        self.linear_layer_2 = nn.Linear(64, 64)
-        self.output_layer = nn.Linear(64, self.num_actions)
-
-    def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(inputs["states"]))
-        x = F.relu(self.linear_layer_2(x))
-        return self.output_layer(x), {}
+    @nn.compact
+    def __call__(self, inputs, role):
+        x = nn.relu(nn.Dense(64)(inputs["states"]))
+        x = nn.relu(nn.Dense(64)(x))
+        x = nn.Dense(self.num_actions)(x)
+        return x, {}
 
 
 # load and wrap the gym environment.
 # note: the environment version may change depending on the gym version
 try:
-    env = gym.make("CartPole-v0")
+    env = gym.make("CartPole-v1")
 except gym.error.DeprecatedEnv as e:
     env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
     print("CartPole-v0 not found. Trying {}".format(env_id))
@@ -55,9 +58,12 @@ memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=device, re
 models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device)
 
+key = jax.random.PRNGKey(0)
+models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+
 # initialize models' parameters (weights and biases)
 for model in models.values():
-    model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
+    model.init_parameters(method_name="normal", stddev=0.1)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -68,7 +74,7 @@ cfg["learning_starts"] = 100
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 1000
 cfg["experiment"]["checkpoint_interval"] = 5000
-cfg["experiment"]["directory"] = "runs/torch/CartPole"
+cfg["experiment"]["directory"] = "runs/jax/CartPole"
 
 agent = CEM(models=models,
             memory=memory,

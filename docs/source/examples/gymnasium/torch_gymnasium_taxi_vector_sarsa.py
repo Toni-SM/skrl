@@ -7,6 +7,11 @@ from skrl.agents.torch.sarsa import SARSA, SARSA_DEFAULT_CONFIG
 from skrl.envs.torch import wrap_env
 from skrl.models.torch import Model, TabularMixin
 from skrl.trainers.torch import SequentialTrainer
+from skrl.utils import set_seed
+
+
+# seed for reproducibility
+set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define model (tabular model) using mixin
@@ -58,6 +63,7 @@ cfg["alpha"] = 0.4
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 1600
 cfg["experiment"]["checkpoint_interval"] = 8000
+cfg["experiment"]["directory"] = "runs/torch/Taxi"
 
 agent = SARSA(models=models,
               memory=None,

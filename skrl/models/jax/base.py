@@ -93,11 +93,33 @@ class Model(flax.linen.Module):
         self.parent = parent
         self.name = name
 
-    def init_state_dict(self, key, inputs, role):
+    def init_state_dict(self,
+                        role: str,
+                        inputs: Mapping[str, Union[np.ndarray, jax.Array]] = {},
+                        key: Optional[jax.Array] = None) -> None:
+        """Initialize state dictionary
+
+        :param role: Role play by the model
+        :type role: str
+        :param inputs: Model inputs. The most common keys are:
+
+                        - ``"states"``: state of the environment used to make the decision
+                        - ``"taken_actions"``: actions taken by the policy for the given states
+
+                       If not specified, the keys will be populated with observation and action space samples
+        :type inputs: dict of np.ndarray or jax.Array, optional
+        :param key: Pseudo-random number generator (PRNG) key (default: ``None``).
+                    If not provided, the skrl's PRNG key (``config.jax.key``) will be used
+        :type key: jax.Array, optional
+        """
+        if not inputs:
+            inputs = {"states": self.observation_space.sample(), "taken_actions": self.action_space.sample()}
+        if key is None:
+            key = config.jax.key
         if isinstance(inputs["states"], (int, np.int32, np.int64)):
             inputs["states"] = np.array(inputs["states"]).reshape(-1,1)
-        self.state_dict = StateDict.create(apply_fn=self.apply,
-                                           params=self.init(key, inputs, role),)
+        # init internal state dict
+        self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def _get_space_size(self,
                         space: Union[int, Sequence[int], gym.Space, gymnasium.Space],

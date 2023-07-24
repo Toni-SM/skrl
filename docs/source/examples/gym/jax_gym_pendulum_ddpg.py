@@ -76,11 +76,9 @@ models["target_policy"] = Actor(env.observation_space, env.action_space, device)
 models["critic"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic"] = Critic(env.observation_space, env.action_space, device)
 
-key = jax.random.PRNGKey(0)
-models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
-models["target_policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "target_policy")
-models["critic"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic")
-models["target_critic"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic")
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():

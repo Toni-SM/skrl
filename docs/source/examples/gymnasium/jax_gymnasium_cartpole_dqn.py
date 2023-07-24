@@ -59,9 +59,9 @@ models = {}
 models["q_network"] = QNetwork(env.observation_space, env.action_space, device)
 models["target_q_network"] = QNetwork(env.observation_space, env.action_space, device)
 
-key = jax.random.PRNGKey(0)
-models["q_network"].init_state_dict(key, {"states": env.observation_space.sample()}, "q_network")
-models["target_q_network"].init_state_dict(key, {"states": env.observation_space.sample()}, "target_q_network")
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():

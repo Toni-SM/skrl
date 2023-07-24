@@ -88,9 +88,9 @@ models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device)
 models["value"] = Value(env.observation_space, env.action_space, device)
 
-key = jax.random.PRNGKey(0)
-models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
-models["value"].init_state_dict(key, {"states": env.observation_space.sample()}, "value")
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)

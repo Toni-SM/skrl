@@ -58,8 +58,9 @@ memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=device, re
 models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device)
 
-key = jax.random.PRNGKey(0)
-models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():

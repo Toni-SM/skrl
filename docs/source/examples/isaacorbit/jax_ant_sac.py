@@ -89,12 +89,9 @@ models["critic_2"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
-key = jax.random.PRNGKey(0)
-models["policy"].init_state_dict(key, {"states": env.observation_space.sample()}, "policy")
-models["critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_1")
-models["critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "critic_2")
-models["target_critic_1"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_1")
-models["target_critic_2"].init_state_dict(key, {"states": env.observation_space.sample(), "taken_actions": env.action_space.sample()}, "target_critic_2")
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)

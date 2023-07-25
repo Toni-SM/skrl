@@ -16,7 +16,7 @@ To ask questions, propose ideas, etc., go to the Discussions tab.
 
 A clear and concise description of the bug/issue.
 
-### Steps to reproduce and logs 
+### Steps to reproduce and logs
 
 Please try to provide a minimal example to reproduce the bug/issue.
 Error messages and logs are also helpful.
@@ -56,7 +56,7 @@ Please provide any additional information that may be helpful in resolving the b
 
 ### Checklist
 
-I have checked that... 
+I have checked that...
 - [ ] there is no similar issue in the repository
 - [ ] the issue is not solved in the skrl's docs troubleshooting section
       <!-- https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting -->

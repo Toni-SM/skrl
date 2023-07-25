@@ -1,18 +1,17 @@
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
-import gym, gymnasium
 import copy
+import gym
+import gymnasium
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils.convert_parameters import parameters_to_vector
-from torch.nn.utils.convert_parameters import vector_to_parameters
-
-from skrl.memories.torch import Memory
-from skrl.models.torch import Model
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 
 from skrl.agents.torch import Agent
+from skrl.memories.torch import Memory
+from skrl.models.torch import Model
 
 
 TRPO_DEFAULT_CONFIG = {
@@ -79,12 +78,12 @@ class TRPO(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -178,39 +177,8 @@ class TRPO(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            self._tensors_names_policy = ["states", "actions", "terminated", "log_prob", "advantages"]
-            self._tensors_names_value = ["states", "terminated", "returns"]
-
-        # RNN specifications
-        self._rnn = False  # flag to indicate whether RNN is available
-        self._rnn_tensors_names = []  # used for sampling during training
-        self._rnn_final_states = {"policy": [], "value": []}
-        self._rnn_initial_states = {"policy": [], "value": []}
-        self._rnn_sequence_length = self.policy.get_specification().get("rnn", {}).get("sequence_length", 1)
-
-        # policy
-        for i, size in enumerate(self.policy.get_specification().get("rnn", {}).get("sizes", [])):
-            self._rnn = True
-            # create tensors in memory
-            if self.memory is not None:
-                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
-                self._rnn_tensors_names.append(f"rnn_policy_{i}")
-            # default RNN states
-            self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
-
-        # value
-        if self.value is not None:
-            if self.policy is self.value:
-                self._rnn_initial_states["value"] = self._rnn_initial_states["policy"]
-            else:
-                for i, size in enumerate(self.value.get_specification().get("rnn", {}).get("sizes", [])):
-                    self._rnn = True
-                    # create tensors in memory
-                    if self.memory is not None:
-                        self.memory.create_tensor(name=f"rnn_value_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
-                        self._rnn_tensors_names.append(f"rnn_value_{i}")
-                    # default RNN states
-                    self._rnn_initial_states["value"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
+            self._tensors_names_policy = ["states", "actions", "log_prob", "advantages"]
+            self._tensors_names_value = ["states", "returns"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = None
@@ -229,19 +197,14 @@ class TRPO(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
-        rnn = {"rnn": self._rnn_initial_states["policy"]} if self._rnn else {}
-
         # sample random actions
-        # TODO: fix for stochasticity, rnn and log_prob
+        # TODO: fix for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
         self._current_log_prob = log_prob
-
-        if self._rnn:
-            self._rnn_final_states["policy"] = outputs.get("rnn", [])
 
         return actions, log_prob, outputs
 
@@ -286,38 +249,15 @@ class TRPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
-            values, _, outputs = self.value.act({"states": self._state_preprocessor(states), **rnn}, role="value")
+            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
-
-            # package RNN states
-            rnn_states = {}
-            if self._rnn:
-                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
-                if self.policy is not self.value:
-                    rnn_states.update({f"rnn_value_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["value"])})
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
+                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
             for memory in self.secondary_memories:
                 memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
-
-        # update RNN states
-        if self._rnn:
-            self._rnn_final_states["value"] = self._rnn_final_states["policy"] if self.policy is self.value else outputs.get("rnn", [])
-
-            # reset states if the episodes have ended
-            finished_episodes = terminated.nonzero(as_tuple=False)
-            if finished_episodes.numel():
-                for rnn_state in self._rnn_final_states["policy"]:
-                    rnn_state[:, finished_episodes[:, 0]] = 0
-                if self.policy is not self.value:
-                    for rnn_state in self._rnn_final_states["value"]:
-                        rnn_state[:, finished_episodes[:, 0]] = 0
-
-            self._rnn_initial_states = self._rnn_final_states
+                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -416,7 +356,7 @@ class TRPO(Agent):
             :return: Surrogate loss
             :rtype: torch.Tensor
             """
-            _, new_log_prob, _ = policy.act({"states": states, "taken_actions": actions, **rnn_policy}, role="policy")
+            _, new_log_prob, _ = policy.act({"states": states, "taken_actions": actions}, role="policy")
             return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
         def conjugate_gradient(policy: Model,
@@ -434,9 +374,9 @@ class TRPO(Agent):
             :type states: torch.Tensor
             :param b: Vector b
             :type b: torch.Tensor
-            :param num_iterations: Number of iterations (default: 10)
+            :param num_iterations: Number of iterations (default: ``10``)
             :type num_iterations: float, optional
-            :param residual_tolerance: Residual tolerance (default: 1e-10)
+            :param residual_tolerance: Residual tolerance (default: ``1e-10``)
             :type residual_tolerance: float, optional
 
             :return: Conjugate vector
@@ -472,7 +412,7 @@ class TRPO(Agent):
             :type states: torch.Tensor
             :param vector: Vector
             :type vector: torch.Tensor
-            :param damping: Damping (default: 0.1)
+            :param damping: Damping (default: ``0.1``)
             :type damping: float, optional
 
             :return: Hessian vector product
@@ -500,13 +440,12 @@ class TRPO(Agent):
             :return: KL divergence
             :rtype: torch.Tensor
             """
-            mu_1 = policy_1.act({"states": states, **rnn_policy}, role="policy")[2]["mean_actions"]
+            mu_1 = policy_1.act({"states": states}, role="policy")[2]["mean_actions"]
             logstd_1 = policy_1.get_log_std(role="policy")
             mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
-            with torch.backends.cudnn.flags(enabled=not self._rnn):
-                mu_2 = policy_2.act({"states": states, **rnn_policy}, role="policy")[2]["mean_actions"]
-                logstd_2 = policy_2.get_log_std(role="policy")
+            mu_2 = policy_2.act({"states": states}, role="policy")[2]["mean_actions"]
+            logstd_2 = policy_2.get_log_std(role="policy")
 
             kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) \
                / torch.square(logstd_2.exp()) - 0.5
@@ -515,8 +454,7 @@ class TRPO(Agent):
         # compute returns and advantages
         with torch.no_grad():
             self.value.train(False)
-            rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
-            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float()), **rnn}, role="value")
+            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
             self.value.train(True)
         last_values = self._value_preprocessor(last_values, inverse=True)
 
@@ -533,17 +471,8 @@ class TRPO(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample all from memory
-        sampled_states, sampled_actions, sampled_dones, sampled_log_prob, sampled_advantages \
-            = self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1, sequence_length=self._rnn_sequence_length)[0]
-        sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=1, sequence_length=self._rnn_sequence_length)[0]
-
-        rnn_policy = {}
-
-        if self._rnn:
-            if self.policy is self.value:
-                rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches], "terminated": sampled_dones}
-            else:
-                rnn_policy = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches, self._rnn_tensors_names) if "policy" in n], "terminated": sampled_dones}
+        sampled_states, sampled_actions, sampled_log_prob, sampled_advantages \
+            = self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1)[0]
 
         sampled_states = self._state_preprocessor(sampled_states, train=True)
 
@@ -585,11 +514,7 @@ class TRPO(Agent):
             self.policy.update_parameters(self.backup_policy)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
-
-        rnn_value = {}
-        if self._rnn:
-            sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches)
 
         cumulative_value_loss = 0
 
@@ -597,18 +522,12 @@ class TRPO(Agent):
         for epoch in range(self._learning_epochs):
 
             # mini-batches loop
-            for i, (sampled_states, sampled_dones, sampled_returns) in enumerate(sampled_batches):
-
-                if self._rnn:
-                    if self.policy is self.value:
-                        rnn_value = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]], "terminated": sampled_dones}
-                    else:
-                        rnn_value = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "value" in n], "terminated": sampled_dones}
+            for sampled_states, sampled_returns in sampled_batches:
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act({"states": sampled_states, **rnn_value}, role="value")
+                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
 
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 

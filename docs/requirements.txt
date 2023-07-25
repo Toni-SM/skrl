@@ -1,11 +1,7 @@
+furo
 sphinx
-sphinx_rtd_theme
+sphinx-tabs
 sphinx-autobuild
-sphinx-tabs==3.2.0
 sphinx-copybutton
-gym
-gymnasium
-torch
-tensorboard
-tqdm
-packaging
+sphinx-notfound-page
+numpy

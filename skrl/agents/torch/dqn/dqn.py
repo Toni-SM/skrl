@@ -1,16 +1,16 @@
-from typing import Union, Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
-import gym, gymnasium
 import copy
 import math
+import gym
+import gymnasium
 
 import torch
 import torch.nn.functional as F
 
+from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-
-from skrl.agents.torch import Agent
 
 
 DQN_DEFAULT_CONFIG = {
@@ -73,12 +73,12 @@ class DQN(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -282,8 +282,8 @@ class DQN(Agent):
         # gradient steps
         for gradient_step in range(self._gradient_steps):
 
-            sampled_states = self._state_preprocessor(sampled_states, train=not gradient_step)
-            sampled_next_states = self._state_preprocessor(sampled_next_states)
+            sampled_states = self._state_preprocessor(sampled_states, train=True)
+            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
             # compute target values
             with torch.no_grad():

@@ -1,0 +1,99 @@
+[project]
+name = "skrl"
+version = "1.0.0-rc.1"
+description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT License"}
+authors = [
+  {name = "Toni-SM"},
+]
+maintainers = [
+  {name = "Toni-SM"},
+]
+keywords = ["reinforcement-learning", "machine-learning", "reinforcement", "machine", "learning", "rl"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+# dependencies / optional-dependencies
+dependencies = [
+  "gym",
+  "gymnasium",
+  "tqdm",
+  "packaging",
+  "tensorboard",
+]
+[project.optional-dependencies]
+torch = [
+  "torch>=1.8",
+]
+jax = [
+  "jax>=0.4.3",
+  "jaxlib>=0.4.3",
+  "flax",
+  "optax",
+]
+all = [
+  "torch>=1.8",
+  "jax>=0.4.3",
+  "jaxlib>=0.4.3",
+  "flax",
+  "optax",
+]
+# urls
+[project.urls]
+"Homepage" = "https://github.com/Toni-SM/skrl"
+"Documentation" = "https://skrl.readthedocs.io"
+"Discussions" = "https://github.com/Toni-SM/skrl/discussions"
+"Bug Reports" = "https://github.com/Toni-SM/skrl/issues"
+"Say Thanks!" = "https://github.com/Toni-SM"
+"Source" = "https://github.com/Toni-SM/skrl"
+
+
+[tool.yapf]
+# yapf -p -m -i -r <folder>
+based_on_style = "pep8"
+blank_line_before_nested_class_or_def = false
+blank_lines_between_top_level_imports_and_variables = 2
+column_limit = 120
+join_multiple_lines = false
+space_between_ending_comma_and_closing_bracket = false
+spaces_around_power_operator = true
+split_all_top_level_comma_separated_values = true
+split_before_arithmetic_operator = true
+split_before_dict_set_generator = false
+split_before_dot = true
+split_complex_comprehension = true
+coalesce_brackets = true
+
+
+[tool.isort]
+use_parentheses = false
+line_length = 120
+multi_line_output = 3
+lines_after_imports = 2
+known_annotation = ["typing"]
+known_framework = [
+  "torch",
+  "jax",
+  "jaxlib",
+  "flax",
+  "optax",
+  "numpy",
+]
+sections = [
+  "FUTURE",
+  "ANNOTATION",
+  "STDLIB",
+  "THIRDPARTY",
+  "FRAMEWORK",
+  "FIRSTPARTY",
+  "LOCALFOLDER",
+]
+no_lines_before = "THIRDPARTY"
+skip = ["docs"]

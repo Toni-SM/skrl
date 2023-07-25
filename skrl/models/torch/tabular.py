@@ -1,4 +1,4 @@
-from typing import Optional, Union, Mapping, Sequence, Tuple, Any
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 
@@ -50,7 +50,7 @@ class TabularMixin:
         lines = []
         for name in self._get_tensor_names():
             tensor = getattr(self, name)
-            lines.append("({}): {}(shape={})".format(name, tensor.__class__.__name__, list(tensor.shape)))
+            lines.append(f"({name}): {tensor.__class__.__name__}(shape={list(tensor.shape)})")
 
         main_str = self.__class__.__name__ + '('
         if lines:
@@ -85,7 +85,7 @@ class TabularMixin:
 
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is ``None``. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
 
         Example::
 
@@ -155,10 +155,9 @@ class TabularMixin:
                     if _tensor.shape == tensor.shape and _tensor.dtype == tensor.dtype:
                         setattr(self, name, tensor)
                     else:
-                        raise ValueError("Tensor shape ({} vs {}) or dtype ({} vs {}) mismatch"\
-                            .format(_tensor.shape, tensor.shape, _tensor.dtype, tensor.dtype))
+                        raise ValueError(f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch")
             else:
-                raise ValueError("{} is not a tensor of {}".format(name, self.__class__.__name__))
+                raise ValueError(f"{name} is not a tensor of {self.__class__.__name__}")
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path
@@ -205,7 +204,6 @@ class TabularMixin:
                     if _tensor.shape == tensor.shape and _tensor.dtype == tensor.dtype:
                         setattr(self, name, tensor)
                     else:
-                        raise ValueError("Tensor shape ({} vs {}) or dtype ({} vs {}) mismatch"\
-                            .format(_tensor.shape, tensor.shape, _tensor.dtype, tensor.dtype))
+                        raise ValueError(f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch")
             else:
-                raise ValueError("{} is not a tensor of {}".format(name, self.__class__.__name__))
+                raise ValueError(f"{name} is not a tensor of {self.__class__.__name__}")

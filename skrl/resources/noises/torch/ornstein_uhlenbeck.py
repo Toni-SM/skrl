@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 from torch.distributions import Normal
@@ -26,9 +26,9 @@ class OrnsteinUhlenbeckNoise(Noise):
         :type mean: float, optional
         :param std: Standard deviation of the normal distribution (default: ``1.0``)
         :type std: float, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or jax.Device, optional
 
         Example::
 
@@ -48,7 +48,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         """Sample an Ornstein-Uhlenbeck noise
 
         :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers, or torch.Size
+        :type size: tuple or list of int, or torch.Size
 
         :return: Sampled noise
         :rtype: torch.Tensor
@@ -66,7 +66,7 @@ class OrnsteinUhlenbeckNoise(Noise):
                     [ 0.1117, -0.1157],
                     [-0.0074,  0.0420]], device='cuda:0')
         """
-        if isinstance(self.state, torch.Tensor) and self.state.size() != torch.Size(size):
+        if hasattr(self.state, "shape") and self.state.shape != torch.Size(size):
             self.state = 0
         self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
 

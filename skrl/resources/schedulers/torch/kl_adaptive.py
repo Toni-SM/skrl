@@ -1,10 +1,10 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 
-class KLAdaptiveRL(_LRScheduler):
+class KLAdaptiveLR(_LRScheduler):
     def __init__(self,
                  optimizer: torch.optim.Optimizer,
                  kl_threshold: float = 0.008,
@@ -27,10 +27,9 @@ class KLAdaptiveRL(_LRScheduler):
 
         Example::
 
-            >>> scheduler = KLAdaptiveRL(optimizer, kl_threshold=0.01)
+            >>> scheduler = KLAdaptiveLR(optimizer, kl_threshold=0.01)
             >>> for epoch in range(100):
-            >>>     train(...)
-            >>>     validate(...)
+            >>>     # ...
             >>>     kl_divergence = ...
             >>>     scheduler.step(kl_divergence)
 
@@ -75,16 +74,16 @@ class KLAdaptiveRL(_LRScheduler):
             >>> kl = 0.0046
             >>> scheduler.step(kl)
 
-        :param kl: KL divergence (default: None)
+        :param kl: KL divergence (default: ``None``)
                    If None, no adjustment is made.
                    If tensor, the number of elements must be 1
-        :type kl: torch.Tensor, float, None, optional
-        :param epoch: Epoch (default: None)
+        :type kl: torch.Tensor, float or None, optional
+        :param epoch: Epoch (default: ``None``)
         :type epoch: int, optional
         """
         if kl is not None:
             for group in self.optimizer.param_groups:
-                if kl >  self.kl_threshold * self._kl_factor:
+                if kl > self.kl_threshold * self._kl_factor:
                     group['lr'] = max(group['lr'] / self._lr_factor, self.min_lr)
                 elif kl < self.kl_threshold / self._kl_factor:
                     group['lr'] = min(group['lr'] * self._lr_factor, self.max_lr)

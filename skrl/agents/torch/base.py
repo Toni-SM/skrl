@@ -1,12 +1,13 @@
-from typing import Union, Mapping, Tuple, Dict, Any, Optional
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-import os
-import gym, gymnasium
+import collections
 import copy
 import datetime
-import collections
-import numpy as np
+import os
+import gym
+import gymnasium
 
+import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -31,12 +32,12 @@ class Agent:
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
@@ -90,14 +91,14 @@ class Agent:
         :return: Representation of the agent as string
         :rtype: str
         """
-        string = "Agent: {}".format(repr(self))
+        string = f"Agent: {repr(self)}"
         for k, v in self.cfg.items():
             if type(v) is dict:
-                string += "\n  |-- {}".format(k)
+                string += f"\n  |-- {k}"
                 for k1, v1 in v.items():
-                    string += "\n  |     |-- {}: {}".format(k1, v1)
+                    string += f"\n  |     |-- {k1}: {v1}"
             else:
-                string += "\n  |-- {}: {}".format(k, v)
+                string += f"\n  |-- {k}: {v}"
         return string
 
     def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
@@ -206,13 +207,14 @@ class Agent:
         # separated modules
         if self.checkpoint_store_separately:
             for name, module in self.checkpoint_modules.items():
-                torch.save(self._get_internal_value(module), os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format(name, tag)))
+                torch.save(self._get_internal_value(module),
+                           os.path.join(self.experiment_dir, "checkpoints", f"{name}_{tag}.pt"))
         # whole agent
         else:
             modules = {}
             for name, module in self.checkpoint_modules.items():
                 modules[name] = self._get_internal_value(module)
-            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "{}_{}.pt".format("agent", tag)))
+            torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
@@ -220,13 +222,13 @@ class Agent:
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
                     torch.save(self.checkpoint_best_modules["modules"][name],
-                               os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format(name)))
+                               os.path.join(self.experiment_dir, "checkpoints", f"best_{name}.pt"))
             # whole agent
             else:
                 modules = {}
                 for name, module in self.checkpoint_modules.items():
                     modules[name] = self.checkpoint_best_modules["modules"][name]
-                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_{}.pt".format("agent")))
+                torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
     def act(self,
@@ -283,28 +285,28 @@ class Agent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # compute the cumulative sum of the rewards and timesteps
-        if self._cumulative_rewards is None:
-            self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
-            self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
-
-        self._cumulative_rewards.add_(rewards)
-        self._cumulative_timesteps.add_(1)
-
-        # check ended episodes
-        finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
-        if finished_episodes.numel():
-
-            # storage cumulative rewards and timesteps
-            self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-            self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
-
-            # reset the cumulative rewards and timesteps
-            self._cumulative_rewards[finished_episodes] = 0
-            self._cumulative_timesteps[finished_episodes] = 0
-
-        # record data
         if self.write_interval > 0:
+            # compute the cumulative sum of the rewards and timesteps
+            if self._cumulative_rewards is None:
+                self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
+                self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
+
+            self._cumulative_rewards.add_(rewards)
+            self._cumulative_timesteps.add_(1)
+
+            # check ended episodes
+            finished_episodes = (terminated + truncated).nonzero(as_tuple=False)
+            if finished_episodes.numel():
+
+                # storage cumulative rewards and timesteps
+                self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
+                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+
+                # reset the cumulative rewards and timesteps
+                self._cumulative_rewards[finished_episodes] = 0
+                self._cumulative_timesteps[finished_episodes] = 0
+
+            # record data
             self.tracking_data["Reward / Instantaneous reward (max)"].append(torch.max(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (min)"].append(torch.min(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (mean)"].append(torch.mean(rewards).item())
@@ -373,7 +375,7 @@ class Agent:
                     else:
                         raise NotImplementedError
                 else:
-                    logger.warning("Cannot load the {} module. The agent doesn't have such an instance".format(name))
+                    logger.warning(f"Cannot load the {name} module. The agent doesn't have such an instance")
 
     def migrate(self,
                 path: str,
@@ -550,26 +552,26 @@ class Agent:
             logger.info("Modules")
             logger.info("  |-- current")
             for name, module in self.checkpoint_modules.items():
-                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                logger.info(f"  |    |-- {name} ({type(module).__name__})")
                 if hasattr(module, "state_dict"):
                     for k, v in module.state_dict().items():
                         if hasattr(v, "shape"):
-                            logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                            logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                         else:
-                            logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+                            logger.info(f"  |    |    |-- {k} ({type(v).__name__})")
             logger.info("  |-- source")
             for name, module in checkpoint.items():
-                logger.info("  |    |-- {} ({})".format(name, type(module).__name__))
+                logger.info(f"  |    |-- {name} ({type(module).__name__})")
                 if name == "model":
                     for k, v in module.items():
-                        logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                        logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                 else:
                     if hasattr(module, "state_dict"):
                         for k, v in module.state_dict().items():
                             if hasattr(v, "shape"):
-                                logger.info("  |    |    |-- {} : {}".format(k, list(v.shape)))
+                                logger.info(f"  |    |    |-- {k} : {list(v.shape)}")
                             else:
-                                logger.info("  |    |    |-- {} ({})".format(k, type(v).__name__))
+                                logger.info(f"  |    |    |-- {k} ({type(v).__name__})")
             logger.info("Migration")
 
         if "optimizer" in self.checkpoint_modules:
@@ -604,7 +606,7 @@ class Agent:
         for name, module in self.checkpoint_modules.items():
             if module not in ["state_preprocessor", "value_preprocessor", "optimizer"] and hasattr(module, "migrate"):
                 if verbose:
-                    logger.info("Model: {} ({})".format(name, type(module).__name__))
+                    logger.info(f"Model: {name} ({type(module).__name__})")
                 status *= module.migrate(state_dict=checkpoint["model"],
                                             name_map=name_map.get(name, {}),
                                             auto_mapping=auto_mapping,
@@ -633,8 +635,8 @@ class Agent:
         """
         timestep += 1
 
-        # update best models and write data to tensorboard
-        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
+        # update best models and write checkpoints
+        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
             if reward > self.checkpoint_best_modules["reward"]:
@@ -642,13 +644,12 @@ class Agent:
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
                 self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
-
-            # write to tensorboard
-            self.write_tracking_data(timestep, timesteps)
-
-        # write checkpoints
-        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+            # write checkpoints
             self.write_checkpoint(timestep, timesteps)
+
+        # write to tensorboard
+        if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
+            self.write_tracking_data(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step

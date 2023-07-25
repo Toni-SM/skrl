@@ -1,17 +1,15 @@
-from typing import Union, Tuple, Optional, Sequence, Mapping, Any
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+from enum import Enum
 import gym
 import gymnasium
-from enum import Enum
 
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model
-from skrl.models.torch import GaussianMixin
-from skrl.models.torch import CategoricalMixin
-from skrl.models.torch import DeterministicMixin
-from skrl.models.torch import MultivariateGaussianMixin
+from skrl.models.torch import Model  # noqa
+from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
+
 
 __all__ = ["categorical_model", "deterministic_model", "gaussian_model", "multivariate_gaussian_model", "Shape"]
 
@@ -72,7 +70,7 @@ def _get_activation_function(activation: str) -> nn.Module:
     elif activation == "softmax":
         return torch.nn.Softmax()
     else:
-        raise ValueError("Unknown activation function: {}".format(activation))
+        raise ValueError(f"Unknown activation function: {activation}")
 
 def _get_num_units_by_shape(model: Model, shape: Shape) -> int:
     """Get the number of units in a layer by shape
@@ -158,8 +156,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
     :type clip_actions: bool, optional
@@ -251,8 +249,8 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
     :type clip_actions: bool, optional
@@ -341,8 +339,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
     :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: False)
     :type clip_actions: bool, optional
@@ -419,8 +417,8 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
     :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).
                                   If True, the model's output is interpreted as unnormalized log probabilities
@@ -491,8 +489,8 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
     :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
     :param structure: Shared model structure (default: ``""``).
                       Note: this parameter is ignored for the moment

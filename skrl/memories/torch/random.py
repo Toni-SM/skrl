@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple, List
+from typing import List, Optional, Tuple, Union
 
 import torch
 
@@ -20,21 +20,21 @@ class RandomMemory(Memory):
 
         :param memory_size: Maximum number of elements in the first dimension of each internal storage
         :type memory_size: int
-        :param num_envs: Number of parallel environments (default: 1)
+        :param num_envs: Number of parallel environments (default: ``1``)
         :type num_envs: int, optional
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
-        :param export: Export the memory to a file (default: False).
+        :param export: Export the memory to a file (default: ``False``).
                        If True, the memory will be exported when the memory is filled
         :type export: bool, optional
-        :param export_format: Export format (default: "pt").
+        :param export_format: Export format (default: ``"pt"``).
                               Supported formats: torch (pt), numpy (np), comma separated values (csv)
         :type export_format: str, optional
-        :param export_directory: Directory where the memory will be exported (default: "").
+        :param export_directory: Directory where the memory will be exported (default: ``""``).
                                  If empty, the agent's experiment directory will be used
         :type export_directory: str, optional
-        :param replacement: Flag to indicate whether the sample is with or without replacement (default: True).
+        :param replacement: Flag to indicate whether the sample is with or without replacement (default: ``True``).
                             Replacement implies that a value can be selected multiple times (the batch size is always guaranteed).
                             Sampling without replacement will return a batch of maximum memory size if the memory size is less than the requested batch size
         :type replacement: bool, optional
@@ -56,9 +56,9 @@ class RandomMemory(Memory):
         :type names: tuple or list of strings
         :param batch_size: Number of element to sample
         :type batch_size: int
-        :param mini_batches: Number of mini-batches to sample (default: 1)
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
         :type mini_batches: int, optional
-        :param sequence_length: Length of each sequence (default: 1)
+        :param sequence_length: Length of each sequence (default: ``1``)
         :type sequence_length: int, optional
 
         :return: Sampled data from tensors sorted according to their position in the list of names.

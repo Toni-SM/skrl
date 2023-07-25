@@ -1,4 +1,4 @@
-from skrl import logger, __version__
+from skrl import __version__, logger
 
 
 def download_model_from_huggingface(repo_id: str, filename: str = "agent.pt") -> str:
@@ -27,6 +27,7 @@ def download_model_from_huggingface(repo_id: str, filename: str = "agent.pt") ->
         >>> download_model_from_huggingface("org/ddpg-Pendulum-v1", "policy.pth")
         '/home/user/.cache/huggingface/hub/models--org--ddpg-Pendulum-v1/snapshots/b44ee96f93ff2e296156b002a2ca4646e197ba32/policy.pth'
     """
+    logger.info(f"Downloading model from Hugging Face Hub: {repo_id}/{filename}")
     try:
         import huggingface_hub
     except ImportError:

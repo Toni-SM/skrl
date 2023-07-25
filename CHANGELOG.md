@@ -2,6 +2,33 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.0-rc.1] - 2023-07-25
+### Added
+- JAX support (with Flax and Optax)
+- RPO agent
+- IPPO and MAPPO multi-agent
+- Multi-agent base class
+- Bi-DexHands environment loader
+- Wrapper for PettingZoo and Bi-DexHands environments
+- Parameters `num_envs`, `headless` and `cli_args` for configuring Isaac Gym, Isaac Orbit
+and Omniverse Isaac Gym environments when they are loaded
+
+### Changed
+- Migrate to `pyproject.toml` Python package development
+- Define ML framework dependencies as optional dependencies in the library installer
+- Move agent implementations with recurrent models to a separate file
+- Allow closing the environment at the end of execution instead of after training/evaluation
+- Documentation theme from *sphinx_rtd_theme* to *furo*
+- Update documentation structure and examples
+
+### Fixed
+- Compatibility for Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)
+- Disable PyTorch gradient computation during the environment stepping
+- Get categorical models' entropy
+- Typo in `KLAdaptiveLR` learning rate scheduler
+  (keep the old name for compatibility with the examples of previous versions.
+  The old name will be removed in future releases)
+
 ## [0.10.2] - 2023-03-23
 ### Changed
 - Update loader and utils for OmniIsaacGymEnvs 2022.2.1.0

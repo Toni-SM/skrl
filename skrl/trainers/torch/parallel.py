@@ -1,4 +1,4 @@
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 import copy
 import tqdm
@@ -6,9 +6,8 @@ import tqdm
 import torch
 import torch.multiprocessing as mp
 
-from skrl.envs.torch import Wrapper
 from skrl.agents.torch import Agent
-
+from skrl.envs.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
@@ -16,11 +15,12 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
+    "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
 
 
 def fn_processor(process_index, *args):
-    print("[INFO] Processor {}: started".format(process_index))
+    print(f"[INFO] Processor {process_index}: started")
 
     pipe = args[0][process_index]
     queue = args[1][process_index]
@@ -47,7 +47,7 @@ def fn_processor(process_index, *args):
         elif task == 'init':
             agent = queue.get()
             agent.init(trainer_cfg=trainer_cfg)
-            print("[INFO] Processor {}: init agent {} with scope {}".format(process_index, type(agent).__name__, scope))
+            print(f"[INFO] Processor {process_index}: init agent {type(agent).__name__} with scope {scope}")
             barrier.wait()
 
         # execute agent's pre-interaction step
@@ -114,9 +114,9 @@ class ParallelTrainer(Trainer):
         :type env: skrl.env.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: [])
-        :type agents_scope: tuple or list of integers
-        :param cfg: Configuration dictionary (default: {}).
+        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
+        :type agents_scope: tuple or list of int, optional
+        :param cfg: Configuration dictionary (default: ``None``).
                     See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """
@@ -141,26 +141,31 @@ class ParallelTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("train")
         else:
             self.agents.set_running_mode("train")
 
-        # single agent
-        if self.num_agents == 1:
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            self.single_agent_train()
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_train()
+            # multi-agent
+            else:
+                self.multi_agent_train()
             return
 
         # initialize multiprocessing variables
         queues = []
         producer_pipes = []
         consumer_pipes = []
-        barrier = mp.Barrier(self.num_agents + 1)
+        barrier = mp.Barrier(self.num_simultaneous_agents + 1)
         processes = []
 
-        for i in range(self.num_agents):
+        for i in range(self.num_simultaneous_agents):
             pipe_read, pipe_write = mp.Pipe(duplex=False)
             producer_pipes.append(pipe_write)
             consumer_pipes.append(pipe_read)
@@ -177,7 +182,7 @@ class ParallelTrainer(Trainer):
                     pass
 
         # spawn and wait for all processes to start
-        for i in range(self.num_agents):
+        for i in range(self.num_simultaneous_agents):
             process = mp.Process(target=fn_processor,
                                  args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
@@ -212,15 +217,14 @@ class ParallelTrainer(Trainer):
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with torch.no_grad():
+                # record the environments' transitions
                 if not rewards.is_cuda:
                     rewards.share_memory_()
                 if not next_states.is_cuda:
@@ -261,9 +265,6 @@ class ParallelTrainer(Trainer):
         for process in processes:
             process.join()
 
-        # close the environment
-        self.env.close()
-
     def eval(self) -> None:
         """Evaluate the agents sequentially
 
@@ -275,26 +276,31 @@ class ParallelTrainer(Trainer):
         - Reset environments
         """
         # set running mode
-        if self.num_agents > 1:
+        if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.set_running_mode("eval")
         else:
             self.agents.set_running_mode("eval")
 
-        # single agent
-        if self.num_agents == 1:
+        # non-simultaneous agents
+        if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            self.single_agent_eval()
+            # single-agent
+            if self.env.num_agents == 1:
+                self.single_agent_eval()
+            # multi-agent
+            else:
+                self.multi_agent_eval()
             return
 
         # initialize multiprocessing variables
         queues = []
         producer_pipes = []
         consumer_pipes = []
-        barrier = mp.Barrier(self.num_agents + 1)
+        barrier = mp.Barrier(self.num_simultaneous_agents + 1)
         processes = []
 
-        for i in range(self.num_agents):
+        for i in range(self.num_simultaneous_agents):
             pipe_read, pipe_write = mp.Pipe(duplex=False)
             producer_pipes.append(pipe_write)
             consumer_pipes.append(pipe_read)
@@ -312,7 +318,7 @@ class ParallelTrainer(Trainer):
                         pass
 
         # spawn and wait for all processes to start
-        for i in range(self.num_agents):
+        for i in range(self.num_simultaneous_agents):
             process = mp.Process(target=fn_processor,
                                  args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
                                  daemon=True)
@@ -342,14 +348,13 @@ class ParallelTrainer(Trainer):
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with torch.no_grad():
                 # write data to TensorBoard
                 if not rewards.is_cuda:
                     rewards.share_memory_()
@@ -386,6 +391,3 @@ class ParallelTrainer(Trainer):
         # join processes
         for process in processes:
             process.join()
-
-        # close the environment
-        self.env.close()

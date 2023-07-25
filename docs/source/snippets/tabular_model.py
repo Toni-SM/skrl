@@ -1,4 +1,13 @@
-# [start-epsilon-greedy]
+# [start-definition-torch]
+class TabularModel(TabularMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, num_envs=1):
+        Model.__init__(self, observation_space, action_space, device)
+        TabularMixin.__init__(self, num_envs)
+# [end-definition-torch]
+
+# =============================================================================
+
+# [start-epsilon-greedy-torch]
 import torch
 
 from skrl.models.torch import Model, TabularMixin
@@ -30,4 +39,4 @@ policy = EpilonGreedyPolicy(observation_space=env.observation_space,
                             device=env.device,
                             num_envs=env.num_envs,
                             epsilon=0.15)
-# [end-epsilon-greedy]
+# [end-epsilon-greedy-torch]

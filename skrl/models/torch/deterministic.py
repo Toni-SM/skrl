@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Any
+from typing import Any, Mapping, Tuple, Union
 
 import gym
 import gymnasium
@@ -78,7 +78,7 @@ class DeterministicMixin:
 
         :return: Model output. The first component is the action to be taken by the agent.
                  The second component is ``None``. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
 
         Example::
 

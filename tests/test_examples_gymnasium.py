@@ -1,10 +1,10 @@
-import pytest
+import os
+import subprocess
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
-import os
-import subprocess
 
 EXAMPLE_DIR = "gymnasium"
 SCRIPTS = ["ddpg_gymnasium_pendulum.py",

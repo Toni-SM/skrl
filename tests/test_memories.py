@@ -1,15 +1,12 @@
-import pytest
+import string
 import warnings
 import hypothesis
 import hypothesis.strategies as st
-
-import string
+import pytest
 
 import torch
 
-from skrl.memories.torch import Memory
-
-from skrl.memories.torch import RandomMemory
+from skrl.memories.torch import Memory, RandomMemory
 
 
 @pytest.fixture

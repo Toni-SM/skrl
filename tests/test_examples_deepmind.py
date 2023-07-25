@@ -1,10 +1,10 @@
-import pytest
+import os
+import subprocess
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
-import os
-import subprocess
 
 EXAMPLE_DIR = "deepmind"
 SCRIPTS = ["dm_suite_cartpole_swingup_ddpg.py",

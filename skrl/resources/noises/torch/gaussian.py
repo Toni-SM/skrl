@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 from torch.distributions import Normal
@@ -14,8 +14,8 @@ class GaussianNoise(Noise):
         :type mean: float
         :param std: Standard deviation of the normal distribution
         :type std: float
-        :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
 
         Example::
@@ -31,7 +31,7 @@ class GaussianNoise(Noise):
         """Sample a Gaussian noise
 
         :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers, or torch.Size
+        :type size: tuple or list of int, or torch.Size
 
         :return: Sampled noise
         :rtype: torch.Tensor

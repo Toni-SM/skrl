@@ -1,4 +1,4 @@
-from typing import Union, Mapping, Tuple, Any
+from typing import Any, Mapping, Tuple, Union
 
 import torch
 from torch.distributions import Categorical
@@ -77,7 +77,7 @@ class CategoricalMixin:
                  The second component is the log of the probability density function.
                  The third component is a dictionary containing the network output ``"net_output"``
                  and extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dictionary
+        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
 
         Example::
 
@@ -102,6 +102,25 @@ class CategoricalMixin:
 
         outputs["net_output"] = net_output
         return actions.unsqueeze(-1), log_prob.unsqueeze(-1), outputs
+
+    def get_entropy(self, role: str = "") -> torch.Tensor:
+        """Compute and return the entropy of the model
+
+        :return: Entropy of the model
+        :rtype: torch.Tensor
+        :param role: Role play by the model (default: ``""``)
+        :type role: str, optional
+
+        Example::
+
+            >>> entropy = model.get_entropy()
+            >>> print(entropy.shape)
+            torch.Size([4096, 1])
+        """
+        distribution = self._c_distribution[role] if role in self._c_distribution else self._c_distribution[""]
+        if distribution is None:
+            return torch.tensor(0.0, device=self.device)
+        return distribution.entropy().to(self.device)
 
     def distribution(self, role: str = "") -> torch.distributions.Categorical:
         """Get the current distribution of the model

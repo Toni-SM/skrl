@@ -1,17 +1,13 @@
-import pytest
 import warnings
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import torch
 
-from skrl.trainers.torch import Trainer
+from skrl.trainers.torch import ManualTrainer, ParallelTrainer, SequentialTrainer, Trainer
 
-from skrl.trainers.torch import ManualTrainer
-from skrl.trainers.torch import ParallelTrainer
-from skrl.trainers.torch import SequentialTrainer
-
-from .utils import DummyEnv, DummyAgent
+from .utils import DummyAgent, DummyEnv
 
 
 @pytest.fixture

@@ -1,12 +1,12 @@
-from typing import Union, Tuple, List
+from typing import List, Tuple, Union
 
-import os
+import collections
 import csv
 import glob
-import numpy as np
+import os
 
+import numpy as np
 import torch
-import collections
 
 
 class MemoryFileIterator():
@@ -58,7 +58,7 @@ class MemoryFileIterator():
         elif self.file_paths[self.n].endswith(".csv"):
             return self._format_csv()
         else:
-            raise ValueError("Unsupported format: {}. Available formats: pt, csv, npz".format(format))
+            raise ValueError(f"Unsupported format for {self.file_paths[self.n]}. Available formats: .pt, .csv, .npz")
 
     def _format_numpy(self) -> Tuple[str, dict]:
         """Load numpy array from file

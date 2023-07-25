@@ -13,8 +13,10 @@ project = "skrl"
 copyright = "2021, Toni-SM"
 author = "Toni-SM"
 
-release = skrl.__version__
-version = skrl.__version__
+if skrl.__version__ != "unknown":
+    release = version = skrl.__version__
+else:
+    release = version = "1.0.0-rc.1"
 
 master_doc = "index"
 

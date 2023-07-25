@@ -433,6 +433,58 @@ These examples perform the training of one agent in a robosuite environment (**o
 
 .. raw:: html
 
+    <br>
+
+Bi-DexHands environments
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multi-agent training/evaluation in a `Bi-DexHands <https://github.com/PKU-MARL/DexterousHands>`_ environment
+
+.. image:: ../_static/imgs/example_bidexhands.png
+    :width: 75%
+    :align: center
+    :alt: bidexhands environments
+
+.. raw:: html
+
+    <br>
+
+.. tabs::
+
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - ShadowHandOver
+              - :download:`torch_bidexhands_shadow_hand_over_ippo.py <../examples/bidexhands/torch_bidexhands_shadow_hand_over_ippo.py>`
+                |br| :download:`torch_bidexhands_shadow_hand_over_mappo.py <../examples/bidexhands/torch_bidexhands_shadow_hand_over_mappo.py>`
+              -
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - ShadowHandOver
+              - :download:`jax_bidexhands_shadow_hand_over_ippo.py <../examples/bidexhands/jax_bidexhands_shadow_hand_over_ippo.py>`
+                |br| :download:`jax_bidexhands_shadow_hand_over_mappo.py <../examples/bidexhands/jax_bidexhands_shadow_hand_over_mappo.py>`
+              -
+
+.. raw:: html
+
     <br><hr>
 
 **NVIDIA Isaac Gym preview**

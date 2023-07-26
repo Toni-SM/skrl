@@ -201,9 +201,6 @@ class TD3(Agent):
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
-        # backward compatibility: torch < 1.9 clamp method does not support tensors
-        self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
-
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
@@ -243,10 +240,7 @@ class TD3(Agent):
 
                 # modify actions
                 actions.add_(noises)
-                if self._backward_compatibility:
-                    actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
-                else:
-                    actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
@@ -358,11 +352,7 @@ class TD3(Agent):
                                         min=-self._smooth_regularization_clip,
                                         max=self._smooth_regularization_clip)
                     next_actions.add_(noises)
-
-                    if self._backward_compatibility:
-                        next_actions = torch.max(torch.min(next_actions, self.clip_actions_max), self.clip_actions_min)
-                    else:
-                        next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                    next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
                 target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1")

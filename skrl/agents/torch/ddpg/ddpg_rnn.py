@@ -197,9 +197,6 @@ class DDPG_RNN(Agent):
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
-        # backward compatibility: torch < 1.9 clamp method does not support tensors
-        self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
-
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
@@ -244,10 +241,7 @@ class DDPG_RNN(Agent):
 
                 # modify actions
                 actions.add_(noises)
-                if self._backward_compatibility:
-                    actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
-                else:
-                    actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())

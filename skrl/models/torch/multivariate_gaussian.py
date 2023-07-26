@@ -74,9 +74,6 @@ class MultivariateGaussianMixin:
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
-            # backward compatibility: torch < 1.9 clamp method does not support tensors
-            self._backward_compatibility = tuple(map(int, (torch.__version__.split(".")[:2]))) < (1, 9)
-
         if not hasattr(self, "_mg_clip_log_std"):
             self._mg_clip_log_std = {}
         self._mg_clip_log_std[role] = clip_log_std
@@ -144,10 +141,7 @@ class MultivariateGaussianMixin:
 
         # clip actions
         if self._mg_clip_actions[role] if role in self._mg_clip_actions else self._mg_clip_actions[""]:
-            if self._backward_compatibility:
-                actions = torch.max(torch.min(actions, self.clip_actions_max), self.clip_actions_min)
-            else:
-                actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
 
         # log of the probability density function
         log_prob = self._mg_distribution[role].log_prob(inputs.get("taken_actions", actions))

@@ -7,7 +7,7 @@ import torch
 import torch.multiprocessing as mp
 
 from skrl.agents.torch import Agent
-from skrl.envs.torch import Wrapper
+from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
@@ -111,7 +111,7 @@ class ParallelTrainer(Trainer):
         Train agents in parallel using multiple processes
 
         :param env: Environment to train on
-        :type env: skrl.env.torch.Wrapper
+        :type env: skrl.envs.wrappers.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: ``None``)

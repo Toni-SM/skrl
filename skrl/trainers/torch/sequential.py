@@ -6,7 +6,7 @@ import tqdm
 import torch
 
 from skrl.agents.torch import Agent
-from skrl.envs.torch import Wrapper
+from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
@@ -29,7 +29,7 @@ class SequentialTrainer(Trainer):
         Train agents sequentially (i.e., one after the other in each interaction with the environment)
 
         :param env: Environment to train on
-        :type env: skrl.env.torch.Wrapper
+        :type env: skrl.envs.wrappers.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: ``None``)

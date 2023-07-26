@@ -188,7 +188,7 @@ def get_env_instance(headless: bool = True,
 
     Example::
 
-        from skrl.envs.torch import wrap_env
+        from skrl.envs.wrappers.torch import wrap_env
         from skrl.utils.omniverse_isaacgym_utils import get_env_instance
 
         # get environment instance

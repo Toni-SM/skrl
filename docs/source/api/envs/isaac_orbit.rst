@@ -87,4 +87,4 @@ Usage
 API
 ^^^
 
-.. autofunction:: skrl.envs.torch.loaders.load_isaac_orbit_env
+.. autofunction:: skrl.envs.loaders.torch.load_isaac_orbit_env

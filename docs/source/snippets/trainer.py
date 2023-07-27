@@ -3,7 +3,7 @@ from typing import Union, List, Optional
 
 import copy
 
-from skrl.envs.torch import Wrapper
+from skrl.envs.wrappers.torch import Wrapper
 from skrl.agents.torch import Agent
 
 from skrl.trainers.torch import Trainer
@@ -25,7 +25,7 @@ class CustomTrainer(Trainer):
                  cfg: Optional[dict] = None) -> None:
         """
         :param env: Environment to train on
-        :type env: skrl.env.torch.Wrapper
+        :type env: skrl.envs.wrappers.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])
@@ -75,7 +75,7 @@ from typing import Union, List, Optional
 
 import copy
 
-from skrl.envs.jax import Wrapper
+from skrl.envs.wrappers.jax import Wrapper
 from skrl.agents.jax import Agent
 
 from skrl.trainers.jax import Trainer
@@ -97,7 +97,7 @@ class CustomTrainer(Trainer):
                  cfg: Optional[dict] = None) -> None:
         """
         :param env: Environment to train on
-        :type env: skrl.env.jax.Wrapper
+        :type env: skrl.envs.wrappers.jax.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: [])

@@ -98,7 +98,7 @@ Usage
 API
 ^^^
 
-.. autofunction:: skrl.envs.torch.loaders.load_isaacgym_env_preview4
+.. autofunction:: skrl.envs.loaders.torch.load_isaacgym_env_preview4
 
 .. raw:: html
 
@@ -181,7 +181,7 @@ Usage
 API
 ^^^
 
-.. autofunction:: skrl.envs.torch.loaders.load_isaacgym_env_preview3
+.. autofunction:: skrl.envs.loaders.torch.load_isaacgym_env_preview3
 
 .. raw:: html
 
@@ -260,4 +260,4 @@ Usage
 API
 ^^^
 
-.. autofunction:: skrl.envs.torch.loaders.load_isaacgym_env_preview2
+.. autofunction:: skrl.envs.loaders.torch.load_isaacgym_env_preview2

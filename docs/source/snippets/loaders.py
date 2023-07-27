@@ -1,6 +1,6 @@
 # [start-omniverse-isaac-gym-envs-parameters-torch]
 # import the environment loader
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole")
@@ -9,7 +9,7 @@ env = load_omniverse_isaacgym_env(task_name="Cartpole")
 
 # [start-omniverse-isaac-gym-envs-parameters-jax]
 # import the environment loader
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole")
@@ -18,7 +18,7 @@ env = load_omniverse_isaacgym_env(task_name="Cartpole")
 
 # [start-omniverse-isaac-gym-envs-cli-torch]
 # import the environment loader
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env()
@@ -27,7 +27,7 @@ env = load_omniverse_isaacgym_env()
 
 # [start-omniverse-isaac-gym-envs-cli-jax]
 # import the environment loader
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env()
@@ -38,7 +38,7 @@ env = load_omniverse_isaacgym_env()
 import threading
 
 # import the environment loader
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
@@ -57,7 +57,7 @@ env.run()
 import threading
 
 # import the environment loader
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
@@ -76,7 +76,7 @@ env.run()
 import threading
 
 # import the environment loader
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(multi_threaded=True, timeout=30)
@@ -95,7 +95,7 @@ env.run()
 import threading
 
 # import the environment loader
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load environment
 env = load_omniverse_isaacgym_env(multi_threaded=True, timeout=30)
@@ -113,7 +113,7 @@ env.run()
 
 # [start-isaac-orbit-envs-parameters-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaac_orbit_env
+from skrl.envs.loaders.torch import load_isaac_orbit_env
 
 # load environment
 env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
@@ -122,7 +122,7 @@ env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
 
 # [start-isaac-orbit-envs-parameters-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaac_orbit_env
 
 # load environment
 env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
@@ -131,7 +131,7 @@ env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
 
 # [start-isaac-orbit-envs-cli-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaac_orbit_env
+from skrl.envs.loaders.torch import load_isaac_orbit_env
 
 # load environment
 env = load_isaac_orbit_env()
@@ -140,7 +140,7 @@ env = load_isaac_orbit_env()
 
 # [start-isaac-orbit-envs-cli-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaac_orbit_env
 
 # load environment
 env = load_isaac_orbit_env()
@@ -163,7 +163,7 @@ env = isaacgymenvs.make(seed=0,
 
 # [start-isaac-gym-envs-preview-4-parameters-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview4
+from skrl.envs.loaders.torch import load_isaacgym_env_preview4
 
 # load environment
 env = load_isaacgym_env_preview4(task_name="Cartpole")
@@ -172,7 +172,7 @@ env = load_isaacgym_env_preview4(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-4-parameters-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview4
+from skrl.envs.loaders.jax import load_isaacgym_env_preview4
 
 # load environment
 env = load_isaacgym_env_preview4(task_name="Cartpole")
@@ -181,7 +181,7 @@ env = load_isaacgym_env_preview4(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-4-cli-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview4
+from skrl.envs.loaders.torch import load_isaacgym_env_preview4
 
 # load environment
 env = load_isaacgym_env_preview4()
@@ -190,7 +190,7 @@ env = load_isaacgym_env_preview4()
 
 # [start-isaac-gym-envs-preview-4-cli-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview4
+from skrl.envs.loaders.jax import load_isaacgym_env_preview4
 
 # load environment
 env = load_isaacgym_env_preview4()
@@ -199,7 +199,7 @@ env = load_isaacgym_env_preview4()
 
 # [start-isaac-gym-envs-preview-3-parameters-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview3
+from skrl.envs.loaders.torch import load_isaacgym_env_preview3
 
 # load environment
 env = load_isaacgym_env_preview3(task_name="Cartpole")
@@ -208,7 +208,7 @@ env = load_isaacgym_env_preview3(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-3-parameters-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview3
+from skrl.envs.loaders.jax import load_isaacgym_env_preview3
 
 # load environment
 env = load_isaacgym_env_preview3(task_name="Cartpole")
@@ -217,7 +217,7 @@ env = load_isaacgym_env_preview3(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-3-cli-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview3
+from skrl.envs.loaders.torch import load_isaacgym_env_preview3
 
 # load environment
 env = load_isaacgym_env_preview3()
@@ -226,7 +226,7 @@ env = load_isaacgym_env_preview3()
 
 # [start-isaac-gym-envs-preview-3-cli-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview3
+from skrl.envs.loaders.jax import load_isaacgym_env_preview3
 
 # load environment
 env = load_isaacgym_env_preview3()
@@ -235,7 +235,7 @@ env = load_isaacgym_env_preview3()
 
 # [start-isaac-gym-envs-preview-2-parameters-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview2
+from skrl.envs.loaders.torch import load_isaacgym_env_preview2
 
 # load environment
 env = load_isaacgym_env_preview2(task_name="Cartpole")
@@ -244,7 +244,7 @@ env = load_isaacgym_env_preview2(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-2-parameters-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview2
+from skrl.envs.loaders.jax import load_isaacgym_env_preview2
 
 # load environment
 env = load_isaacgym_env_preview2(task_name="Cartpole")
@@ -253,7 +253,7 @@ env = load_isaacgym_env_preview2(task_name="Cartpole")
 
 # [start-isaac-gym-envs-preview-2-cli-torch]
 # import the environment loader
-from skrl.envs.torch import load_isaacgym_env_preview2
+from skrl.envs.loaders.torch import load_isaacgym_env_preview2
 
 # load environment
 env = load_isaacgym_env_preview2()
@@ -262,7 +262,7 @@ env = load_isaacgym_env_preview2()
 
 # [start-isaac-gym-envs-preview-2-cli-jax]
 # import the environment loader
-from skrl.envs.jax import load_isaacgym_env_preview2
+from skrl.envs.loaders.jax import load_isaacgym_env_preview2
 
 # load environment
 env = load_isaacgym_env_preview2()

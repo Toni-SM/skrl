@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.0-rc.2] - Unreleased
+### Changed
+- Structure environment loaders and wrappers file hierarchy coherently [**breaking change**]
+- Drop support for versions prior to PyTorch 1.9 (1.8.0 and 1.8.1)
+
 ## [1.0.0-rc.1] - 2023-07-25
 ### Added
 - JAX support (with Flax and Optax)

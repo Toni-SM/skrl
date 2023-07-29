@@ -15,6 +15,10 @@ skrl provides a Python mixin (:literal:`CategoricalMixin`) to assist in the crea
 
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
+.. note::
+
+    For models in JAX/Flax it is imperative to define all parameters (except ``observation_space``, ``action_space`` and ``device``) with default values to avoid errors (``TypeError: __init__() missing N required positional argument``) during initialization.
+
 .. tabs::
 
     .. group-tab:: |_4| |pytorch| |_4|

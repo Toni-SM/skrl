@@ -186,9 +186,9 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     """
     class GaussianModel(GaussianMixin, Model):
         def __init__(self, observation_space, action_space, device, clip_actions,
-                     clip_log_std, min_log_std, max_log_std, metadata):
+                     clip_log_std, min_log_std, max_log_std, reduction="sum"):
             Model.__init__(self, observation_space, action_space, device)
-            GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
+            GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
             self.instantiator_output_scale = metadata["output_scale"]
             self.instantiator_input_type = metadata["input_shape"].value
@@ -225,8 +225,7 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                          clip_actions=clip_actions,
                          clip_log_std=clip_log_std,
                          min_log_std=min_log_std,
-                         max_log_std=max_log_std,
-                         metadata=metadata)
+                         max_log_std=max_log_std)
 
 def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -279,7 +278,7 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     """
     class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
         def __init__(self, observation_space, action_space, device, clip_actions,
-                     clip_log_std, min_log_std, max_log_std, metadata):
+                     clip_log_std, min_log_std, max_log_std):
             Model.__init__(self, observation_space, action_space, device)
             MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
@@ -318,8 +317,7 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
                                      clip_actions=clip_actions,
                                      clip_log_std=clip_log_std,
                                      min_log_std=min_log_std,
-                                     max_log_std=max_log_std,
-                                     metadata=metadata)
+                                     max_log_std=max_log_std)
 
 def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                         action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -362,7 +360,7 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     :rtype: Model
     """
     class DeterministicModel(DeterministicMixin, Model):
-        def __init__(self, observation_space, action_space, device, clip_actions, metadata):
+        def __init__(self, observation_space, action_space, device, clip_actions):
             Model.__init__(self, observation_space, action_space, device)
             DeterministicMixin.__init__(self, clip_actions)
 
@@ -397,13 +395,12 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     return DeterministicModel(observation_space=observation_space,
                               action_space=action_space,
                               device=device,
-                              clip_actions=clip_actions,
-                              metadata=metadata)
+                              clip_actions=clip_actions)
 
 def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                       action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                       device: Optional[Union[str, torch.device]] = None,
-                      unnormalized_log_prob: bool = False,
+                      unnormalized_log_prob: bool = True,
                       input_shape: Shape = Shape.STATES,
                       hiddens: list = [256, 256],
                       hidden_activation: list = ["relu", "relu"],
@@ -440,7 +437,7 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :rtype: Model
     """
     class CategoricalModel(CategoricalMixin, Model):
-        def __init__(self, observation_space, action_space, device, unnormalized_log_prob, metadata):
+        def __init__(self, observation_space, action_space, device, unnormalized_log_prob):
             Model.__init__(self, observation_space, action_space, device)
             CategoricalMixin.__init__(self, unnormalized_log_prob)
 
@@ -472,8 +469,7 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     return CategoricalModel(observation_space=observation_space,
                             action_space=action_space,
                             device=device,
-                            unnormalized_log_prob=unnormalized_log_prob,
-                            metadata=metadata)
+                            unnormalized_log_prob=unnormalized_log_prob)
 
 def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,

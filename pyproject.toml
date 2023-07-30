@@ -56,7 +56,7 @@ all = [
 
 
 [tool.yapf]
-# yapf -p -m -i -r <folder>
+# run: yapf -p -m -i -r <folder>
 based_on_style = "pep8"
 blank_line_before_nested_class_or_def = false
 blank_lines_between_top_level_imports_and_variables = 2
@@ -70,6 +70,13 @@ split_before_dict_set_generator = false
 split_before_dot = true
 split_complex_comprehension = true
 coalesce_brackets = true
+
+
+[tool.codespell]
+# run: codespell <folder>
+skip = "./docs/_build,./docs/source/_static"
+quiet-level = 3
+count = ""
 
 
 [tool.isort]

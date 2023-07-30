@@ -2,7 +2,7 @@ import gym
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.dqn import DQN, DQN_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed

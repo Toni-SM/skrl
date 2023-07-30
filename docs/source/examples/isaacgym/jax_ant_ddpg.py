@@ -7,7 +7,8 @@ import jax.numpy as jnp
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.envs.jax import load_isaacgym_env_preview4, wrap_env
+from skrl.envs.loaders.jax import load_isaacgym_env_preview4
+from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, Model
 from skrl.resources.noises.jax import OrnsteinUhlenbeckNoise

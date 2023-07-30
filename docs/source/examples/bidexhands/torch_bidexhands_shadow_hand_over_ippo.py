@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 
 # import the skrl components to build the RL system
-from skrl.envs.torch.loaders import load_bidexhands_env
-from skrl.envs.torch.wrappers import wrap_env
+from skrl.envs.loaders.torch import load_bidexhands_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.multi_agents.torch.ippo import IPPO, IPPO_DEFAULT_CONFIG

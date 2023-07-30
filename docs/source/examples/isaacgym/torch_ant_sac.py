@@ -5,7 +5,8 @@ import torch.nn as nn
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.sac import SAC, SAC_DEFAULT_CONFIG
-from skrl.envs.torch import load_isaacgym_env_preview4, wrap_env
+from skrl.envs.loaders.torch import load_isaacgym_env_preview4
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.torch import RunningStandardScaler

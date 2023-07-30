@@ -4,7 +4,7 @@ import torch
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.sarsa import SARSA, SARSA_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.models.torch import Model, TabularMixin
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed

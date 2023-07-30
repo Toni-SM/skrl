@@ -3,7 +3,7 @@ import gym
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.dqn import DQN, DQN_DEFAULT_CONFIG
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed

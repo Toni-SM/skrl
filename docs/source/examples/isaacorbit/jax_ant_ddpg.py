@@ -13,12 +13,14 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 
+
 jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.envs.jax import load_isaac_orbit_env, wrap_env
+from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, Model
 from skrl.resources.noises.jax import OrnsteinUhlenbeckNoise

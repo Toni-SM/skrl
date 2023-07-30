@@ -358,7 +358,7 @@ class A2C(Agent):
 
             _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
-            # compute aproximate KL divergence for KLAdaptive learning rate scheduler
+            # compute approximate KL divergence for KLAdaptive learning rate scheduler
             if self._learning_rate_scheduler:
                 if isinstance(self.scheduler, KLAdaptiveLR):
                     with torch.no_grad():

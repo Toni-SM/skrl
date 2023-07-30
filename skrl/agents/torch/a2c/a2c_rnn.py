@@ -430,7 +430,7 @@ class A2C_RNN(Agent):
 
             _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="policy")
 
-            # compute aproximate KL divergence for KLAdaptive learning rate scheduler
+            # compute approximate KL divergence for KLAdaptive learning rate scheduler
             if isinstance(self.scheduler, KLAdaptiveLR):
                 with torch.no_grad():
                     ratio = next_log_prob - sampled_log_prob

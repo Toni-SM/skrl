@@ -199,7 +199,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
 
         .. raw:: html
 
@@ -263,7 +263,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
 
         .. raw:: html
 
@@ -328,7 +328,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden/cell states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden/cell states
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden/cell states
 
         .. raw:: html
 

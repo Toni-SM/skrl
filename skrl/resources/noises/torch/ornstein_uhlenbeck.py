@@ -28,7 +28,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         :type std: float, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or jax.Device, optional
+        :type device: str or torch.device, optional
 
         Example::
 

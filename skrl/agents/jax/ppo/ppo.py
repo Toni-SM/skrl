@@ -142,7 +142,7 @@ def _update_policy(policy_act,
     def _policy_loss(params):
         _, next_log_prob, outputs = policy_act({"states": sampled_states, "taken_actions": sampled_actions}, "policy", params)
 
-        # compute aproximate KL divergence
+        # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
         kl_divergence = ((jnp.exp(ratio) - 1) - ratio).mean()
 

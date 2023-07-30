@@ -146,7 +146,7 @@ class CustomTrainer(Trainer):
 # [pytorch-start-sequential]
 from skrl.trainers.torch import SequentialTrainer
 
-# asuming there is an environment called 'env'
+# assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
@@ -164,7 +164,7 @@ trainer.eval()
 # [jax-start-sequential]
 from skrl.trainers.jax import SequentialTrainer
 
-# asuming there is an environment called 'env'
+# assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
@@ -183,7 +183,7 @@ trainer.eval()
 # [pytorch-start-parallel]
 from skrl.trainers.torch import ParallelTrainer
 
-# asuming there is an environment called 'env'
+# assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
@@ -202,7 +202,7 @@ trainer.eval()
 # [pytorch-start-manual]
 from skrl.trainers.torch import ManualTrainer
 
-# asuming there is an environment called 'env'
+# assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
@@ -222,7 +222,7 @@ for timestep in range(cfg["timesteps"]):
 # [jax-start-manual]
 from skrl.trainers.jax import ManualTrainer
 
-# asuming there is an environment called 'env'
+# assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer

@@ -64,7 +64,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
     :param verbose: Whether to print the wrapper type (default: ``True``)
     :type verbose: bool, optional
 
-    :raises ValueError: Unknow wrapper type
+    :raises ValueError: Unknown wrapper type
 
     :return: Wrapped environment
     :rtype: Wrapper or MultiAgentEnvWrapper

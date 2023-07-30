@@ -392,4 +392,4 @@ Memories can be automatically exported to files at each filling cycle (before da
 Importing memories
 ^^^^^^^^^^^^^^^^^^
 
-TODO :red:`(comming soon)`
+TODO :red:`(coming soon)`

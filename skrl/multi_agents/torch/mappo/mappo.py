@@ -413,7 +413,7 @@ class MAPPO(MultiAgent):
 
                     _, next_log_prob, _ = policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
-                    # compute aproximate KL divergence
+                    # compute approximate KL divergence
                     with torch.no_grad():
                         ratio = next_log_prob - sampled_log_prob
                         kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()

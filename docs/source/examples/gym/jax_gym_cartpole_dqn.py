@@ -1,17 +1,13 @@
 import gym
 
-import flax.linen as nn
-import jax
-import jax.numpy as jnp
-
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.dqn import DQN, DQN_DEFAULT_CONFIG
 from skrl.envs.jax import wrap_env
 from skrl.memories.jax import RandomMemory
-from skrl.models.jax import DeterministicMixin, Model
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+from skrl.utils.model_instantiators.jax import Shape, deterministic_model
 
 
 config.jax.backend = "numpy"  # or "jax"
@@ -19,20 +15,6 @@ config.jax.backend = "numpy"  # or "jax"
 
 # seed for reproducibility
 set_seed()  # e.g. `set_seed(42)` for fixed seed
-
-
-# define model (deterministic model) using mixins
-class QNetwork(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        DeterministicMixin.__init__(self, clip_actions)
-
-    @nn.compact
-    def __call__(self, inputs, role):
-        x = nn.relu(nn.Dense(64)(inputs["states"]))
-        x = nn.relu(nn.Dense(64)(x))
-        x = nn.Dense(self.num_actions)(x)
-        return x, {}
 
 
 # load and wrap the gym environment.
@@ -52,12 +34,30 @@ device = env.device
 memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# instantiate the agent's models (function approximators).
+# instantiate the agent's models (function approximators) using the model instantiator utility.
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/dqn.html#models
 models = {}
-models["q_network"] = QNetwork(env.observation_space, env.action_space, device)
-models["target_q_network"] = QNetwork(env.observation_space, env.action_space, device)
+models["q_network"] = deterministic_model(observation_space=env.observation_space,
+                                          action_space=env.action_space,
+                                          device=device,
+                                          clip_actions=False,
+                                          input_shape=Shape.OBSERVATIONS,
+                                          hiddens=[64, 64],
+                                          hidden_activation=["relu", "relu"],
+                                          output_shape=Shape.ACTIONS,
+                                          output_activation=None,
+                                          output_scale=1.0)
+models["target_q_network"] = deterministic_model(observation_space=env.observation_space,
+                                                 action_space=env.action_space,
+                                                 device=device,
+                                                 clip_actions=False,
+                                                 input_shape=Shape.OBSERVATIONS,
+                                                 hiddens=[64, 64],
+                                                 hidden_activation=["relu", "relu"],
+                                                 output_shape=Shape.ACTIONS,
+                                                 output_activation=None,
+                                                 output_scale=1.0)
 
 # instantiate models' state dict
 for role, model in models.items():

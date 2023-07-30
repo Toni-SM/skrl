@@ -6,7 +6,7 @@ from skrl.envs.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
-from skrl.utils.model_instantiators import Shape, deterministic_model
+from skrl.utils.model_instantiators.torch import Shape, deterministic_model
 
 
 # seed for reproducibility
@@ -30,7 +30,7 @@ device = env.device
 memory = RandomMemory(memory_size=200000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# instantiate the agent's models (function approximators) using the model instantiator utility
+# instantiate the agent's models (function approximators) using the model instantiator utility.
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/dqn.html#models
 models = {}

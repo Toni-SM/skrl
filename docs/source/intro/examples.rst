@@ -1152,32 +1152,44 @@ Three cases are presented:
 Omniverse Isaac Sim (single environment)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These examples show how to train an agent in an Omniverse Isaac Sim environment that is implemented using the Gym interface (**one agent, one environment**)
+Training/evaluation of an agent in Omniverse Isaac Sim environment implemented using the Gym interface (**one agent, one environment**)
 
 .. tabs::
 
     .. tab:: Isaac Sim 2022.X.X (Cartpole)
 
-        This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_new_rl_example.html>`_ tutorial
+        This example performs the training of an agent in the Isaac Sim's Cartpole environment described in the `Creating New RL Environment <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_new_rl_example.html>`_ tutorial
 
         Use the steps described below to setup and launch the experiment after follow the tutorial
 
         .. code-block:: bash
 
             # download the sample code from GitHub in the directory containing the cartpole_task.py script
-            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/cartpole_example_skrl.py
+            wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/torch_isaacsim_cartpole_ppo.py
 
             # run the experiment
-            PYTHON_PATH cartpole_example_skrl.py
+            PYTHON_PATH torch_isaacsim_cartpole_ppo.py
 
         .. raw:: html
 
             <br>
 
-        :download:`cartpole_example_skrl.py <../examples/isaacsim/cartpole_example_skrl.py>`
+        .. tabs::
 
-        .. literalinclude:: ../examples/isaacsim/cartpole_example_skrl.py
-            :language: python
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
+
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - Cartpole
+                      - :download:`torch_isaacsim_cartpole_ppo.py <../examples/isaacsim/torch_isaacsim_cartpole_ppo.py>`
+                      -
 
     .. tab:: Isaac Sim 2021.2.1 (JetBot)
 
@@ -1201,13 +1213,13 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
                     ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
 
                     # download the sample code from GitHub
-                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/torch_isaacsim_jetbot_ppo.py
 
                     # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
                     cp ../stable_baselines_example/env.py .
 
                     # run the experiment
-                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh isaacsim_jetbot_ppo.py
+                    ~/.local/share/ov/pkg/isaac_sim-2021.2.1/python.sh torch_isaacsim_jetbot_ppo.py
 
             .. tab:: Remote container (setup)
 
@@ -1221,23 +1233,34 @@ These examples show how to train an agent in an Omniverse Isaac Sim environment 
                     /isaac-sim/kit/python/bin/python3 -m pip install -e git+https://github.com/Toni-SM/skrl.git#egg=skrl
 
                     # download the sample code from GitHub
-                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/isaacsim_jetbot_ppo.py
+                    wget https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/examples/isaacsim/torch_isaacsim_jetbot_ppo.py
 
                     # copy the Isaac Sim sample environment (JetBotEnv) to the working directory
                     cp ../stable_baselines_example/env.py .
 
                     # run the experiment
-                    /isaac-sim/python.sh isaacsim_jetbot_ppo.py
+                    /isaac-sim/python.sh torch_isaacsim_jetbot_ppo.py
 
         .. raw:: html
 
             <br>
 
-        :download:`isaacsim_jetbot_ppo.py <../examples/isaacsim/isaacsim_jetbot_ppo.py>`
+        .. tabs::
 
-        .. literalinclude:: ../examples/isaacsim/isaacsim_jetbot_ppo.py
-            :language: python
-            :emphasize-lines: 24-39, 45, 53-68, 73
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
+
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - JetBot
+                      - :download:`torch_isaacsim_jetbot_ppo.py <../examples/isaacsim/torch_isaacsim_jetbot_ppo.py>`
+                      -
 
 .. raw:: html
 

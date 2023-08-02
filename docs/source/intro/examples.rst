@@ -1394,7 +1394,7 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Prerequisites:**
 
-                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
+                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
@@ -1625,7 +1625,7 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Prerequisites:**
 
-                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
+                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
 
                 **Files** (the implementation is self-contained so no specific location is required):
 

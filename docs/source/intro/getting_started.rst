@@ -43,208 +43,345 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, Isaac Gym and Omniverse Isaac Gym interfaces (the last two have slight differences with Gym) and offer, for library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, NVIDIA Isaac Gym, Isaac Orbit and Omniverse Isaac Gym interfaces, among others. The wrapped environments provide, to the library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
-.. image:: ../_static/imgs/wrapping-light.svg
-    :width: 100%
-    :align: center
-    :class: only-light
-    :alt: Environment wrapping
-
-.. image:: ../_static/imgs/wrapping-dark.svg
-    :width: 100%
-    :align: center
-    :class: only-dark
-    :alt: Environment wrapping
-
-Within the methods and properties defined in the wrapped environment, the observation and action space are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
+* For **multi-agent** environments, skrl offers a function to **wrap environments** based on the PettingZoo and Bi-DexHands interfaces. The wrapped environments provide, to the library components, a common interface (based on PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
 .. tabs::
 
-    .. tab:: Omniverse Isaac Gym
+    .. group-tab:: Single-agent environments
+
+        .. image:: ../_static/imgs/wrapping-light.svg
+            :width: 100%
+            :align: center
+            :class: only-light
+            :alt: Environment wrapping
+
+        .. image:: ../_static/imgs/wrapping-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
+            :alt: Environment wrapping
+
+    .. group-tab:: Multi-agent environments
+
+        .. image:: ../_static/imgs/multi_agent_wrapping-light.svg
+            :width: 100%
+            :align: center
+            :class: only-light
+            :alt: Environment wrapping
+
+        .. image:: ../_static/imgs/multi_agent_wrapping-dark.svg
+            :width: 100%
+            :align: center
+            :class: only-dark
+            :alt: Environment wrapping
+
+Among the methods and properties defined in the wrapped environment, the observation and action spaces are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
+
+.. tabs::
+
+    .. group-tab:: Single-agent environments
 
         .. tabs::
 
-            .. tab:: Common environment
-
-                .. code-block:: python
-
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_omniverse_isaacgym_env
-
-                    # load the environment
-                    env = load_omniverse_isaacgym_env(task_name="Cartpole")
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-
-            .. tab:: Multi-threaded environment
-
-                .. code-block:: python
-
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_omniverse_isaacgym_env
-
-                    # load the multi-threaded environment
-                    env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-
-    .. tab:: Isaac Gym
-
-        .. tabs::
-
-            .. tab:: Preview 4 (isaacgymenvs.make)
-
-                .. code-block:: python
-
-                    import isaacgymenvs
-
-                    # import the environment wrapper
-                    from skrl.envs.torch import wrap_env
-
-                    # create/load the environment using the easy-to-use API from NVIDIA
-                    env = isaacgymenvs.make(seed=0,
-                                            task="Cartpole",
-                                            num_envs=512,
-                                            sim_device="cuda:0",
-                                            rl_device="cuda:0",
-                                            graphics_device_id=0,
-                                            headless=False)
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-
-            .. tab:: Preview 4
-
-                .. code-block:: python
-
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview4
-
-                    # load the environment
-                    env = load_isaacgym_env_preview4(task_name="Cartpole")
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-
-            .. tab:: Preview 3
-
-                .. code-block:: python
-
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview3
-
-                    # load the environment
-                    env = load_isaacgym_env_preview3(task_name="Cartpole")
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
-
-            .. tab:: Preview 2
-
-                .. code-block:: python
-
-                    # import the environment wrapper and loader
-                    from skrl.envs.torch import wrap_env
-                    from skrl.envs.torch import load_isaacgym_env_preview2
-
-                    # load the environment
-                    env = load_isaacgym_env_preview2(task_name="Cartpole")
-
-                    # wrap the environment
-                    env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
-
-    .. tab:: Gym / Gymnasium
-
-        .. tabs::
-
-            .. tab:: Gym
+            .. tab:: Omniverse Isaac Gym
 
                 .. tabs::
 
-                    .. tab:: Single environment
+                    .. tab:: Common environment
 
-                        .. code-block:: python
+                        .. tabs::
 
-                            # import the environment wrapper and gym
-                            from skrl.envs.torch import wrap_env
-                            import gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load environment
-                            env = gym.make('Pendulum-v1')
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-omniverse-isaacgym]
+                                    :end-before: [pytorch-end-omniverse-isaacgym]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            .. group-tab:: |_4| |jax| |_4|
 
-                    .. tab:: Vectorized environment
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-omniverse-isaacgym]
+                                    :end-before: [jax-end-omniverse-isaacgym]
 
-                        Visit the OpenAI Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments.
+                    .. tab:: Multi-threaded environment
 
-                        .. code-block:: python
+                        .. tabs::
 
-                            # import the environment wrapper and gym
-                            from skrl.envs.torch import wrap_env
-                            import gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load a vectorized environment
-                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-omniverse-isaacgym-mt]
+                                    :end-before: [pytorch-end-omniverse-isaacgym-mt]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
+                            .. group-tab:: |_4| |jax| |_4|
 
-            .. tab:: Gymnasium
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-omniverse-isaacgym-mt]
+                                    :end-before: [jax-end-omniverse-isaacgym-mt]
+
+            .. tab:: Isaac Orbit
 
                 .. tabs::
 
-                    .. tab:: Single environment
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                        .. code-block:: python
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaac-orbit]
+                            :end-before: [pytorch-end-isaac-orbit]
 
-                            # import the environment wrapper and gymnasium
-                            from skrl.envs.torch import wrap_env
-                            import gymnasium as gym
+                    .. group-tab:: |_4| |jax| |_4|
 
-                            # load environment
-                            env = gym.make('Pendulum-v1')
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaac-orbit]
+                            :end-before: [jax-end-isaac-orbit]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+            .. tab:: Isaac Gym
 
-                    .. tab:: Vectorized environment
+                .. tabs::
 
-                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments.
+                    .. tab:: Preview 4 (isaacgymenvs.make)
 
-                        .. code-block:: python
+                        .. tabs::
 
-                            # import the environment wrapper and gymnasium
-                            from skrl.envs.torch import wrap_env
-                            import gymnasium as gym
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-                            # load a vectorized environment
-                            env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-isaacgym-preview4-make]
+                                    :end-before: [pytorch-end-isaacgym-preview4-make]
 
-                            # wrap the environment
-                            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+                            .. group-tab:: |_4| |jax| |_4|
 
-    .. tab:: DeepMind
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-isaacgym-preview4-make]
+                                    :end-before: [jax-end-isaacgym-preview4-make]
 
-        .. code-block:: python
+                    .. tab:: Preview 4
 
-            # import the environment wrapper and the deepmind suite
-            from skrl.envs.torch import wrap_env
-            from dm_control import suite
+                        .. tabs::
 
-            # load environment
-            env = suite.load(domain_name="cartpole", task_name="swingup")
+                            .. group-tab:: |_4| |pytorch| |_4|
 
-            # wrap the environment
-            env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-isaacgym-preview4]
+                                    :end-before: [pytorch-end-isaacgym-preview4]
+
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-isaacgym-preview4]
+                                    :end-before: [jax-end-isaacgym-preview4]
+
+                    .. tab:: Preview 3
+
+                        .. tabs::
+
+                            .. group-tab:: |_4| |pytorch| |_4|
+
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-isaacgym-preview3]
+                                    :end-before: [pytorch-end-isaacgym-preview3]
+
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-isaacgym-preview3]
+                                    :end-before: [jax-end-isaacgym-preview3]
+
+                    .. tab:: Preview 2
+
+                        .. tabs::
+
+                            .. group-tab:: |_4| |pytorch| |_4|
+
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-isaacgym-preview2]
+                                    :end-before: [pytorch-end-isaacgym-preview2]
+
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-isaacgym-preview2]
+                                    :end-before: [jax-end-isaacgym-preview2]
+
+            .. tab:: Gym / Gymnasium
+
+                .. tabs::
+
+                    .. tab:: Gym
+
+                        .. tabs::
+
+                            .. tab:: Single environment
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gym]
+                                            :end-before: [pytorch-end-gym]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gym]
+                                            :end-before: [jax-end-gym]
+
+                            .. tab:: Vectorized environment
+
+                                Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gym-vectorized]
+                                            :end-before: [pytorch-end-gym-vectorized]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gym-vectorized]
+                                            :end-before: [jax-end-gym-vectorized]
+
+                    .. tab:: Gymnasium
+
+                        .. tabs::
+
+                            .. tab:: Single environment
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gymnasium]
+                                            :end-before: [pytorch-end-gymnasium]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gymnasium]
+                                            :end-before: [jax-end-gymnasium]
+
+                            .. tab:: Vectorized environment
+
+                                Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gymnasium-vectorized]
+                                            :end-before: [pytorch-end-gymnasium-vectorized]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gymnasium-vectorized]
+                                            :end-before: [jax-end-gymnasium-vectorized]
+
+            .. tab:: DeepMind
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-deepmind]
+                            :end-before: [pytorch-end-deepmind]
+
+                    .. .. group-tab:: |_4| |jax| |_4|
+
+                    ..     .. literalinclude:: ../snippets/wrapping.py
+                    ..         :language: python
+                    ..         :start-after: [jax-start-deepmind]
+                    ..         :end-before: [jax-end-deepmind]
+
+            .. tab:: robosuite
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-robosuite]
+                            :end-before: [pytorch-end-robosuite]
+
+                    .. .. group-tab:: |_4| |jax| |_4|
+
+                    ..     .. literalinclude:: ../snippets/wrapping.py
+                    ..         :language: python
+                    ..         :start-after: [jax-start-robosuite]
+                    ..         :end-before: [jax-end-robosuite]
+
+    .. group-tab:: Multi-agent environments
+
+        .. tabs::
+
+            .. tab:: PettingZoo
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [start-pettingzoo-torch]
+                            :end-before: [end-pettingzoo-torch]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [start-pettingzoo-jax]
+                            :end-before: [end-pettingzoo-jax]
+
+            .. tab:: Bi-DexHands
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [start-bidexhands-torch]
+                            :end-before: [end-bidexhands-torch]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [start-bidexhands-jax]
+                            :end-before: [end-bidexhands-jax]
 
 Once the environment is known (and instantiated), it is time to configure and instantiate the agent. Agents are composed, apart from the optimization algorithm, by several components, such as memories, models or noises, for example, according to their nature. The following subsections focus on those components.
 
@@ -265,14 +402,23 @@ The following code snippets show how to instantiate a memory:
 
     .. tab:: Random memory
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.memories.torch import RandomMemory
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # instantiate a memory
-            memory = RandomMemory(memory_size=100000, num_envs=env.num_envs)
+                .. literalinclude:: ../snippets/memories.py
+                    :language: python
+                    :start-after: [start-random-torch]
+                    :end-before: [end-random-torch]
 
-Memories are passed directly to the agent constructor, if required (not all agents require memory, such as Q-learning or SARSA, for example), during its instantiation under the argument :literal:`memory`.
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../snippets/memories.py
+                    :language: python
+                    :start-after: [start-random-jax]
+                    :end-before: [end-random-jax]
+
+Memories are passed directly to the agent constructor, if required (not all agents require memory, such as Q-learning or SARSA, for example), during its instantiation under the argument :literal:`memory` (or :literal:`memories`).
 
 .. raw:: html
 
@@ -283,9 +429,7 @@ Memories are passed directly to the agent constructor, if required (not all agen
 
 Models are the agents' brains. Agents can have one or several models and their parameters are adjusted via the optimization algorithms.
 
-In contrast to other libraries, skrl does not provide predefined models or fixed templates (this practice tends to hide and reduce the flexibility of the system, forcing developers to deeply inspect the code to make even small changes). Nevertheless, **helper classes/mixins are provided** to create discrete and continuous (stochastic or deterministic) models with the library. In this way, the user/researcher should only be concerned with the definition of the approximation functions (tables or artificial neural networks), having all the control in his hands.
-
-The following code snippets show how to define a model, based on the concept of each respective image, using the provided classes/mixins. For more information refer to :ref:`Categorical <models_categorical>`, :ref:`Gaussian <models_gaussian>`, :ref:`Multivariate Gaussian <models_multivariate_gaussian>` and :ref:`Deterministic <models_deterministic>` sections for artificial neural networks models, and :ref:`Tabular <models_tabular>` section for tabular models.
+In contrast to other libraries, skrl does not provide predefined models or fixed templates (this practice tends to hide and reduce the flexibility of the system, forcing developers to deeply inspect the code to make even small changes). Nevertheless, **helper mixins are provided** to create discrete and continuous (stochastic or deterministic) models with the library. In this way, the user/researcher should only be concerned with the definition of the approximation functions (tables or artificial neural networks), having all the control in his hands. The following diagrams show the concept of the provided mixins.
 
 .. tabs::
 
@@ -305,28 +449,9 @@ The following code snippets show how to define a model, based on the concept of 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        .. code-block:: python
-
-            import torch
-            import torch.nn as nn
-            from skrl.models.torch import Model, CategoricalMixin
-
-            # define the model
-            class Policy(CategoricalMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0", unnormalized_log_prob=True):
-                    Model.__init__(self, observation_space, action_space, device)
-                    CategoricalMixin.__init__(self, unnormalized_log_prob)
-
-                    self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-                                            nn.ELU(),
-                                            nn.Linear(32, 32),
-                                            nn.ELU(),
-                                            nn.Linear(32, self.num_actions))
-
-                def compute(self, inputs, role):
-                    return self.net(inputs["states"]), {}
+        For snippets refer to :ref:`Categorical <models_categorical>` model section.
 
     .. tab:: Gaussian
 
@@ -344,30 +469,9 @@ The following code snippets show how to define a model, based on the concept of 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        .. code-block:: python
-
-            import torch
-            import torch.nn as nn
-            from skrl.models.torch import Model, GaussianMixin
-
-            # define the model
-            class Policy(GaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0",
-                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-                    Model.__init__(self, observation_space, action_space, device)
-                    GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
-
-                    self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, self.num_actions))
-                    self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-                def compute(self, inputs, role):
-                    return self.net(inputs["states"]), self.log_std_parameter, {}
+        For snippets refer to :ref:`Gaussian <models_gaussian>` model section.
 
     .. tab:: Multivariate Gaussian
 
@@ -385,30 +489,9 @@ The following code snippets show how to define a model, based on the concept of 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        .. code-block:: python
-
-            import torch
-            import torch.nn as nn
-            from skrl.models.torch import Model, MultivariateGaussianMixin
-
-            # define the model
-            class Policy(MultivariateGaussianMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0",
-                             clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2):
-                    Model.__init__(self, observation_space, action_space, device)
-                    MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
-
-                    self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, self.num_actions))
-                    self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-                def compute(self, inputs, role):
-                    return self.net(inputs["states"]), self.log_std_parameter, {}
+        For snippets refer to :ref:`Multivariate Gaussian <models_multivariate_gaussian>` model section.
 
     .. tab:: Deterministic
 
@@ -426,49 +509,13 @@ The following code snippets show how to define a model, based on the concept of 
 
         .. raw:: html
 
-            <hr>
+            <br>
 
-        .. code-block:: python
-
-            import torch
-            import torch.nn as nn
-            from skrl.models.torch import Model, DeterministicMixin
-
-            # define the model
-            class Policy(DeterministicMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
-                    Model.__init__(self, observation_space, action_space, device)
-                    DeterministicMixin.__init__(self, clip_actions)
-
-                    self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, 32),
-                                             nn.ELU(),
-                                             nn.Linear(32, self.num_actions))
-
-                def compute(self, inputs, role):
-                    return self.net(inputs["states"]), {}
+        For snippets refer to :ref:`Deterministic <models_deterministic>` model section.
 
     .. tab:: Tabular
 
-        .. code-block:: python
-
-            import torch
-            from skrl.models.torch import Model, TabularMixin
-
-            # define the model
-            class Policy(TabularMixin, Model):
-                def __init__(self, observation_space, action_space, device="cuda:0", num_envs=1):
-                    Model.__init__(self, observation_space, action_space, device)
-                    TabularMixin.__init__(self, num_envs)
-
-                    self.table = torch.ones((num_envs, self.num_observations, self.num_actions),
-                                            dtype=torch.float32, device=self.device)
-
-                def compute(self, inputs, role):
-                    actions = torch.argmax(self.table[torch.arange(self.num_envs).view(-1, 1), inputs["states"]],
-                                           dim=-1, keepdim=True).view(-1,1)
-                    return actions, {}
+        For snippets refer to :ref:`Tabular <models_tabular>` model section.
 
 Models must be collected in a dictionary and passed to the agent constructor during its instantiation under the argument :literal:`models`. The dictionary keys are specific to each agent. Visit their respective documentation for more details (under *Spaces and models* section). For example, the PPO agent requires the policy and value models as shown below:
 
@@ -489,36 +536,45 @@ Models can be saved and loaded to and from the file system. However, the recomme
 
 Noise plays a fundamental role in the exploration stage, especially in agents of a deterministic nature, such as DDPG or TD3, for example.
 
-skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :doc:`Noises <../api/resources/noises>` documentation for more information.
+skrl provides, as part of its resources, **classes for instantiating noises** as shown in the following code snippets. Refer to :doc:`Noises <../api/resources/noises>` documentation for more information. Noise instances are passed to the agents in their respective configuration dictionaries.
 
 .. tabs::
 
     .. tab:: Gaussian noise
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.resources.noises.torch import GaussianNoise
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # instantiate a noise
-            noise = GaussianNoise(mean=0, std=0.2, device=env.device)
+                .. literalinclude:: ../snippets/noises.py
+                    :language: python
+                    :start-after: [torch-start-gaussian]
+                    :end-before: [torch-end-gaussian]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../snippets/noises.py
+                    :language: python
+                    :start-after: [jax-start-gaussian]
+                    :end-before: [jax-end-gaussian]
 
     .. tab:: Ornstein-Uhlenbeck noise
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # instantiate a noise
-            noise = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device=env.device)
+                .. literalinclude:: ../snippets/noises.py
+                    :language: python
+                    :start-after: [torch-start-ornstein-uhlenbeck]
+                    :end-before: [torch-end-ornstein-uhlenbeck]
 
-Noise instances are passed to the agents in their respective configuration dictionaries. For example, the DDPG agent requires the exploration noise as shown below:
+            .. group-tab:: |_4| |jax| |_4|
 
-.. code-block:: python
-
-    from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-
-    agent_cfg = DDPG_DEFAULT_CONFIG.copy()
-    agent_cfg["exploration"]["noise"] = noise
+                .. literalinclude:: ../snippets/noises.py
+                    :language: python
+                    :start-after: [jax-start-ornstein-uhlenbeck]
+                    :end-before: [jax-end-ornstein-uhlenbeck]
 
 .. raw:: html
 
@@ -529,18 +585,33 @@ Noise instances are passed to the agents in their respective configuration dicti
 
 Learning rate schedulers help RL system converge faster and improve accuracy.
 
-skrl **supports all PyTorch learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :doc:`Learning rate schedulers <../api/resources/schedulers>` documentation for more information.
+skrl **supports all PyTorch and JAX (Optax) learning rate schedulers** and provides, as part of its resources, **additional schedulers**. Refer to :doc:`Learning rate schedulers <../api/resources/schedulers>` documentation for more information.
 
 Learning rate schedulers classes and their respective arguments (except the :literal:`optimizer` argument) are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the schedulers can be configured as shown below:
 
-.. code-block:: python
+.. tabs::
 
-    from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-    from skrl.resources.schedulers.torch import KLAdaptiveRL
+    .. group-tab:: |_4| |pytorch| |_4|
 
-    agent_cfg = PPO_DEFAULT_CONFIG.copy()
-    agent_cfg["learning_rate_scheduler"] = KLAdaptiveRL
-    agent_cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+        .. code-block:: python
+
+            from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
+            from skrl.resources.schedulers.torch import KLAdaptiveRL
+
+            agent_cfg = PPO_DEFAULT_CONFIG.copy()
+            agent_cfg["learning_rate_scheduler"] = KLAdaptiveRL
+            agent_cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. code-block:: python
+
+            from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+            from skrl.resources.schedulers.jax import KLAdaptiveRL
+
+            agent_cfg = PPO_DEFAULT_CONFIG.copy()
+            agent_cfg["learning_rate_scheduler"] = KLAdaptiveRL
+            agent_cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
 
 .. raw:: html
 
@@ -555,15 +626,31 @@ skrl provides, as part of its resources, **preprocessors** classes. Refer to :do
 
 Preprocessors classes and their respective arguments are passed to the agents in their respective configuration dictionaries. For example, for the PPO agent, one of the preprocessors can be configured as shown below:
 
-.. code-block:: python
+.. tabs::
 
-    from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-    from skrl.resources.preprocessors.torch import RunningStandardScaler
+    .. group-tab:: |_4| |pytorch| |_4|
 
-    agent_cfg["state_preprocessor"] = RunningStandardScaler
-    agent_cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": env.device}
-    agent_cfg["value_preprocessor"] = RunningStandardScaler
-    agent_cfg["value_preprocessor_kwargs"] = {"size": 1, "device": env.device}
+        .. code-block:: python
+
+            from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
+            from skrl.resources.preprocessors.torch import RunningStandardScaler
+
+            agent_cfg["state_preprocessor"] = RunningStandardScaler
+            agent_cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": env.device}
+            agent_cfg["value_preprocessor"] = RunningStandardScaler
+            agent_cfg["value_preprocessor_kwargs"] = {"size": 1, "device": env.device}
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. code-block:: python
+
+            from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+            from skrl.resources.preprocessors.jax import RunningStandardScaler
+
+            agent_cfg["state_preprocessor"] = RunningStandardScaler
+            agent_cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": env.device}
+            agent_cfg["value_preprocessor"] = RunningStandardScaler
+            agent_cfg["value_preprocessor_kwargs"] = {"size": 1, "device": env.device}
 
 .. raw:: html
 
@@ -574,33 +661,60 @@ Preprocessors classes and their respective arguments are passed to the agents in
 
 Agents are the components in charge of decision making. They are much more than models (neural networks, for example) and include the optimization algorithms that compute the optimal policy
 
-skrl provides **state-of-the-art agent**. Its implementations are focused on readability, simplicity and code transparency. Each agent is implemented independently even when two or more agents may contain code in common. Refer to each agent documentation for more information about the models and spaces they support, their respective configurations, algorithm details and more.
+skrl provides **state-of-the-art agents**. Their implementations are focused on readability, simplicity and code transparency. Each agent is implemented independently even when two or more agents may contain code in common. Refer to each agent documentation for more information about the models and spaces they support, their respective configurations, algorithm details and more.
 
-    * :doc:`Advantage Actor Critic <../api/agents/a2c>` (**A2C**)
-    * :doc:`Adversarial Motion Priors <../api/agents/amp>` (**AMP**)
-    * :doc:`Cross-Entropy Method <../api/agents/cem>` (**CEM**)
-    * :doc:`Deep Deterministic Policy Gradient <../api/agents/ddpg>` (**DDPG**)
-    * :doc:`Double Deep Q-Network <../api/agents/ddqn>` (**DDQN**)
-    * :doc:`Deep Q-Network <../api/agents/dqn>` (**DQN**)
-    * :doc:`Proximal Policy Optimization <../api/agents/ppo>` (**PPO**)
-    * :doc:`Q-learning <../api/agents/q_learning>` (**Q-learning**)
-    * :doc:`Soft Actor-Critic <../api/agents/sac>` (**SAC**)
-    * :doc:`State Action Reward State Action <../api/agents/sarsa>` (**SARSA**)
-    * :doc:`Twin-Delayed DDPG <../api/agents/td3>` (**TD3**)
-    * :doc:`Trust Region Policy Optimization <../api/agents/trpo>` (**TRPO**)
+.. tabs::
+
+    .. group-tab:: (Single) agents
+
+        * :doc:`Advantage Actor Critic <../api/agents/a2c>` (**A2C**)
+        * :doc:`Adversarial Motion Priors <../api/agents/amp>` (**AMP**)
+        * :doc:`Cross-Entropy Method <../api/agents/cem>` (**CEM**)
+        * :doc:`Deep Deterministic Policy Gradient <../api/agents/ddpg>` (**DDPG**)
+        * :doc:`Double Deep Q-Network <../api/agents/ddqn>` (**DDQN**)
+        * :doc:`Deep Q-Network <../api/agents/dqn>` (**DQN**)
+        * :doc:`Proximal Policy Optimization <../api/agents/ppo>` (**PPO**)
+        * :doc:`Q-learning <../api/agents/q_learning>` (**Q-learning**)
+        * :doc:`Robust Policy Optimization <../api/agents/rpo>` (**RPO**)
+        * :doc:`Soft Actor-Critic <../api/agents/sac>` (**SAC**)
+        * :doc:`State Action Reward State Action <../api/agents/sarsa>` (**SARSA**)
+        * :doc:`Twin-Delayed DDPG <../api/agents/td3>` (**TD3**)
+        * :doc:`Trust Region Policy Optimization <../api/agents/trpo>` (**TRPO**)
+
+    .. group-tab:: Multi-agents
+
+        * :doc:`Independent Proximal Policy Optimization <../api/multi_agents/ippo>` (**IPPO**)
+        * :doc:`Multi-Agent Proximal Policy Optimization <../api/multi_agents/mappo>` (**MAPPO**)
 
 Agents generally expect, as arguments, the following components: models and memories, as well as the following variables: observation and action spaces, the device where their logic is executed and a configuration dictionary with hyperparameters and other values. The remaining components, mentioned above, are collected through the configuration dictionary. For example, the PPO agent can be instantiated as follows:
 
-.. code-block:: python
+.. tabs::
 
-    from skrl.agents.torch.ppo import PPO
+    .. group-tab:: |_4| |pytorch| |_4|
 
-    agent = PPO(models=models,  # models dict
-                memory=memory,  # memory instance, or None if not required
-                cfg=agent_cfg,  # configuration dict (preprocessors, learning rate schedulers, etc.)
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device)
+        .. code-block:: python
+
+            from skrl.agents.torch.ppo import PPO
+
+            agent = PPO(models=models,  # models dict
+                        memory=memory,  # memory instance, or None if not required
+                        cfg=agent_cfg,  # configuration dict (preprocessors, learning rate schedulers, etc.)
+                        observation_space=env.observation_space,
+                        action_space=env.action_space,
+                        device=env.device)
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. code-block:: python
+
+            from skrl.agents.jax.ppo import PPO
+
+            agent = PPO(models=models,  # models dict
+                        memory=memory,  # memory instance, or None if not required
+                        cfg=agent_cfg,  # configuration dict (preprocessors, learning rate schedulers, etc.)
+                        observation_space=env.observation_space,
+                        action_space=env.action_space,
+                        device=env.device)
 
 Agents can be saved and loaded to and from the file system. This is the **recommended practice** for loading checkpoints to perform evaluations or to continue interrupted training (since they include, in addition to models, other internal components and instances such as preprocessors or optimizers). Refer to :doc:`Saving, loading and logging <data>` (under *Checkpoints* section) for more information.
 
@@ -613,59 +727,58 @@ Agents can be saved and loaded to and from the file system. This is the **recomm
 
 Now that both actors, the environment and the agent, are instantiated, it is time to put the RL system in motion.
 
-skrl offers classes (called **trainers**) that manage the interaction cycle between the environment and the agent(s) for both: training and evaluation. These classes also enable the simultaneous training and evaluation of several agents by scope (subsets of environments among all available environments), which may or may not share resources, in the same run.
+skrl offers classes (called :doc:`Trainers <../api/trainers>`) that manage the interaction cycle between the environment and the agent(s) for both: training and evaluation. These classes also enable the simultaneous training and evaluation of several agents by scope (subsets of environments among all available environments), which may or may not share resources, in the same run.
 
-The following code snippets show how to load and wrap environments based on the supported interfaces:
+The following code snippets show how to train/evaluate RL systems using the available trainers:
 
 .. tabs::
 
     .. tab:: Sequential trainer
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.trainers.torch import SequentialTrainer
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # create a sequential trainer
-            cfg = {"timesteps": 50000, "headless": False}
-            trainer = SequentialTrainer(env=env, agents=[agent], cfg=cfg)
+                .. literalinclude:: ../snippets/trainer.py
+                    :language: python
+                    :start-after: [pytorch-start-sequential]
+                    :end-before: [pytorch-end-sequential]
 
-            # train the agent(s)
-            trainer.train()
+            .. group-tab:: |_4| |jax| |_4|
 
-            # evaluate the agent(s)
-            trainer.eval()
+                .. literalinclude:: ../snippets/trainer.py
+                    :language: python
+                    :start-after: [jax-start-sequential]
+                    :end-before: [jax-end-sequential]
 
     .. tab:: Parallel trainer
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.trainers.torch import ParallelTrainer
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # create a parallel trainer
-            cfg = {"timesteps": 50000, "headless": False}
-            trainer = ParallelTrainer(env=env, agents=[agent], cfg=cfg)
-
-            # train the agent(s)
-            trainer.train()
-
-            # evaluate the agent(s)
-            trainer.eval()
+                .. literalinclude:: ../snippets/trainer.py
+                    :language: python
+                    :start-after: [pytorch-start-parallel]
+                    :end-before: [pytorch-end-parallel]
 
     .. tab:: Manual trainer
 
-        .. code-block:: python
+        .. tabs::
 
-            from skrl.trainers.torch import ManualTrainer
+            .. group-tab:: |_4| |pytorch| |_4|
 
-            # create a manual trainer
-            cfg = {"timesteps": 50000, "headless": False}
-            trainer = ManualTrainer(env=env, agents=[agent], cfg=cfg)
+                .. literalinclude:: ../snippets/trainer.py
+                    :language: python
+                    :start-after: [pytorch-start-manual]
+                    :end-before: [pytorch-end-manual]
 
-            # train the agent(s)
-            trainer.train()
+            .. group-tab:: |_4| |jax| |_4|
 
-            # evaluate the agent(s)
-            trainer.eval()
+                .. literalinclude:: ../snippets/trainer.py
+                    :language: python
+                    :start-after: [jax-start-manual]
+                    :end-before: [jax-end-manual]
 
 .. raw:: html
 

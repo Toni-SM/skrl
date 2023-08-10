@@ -144,6 +144,7 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                    clip_log_std: bool = True,
                    min_log_std: float = -20,
                    max_log_std: float = 2,
+                   initial_log_std: float = 0,
                    input_shape: Shape = Shape.STATES,
                    hiddens: list = [256, 256],
                    hidden_activation: list = ["relu", "relu"],
@@ -169,6 +170,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :type min_log_std: float, optional
     :param max_log_std: Maximum value of the log standard deviation (default: 2)
     :type max_log_std: float, optional
+    :param initial_log_std: Initial value for the log standard deviation (default: 0)
+    :type initial_log_std: float, optional
     :param input_shape: Shape of the input (default: Shape.STATES)
     :type input_shape: Shape, optional
     :param hiddens: Number of hidden units in each hidden layer
@@ -209,7 +212,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                                             output_shape=metadata["output_shape"],
                                             output_activation=metadata["output_activation"],
                                             output_scale=metadata["output_scale"])
-            self.log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(_get_num_units_by_shape(self, metadata["output_shape"])))
+            self.log_std_parameter = self.param("log_std_parameter", lambda _: metadata["initial_log_std"] \
+                                                * jnp.ones(_get_num_units_by_shape(self, metadata["output_shape"])))
 
         def __call__(self, inputs, role):
             if self.instantiator_input_type == 0:
@@ -226,7 +230,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                 "hidden_activation": hidden_activation,
                 "output_shape": output_shape,
                 "output_activation": output_activation,
-                "output_scale": output_scale}
+                "output_scale": output_scale,
+                "initial_log_std": initial_log_std}
 
     return GaussianModel(observation_space=observation_space,
                          action_space=action_space,

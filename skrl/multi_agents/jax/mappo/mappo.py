@@ -49,6 +49,7 @@ MAPPO_DEFAULT_CONFIG = {
     "kl_threshold": 0,              # KL divergence threshold for early stopping
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -273,6 +274,7 @@ class MAPPO(MultiAgent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self._as_dict(self.cfg["time_limit_bootstrap"])
 
         # set up optimizer and learning rate scheduler
         self.policy_optimizer = {}
@@ -423,13 +425,17 @@ class MAPPO(MultiAgent):
             for uid in self.possible_agents:
                 # reward shaping
                 if self._rewards_shaper is not None:
-                    rewards = self._rewards_shaper(rewards, timestep, timesteps)
+                    rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
                 values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states[uid])}, role="value")
                 if not self._jax:  # numpy backend
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
+
+                # time-limit (truncation) boostrapping
+                if self._time_limit_bootstrap[uid]:
+                    rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],

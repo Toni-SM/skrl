@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.0.0-rc.2] - Unreleased
+### Added
+- Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
+- Time-limit (truncation) boostrapping in on-policy actor-critic agents
+- Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
+
 ### Changed
 - Structure environment loaders and wrappers file hierarchy coherently [**breaking change**]
 - Drop support for versions prior to PyTorch 1.9 (1.8.0 and 1.8.1)

@@ -27,7 +27,7 @@ class IsaacOrbitWrapper(Wrapper):
         :rtype: tuple of torch.Tensor and any other info
         """
         self._obs_dict, reward, terminated, info = self._env.step(actions)
-        truncated = torch.zeros_like(terminated)
+        truncated = info["time_outs"] if "time_outs" in info else torch.zeros_like(terminated)
         return self._obs_dict["policy"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:

@@ -64,12 +64,14 @@ class OmniverseIsaacGymWrapper(Wrapper):
 
         with torch.no_grad():
             self._obs_dict, reward, terminated, info = self._env.step(actions)
-            terminated = terminated.to(dtype=torch.int8).view(-1, 1)
+
+        terminated = terminated.to(dtype=torch.int8)
+        truncated = info["time_outs"].to(dtype=torch.int8) if "time_outs" in info else torch.zeros_like(terminated)
 
         return _torch2jax(self._obs_dict["obs"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \
-               _torch2jax(terminated, self._jax), \
-               _torch2jax(terminated, self._jax), \
+               _torch2jax(terminated.view(-1, 1), self._jax), \
+               _torch2jax(truncated.view(-1, 1), self._jax), \
                info
 
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:

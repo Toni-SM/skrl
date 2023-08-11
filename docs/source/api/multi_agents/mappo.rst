@@ -151,8 +151,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/multi_agents/torch/mappo/mappo.py
     :language: python
-    :lines: 18-63
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

@@ -7,7 +7,7 @@ import torch.nn as nn
 # import the skrl components to build the RL system
 from skrl.agents.torch.ppo import PPO_DEFAULT_CONFIG
 from skrl.agents.torch.ppo import PPO_RNN as PPO
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.torch import RunningStandardScaler

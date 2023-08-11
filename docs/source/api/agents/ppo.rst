@@ -71,7 +71,7 @@ Learning algorithm
 |     :green:`# mini-batches loop`
 |     **FOR** each mini-batch [:math:`s, a, logp, V, R, A`] up to :guilabel:`mini_batches` **DO**
 |         :math:`logp' \leftarrow \pi_\theta(s, a)`
-|         :green:`# compute aproximate KL divergence`
+|         :green:`# compute approximate KL divergence`
 |         :math:`ratio \leftarrow logp' - logp`
 |         :math:`KL_{_{divergence}} \leftarrow \frac{1}{N} \sum_{i=1}^N ((e^{ratio} - 1) - ratio)`
 |         :green:`# early stopping with KL divergence`
@@ -159,8 +159,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/ppo/ppo.py
     :language: python
-    :lines: 18-61
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

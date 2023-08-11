@@ -1,7 +1,7 @@
 # [pytorch-start-omniverse-isaacgym]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load the environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole")
@@ -12,8 +12,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 
 # [jax-start-omniverse-isaacgym]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load the environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole")
@@ -25,8 +25,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 
 # [pytorch-start-omniverse-isaacgym-mt]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_omniverse_isaacgym_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
 
 # load the multi-threaded environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
@@ -38,8 +38,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 
 # [jax-start-omniverse-isaacgym-mt]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_omniverse_isaacgym_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
 
 # load the multi-threaded environment
 env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
@@ -51,8 +51,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 
 # [pytorch-start-isaac-orbit]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaac_orbit_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaac_orbit_env
 
 # load the environment
 env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
@@ -64,8 +64,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
 
 # [jax-start-isaac-orbit]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaac_orbit_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaac_orbit_env
 
 # load the environment
 env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
@@ -79,7 +79,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
 import isaacgymenvs
 
 # import the environment wrapper
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 
 # create/load the environment using the easy-to-use API from NVIDIA
 env = isaacgymenvs.make(seed=0,
@@ -99,7 +99,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 import isaacgymenvs
 
 # import the environment wrapper
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 
 # create/load the environment using the easy-to-use API from NVIDIA
 env = isaacgymenvs.make(seed=0,
@@ -117,8 +117,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
 # [pytorch-start-isaacgym-preview4]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview4
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaacgym_env_preview4
 
 # load the environment
 env = load_isaacgym_env_preview4(task_name="Cartpole")
@@ -130,8 +130,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
 # [jax-start-isaacgym-preview4]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaacgym_env_preview4
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaacgym_env_preview4
 
 # load the environment
 env = load_isaacgym_env_preview4(task_name="Cartpole")
@@ -143,8 +143,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 
 # [pytorch-start-isaacgym-preview3]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview3
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaacgym_env_preview3
 
 # load the environment
 env = load_isaacgym_env_preview3(task_name="Cartpole")
@@ -156,8 +156,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 
 # [jax-start-isaacgym-preview3]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaacgym_env_preview3
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaacgym_env_preview3
 
 # load the environment
 env = load_isaacgym_env_preview3(task_name="Cartpole")
@@ -169,8 +169,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 
 # [pytorch-start-isaacgym-preview2]
 # import the environment wrapper and loader
-from skrl.envs.torch import wrap_env
-from skrl.envs.torch import load_isaacgym_env_preview2
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaacgym_env_preview2
 
 # load the environment
 env = load_isaacgym_env_preview2(task_name="Cartpole")
@@ -182,8 +182,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
 # [jax-start-isaacgym-preview2]
 # import the environment wrapper and loader
-from skrl.envs.jax import wrap_env
-from skrl.envs.jax import load_isaacgym_env_preview2
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaacgym_env_preview2
 
 # load the environment
 env = load_isaacgym_env_preview2(task_name="Cartpole")
@@ -195,7 +195,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 
 # [pytorch-start-gym]
 # import the environment wrapper and gym
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 import gym
 
 # load the environment
@@ -208,7 +208,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
 # [jax-start-gym]
 # import the environment wrapper and gym
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 import gym
 
 # load the environment
@@ -221,7 +221,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
 # [pytorch-start-gym-vectorized]
 # import the environment wrapper and gym
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 import gym
 
 # load a vectorized environment
@@ -234,7 +234,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
 # [jax-start-gym-vectorized]
 # import the environment wrapper and gym
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 import gym
 
 # load a vectorized environment
@@ -247,7 +247,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 
 # [pytorch-start-gymnasium]
 # import the environment wrapper and gymnasium
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load the environment
@@ -260,7 +260,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
 # [jax-start-gymnasium]
 # import the environment wrapper and gymnasium
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load the environment
@@ -273,7 +273,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
 # [pytorch-start-gymnasium-vectorized]
 # import the environment wrapper and gymnasium
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
@@ -286,7 +286,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
 # [jax-start-gymnasium-vectorized]
 # import the environment wrapper and gymnasium
-from skrl.envs.jax import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
@@ -299,7 +299,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 
 # [pytorch-start-deepmind]
 # import the environment wrapper and the deepmind suite
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from dm_control import suite
 
 # load the environment
@@ -312,7 +312,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
 
 # [pytorch-start-robosuite]
 # import the environment wrapper
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 
 # import the robosuite wrapper
 import robosuite
@@ -341,8 +341,8 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
 
 # [start-bidexhands-torch]
 # import the environment wrapper and loader
-from skrl.envs.torch.wrappers import wrap_env
-from skrl.envs.torch.loaders import load_bidexhands_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_bidexhands_env
 
 # load the environment
 env = load_bidexhands_env(task_name="ShadowHandOver")
@@ -354,8 +354,8 @@ env = wrap_env(env, wrapper="bidexhands")
 
 # [start-bidexhands-jax]
 # import the environment wrapper and loader
-from skrl.envs.jax.wrappers import wrap_env
-from skrl.envs.jax.loaders import load_bidexhands_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_bidexhands_env
 
 # load the environment
 env = load_bidexhands_env(task_name="ShadowHandOver")
@@ -367,7 +367,7 @@ env = wrap_env(env, wrapper="bidexhands")
 
 # [start-pettingzoo-torch]
 # import the environment wrapper
-from skrl.envs.torch.wrappers import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 
 # import a PettingZoo environment
 from pettingzoo.sisl import multiwalker_v9
@@ -382,7 +382,7 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
 
 # [start-pettingzoo-jax]
 # import the environment wrapper
-from skrl.envs.jax.wrappers import wrap_env
+from skrl.envs.wrappers.jax import wrap_env
 
 # import a PettingZoo environment
 from pettingzoo.sisl import multiwalker_v9

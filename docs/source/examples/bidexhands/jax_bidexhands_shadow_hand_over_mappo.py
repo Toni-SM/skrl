@@ -6,7 +6,8 @@ import jax.numpy as jnp
 
 # import the skrl components to build the RL system
 from skrl import config
-from skrl.envs.jax import load_bidexhands_env, wrap_env
+from skrl.envs.loaders.jax import load_bidexhands_env
+from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
 from skrl.multi_agents.jax.mappo import MAPPO, MAPPO_DEFAULT_CONFIG

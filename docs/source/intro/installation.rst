@@ -25,7 +25,7 @@ According to the specific ML frameworks, the following libraries are required:
 PyTorch
 """""""
 
-    * `torch <https://pytorch.org>`_ 1.8.0 or higher
+    * `torch <https://pytorch.org>`_ 1.9.0 or higher
 
 JAX
 """

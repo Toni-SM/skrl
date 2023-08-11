@@ -82,7 +82,7 @@ Usage
 API (PyTorch)
 -------------
 
-.. autofunction:: skrl.envs.torch.wrappers.wrap_env
+.. autofunction:: skrl.envs.wrappers.torch.wrap_env
 
 .. raw:: html
 
@@ -91,7 +91,7 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autofunction:: skrl.envs.jax.wrappers.wrap_env
+.. autofunction:: skrl.envs.wrappers.jax.wrap_env
 
 .. raw:: html
 
@@ -100,7 +100,7 @@ API (JAX)
 Internal API (PyTorch)
 ----------------------
 
-.. autoclass:: skrl.envs.torch.wrappers.MultiAgentEnvWrapper
+.. autoclass:: skrl.envs.wrappers.torch.MultiAgentEnvWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -117,14 +117,14 @@ Internal API (PyTorch)
 
         A list of all possible_agents the environment could generate
 
-.. autoclass:: skrl.envs.torch.wrappers.BiDexHandsWrapper
+.. autoclass:: skrl.envs.wrappers.torch.BiDexHandsWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.PettingZooWrapper
+.. autoclass:: skrl.envs.wrappers.torch.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -138,7 +138,7 @@ Internal API (PyTorch)
 Internal API (JAX)
 ------------------
 
-.. autoclass:: skrl.envs.jax.wrappers.MultiAgentEnvWrapper
+.. autoclass:: skrl.envs.wrappers.jax.MultiAgentEnvWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -155,14 +155,14 @@ Internal API (JAX)
 
         A list of all possible_agents the environment could generate
 
-.. autoclass:: skrl.envs.jax.wrappers.BiDexHandsWrapper
+.. autoclass:: skrl.envs.wrappers.jax.BiDexHandsWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.jax.wrappers.PettingZooWrapper
+.. autoclass:: skrl.envs.wrappers.jax.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:

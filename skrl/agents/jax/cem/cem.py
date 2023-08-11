@@ -16,6 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# [start-config-dict-jax]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "percentile": 0.70,             # percentile to compute the reward bound [0, 1]
@@ -46,6 +47,7 @@ CEM_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-jax]
 
 
 class CEM(Agent):

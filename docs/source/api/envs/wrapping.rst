@@ -14,7 +14,7 @@ This library works with a common API to interact with the following RL environme
 * `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
 * `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_
-* `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/tutorial_gym_isaac_gym.html>`_
+* `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -308,7 +308,7 @@ Usage
 API (PyTorch)
 -------------
 
-.. autofunction:: skrl.envs.torch.wrappers.wrap_env
+.. autofunction:: skrl.envs.wrappers.torch.wrap_env
 
 .. raw:: html
 
@@ -317,7 +317,7 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autofunction:: skrl.envs.jax.wrappers.wrap_env
+.. autofunction:: skrl.envs.wrappers.jax.wrap_env
 
 .. raw:: html
 
@@ -326,7 +326,7 @@ API (JAX)
 Internal API (PyTorch)
 ----------------------
 
-.. autoclass:: skrl.envs.torch.wrappers.Wrapper
+.. autoclass:: skrl.envs.wrappers.torch.Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -339,49 +339,49 @@ Internal API (PyTorch)
 
         If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
 
-.. autoclass:: skrl.envs.torch.wrappers.OmniverseIsaacGymWrapper
+.. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.IsaacOrbitWrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacOrbitWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.IsaacGymPreview3Wrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.IsaacGymPreview2Wrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.GymWrapper
+.. autoclass:: skrl.envs.wrappers.torch.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.torch.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.DeepMindWrapper
+.. autoclass:: skrl.envs.wrappers.torch.DeepMindWrapper
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
@@ -389,7 +389,7 @@ Internal API (PyTorch)
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.torch.wrappers.RobosuiteWrapper
+.. autoclass:: skrl.envs.wrappers.torch.RobosuiteWrapper
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
@@ -404,7 +404,7 @@ Internal API (PyTorch)
 Internal API (JAX)
 ------------------
 
-.. autoclass:: skrl.envs.jax.wrappers.Wrapper
+.. autoclass:: skrl.envs.wrappers.jax.Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -417,35 +417,35 @@ Internal API (JAX)
 
         If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda"`` or ``"cpu"`` depending on the device availability
 
-.. autoclass:: skrl.envs.jax.wrappers.OmniverseIsaacGymWrapper
+.. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.jax.wrappers.IsaacOrbitWrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacOrbitWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.jax.wrappers.IsaacGymPreview3Wrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.jax.wrappers.IsaacGymPreview2Wrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.jax.wrappers.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:

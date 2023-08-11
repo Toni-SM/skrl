@@ -16,6 +16,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
+# [start-config-dict-jax]
 IPPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
@@ -47,6 +48,7 @@ IPPO_DEFAULT_CONFIG = {
     "kl_threshold": 0,              # KL divergence threshold for early stopping
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -60,6 +62,7 @@ IPPO_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-jax]
 
 
 def compute_gae(rewards: np.ndarray,
@@ -142,7 +145,7 @@ def _update_policy(policy_act,
     def _policy_loss(params):
         _, next_log_prob, outputs = policy_act({"states": sampled_states, "taken_actions": sampled_actions}, "policy", params)
 
-        # compute aproximate KL divergence
+        # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
         kl_divergence = ((jnp.exp(ratio) - 1) - ratio).mean()
 
@@ -264,6 +267,7 @@ class IPPO(MultiAgent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self._as_dict(self.cfg["time_limit_bootstrap"])
 
         # set up optimizer and learning rate scheduler
         self.policy_optimizer = {}
@@ -406,13 +410,17 @@ class IPPO(MultiAgent):
             for uid in self.possible_agents:
                 # reward shaping
                 if self._rewards_shaper is not None:
-                    rewards = self._rewards_shaper(rewards, timestep, timesteps)
+                    rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
                 values, _, _ = self.values[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="value")
                 if not self._jax:  # numpy backend
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
+
+                # time-limit (truncation) boostrapping
+                if self._time_limit_bootstrap[uid]:
+                    rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],

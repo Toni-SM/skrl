@@ -15,6 +15,10 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
+.. note::
+
+    For models in JAX/Flax it is imperative to define all parameters (except ``observation_space``, ``action_space`` and ``device``) with default values to avoid errors (``TypeError: __init__() missing N required positional argument``) during initialization.
+
 .. tabs::
 
     .. group-tab:: |_4| |pytorch| |_4|
@@ -195,7 +199,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
 
         .. raw:: html
 
@@ -259,7 +263,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
 
         .. raw:: html
 
@@ -324,7 +328,7 @@ Usage
             * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
             * ``"rnn"``: list of initial hidden/cell states ordered according to the model specification
 
-        * The ``.compute()`` method must inlcude, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden/cell states
+        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden/cell states
 
         .. raw:: html
 

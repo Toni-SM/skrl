@@ -42,7 +42,7 @@ A set of utilities and configurations for managing an RL setup is provided as pa
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Model instantiators <utils/model_instantiators>`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Hugging Face integration <utils/huggingface>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

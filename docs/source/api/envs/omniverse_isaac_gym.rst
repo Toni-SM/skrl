@@ -159,4 +159,4 @@ In this approach, the RL algorithm is executed on a secondary thread while the s
 API
 ^^^
 
-.. autofunction:: skrl.envs.torch.loaders.load_omniverse_isaacgym_env
+.. autofunction:: skrl.envs.loaders.torch.load_omniverse_isaacgym_env

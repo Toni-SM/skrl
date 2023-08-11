@@ -6,7 +6,7 @@ import tqdm
 
 from skrl import logger
 from skrl.agents.jax import Agent
-from skrl.envs.jax import Wrapper
+from skrl.envs.wrappers.jax import Wrapper
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
@@ -39,7 +39,7 @@ class Trainer:
         """Base class for trainers
 
         :param env: Environment to train on
-        :type env: skrl.env.jax.Wrapper
+        :type env: skrl.envs.wrappers.jax.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
         :param agents_scope: Number of environments for each agent to train on (default: ``None``)

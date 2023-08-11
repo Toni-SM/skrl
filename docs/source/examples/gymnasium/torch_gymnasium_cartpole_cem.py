@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.cem import CEM, CEM_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import CategoricalMixin, Model
 from skrl.trainers.torch import SequentialTrainer

@@ -11,6 +11,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 Q_LEARNING_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
 
@@ -33,6 +34,7 @@ Q_LEARNING_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class Q_LEARNING(Agent):

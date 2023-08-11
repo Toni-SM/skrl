@@ -5,7 +5,7 @@ import torch.nn as nn
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.dqn import DQN, DQN_DEFAULT_CONFIG
-from skrl.envs.torch import wrap_env
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, Model
 from skrl.trainers.torch import SequentialTrainer

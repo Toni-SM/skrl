@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# [start-config-dict-torch]
 A2C_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "mini_batches": 1,              # number of mini batches to use for updating
@@ -22,7 +23,7 @@ A2C_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
 
-    "learning_rate": 1e-3,          # learning rate
+    "learning_rate": 1e-3,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
@@ -39,6 +40,7 @@ A2C_DEFAULT_CONFIG = {
     "entropy_loss_scale": 0.0,      # entropy loss scaling factor
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -52,6 +54,7 @@ A2C_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class A2C(Agent):
@@ -123,6 +126,7 @@ class A2C(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -239,6 +243,10 @@ class A2C(Agent):
             # compute values
             values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -358,7 +366,7 @@ class A2C(Agent):
 
             _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
-            # compute aproximate KL divergence for KLAdaptive learning rate scheduler
+            # compute approximate KL divergence for KLAdaptive learning rate scheduler
             if self._learning_rate_scheduler:
                 if isinstance(self.scheduler, KLAdaptiveLR):
                     with torch.no_grad():

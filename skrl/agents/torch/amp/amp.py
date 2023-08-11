@@ -15,6 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 AMP_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 6,           # number of learning epochs during each update
@@ -56,6 +57,7 @@ AMP_DEFAULT_CONFIG = {
     "discriminator_weight_decay_scale": 0.0001,         # weight decay scaling factor for the discriminator loss
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -69,6 +71,7 @@ AMP_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class AMP(Agent):
@@ -183,6 +186,7 @@ class AMP(Agent):
         self._discriminator_weight_decay_scale = self.cfg["discriminator_weight_decay_scale"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None and self.discriminator is not None:
@@ -328,6 +332,10 @@ class AMP(Agent):
             with torch.no_grad():
                 values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             with torch.no_grad():
                 next_values, _, _ = self.value.act({"states": self._state_preprocessor(next_states)}, role="value")

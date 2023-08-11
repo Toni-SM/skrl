@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# [start-config-dict-torch]
 RPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
@@ -47,6 +48,7 @@ RPO_DEFAULT_CONFIG = {
     "kl_threshold": 0,              # KL divergence threshold for early stopping
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -60,6 +62,7 @@ RPO_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class RPO(Agent):
@@ -139,6 +142,7 @@ class RPO(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -256,6 +260,10 @@ class RPO(Agent):
             # compute values
             values, _, _ = self.value.act({"states": self._state_preprocessor(states), "alpha": self._alpha}, role="value")
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
@@ -377,7 +385,7 @@ class RPO(Agent):
 
                 _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions, "alpha": self._alpha}, role="policy")
 
-                # compute aproximate KL divergence
+                # compute approximate KL divergence
                 with torch.no_grad():
                     ratio = next_log_prob - sampled_log_prob
                     kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()

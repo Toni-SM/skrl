@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.0.0-rc.2] - Unreleased
+## [1.0.0-rc.2] - 2023-08-11
 ### Added
 - Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
 - Time-limit (truncation) boostrapping in on-policy actor-critic agents

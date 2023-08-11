@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# [start-config-dict-torch]
 A2C_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "mini_batches": 1,              # number of mini batches to use for updating
@@ -53,6 +54,7 @@ A2C_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class A2C_RNN(Agent):

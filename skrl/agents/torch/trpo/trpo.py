@@ -14,6 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 TRPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
@@ -59,6 +60,7 @@ TRPO_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class TRPO(Agent):

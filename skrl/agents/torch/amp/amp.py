@@ -15,6 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 AMP_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 6,           # number of learning epochs during each update
@@ -70,6 +71,7 @@ AMP_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class AMP(Agent):

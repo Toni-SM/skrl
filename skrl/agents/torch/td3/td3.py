@@ -15,6 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 TD3_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
@@ -60,6 +61,7 @@ TD3_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class TD3(Agent):

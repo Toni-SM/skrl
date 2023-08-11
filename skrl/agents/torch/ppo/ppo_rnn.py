@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# [start-config-dict-torch]
 PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "learning_epochs": 8,           # number of learning epochs during each update
@@ -60,6 +61,7 @@ PPO_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class PPO_RNN(Agent):

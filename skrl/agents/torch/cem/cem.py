@@ -13,6 +13,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# [start-config-dict-torch]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
     "percentile": 0.70,             # percentile to compute the reward bound [0, 1]
@@ -43,6 +44,7 @@ CEM_DEFAULT_CONFIG = {
         "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
     }
 }
+# [end-config-dict-torch]
 
 
 class CEM(Agent):

@@ -40,6 +40,7 @@ A2C_DEFAULT_CONFIG = {
     "entropy_loss_scale": 0.0,      # entropy loss scaling factor
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -234,6 +235,7 @@ class A2C(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -368,6 +370,10 @@ class A2C(Agent):
             if not self._jax:  # numpy backend
                 values = jax.device_get(values)
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,

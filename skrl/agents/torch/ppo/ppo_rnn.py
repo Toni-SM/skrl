@@ -46,6 +46,7 @@ PPO_DEFAULT_CONFIG = {
     "kl_threshold": 0,              # KL divergence threshold for early stopping
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -137,6 +138,7 @@ class PPO_RNN(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -291,6 +293,10 @@ class PPO_RNN(Agent):
             rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
             values, _, outputs = self.value.act({"states": self._state_preprocessor(states), **rnn}, role="value")
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             # package RNN states
             rnn_states = {}

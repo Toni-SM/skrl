@@ -22,7 +22,7 @@ A2C_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
 
-    "learning_rate": 1e-3,          # learning rate
+    "learning_rate": 1e-3,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
@@ -39,6 +39,7 @@ A2C_DEFAULT_CONFIG = {
     "entropy_loss_scale": 0.0,      # entropy loss scaling factor
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
+    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
     "experiment": {
         "directory": "",            # experiment's parent directory
@@ -123,6 +124,7 @@ class A2C_RNN(Agent):
         self._learning_starts = self.cfg["learning_starts"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -276,6 +278,10 @@ class A2C_RNN(Agent):
             rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
             values, _, outputs = self.value.act({"states": self._state_preprocessor(states), **rnn}, role="value")
             values = self._value_preprocessor(values, inverse=True)
+
+            # time-limit (truncation) boostrapping
+            if self._time_limit_bootstrap:
+                rewards += self._discount_factor * values * truncated
 
             # package RNN states
             rnn_states = {}

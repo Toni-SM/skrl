@@ -139,8 +139,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/sac/sac.py
     :language: python
-    :lines: 18-56
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

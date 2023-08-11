@@ -78,8 +78,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/sarsa/sarsa.py
     :language: python
-    :lines: 14-35
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

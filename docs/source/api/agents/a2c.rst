@@ -143,8 +143,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/a2c/a2c.py
     :language: python
-    :lines: 18-54
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

@@ -98,8 +98,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/dqn/dqn.py
     :language: python
-    :lines: 16-55
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

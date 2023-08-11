@@ -139,8 +139,8 @@ Configuration and hyperparameters
 
 .. literalinclude:: ../../../../skrl/agents/torch/amp/amp.py
     :language: python
-    :lines: 18-71
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

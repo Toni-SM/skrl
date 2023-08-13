@@ -71,7 +71,8 @@ class Model(torch.nn.Module):
         :param space: Space or shape from which to obtain the number of elements
         :type space: int, sequence of int, gym.Space, or gymnasium.Space
         :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``).
-                                   If ``False``, the shape of the space is returned. It only affects Discrete spaces
+                                   If ``False``, the shape of the space is returned.
+                                   It only affects Discrete and MultiDiscrete spaces
         :type number_of_elements: bool, optional
 
         :raises ValueError: If the space is not supported
@@ -101,6 +102,13 @@ class Model(torch.nn.Module):
             >>> model._get_space_size(space, number_of_elements=False)
             1
 
+            # MultiDiscrete space
+            >>> space = gym.spaces.MultiDiscrete([5, 3, 2])
+            >>> model._get_space_size(space)
+            10
+            >>> model._get_space_size(space, number_of_elements=False)
+            3
+
             # Dict space
             >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
             ...                          'b': gym.spaces.Discrete(4)})
@@ -120,6 +128,11 @@ class Model(torch.nn.Module):
                     size = space.n
                 else:
                     size = 1
+            elif issubclass(type(space), gym.spaces.MultiDiscrete):
+                if number_of_elements:
+                    size = np.sum(space.nvec)
+                else:
+                    size = space.nvec.shape[0]
             elif issubclass(type(space), gym.spaces.Box):
                 size = np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
@@ -130,6 +143,11 @@ class Model(torch.nn.Module):
                     size = space.n
                 else:
                     size = 1
+            elif issubclass(type(space), gymnasium.spaces.MultiDiscrete):
+                if number_of_elements:
+                    size = np.sum(space.nvec)
+                else:
+                    size = space.nvec.shape[0]
             elif issubclass(type(space), gymnasium.spaces.Box):
                 size = np.prod(space.shape)
             elif issubclass(type(space), gymnasium.spaces.Dict):

@@ -34,10 +34,14 @@ https://skrl.readthedocs.io/en/latest/
 To cite this library in publications, please use the following reference:
 
 ```bibtex
-@article{serrano2022skrl,
-  title={skrl: Modular and Flexible Library for Reinforcement Learning},
-  author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
-  journal={arXiv preprint arXiv:2202.03825},
-  year={2022}
+@article{serrano2023skrl,
+  author  = {Antonio Serrano-Muñoz and Dimitrios Chrysostomou and Simon Bøgh and Nestor Arana-Arexolaleiba},
+  title   = {skrl: Modular and Flexible Library for Reinforcement Learning},
+  journal = {Journal of Machine Learning Research},
+  year    = {2023},
+  volume  = {24},
+  number  = {254},
+  pages   = {1--9},
+  url     = {http://jmlr.org/papers/v24/23-0112.html}
 }
 ```

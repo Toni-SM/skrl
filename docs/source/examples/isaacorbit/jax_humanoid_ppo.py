@@ -140,3 +140,17 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
+
+
+# # ---------------------------------------------------------
+# # comment the code above: `trainer.train()`, and...
+# # uncomment the following lines to evaluate a trained agent
+# # ---------------------------------------------------------
+# from skrl.utils.huggingface import download_model_from_huggingface
+
+# # download the trained agent's checkpoint from Hugging Face Hub and load it
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO", filename="agent.pickle")
+# agent.load(path)
+
+# # start evaluation
+# trainer.eval()

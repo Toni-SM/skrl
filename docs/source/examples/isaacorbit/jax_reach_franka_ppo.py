@@ -52,8 +52,8 @@ class Policy(GaussianMixin, Model):
         x = nn.elu(nn.Dense(128)(x))
         x = nn.elu(nn.Dense(64)(x))
         x = nn.Dense(self.num_actions)(x)
-        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
-        return x, log_std, {}
+        log_std = self.param("log_std", lambda _: 0.5 * jnp.ones(self.num_actions))
+        return nn.tanh(x), log_std, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
@@ -105,7 +105,7 @@ cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
 cfg["learning_rate_scheduler"] = KLAdaptiveRL
-cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 cfg["random_timesteps"] = 0
 cfg["learning_starts"] = 0
 cfg["grad_norm_clip"] = 1.0
@@ -116,6 +116,7 @@ cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
 cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = False
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler

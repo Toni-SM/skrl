@@ -96,8 +96,8 @@ cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": dev
 cfg["value_preprocessor"] = RunningStandardScaler
 cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 800
-cfg["experiment"]["checkpoint_interval"] = 8000
+cfg["experiment"]["write_interval"] = 336
+cfg["experiment"]["checkpoint_interval"] = 3360
 cfg["experiment"]["directory"] = "runs/torch/Isaac-Lift-Franka-v0"
 
 agent = PPO(models=models,

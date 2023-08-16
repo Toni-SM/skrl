@@ -3,7 +3,6 @@ name: Bug report
 about: Submit a bug report
 labels:
 - bug
-
 body:
 - type: markdown
   attributes:
@@ -51,3 +50,4 @@ body:
   attributes:
     label: Additional system information
     placeholder: Python version, OS (Linux/Windows/Mac/WSL), etc.
+---

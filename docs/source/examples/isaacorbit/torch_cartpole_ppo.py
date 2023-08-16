@@ -31,7 +31,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU())
 
         self.mean_layer = nn.Linear(32, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.log_std_parameter = nn.Parameter(torch.ones(self.num_actions))
 
         self.value_layer = nn.Linear(32, 1)
 
@@ -88,6 +88,7 @@ cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
 cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = True
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler

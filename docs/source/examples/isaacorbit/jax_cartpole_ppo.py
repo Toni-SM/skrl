@@ -51,7 +51,7 @@ class Policy(GaussianMixin, Model):
         x = nn.elu(nn.Dense(32)(inputs["states"]))
         x = nn.elu(nn.Dense(32)(x))
         x = nn.Dense(self.num_actions)(x)
-        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        log_std = self.param("log_std", lambda _: jnp.ones(self.num_actions))
         return x, log_std, {}
 
 class Value(DeterministicMixin, Model):
@@ -114,6 +114,7 @@ cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
 cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = True
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
@@ -137,3 +138,17 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
+
+
+# # ---------------------------------------------------------
+# # comment the code above: `trainer.train()`, and...
+# # uncomment the following lines to evaluate a trained agent
+# # ---------------------------------------------------------
+# from skrl.utils.huggingface import download_model_from_huggingface
+
+# # download the trained agent's checkpoint from Hugging Face Hub and load it
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO", filename="agent.pickle")
+# agent.load(path)
+
+# # start evaluation
+# trainer.eval()

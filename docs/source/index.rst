@@ -50,15 +50,19 @@ SKRL - Reinforcement Learning library (|version|)
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
 |
 
-**Citing skrl:** To cite this library (created at `Mondragon Unibertsitatea <https://www.mondragon.edu/en/home>`_) use the following reference to its `article <https://arxiv.org/abs/2202.03825>`_: *"skrl: Modular and Flexible Library for Reinforcement Learning"*
+**Citing skrl:** To cite this library (created at Mondragon Unibertsitatea) use the following reference to its article: `skrl: Modular and Flexible Library for Reinforcement Learning <http://jmlr.org/papers/v24/23-0112.html>`_.
 
 .. code-block:: bibtex
 
-    @article{serrano2022skrl,
-      title={skrl: Modular and Flexible Library for Reinforcement Learning},
-      author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
-      journal={arXiv preprint arXiv:2202.03825},
-      year={2022}
+    @article{serrano2023skrl,
+      author  = {Antonio Serrano-Muñoz and Dimitrios Chrysostomou and Simon Bøgh and Nestor Arana-Arexolaleiba},
+      title   = {skrl: Modular and Flexible Library for Reinforcement Learning},
+      journal = {Journal of Machine Learning Research},
+      year    = {2023},
+      volume  = {24},
+      number  = {254},
+      pages   = {1--9},
+      url     = {http://jmlr.org/papers/v24/23-0112.html}
     }
 
 .. raw:: html

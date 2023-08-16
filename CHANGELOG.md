@@ -2,14 +2,34 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.0] - 2023-08-16
+
+Transition from pre-release versions (`1.0.0-rc.1` and`1.0.0-rc.2`) to a stable version.
+
+This release also announces the publication of the **skrl** paper in the Journal of Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
+
+Summary of the most relevant features:
+- JAX support
+- New documentation theme and structure
+- Multi-agent Reinforcement Learning (MARL)
+
 ## [1.0.0-rc.2] - 2023-08-11
 ### Added
 - Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
 - Time-limit (truncation) boostrapping in on-policy actor-critic agents
 - Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
 
+### Changed (breaking changes)
+- Structure environment loaders and wrappers file hierarchy coherently
+  Import statements now follow the next convention:
+  - Wrappers (e.g.):
+    - `from skrl.envs.wrappers.torch import wrap_env`
+    - `from skrl.envs.wrappers.jax import wrap_env`
+  - Loaders (e.g.):
+    - `from skrl.envs.loaders.torch import load_omniverse_isaacgym_env`
+    - `from skrl.envs.loaders.jax import load_omniverse_isaacgym_env`
+
 ### Changed
-- Structure environment loaders and wrappers file hierarchy coherently [**breaking change**]
 - Drop support for versions prior to PyTorch 1.9 (1.8.0 and 1.8.1)
 
 ## [1.0.0-rc.1] - 2023-07-25
@@ -66,7 +86,7 @@ and Omniverse Isaac Gym environments when they are loaded
 ### Added
 - Support for Farama Gymnasium interface
 - Wrapper for robosuite environments
-- Weights & Biases integration (by @juhannc)
+- Weights & Biases integration
 - Set the running mode (training or evaluation) of the agents
 - Allow clipping the gradient norm for DDPG, TD3 and SAC agents
 - Initialize model biases
@@ -75,9 +95,11 @@ and Omniverse Isaac Gym environments when they are loaded
 - Farama Shimmy and robosuite examples
 - KUKA LBR iiwa real-world example
 
+### Changed (breaking changes)
+- Forward model inputs as a Python dictionary
+- Returns a Python dictionary with extra output values in model calls
+
 ### Changed
-- Forward model inputs as a Python dictionary [**breaking change**]
-- Returns a Python dictionary with extra output values in model calls [**breaking change**]
 - Adopt the implementation of `terminated` and `truncated` over `done` for all environments
 
 ### Fixed
@@ -98,7 +120,7 @@ to allow storing samples in memories during evaluation
 - Gaussian model mixin
 - Support for creating shared models
 - Parameter `role` to model methods
-- Wrapper compatibility with the new OpenAI Gym environment API (by @juhannc)
+- Wrapper compatibility with the new OpenAI Gym environment API
 - Internal library colored logger
 - Migrate checkpoints/models from other RL libraries to skrl models/agents
 - Configuration parameter `store_separately` to agent configuration dict
@@ -107,11 +129,13 @@ to allow storing samples in memories during evaluation
 - Benchmark results for Isaac Gym and Omniverse Isaac Gym on the GitHub discussion page
 - Franka Emika real-world example
 
+### Changed (breaking changes)
+- Models implementation as Python mixin
+
 ### Changed
-- Models implementation as Python mixin [**breaking change**]
 - Multivariate Gaussian model (`GaussianModel` until 0.7.0) to `MultivariateGaussianMixin`
 - Trainer's `cfg` parameter position and default values
-- Show training/evaluation display progress using `tqdm` (by @juhannc)
+- Show training/evaluation display progress using `tqdm`
 - Update Isaac Gym and Omniverse Isaac Gym examples
 
 ### Fixed

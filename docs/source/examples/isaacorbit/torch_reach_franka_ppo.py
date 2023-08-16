@@ -33,7 +33,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
                                  nn.ELU())
 
         self.mean_layer = nn.Linear(64, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.log_std_parameter = nn.Parameter(0.5 * torch.ones(self.num_actions))
 
         self.value_layer = nn.Linear(64, 1)
 
@@ -45,7 +45,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
     def compute(self, inputs, role):
         if role == "policy":
-            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
+            return torch.tanh(self.mean_layer(self.net(inputs["states"]))), self.log_std_parameter, {}
         elif role == "value":
             return self.value_layer(self.net(inputs["states"])), {}
 
@@ -79,7 +79,7 @@ cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
 cfg["learning_rate_scheduler"] = KLAdaptiveRL
-cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 cfg["random_timesteps"] = 0
 cfg["learning_starts"] = 0
 cfg["grad_norm_clip"] = 1.0
@@ -90,6 +90,7 @@ cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
 cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = False
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler

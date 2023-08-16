@@ -10,7 +10,9 @@
 
 <br>
 <p align="center">
+  <a href="https://skrl.readthedocs.io">
   <img width="300rem" src="https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/_static/data/logo-light-mode.png">
+  </a>
 </p>
 <h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
 <br>
@@ -21,7 +23,7 @@
 
 ### Please, visit the documentation for usage details and examples
 
-https://skrl.readthedocs.io/en/latest/
+<strong>https://skrl.readthedocs.io</strong>
 
 <br>
 
@@ -34,10 +36,14 @@ https://skrl.readthedocs.io/en/latest/
 To cite this library in publications, please use the following reference:
 
 ```bibtex
-@article{serrano2022skrl,
-  title={skrl: Modular and Flexible Library for Reinforcement Learning},
-  author={Serrano-Mu{\~n}oz, Antonio and Arana-Arexolaleiba, Nestor and Chrysostomou, Dimitrios and B{\o}gh, Simon},
-  journal={arXiv preprint arXiv:2202.03825},
-  year={2022}
+@article{serrano2023skrl,
+  author  = {Antonio Serrano-Muñoz and Dimitrios Chrysostomou and Simon Bøgh and Nestor Arana-Arexolaleiba},
+  title   = {skrl: Modular and Flexible Library for Reinforcement Learning},
+  journal = {Journal of Machine Learning Research},
+  year    = {2023},
+  volume  = {24},
+  number  = {254},
+  pages   = {1--9},
+  url     = {http://jmlr.org/papers/v24/23-0112.html}
 }
 ```

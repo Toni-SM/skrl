@@ -39,7 +39,7 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 # define models (stochastic and deterministic models) using mixins
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+                 clip_log_std=True, min_log_std=-5, max_log_std=2, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
@@ -53,7 +53,7 @@ class Policy(GaussianMixin, Model):
         x = nn.elu(nn.Dense(100)(x))
         x = nn.Dense(self.num_actions)(x)
         log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
-        return x, log_std, {}
+        return nn.tanh(x), log_std, {}
 
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
@@ -105,7 +105,7 @@ cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
 cfg["learning_rate_scheduler"] = KLAdaptiveRL
-cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
+cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 cfg["random_timesteps"] = 0
 cfg["learning_starts"] = 0
 cfg["grad_norm_clip"] = 1.0
@@ -113,9 +113,10 @@ cfg["ratio_clip"] = 0.2
 cfg["value_clip"] = 0.2
 cfg["clip_predicted_values"] = True
 cfg["entropy_loss_scale"] = 0.0
-cfg["value_loss_scale"] = 1.0
+cfg["value_loss_scale"] = 4.0
 cfg["kl_threshold"] = 0
-cfg["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * 0.01
+cfg["time_limit_bootstrap"] = False
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
@@ -139,3 +140,17 @@ trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
+
+
+# # ---------------------------------------------------------
+# # comment the code above: `trainer.train()`, and...
+# # uncomment the following lines to evaluate a trained agent
+# # ---------------------------------------------------------
+# from skrl.utils.huggingface import download_model_from_huggingface
+
+# # download the trained agent's checkpoint from Hugging Face Hub and load it
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO", filename="agent.pickle")
+# agent.load(path)
+
+# # start evaluation
+# trainer.eval()

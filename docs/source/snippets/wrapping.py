@@ -297,6 +297,32 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-gymnasium-vectorized]
 
 
+# [pytorch-start-shimmy]
+# import the environment wrapper and gymnasium
+from skrl.envs.wrappers.torch import wrap_env
+import gymnasium as gym
+
+# load the environment (API conversion)
+env = gym.make("ALE/Pong-v5")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [pytorch-end-shimmy]
+
+
+# [jax-start-shimmy]
+# import the environment wrapper and gymnasium
+from skrl.envs.wrappers.jax import wrap_env
+import gymnasium as gym
+
+# load the environment (API conversion)
+env = gym.make("ALE/Pong-v5")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [jax-end-shimmy]
+
+
 # [pytorch-start-deepmind]
 # import the environment wrapper and the deepmind suite
 from skrl.envs.wrappers.torch import wrap_env

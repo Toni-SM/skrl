@@ -98,11 +98,32 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - :download:`jax_gymnasium_cartpole_cem.py <../examples/gymnasium/jax_gymnasium_cartpole_cem.py>`
                         |br| :download:`jax_gymnasium_cartpole_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_dqn.py>`
                       -
+                    * - FrozenLake
+                      -
+                      -
                     * - Pendulum
                       - :download:`jax_gymnasium_pendulum_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_ddpg.py>`
                         |br| :download:`jax_gymnasium_pendulum_ppo.py <../examples/gymnasium/jax_gymnasium_pendulum_ppo.py>`
                         |br| :download:`jax_gymnasium_pendulum_sac.py <../examples/gymnasium/jax_gymnasium_pendulum_sac.py>`
                         |br| :download:`jax_gymnasium_pendulum_td3.py <../examples/gymnasium/jax_gymnasium_pendulum_td3.py>`
+                      -
+                    * - PendulumNoVel*
+                        |br| (RNN / GRU / LSTM)
+                      - |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                      -
+                    * - Taxi
+                      -
                       -
 
         .. note::
@@ -171,11 +192,32 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - :download:`jax_gym_cartpole_cem.py <../examples/gym/jax_gym_cartpole_cem.py>`
                         |br| :download:`jax_gym_cartpole_dqn.py <../examples/gym/jax_gym_cartpole_dqn.py>`
                       -
+                    * - FrozenLake
+                      -
+                      -
                     * - Pendulum
                       - :download:`jax_gym_pendulum_ddpg.py <../examples/gym/jax_gym_pendulum_ddpg.py>`
                         |br| :download:`jax_gym_pendulum_ppo.py <../examples/gym/jax_gym_pendulum_ppo.py>`
                         |br| :download:`jax_gym_pendulum_sac.py <../examples/gym/jax_gym_pendulum_sac.py>`
                         |br| :download:`jax_gym_pendulum_td3.py <../examples/gym/jax_gym_pendulum_td3.py>`
+                      -
+                    * - PendulumNoVel*
+                        |br| (RNN / GRU / LSTM)
+                      - |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                      -
+                    * - Taxi
+                      -
                       -
 
         .. note::
@@ -235,8 +277,14 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                     * - CartPole
                       - :download:`jax_gymnasium_cartpole_vector_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_vector_dqn.py>`
                       -
+                    * - FrozenLake
+                      -
+                      -
                     * - Pendulum
                       - :download:`jax_gymnasium_pendulum_vector_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_vector_ddpg.py>`
+                      -
+                    * - Taxi
+                      -
                       -
 
     .. group-tab:: Gym
@@ -281,8 +329,14 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                     * - CartPole
                       - :download:`jax_gym_cartpole_vector_dqn.py <../examples/gym/jax_gym_cartpole_vector_dqn.py>`
                       -
+                    * - FrozenLake
+                      -
+                      -
                     * - Pendulum
                       - :download:`jax_gym_pendulum_vector_ddpg.py <../examples/gym/jax_gym_pendulum_vector_ddpg.py>`
+                      -
+                    * - Taxi
+                      -
                       -
 
 .. raw:: html

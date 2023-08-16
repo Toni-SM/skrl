@@ -7,8 +7,9 @@ body:
     value: |
       **Your help in making skrl better is greatly appreciated!**
       
-      * Please ensure that the issue hasn't already been reported by using the [issue search](https://github.com/Toni-SM/skrl/search?q=is%3Aissue&type=issues).
-      * The issue (and its solution) is not listed in the skrl documentation's [troubleshooting](https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting) section.
+      * Please ensure that:
+        * The issue hasn't already been reported by using the [issue search](https://github.com/Toni-SM/skrl/search?q=is%3Aissue&type=issues).
+        * The issue (and its solution) is not listed in the skrl documentation [troubleshooting](https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting) section.
       * For questions, please consider [open a discussion](https://github.com/Toni-SM/skrl/discussions).
       <br>
 - type: textarea
@@ -19,7 +20,7 @@ body:
       Markdown formatting might be applied to the text.
       
       ```python
-      # use triple backticks for code-blocks or error/log messages
+      # use triple backticks for code blocks or error/log messages
       ```
   validations:
     required: true
@@ -28,7 +29,7 @@ body:
     label: What skrl version are you using?
     description: The skrl version can be obtained with the command `pip show skrl`.
     options:
-      - unknown
+      - ---
       - 1.0.0
       - 1.0.0-rc2
       - 1.0.0-rc1

@@ -835,7 +835,7 @@ The agent configuration is mapped, as far as possible, from the `Isaac Orbit con
               - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
               - :download:`torch_lift_franka_ppo.py <../examples/isaacorbit/torch_lift_franka_ppo.py>`
-              -
+              - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
               - :download:`torch_reach_franka_ppo.py <../examples/isaacorbit/torch_reach_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
@@ -859,22 +859,22 @@ The agent configuration is mapped, as far as possible, from the `Isaac Orbit con
                 |br| :download:`jax_ant_ddpg.py <../examples/isaacorbit/jax_ant_ddpg.py>`
                 |br| :download:`jax_ant_td3.py <../examples/isaacorbit/jax_ant_td3.py>`
                 |br| :download:`jax_ant_sac.py <../examples/isaacorbit/jax_ant_sac.py>`
-              - |br|
+              - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Isaac-Cartpole-v0
               - :download:`jax_cartpole_ppo.py <../examples/isaacorbit/jax_cartpole_ppo.py>`
-              -
+              - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
             * - Isaac-Humanoid-v0
               - :download:`jax_humanoid_ppo.py <../examples/isaacorbit/jax_humanoid_ppo.py>`
-              -
+              - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
               - :download:`jax_lift_franka_ppo.py <../examples/isaacorbit/jax_lift_franka_ppo.py>`
-              -
+              - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
               - :download:`jax_reach_franka_ppo.py <../examples/isaacorbit/jax_reach_franka_ppo.py>`
-              -
+              - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
             * - Isaac-Velocity-Anymal-C-v0
               - :download:`jax_velocity_anymal_c_ppo.py <../examples/isaacorbit/jax_velocity_anymal_c_ppo.py>`
               -

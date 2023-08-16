@@ -10,6 +10,7 @@ Wrapping (single-agent)
 This library works with a common API to interact with the following RL environments:
 
 * OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_ (single and vectorized environments)
+* `Farama Shimmy <https://shimmy.farama.org/>`_
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
@@ -264,6 +265,24 @@ Usage
                                     :language: python
                                     :start-after: [jax-start-gymnasium-vectorized]
                                     :end-before: [jax-end-gymnasium-vectorized]
+
+    .. tab:: Shimmy
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-shimmy]
+                    :end-before: [pytorch-end-shimmy]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-shimmy]
+                    :end-before: [jax-end-shimmy]
 
     .. tab:: DeepMind
 

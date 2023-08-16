@@ -10,7 +10,9 @@
 
 <br>
 <p align="center">
+  <a href="https://skrl.readthedocs.io">
   <img width="300rem" src="https://raw.githubusercontent.com/Toni-SM/skrl/main/docs/source/_static/data/logo-light-mode.png">
+  </a>
 </p>
 <h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
 <br>
@@ -21,7 +23,7 @@
 
 ### Please, visit the documentation for usage details and examples
 
-https://skrl.readthedocs.io/en/latest/
+<strong>https://skrl.readthedocs.io</strong>
 
 <br>
 

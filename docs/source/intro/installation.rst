@@ -56,7 +56,7 @@ To install **skrl** with pip, execute:
 
         .. code-block:: bash
 
-            pip install --pre skrl["torch"]
+            pip install skrl["torch"]
 
     .. group-tab:: |_4| |jax| |_4|
 
@@ -66,19 +66,19 @@ To install **skrl** with pip, execute:
 
         .. code-block:: bash
 
-            pip install --pre skrl["jax"]
+            pip install skrl["jax"]
 
     .. group-tab:: All ML frameworks
 
         .. code-block:: bash
 
-            pip install --pre skrl["all"]
+            pip install skrl["all"]
 
     .. group-tab:: No ML framework
 
         .. code-block:: bash
 
-            pip install --pre skrl
+            pip install skrl
 
 .. raw:: html
 

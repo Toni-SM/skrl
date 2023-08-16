@@ -1,62 +1,53 @@
 ---
 name: Bug report
 about: Submit a bug report
-title: "[Bug] Report title"
-labels: ''
-assignees: ''
+labels:
+- bug
 
----
+body:
+- type: markdown
+  attributes:
+    value: >
+      ## Your help in making skrl better is greatly appreciated!
 
-<!--
-To submit a bug report, please fill out the information below.
-To ask questions, propose ideas, etc., go to the Discussions tab.
- -->
+      * Please ensure that the issue hasn't already been reported by using the [issue search](https://github.com/Toni-SM/skrl/search?q=is%3Aissue&type=issues).
 
-### Description
+      * The issue (and its solution) is not listed in the skrl documentation's [troubleshooting](https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting) section.
 
-A clear and concise description of the bug/issue.
+      * For questions, please consider [open a discussion](https://github.com/Toni-SM/skrl/discussions).
+      <br>
+- type: textarea
+  attributes:
+    label: Description
+    description: >-
+      A clear and concise description of the bug/issue. Try to provide a minimal example to reproduce it (error/log messages are also helpful).
+    placeholder: |
+      Markdown formatting might be applied to the text.
 
-### Steps to reproduce and logs
-
-Please try to provide a minimal example to reproduce the bug/issue.
-Error messages and logs are also helpful.
-
-<!-- Post terminal errors/logs or command to run under three backticks (```) to format code -->
-
-```
-Paste the terminal error here
-```
-
-### Setup information
-
-<!-- Please complete the following (if applicable) -->
-Basic information
-- skrl version: [e.g. 1.0.0. Can be obtained by `pip show skrl`]
-- Python version: [e.g. 3.10]
-- OS: [e.g. Ubuntu 20.04]
-
-<!-- Please complete the following (if applicable) -->
-ML frameworks/libraries
-- PyTorch version: [e.g. 2.0.0. Can be obtained by `pip show torch`]
-- JAX version: [e.g. 0.4.0. Can be obtained by `pip show jax`]
-- Flax version: [e.g. 0.6.0. Can be obtained by `pip show flax`]
-- Optax version: [e.g. 0.1.0. Can be obtained by `pip show optax`]
-
-<!-- Please complete the following (if applicable) -->
-Environments interfaces
-- Gym / Gymnasium version: [e.g. 0.23.0 / 0.28.0. Can be obtained by `pip show gym gymnasium`]
-- NVIDIA OmniIsaacGymEnvs (OIGE) version: [e.g. 2022.2.0.0. Can be obtained by `./python.sh -m pip show omniisaacgymenvs`]
-- NVIDIA Isaac Orbit version: [e.g. 0.2.0. Can be obtained by `orbit -p -m pip show omni-isaac-orbit_envs`]
-- NVIDIA IsaacGymEnvs (preview) version: [e.g. 1.3.0. Can be obtained by `pip show isaacgymenvs`]
-- <!--Other interface -->
-
-### Additional information
-
-Please provide any additional information that may be helpful in resolving the bug
-
-### Checklist
-
-I have checked that...
-- [ ] there is no similar issue in the repository
-- [ ] the issue is not solved in the skrl's docs troubleshooting section
-      <!-- https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting -->
+      ```python
+      # use triple backticks for code-blocks or error/log messages
+      ```
+  validations:
+    required: true
+- type: dropdown
+  attributes:
+    label: What skrl version are you using?
+    description: The skrl version can be obtained with the command `pip show skrl`.
+    options:
+      - unknown
+      - 1.0.0
+      - 1.0.0-rc2
+      - 1.0.0-rc1
+      - 0.10.2 or 0.10.1
+      - 0.10.0 or earlier
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: What ML framework/library version are you using?
+    description: The version can be obtained with the command `pip show torch` or `pip show jax flax optax`.
+    placeholder: PyTorch version, JAX/Flax/Optax version, etc.
+- type: input
+  attributes:
+    label: Additional system information
+    placeholder: Python version, OS (Linux/Windows/Mac/WSL), etc.

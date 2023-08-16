@@ -1,7 +1,6 @@
 ---
 name: Bug report
 about: Submit a bug report
-title: "[Bug] Report title"
 labels:
 - bug
 

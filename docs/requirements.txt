@@ -1,5 +1,5 @@
 furo
-sphinx
+sphinx>=7.2.2
 sphinx-tabs
 sphinx-autobuild
 sphinx-copybutton

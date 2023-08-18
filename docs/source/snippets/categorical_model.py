@@ -109,6 +109,9 @@ policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              unnormalized_log_prob=True)
+
+# initialize model's state dict
+policy.init_state_dict("policy")
 # [end-mlp-setup-jax]
 
 # [start-mlp-compact-jax]
@@ -138,6 +141,9 @@ policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              unnormalized_log_prob=True)
+
+# initialize model's state dict
+policy.init_state_dict("policy")
 # [end-mlp-compact-jax]
 
 # =============================================================================

@@ -135,6 +135,9 @@ policy = MLP(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
+
+# initialize model's state dict
+policy.init_state_dict("policy")
 # [end-mlp-setup-jax]
 
 # [start-mlp-compact-jax]
@@ -171,6 +174,9 @@ policy = MLP(observation_space=env.observation_space,
              min_log_std=-20,
              max_log_std=2,
              reduction="sum")
+
+# initialize model's state dict
+policy.init_state_dict("policy")
 # [end-mlp-compact-jax]
 
 # =============================================================================

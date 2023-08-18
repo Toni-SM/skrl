@@ -107,10 +107,13 @@ class MLP(DeterministicMixin, Model):
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
+critic = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
+
+# initialize model's state dict
+critic.init_state_dict("critic")
 # [end-mlp-setup-jax]
 
 # [start-mlp-compact-jax]
@@ -136,10 +139,13 @@ class MLP(DeterministicMixin, Model):
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
+critic = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
              clip_actions=False)
+
+# initialize model's state dict
+critic.init_state_dict("critic")
 # [end-mlp-compact-jax]
 
 # =============================================================================

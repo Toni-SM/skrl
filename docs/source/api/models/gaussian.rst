@@ -15,9 +15,11 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
-.. note::
+.. warning::
 
     For models in JAX/Flax it is imperative to define all parameters (except ``observation_space``, ``action_space`` and ``device``) with default values to avoid errors (``TypeError: __init__() missing N required positional argument``) during initialization.
+
+    In addition, it is necessary to initialize the model's ``state_dict`` (via the ``init_state_dict`` method) after its instantiation to avoid errors (``AttributeError: object has no attribute "state_dict". If "state_dict" is defined in '.setup()', remember these fields are only accessible from inside 'init' or 'apply'``) during its use.
 
 .. tabs::
 

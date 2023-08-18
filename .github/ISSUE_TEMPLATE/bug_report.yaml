@@ -6,7 +6,7 @@ body:
   attributes:
     value: |
       **Your help in making skrl better is greatly appreciated!**
-      
+
       * Please ensure that:
         * The issue hasn't already been reported by using the [issue search](https://github.com/Toni-SM/skrl/search?q=is%3Aissue&type=issues).
         * The issue (and its solution) is not listed in the skrl documentation [troubleshooting](https://skrl.readthedocs.io/en/latest/intro/installation.html#known-issues-and-troubleshooting) section.
@@ -18,7 +18,7 @@ body:
     description: A clear and concise description of the bug/issue. Try to provide a minimal example to reproduce it (error/log messages are also helpful).
     placeholder: |
       Markdown formatting might be applied to the text.
-      
+
       ```python
       # use triple backticks for code blocks or error/log messages
       ```

@@ -62,7 +62,8 @@ To install **skrl** with pip, execute:
 
         .. warning::
 
-            JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+            JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
+            `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
         .. code-block:: bash
 
@@ -108,7 +109,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
+                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
             .. code-block:: bash
 
@@ -140,7 +142,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions see the JAX `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
+                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
 
             .. code-block:: bash
 
@@ -188,7 +191,26 @@ Bug detection and/or correction, feature requests and everything else are more t
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
 
-2. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs on Isaac Sim 2022.2.1 and earlier).
+2. When installing the JAX version in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Orbit on Isaac Sim 2022.2.1 and earlier).
+
+    .. code-block:: text
+
+        ERROR: Ignored the following versions that require a different python version: 0.4.0 Requires-Python >=3.8; ...
+        ERROR: Could not find a version that satisfies the requirement jax>=0.4.3; extra == "jax" (from skrl[jax]) (from versions: 0.0, ..., 0.3.25)
+        ERROR: No matching distribution found for jax>=0.4.3; extra == "jax"
+
+    JAX support for Python 3.7 is up to version 0.3.25, while skrl requires ``jax>=0.4.3``.
+    Furthermore, ``jaxlib<=0.3.25`` builds are only available up to NVIDIA CUDA 11 and cuDNN 8.2 versions.
+
+    However, it is possible to use **skrl** under these circumstances, subject to the following points:
+
+    * Install JAX, Flax and Optax manually using ``pip install jax flax optax`` and ignore the installation errors for skrl.
+
+    * The ``jax.Device = jax.xla.Device`` statement is required by skrl to support ``jax<0.4.3``.
+
+    * Overload models ``__hash__`` method to avoid :literal:`"TypeError: Failed to hash Flax Module"`.
+
+3. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Orbit on Isaac Sim 2022.2.1 and earlier).
 
     .. code-block:: text
 
@@ -201,14 +223,16 @@ Bug detection and/or correction, feature requests and everything else are more t
         def __hash__(self):
             return id(self)
 
-3. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Isaac Orbit or Omniverse Isaac Gym environments.
+4. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Isaac Orbit or Omniverse Isaac Gym environments.
 
     .. code-block:: text
 
         PxgCudaDeviceMemoryAllocator fail to allocate memory XXXXXX bytes!! Result = 2
         RuntimeError: CUDA error: an illegal memory access was encountered
 
-    NVIDIA environments use PyTorch as a backend, and both PyTorch (for CUDA kernels, among others) and JAX preallocate GPU memory, which can lead to out-of-memory (OOM) problems. Reduce or disable GPU memory preallocation as indicated in JAX `GPU memory allocation <https://jax.readthedocs.io/en/latest/gpu_memory_allocation.html>`_ to avoid this issue. For example:
+    NVIDIA environments use PyTorch as a backend, and both PyTorch (for CUDA kernels, among others) and JAX preallocate GPU memory,
+    which can lead to out-of-memory (OOM) problems. Reduce or disable GPU memory preallocation as indicated in JAX
+    `GPU memory allocation <https://jax.readthedocs.io/en/latest/gpu_memory_allocation.html>`_ to avoid this issue. For example:
 
     .. code-block:: bash
 

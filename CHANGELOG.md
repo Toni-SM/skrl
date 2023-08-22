@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - Unreleased
+### Changed (breaking changes)
+- Rename the `ManualTrainer` to `StepTrainer`
+
 ## [1.0.0] - 2023-08-16
 
 Transition from pre-release versions (`1.0.0-rc.1` and`1.0.0-rc.2`) to a stable version.

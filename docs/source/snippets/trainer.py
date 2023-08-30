@@ -199,15 +199,15 @@ trainer.eval()
 
 # =============================================================================
 
-# [pytorch-start-manual]
-from skrl.trainers.torch import ManualTrainer
+# [pytorch-start-step]
+from skrl.trainers.torch import StepTrainer
 
 # assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = ManualTrainer(env=env, agents=agents, cfg=cfg)
+trainer = StepTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 for timestep in range(cfg["timesteps"]):
@@ -216,18 +216,18 @@ for timestep in range(cfg["timesteps"]):
 # evaluate the agent(s)
 for timestep in range(cfg["timesteps"]):
     trainer.eval(timestep=timestep)
-# [pytorch-end-manual]
+# [pytorch-end-step]
 
 
-# [jax-start-manual]
-from skrl.trainers.jax import ManualTrainer
+# [jax-start-step]
+from skrl.trainers.jax import StepTrainer
 
 # assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = ManualTrainer(env=env, agents=agents, cfg=cfg)
+trainer = StepTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 for timestep in range(cfg["timesteps"]):
@@ -236,4 +236,4 @@ for timestep in range(cfg["timesteps"]):
 # evaluate the agent(s)
 for timestep in range(cfg["timesteps"]):
     trainer.eval(timestep=timestep)
-# [jax-end-manual]
+# [jax-end-step]

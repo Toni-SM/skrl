@@ -762,7 +762,7 @@ The following code snippets show how to train/evaluate RL systems using the avai
                     :start-after: [pytorch-start-parallel]
                     :end-before: [pytorch-end-parallel]
 
-    .. tab:: Manual trainer
+    .. tab:: Step trainer
 
         .. tabs::
 
@@ -770,15 +770,15 @@ The following code snippets show how to train/evaluate RL systems using the avai
 
                 .. literalinclude:: ../snippets/trainer.py
                     :language: python
-                    :start-after: [pytorch-start-manual]
-                    :end-before: [pytorch-end-manual]
+                    :start-after: [pytorch-start-step]
+                    :end-before: [pytorch-end-step]
 
             .. group-tab:: |_4| |jax| |_4|
 
                 .. literalinclude:: ../snippets/trainer.py
                     :language: python
-                    :start-after: [jax-start-manual]
-                    :end-before: [jax-end-manual]
+                    :start-after: [jax-start-step]
+                    :end-before: [jax-end-step]
 
 .. raw:: html
 

@@ -165,7 +165,7 @@ Trainers
 
     * :doc:`Sequential trainer <api/trainers/sequential>`
     * :doc:`Parallel trainer <api/trainers/parallel>`
-    * :doc:`Manual trainer <api/trainers/manual>`
+    * :doc:`Step trainer <api/trainers/step>`
 
 Resources
 ^^^^^^^^^

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import copy
 import functools
@@ -189,7 +189,7 @@ def _update_value(value_act,
 class IPPO(MultiAgent):
     def __init__(self,
                  possible_agents: Sequence[str],
-                 models: Dict[str, Model],
+                 models: Mapping[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
                  observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
                  action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
@@ -308,7 +308,7 @@ class IPPO(MultiAgent):
             else:
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
+    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent
         """
         super().init(trainer_cfg=trainer_cfg)

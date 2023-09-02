@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import collections
 import copy
@@ -18,7 +18,7 @@ from skrl.models.torch import Model
 
 class Agent:
     def __init__(self,
-                 models: Dict[str, Model],
+                 models: Mapping[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
                  observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -125,7 +125,7 @@ class Agent:
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
-    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
+    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent
 
         This method should be called before the agent is used.

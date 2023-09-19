@@ -72,40 +72,24 @@ class GaussianMixin:
               )
             )
         """
-        if not hasattr(self, "_g_clip_actions"):
-            self._g_clip_actions = {}
-        self._g_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
             issubclass(type(self.action_space), gymnasium.Space))
 
-        if self._g_clip_actions[role]:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        if self._clip_actions:
+            self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
+            self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
-        if not hasattr(self, "_g_clip_log_std"):
-            self._g_clip_log_std = {}
-        self._g_clip_log_std[role] = clip_log_std
-        if not hasattr(self, "_g_log_std_min"):
-            self._g_log_std_min = {}
-        self._g_log_std_min[role] = min_log_std
-        if not hasattr(self, "_g_log_std_max"):
-            self._g_log_std_max = {}
-        self._g_log_std_max[role] = max_log_std
+        self._clip_log_std = clip_log_std
+        self._log_std_min = min_log_std
+        self._log_std_max = max_log_std
 
-        if not hasattr(self, "_g_log_std"):
-            self._g_log_std = {}
-        self._g_log_std[role] = None
-        if not hasattr(self, "_g_num_samples"):
-            self._g_num_samples = {}
-        self._g_num_samples[role] = None
-        if not hasattr(self, "_g_distribution"):
-            self._g_distribution = {}
-        self._g_distribution[role] = None
+        self._log_std = None
+        self._num_samples = None
+        self._distribution = None
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        if not hasattr(self, "_g_reduction"):
-            self._g_reduction = {}
-        self._g_reduction[role] = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
+        self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
             else torch.prod if reduction == "prod" else None
 
     def act(self,
@@ -138,29 +122,26 @@ class GaussianMixin:
         mean_actions, log_std, outputs = self.compute(inputs, role)
 
         # clamp log standard deviations
-        if self._g_clip_log_std[role] if role in self._g_clip_log_std else self._g_clip_log_std[""]:
-            log_std = torch.clamp(log_std,
-                                  self._g_log_std_min[role] if role in self._g_log_std_min else self._g_log_std_min[""],
-                                  self._g_log_std_max[role] if role in self._g_log_std_max else self._g_log_std_max[""])
+        if self._clip_log_std:
+            log_std = torch.clamp(log_std, self._log_std_min, self._log_std_max)
 
-        self._g_log_std[role] = log_std
-        self._g_num_samples[role] = mean_actions.shape[0]
+        self._log_std = log_std
+        self._num_samples = mean_actions.shape[0]
 
         # distribution
-        self._g_distribution[role] = Normal(mean_actions, log_std.exp())
+        self._distribution = Normal(mean_actions, log_std.exp())
 
         # sample using the reparameterization trick
-        actions = self._g_distribution[role].rsample()
+        actions = self._distribution.rsample()
 
         # clip actions
-        if self._g_clip_actions[role] if role in self._g_clip_actions else self._g_clip_actions[""]:
-            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+        if self._clip_actions:
+            actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
 
         # log of the probability density function
-        log_prob = self._g_distribution[role].log_prob(inputs.get("taken_actions", actions))
-        reduction = self._g_reduction[role] if role in self._g_reduction else self._g_reduction[""]
-        if reduction is not None:
-            log_prob = reduction(log_prob, dim=-1)
+        log_prob = self._distribution.log_prob(inputs.get("taken_actions", actions))
+        if self._reduction is not None:
+            log_prob = self._reduction(log_prob, dim=-1)
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
@@ -181,10 +162,9 @@ class GaussianMixin:
             >>> print(entropy.shape)
             torch.Size([4096, 8])
         """
-        distribution = self._g_distribution[role] if role in self._g_distribution else self._g_distribution[""]
-        if distribution is None:
+        if self._distribution is None:
             return torch.tensor(0.0, device=self.device)
-        return distribution.entropy().to(self.device)
+        return self._distribution.entropy().to(self.device)
 
     def get_log_std(self, role: str = "") -> torch.Tensor:
         """Return the log standard deviation of the model
@@ -200,8 +180,7 @@ class GaussianMixin:
             >>> print(log_std.shape)
             torch.Size([4096, 8])
         """
-        return (self._g_log_std[role] if role in self._g_log_std else self._g_log_std[""]) \
-            .repeat(self._g_num_samples[role] if role in self._g_num_samples else self._g_num_samples[""], 1)
+        return self._log_std.repeat(self._num_samples, 1)
 
     def distribution(self, role: str = "") -> torch.distributions.Normal:
         """Get the current distribution of the model
@@ -217,4 +196,4 @@ class GaussianMixin:
             >>> print(distribution)
             Normal(loc: torch.Size([4096, 8]), scale: torch.Size([4096, 8]))
         """
-        return self._g_distribution[role] if role in self._g_distribution else self._g_distribution[""]
+        return self._distribution

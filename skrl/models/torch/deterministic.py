@@ -51,14 +51,12 @@ class DeterministicMixin:
               )
             )
         """
-        if not hasattr(self, "_d_clip_actions"):
-            self._d_clip_actions = {}
-        self._d_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
             issubclass(type(self.action_space), gymnasium.Space))
 
-        if self._d_clip_actions[role]:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        if self._clip_actions:
+            self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
+            self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
     def act(self,
             inputs: Mapping[str, Union[torch.Tensor, Any]],
@@ -88,7 +86,7 @@ class DeterministicMixin:
         actions, outputs = self.compute(inputs, role)
 
         # clip actions
-        if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:
-            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+        if self._clip_actions:
+            actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
 
         return actions, None, outputs

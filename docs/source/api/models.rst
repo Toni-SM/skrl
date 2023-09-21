@@ -6,6 +6,7 @@ Models
 
     Tabular <models/tabular>
     Categorical <models/categorical>
+    Multi-Categorical <models/multicategorical>
     Gaussian <models/gaussian>
     Multivariate Gaussian <models/multivariate_gaussian>
     Deterministic <models/deterministic>
@@ -29,6 +30,9 @@ Models (or agent models) refer to a representation of the agent's policy, value 
     * - :doc:`Categorical model <models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+    * - :doc:`Multi-Categorical model <models/multicategorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

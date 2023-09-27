@@ -1,5 +1,5 @@
-Manual trainer
-==============
+Manual training
+===============
 
 Train agents by manually controlling the training/evaluation loop.
 
@@ -33,60 +33,40 @@ Usage
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/trainer.py
-            :language: python
-            :start-after: [pytorch-start-manual]
-            :end-before: [pytorch-end-manual]
+        .. tabs::
+
+            .. group-tab:: Training
+
+                .. literalinclude:: ../../snippets/trainer.py
+                    :language: python
+                    :start-after: [pytorch-start-manual-training]
+                    :end-before: [pytorch-end-manual-training]
+
+            .. group-tab:: Evaluation
+
+                .. literalinclude:: ../../snippets/trainer.py
+                    :language: python
+                    :start-after: [pytorch-start-manual-evaluation]
+                    :end-before: [pytorch-end-manual-evaluation]
 
     .. group-tab:: |_4| |jax| |_4|
 
-        .. literalinclude:: ../../snippets/trainer.py
-            :language: python
-            :start-after: [jax-start-manual]
-            :end-before: [jax-end-manual]
+        .. tabs::
+
+            .. group-tab:: Training
+
+                .. literalinclude:: ../../snippets/trainer.py
+                    :language: python
+                    :start-after: [jax-start-manual-training]
+                    :end-before: [jax-end-manual-training]
+
+            .. group-tab:: Evaluation
+
+                .. literalinclude:: ../../snippets/trainer.py
+                    :language: python
+                    :start-after: [jax-start-manual-evaluation]
+                    :end-before: [jax-end-manual-evaluation]
 
 .. raw:: html
 
     <br>
-
-Configuration
--------------
-
-.. literalinclude:: ../../../../skrl/trainers/torch/manual.py
-    :language: python
-    :lines: 14-19
-    :linenos:
-
-.. raw:: html
-
-    <br>
-
-API (PyTorch)
--------------
-
-.. autoclass:: skrl.trainers.torch.manual.MANUAL_TRAINER_DEFAULT_CONFIG
-
-.. autoclass:: skrl.trainers.torch.manual.ManualTrainer
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-    :members:
-
-    .. automethod:: __init__
-
-.. raw:: html
-
-    <br>
-
-API (JAX)
----------
-
-.. autoclass:: skrl.trainers.jax.manual.MANUAL_TRAINER_DEFAULT_CONFIG
-
-.. autoclass:: skrl.trainers.jax.manual.ManualTrainer
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-    :members:
-
-    .. automethod:: __init__

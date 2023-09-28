@@ -55,7 +55,6 @@ Configuration
 .. literalinclude:: ../../../../skrl/trainers/torch/step.py
     :language: python
     :lines: 13-18
-    :linenos:
 
 .. raw:: html
 

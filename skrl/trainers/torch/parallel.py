@@ -11,12 +11,14 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# [start-config-dict-torch]
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
+# [end-config-dict-torch]
 
 
 def fn_processor(process_index, *args):

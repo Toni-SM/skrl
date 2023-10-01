@@ -102,6 +102,8 @@ class Memory:
         elif issubclass(type(space), gym.Space):
             if issubclass(type(space), gym.spaces.Discrete):
                 return (1,) if keep_dimensions else 1
+            elif issubclass(type(space), gym.spaces.MultiDiscrete):
+                return space.nvec.shape[0]
             elif issubclass(type(space), gym.spaces.Box):
                 return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
             elif issubclass(type(space), gym.spaces.Dict):
@@ -111,6 +113,8 @@ class Memory:
         elif issubclass(type(space), gymnasium.Space):
             if issubclass(type(space), gymnasium.spaces.Discrete):
                 return (1,) if keep_dimensions else 1
+            elif issubclass(type(space), gymnasium.spaces.MultiDiscrete):
+                return space.nvec.shape[0]
             elif issubclass(type(space), gymnasium.spaces.Box):
                 return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
             elif issubclass(type(space), gymnasium.spaces.Dict):

@@ -137,11 +137,11 @@ class MultiCategoricalMixin:
             return entropy
         return torch.tensor(0.0, device=self.device)
 
-    def distribution(self, role: str = "") -> Sequence[torch.distributions.Categorical]:
-        """Get the current distributions of the model
+    def distribution(self, role: str = "") -> torch.distributions.Categorical:
+        """Get the current distribution of the model
 
-        :return: Distributions of the model
-        :rtype: list of torch.distributions.Categorical
+        :return: First distributions of the model
+        :rtype: torch.distributions.Categorical
         :param role: Role play by the model (default: ``""``)
         :type role: str, optional
 
@@ -149,7 +149,7 @@ class MultiCategoricalMixin:
 
             >>> distribution = model.distribution()
             >>> print(distribution)
-            [Categorical(probs: torch.Size([10, 3]), logits: torch.Size([10, 3])),
-             Categorical(probs: torch.Size([10, 2]), logits: torch.Size([10, 2]))]
+            Categorical(probs: torch.Size([10, 3]), logits: torch.Size([10, 3]))
         """
-        return self._distributions
+        # TODO: find a way to integrate in the class the distribution functions (e.g.: stddev)
+        return self._distributions[0]

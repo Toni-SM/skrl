@@ -100,6 +100,7 @@ class MultiCategoricalMixin:
         self._i = 0
         self._key = config.jax.key
 
+        self._action_space_nvec = np.cumsum(self.action_space.nvec).tolist()
         self._action_space_shape = self._get_space_size(self.action_space, number_of_elements=False)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
@@ -143,7 +144,7 @@ class MultiCategoricalMixin:
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         # split inputs
-        net_outputs = jnp.split(net_output, jnp.cumsum(self.action_space.nvec), axis=-1)
+        net_outputs = jnp.split(net_output, self._action_space_nvec, axis=-1)
         if "taken_actions" in inputs:
             taken_actions = jnp.split(inputs["taken_actions"], self._action_space_shape, axis=-1)
         else:

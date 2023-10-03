@@ -119,6 +119,9 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Discrete
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\blacksquare`
+    * - MultiDiscrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - Box
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
@@ -149,7 +152,8 @@ The implementation uses 1 discrete function approximator. This function approxim
       - :literal:`"policy"`
       - observation
       - action
-      - :ref:`Categorical <models_categorical>`
+      - :ref:`Categorical <models_categorical>` /
+        |br| :ref:`Multi-Categorical <models_multicategorical>`
 
 .. raw:: html
 

@@ -160,6 +160,9 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Discrete
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+    * - MultiDiscrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Box
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -190,7 +193,8 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
       - :literal:`"policy"`
       - observation
       - action
-      - :ref:`Gaussian <models_gaussian>` / :ref:`MultivariateGaussian <models_multivariate_gaussian>`
+      - :ref:`Gaussian <models_gaussian>` /
+        |br| :ref:`MultivariateGaussian <models_multivariate_gaussian>`
     * - :math:`Q_{\phi 1}(s, a)`
       - Q1-network (critic 1)
       - :literal:`"critic_1"`

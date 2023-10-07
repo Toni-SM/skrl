@@ -1,10 +1,12 @@
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import contextlib
 import copy
 import tqdm
 
+import jax
 import jax.numpy as jnp
+import numpy as np
 
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import Wrapper
@@ -58,7 +60,9 @@ class StepTrainer(Trainer):
 
         self.states = None
 
-    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
+    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Execute a training iteration
 
         This method executes the following steps once:
@@ -77,6 +81,9 @@ class StepTrainer(Trainer):
         :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         if timestep is None:
             self._timestep += 1
@@ -164,7 +171,11 @@ class StepTrainer(Trainer):
             else:
                 self.states = next_states
 
-    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
+        return next_states, rewards, terminated, truncated, infos
+
+    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
+        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
+              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
@@ -180,6 +191,9 @@ class StepTrainer(Trainer):
         :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         if timestep is None:
             self._timestep += 1
@@ -251,3 +265,5 @@ class StepTrainer(Trainer):
                 self.states, infos = self.env.reset()
             else:
                 self.states = next_states
+
+        return next_states, rewards, terminated, truncated, infos

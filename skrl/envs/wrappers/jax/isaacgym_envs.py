@@ -3,8 +3,13 @@ from typing import Any, Tuple, Union
 import jax
 import jax.dlpack as jax_dlpack
 import numpy as np
-import torch
-import torch.utils.dlpack as torch_dlpack
+
+
+try:
+    import torch
+    import torch.utils.dlpack as torch_dlpack
+except:
+    pass  # TODO: show warning message
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper

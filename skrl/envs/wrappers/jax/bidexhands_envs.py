@@ -5,8 +5,13 @@ import gym
 import jax
 import jax.dlpack
 import numpy as np
-import torch
-import torch.utils.dlpack
+
+
+try:
+    import torch
+    import torch.utils.dlpack
+except:
+    pass  # TODO: show warning message
 
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper
 

@@ -163,6 +163,24 @@ Usage
                             :start-after: [start-cnn-functional-torch]
                             :end-before: [end-cnn-functional-torch]
 
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. tabs::
+
+                    .. group-tab:: setup-style
+
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
+                            :language: python
+                            :start-after: [start-cnn-setup-jax]
+                            :end-before: [end-cnn-setup-jax]
+
+                    .. group-tab:: compact-style
+
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
+                            :language: python
+                            :start-after: [start-cnn-compact-jax]
+                            :end-before: [end-cnn-compact-jax]
+
     .. tab:: RNN
 
         .. image:: ../../_static/imgs/model_categorical_rnn-light.svg

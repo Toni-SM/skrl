@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Tuple, Union
 
 import contextlib
 import copy
+import sys
 import tqdm
 
 import jax
@@ -91,7 +92,7 @@ class StepTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # set running mode
@@ -201,7 +202,7 @@ class StepTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # set running mode

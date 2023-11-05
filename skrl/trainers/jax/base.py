@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 
 import atexit
 import contextlib
+import sys
 import tqdm
 
 from skrl import logger
@@ -161,7 +162,7 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -218,7 +219,7 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with contextlib.nullcontext():
@@ -274,7 +275,7 @@ class Trainer:
         states, infos = self.env.reset()
         shared_states = infos.get("shared_states", None)
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -334,7 +335,7 @@ class Trainer:
         states, infos = self.env.reset()
         shared_states = infos.get("shared_states", None)
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with contextlib.nullcontext():

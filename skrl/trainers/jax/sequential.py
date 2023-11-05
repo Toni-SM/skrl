@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 
 import contextlib
 import copy
+import sys
 import tqdm
 
 import jax.numpy as jnp
@@ -86,7 +87,7 @@ class SequentialTrainer(Trainer):
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for agent in self.agents:
@@ -158,7 +159,7 @@ class SequentialTrainer(Trainer):
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with contextlib.nullcontext():

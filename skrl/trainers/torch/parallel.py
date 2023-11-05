@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import copy
+import sys
 import tqdm
 
 import torch
@@ -203,7 +204,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -339,7 +340,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with torch.no_grad():

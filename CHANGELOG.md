@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed (breaking changes)
 - Rename the `ManualTrainer` to `StepTrainer`
+- Output training/evaluation progress messages to system's stdout
 
 ## [1.0.0] - 2023-08-16
 

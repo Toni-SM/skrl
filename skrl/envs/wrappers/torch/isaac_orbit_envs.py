@@ -26,8 +26,7 @@ class IsaacOrbitWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, reward, terminated, info = self._env.step(actions)
-        truncated = info["time_outs"] if "time_outs" in info else torch.zeros_like(terminated)
+        self._obs_dict, reward, terminated, truncated, info = self._env.step(actions)
         return self._obs_dict["policy"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
@@ -37,9 +36,9 @@ class IsaacOrbitWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._obs_dict = self._env.reset()
+            self._obs_dict, info = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["policy"], {}
+        return self._obs_dict["policy"], info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

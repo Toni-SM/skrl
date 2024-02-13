@@ -32,7 +32,7 @@ Models (or agent models) refer to a representation of the agent's policy, value 
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Multi-Categorical model <models/multicategorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

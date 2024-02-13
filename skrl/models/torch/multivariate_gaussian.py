@@ -65,34 +65,20 @@ class MultivariateGaussianMixin:
               )
             )
         """
-        if not hasattr(self, "_mg_clip_actions"):
-            self._mg_clip_actions = {}
-        self._mg_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
+        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
             issubclass(type(self.action_space), gymnasium.Space))
 
-        if self._mg_clip_actions[role]:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        if self._clip_actions:
+            self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
+            self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
-        if not hasattr(self, "_mg_clip_log_std"):
-            self._mg_clip_log_std = {}
-        self._mg_clip_log_std[role] = clip_log_std
-        if not hasattr(self, "_mg_log_std_min"):
-            self._mg_log_std_min = {}
-        self._mg_log_std_min[role] = min_log_std
-        if not hasattr(self, "_mg_log_std_max"):
-            self._mg_log_std_max = {}
-        self._mg_log_std_max[role] = max_log_std
+        self._clip_log_std = clip_log_std
+        self._log_std_min = min_log_std
+        self._log_std_max = max_log_std
 
-        if not hasattr(self, "_mg_log_std"):
-            self._mg_log_std = {}
-        self._mg_log_std[role] = None
-        if not hasattr(self, "_mg_num_samples"):
-            self._mg_num_samples = {}
-        self._mg_num_samples[role] = None
-        if not hasattr(self, "_mg_distribution"):
-            self._mg_distribution = {}
-        self._mg_distribution[role] = None
+        self._log_std = None
+        self._num_samples = None
+        self._distribution = None
 
     def act(self,
             inputs: Mapping[str, Union[torch.Tensor, Any]],
@@ -124,27 +110,25 @@ class MultivariateGaussianMixin:
         mean_actions, log_std, outputs = self.compute(inputs, role)
 
         # clamp log standard deviations
-        if self._mg_clip_log_std[role] if role in self._mg_clip_log_std else self._mg_clip_log_std[""]:
-            log_std = torch.clamp(log_std,
-                                  self._mg_log_std_min[role] if role in self._mg_log_std_min else self._mg_log_std_min[""],
-                                  self._mg_log_std_max[role] if role in self._mg_log_std_max else self._mg_log_std_max[""])
+        if self._clip_log_std:
+            log_std = torch.clamp(log_std, self._log_std_min, self._log_std_max)
 
-        self._mg_log_std[role] = log_std
-        self._mg_num_samples[role] = mean_actions.shape[0]
+        self._log_std = log_std
+        self._num_samples = mean_actions.shape[0]
 
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        self._mg_distribution[role] = MultivariateNormal(mean_actions, scale_tril=covariance)
+        self._distribution = MultivariateNormal(mean_actions, scale_tril=covariance)
 
         # sample using the reparameterization trick
-        actions = self._mg_distribution[role].rsample()
+        actions = self._distribution.rsample()
 
         # clip actions
-        if self._mg_clip_actions[role] if role in self._mg_clip_actions else self._mg_clip_actions[""]:
-            actions = torch.clamp(actions, min=self.clip_actions_min, max=self.clip_actions_max)
+        if self._clip_actions:
+            actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
 
         # log of the probability density function
-        log_prob = self._mg_distribution[role].log_prob(inputs.get("taken_actions", actions))
+        log_prob = self._distribution.log_prob(inputs.get("taken_actions", actions))
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
@@ -165,10 +149,9 @@ class MultivariateGaussianMixin:
             >>> print(entropy.shape)
             torch.Size([4096])
         """
-        distribution = self._mg_distribution[role] if role in self._mg_distribution else self._mg_distribution[""]
-        if distribution is None:
+        if self._distribution is None:
             return torch.tensor(0.0, device=self.device)
-        return distribution.entropy().to(self.device)
+        return self._distribution.entropy().to(self.device)
 
     def get_log_std(self, role: str = "") -> torch.Tensor:
         """Return the log standard deviation of the model
@@ -184,8 +167,7 @@ class MultivariateGaussianMixin:
             >>> print(log_std.shape)
             torch.Size([4096, 8])
         """
-        return (self._mg_log_std[role] if role in self._mg_log_std else self._mg_log_std[""]) \
-            .repeat(self._mg_num_samples[role] if role in self._mg_num_samples else self._mg_num_samples[""], 1)
+        return self._log_std.repeat(self._num_samples, 1)
 
     def distribution(self, role: str = "") -> torch.distributions.MultivariateNormal:
         """Get the current distribution of the model
@@ -201,4 +183,4 @@ class MultivariateGaussianMixin:
             >>> print(distribution)
             MultivariateNormal(loc: torch.Size([4096, 8]), scale_tril: torch.Size([4096, 8, 8]))
         """
-        return self._mg_distribution[role] if role in self._mg_distribution else self._mg_distribution[""]
+        return self._distribution

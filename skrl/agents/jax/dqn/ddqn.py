@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import functools
@@ -89,7 +89,7 @@ def _update_q_network(q_network_act,
 
 class DDQN(Agent):
     def __init__(self,
-                 models: Dict[str, Model],
+                 models: Mapping[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
                  observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -182,7 +182,7 @@ class DDQN(Agent):
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Dict[str, Any]] = None) -> None:
+    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent
         """
         super().init(trainer_cfg=trainer_cfg)

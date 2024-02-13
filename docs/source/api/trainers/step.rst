@@ -1,7 +1,7 @@
-Sequential trainer
-==================
+Step trainer
+============
 
-Train agents sequentially (i.e., one after the other in each interaction with the environment).
+Train agents controlling the training/evaluation loop step-by-step.
 
 .. raw:: html
 
@@ -10,17 +10,17 @@ Train agents sequentially (i.e., one after the other in each interaction with th
 Concept
 -------
 
-.. image:: ../../_static/imgs/sequential_trainer-light.svg
+.. image:: ../../_static/imgs/manual_trainer-light.svg
     :width: 100%
     :align: center
     :class: only-light
-    :alt: Sequential trainer
+    :alt: Step-by-step trainer
 
-.. image:: ../../_static/imgs/sequential_trainer-dark.svg
+.. image:: ../../_static/imgs/manual_trainer-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
-    :alt: Sequential trainer
+    :alt: Step-by-step trainer
 
 .. raw:: html
 
@@ -35,15 +35,15 @@ Usage
 
         .. literalinclude:: ../../snippets/trainer.py
             :language: python
-            :start-after: [pytorch-start-sequential]
-            :end-before: [pytorch-end-sequential]
+            :start-after: [pytorch-start-step]
+            :end-before: [pytorch-end-step]
 
     .. group-tab:: |_4| |jax| |_4|
 
         .. literalinclude:: ../../snippets/trainer.py
             :language: python
-            :start-after: [jax-start-sequential]
-            :end-before: [jax-end-sequential]
+            :start-after: [jax-start-step]
+            :end-before: [jax-end-step]
 
 .. raw:: html
 
@@ -52,7 +52,7 @@ Usage
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
+.. literalinclude:: ../../../../skrl/trainers/torch/step.py
     :language: python
     :start-after: [start-config-dict-torch]
     :end-before: [end-config-dict-torch]
@@ -64,9 +64,9 @@ Configuration
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.torch.step.STEP_TRAINER_DEFAULT_CONFIG
 
-.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.torch.step.StepTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -81,9 +81,9 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.trainers.jax.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.jax.step.STEP_TRAINER_DEFAULT_CONFIG
 
-.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.jax.step.StepTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

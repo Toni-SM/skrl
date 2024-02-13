@@ -55,8 +55,8 @@ Configuration
 
 .. literalinclude:: ../../../../skrl/trainers/torch/parallel.py
     :language: python
-    :lines: 15-20
-    :linenos:
+    :start-after: [start-config-dict-torch]
+    :end-before: [end-config-dict-torch]
 
 .. raw:: html
 

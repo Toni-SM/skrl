@@ -1,18 +1,16 @@
 # [start-definition-torch]
-class GaussianModel(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+class MultiCategoricalModel(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 # [end-definition-torch]
 
 
 # [start-definition-jax]
-class GaussianModel(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+class MultiCategoricalModel(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 # [end-definition-jax]
 
 # =============================================================================
@@ -21,37 +19,30 @@ class GaussianModel(GaussianMixin, Model):
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class MLP(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+class MLP(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
                                  nn.ReLU(),
                                  nn.Linear(64, 32),
                                  nn.ReLU(),
-                                 nn.Linear(32, self.num_actions),
-                                 nn.Tanh())
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+                                 nn.Linear(32, self.num_actions))
 
     def compute(self, inputs, role):
-        return self.net(inputs["states"]), self.log_std_parameter, {}
+        return self.net(inputs["states"]), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 # [end-mlp-sequential-torch]
 
@@ -60,62 +51,51 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class MLP(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+class MLP(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.fc1 = nn.Linear(self.num_observations, 64)
         self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.logits = nn.Linear(32, self.num_actions)
 
     def compute(self, inputs, role):
         x = self.fc1(inputs["states"])
         x = F.relu(x)
         x = self.fc2(x)
         x = F.relu(x)
-        x = self.fc3(x)
-        return torch.tanh(x), self.log_std_parameter, {}
+        return self.logits(x), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 # [end-mlp-functional-torch]
 
 # [start-mlp-setup-jax]
-import jax.numpy as jnp
 import flax.linen as nn
 
-from skrl.models.jax import Model, GaussianMixin
+from skrl.models.jax import Model, MultiCategoricalMixin
 
 
 # define the model
-class MLP(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+class MLP(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
     def setup(self):
         self.fc1 = nn.Dense(64)
         self.fc2 = nn.Dense(32)
         self.fc3 = nn.Dense(self.num_actions)
-
-        self.log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
 
     def __call__(self, inputs, role):
         x = self.fc1(inputs["states"])
@@ -123,17 +103,14 @@ class MLP(GaussianMixin, Model):
         x = self.fc2(x)
         x = nn.relu(x)
         x = self.fc3(x)
-        return nn.tanh(x), self.log_std_parameter, {}
+        return x, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 
 # initialize model's state dict
@@ -141,18 +118,16 @@ policy.init_state_dict("policy")
 # [end-mlp-setup-jax]
 
 # [start-mlp-compact-jax]
-import jax.numpy as jnp
 import flax.linen as nn
 
-from skrl.models.jax import Model, GaussianMixin
+from skrl.models.jax import Model, MultiCategoricalMixin
 
 
 # define the model
-class MLP(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+class MLP(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
@@ -161,18 +136,14 @@ class MLP(GaussianMixin, Model):
         x = nn.Dense(32)(x)
         x = nn.relu(x)
         x = nn.Dense(self.num_actions)(x)
-        log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
-        return nn.tanh(x), log_std_parameter, {}
+        return x, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = MLP(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 
 # initialize model's state dict
@@ -185,15 +156,14 @@ policy.init_state_dict("policy")
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class CNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+class CNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.net = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=4),
                                  nn.ReLU(),
@@ -212,21 +182,16 @@ class CNN(GaussianMixin, Model):
                                  nn.Tanh(),
                                  nn.Linear(32, self.num_actions))
 
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
     def compute(self, inputs, role):
         # permute (samples, width * height * channels) -> (samples, channels, width, height)
-        return self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), self.log_std_parameter, {}
+        return self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 # [end-cnn-sequential-torch]
 
@@ -235,15 +200,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class CNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
+class CNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -253,8 +217,6 @@ class CNN(GaussianMixin, Model):
         self.fc3 = nn.Linear(16, 64)
         self.fc4 = nn.Linear(64, 32)
         self.fc5 = nn.Linear(32, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, inputs, role):
         # permute (samples, width * height * channels) -> (samples, channels, width, height)
@@ -275,33 +237,28 @@ class CNN(GaussianMixin, Model):
         x = self.fc4(x)
         x = torch.tanh(x)
         x = self.fc5(x)
-        return x, self.log_std_parameter, {}
+        return x, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 # [end-cnn-functional-torch]
 
 # [start-cnn-setup-jax]
-import jax.numpy as jnp
 import flax.linen as nn
 
-from skrl.models.jax import Model, GaussianMixin
+from skrl.models.jax import Model, MultiCategoricalMixin
 
 
 # define the model
-class CNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+class CNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
     def setup(self):
         self.conv1 = nn.Conv(32, kernel_size=(8, 8), strides=(4, 4), padding="VALID")
@@ -312,8 +269,6 @@ class CNN(GaussianMixin, Model):
         self.fc3 = nn.Dense(64)
         self.fc4 = nn.Dense(32)
         self.fc5 = nn.Dense(self.num_actions)
-
-        self.log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
 
     def __call__(self, inputs, role):
         x = inputs["states"].reshape((-1, *self.observation_space.shape))
@@ -333,17 +288,14 @@ class CNN(GaussianMixin, Model):
         x = self.fc4(x)
         x = nn.tanh(x)
         x = self.fc5(x)
-        return nn.tanh(x), self.log_std_parameter, {}
+        return x, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 
 # initialize model's state dict
@@ -351,18 +303,16 @@ policy.init_state_dict("policy")
 # [end-cnn-setup-jax]
 
 # [start-cnn-compact-jax]
-import jax.numpy as jnp
 import flax.linen as nn
 
-from skrl.models.jax import Model, GaussianMixin
+from skrl.models.jax import Model, MultiCategoricalMixin
 
 
 # define the model
-class CNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None,
-                 clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+class CNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
@@ -383,18 +333,14 @@ class CNN(GaussianMixin, Model):
         x = nn.Dense(32)(x)
         x = nn.tanh(x)
         x = nn.Dense(self.num_actions)(x)
-        log_std_parameter = self.param("log_std_parameter", lambda _: jnp.zeros(self.num_actions))
-        return nn.tanh(x), log_std_parameter, {}
+        return x, {}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = CNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum")
 
 # initialize model's state dict
@@ -407,16 +353,15 @@ policy.init_state_dict("policy")
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class RNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class RNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -432,10 +377,7 @@ class RNN(GaussianMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(64, 32),
                                  nn.ReLU(),
-                                 nn.Linear(32, self.num_actions),
-                                 nn.Tanh())
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+                                 nn.Linear(32, self.num_actions))
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -478,17 +420,14 @@ class RNN(GaussianMixin, Model):
         # flatten the RNN output
         rnn_output = torch.flatten(rnn_output, start_dim=0, end_dim=1)  # (N, L, D ∗ Hout) -> (N * L, D ∗ Hout)
 
-        return self.net(rnn_output), self.log_std_parameter, {"rnn": [hidden_states]}
+        return self.net(rnn_output), {"rnn": [hidden_states]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = RNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum",
              num_envs=env.num_envs,
              num_layers=1,
@@ -501,16 +440,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class RNN(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class RNN(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -524,9 +462,7 @@ class RNN(GaussianMixin, Model):
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.logits = nn.Linear(32, self.num_actions)
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -573,19 +509,15 @@ class RNN(GaussianMixin, Model):
         x = F.relu(x)
         x = self.fc2(x)
         x = F.relu(x)
-        x = self.fc3(x)
 
-        return torch.tanh(x), self.log_std_parameter, {"rnn": [hidden_states]}
+        return self.logits(x), {"rnn": [hidden_states]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = RNN(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum",
              num_envs=env.num_envs,
              num_layers=1,
@@ -599,16 +531,15 @@ policy = RNN(observation_space=env.observation_space,
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class GRU(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class GRU(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -624,10 +555,7 @@ class GRU(GaussianMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(64, 32),
                                  nn.ReLU(),
-                                 nn.Linear(32, self.num_actions),
-                                 nn.Tanh())
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+                                 nn.Linear(32, self.num_actions))
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -670,17 +598,14 @@ class GRU(GaussianMixin, Model):
         # flatten the RNN output
         rnn_output = torch.flatten(rnn_output, start_dim=0, end_dim=1)  # (N, L, D ∗ Hout) -> (N * L, D ∗ Hout)
 
-        return self.net(rnn_output), self.log_std_parameter, {"rnn": [hidden_states]}
+        return self.net(rnn_output), {"rnn": [hidden_states]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = GRU(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum",
              num_envs=env.num_envs,
              num_layers=1,
@@ -693,16 +618,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class GRU(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class GRU(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -716,9 +640,7 @@ class GRU(GaussianMixin, Model):
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.logits = nn.Linear(32, self.num_actions)
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -765,19 +687,15 @@ class GRU(GaussianMixin, Model):
         x = F.relu(x)
         x = self.fc2(x)
         x = F.relu(x)
-        x = self.fc3(x)
 
-        return torch.tanh(x), self.log_std_parameter, {"rnn": [hidden_states]}
+        return self.logits(x), {"rnn": [hidden_states]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = GRU(observation_space=env.observation_space,
              action_space=env.action_space,
              device=env.device,
-             clip_actions=True,
-             clip_log_std=True,
-             min_log_std=-20,
-             max_log_std=2,
+             unnormalized_log_prob=True,
              reduction="sum",
              num_envs=env.num_envs,
              num_layers=1,
@@ -791,16 +709,15 @@ policy = GRU(observation_space=env.observation_space,
 import torch
 import torch.nn as nn
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class LSTM(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class LSTM(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -816,10 +733,7 @@ class LSTM(GaussianMixin, Model):
                                  nn.ReLU(),
                                  nn.Linear(64, 32),
                                  nn.ReLU(),
-                                 nn.Linear(32, self.num_actions),
-                                 nn.Tanh())
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+                                 nn.Linear(32, self.num_actions))
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -867,17 +781,14 @@ class LSTM(GaussianMixin, Model):
         # flatten the RNN output
         rnn_output = torch.flatten(rnn_output, start_dim=0, end_dim=1)  # (N, L, D ∗ Hout) -> (N * L, D ∗ Hout)
 
-        return self.net(rnn_output), self.log_std_parameter, {"rnn": [rnn_states[0], rnn_states[1]]}
+        return self.net(rnn_output), {"rnn": [rnn_states[0], rnn_states[1]]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = LSTM(observation_space=env.observation_space,
               action_space=env.action_space,
               device=env.device,
-              clip_actions=True,
-              clip_log_std=True,
-              min_log_std=-20,
-              max_log_std=2,
+              unnormalized_log_prob=True,
               reduction="sum",
               num_envs=env.num_envs,
               num_layers=1,
@@ -890,16 +801,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl.models.torch import Model, GaussianMixin
+from skrl.models.torch import Model, MultiCategoricalMixin
 
 
 # define the model
-class LSTM(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum",
+class LSTM(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum",
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -913,9 +823,7 @@ class LSTM(GaussianMixin, Model):
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, self.num_actions)
-
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.logits = nn.Linear(32, self.num_actions)
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
@@ -967,19 +875,15 @@ class LSTM(GaussianMixin, Model):
         x = F.relu(x)
         x = self.fc2(x)
         x = F.relu(x)
-        x = self.fc3(x)
 
-        return torch.tanh(x), self.log_std_parameter, {"rnn": [rnn_states[0], rnn_states[1]]}
+        return self.logits(x), {"rnn": [rnn_states[0], rnn_states[1]]}
 
 
 # instantiate the model (assumes there is a wrapped environment: env)
 policy = LSTM(observation_space=env.observation_space,
               action_space=env.action_space,
               device=env.device,
-              clip_actions=True,
-              clip_log_std=True,
-              min_log_std=-20,
-              max_log_std=2,
+              unnormalized_log_prob=True,
               reduction="sum",
               num_envs=env.num_envs,
               num_layers=1,

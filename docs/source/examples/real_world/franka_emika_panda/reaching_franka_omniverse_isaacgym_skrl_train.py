@@ -13,8 +13,8 @@ from skrl.envs.torch import wrap_env
 from skrl.utils import set_seed
 
 
-# set the seed for reproducibility
-set_seed(42)
+# Seed for reproducibility
+seed = set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # Define the models (stochastic and deterministic models) for the agent using helper mixin.
@@ -62,6 +62,7 @@ env = get_env_instance(headless=headless)
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 from reaching_franka_omniverse_isaacgym_env import ReachingFrankaTask, TASK_CFG
 
+TASK_CFG["seed"] = seed
 TASK_CFG["headless"] = headless
 TASK_CFG["task"]["env"]["numEnvs"] = 1024
 TASK_CFG["task"]["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"

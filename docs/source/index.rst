@@ -154,6 +154,7 @@ Models
 
     * :doc:`Tabular model <api/models/tabular>` (discrete domain)
     * :doc:`Categorical model <api/models/categorical>` (discrete domain)
+    * :doc:`Multi-Categorical model <api/models/multicategorical>` (discrete domain)
     * :doc:`Gaussian model <api/models/gaussian>` (continuous domain)
     * :doc:`Multivariate Gaussian model <api/models/multivariate_gaussian>` (continuous domain)
     * :doc:`Deterministic model <api/models/deterministic>` (continuous domain)
@@ -165,7 +166,7 @@ Trainers
 
     * :doc:`Sequential trainer <api/trainers/sequential>`
     * :doc:`Parallel trainer <api/trainers/parallel>`
-    * :doc:`Manual trainer <api/trainers/manual>`
+    * :doc:`Step trainer <api/trainers/step>`
 
 Resources
 ^^^^^^^^^

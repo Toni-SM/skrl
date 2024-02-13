@@ -8,6 +8,11 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.omniverse_isaacgym_utils import get_env_instance
 from skrl.envs.torch import wrap_env
+from skrl.utils import set_seed
+
+
+# Seed for reproducibility
+seed = set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # Define only the policy for evaluation
@@ -37,6 +42,7 @@ env = get_env_instance(headless=headless)
 from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig
 from reaching_franka_omniverse_isaacgym_env import ReachingFrankaTask, TASK_CFG
 
+TASK_CFG["seed"] = seed
 TASK_CFG["headless"] = headless
 TASK_CFG["task"]["env"]["numEnvs"] = 64
 TASK_CFG["task"]["env"]["controlSpace"] = "joint"  # "joint" or "cartesian"

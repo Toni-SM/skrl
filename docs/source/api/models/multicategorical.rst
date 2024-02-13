@@ -1,15 +1,15 @@
-.. _models_gaussian:
+.. _models_multicategorical:
 
-Gaussian model
-==============
+Multi-Categorical model
+=======================
 
-Gaussian models run **continuous-domain stochastic** policies.
+Multi-Categorical models run **discrete-domain stochastic** policies.
 
 .. raw:: html
 
     <br><hr>
 
-skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
+skrl provides a Python mixin (:literal:`MultiCategoricalMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
@@ -25,17 +25,17 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/gaussian_model.py
+        .. literalinclude:: ../../snippets/multicategorical_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
+            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-torch]
             :end-before: [end-definition-torch]
 
     .. group-tab:: |_4| |jax| |_4|
 
-        .. literalinclude:: ../../snippets/gaussian_model.py
+        .. literalinclude:: ../../snippets/multicategorical_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
+            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-jax]
             :end-before: [end-definition-jax]
 
@@ -46,17 +46,17 @@ skrl provides a Python mixin (:literal:`GaussianMixin`) to assist in the creatio
 Concept
 -------
 
-.. image:: ../../_static/imgs/model_gaussian-light.svg
+.. image:: ../../_static/imgs/model_multicategorical-light.svg
     :width: 100%
     :align: center
     :class: only-light
-    :alt: Gaussian model
+    :alt: Multi-Categorical model
 
-.. image:: ../../_static/imgs/model_gaussian-dark.svg
+.. image:: ../../_static/imgs/model_multicategorical-dark.svg
     :width: 100%
     :align: center
     :class: only-dark
-    :alt: Gaussian model
+    :alt: Multi-Categorical model
 
 .. raw:: html
 
@@ -75,13 +75,13 @@ Usage
 
     .. tab:: MLP
 
-        .. image:: ../../_static/imgs/model_gaussian_mlp-light.svg
-            :width: 42%
+        .. image:: ../../_static/imgs/model_categorical_mlp-light.svg
+            :width: 40%
             :align: center
             :class: only-light
 
-        .. image:: ../../_static/imgs/model_gaussian_mlp-dark.svg
-            :width: 42%
+        .. image:: ../../_static/imgs/model_categorical_mlp-dark.svg
+            :width: 40%
             :align: center
             :class: only-dark
 
@@ -97,14 +97,14 @@ Usage
 
                     .. group-tab:: nn.Sequential
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-mlp-sequential-torch]
                             :end-before: [end-mlp-sequential-torch]
 
                     .. group-tab:: nn.functional
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-mlp-functional-torch]
                             :end-before: [end-mlp-functional-torch]
@@ -115,26 +115,26 @@ Usage
 
                     .. group-tab:: setup-style
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-mlp-setup-jax]
                             :end-before: [end-mlp-setup-jax]
 
                     .. group-tab:: compact-style
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-mlp-compact-jax]
                             :end-before: [end-mlp-compact-jax]
 
     .. tab:: CNN
 
-        .. image:: ../../_static/imgs/model_gaussian_cnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_cnn-light.svg
             :width: 100%
             :align: center
             :class: only-light
 
-        .. image:: ../../_static/imgs/model_gaussian_cnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_cnn-dark.svg
             :width: 100%
             :align: center
             :class: only-dark
@@ -151,14 +151,14 @@ Usage
 
                     .. group-tab:: nn.Sequential
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-cnn-sequential-torch]
                             :end-before: [end-cnn-sequential-torch]
 
                     .. group-tab:: nn.functional
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-cnn-functional-torch]
                             :end-before: [end-cnn-functional-torch]
@@ -169,26 +169,26 @@ Usage
 
                     .. group-tab:: setup-style
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-cnn-setup-jax]
                             :end-before: [end-cnn-setup-jax]
 
                     .. group-tab:: compact-style
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-cnn-compact-jax]
                             :end-before: [end-cnn-compact-jax]
 
     .. tab:: RNN
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -233,26 +233,26 @@ Usage
 
                     .. group-tab:: nn.Sequential
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-rnn-sequential-torch]
                             :end-before: [end-rnn-sequential-torch]
 
                     .. group-tab:: nn.functional
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-rnn-functional-torch]
                             :end-before: [end-rnn-functional-torch]
 
     .. tab:: GRU
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -297,26 +297,26 @@ Usage
 
                     .. group-tab:: nn.Sequential
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-gru-sequential-torch]
                             :end-before: [end-gru-sequential-torch]
 
                     .. group-tab:: nn.functional
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-gru-functional-torch]
                             :end-before: [end-gru-functional-torch]
 
     .. tab:: LSTM
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-light.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-light.svg
             :width: 90%
             :align: center
             :class: only-light
 
-        .. image:: ../../_static/imgs/model_gaussian_rnn-dark.svg
+        .. image:: ../../_static/imgs/model_categorical_rnn-dark.svg
             :width: 90%
             :align: center
             :class: only-dark
@@ -362,14 +362,14 @@ Usage
 
                     .. group-tab:: nn.Sequential
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-lstm-sequential-torch]
                             :end-before: [end-lstm-sequential-torch]
 
                     .. group-tab:: nn.functional
 
-                        .. literalinclude:: ../../snippets/gaussian_model.py
+                        .. literalinclude:: ../../snippets/multicategorical_model.py
                             :language: python
                             :start-after: [start-lstm-functional-torch]
                             :end-before: [end-lstm-functional-torch]
@@ -381,7 +381,7 @@ Usage
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.models.torch.gaussian.GaussianMixin
+.. autoclass:: skrl.models.torch.multicategorical.MultiCategoricalMixin
     :show-inheritance:
     :members:
 
@@ -394,7 +394,7 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.models.jax.gaussian.GaussianMixin
+.. autoclass:: skrl.models.jax.multicategorical.MultiCategoricalMixin
     :show-inheritance:
     :members:
 

@@ -1,6 +1,7 @@
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import copy
+import sys
 import tqdm
 
 import torch
@@ -10,23 +11,25 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
-MANUAL_TRAINER_DEFAULT_CONFIG = {
+# [start-config-dict-torch]
+STEP_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
+# [end-config-dict-torch]
 
 
-class ManualTrainer(Trainer):
+class StepTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
                  agents_scope: Optional[List[int]] = None,
                  cfg: Optional[dict] = None) -> None:
-        """Manual trainer
+        """Step-by-step trainer
 
-        Train agents by manually controlling the training/evaluation loop
+        Train agents by controlling the training/evaluation loop step by step
 
         :param env: Environment to train on
         :type env: skrl.envs.wrappers.torch.Wrapper
@@ -35,10 +38,10 @@ class ManualTrainer(Trainer):
         :param agents_scope: Number of environments for each agent to train on (default: ``None``)
         :type agents_scope: tuple or list of int, optional
         :param cfg: Configuration dictionary (default: ``None``).
-                    See MANUAL_TRAINER_DEFAULT_CONFIG for default values
+                    See STEP_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """
-        _cfg = copy.deepcopy(MANUAL_TRAINER_DEFAULT_CONFIG)
+        _cfg = copy.deepcopy(STEP_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
         agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
@@ -55,7 +58,8 @@ class ManualTrainer(Trainer):
 
         self.states = None
 
-    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
+    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute a training iteration
 
         This method executes the following steps once:
@@ -74,6 +78,9 @@ class ManualTrainer(Trainer):
         :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of torch.Tensor and any other info
         """
         if timestep is None:
             self._timestep += 1
@@ -81,7 +88,7 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # set running mode
@@ -162,7 +169,10 @@ class ManualTrainer(Trainer):
             else:
                 self.states = next_states
 
-    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> None:
+        return next_states, rewards, terminated, truncated, infos
+
+    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
@@ -178,6 +188,9 @@ class ManualTrainer(Trainer):
         :param timesteps: Total number of timesteps (default: ``None``).
                           If None, the total number of timesteps is obtained from the trainer's config
         :type timesteps: int, optional
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of torch.Tensor and any other info
         """
         if timestep is None:
             self._timestep += 1
@@ -185,7 +198,7 @@ class ManualTrainer(Trainer):
         timesteps = self.timesteps if timesteps is None else timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # set running mode
@@ -248,3 +261,5 @@ class ManualTrainer(Trainer):
                 self.states, infos = self.env.reset()
             else:
                 self.states = next_states
+
+        return next_states, rewards, terminated, truncated, infos

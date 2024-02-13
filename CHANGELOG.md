@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - 2024-02-12
+### Added
+- MultiCategorical mixin to operate MultiDiscrete action spaces
+
+### Changed (breaking changes)
+- Rename the `ManualTrainer` to `StepTrainer`
+- Output training/evaluation progress messages to system's stdout
+- Get single observation/action spaces for vectorized environments
+- Update Isaac Orbit environment wrapper
+
 ## [1.0.0] - 2023-08-16
 
 Transition from pre-release versions (`1.0.0-rc.1` and`1.0.0-rc.2`) to a stable version.

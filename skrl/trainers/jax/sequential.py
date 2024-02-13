@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 
 import contextlib
 import copy
+import sys
 import tqdm
 
 import jax.numpy as jnp
@@ -11,12 +12,14 @@ from skrl.envs.wrappers.jax import Wrapper
 from skrl.trainers.jax import Trainer
 
 
+# [start-config-dict-jax]
 SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
+# [end-config-dict-jax]
 
 
 class SequentialTrainer(Trainer):
@@ -84,7 +87,7 @@ class SequentialTrainer(Trainer):
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for agent in self.agents:
@@ -156,7 +159,7 @@ class SequentialTrainer(Trainer):
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with contextlib.nullcontext():

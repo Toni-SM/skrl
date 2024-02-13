@@ -199,15 +199,15 @@ trainer.eval()
 
 # =============================================================================
 
-# [pytorch-start-manual]
-from skrl.trainers.torch import ManualTrainer
+# [pytorch-start-step]
+from skrl.trainers.torch import StepTrainer
 
 # assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = ManualTrainer(env=env, agents=agents, cfg=cfg)
+trainer = StepTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 for timestep in range(cfg["timesteps"]):
@@ -216,18 +216,18 @@ for timestep in range(cfg["timesteps"]):
 # evaluate the agent(s)
 for timestep in range(cfg["timesteps"]):
     trainer.eval(timestep=timestep)
-# [pytorch-end-manual]
+# [pytorch-end-step]
 
 
-# [jax-start-manual]
-from skrl.trainers.jax import ManualTrainer
+# [jax-start-step]
+from skrl.trainers.jax import StepTrainer
 
 # assuming there is an environment called 'env'
 # and an agent or a list of agents called 'agents'
 
 # create a sequential trainer
 cfg = {"timesteps": 50000, "headless": False}
-trainer = ManualTrainer(env=env, agents=agents, cfg=cfg)
+trainer = StepTrainer(env=env, agents=agents, cfg=cfg)
 
 # train the agent(s)
 for timestep in range(cfg["timesteps"]):
@@ -236,4 +236,44 @@ for timestep in range(cfg["timesteps"]):
 # evaluate the agent(s)
 for timestep in range(cfg["timesteps"]):
     trainer.eval(timestep=timestep)
-# [jax-end-manual]
+# [jax-end-step]
+
+# =============================================================================
+
+# [pytorch-start-manual-training]
+
+# [pytorch-end-manual-training]
+
+# [pytorch-start-manual-evaluation]
+# assuming there is an environment named 'env'
+# and an agent named 'agents' (or a state-preprocessor and a policy)
+
+states, infos = env.reset()
+
+for i in range(1000):
+    # state-preprocessor + policy
+    with torch.no_grad():
+        states = state_preprocessor(states)
+        actions = policy.act({"states": states})[0]
+
+    # step the environment
+    next_states, rewards, terminated, truncated, infos = env.step(actions)
+
+    # render the environment
+    env.render()
+
+    # check for termination/truncation
+    if terminated.any() or truncated.any():
+        states, infos = env.reset()
+    else:
+        states = next_states
+# [pytorch-end-manual-evaluation]
+
+
+# [jax-start-manual-training]
+
+# [jax-end-manual-training]
+
+# [jax-start-manual-evaluation]
+
+# [jax-end-manual-evaluation]

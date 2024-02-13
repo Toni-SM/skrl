@@ -3,8 +3,13 @@ from typing import Any, Tuple, Union
 import jax
 import jax.dlpack as jax_dlpack
 import numpy as np
-import torch
-import torch.utils.dlpack as torch_dlpack
+
+
+try:
+    import torch
+    import torch.utils.dlpack as torch_dlpack
+except:
+    pass  # TODO: show warning message
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper
@@ -53,10 +58,10 @@ class IsaacOrbitWrapper(Wrapper):
         actions = _jax2torch(actions, self._env.device, self._jax)
 
         with torch.no_grad():
-            self._obs_dict, reward, terminated, info = self._env.step(actions)
+            self._obs_dict, reward, terminated, truncated, info = self._env.step(actions)
 
         terminated = terminated.to(dtype=torch.int8)
-        truncated = info["time_outs"].to(dtype=torch.int8) if "time_outs" in info else torch.zeros_like(terminated)
+        truncated = truncated.to(dtype=torch.int8)
 
         return _torch2jax(self._obs_dict["policy"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \
@@ -71,9 +76,9 @@ class IsaacOrbitWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._obs_dict = self._env.reset()
+            self._obs_dict, info = self._env.reset()
             self._reset_once = False
-        return _torch2jax(self._obs_dict["policy"], self._jax), {}
+        return _torch2jax(self._obs_dict["policy"], self._jax), info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

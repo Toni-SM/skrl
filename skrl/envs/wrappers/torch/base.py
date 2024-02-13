@@ -19,6 +19,14 @@ class Wrapper(object):
             self.device = torch.device(self._env.device)
         else:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # spaces
+        try:
+            self._action_space = self._env.single_action_space
+            self._observation_space = self._env.single_observation_space
+        except AttributeError:
+            self._action_space = self._env.action_space
+            self._observation_space = self._env.observation_space
+        self._state_space = self._env.state_space if hasattr(self._env, "state_space") else self._observation_space
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -91,19 +99,19 @@ class Wrapper(object):
         If the wrapped environment does not have the ``state_space`` property,
         the value of the ``observation_space`` property will be used
         """
-        return self._env.state_space if hasattr(self._env, "state_space") else self._env.observation_space
+        return self._state_space
 
     @property
     def observation_space(self) -> gym.Space:
         """Observation space
         """
-        return self._env.observation_space
+        return self._observation_space
 
     @property
     def action_space(self) -> gym.Space:
         """Action space
         """
-        return self._env.action_space
+        return self._action_space
 
 
 class MultiAgentEnvWrapper(object):

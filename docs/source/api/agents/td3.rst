@@ -169,6 +169,9 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
     * - Discrete
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+    * - MultiDiscrete
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Box
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

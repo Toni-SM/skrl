@@ -1,9 +1,6 @@
 import torch
 import numpy as np
 
-from omni.isaac.core.utils.extensions import enable_extension
-enable_extension("omni.replicator.isaac")  # required by OIGE
-
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.franka import Franka as Robot
 
@@ -27,6 +24,8 @@ TASK_CFG = {"test": False,
             "headless": True,
             "sim_device": "gpu",
             "enable_livestream": False,
+            "warp": False,
+            "seed": 42,
             "task": {"name": "ReachingFranka",
                      "physics_engine": "physx",
                      "env": {"numEnvs": 1024,
@@ -86,6 +85,7 @@ TASK_CFG = {"test": False,
                                        "rest_offset": 0.0},
                              "target": {"override_usd_defaults": False,
                                         "fixed_base": True,
+                                        "make_kinematic": True,
                                         "enable_self_collisions": False,
                                         "enable_gyroscopic_forces": True,
                                         "solver_position_iteration_count": 4,

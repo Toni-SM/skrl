@@ -113,6 +113,8 @@ class GymWrapper(Wrapper):
                     return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(-1)
         elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
+        elif isinstance(space, gym.spaces.MultiDiscrete):
+            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         elif isinstance(space, gym.spaces.Box):
             return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
         raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")

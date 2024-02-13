@@ -25,7 +25,6 @@ Usage
 
         .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
-            :linenos:
             :emphasize-lines: 1, 5-6
             :start-after: [start-memory_file_iterator-torch]
             :end-before: [end-memory_file_iterator-torch]
@@ -34,7 +33,6 @@ Usage
 
         .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
-            :linenos:
             :emphasize-lines: 1, 5-6
             :start-after: [start-memory_file_iterator-numpy]
             :end-before: [end-memory_file_iterator-numpy]
@@ -43,7 +41,6 @@ Usage
 
         .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
-            :linenos:
             :emphasize-lines: 1, 5-6
             :start-after: [start-memory_file_iterator-csv]
             :end-before: [end-memory_file_iterator-csv]
@@ -101,7 +98,6 @@ Usage
 
         .. literalinclude:: ../../snippets/utils_postprocessing.py
             :language: python
-            :linenos:
             :emphasize-lines: 1, 5-7
             :start-after: [start-tensorboard_file_iterator-list]
             :end-before: [end-tensorboard_file_iterator-list]

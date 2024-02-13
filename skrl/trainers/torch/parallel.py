@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import copy
+import sys
 import tqdm
 
 import torch
@@ -11,12 +12,14 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# [start-config-dict-torch]
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
 }
+# [end-config-dict-torch]
 
 
 def fn_processor(process_index, *args):
@@ -201,7 +204,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -337,7 +340,7 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar):
+        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # compute actions
             with torch.no_grad():

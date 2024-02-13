@@ -113,6 +113,8 @@ class GymWrapper(Wrapper):
                     return actions.astype(space[0].dtype).reshape(-1)
         elif isinstance(space, gym.spaces.Discrete):
             return actions.item()
+        elif isinstance(space, gym.spaces.MultiDiscrete):
+            return actions.astype(space.dtype).reshape(space.shape)
         elif isinstance(space, gym.spaces.Box):
             return actions.astype(space.dtype).reshape(space.shape)
         raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")

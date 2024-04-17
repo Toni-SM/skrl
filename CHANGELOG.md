@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - Unreleased
+### Fixed
+- Moved the batch sampling inside gradient step loop for DDPG and TD3. [SpinningUp description.](https://spinningup.openai.com/en/latest/algorithms/ddpg.html#pseudocode)
+
 ## [1.1.0] - 2024-02-12
 ### Added
 - MultiCategorical mixin to operate MultiDiscrete action spaces

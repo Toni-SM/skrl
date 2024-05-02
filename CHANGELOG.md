@@ -3,8 +3,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.2.0] - Unreleased
+### Added
+- Define the `environment_info` trainer config to log environment info (PyTorch implementation)
+
 ### Fixed
-- Moved the batch sampling inside gradient step loop for DDPG and TD3. [SpinningUp description.](https://spinningup.openai.com/en/latest/algorithms/ddpg.html#pseudocode)
+- Move the batch sampling inside gradient step loop for DDPG and TD3
 
 ## [1.1.0] - 2024-02-12
 ### Added

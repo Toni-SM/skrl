@@ -17,6 +17,7 @@ STEP_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
+    "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
 
@@ -129,8 +130,8 @@ class StepTrainer(Trainer):
                 self.env.render()
 
         if self.num_simultaneous_agents == 1:
-            # record the environments' transitions
             with torch.no_grad():
+                # record the environments' transitions
                 self.agents.record_transition(states=self.states,
                                               actions=actions,
                                               rewards=rewards,
@@ -141,12 +142,18 @@ class StepTrainer(Trainer):
                                               timestep=timestep,
                                               timesteps=timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=timesteps)
 
         else:
-            # record the environments' transitions
             with torch.no_grad():
+                # record the environments' transitions
                 for agent, scope in zip(self.agents, self.agents_scope):
                     agent.record_transition(states=self.states[scope[0]:scope[1]],
                                             actions=actions[scope[0]:scope[1]],
@@ -157,6 +164,13 @@ class StepTrainer(Trainer):
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            for agent in self.agents:
+                                agent.track_data(f"Info / {k}", v.item())
 
             # post-interaction
             for agent in self.agents:
@@ -242,6 +256,12 @@ class StepTrainer(Trainer):
                                               timesteps=timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             else:
                 # write data to TensorBoard
                 for agent, scope in zip(self.agents, self.agents_scope):
@@ -255,6 +275,13 @@ class StepTrainer(Trainer):
                                             timestep=timestep,
                                             timesteps=timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            for agent in self.agents:
+                                agent.track_data(f"Info / {k}", v.item())
 
             # reset environments
             if terminated.any() or truncated.any():

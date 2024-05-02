@@ -59,6 +59,7 @@ class Trainer:
         self.headless = self.cfg.get("headless", False)
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
         self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
+        self.environment_info = self.cfg.get("environment_info", "episode")
 
         self.initial_timestep = 0
 
@@ -190,6 +191,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
@@ -243,6 +250,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
 
             # reset environments
             if self.env.num_envs > 1:
@@ -304,6 +317,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
@@ -360,6 +379,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
 
                 # reset environments
                 if not self.env.agents:

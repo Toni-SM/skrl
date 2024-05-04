@@ -61,7 +61,7 @@ class Agent:
                 model.to(model.device)
 
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
+        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", "auto")
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -72,7 +72,7 @@ class Agent:
 
         # checkpoint
         self.checkpoint_modules = {}
-        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
+        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", "auto")
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
         self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
 
@@ -134,10 +134,10 @@ class Agent:
         :param trainer_cfg: Trainer configuration
         :type trainer_cfg: dict, optional
         """
+        trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
         # setup Weights & Biases
         if self.cfg.get("experiment", {}).get("wandb", False):
             # save experiment config
-            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
             try:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
             except AttributeError:
@@ -154,9 +154,13 @@ class Agent:
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
+        if self.write_interval == "auto":
+            self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
             self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
+        if self.checkpoint_interval == "auto":
+            self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 

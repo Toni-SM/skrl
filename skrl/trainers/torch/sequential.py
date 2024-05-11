@@ -106,13 +106,31 @@ class SequentialTrainer(Trainer):
             with torch.no_grad():
                 actions = torch.vstack([agent.act(states[scope[0]:scope[1]], timestep=timestep, timesteps=self.timesteps)[0] \
                                         for agent, scope in zip(self.agents, self.agents_scope)])
+                
+                if self.wandblog:
+                    wandb.log({
+                        "Trainer / gpu_allocated_memory": self.logger.get_gpu_allocated_memory(),
+                        "Trainer / cpu_allocated_memory": self.logger.get_cpu_allocated_memory()
+                    })
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
+                if self.wandblog:
+                    wandb.log({
+                        "Trainer / gpu_allocated_memory": self.logger.get_gpu_allocated_memory(),
+                        "Trainer / cpu_allocated_memory": self.logger.get_cpu_allocated_memory()
+                    })
+
                 # render scene
                 if not self.headless:
                     self.env.render()
+
+                if self.wandblog:
+                    wandb.log({
+                        "Trainer / gpu_allocated_memory": self.logger.get_gpu_allocated_memory(),
+                        "Trainer / cpu_allocated_memory": self.logger.get_cpu_allocated_memory()
+                    })
 
                 # record the environments' transitions
                 for agent, scope in zip(self.agents, self.agents_scope):
@@ -129,6 +147,12 @@ class SequentialTrainer(Trainer):
             # post-interaction
             for agent in self.agents:
                 agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            if self.wandblog:
+                    wandb.log({
+                        "Trainer / gpu_allocated_memory": self.logger.get_gpu_allocated_memory(),
+                        "Trainer / cpu_allocated_memory": self.logger.get_cpu_allocated_memory()
+                    })
 
             # reset environments
             with torch.no_grad():

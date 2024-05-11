@@ -5,6 +5,8 @@ import itertools
 import gym
 import gymnasium
 
+import wandb
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -141,6 +143,8 @@ class PPO(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
+
+        self.wandblog = self.cfg["wandb_log"]
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -288,14 +292,17 @@ class PPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
+        training_loss = float("inf")
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
             self.set_mode("train")
-            self._update(timestep, timesteps)
+            training_loss = self._update(timestep, timesteps)
             self.set_mode("eval")
 
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
+
+        return training_loss
 
     def _update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step
@@ -378,7 +385,6 @@ class PPO(Agent):
 
             # mini-batches loop
             for sampled_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages in sampled_batches:
-
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
@@ -438,9 +444,26 @@ class PPO(Agent):
                 else:
                     self.scheduler.step()
 
+
+            if self.wandblog:
+                wandb.log({
+                    "Current Loss / Policy loss": cumulative_policy_loss / (self._learning_epochs * self._mini_batches),
+                    "Current Loss / Value loss": cumulative_value_loss / (self._learning_epochs * self._mini_batches),
+                })
+
+        # wandb logging
+        if self.wandblog:
+            wandb.log({
+                "Loss / Policy loss": cumulative_policy_loss / (self._learning_epochs * self._mini_batches),
+                "Loss / Value loss": cumulative_value_loss / (self._learning_epochs * self._mini_batches),
+                "Loss / Entropy loss (default is 0)": cumulative_entropy_loss / (self._learning_epochs * self._mini_batches),
+                "Policy / Standard deviation": self.policy.distribution(role="policy").stddev.mean().item(),
+            })
+
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
+
         if self._entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
 

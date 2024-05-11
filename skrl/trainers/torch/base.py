@@ -1,5 +1,7 @@
 from typing import List, Optional, Union
 
+import matplotlib.pyplot as plt
+
 import atexit
 import sys
 import tqdm
@@ -9,6 +11,8 @@ import torch
 from skrl import logger
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import Wrapper
+
+import wandb
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
@@ -144,7 +148,7 @@ class Trainer:
         """
         raise NotImplementedError
 
-    def single_agent_train(self) -> None:
+    def single_agent_train(self, wandblog) -> None:
         """Train agent
 
         This method executes the following steps in loop:
@@ -161,7 +165,21 @@ class Trainer:
         assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
         # reset env
-        states, infos = self.env.reset()
+        states, infos = self.env.reset() # [1, 49152]
+
+        if wandblog:
+            pass
+            # observation_space_shape = self.cfg["resolution"]
+            # if observation_space_shape is not None:
+            #     states_log = states.view(-1, *observation_space_shape)
+            #     examples = []
+            #     for i in range(3):
+            #         img_np = states_log[0].detach().cpu().numpy()
+            #         image = wandb.Image(img_np, caption=f"random field {0}")
+            #         examples.append(image)
+            #     wandb.log({
+            #         "reset_states": examples, 
+            #     })
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
@@ -174,6 +192,23 @@ class Trainer:
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+
+                if wandblog:
+                    observation_space_shape = self.cfg["resolution"]
+                    if observation_space_shape is not None:
+                        # states_log = states.view(-1, *observation_space_shape)
+                        # img_np = states_log[0].detach().cpu().numpy()
+                        # plt.imshow(img_np)
+                        # plt.savefig("TEST_next_states.png")
+                        # wandb_img = wandb.Image("TEST_next_states.png")
+                        wandb.log({
+                            #"next_states": wandb_img, 
+                            "rewards": rewards
+                        })
+                    else:
+                        wandb.log({
+                            "rewards": rewards
+                        })
 
                 # render scene
                 if not self.headless:

@@ -10,6 +10,9 @@ from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
+from mem_logger import MemLogger
+
+import wandb
 
 # [start-config-dict-torch]
 SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
@@ -25,6 +28,8 @@ class SequentialTrainer(Trainer):
     def __init__(self,
                  env: Wrapper,
                  agents: Union[Agent, List[Agent]],
+                 logger: MemLogger,
+                 wandblog: bool = False,
                  agents_scope: Optional[List[int]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Sequential trainer
@@ -53,6 +58,9 @@ class SequentialTrainer(Trainer):
         else:
             self.agents.init(trainer_cfg=self.cfg)
 
+        self.logger = logger
+        self.wandblog = wandblog
+
     def train(self) -> None:
         """Train the agents sequentially
 
@@ -77,10 +85,12 @@ class SequentialTrainer(Trainer):
         if self.num_simultaneous_agents == 1:
             # single-agent
             if self.env.num_agents == 1:
-                self.single_agent_train()
+                self.single_agent_train(self.wandblog)
             # multi-agent
             else:
                 self.multi_agent_train()
+
+            print(f"Single agent training is complete")
             return
 
         # reset env
@@ -126,6 +136,12 @@ class SequentialTrainer(Trainer):
                     states, infos = self.env.reset()
                 else:
                     states = next_states
+        
+        if self.wandblog:
+            wandb.log({
+                "Trainer / gpu_allocated_memory": self.logger.get_gpu_allocated_memory(),
+                "Trainer / cpu_allocated_memory": self.logger.get_cpu_allocated_memory()
+            })
 
     def eval(self) -> None:
         """Evaluate the agents sequentially

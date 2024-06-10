@@ -240,7 +240,7 @@ class StepTrainer(Trainer):
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps, save_checkpoints=False)
 
             else:
                 # write data to TensorBoard
@@ -254,7 +254,7 @@ class StepTrainer(Trainer):
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
-                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
+                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps, save_checkpoints=False)
 
             # reset environments
             if terminated.any() or truncated.any():

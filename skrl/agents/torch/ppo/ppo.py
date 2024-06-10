@@ -49,6 +49,8 @@ PPO_DEFAULT_CONFIG = {
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
     "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
+    "mixed_precision": False,       # mixed torch.float32 and torch.float16 precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -141,6 +143,14 @@ class PPO(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
+
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # cuda or cpu
+        self._device_type = torch.device(device).type
+
+        # set up scaler
+        self._scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -379,51 +389,57 @@ class PPO(Agent):
             # mini-batches loop
             for sampled_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages in sampled_batches:
 
-                sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
+                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-                _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
+                    sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
-                # compute approximate KL divergence
-                with torch.no_grad():
-                    ratio = next_log_prob - sampled_log_prob
-                    kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
-                    kl_divergences.append(kl_divergence)
+                    _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 
-                # early stopping with KL divergence
-                if self._kl_threshold and kl_divergence > self._kl_threshold:
-                    break
+                    # compute approximate KL divergence
+                    with torch.no_grad():
+                        ratio = next_log_prob - sampled_log_prob
+                        kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                        kl_divergences.append(kl_divergence)
 
-                # compute entropy loss
-                if self._entropy_loss_scale:
-                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
-                else:
-                    entropy_loss = 0
+                    # early stopping with KL divergence
+                    if self._kl_threshold and kl_divergence > self._kl_threshold:
+                        break
 
-                # compute policy loss
-                ratio = torch.exp(next_log_prob - sampled_log_prob)
-                surrogate = sampled_advantages * ratio
-                surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
+                    # compute entropy loss
+                    if self._entropy_loss_scale:
+                        entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
+                    else:
+                        entropy_loss = 0
 
-                policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
+                    # compute policy loss
+                    ratio = torch.exp(next_log_prob - sampled_log_prob)
+                    surrogate = sampled_advantages * ratio
+                    surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip, 1.0 + self._ratio_clip)
 
-                # compute value loss
-                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+                    policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
-                if self._clip_predicted_values:
-                    predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
-                                                                   min=-self._value_clip,
-                                                                   max=self._value_clip)
-                value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
+                    # compute value loss
+                    predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+
+                    if self._clip_predicted_values:
+                        predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
+                                                                    min=-self._value_clip,
+                                                                    max=self._value_clip)
+                    value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
                 # optimization step
                 self.optimizer.zero_grad()
-                (policy_loss + entropy_loss + value_loss).backward()
+                self._scaler.scale(policy_loss + entropy_loss + value_loss).backward()
+
                 if self._grad_norm_clip > 0:
+                    self._scaler.unscale_(self.optimizer)
                     if self.policy is self.value:
                         nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                     else:
                         nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
-                self.optimizer.step()
+
+                self._scaler.step(self.optimizer)
+                self._scaler.update()
 
                 # update cumulative losses
                 cumulative_policy_loss += policy_loss.item()

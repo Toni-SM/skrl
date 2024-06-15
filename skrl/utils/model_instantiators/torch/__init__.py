@@ -562,12 +562,12 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
                 net_inputs = torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)
 
             if role == self._roles[0]:
-                self.output = self.net(net_inputs)
-                return self.instantiator_output_scales[0] * self.mean_net(self.output), self.log_std_parameter, {}
+                self._shared_output = self.net(net_inputs)
+                return self.instantiator_output_scales[0] * self.mean_net(self._shared_output), self.log_std_parameter, {}
             elif role == self._roles[1]:
-                output = self.net(net_inputs) if self.output is None else self.output
-                self.output = None
-                return self.instantiator_output_scales[1] * self.value_net(output), {}
+                shared_output = self.net(net_inputs) if self._shared_output is None else self._shared_output
+                self._shared_output = None
+                return self.instantiator_output_scales[1] * self.value_net(shared_output), {}
 
     # TODO: define the model using the specified structure
 

@@ -486,7 +486,8 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
                  device: Optional[Union[str, torch.device]] = None,
                  structure: str = "",
                  roles: Sequence[str] = [],
-                 parameters: Sequence[Mapping[str, Any]] = []) -> Model:
+                 parameters: Sequence[Mapping[str, Any]] = [],
+                 single_forward_pass: bool = True) -> Model:
     """Instantiate a shared model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -505,12 +506,14 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     :type roles: sequence of strings, optional
     :param parameters: Organized list of model instantiator parameters (default: ``[]``)
     :type parameters: sequence of dict, optional
+    :param single_forward_pass: Whether to perform a single forward-pass for the shared layers/network (default: ``True``)
+    :type single_forward_pass: bool
 
     :return: Shared model instance
     :rtype: Model
     """
     class GaussianDeterministicModel(GaussianMixin, DeterministicMixin, Model):
-        def __init__(self, observation_space, action_space, device, roles, metadata):
+        def __init__(self, observation_space, action_space, device, roles, metadata, single_forward_pass):
             Model.__init__(self, observation_space, action_space, device)
             GaussianMixin.__init__(self,
                                    clip_actions=metadata[0]["clip_actions"],
@@ -521,6 +524,7 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
             DeterministicMixin.__init__(self, clip_actions=metadata[1]["clip_actions"], role=roles[1])
 
             self._roles = roles
+            self._single_forward_pass = single_forward_pass
             self.instantiator_input_type = metadata[0]["input_shape"].value
             self.instantiator_output_scales = [m["output_scale"] for m in metadata]
 
@@ -561,18 +565,27 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
             elif self.instantiator_input_type == -2:
                 net_inputs = torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)
 
-            if role == self._roles[0]:
-                self._shared_output = self.net(net_inputs)
-                return self.instantiator_output_scales[0] * self.mean_net(self._shared_output), self.log_std_parameter, {}
-            elif role == self._roles[1]:
-                shared_output = self.net(net_inputs) if self._shared_output is None else self._shared_output
-                self._shared_output = None
-                return self.instantiator_output_scales[1] * self.value_net(shared_output), {}
+            # single shared layers/network forward-pass
+            if self._single_forward_pass:
+                if role == self._roles[0]:
+                    self._shared_output = self.net(net_inputs)
+                    return self.instantiator_output_scales[0] * self.mean_net(self._shared_output), self.log_std_parameter, {}
+                elif role == self._roles[1]:
+                    shared_output = self.net(net_inputs) if self._shared_output is None else self._shared_output
+                    self._shared_output = None
+                    return self.instantiator_output_scales[1] * self.value_net(shared_output), {}
+            # multiple shared layers/network forward-pass
+            else:
+                if role == self._roles[0]:
+                    return self.instantiator_output_scales[0] * self.mean_net(self.net(net_inputs)), self.log_std_parameter, {}
+                elif role == self._roles[1]:
+                    return self.instantiator_output_scales[1] * self.value_net(self.net(net_inputs)), {}
 
     # TODO: define the model using the specified structure
 
     return GaussianDeterministicModel(observation_space=observation_space,
-                                        action_space=action_space,
-                                        device=device,
-                                        roles=roles,
-                                        metadata=parameters)
+                                      action_space=action_space,
+                                      device=device,
+                                      roles=roles,
+                                      metadata=parameters,
+                                      single_forward_pass=single_forward_pass)

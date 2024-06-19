@@ -6,7 +6,7 @@ import tqdm
 
 import torch
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import Wrapper
 
@@ -74,6 +74,12 @@ class Trainer:
                 logger.info("Closing environment")
                 self.env.close()
                 logger.info("Environment closed")
+
+        # multi-gpu
+        if config.torch.is_distributed:
+            logger.info(f"rank: {config.torch.rank}, local rank: {config.torch.local_rank}, world size: {config.torch.world_size}")
+            torch.distributed.init_process_group("nccl", rank=config.torch.rank, world_size=config.torch.world_size)
+            torch.cuda.set_device(config.torch.local_rank)
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer

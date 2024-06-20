@@ -14,8 +14,14 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     """
     Set the seed for the random number generators
 
-    Due to NumPy's legacy seeding constraint the seed must be between 0 and 2**32 - 1.
-    Otherwise a NumPy exception (``ValueError: Seed must be between 0 and 2**32 - 1``) will be raised
+    .. note::
+
+        In distributed runs, the worker/process seed will be incremented (counting from the defined value) according to its rank
+
+    .. warning::
+
+        Due to NumPy's legacy seeding constraint the seed must be between 0 and 2**32 - 1.
+        Otherwise a NumPy exception (``ValueError: Seed must be between 0 and 2**32 - 1``) will be raised
 
     Modified packages:
 
@@ -65,8 +71,12 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
         except NotImplementedError:
             seed = int(time.time() * 1000)
         seed %= 2 ** 31  # NumPy's legacy seeding seed must be between 0 and 2**32 - 1
-
     seed = int(seed)
+
+    # set different seeds in distributed runs
+    if config.torch.is_distributed:
+        seed += config.torch.rank
+
     logger.info(f"Seed: {seed}")
 
     # numpy

@@ -58,33 +58,33 @@ class _Config(object):
 
             @property
             def local_rank(self) -> int:
-                """The rank of the worker (e.g.: GPU) within a local worker group (e.g.: node)
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
 
-                This value reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
                 """
                 return self._local_rank
 
             @property
             def rank(self) -> int:
-                """The rank of the worker (e.g.: GPU) within a worker group (e.g.: across all nodes)
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
 
-                This value reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
                 """
                 return self._rank
 
             @property
             def world_size(self) -> int:
-                """The total number of workers (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
 
-                This value reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
                 """
                 return self._world_size
 
             @property
-            def is_distributed(self) -> int:
-                """If running in distributed environment
+            def is_distributed(self) -> bool:
+                """Whether if running in a distributed environment
 
-                This value reads from the ``WORLD_SIZE > 1`` checking
+                This property is ``True`` when the PyTorch's distributed environment variable ``WORLD_SIZE > 1``
                 """
                 return self._is_distributed
 
@@ -92,7 +92,8 @@ class _Config(object):
             def device(self) -> "torch.device":
                 """Default device
 
-                The default device, unless specified, is ``cuda:LOCAL_RANK`` if CUDA is available, ``cpu`` otherwise
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
                 """
                 try:
                     import torch

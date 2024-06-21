@@ -10,7 +10,7 @@ from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.torch.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
-from skrl.envs.wrappers.torch.isaaclab_envs import IsaacOrbitWrapper
+from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabWrapper
 from skrl.envs.wrappers.torch.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 from skrl.envs.wrappers.torch.robosuite_envs import RobosuiteWrapper
@@ -58,7 +58,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                     +--------------------+-------------------------+
                     |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
                     +--------------------+-------------------------+
-                    |Isaac Sim (orbit)   |``"isaac-orbit"``        |
+                    |Isaac Lab           |``"isaaclab"``           |
                     +--------------------+-------------------------+
     :type wrapper: str, optional
     :param verbose: Whether to print the wrapper type (default: ``True``)
@@ -80,11 +80,11 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                 logger.info("Environment wrapper: Omniverse Isaac Gym")
             return OmniverseIsaacGymWrapper(env)
         elif isinstance(env, gym.core.Env) or isinstance(env, gym.core.Wrapper):
-            # isaac-orbit
+            # isaaclab
             if hasattr(env, "sim") and hasattr(env, "env_ns"):
                 if verbose:
-                    logger.info("Environment wrapper: Isaac Orbit")
-                return IsaacOrbitWrapper(env)
+                    logger.info("Environment wrapper: Isaac Lab")
+                return IsaacLabWrapper(env)
             # gym
             if verbose:
                 logger.info("Environment wrapper: Gym")
@@ -152,9 +152,9 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info("Environment wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
-    elif wrapper == "isaac-orbit":
+    elif wrapper == "isaaclab" or wrapper == "isaac-orbit":
         if verbose:
-            logger.info("Environment wrapper: Isaac Orbit")
-        return IsaacOrbitWrapper(env)
+            logger.info("Environment wrapper: Isaac Lab")
+        return IsaacLabWrapper(env)
     else:
         raise ValueError(f"Unknown wrapper type: {wrapper}")

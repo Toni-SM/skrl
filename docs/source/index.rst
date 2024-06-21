@@ -138,7 +138,7 @@ Environments
     * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo** and **Bi-DexHands** environments
     * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
     * Loading :doc:`Omniverse Isaac Gym environments <api/envs/omniverse_isaac_gym>`
-    * Loading :doc:`Isaac Lab environments <api/envs/isaac_orbit>`
+    * Loading :doc:`Isaac Lab environments <api/envs/isaaclab>`
 
 Memories
 ^^^^^^^^

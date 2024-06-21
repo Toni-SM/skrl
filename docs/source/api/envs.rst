@@ -8,7 +8,7 @@ Environments
     Wrapping (multi-agents) <envs/multi_agents_wrapping>
     Isaac Gym environments <envs/isaac_gym>
     Omniverse Isaac Gym environments <envs/omniverse_isaac_gym>
-    Isaac Lab environments <envs/isaac_orbit>
+    Isaac Lab environments <envs/isaaclab>
 
 The environment plays a fundamental and crucial role in defining the RL setup. It is the place where the agent interacts, and it is responsible for providing the agent with information about its current state, as well as the rewards/penalties associated with each action.
 
@@ -32,7 +32,7 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
     * - :doc:`Omniverse Isaac Gym environments <envs/omniverse_isaac_gym>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - :doc:`Isaac Lab environments <envs/isaac_orbit>`
+    * - :doc:`Isaac Lab environments <envs/isaaclab>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 

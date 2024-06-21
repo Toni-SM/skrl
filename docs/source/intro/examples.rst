@@ -784,7 +784,7 @@ Isaac Lab environments
 
 Training/evaluation of an agent in `Isaac Lab environments <https://isaac-sim.github.io/IsaacLab/index.html>`_ (**one agent, multiple environments**)
 
-.. image:: ../_static/imgs/example_isaac_orbit.png
+.. image:: ../_static/imgs/example_isaaclab.png
     :width: 100%
     :align: center
     :alt: Isaac Lab environments

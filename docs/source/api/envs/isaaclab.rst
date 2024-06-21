@@ -1,7 +1,7 @@
 Isaac Lab environments
 ======================
 
-.. image:: ../../_static/imgs/example_isaac_orbit.png
+.. image:: ../../_static/imgs/example_isaaclab.png
     :width: 100%
     :align: center
     :alt: Isaac Lab environments

@@ -9,8 +9,8 @@ from skrl.envs.wrappers.torch.bidexhands_envs import BiDexHandsWrapper
 from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.torch.isaac_orbit_envs import IsaacOrbitWrapper
 from skrl.envs.wrappers.torch.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
+from skrl.envs.wrappers.torch.isaaclab_envs import IsaacOrbitWrapper
 from skrl.envs.wrappers.torch.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 from skrl.envs.wrappers.torch.robosuite_envs import RobosuiteWrapper

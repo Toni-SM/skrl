@@ -8,8 +8,8 @@ from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
 from skrl.envs.wrappers.jax.bidexhands_envs import BiDexHandsWrapper
 from skrl.envs.wrappers.jax.gym_envs import GymWrapper
 from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.jax.isaac_orbit_envs import IsaacOrbitWrapper
 from skrl.envs.wrappers.jax.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
+from skrl.envs.wrappers.jax.isaaclab_envs import IsaacOrbitWrapper
 from skrl.envs.wrappers.jax.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
 

@@ -18,11 +18,12 @@ jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 
 # import the skrl components to build the RL system
 from skrl import config
-from skrl.agents.jax.sac import SAC, SAC_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.agents.jax.td3 import TD3, TD3_DEFAULT_CONFIG
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
-from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.models.jax import DeterministicMixin, Model
+from skrl.resources.noises.jax import GaussianNoise
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
@@ -35,12 +36,11 @@ config.jax.backend = "jax"  # or "numpy"
 set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
-# define models (stochastic and deterministic models) using mixins
-class StochasticActor(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
-                 clip_log_std=True, min_log_std=-5, max_log_std=2, reduction="sum", **kwargs):
+# define models (deterministic models) using mixins
+class DeterministicActor(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+        DeterministicMixin.__init__(self, clip_actions)
 
     def __hash__(self):  # for Isaac Sim 2022.2.1 or earlier
         return id(self)
@@ -50,8 +50,7 @@ class StochasticActor(GaussianMixin, Model):
         x = nn.relu(nn.Dense(512)(inputs["states"]))
         x = nn.relu(nn.Dense(256)(x))
         x = nn.Dense(self.num_actions)(x)
-        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
-        return nn.tanh(x), log_std, {}
+        return nn.tanh(x), {}
 
 class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
@@ -70,8 +69,8 @@ class Critic(DeterministicMixin, Model):
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0", num_envs=64)
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Ant-v0", num_envs=64)
 env = wrap_env(env)
 
 device = env.device
@@ -82,10 +81,11 @@ memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
-# SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
+# TD3 requires 6 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/api/agents/td3.html#models
 models = {}
-models["policy"] = StochasticActor(env.observation_space, env.action_space, device)
+models["policy"] = DeterministicActor(env.observation_space, env.action_space, device)
+models["target_policy"] = DeterministicActor(env.observation_space, env.action_space, device)
 models["critic_1"] = Critic(env.observation_space, env.action_space, device)
 models["critic_2"] = Critic(env.observation_space, env.action_space, device)
 models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
@@ -97,8 +97,11 @@ for role, model in models.items():
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
-cfg = SAC_DEFAULT_CONFIG.copy()
+# https://skrl.readthedocs.io/en/latest/api/agents/td3.html#configuration-and-hyperparameters
+cfg = TD3_DEFAULT_CONFIG.copy()
+cfg["exploration"]["noise"] = GaussianNoise(0, 0.1, device=device)
+cfg["smooth_regularization_noise"] = GaussianNoise(0, 0.1, device=device)
+cfg["smooth_regularization_clip"] = 0.5
 cfg["gradient_steps"] = 1
 cfg["batch_size"] = 4096
 cfg["discount_factor"] = 0.99
@@ -107,10 +110,6 @@ cfg["actor_learning_rate"] = 5e-4
 cfg["critic_learning_rate"] = 5e-4
 cfg["random_timesteps"] = 80
 cfg["learning_starts"] = 80
-cfg["grad_norm_clip"] = 0
-cfg["learn_entropy"] = True
-cfg["entropy_learning_rate"] = 5e-3
-cfg["initial_entropy_value"] = 1.0
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
@@ -118,7 +117,7 @@ cfg["experiment"]["write_interval"] = 800
 cfg["experiment"]["checkpoint_interval"] = 8000
 cfg["experiment"]["directory"] = "runs/jax/Isaac-Ant-v0"
 
-agent = SAC(models=models,
+agent = TD3(models=models,
             memory=memory,
             cfg=cfg,
             observation_space=env.observation_space,

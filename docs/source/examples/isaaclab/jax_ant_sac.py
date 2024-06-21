@@ -18,13 +18,12 @@ jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 
 # import the skrl components to build the RL system
 from skrl import config
-from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.agents.jax.sac import SAC, SAC_DEFAULT_CONFIG
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.jax import RunningStandardScaler
-from skrl.resources.schedulers.jax import KLAdaptiveRL
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
 
@@ -37,7 +36,7 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins
-class Policy(GaussianMixin, Model):
+class StochasticActor(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False,
                  clip_log_std=True, min_log_std=-5, max_log_std=2, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
@@ -48,14 +47,13 @@ class Policy(GaussianMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(400)(inputs["states"]))
-        x = nn.elu(nn.Dense(200)(x))
-        x = nn.elu(nn.Dense(100)(x))
+        x = nn.relu(nn.Dense(512)(inputs["states"]))
+        x = nn.relu(nn.Dense(256)(x))
         x = nn.Dense(self.num_actions)(x)
         log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         return nn.tanh(x), log_std, {}
 
-class Value(DeterministicMixin, Model):
+class Critic(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
@@ -65,30 +63,33 @@ class Value(DeterministicMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(400)(inputs["states"]))
-        x = nn.elu(nn.Dense(200)(x))
-        x = nn.elu(nn.Dense(100)(x))
+        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
+        x = nn.relu(nn.Dense(512)(x))
+        x = nn.relu(nn.Dense(256)(x))
         x = nn.Dense(1)(x)
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Humanoid-v0")
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Ant-v0", num_envs=64)
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=32, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
-# PPO requires 2 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#models
+# SAC requires 5 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
 models = {}
-models["policy"] = Policy(env.observation_space, env.action_space, device)
-models["value"] = Value(env.observation_space, env.action_space, device)
+models["policy"] = StochasticActor(env.observation_space, env.action_space, device)
+models["critic_1"] = Critic(env.observation_space, env.action_space, device)
+models["critic_2"] = Critic(env.observation_space, env.action_space, device)
+models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
+models["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
 # instantiate models' state dict
 for role, model in models.items():
@@ -96,37 +97,28 @@ for role, model in models.items():
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
-cfg = PPO_DEFAULT_CONFIG.copy()
-cfg["rollouts"] = 32  # memory_size
-cfg["learning_epochs"] = 8
-cfg["mini_batches"] = 8  # 32 * 1024 / 4096
+# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
+cfg = SAC_DEFAULT_CONFIG.copy()
+cfg["gradient_steps"] = 1
+cfg["batch_size"] = 4096
 cfg["discount_factor"] = 0.99
-cfg["lambda"] = 0.95
-cfg["learning_rate"] = 3e-4
-cfg["learning_rate_scheduler"] = KLAdaptiveRL
-cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
-cfg["random_timesteps"] = 0
-cfg["learning_starts"] = 0
-cfg["grad_norm_clip"] = 1.0
-cfg["ratio_clip"] = 0.2
-cfg["value_clip"] = 0.2
-cfg["clip_predicted_values"] = True
-cfg["entropy_loss_scale"] = 0.0
-cfg["value_loss_scale"] = 4.0
-cfg["kl_threshold"] = 0
-cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * 0.01
-cfg["time_limit_bootstrap"] = False
+cfg["polyak"] = 0.005
+cfg["actor_learning_rate"] = 5e-4
+cfg["critic_learning_rate"] = 5e-4
+cfg["random_timesteps"] = 80
+cfg["learning_starts"] = 80
+cfg["grad_norm_clip"] = 0
+cfg["learn_entropy"] = True
+cfg["entropy_learning_rate"] = 5e-3
+cfg["initial_entropy_value"] = 1.0
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
-cfg["value_preprocessor"] = RunningStandardScaler
-cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 80
-cfg["experiment"]["checkpoint_interval"] = 800
-cfg["experiment"]["directory"] = "runs/jax/Isaac-Humanoid-v0"
+cfg["experiment"]["write_interval"] = 800
+cfg["experiment"]["checkpoint_interval"] = 8000
+cfg["experiment"]["directory"] = "runs/jax/Isaac-Ant-v0"
 
-agent = PPO(models=models,
+agent = SAC(models=models,
             memory=memory,
             cfg=cfg,
             observation_space=env.observation_space,
@@ -135,22 +127,8 @@ agent = PPO(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 16000, "headless": True}
+cfg_trainer = {"timesteps": 160000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
 trainer.train()
-
-
-# # ---------------------------------------------------------
-# # comment the code above: `trainer.train()`, and...
-# # uncomment the following lines to evaluate a trained agent
-# # ---------------------------------------------------------
-# from skrl.utils.huggingface import download_model_from_huggingface
-
-# # download the trained agent's checkpoint from Hugging Face Hub and load it
-# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO", filename="agent.pickle")
-# agent.load(path)
-
-# # start evaluation
-# trainer.eval()

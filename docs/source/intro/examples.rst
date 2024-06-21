@@ -772,28 +772,28 @@ The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs co
 
     <br><hr>
 
-**NVIDIA Isaac Orbit**
-----------------------
+**NVIDIA Isaac Lab**
+--------------------
 
 .. raw:: html
 
     <br>
 
-Isaac Orbit environments
-^^^^^^^^^^^^^^^^^^^^^^^^
+Isaac Lab environments
+^^^^^^^^^^^^^^^^^^^^^^
 
-Training/evaluation of an agent in `Isaac Orbit environments <https://isaac-orbit.github.io/orbit/index.html>`_ (**one agent, multiple environments**)
+Training/evaluation of an agent in `Isaac Lab environments <https://isaac-sim.github.io/IsaacLab/index.html>`_ (**one agent, multiple environments**)
 
-.. image:: ../_static/imgs/example_isaac_orbit.png
+.. image:: ../_static/imgs/example_isaaclab.png
     :width: 100%
     :align: center
-    :alt: Isaac Orbit environments
+    :alt: Isaac Lab environments
 
 .. raw:: html
 
     <br>
 
-The agent configuration is mapped, as far as possible, from the `Isaac Orbit configuration <https://github.com/NVIDIA-Omniverse/Orbit/tree/main/source/extensions/omni.isaac.orbit_envs/data/rl_games>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+The agent configuration is mapped, as far as possible, from the Isaac Lab configuration for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. tabs::
 
@@ -853,11 +853,11 @@ The agent configuration is mapped, as far as possible, from the `Isaac Orbit con
             # trainer
             timesteps = num_steps_per_episode * max_epochs
 
-**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Orbit) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Lab) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
 
 .. note::
 
-    Isaac Orbit environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`orbit -p script.py --headless`
+    Isaac Lab environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`
 
 .. tabs::
 
@@ -873,28 +873,28 @@ The agent configuration is mapped, as far as possible, from the `Isaac Orbit con
               - Script
               - Checkpoint (Hugging Face)
             * - Isaac-Ant-v0
-              - :download:`torch_ant_ppo.py <../examples/isaacorbit/torch_ant_ppo.py>`
-                |br| :download:`torch_ant_ddpg.py <../examples/isaacorbit/torch_ant_ddpg.py>`
-                |br| :download:`torch_ant_td3.py <../examples/isaacorbit/torch_ant_td3.py>`
-                |br| :download:`torch_ant_sac.py <../examples/isaacorbit/torch_ant_sac.py>`
+              - :download:`torch_ant_ppo.py <../examples/isaaclab/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../examples/isaaclab/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../examples/isaaclab/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../examples/isaaclab/torch_ant_sac.py>`
               - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Isaac-Cartpole-v0
-              - :download:`torch_cartpole_ppo.py <../examples/isaacorbit/torch_cartpole_ppo.py>`
+              - :download:`torch_cartpole_ppo.py <../examples/isaaclab/torch_cartpole_ppo.py>`
               - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
             * - Isaac-Humanoid-v0
-              - :download:`torch_humanoid_ppo.py <../examples/isaacorbit/torch_humanoid_ppo.py>`
+              - :download:`torch_humanoid_ppo.py <../examples/isaaclab/torch_humanoid_ppo.py>`
               - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
-              - :download:`torch_lift_franka_ppo.py <../examples/isaacorbit/torch_lift_franka_ppo.py>`
+              - :download:`torch_lift_franka_ppo.py <../examples/isaaclab/torch_lift_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
-              - :download:`torch_reach_franka_ppo.py <../examples/isaacorbit/torch_reach_franka_ppo.py>`
+              - :download:`torch_reach_franka_ppo.py <../examples/isaaclab/torch_reach_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
             * - Isaac-Velocity-Anymal-C-v0
-              - :download:`torch_velocity_anymal_c_ppo.py <../examples/isaacorbit/torch_velocity_anymal_c_ppo.py>`
+              - :download:`torch_velocity_anymal_c_ppo.py <../examples/isaaclab/torch_velocity_anymal_c_ppo.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -909,28 +909,28 @@ The agent configuration is mapped, as far as possible, from the `Isaac Orbit con
               - Script
               - Checkpoint (Hugging Face)
             * - Isaac-Ant-v0
-              - :download:`jax_ant_ppo.py <../examples/isaacorbit/jax_ant_ppo.py>`
-                |br| :download:`jax_ant_ddpg.py <../examples/isaacorbit/jax_ant_ddpg.py>`
-                |br| :download:`jax_ant_td3.py <../examples/isaacorbit/jax_ant_td3.py>`
-                |br| :download:`jax_ant_sac.py <../examples/isaacorbit/jax_ant_sac.py>`
+              - :download:`jax_ant_ppo.py <../examples/isaaclab/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../examples/isaaclab/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../examples/isaaclab/jax_ant_td3.py>`
+                |br| :download:`jax_ant_sac.py <../examples/isaaclab/jax_ant_sac.py>`
               - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Isaac-Cartpole-v0
-              - :download:`jax_cartpole_ppo.py <../examples/isaacorbit/jax_cartpole_ppo.py>`
+              - :download:`jax_cartpole_ppo.py <../examples/isaaclab/jax_cartpole_ppo.py>`
               - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
             * - Isaac-Humanoid-v0
-              - :download:`jax_humanoid_ppo.py <../examples/isaacorbit/jax_humanoid_ppo.py>`
+              - :download:`jax_humanoid_ppo.py <../examples/isaaclab/jax_humanoid_ppo.py>`
               - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
-              - :download:`jax_lift_franka_ppo.py <../examples/isaacorbit/jax_lift_franka_ppo.py>`
+              - :download:`jax_lift_franka_ppo.py <../examples/isaaclab/jax_lift_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
-              - :download:`jax_reach_franka_ppo.py <../examples/isaacorbit/jax_reach_franka_ppo.py>`
+              - :download:`jax_reach_franka_ppo.py <../examples/isaaclab/jax_reach_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
             * - Isaac-Velocity-Anymal-C-v0
-              - :download:`jax_velocity_anymal_c_ppo.py <../examples/isaacorbit/jax_velocity_anymal_c_ppo.py>`
+              - :download:`jax_velocity_anymal_c_ppo.py <../examples/isaaclab/jax_velocity_anymal_c_ppo.py>`
               -
 
 .. raw:: html

@@ -43,7 +43,7 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-* For **single-agent** environments, skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, NVIDIA Isaac Gym, Isaac Orbit and Omniverse Isaac Gym interfaces, among others. The wrapped environments provide, to the library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, NVIDIA Isaac Gym, Omniverse Isaac Gym and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
 * For **multi-agent** environments, skrl offers a function to **wrap environments** based on the PettingZoo and Bi-DexHands interfaces. The wrapped environments provide, to the library components, a common interface (based on PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
@@ -85,6 +85,24 @@ Among the methods and properties defined in the wrapped environment, the observa
 
         .. tabs::
 
+            .. tab:: Isaac Lab
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaaclab]
+                            :end-before: [pytorch-end-isaaclab]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaaclab]
+                            :end-before: [jax-end-isaaclab]
+
             .. tab:: Omniverse Isaac Gym
 
                 .. tabs::
@@ -124,24 +142,6 @@ Among the methods and properties defined in the wrapped environment, the observa
                                     :language: python
                                     :start-after: [jax-start-omniverse-isaacgym-mt]
                                     :end-before: [jax-end-omniverse-isaacgym-mt]
-
-            .. tab:: Isaac Orbit
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaac-orbit]
-                            :end-before: [pytorch-end-isaac-orbit]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaac-orbit]
-                            :end-before: [jax-end-isaac-orbit]
 
             .. tab:: Isaac Gym
 

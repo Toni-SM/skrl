@@ -14,8 +14,8 @@ This library works with a common API to interact with the following RL environme
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
-* `NVIDIA Isaac Orbit <https://isaac-orbit.github.io/orbit/index.html>`_
 * `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_
+* `NVIDIA Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -43,6 +43,24 @@ Usage
 -----
 
 .. tabs::
+
+    .. tab:: Isaac Lab
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-isaaclab]
+                    :end-before: [pytorch-end-isaaclab]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-isaaclab]
+                    :end-before: [jax-end-isaaclab]
 
     .. tab:: Omniverse Isaac Gym
 
@@ -83,24 +101,6 @@ Usage
                             :language: python
                             :start-after: [jax-start-omniverse-isaacgym-mt]
                             :end-before: [jax-end-omniverse-isaacgym-mt]
-
-    .. tab:: Isaac Orbit
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-isaac-orbit]
-                    :end-before: [pytorch-end-isaac-orbit]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-isaac-orbit]
-                    :end-before: [jax-end-isaac-orbit]
 
     .. tab:: Isaac Gym
 
@@ -365,7 +365,7 @@ Internal API (PyTorch)
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacOrbitWrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -443,7 +443,7 @@ Internal API (JAX)
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacOrbitWrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:

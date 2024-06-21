@@ -8,10 +8,10 @@ logger.warning(" - Import wrappers using `from skrl.envs.wrappers.jax import ...
 
 from skrl.envs.loaders.jax import (
     load_bidexhands_env,
-    load_isaac_orbit_env,
     load_isaacgym_env_preview2,
     load_isaacgym_env_preview3,
     load_isaacgym_env_preview4,
+    load_isaaclab_env,
     load_omniverse_isaacgym_env
 )
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper, wrap_env

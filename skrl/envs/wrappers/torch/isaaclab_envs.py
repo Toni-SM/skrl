@@ -5,12 +5,12 @@ import torch
 from skrl.envs.wrappers.torch.base import Wrapper
 
 
-class IsaacOrbitWrapper(Wrapper):
+class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Orbit environment wrapper
+        """Isaac Lab environment wrapper
 
         :param env: The environment to wrap
-        :type env: Any supported Isaac Orbit environment
+        :type env: Any supported Isaac Lab environment
         """
         super().__init__(env)
 

@@ -17,7 +17,7 @@ Control of robotic manipulators
 Differential inverse kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This implementation attempts to unify under a single and reusable function the whole set of procedures used to compute the inverse kinematics of a robotic manipulator, originally shown in the Isaac Orbit framework's task space controllers section, but this time for Omniverse Isaac Gym.
+This implementation attempts to unify under a single and reusable function the whole set of procedures used to compute the inverse kinematics of a robotic manipulator, originally shown in the Isaac Lab (Orbit then) framework's task space controllers section, but this time for Omniverse Isaac Gym.
 
 :math:`\Delta\theta =` :guilabel:`scale` :math:`J^\dagger \, \vec{e}`
 

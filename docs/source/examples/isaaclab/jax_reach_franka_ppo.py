@@ -19,7 +19,7 @@ jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
@@ -72,8 +72,8 @@ class Value(DeterministicMixin, Model):
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Reach-Franka-v0")
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Reach-Franka-v0")
 env = wrap_env(env)
 
 device = env.device

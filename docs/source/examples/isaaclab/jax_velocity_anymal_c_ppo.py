@@ -18,13 +18,13 @@ jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 
 # import the skrl components to build the RL system
 from skrl import config
-from skrl.agents.jax.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
-from skrl.models.jax import DeterministicMixin, Model
-from skrl.resources.noises.jax import OrnsteinUhlenbeckNoise
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveRL
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
 
@@ -36,23 +36,26 @@ config.jax.backend = "jax"  # or "numpy"
 set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
-# define models (deterministic models) using mixins
-class DeterministicActor(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+# define models (stochastic and deterministic models) using mixins
+class Policy(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        DeterministicMixin.__init__(self, clip_actions)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
     def __hash__(self):  # for Isaac Sim 2022.2.1 or earlier
         return id(self)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.relu(nn.Dense(512)(inputs["states"]))
-        x = nn.relu(nn.Dense(256)(x))
+        x = nn.elu(nn.Dense(128)(inputs["states"]))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(128)(x))
         x = nn.Dense(self.num_actions)(x)
-        return nn.tanh(x), {}
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        return x, log_std, {}
 
-class Critic(DeterministicMixin, Model):
+class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
@@ -62,32 +65,30 @@ class Critic(DeterministicMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
-        x = nn.relu(nn.Dense(512)(x))
-        x = nn.relu(nn.Dense(256)(x))
+        x = nn.elu(nn.Dense(128)(inputs["states"]))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(128)(x))
         x = nn.Dense(1)(x)
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0", num_envs=64)
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Velocity-Anymal-C-v0")
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=24, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
-# DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#models
+# PPO requires 2 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#models
 models = {}
-models["policy"] = DeterministicActor(env.observation_space, env.action_space, device)
-models["target_policy"] = DeterministicActor(env.observation_space, env.action_space, device)
-models["critic"] = Critic(env.observation_space, env.action_space, device)
-models["target_critic"] = Critic(env.observation_space, env.action_space, device)
+models["policy"] = Policy(env.observation_space, env.action_space, device)
+models["value"] = Value(env.observation_space, env.action_space, device)
 
 # instantiate models' state dict
 for role, model in models.items():
@@ -95,34 +96,46 @@ for role, model in models.items():
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#configuration-and-hyperparameters
-cfg = DDPG_DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1, base_scale=0.5, device=device)
-cfg["gradient_steps"] = 1
-cfg["batch_size"] = 4096
+# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
+cfg = PPO_DEFAULT_CONFIG.copy()
+cfg["rollouts"] = 24  # memory_size
+cfg["learning_epochs"] = 5
+cfg["mini_batches"] = 4  # 24 * 4096 / 24576
 cfg["discount_factor"] = 0.99
-cfg["polyak"] = 0.005
-cfg["actor_learning_rate"] = 5e-4
-cfg["critic_learning_rate"] = 5e-4
-cfg["random_timesteps"] = 80
-cfg["learning_starts"] = 80
+cfg["lambda"] = 0.95
+cfg["learning_rate"] = 1e-3
+cfg["learning_rate_scheduler"] = KLAdaptiveRL
+cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
+cfg["random_timesteps"] = 0
+cfg["learning_starts"] = 0
+cfg["grad_norm_clip"] = 1.0
+cfg["ratio_clip"] = 0.2
+cfg["value_clip"] = 0.2
+cfg["clip_predicted_values"] = True
+cfg["entropy_loss_scale"] = 0.0
+cfg["value_loss_scale"] = 1.0
+cfg["kl_threshold"] = 0
+cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = False
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+cfg["value_preprocessor"] = RunningStandardScaler
+cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 800
-cfg["experiment"]["checkpoint_interval"] = 8000
-cfg["experiment"]["directory"] = "runs/jax/Isaac-Ant-v0"
+cfg["experiment"]["write_interval"] = 60
+cfg["experiment"]["checkpoint_interval"] = 600
+cfg["experiment"]["directory"] = "runs/jax/Isaac-Velocity-Anymal-C-v0"
 
-agent = DDPG(models=models,
-             memory=memory,
-             cfg=cfg,
-             observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=device)
+agent = PPO(models=models,
+            memory=memory,
+            cfg=cfg,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=device)
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 160000, "headless": True}
+cfg_trainer = {"timesteps": 12000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training

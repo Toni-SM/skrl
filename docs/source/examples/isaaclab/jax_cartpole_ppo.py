@@ -19,7 +19,7 @@ jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
@@ -33,7 +33,7 @@ config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
-set_seed()  # e.g. `set_seed(42)` for fixed seed
+set_seed()  # e.g. `set_seed(40)` for fixed seed
 
 
 # define models (stochastic and deterministic models) using mixins
@@ -48,11 +48,10 @@ class Policy(GaussianMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(256)(inputs["states"]))
-        x = nn.elu(nn.Dense(128)(x))
-        x = nn.elu(nn.Dense(64)(x))
+        x = nn.elu(nn.Dense(32)(inputs["states"]))
+        x = nn.elu(nn.Dense(32)(x))
         x = nn.Dense(self.num_actions)(x)
-        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        log_std = self.param("log_std", lambda _: jnp.ones(self.num_actions))
         return x, log_std, {}
 
 class Value(DeterministicMixin, Model):
@@ -65,15 +64,14 @@ class Value(DeterministicMixin, Model):
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.elu(nn.Dense(256)(inputs["states"]))
-        x = nn.elu(nn.Dense(128)(x))
-        x = nn.elu(nn.Dense(64)(x))
+        x = nn.elu(nn.Dense(32)(inputs["states"]))
+        x = nn.elu(nn.Dense(32)(x))
         x = nn.Dense(1)(x)
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0")
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 env = wrap_env(env)
 
 device = env.device
@@ -100,7 +98,7 @@ for role, model in models.items():
 cfg = PPO_DEFAULT_CONFIG.copy()
 cfg["rollouts"] = 16  # memory_size
 cfg["learning_epochs"] = 8
-cfg["mini_batches"] = 4  # 16 * 1024 / 4096
+cfg["mini_batches"] = 1  # 16 * 512 / 8192
 cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
@@ -113,18 +111,18 @@ cfg["ratio_clip"] = 0.2
 cfg["value_clip"] = 0.2
 cfg["clip_predicted_values"] = True
 cfg["entropy_loss_scale"] = 0.0
-cfg["value_loss_scale"] = 1.0
+cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
-cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * 0.1
+cfg["rewards_shaper"] = None
 cfg["time_limit_bootstrap"] = True
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
 cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 40
-cfg["experiment"]["checkpoint_interval"] = 400
-cfg["experiment"]["directory"] = "runs/jax/Isaac-Ant-v0"
+cfg["experiment"]["write_interval"] = 16
+cfg["experiment"]["checkpoint_interval"] = 80
+cfg["experiment"]["directory"] = "runs/jax/Isaac-Cartpole-v0"
 
 agent = PPO(models=models,
             memory=memory,
@@ -135,7 +133,7 @@ agent = PPO(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 8000, "headless": True}
+cfg_trainer = {"timesteps": 1600, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
@@ -149,7 +147,7 @@ trainer.train()
 # from skrl.utils.huggingface import download_model_from_huggingface
 
 # # download the trained agent's checkpoint from Hugging Face Hub and load it
-# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Ant-v0-PPO", filename="agent.pickle")
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO", filename="agent.pickle")
 # agent.load(path)
 
 # # start evaluation

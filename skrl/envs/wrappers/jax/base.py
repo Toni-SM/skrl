@@ -20,12 +20,19 @@ class Wrapper(object):
         self._env = env
 
         # device (faster than @property)
-        self.device = jax.devices()[0]
+        self.device = None
         if hasattr(self._env, "device"):
-            try:
-                self.device = jax.devices(self._env.device.split(':')[0] if type(self._env.device) == str else self._env.device.type)[0]
-            except RuntimeError:
-                pass
+            if type(self._env.device) == str:
+                device_type, device_index = f"{self._env.device}:0".split(':')[:2]
+                try:
+                    self.device = jax.devices(device_type)[int(device_index)]
+                except RuntimeError:
+                    self.device = None
+            else:
+                self.device = self._env.device
+        if self.device is None:
+            self.device = jax.devices()[0]
+
         # spaces
         try:
             self._action_space = self._env.single_action_space
@@ -135,12 +142,18 @@ class MultiAgentEnvWrapper(object):
         self._env = env
 
         # device (faster than @property)
-        self.device = jax.devices()[0]
+        self.device = None
         if hasattr(self._env, "device"):
-            try:
-                self.device = jax.devices(self._env.device.split(':')[0] if type(self._env.device) == str else self._env.device.type)[0]
-            except RuntimeError:
-                pass
+            if type(self._env.device) == str:
+                device_type, device_index = f"{self._env.device}:0".split(':')[:2]
+                try:
+                    self.device = jax.devices(device_type)[int(device_index)]
+                except RuntimeError:
+                    self.device = None
+            else:
+                self.device = self._env.device
+        if self.device is None:
+            self.device = jax.devices()[0]
 
         self.possible_agents = []
 

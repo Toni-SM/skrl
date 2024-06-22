@@ -26,7 +26,7 @@ class Wrapper(object):
                 device_type, device_index = f"{self._env.device}:0".split(':')[:2]
                 try:
                     self.device = jax.devices(device_type)[int(device_index)]
-                except RuntimeError:
+                except (RuntimeError, IndexError):
                     self.device = None
             else:
                 self.device = self._env.device
@@ -148,7 +148,7 @@ class MultiAgentEnvWrapper(object):
                 device_type, device_index = f"{self._env.device}:0".split(':')[:2]
                 try:
                     self.device = jax.devices(device_type)[int(device_index)]
-                except RuntimeError:
+                except (RuntimeError, IndexError):
                     self.device = None
             else:
                 self.device = self._env.device

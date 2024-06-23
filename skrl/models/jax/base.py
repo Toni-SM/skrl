@@ -79,7 +79,10 @@ class Model(flax.linen.Module):
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
+            self.device = device
+            if type(device) == str:
+                device_type, device_index = f"{device}:0".split(':')[:2]
+                self.device = jax.devices(device_type)[int(device_index)]
 
         self.observation_space = observation_space
         self.action_space = action_space
@@ -119,7 +122,8 @@ class Model(flax.linen.Module):
         if isinstance(inputs["states"], (int, np.int32, np.int64)):
             inputs["states"] = np.array(inputs["states"]).reshape(-1,1)
         # init internal state dict
-        self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
+        with jax.default_device(self.device):
+            self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def _get_space_size(self,
                         space: Union[int, Sequence[int], gym.Space, gymnasium.Space],

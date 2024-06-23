@@ -44,6 +44,8 @@ class IsaacLabWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
+        self._observation_space = self._observation_space["policy"]
+
     def step(self, actions: Union[np.ndarray, jax.Array]) -> \
         Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
               Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:

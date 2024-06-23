@@ -17,6 +17,8 @@ class IsaacLabWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
+        self._observation_space = self._observation_space["policy"]
+
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 

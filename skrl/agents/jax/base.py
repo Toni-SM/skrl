@@ -53,7 +53,10 @@ class Agent:
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
+            self.device = device
+            if type(device) == str:
+                device_type, device_index = f"{device}:0".split(':')[:2]
+                self.device = jax.devices(device_type)[int(device_index)]
 
         if type(memory) is list:
             self.memory = memory[0]
@@ -474,7 +477,9 @@ class Agent:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
+                with jax.default_device(self.device):
+                    self.checkpoint_best_modules["modules"] = \
+                        {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

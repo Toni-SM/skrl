@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Move the batch sampling inside gradient step loop for DDPG and TD3
+- Perform JAX computation on the selected device
 
 ## [1.1.0] - 2024-02-12
 ### Added

@@ -72,7 +72,8 @@ class _Config(object):
                 if isinstance(self._key, np.ndarray):
                     try:
                         import jax
-                        self._key = jax.random.PRNGKey(self._key[1])
+                        with jax.default_device(jax.devices("cpu")[0]):
+                            self._key = jax.random.PRNGKey(self._key[1])
                     except ImportError:
                         pass
                 return self._key
@@ -83,7 +84,8 @@ class _Config(object):
                     # don't import JAX if it has not been imported before
                     if "jax" in sys.modules:
                         import jax
-                        value = jax.random.PRNGKey(value)
+                        with jax.default_device(jax.devices("cpu")[0]):
+                            value = jax.random.PRNGKey(value)
                     else:
                         value = np.array([0, value], dtype=np.uint32)
                 self._key = value

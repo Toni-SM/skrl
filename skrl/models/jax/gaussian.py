@@ -173,9 +173,10 @@ class GaussianMixin:
             >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             (4096, 8) (4096, 1) (4096, 8)
         """
-        self._i += 1
-        subkey = jax.random.fold_in(self._key, self._i)
-        inputs["key"] = subkey
+        with jax.default_device(self.device):
+            self._i += 1
+            subkey = jax.random.fold_in(self._key, self._i)
+            inputs["key"] = subkey
 
         # map from states/observations to mean actions and log standard deviations
         mean_actions, log_std, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)

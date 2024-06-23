@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -187,6 +188,16 @@ class AMP(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.value is not None:
+                self.value.broadcast_parameters()
+            if self.discriminator is not None:
+                self.discriminator.broadcast_parameters()
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None and self.discriminator is not None:
@@ -554,10 +565,17 @@ class AMP(Agent):
                 # optimization step
                 self.optimizer.zero_grad()
                 (policy_loss + entropy_loss + value_loss + discriminator_loss).backward()
+
+                if config.torch.is_distributed:
+                    self.policy.reduce_parameters()
+                    self.value.reduce_parameters()
+                    self.discriminator.reduce_parameters()
+
                 if self._grad_norm_clip > 0:
                     nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(),
                                                              self.value.parameters(),
                                                              self.discriminator.parameters()), self._grad_norm_clip)
+
                 self.optimizer.step()
 
                 # update cumulative losses
@@ -571,7 +589,7 @@ class AMP(Agent):
             if self._learning_rate_scheduler:
                 self.scheduler.step()
 
-        # update AMP repaly buffer
+        # update AMP replay buffer
         self.reply_buffer.add_samples(states=amp_states.view(-1, amp_states.shape[-1]))
 
         # record data

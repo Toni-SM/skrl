@@ -143,7 +143,7 @@ class PPO(Agent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
-        # broadcast models' parameters
+        # broadcast models' parameters in distributed runs
         if config.torch.is_distributed:
             logger.info(f"Broadcasting models' parameters")
             if self.policy is not None:

@@ -477,7 +477,9 @@ class Agent:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
+                with jax.default_device(self.device):
+                    self.checkpoint_best_modules["modules"] = \
+                        {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

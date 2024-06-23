@@ -103,9 +103,10 @@ class RunningStandardScaler:
         size = self._get_space_size(size)
 
         if self._jax:
-            self.running_mean = jnp.zeros(size, dtype=jnp.float32)
-            self.running_variance = jnp.ones(size, dtype=jnp.float32)
-            self.current_count = jnp.ones((1,), dtype=jnp.float32)
+            with jax.default_device(self.device):
+                self.running_mean = jnp.zeros(size, dtype=jnp.float32)
+                self.running_variance = jnp.ones(size, dtype=jnp.float32)
+                self.current_count = jnp.ones((1,), dtype=jnp.float32)
         else:
             self.running_mean = np.zeros(size, dtype=np.float32)
             self.running_variance = np.ones(size, dtype=np.float32)

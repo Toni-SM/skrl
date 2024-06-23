@@ -219,16 +219,18 @@ class SAC(Agent):
                 def value(self):
                     return self.state_dict.params["params"]
 
-            self.log_entropy_coefficient = _LogEntropyCoefficient(self._entropy_coefficient)
-            self.entropy_optimizer = Adam(model=self.log_entropy_coefficient, lr=self._entropy_learning_rate)
+            with jax.default_device(self.device):
+                self.log_entropy_coefficient = _LogEntropyCoefficient(self._entropy_coefficient)
+                self.entropy_optimizer = Adam(model=self.log_entropy_coefficient, lr=self._entropy_learning_rate)
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
-            self.critic_1_optimizer = Adam(model=self.critic_1, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
-            self.critic_2_optimizer = Adam(model=self.critic_2, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
+            with jax.default_device(self.device):
+                self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
+                self.critic_1_optimizer = Adam(model=self.critic_1, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
+                self.critic_2_optimizer = Adam(model=self.critic_2, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_1_scheduler = self._learning_rate_scheduler(self.critic_1_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])

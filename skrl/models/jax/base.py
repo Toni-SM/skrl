@@ -122,7 +122,8 @@ class Model(flax.linen.Module):
         if isinstance(inputs["states"], (int, np.int32, np.int64)):
             inputs["states"] = np.array(inputs["states"]).reshape(-1,1)
         # init internal state dict
-        self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
+        with jax.default_device(self.device):
+            self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def _get_space_size(self,
                         space: Union[int, Sequence[int], gym.Space, gymnasium.Space],

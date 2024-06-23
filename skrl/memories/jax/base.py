@@ -239,18 +239,21 @@ class Memory:
         view_shape = (-1, *size) if keep_dimensions else (-1, size)
         # create tensor (_tensor_<name>) and add it to the internal storage
         if self._jax:
-            setattr(self, f"_tensor_{name}", jnp.zeros(tensor_shape, dtype=dtype))
+            with jax.default_device(self.device):
+                setattr(self, f"_tensor_{name}", jnp.zeros(tensor_shape, dtype=dtype))
         else:
             setattr(self, f"_tensor_{name}", np.zeros(tensor_shape, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
-        self.tensors_view[name] = self.tensors[name].reshape(*view_shape)
+        with jax.default_device(self.device):
+            self.tensors_view[name] = self.tensors[name].reshape(*view_shape)
         self.tensors_keep_dimensions[name] = keep_dimensions
         # fill the tensors (float tensors) with NaN
         for name, tensor in self.tensors.items():
             if tensor.dtype == np.float32 or tensor.dtype == np.float64:
                 if self._jax:
-                    self.tensors[name] = _copyto(self.tensors[name], float("nan"))
+                    with jax.default_device(self.device):
+                        self.tensors[name] = _copyto(self.tensors[name], float("nan"))
                 else:
                     self.tensors[name].fill(float("nan"))
         # check views

@@ -117,7 +117,8 @@ class CEM(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
-            self.optimizer = Adam(model=self.policy, lr=self._learning_rate)
+            with jax.default_device(self.device):
+                self.optimizer = Adam(model=self.policy, lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 

@@ -258,6 +258,10 @@ Support for advanced features is described in the next table
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+    * - Distributed
+      - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 

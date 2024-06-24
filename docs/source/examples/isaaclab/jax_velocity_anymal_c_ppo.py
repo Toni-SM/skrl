@@ -53,7 +53,7 @@ class Value(DeterministicMixin, Model):
 
 
 # load and wrap the Isaac Lab environment
-env = load_isaaclab_env(task_name="Isaac-Velocity-Anymal-C-v0")
+env = load_isaaclab_env(task_name="Isaac-Velocity-Flat-Anymal-C-v0")
 env = wrap_env(env)
 
 device = env.device

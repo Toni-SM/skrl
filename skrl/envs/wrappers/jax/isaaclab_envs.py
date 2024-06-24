@@ -19,7 +19,7 @@ from skrl.envs.wrappers.jax.base import Wrapper
 # jaxlib.xla_extension.XlaRuntimeError: INVALID_ARGUMENT: DLPack tensor is on GPU, but no GPU backend was provided.
 _CPU = jax.devices()[0].device_kind.lower() == "cpu"
 if _CPU:
-    logger.warning("Isaac Orbit runs on GPU, but there is no GPU backend for JAX. JAX operations will run on CPU.")
+    logger.warning("Isaac Lab runs on GPU, but there is no GPU backend for JAX. JAX operations will run on CPU.")
 
 def _jax2torch(array, device, from_jax=True):
     if from_jax:
@@ -32,17 +32,19 @@ def _torch2jax(tensor, to_jax=True):
     return tensor.cpu().numpy()
 
 
-class IsaacOrbitWrapper(Wrapper):
+class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Orbit environment wrapper
+        """Isaac Lab environment wrapper
 
         :param env: The environment to wrap
-        :type env: Any supported Isaac Orbit environment
+        :type env: Any supported Isaac Lab environment
         """
         super().__init__(env)
 
         self._reset_once = True
         self._obs_dict = None
+
+        self._observation_space = self._observation_space["policy"]
 
     def step(self, actions: Union[np.ndarray, jax.Array]) -> \
         Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],

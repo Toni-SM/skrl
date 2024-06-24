@@ -111,40 +111,40 @@ env.run()
 
 # =============================================================================
 
-# [start-isaac-orbit-envs-parameters-torch]
+# [start-isaaclab-envs-parameters-torch]
 # import the environment loader
-from skrl.envs.loaders.torch import load_isaac_orbit_env
+from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load environment
-env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
-# [end-isaac-orbit-envs-parameters-torch]
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+# [end-isaaclab-envs-parameters-torch]
 
 
-# [start-isaac-orbit-envs-parameters-jax]
+# [start-isaaclab-envs-parameters-jax]
 # import the environment loader
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load environment
-env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
-# [end-isaac-orbit-envs-parameters-jax]
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+# [end-isaaclab-envs-parameters-jax]
 
 
-# [start-isaac-orbit-envs-cli-torch]
+# [start-isaaclab-envs-cli-torch]
 # import the environment loader
-from skrl.envs.loaders.torch import load_isaac_orbit_env
+from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load environment
-env = load_isaac_orbit_env()
-# [end-isaac-orbit-envs-cli-torch]
+env = load_isaaclab_env()
+# [end-isaaclab-envs-cli-torch]
 
 
-# [start-isaac-orbit-envs-cli-jax]
+# [start-isaaclab-envs-cli-jax]
 # import the environment loader
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load environment
-env = load_isaac_orbit_env()
-# [end-isaac-orbit-envs-cli-jax]
+env = load_isaaclab_env()
+# [end-isaaclab-envs-cli-jax]
 
 # =============================================================================
 

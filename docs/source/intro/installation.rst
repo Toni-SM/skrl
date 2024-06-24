@@ -191,7 +191,7 @@ Bug detection and/or correction, feature requests and everything else are more t
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
 
-2. When installing the JAX version in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Orbit on Isaac Sim 2022.2.1 and earlier).
+2. When installing the JAX version in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Lab on Isaac Sim 2022.2.1 and earlier).
 
     .. code-block:: text
 
@@ -210,7 +210,7 @@ Bug detection and/or correction, feature requests and everything else are more t
 
     * Overload models ``__hash__`` method to avoid :literal:`"TypeError: Failed to hash Flax Module"`.
 
-3. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Orbit on Isaac Sim 2022.2.1 and earlier).
+3. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Lab on Isaac Sim 2022.2.1 and earlier).
 
     .. code-block:: text
 
@@ -223,7 +223,7 @@ Bug detection and/or correction, feature requests and everything else are more t
         def __hash__(self):
             return id(self)
 
-4. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Isaac Orbit or Omniverse Isaac Gym environments.
+4. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Omniverse Isaac Gym or Isaac Lab environments.
 
     .. code-block:: text
 

@@ -45,9 +45,12 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
     def compute(self, inputs, role):
         if role == "policy":
-            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
+            self._shared_output = self.net(inputs["states"])
+            return self.mean_layer(self._shared_output), self.log_std_parameter, {}
         elif role == "value":
-            return self.value_layer(self.net(inputs["states"])), {}
+            shared_output = self.net(inputs["states"]) if self._shared_output is None else self._shared_output
+            self._shared_output = None
+            return self.value_layer(shared_output), {}
 
 
 # load and wrap the Isaac Gym environment

@@ -47,9 +47,9 @@ DQN_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -158,7 +158,8 @@ class DQN(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
-            self.optimizer = Adam(model=self.q_network, lr=self._learning_rate)
+            with jax.default_device(self.device):
+                self.optimizer = Adam(model=self.q_network, lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
 

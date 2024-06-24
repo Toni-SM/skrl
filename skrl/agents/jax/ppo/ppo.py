@@ -53,9 +53,9 @@ PPO_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -277,8 +277,9 @@ class PPO(Agent):
                 else:
                     self._learning_rate = self._learning_rate_scheduler(self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"])
             # optimizer
-            self.policy_optimizer = Adam(model=self.policy, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
-            self.value_optimizer = Adam(model=self.value, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
+            with jax.default_device(self.device):
+                self.policy_optimizer = Adam(model=self.policy, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
+                self.value_optimizer = Adam(model=self.value, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer

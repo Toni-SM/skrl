@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.envs.loaders.torch import load_isaac_orbit_env
+from skrl.agents.torch.td3 import TD3, TD3_DEFAULT_CONFIG
+from skrl.envs.loaders.torch import load_isaaclab_env
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, Model
-from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
+from skrl.resources.noises.torch import GaussianNoise
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
@@ -48,8 +48,8 @@ class Critic(DeterministicMixin, Model):
         return self.net(torch.cat([inputs["states"], inputs["taken_actions"]], dim=1)), {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0", num_envs=64)
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Ant-v0", num_envs=64)
 env = wrap_env(env)
 
 device = env.device
@@ -60,19 +60,23 @@ memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
-# DDPG requires 4 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#models
+# TD3 requires 5 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/api/agents/td3.html#models
 models = {}
 models["policy"] = DeterministicActor(env.observation_space, env.action_space, device)
 models["target_policy"] = DeterministicActor(env.observation_space, env.action_space, device)
-models["critic"] = Critic(env.observation_space, env.action_space, device)
-models["target_critic"] = Critic(env.observation_space, env.action_space, device)
+models["critic_1"] = Critic(env.observation_space, env.action_space, device)
+models["critic_2"] = Critic(env.observation_space, env.action_space, device)
+models["target_critic_1"] = Critic(env.observation_space, env.action_space, device)
+models["target_critic_2"] = Critic(env.observation_space, env.action_space, device)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#configuration-and-hyperparameters
-cfg = DDPG_DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.1, base_scale=0.5, device=device)
+# https://skrl.readthedocs.io/en/latest/api/agents/td3.html#configuration-and-hyperparameters
+cfg = TD3_DEFAULT_CONFIG.copy()
+cfg["exploration"]["noise"] = GaussianNoise(0, 0.1, device=device)
+cfg["smooth_regularization_noise"] = GaussianNoise(0, 0.2, device=device)
+cfg["smooth_regularization_clip"] = 0.5
 cfg["gradient_steps"] = 1
 cfg["batch_size"] = 4096
 cfg["discount_factor"] = 0.99
@@ -88,12 +92,12 @@ cfg["experiment"]["write_interval"] = 800
 cfg["experiment"]["checkpoint_interval"] = 8000
 cfg["experiment"]["directory"] = "runs/torch/Isaac-Ant-v0"
 
-agent = DDPG(models=models,
-             memory=memory,
-             cfg=cfg,
-             observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=device)
+agent = TD3(models=models,
+            memory=memory,
+            cfg=cfg,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            device=device)
 
 
 # configure and instantiate the RL trainer

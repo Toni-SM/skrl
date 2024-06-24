@@ -2,6 +2,20 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2024-06-23
+### Added
+- Define the `environment_info` trainer config to log environment info (PyTorch implementation)
+- Add support to automatically compute the write and checkpoint intervals and make it the default option
+- Single forward-pass in shared models
+- Distributed multi-GPU and multi-node learning (PyTorch implementation)
+
+### Changed
+- Update Orbit-related source code and docs to Isaac Lab
+
+### Fixed
+- Move the batch sampling inside gradient step loop for DDPG and TD3
+- Perform JAX computation on the selected device
+
 ## [1.1.0] - 2024-02-12
 ### Added
 - MultiCategorical mixin to operate MultiDiscrete action spaces

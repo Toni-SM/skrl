@@ -31,7 +31,10 @@ class Noise():
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
+            self.device = device
+            if type(device) == str:
+                device_type, device_index = f"{device}:0".split(':')[:2]
+                self.device = jax.devices(device_type)[int(device_index)]
 
     def sample_like(self, tensor: Union[np.ndarray, jax.Array]) -> Union[np.ndarray, jax.Array]:
         """Sample a noise with the same size (shape) as the input tensor

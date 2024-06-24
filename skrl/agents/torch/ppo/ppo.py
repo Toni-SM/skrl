@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -52,9 +53,9 @@ PPO_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -110,6 +111,14 @@ class PPO(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+                if self.value is not None and self.policy is not self.value:
+                    self.value.broadcast_parameters()
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
@@ -418,6 +427,10 @@ class PPO(Agent):
                 # optimization step
                 self.optimizer.zero_grad()
                 (policy_loss + entropy_loss + value_loss).backward()
+                if config.torch.is_distributed:
+                    self.policy.reduce_parameters()
+                    if self.policy is not self.value:
+                        self.value.reduce_parameters()
                 if self._grad_norm_clip > 0:
                     if self.policy is self.value:
                         nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
@@ -434,7 +447,7 @@ class PPO(Agent):
             # update learning rate
             if self._learning_rate_scheduler:
                 if isinstance(self.scheduler, KLAdaptiveLR):
-                    self.scheduler.step(torch.tensor(kl_divergences).mean())
+                    self.scheduler.step(torch.tensor(kl_divergences, device=self.device).mean())
                 else:
                     self.scheduler.step()
 

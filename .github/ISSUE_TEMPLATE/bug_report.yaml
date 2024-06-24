@@ -30,11 +30,14 @@ body:
     description: The skrl version can be obtained with the command `pip show skrl`.
     options:
       - ---
+      - 1.2.0
+      - 1.1.0
       - 1.0.0
       - 1.0.0-rc2
       - 1.0.0-rc1
       - 0.10.2 or 0.10.1
       - 0.10.0 or earlier
+      - develop branch
   validations:
     required: true
 - type: input

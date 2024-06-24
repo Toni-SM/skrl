@@ -49,30 +49,30 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 # [jax-end-omniverse-isaacgym-mt]
 
 
-# [pytorch-start-isaac-orbit]
+# [pytorch-start-isaaclab]
 # import the environment wrapper and loader
 from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_isaac_orbit_env
+from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load the environment
-env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
-# [pytorch-end-isaac-orbit]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
+# [pytorch-end-isaaclab]
 
 
-# [jax-start-isaac-orbit]
+# [jax-start-isaaclab]
 # import the environment wrapper and loader
 from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load the environment
-env = load_isaac_orbit_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaac-orbit")'
-# [jax-end-isaac-orbit]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
+# [jax-end-isaaclab]
 
 
 # [pytorch-start-isaacgym-preview4-make]

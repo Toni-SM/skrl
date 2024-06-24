@@ -1,25 +1,11 @@
-"""
-Notes for Isaac Sim 2022.2.1 or earlier (Python 3.7 environment):
-  * Python 3.7 is only supported up to jax<=0.3.25.
-    See: https://github.com/google/jax/blob/main/CHANGELOG.md#jaxlib-041-dec-13-2022.
-  * Builds for jaxlib<=0.3.25 are only available up to NVIDIA CUDA 11 and cuDNN 8.2 versions.
-    See: https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-    and search for `cuda11/jaxlib-0.3.25+cuda11.cudnn82-cp37-cp37m-manylinux2014_x86_64.whl`.
-  * The `jax.Device = jax.xla.Device` statement is required by skrl to support jax<0.4.3.
-  * Models require overloading the `__hash__` method to avoid "TypeError: Failed to hash Flax Module".
-"""
-
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
 
-
-jax.Device = jax.xla.Device  # for Isaac Sim 2022.2.1 or earlier
-
 # import the skrl components to build the RL system
 from skrl import config
 from skrl.agents.jax.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-from skrl.envs.loaders.jax import load_isaac_orbit_env
+from skrl.envs.loaders.jax import load_isaaclab_env
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.models.jax import DeterministicMixin, Model
@@ -42,9 +28,6 @@ class DeterministicActor(DeterministicMixin, Model):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-    def __hash__(self):  # for Isaac Sim 2022.2.1 or earlier
-        return id(self)
-
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
         x = nn.relu(nn.Dense(512)(inputs["states"]))
@@ -57,9 +40,6 @@ class Critic(DeterministicMixin, Model):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-    def __hash__(self):  # for Isaac Sim 2022.2.1 or earlier
-        return id(self)
-
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
         x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
@@ -69,8 +49,8 @@ class Critic(DeterministicMixin, Model):
         return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0", num_envs=64)
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Ant-v0", num_envs=64)
 env = wrap_env(env)
 
 device = env.device

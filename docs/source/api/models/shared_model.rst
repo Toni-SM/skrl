@@ -7,7 +7,7 @@ Sometimes it is desirable to define models that use shared layers or network to 
 
 * Reduce the number of parameters in the whole system.
 
-* Make the computation more efficient.
+* Make the computation more efficient (single forward-pass).
 
 .. raw:: html
 
@@ -42,7 +42,24 @@ The code snippet below shows how to define a shared model. The following practic
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. literalinclude:: ../../snippets/shared_model.py
-            :language: python
-            :start-after: [start-mlp-torch]
-            :end-before: [end-mlp-torch]
+        .. tabs::
+
+            .. group-tab:: Single forward-pass
+
+                .. warning::
+
+                    The implementation described for single forward-pass requires that the value-pass always follows the policy-pass (e.g.: ``PPO``) which may not be generalized to other algorithms.
+
+                    If this requirement is not met, other forms of "chaching" the shared layers/network output could be implemented.
+
+                .. literalinclude:: ../../snippets/shared_model.py
+                    :language: python
+                    :start-after: [start-mlp-single-forward-pass-torch]
+                    :end-before: [end-mlp-single-forward-pass-torch]
+
+            .. group-tab:: Multiple forward-pass
+
+                .. literalinclude:: ../../snippets/shared_model.py
+                    :language: python
+                    :start-after: [start-mlp-multi-forward-pass-torch]
+                    :end-before: [end-mlp-multi-forward-pass-torch]

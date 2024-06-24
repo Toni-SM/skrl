@@ -1,57 +1,59 @@
-import torch
-import torch.nn as nn
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.loaders.torch import load_isaac_orbit_env
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config
+from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
+from skrl.envs.loaders.jax import load_isaaclab_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveRL
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
+
+
+config.jax.backend = "jax"  # or "numpy"
 
 
 # seed for reproducibility
 set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 
-# define shared model (stochastic and deterministic models) using mixins
-class Shared(GaussianMixin, DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
+# define models (stochastic and deterministic models) using mixins
+class Policy(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False,
+                 clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.elu(nn.Dense(256)(inputs["states"]))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(64)(x))
+        x = nn.Dense(self.num_actions)(x)
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        return x, log_std, {}
+
+class Value(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device=None, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
-                                 nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 64),
-                                 nn.ELU())
-
-        self.mean_layer = nn.Linear(64, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-
-        self.value_layer = nn.Linear(64, 1)
-
-    def act(self, inputs, role):
-        if role == "policy":
-            return GaussianMixin.act(self, inputs, role)
-        elif role == "value":
-            return DeterministicMixin.act(self, inputs, role)
-
-    def compute(self, inputs, role):
-        if role == "policy":
-            return self.mean_layer(self.net(inputs["states"])), self.log_std_parameter, {}
-        elif role == "value":
-            return self.value_layer(self.net(inputs["states"])), {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.elu(nn.Dense(256)(inputs["states"]))
+        x = nn.elu(nn.Dense(128)(x))
+        x = nn.elu(nn.Dense(64)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
 
-# load and wrap the Isaac Orbit environment
-env = load_isaac_orbit_env(task_name="Isaac-Ant-v0")
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Ant-v0")
 env = wrap_env(env)
 
 device = env.device
@@ -65,8 +67,12 @@ memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#models
 models = {}
-models["policy"] = Shared(env.observation_space, env.action_space, device)
-models["value"] = models["policy"]  # same instance: shared model
+models["policy"] = Policy(env.observation_space, env.action_space, device)
+models["value"] = Value(env.observation_space, env.action_space, device)
+
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -98,7 +104,7 @@ cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 40
 cfg["experiment"]["checkpoint_interval"] = 400
-cfg["experiment"]["directory"] = "runs/torch/Isaac-Ant-v0"
+cfg["experiment"]["directory"] = "runs/jax/Isaac-Ant-v0"
 
 agent = PPO(models=models,
             memory=memory,
@@ -123,7 +129,7 @@ trainer.train()
 # from skrl.utils.huggingface import download_model_from_huggingface
 
 # # download the trained agent's checkpoint from Hugging Face Hub and load it
-# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Ant-v0-PPO", filename="agent.pt")
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Ant-v0-PPO", filename="agent.pickle")
 # agent.load(path)
 
 # # start evaluation

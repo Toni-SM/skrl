@@ -1,6 +1,7 @@
 from typing import Union
 
 import logging
+import os
 import sys
 
 import numpy as np
@@ -43,6 +44,69 @@ class _Config(object):
     def __init__(self) -> None:
         """Machine learning framework specific configuration
         """
+
+        class PyTorch(object):
+            def __init__(self) -> None:
+                """PyTorch configuration
+                """
+                self._device = None
+                # torch.distributed config
+                self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
+                self._rank = int(os.getenv("RANK", "0"))
+                self._world_size = int(os.getenv("WORLD_SIZE", "1"))
+                self._is_distributed = self._world_size > 1
+
+            @property
+            def local_rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
+
+                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._local_rank
+
+            @property
+            def rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
+
+                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._rank
+
+            @property
+            def world_size(self) -> int:
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+
+                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                """
+                return self._world_size
+
+            @property
+            def is_distributed(self) -> bool:
+                """Whether if running in a distributed environment
+
+                This property is ``True`` when the PyTorch's distributed environment variable ``WORLD_SIZE > 1``
+                """
+                return self._is_distributed
+
+            @property
+            def device(self) -> "torch.device":
+                """Default device
+
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
+                """
+                try:
+                    import torch
+                    if self._device is None:
+                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
+                    return torch.device(self._device)
+                except ImportError:
+                    return self._device
+
+            @device.setter
+            def device(self, device: Union[str, "torch.device"]) -> None:
+                self._device = device
+
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration
@@ -91,5 +155,6 @@ class _Config(object):
                 self._key = value
 
         self.jax = JAX()
+        self.torch = PyTorch()
 
 config = _Config()

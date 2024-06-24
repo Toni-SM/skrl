@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Define the `environment_info` trainer config to log environment info (PyTorch implementation)
 - Add support to automatically compute the write and checkpoint intervals and make it the default option
 - Single forward-pass in shared models
+- Distributed multi-GPU and multi-node learning (PyTorch implementation)
 
 ### Changed
 - Update Orbit-related source code and docs to Isaac Lab

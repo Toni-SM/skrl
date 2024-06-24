@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -111,6 +112,14 @@ class TRPO_RNN(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.value is not None:
+                self.value.broadcast_parameters()
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
@@ -591,6 +600,9 @@ class TRPO_RNN(Agent):
         if restore_policy_flag:
             self.policy.update_parameters(self.backup_policy)
 
+        if config.torch.is_distributed:
+            self.policy.reduce_parameters()
+
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
 
@@ -622,6 +634,8 @@ class TRPO_RNN(Agent):
                 # optimization step (value)
                 self.value_optimizer.zero_grad()
                 value_loss.backward()
+                if config.torch.is_distributed:
+                    self.value.reduce_parameters()
                 if self._grad_norm_clip > 0:
                     nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
                 self.value_optimizer.step()

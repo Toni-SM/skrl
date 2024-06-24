@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -103,6 +104,14 @@ class A2C_RNN(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+                if self.value is not None and self.policy is not self.value:
+                    self.value.broadcast_parameters()
 
         # configuration
         self._mini_batches = self.cfg["mini_batches"]
@@ -462,6 +471,10 @@ class A2C_RNN(Agent):
             # optimization step
             self.optimizer.zero_grad()
             (policy_loss + entropy_loss + value_loss).backward()
+            if config.torch.is_distributed:
+                self.policy.reduce_parameters()
+                if self.policy is not self.value:
+                    self.value.reduce_parameters()
             if self._grad_norm_clip > 0:
                 if self.policy is self.value:
                     nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
@@ -478,7 +491,7 @@ class A2C_RNN(Agent):
         # update learning rate
         if self._learning_rate_scheduler:
             if isinstance(self.scheduler, KLAdaptiveLR):
-                self.scheduler.step(torch.tensor(kl_divergences).mean())
+                self.scheduler.step(torch.tensor(kl_divergences, device=self.device).mean())
             else:
                 self.scheduler.step()
 

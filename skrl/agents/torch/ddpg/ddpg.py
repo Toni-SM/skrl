@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -108,6 +109,14 @@ class DDPG(Agent):
         self.checkpoint_modules["target_policy"] = self.target_policy
         self.checkpoint_modules["critic"] = self.critic
         self.checkpoint_modules["target_critic"] = self.target_critic
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.critic is not None:
+                self.critic.broadcast_parameters()
 
         if self.target_policy is not None and self.target_critic is not None:
         # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -341,6 +350,8 @@ class DDPG(Agent):
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            if config.torch.is_distributed:
+                self.critic.reduce_parameters()
             if self._grad_norm_clip > 0:
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
             self.critic_optimizer.step()
@@ -354,6 +365,8 @@ class DDPG(Agent):
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
+            if config.torch.is_distributed:
+                self.policy.reduce_parameters()
             if self._grad_norm_clip > 0:
                 nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
             self.policy_optimizer.step()

@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
@@ -116,8 +117,17 @@ class MAPPO(MultiAgent):
         self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
 
         for uid in self.possible_agents:
+            # checkpoint models
             self.checkpoint_modules[uid]["policy"] = self.policies[uid]
             self.checkpoint_modules[uid]["value"] = self.values[uid]
+
+            # broadcast models' parameters in distributed runs
+            if config.torch.is_distributed:
+                logger.info(f"Broadcasting models' parameters")
+                if self.policies[uid] is not None:
+                    self.policies[uid].broadcast_parameters()
+                    if self.values[uid] is not None and self.policies[uid] is not self.values[uid]:
+                        self.values[uid].broadcast_parameters()
 
         # configuration
         self._learning_epochs = self._as_dict(self.cfg["learning_epochs"])
@@ -457,6 +467,10 @@ class MAPPO(MultiAgent):
                     # optimization step
                     self.optimizers[uid].zero_grad()
                     (policy_loss + entropy_loss + value_loss).backward()
+                    if config.torch.is_distributed:
+                        policy.reduce_parameters()
+                        if policy is not value:
+                            value.reduce_parameters()
                     if self._grad_norm_clip[uid] > 0:
                         if policy is value:
                             nn.utils.clip_grad_norm_(policy.parameters(), self._grad_norm_clip[uid])
@@ -473,7 +487,7 @@ class MAPPO(MultiAgent):
                 # update learning rate
                 if self._learning_rate_scheduler[uid]:
                     if isinstance(self.schedulers[uid], KLAdaptiveLR):
-                        self.schedulers[uid].step(torch.tensor(kl_divergences).mean())
+                        self.schedulers[uid].step(torch.tensor(kl_divergences, device=self.device).mean())
                     else:
                         self.schedulers[uid].step()
 

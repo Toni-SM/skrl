@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2024-06-23
 ### Added
 - Define the `environment_info` trainer config to log environment info (PyTorch implementation)
 - Add support to automatically compute the write and checkpoint intervals and make it the default option

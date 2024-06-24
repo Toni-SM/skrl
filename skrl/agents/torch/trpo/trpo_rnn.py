@@ -113,6 +113,14 @@ class TRPO_RNN(Agent):
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
 
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.value is not None:
+                self.value.broadcast_parameters()
+
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
         self._mini_batches = self.cfg["mini_batches"]
@@ -143,14 +151,6 @@ class TRPO_RNN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
-
-        # broadcast models' parameters in distributed runs
-        if config.torch.is_distributed:
-            logger.info(f"Broadcasting models' parameters")
-            if self.policy is not None:
-                self.policy.broadcast_parameters()
-            if self.value is not None:
-                self.value.broadcast_parameters()
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -634,13 +634,10 @@ class TRPO_RNN(Agent):
                 # optimization step (value)
                 self.value_optimizer.zero_grad()
                 value_loss.backward()
-
                 if config.torch.is_distributed:
                     self.value.reduce_parameters()
-
                 if self._grad_norm_clip > 0:
                     nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
-
                 self.value_optimizer.step()
 
                 # update cumulative losses

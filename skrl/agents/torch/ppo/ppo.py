@@ -112,6 +112,14 @@ class PPO(Agent):
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
 
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+                if self.value is not None and self.policy is not self.value:
+                    self.value.broadcast_parameters()
+
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
         self._mini_batches = self.cfg["mini_batches"]
@@ -142,14 +150,6 @@ class PPO(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
-
-        # broadcast models' parameters in distributed runs
-        if config.torch.is_distributed:
-            logger.info(f"Broadcasting models' parameters")
-            if self.policy is not None:
-                self.policy.broadcast_parameters()
-                if self.value is not None and self.policy is not self.value:
-                    self.value.broadcast_parameters()
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -427,18 +427,15 @@ class PPO(Agent):
                 # optimization step
                 self.optimizer.zero_grad()
                 (policy_loss + entropy_loss + value_loss).backward()
-
                 if config.torch.is_distributed:
                     self.policy.reduce_parameters()
                     if self.policy is not self.value:
                         self.value.reduce_parameters()
-
                 if self._grad_norm_clip > 0:
                     if self.policy is self.value:
                         nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                     else:
                         nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
-
                 self.optimizer.step()
 
                 # update cumulative losses

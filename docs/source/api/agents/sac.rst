@@ -245,8 +245,8 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - Distributed
-      - \-
-      - .. centered:: :math:`\square`
+      - Single Program Multi Data (SPMD) multi-GPU
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
 .. raw:: html

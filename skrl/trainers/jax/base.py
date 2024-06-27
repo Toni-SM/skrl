@@ -243,7 +243,7 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
             # reset environments
             if self.env.num_envs > 1:
@@ -362,7 +362,7 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
                 # reset environments
                 if not self.env.agents:

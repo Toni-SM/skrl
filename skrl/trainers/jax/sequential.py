@@ -185,7 +185,7 @@ class SequentialTrainer(Trainer):
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
-                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
                 # reset environments
                 if terminated.any() or truncated.any():

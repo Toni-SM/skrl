@@ -74,8 +74,8 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     seed = int(seed)
 
     # set different seeds in distributed runs
-    if config.torch.is_distributed:
-        seed += config.torch.rank
+    if config.torch.is_distributed or config.jax.is_distributed:
+        seed += max(config.torch.rank, config.jax.rank)
 
     logger.info(f"Seed: {seed}")
 

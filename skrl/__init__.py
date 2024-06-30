@@ -113,6 +113,24 @@ class _Config(object):
                 """
                 self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
+                # distributed config (based on torch.distributed, since JAX doesn't implement it)
+                # JAX doesn't automatically start multiple processes from a single program invocation
+                # https://jax.readthedocs.io/en/latest/multi_process.html#launching-jax-processes
+                self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
+                self._rank = int(os.getenv("RANK", "0"))
+                self._world_size = int(os.getenv("WORLD_SIZE", "1"))
+                self._coordinator_address = os.getenv("MASTER_ADDR", "127.0.0.1") + ":" + os.getenv("MASTER_PORT", "1234")
+                self._is_distributed = self._world_size > 1
+
+                # TODO: find a better place for it
+                # set up distributed runs
+                if self._is_distributed and "jax" in sys.modules:
+                    import jax
+                    logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
+                    jax.distributed.initialize(coordinator_address=self._coordinator_address,
+                                               num_processes=self._world_size,
+                                               process_id=self._rank,
+                                               local_device_ids=self._local_rank)
 
             @property
             def backend(self) -> str:
@@ -153,6 +171,46 @@ class _Config(object):
                     else:
                         value = np.array([0, value], dtype=np.uint32)
                 self._key = value
+
+            @property
+            def local_rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
+
+                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._local_rank
+
+            @property
+            def rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
+
+                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._rank
+
+            @property
+            def world_size(self) -> int:
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+
+                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                """
+                return self._world_size
+
+            @property
+            def coordinator_address(self) -> int:
+                """IP address and port where process 0 will start a JAX service
+
+                This property reads from the ``MASTER_ADDR:MASTER_PORT`` environment variables (``127.0.0.1:1234`` if they don't exist)
+                """
+                return self._coordinator_address
+
+            @property
+            def is_distributed(self) -> bool:
+                """Whether if running in a distributed environment
+
+                This property is ``True`` when the JAX's distributed environment variable ``WORLD_SIZE > 1``
+                """
+                return self._is_distributed
 
         self.jax = JAX()
         self.torch = PyTorch()

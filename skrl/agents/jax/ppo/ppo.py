@@ -9,6 +9,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -233,6 +234,14 @@ class PPO(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["value"] = self.value
+
+        # broadcast models' parameters in distributed runs
+        if config.jax.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.value is not None:
+                self.value.broadcast_parameters()
 
         # configuration
         self._learning_epochs = self.cfg["learning_epochs"]
@@ -532,7 +541,12 @@ class PPO(Agent):
             # update learning rate
             if self._learning_rate_scheduler:
                 if isinstance(self.scheduler, KLAdaptiveLR):
-                    self.scheduler.step(np.mean(kl_divergences))
+                    kl = np.mean(kl_divergences)
+                    # reduce (collect from all workers/processes) KL in distributed runs
+                    if config.jax.is_distributed:
+                        kl = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(kl.reshape(1)).item()
+                        kl /= config.jax.world_size
+                    self.scheduler.step(kl)
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))

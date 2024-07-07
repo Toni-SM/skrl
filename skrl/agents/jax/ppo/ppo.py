@@ -517,6 +517,8 @@ class PPO(Agent):
                     break
 
                 # optimization step (policy)
+                if config.jax.is_distributed:
+                    grad = self.policy.reduce_parameters(grad)
                 self.policy_optimizer = self.policy_optimizer.step(grad, self.policy, self.scheduler._lr if self.scheduler else None)
 
                 # compute value loss
@@ -530,6 +532,8 @@ class PPO(Agent):
                                                  self._value_clip)
 
                 # optimization step (value)
+                if config.jax.is_distributed:
+                    grad = self.value.reduce_parameters(grad)
                 self.value_optimizer = self.value_optimizer.step(grad, self.value, self.scheduler._lr if self.scheduler else None)
 
                 # update cumulative losses

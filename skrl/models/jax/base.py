@@ -5,9 +5,23 @@ import gymnasium
 
 import flax
 import jax
+import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+
+
+@jax.jit
+def _vectorize_leaves(leaves: Sequence[jax.Array]) -> jax.Array:
+    return jnp.expand_dims(jnp.concatenate(list(map(jnp.ravel, leaves)), axis=-1), 0)
+
+@jax.jit
+def _unvectorize_leaves(leaves: Sequence[jax.Array], vector: jax.Array) -> Sequence[jax.Array]:
+    offset = 0
+    for i, leaf in enumerate(leaves):
+        leaves[i] = leaves[i].at[:].set(vector.at[0, offset:offset + leaf.size].get().reshape(leaf.shape))
+        offset += leaf.size
+    return leaves
 
 
 class StateDict(flax.struct.PyTreeNode):
@@ -590,3 +604,30 @@ class Model(flax.linen.Module):
         is_source = jax.process_index() == rank
         params = jax.experimental.multihost_utils.broadcast_one_to_all(self.state_dict.params, is_source=is_source)
         self.state_dict = self.state_dict.replace(params=params)
+
+    def reduce_parameters(self, tree: Any) -> Any:
+        """Reduce model parameters across all workers/processes in the whole group (e.g.: across all nodes)
+
+        After calling this method, the distributed model parameters will be bitwise identical for all workers/processes
+
+        :param tree: pytree to apply collective reduction
+        :type tree: Any
+
+        Example::
+
+            # reduce model parameter across all workers/processes
+            >>> if config.jax.is_distributed:
+            ...     model.reduce_parameters(grad)
+        """
+        # # collective all-reduce mean for each pytree leaves
+        # return jax.tree_util.tree_map(lambda g: jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')
+        #                               (jnp.expand_dims(g, 0)).squeeze(0) / config.jax.world_size, tree)
+
+        # # using https://jax.readthedocs.io/en/latest/_autosummary/jax.flatten_util.ravel_pytree.html
+        # vector, unflatten = jax.flatten_util.ravel_pytree(tree)
+        # vector = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(jnp.expand_dims(vector, 0)) / config.jax.world_size
+        # return unflatten(jnp.squeeze(vector, 0))
+
+        leaves, treedef = jax.tree.flatten(tree)
+        vector = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(_vectorize_leaves(leaves)) / config.jax.world_size
+        return jax.tree.unflatten(treedef, _unvectorize_leaves(leaves, vector))

@@ -162,14 +162,8 @@ class _Config(object):
 
             @key.setter
             def key(self, value: Union[int, "jax.Array"]) -> None:
-                if type(value) is int:
-                    # don't import JAX if it has not been imported before
-                    if "jax" in sys.modules:
-                        import jax
-                        with jax.default_device(jax.devices("cpu")[0]):
-                            value = jax.random.PRNGKey(value)
-                    else:
-                        value = np.array([0, value], dtype=np.uint32)
+                if isinstance(value, (int, float)):
+                    value = np.array([0, value], dtype=np.uint32)
                 self._key = value
 
             @property

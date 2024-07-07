@@ -57,6 +57,25 @@ class _Config(object):
                 self._is_distributed = self._world_size > 1
 
             @property
+            def device(self) -> "torch.device":
+                """Default device
+
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
+                """
+                try:
+                    import torch
+                    if self._device is None:
+                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
+                    return torch.device(self._device)
+                except ImportError:
+                    return self._device
+
+            @device.setter
+            def device(self, device: Union[str, "torch.device"]) -> None:
+                self._device = device
+
+            @property
             def local_rank(self) -> int:
                 """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
 
@@ -88,25 +107,6 @@ class _Config(object):
                 """
                 return self._is_distributed
 
-            @property
-            def device(self) -> "torch.device":
-                """Default device
-
-                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise
-                """
-                try:
-                    import torch
-                    if self._device is None:
-                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
-                    return torch.device(self._device)
-                except ImportError:
-                    return self._device
-
-            @device.setter
-            def device(self, device: Union[str, "torch.device"]) -> None:
-                self._device = device
-
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration
@@ -121,6 +121,8 @@ class _Config(object):
                 self._world_size = int(os.getenv("WORLD_SIZE", "1"))
                 self._coordinator_address = os.getenv("MASTER_ADDR", "127.0.0.1") + ":" + os.getenv("MASTER_PORT", "1234")
                 self._is_distributed = self._world_size > 1
+                # device
+                self._device = f"cuda:{self._local_rank}"
 
                 # TODO: find a better place for it
                 # set up distributed runs
@@ -131,6 +133,31 @@ class _Config(object):
                                                num_processes=self._world_size,
                                                process_id=self._rank,
                                                local_device_ids=self._local_rank)
+
+            @property
+            def device(self) -> "jax.Device":
+                """Default device
+
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
+                """
+                try:
+                    import jax
+                    if type(self._device) == str:
+                        device_type, device_index = f"{self._device}:0".split(':')[:2]
+                        try:
+                            self._device = jax.devices(device_type)[int(device_index)]
+                        except (RuntimeError, IndexError):
+                            self._device = None
+                    if self._device is None:
+                        self._device = jax.devices()[0]
+                except ImportError:
+                    pass
+                return self._device
+
+            @device.setter
+            def device(self, device: Union[str, "jax.Device"]) -> None:
+                self._device = device
 
             @property
             def backend(self) -> str:
@@ -154,7 +181,7 @@ class _Config(object):
                 if isinstance(self._key, np.ndarray):
                     try:
                         import jax
-                        with jax.default_device(jax.devices("cpu")[0]):
+                        with jax.default_device(self.device):
                             self._key = jax.random.PRNGKey(self._key[1])
                     except ImportError:
                         pass

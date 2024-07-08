@@ -527,7 +527,7 @@ class Model(flax.linen.Module):
                 name_map: Mapping[str, str] = {},
                 auto_mapping: bool = True,
                 verbose: bool = False) -> bool:
-        """Migrate the specified extrernal model's state dict to the current model
+        """Migrate the specified external model's state dict to the current model
 
         .. warning::
 
@@ -612,6 +612,9 @@ class Model(flax.linen.Module):
 
         :param tree: pytree to apply collective reduction
         :type tree: Any
+
+        :return: all-reduced pytree
+        :rtype: Any
 
         Example::
 

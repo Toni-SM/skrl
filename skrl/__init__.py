@@ -124,9 +124,8 @@ class _Config(object):
                 # device
                 self._device = f"cuda:{self._local_rank}"
 
-                # TODO: find a better place for it
                 # set up distributed runs
-                if self._is_distributed and "jax" in sys.modules:
+                if self._is_distributed:
                     import jax
                     logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
                     jax.distributed.initialize(coordinator_address=self._coordinator_address,

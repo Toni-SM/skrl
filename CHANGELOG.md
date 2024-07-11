@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - Unreleased
+### Changed
+- Move the KL reduction in distributed runs from the `KLAdaptiveLR` class to each agent using it
+
 ## [1.2.0] - 2024-06-23
 ### Added
 - Define the `environment_info` trainer config to log environment info (PyTorch implementation)

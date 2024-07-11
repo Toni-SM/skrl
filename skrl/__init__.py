@@ -116,10 +116,10 @@ class _Config(object):
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
                 # JAX doesn't automatically start multiple processes from a single program invocation
                 # https://jax.readthedocs.io/en/latest/multi_process.html#launching-jax-processes
-                self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
-                self._rank = int(os.getenv("RANK", "0"))
-                self._world_size = int(os.getenv("WORLD_SIZE", "1"))
-                self._coordinator_address = os.getenv("MASTER_ADDR", "127.0.0.1") + ":" + os.getenv("MASTER_PORT", "1234")
+                self._local_rank = int(os.getenv("JAX_LOCAL_RANK", "0"))
+                self._rank = int(os.getenv("JAX_RANK", "0"))
+                self._world_size = int(os.getenv("JAX_WORLD_SIZE", "1"))
+                self._coordinator_address = os.getenv("JAX_COORDINATOR_ADDR", "127.0.0.1") + ":" + os.getenv("JAX_COORDINATOR_PORT", "1234")
                 self._is_distributed = self._world_size > 1
                 # device
                 self._device = f"cuda:{self._local_rank}"
@@ -138,7 +138,7 @@ class _Config(object):
             def device(self) -> "jax.Device":
                 """Default device
 
-                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
                 if CUDA is available, ``cpu`` otherwise
                 """
                 try:
@@ -197,7 +197,7 @@ class _Config(object):
             def local_rank(self) -> int:
                 """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
 
-                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``JAX_LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
                 """
                 return self._local_rank
 
@@ -205,7 +205,7 @@ class _Config(object):
             def rank(self) -> int:
                 """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
 
-                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``JAX_RANK`` environment variable (``0`` if it doesn't exist)
                 """
                 return self._rank
 
@@ -213,7 +213,7 @@ class _Config(object):
             def world_size(self) -> int:
                 """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
 
-                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                This property reads from the ``JAX_WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
                 """
                 return self._world_size
 
@@ -221,7 +221,8 @@ class _Config(object):
             def coordinator_address(self) -> int:
                 """IP address and port where process 0 will start a JAX service
 
-                This property reads from the ``MASTER_ADDR:MASTER_PORT`` environment variables (``127.0.0.1:1234`` if they don't exist)
+                This property reads from the ``JAX_COORDINATOR_ADDR:JAX_COORDINATOR_PORT`` environment variables
+                (``127.0.0.1:1234`` if they don't exist)
                 """
                 return self._coordinator_address
 
@@ -229,7 +230,7 @@ class _Config(object):
             def is_distributed(self) -> bool:
                 """Whether if running in a distributed environment
 
-                This property is ``True`` when the JAX's distributed environment variable ``WORLD_SIZE > 1``
+                This property is ``True`` when the JAX's distributed environment variable ``JAX_WORLD_SIZE > 1``
                 """
                 return self._is_distributed
 

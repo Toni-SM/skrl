@@ -84,7 +84,7 @@ API
 
     Default device
 
-    The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise
+    The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise
 
 .. py:data:: skrl.config.jax.backend
     :type: str
@@ -107,7 +107,7 @@ API
 
     The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
 
-    This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist).
+    This property reads from the ``JAX_LOCAL_RANK`` environment variable (``0`` if it doesn't exist).
 
 .. py:data:: skrl.config.jax.rank
     :type: int
@@ -115,7 +115,7 @@ API
 
     The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
 
-    This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist).
+    This property reads from the ``JAX_RANK`` environment variable (``0`` if it doesn't exist).
 
 .. py:data:: skrl.config.jax.world_size
     :type: int
@@ -123,7 +123,7 @@ API
 
     The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
 
-    This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist).
+    This property reads from the ``JAX_WORLD_SIZE`` environment variable (``1`` if it doesn't exist).
 
 .. py:data:: skrl.config.jax.coordinator_address
     :type: str
@@ -131,7 +131,7 @@ API
 
     IP address and port where process 0 will start a JAX service
 
-    This property reads from the ``MASTER_ADDR:MASTER_PORT`` environment variables (``127.0.0.1:1234`` if they don't exist)
+    This property reads from the ``JAX_COORDINATOR_ADDR:JAX_COORDINATOR_PORT`` environment variables (``127.0.0.1:1234`` if they don't exist)
 
 .. py:data:: skrl.config.jax.is_distributed
     :type: bool

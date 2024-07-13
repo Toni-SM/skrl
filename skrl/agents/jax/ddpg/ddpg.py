@@ -9,6 +9,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -160,6 +161,14 @@ class DDPG(Agent):
         self.checkpoint_modules["target_policy"] = self.target_policy
         self.checkpoint_modules["critic"] = self.critic
         self.checkpoint_modules["target_critic"] = self.target_critic
+
+        # broadcast models' parameters in distributed runs
+        if config.jax.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.critic is not None:
+                self.critic.broadcast_parameters()
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -412,6 +421,8 @@ class DDPG(Agent):
                                                                              self._discount_factor)
 
             # optimization step (critic)
+            if config.jax.is_distributed:
+                grad = self.critic.reduce_parameters(grad)
             self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
             # compute policy (actor) loss
@@ -422,6 +433,8 @@ class DDPG(Agent):
                                                sampled_states)
 
             # optimization step (policy)
+            if config.jax.is_distributed:
+                grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
 
             # update target networks

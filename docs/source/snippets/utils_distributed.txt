@@ -1,0 +1,21 @@
+[start-distributed-launcher-jax]
+usage: python -m skrl.utils.distributed.jax [-h] [--nnodes NNODES]
+                        [--nproc-per-node NPROC_PER_NODE] [--node-rank NODE_RANK]
+                        [--coordinator-address COORDINATOR_ADDRESS] script ...
+
+JAX Distributed Training Launcher
+
+positional arguments:
+  script                Training script path to be launched in parallel
+  script_args           Arguments for the training script
+
+options:
+  -h, --help            show this help message and exit
+  --nnodes NNODES       Number of nodes
+  --nproc-per-node NPROC_PER_NODE, --nproc_per_node NPROC_PER_NODE
+                        Number of workers per node
+  --node-rank NODE_RANK, --node_rank NODE_RANK
+                        Node rank for multi-node distributed training
+  --coordinator-address COORDINATOR_ADDRESS, --coordinator_address COORDINATOR_ADDRESS
+                        IP address and port where process 0 will start a JAX service
+[end-distributed-launcher-jax]

@@ -6,7 +6,7 @@ import sys
 from skrl import logger
 
 
-__all__ = ["load_isaac_orbit_env"]
+__all__ = ["load_isaaclab_env"]
 
 
 def _print_cfg(d, indent=0) -> None:
@@ -24,16 +24,16 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_isaac_orbit_env(task_name: str = "",
-                         num_envs: Optional[int] = None,
-                         headless: Optional[bool] = None,
-                         cli_args: Sequence[str] = [],
-                         show_cfg: bool = True):
-    """Load an Isaac Orbit environment
+def load_isaaclab_env(task_name: str = "",
+                      num_envs: Optional[int] = None,
+                      headless: Optional[bool] = None,
+                      cli_args: Sequence[str] = [],
+                      show_cfg: bool = True):
+    """Load an Isaac Lab environment
 
-    Isaac Orbit: https://isaac-orbit.github.io/orbit/index.html
+    Isaac Lab: https://isaac-sim.github.io/IsaacLab
 
-    This function includes the definition and parsing of command line arguments used by Isaac Orbit:
+    This function includes the definition and parsing of command line arguments used by Isaac Lab:
 
     - ``--headless``: Force display off at all times
     - ``--cpu``: Use CPU pipeline
@@ -53,19 +53,19 @@ def load_isaac_orbit_env(task_name: str = "",
                      If not specified, the default task configuration is used.
                      Command line argument has priority over function parameter if both are specified
     :type headless: bool, optional
-    :param cli_args: Isaac Orbit configuration and command line arguments (default: ``[]``)
+    :param cli_args: Isaac Lab configuration and command line arguments (default: ``[]``)
     :type cli_args: list of str, optional
     :param show_cfg: Whether to print the configuration (default: ``True``)
     :type show_cfg: bool, optional
 
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
 
-    :return: Isaac Orbit environment
+    :return: Isaac Lab environment
     :rtype: gym.Env
     """
     import argparse
     import atexit
-    import gym
+    import gymnasium as gym
 
     # check task from command line arguments
     defined = False
@@ -121,46 +121,42 @@ def load_isaac_orbit_env(task_name: str = "",
     sys.argv += cli_args
 
     # parse arguments
-    parser = argparse.ArgumentParser("Welcome to Orbit: Omniverse Robotics Environments!")
-    parser.add_argument("--headless", action="store_true", default=False, help="Force display off at all times.")
+    parser = argparse.ArgumentParser("Isaac Lab: Omniverse Robotics Environments!")
     parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
     parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
     parser.add_argument("--task", type=str, default=None, help="Name of the task.")
     parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+    parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
+    parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
+    parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
+    parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations.")
+    parser.add_argument("--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes.")
+
+    # launch the simulation app
+    from omni.isaac.lab.app import AppLauncher
+
+    AppLauncher.add_app_launcher_args(parser)
     args = parser.parse_args()
-
-    # load the most efficient kit configuration in headless mode
-    if args.headless:
-        app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.gym.headless.kit"
-    else:
-        app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
-
-    # launch the simulator
-    from omni.isaac.kit import SimulationApp  # type: ignore
-
-    config = {"headless": args.headless}
-    simulation_app = SimulationApp(config, experience=app_experience)
+    app_launcher = AppLauncher(args)
 
     @atexit.register
     def close_the_simulator():
-        simulation_app.close()
+        app_launcher.app.close()
 
-    # import orbit extensions
-    import omni.isaac.contrib_envs  # type: ignore
-    import omni.isaac.orbit_envs  # type: ignore
-    from omni.isaac.orbit_envs.utils import parse_env_cfg  # type: ignore
+    import omni.isaac.lab_tasks  # type: ignore
+    from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
 
-    cfg = parse_env_cfg(args.task, use_gpu=not args.cpu, num_envs=args.num_envs)
+    cfg = parse_env_cfg(args.task, use_gpu=not args.cpu, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
 
     # print config
     if show_cfg:
-        print(f"\nIsaac Orbit environment ({args.task})")
+        print(f"\nIsaac Lab environment ({args.task})")
         try:
             _print_cfg(cfg)
         except AttributeError as e:
             pass
 
     # load environment
-    env = gym.make(args.task, cfg=cfg, headless=args.headless)
+    env = gym.make(args.task, cfg=cfg, render_mode="rgb_array" if args.video else None)
 
     return env

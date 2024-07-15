@@ -1,7 +1,11 @@
 from typing import Optional, Union
 
+from packaging import version
+
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
+
+from skrl import config
 
 
 class KLAdaptiveLR(_LRScheduler):
@@ -24,6 +28,10 @@ class KLAdaptiveLR(_LRScheduler):
 
             This scheduler is only available for PPO at the moment.
             Applying it to other agents will not change the learning rate
+
+        .. note::
+
+            In distributed runs, the learning rate will be reduced and broadcasted across all workers/processes
 
         Example::
 
@@ -50,6 +58,8 @@ class KLAdaptiveLR(_LRScheduler):
         :param verbose: Verbose mode (default: ``False``)
         :type verbose: bool, optional
         """
+        if version.parse(torch.__version__) >= version.parse("2.2"):
+            verbose = "deprecated"
         super().__init__(optimizer, last_epoch, verbose)
 
         self.kl_threshold = kl_threshold
@@ -82,10 +92,25 @@ class KLAdaptiveLR(_LRScheduler):
         :type epoch: int, optional
         """
         if kl is not None:
-            for group in self.optimizer.param_groups:
-                if kl > self.kl_threshold * self._kl_factor:
-                    group['lr'] = max(group['lr'] / self._lr_factor, self.min_lr)
-                elif kl < self.kl_threshold / self._kl_factor:
-                    group['lr'] = min(group['lr'] * self._lr_factor, self.max_lr)
+            # reduce (collect from all workers/processes) learning rate in distributed runs
+            if config.torch.is_distributed:
+                torch.distributed.all_reduce(kl, op=torch.distributed.ReduceOp.SUM)
+                kl /= config.torch.world_size
 
-            self._last_lr = [group['lr'] for group in self.optimizer.param_groups]
+            for i, group in enumerate(self.optimizer.param_groups):
+                # adjust the learning rate
+                lr = group['lr']
+                if kl > self.kl_threshold * self._kl_factor:
+                    lr = max(lr / self._lr_factor, self.min_lr)
+                elif kl < self.kl_threshold / self._kl_factor:
+                    lr = min(lr * self._lr_factor, self.max_lr)
+
+                # broadcast learning rate in distributed runs
+                if config.torch.is_distributed:
+                    lr_tensor = torch.tensor([lr], device=config.torch.device)
+                    torch.distributed.broadcast(lr_tensor, 0)
+                    lr = lr_tensor.item()
+
+                # update value
+                group['lr'] = lr
+                self._last_lr[i] = lr

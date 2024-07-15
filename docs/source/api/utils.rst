@@ -25,7 +25,7 @@ A set of utilities and configurations for managing an RL setup is provided as pa
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`ML frameworks <config/frameworks>` configuration |_5| |_5| |_5| |_5| |_5| |_2|
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
 .. list-table::

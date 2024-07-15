@@ -3,7 +3,7 @@ import torch.nn as nn
 
 # import the skrl components to build the RL system
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
+from skrl.envs.loaders.torch import load_isaaclab_env
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
@@ -25,17 +25,15 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
         DeterministicMixin.__init__(self, clip_actions)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 256),
+        self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
                                  nn.ELU(),
-                                 nn.Linear(256, 128),
-                                 nn.ELU(),
-                                 nn.Linear(128, 64),
+                                 nn.Linear(32, 32),
                                  nn.ELU())
 
-        self.mean_layer = nn.Linear(64, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.mean_layer = nn.Linear(32, self.num_actions)
+        self.log_std_parameter = nn.Parameter(torch.ones(self.num_actions))
 
-        self.value_layer = nn.Linear(64, 1)
+        self.value_layer = nn.Linear(32, 1)
 
     def act(self, inputs, role):
         if role == "policy":
@@ -53,15 +51,15 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
             return self.value_layer(shared_output), {}
 
 
-# load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Anymal")
+# load and wrap the Isaac Lab environment
+env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 env = wrap_env(env)
 
 device = env.device
 
 
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=24, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
@@ -75,9 +73,9 @@ models["value"] = models["policy"]  # same instance: shared model
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
 cfg = PPO_DEFAULT_CONFIG.copy()
-cfg["rollouts"] = 24  # memory_size
-cfg["learning_epochs"] = 5
-cfg["mini_batches"] = 3  # 24 * 4096 / 32768
+cfg["rollouts"] = 16  # memory_size
+cfg["learning_epochs"] = 8
+cfg["mini_batches"] = 1  # 16 * 512 / 8192
 cfg["discount_factor"] = 0.99
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 3e-4
@@ -90,17 +88,18 @@ cfg["ratio_clip"] = 0.2
 cfg["value_clip"] = 0.2
 cfg["clip_predicted_values"] = True
 cfg["entropy_loss_scale"] = 0.0
-cfg["value_loss_scale"] = 1.0
+cfg["value_loss_scale"] = 2.0
 cfg["kl_threshold"] = 0
 cfg["rewards_shaper"] = None
+cfg["time_limit_bootstrap"] = True
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
 cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 120
-cfg["experiment"]["checkpoint_interval"] = 1200
-cfg["experiment"]["directory"] = "runs/torch/Anymal"
+cfg["experiment"]["write_interval"] = 16
+cfg["experiment"]["checkpoint_interval"] = 80
+cfg["experiment"]["directory"] = "runs/torch/Isaac-Cartpole-v0"
 
 agent = PPO(models=models,
             memory=memory,
@@ -111,7 +110,7 @@ agent = PPO(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 24000, "headless": True}
+cfg_trainer = {"timesteps": 1600, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 # start training
@@ -125,7 +124,7 @@ trainer.train()
 # from skrl.utils.huggingface import download_model_from_huggingface
 
 # # download the trained agent's checkpoint from Hugging Face Hub and load it
-# path = download_model_from_huggingface("skrl/OmniIsaacGymEnvs-Anymal-PPO", filename="agent.pt")
+# path = download_model_from_huggingface("skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO", filename="agent.pt")
 # agent.load(path)
 
 # # start evaluation

@@ -53,7 +53,10 @@ class Agent:
         if device is None:
             self.device = jax.devices()[0]
         else:
-            self.device = device if isinstance(device, jax.Device) else jax.devices(device)[0]
+            self.device = device
+            if type(device) == str:
+                device_type, device_index = f"{device}:0".split(':')[:2]
+                self.device = jax.devices(device_type)[int(device_index)]
 
         if type(memory) is list:
             self.memory = memory[0]
@@ -68,7 +71,7 @@ class Agent:
                 pass
 
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
+        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", "auto")
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -79,7 +82,7 @@ class Agent:
 
         # checkpoint
         self.checkpoint_modules = {}
-        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
+        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", "auto")
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
         self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
 
@@ -141,10 +144,10 @@ class Agent:
         :param trainer_cfg: Trainer configuration
         :type trainer_cfg: dict, optional
         """
+        trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
         # setup Weights & Biases
         if self.cfg.get("experiment", {}).get("wandb", False):
             # save experiment config
-            trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
             try:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
             except AttributeError:
@@ -161,6 +164,8 @@ class Agent:
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
+        if self.write_interval == "auto":
+            self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
             self.writer = None
             # tensorboard via torch SummaryWriter
@@ -203,6 +208,8 @@ class Agent:
                 logger.warning("The current running process will be terminated.")
                 exit()
 
+        if self.checkpoint_interval == "auto":
+            self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
@@ -470,7 +477,9 @@ class Agent:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
+                with jax.default_device(self.device):
+                    self.checkpoint_best_modules["modules"] = \
+                        {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

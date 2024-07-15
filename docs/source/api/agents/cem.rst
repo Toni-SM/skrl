@@ -175,6 +175,10 @@ Support for advanced features is described in the next table
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+    * - Distributed
+      - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 

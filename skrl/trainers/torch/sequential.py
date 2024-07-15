@@ -17,6 +17,7 @@ SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
+    "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
 
@@ -116,6 +117,13 @@ class SequentialTrainer(Trainer):
                                             timestep=timestep,
                                             timesteps=self.timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            for agent in self.agents:
+                                agent.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             for agent in self.agents:
                 agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -183,6 +191,13 @@ class SequentialTrainer(Trainer):
                                             timestep=timestep,
                                             timesteps=self.timesteps)
                     super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            for agent in self.agents:
+                                agent.track_data(f"Info / {k}", v.item())
 
                 # reset environments
                 if terminated.any() or truncated.any():

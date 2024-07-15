@@ -53,9 +53,9 @@ TD3_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -219,9 +219,10 @@ class TD3(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
-            self.critic_1_optimizer = Adam(model=self.critic_1, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
-            self.critic_2_optimizer = Adam(model=self.critic_2, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
+            with jax.default_device(self.device):
+                self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
+                self.critic_1_optimizer = Adam(model=self.critic_1, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
+                self.critic_2_optimizer = Adam(model=self.critic_2, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
                 self.critic_1_scheduler = self._learning_rate_scheduler(self.critic_1_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
@@ -422,12 +423,12 @@ class TD3(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+            # sample a batch from memory
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)

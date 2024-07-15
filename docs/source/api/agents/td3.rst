@@ -47,10 +47,10 @@ Learning algorithm
 
 |
 | :literal:`_update(...)`
-| :green:`# sample a batch from memory`
-| [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
+|     :green:`# sample a batch from memory`
+|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip`
@@ -256,6 +256,10 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - Distributed
+      - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 

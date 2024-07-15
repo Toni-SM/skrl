@@ -18,6 +18,7 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
+    "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
 

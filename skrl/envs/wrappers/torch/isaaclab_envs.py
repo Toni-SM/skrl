@@ -5,17 +5,19 @@ import torch
 from skrl.envs.wrappers.torch.base import Wrapper
 
 
-class IsaacOrbitWrapper(Wrapper):
+class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Orbit environment wrapper
+        """Isaac Lab environment wrapper
 
         :param env: The environment to wrap
-        :type env: Any supported Isaac Orbit environment
+        :type env: Any supported Isaac Lab environment
         """
         super().__init__(env)
 
         self._reset_once = True
         self._obs_dict = None
+
+        self._observation_space = self._observation_space["policy"]
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

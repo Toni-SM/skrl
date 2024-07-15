@@ -6,7 +6,7 @@ import tqdm
 
 import torch
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import Wrapper
 
@@ -59,6 +59,7 @@ class Trainer:
         self.headless = self.cfg.get("headless", False)
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
         self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
+        self.environment_info = self.cfg.get("environment_info", "episode")
 
         self.initial_timestep = 0
 
@@ -73,6 +74,11 @@ class Trainer:
                 logger.info("Closing environment")
                 self.env.close()
                 logger.info("Environment closed")
+
+        # update trainer configuration to avoid duplicated info/data in distributed runs
+        if config.torch.is_distributed:
+            if config.torch.rank:
+                self.disable_progressbar = True
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer
@@ -190,6 +196,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
@@ -243,6 +255,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
 
             # reset environments
             if self.env.num_envs > 1:
@@ -304,6 +322,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
 
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
+
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
@@ -360,6 +384,12 @@ class Trainer:
                                               timestep=timestep,
                                               timesteps=self.timesteps)
                 super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+                # log environment info
+                if self.environment_info in infos:
+                    for k, v in infos[self.environment_info].items():
+                        if isinstance(v, torch.Tensor) and v.numel() == 1:
+                            self.agents.track_data(f"Info / {k}", v.item())
 
                 # reset environments
                 if not self.env.agents:

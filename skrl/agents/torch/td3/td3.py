@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -52,9 +52,9 @@ TD3_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -118,6 +118,16 @@ class TD3(Agent):
         self.checkpoint_modules["critic_2"] = self.critic_2
         self.checkpoint_modules["target_critic_1"] = self.target_critic_1
         self.checkpoint_modules["target_critic_2"] = self.target_critic_2
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.critic_1 is not None:
+                self.critic_1.broadcast_parameters()
+            if self.critic_2 is not None:
+                self.critic_2.broadcast_parameters()
 
         if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -336,12 +346,13 @@ class TD3(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+
+            # sample a batch from memory
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
@@ -371,6 +382,9 @@ class TD3(Agent):
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            if config.torch.is_distributed:
+                self.critic_1.reduce_parameters()
+                self.critic_2.reduce_parameters()
             if self._grad_norm_clip > 0:
                 nn.utils.clip_grad_norm_(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip)
             self.critic_optimizer.step()
@@ -388,6 +402,8 @@ class TD3(Agent):
                 # optimization step (policy)
                 self.policy_optimizer.zero_grad()
                 policy_loss.backward()
+                if config.torch.is_distributed:
+                    self.policy.reduce_parameters()
                 if self._grad_norm_clip > 0:
                     nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 self.policy_optimizer.step()

@@ -8,6 +8,7 @@ import gymnasium
 import torch
 import torch.nn.functional as F
 
+from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
@@ -45,9 +46,9 @@ DDQN_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -103,6 +104,12 @@ class DDQN(Agent):
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network
         self.checkpoint_modules["target_q_network"] = self.target_q_network
+
+        # broadcast models' parameters in distributed runs
+        if config.torch.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.q_network is not None:
+                self.q_network.broadcast_parameters()
 
         if self.target_q_network is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
@@ -303,6 +310,8 @@ class DDQN(Agent):
             # optimize Q-network
             self.optimizer.zero_grad()
             q_network_loss.backward()
+            if config.torch.is_distributed:
+                self.q_network.reduce_parameters()
             self.optimizer.step()
 
             # update target network

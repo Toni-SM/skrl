@@ -47,10 +47,10 @@ Learning algorithm
 
 |
 | :literal:`_update(...)`
-| :green:`# sample a batch from memory`
-| [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
+|     :green:`# sample a batch from memory`
+|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow Q_{\phi_{target}}(s', a')`
@@ -234,6 +234,10 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - Distributed
+      - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 

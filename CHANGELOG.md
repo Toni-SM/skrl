@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.3.0] - Unreleased
+### Added
+- Distributed multi-GPU and multi-node learning (JAX implementation)
+- Utilities to start multiple processes from a single program invocation for distributed learning using JAX
+
 ### Changed
 - Move the KL reduction in distributed runs from the `KLAdaptiveLR` class to each agent using it
 

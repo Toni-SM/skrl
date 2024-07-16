@@ -4,7 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.3.0] - Unreleased
 ### Changed
-- Move the KL reduction in distributed runs from the `KLAdaptiveLR` class to each agent using it
+- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent using it in distributed runs
+- Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
 
 ## [1.2.0] - 2024-06-23
 ### Added

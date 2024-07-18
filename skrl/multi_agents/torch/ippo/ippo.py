@@ -467,7 +467,12 @@ class IPPO(MultiAgent):
                 # update learning rate
                 if self._learning_rate_scheduler[uid]:
                     if isinstance(self.schedulers[uid], KLAdaptiveLR):
-                        self.schedulers[uid].step(torch.tensor(kl_divergences, device=self.device).mean())
+                        kl = torch.tensor(kl_divergences, device=self.device).mean()
+                        # reduce (collect from all workers/processes) KL in distributed runs
+                        if config.torch.is_distributed:
+                            torch.distributed.all_reduce(kl, op=torch.distributed.ReduceOp.SUM)
+                            kl /= config.torch.world_size
+                        self.schedulers[uid].step(kl.item())
                     else:
                         self.schedulers[uid].step()
 

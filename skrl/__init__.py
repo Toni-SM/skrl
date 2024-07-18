@@ -56,6 +56,13 @@ class _Config(object):
                 self._world_size = int(os.getenv("WORLD_SIZE", "1"))
                 self._is_distributed = self._world_size > 1
 
+                # set up distributed runs
+                if self._is_distributed:
+                    import torch
+                    logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
+                    torch.distributed.init_process_group("nccl", rank=self._rank, world_size=self._world_size)
+                    torch.cuda.set_device(self._local_rank)
+
             @property
             def local_rank(self) -> int:
                 """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)

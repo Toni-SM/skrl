@@ -247,7 +247,7 @@ Support for advanced features is described in the next table
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 .. raw:: html
 

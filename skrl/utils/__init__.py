@@ -76,6 +76,8 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     # set different seeds in distributed runs
     if config.torch.is_distributed:
         seed += config.torch.rank
+    if config.jax.is_distributed:
+        seed += config.jax.rank
 
     logger.info(f"Seed: {seed}")
 

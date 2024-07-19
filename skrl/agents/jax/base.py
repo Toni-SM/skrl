@@ -139,26 +139,33 @@ class Agent:
         """Initialize the agent
 
         This method should be called before the agent is used.
-        It will initialize the TensoBoard writer (and optionally Weights & Biases) and create the checkpoints directory
+        It will initialize the TensorBoard writer (and optionally Weights & Biases) and create the checkpoints directory
 
         :param trainer_cfg: Trainer configuration
         :type trainer_cfg: dict, optional
         """
         trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+
+        # update agent configuration to avoid duplicated logging/checking in distributed runs
+        if config.jax.is_distributed and config.jax.rank:
+            self.write_interval = 0
+            self.checkpoint_interval = 0
+            # TODO: disable wandb
+
         # setup Weights & Biases
         if self.cfg.get("experiment", {}).get("wandb", False):
-            # save experiment config
+            # save experiment configuration
             try:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
             except AttributeError:
                 models_cfg = {k: v._modules for (k, v) in self.models.items()}
-            config={**self.cfg, **trainer_cfg, **models_cfg}
+            wandb_config={**self.cfg, **trainer_cfg, **models_cfg}
             # set default values
             wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
             wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
             wandb_kwargs.setdefault("sync_tensorboard", True)
             wandb_kwargs.setdefault("config", {})
-            wandb_kwargs["config"].update(config)
+            wandb_kwargs["config"].update(wandb_config)
             # init Weights & Biases
             import wandb
             wandb.init(**wandb_kwargs)
@@ -443,7 +450,7 @@ class Agent:
                 name_map: Mapping[str, Mapping[str, str]] = {},
                 auto_mapping: bool = True,
                 verbose: bool = False) -> bool:
-        """Migrate the specified extrernal checkpoint to the current agent
+        """Migrate the specified external checkpoint to the current agent
 
         :raises NotImplementedError: Not yet implemented
         """

@@ -10,6 +10,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -173,6 +174,16 @@ class SAC(Agent):
         self.checkpoint_modules["critic_2"] = self.critic_2
         self.checkpoint_modules["target_critic_1"] = self.target_critic_1
         self.checkpoint_modules["target_critic_2"] = self.target_critic_2
+
+        # broadcast models' parameters in distributed runs
+        if config.jax.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.policy is not None:
+                self.policy.broadcast_parameters()
+            if self.critic_1 is not None:
+                self.critic_1.broadcast_parameters()
+            if self.critic_2 is not None:
+                self.critic_2.broadcast_parameters()
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -418,6 +429,8 @@ class SAC(Agent):
                                                                                                 self._discount_factor)
 
             # optimization step (critic)
+            if config.jax.is_distributed:
+                grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(grad, self.critic_1)
             self.critic_2_optimizer = self.critic_2_optimizer.step(grad, self.critic_2)
 
@@ -432,6 +445,8 @@ class SAC(Agent):
                                                          sampled_states)
 
             # optimization step (policy)
+            if config.jax.is_distributed:
+                grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
 
             # entropy learning

@@ -64,6 +64,25 @@ class _Config(object):
                     torch.cuda.set_device(self._local_rank)
 
             @property
+            def device(self) -> "torch.device":
+                """Default device
+
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
+                """
+                try:
+                    import torch
+                    if self._device is None:
+                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
+                    return torch.device(self._device)
+                except ImportError:
+                    return self._device
+
+            @device.setter
+            def device(self, device: Union[str, "torch.device"]) -> None:
+                self._device = device
+
+            @property
             def local_rank(self) -> int:
                 """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
 
@@ -95,31 +114,56 @@ class _Config(object):
                 """
                 return self._is_distributed
 
-            @property
-            def device(self) -> "torch.device":
-                """Default device
-
-                The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise
-                """
-                try:
-                    import torch
-                    if self._device is None:
-                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
-                    return torch.device(self._device)
-                except ImportError:
-                    return self._device
-
-            @device.setter
-            def device(self, device: Union[str, "torch.device"]) -> None:
-                self._device = device
-
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration
                 """
                 self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
+                # distributed config (based on torch.distributed, since JAX doesn't implement it)
+                # JAX doesn't automatically start multiple processes from a single program invocation
+                # https://jax.readthedocs.io/en/latest/multi_process.html#launching-jax-processes
+                self._local_rank = int(os.getenv("JAX_LOCAL_RANK", "0"))
+                self._rank = int(os.getenv("JAX_RANK", "0"))
+                self._world_size = int(os.getenv("JAX_WORLD_SIZE", "1"))
+                self._coordinator_address = os.getenv("JAX_COORDINATOR_ADDR", "127.0.0.1") + ":" + os.getenv("JAX_COORDINATOR_PORT", "1234")
+                self._is_distributed = self._world_size > 1
+                # device
+                self._device = f"cuda:{self._local_rank}"
+
+                # set up distributed runs
+                if self._is_distributed:
+                    import jax
+                    logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
+                    jax.distributed.initialize(coordinator_address=self._coordinator_address,
+                                               num_processes=self._world_size,
+                                               process_id=self._rank,
+                                               local_device_ids=self._local_rank)
+
+            @property
+            def device(self) -> "jax.Device":
+                """Default device
+
+                The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
+                if CUDA is available, ``cpu`` otherwise
+                """
+                try:
+                    import jax
+                    if type(self._device) == str:
+                        device_type, device_index = f"{self._device}:0".split(':')[:2]
+                        try:
+                            self._device = jax.devices(device_type)[int(device_index)]
+                        except (RuntimeError, IndexError):
+                            self._device = None
+                    if self._device is None:
+                        self._device = jax.devices()[0]
+                except ImportError:
+                    pass
+                return self._device
+
+            @device.setter
+            def device(self, device: Union[str, "jax.Device"]) -> None:
+                self._device = device
 
             @property
             def backend(self) -> str:
@@ -143,7 +187,7 @@ class _Config(object):
                 if isinstance(self._key, np.ndarray):
                     try:
                         import jax
-                        with jax.default_device(jax.devices("cpu")[0]):
+                        with jax.default_device(self.device):
                             self._key = jax.random.PRNGKey(self._key[1])
                     except ImportError:
                         pass
@@ -151,15 +195,50 @@ class _Config(object):
 
             @key.setter
             def key(self, value: Union[int, "jax.Array"]) -> None:
-                if type(value) is int:
-                    # don't import JAX if it has not been imported before
-                    if "jax" in sys.modules:
-                        import jax
-                        with jax.default_device(jax.devices("cpu")[0]):
-                            value = jax.random.PRNGKey(value)
-                    else:
-                        value = np.array([0, value], dtype=np.uint32)
+                if isinstance(value, (int, float)):
+                    value = np.array([0, value], dtype=np.uint32)
                 self._key = value
+
+            @property
+            def local_rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
+
+                This property reads from the ``JAX_LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._local_rank
+
+            @property
+            def rank(self) -> int:
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
+
+                This property reads from the ``JAX_RANK`` environment variable (``0`` if it doesn't exist)
+                """
+                return self._rank
+
+            @property
+            def world_size(self) -> int:
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+
+                This property reads from the ``JAX_WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                """
+                return self._world_size
+
+            @property
+            def coordinator_address(self) -> int:
+                """IP address and port where process 0 will start a JAX service
+
+                This property reads from the ``JAX_COORDINATOR_ADDR:JAX_COORDINATOR_PORT`` environment variables
+                (``127.0.0.1:1234`` if they don't exist)
+                """
+                return self._coordinator_address
+
+            @property
+            def is_distributed(self) -> bool:
+                """Whether if running in a distributed environment
+
+                This property is ``True`` when the JAX's distributed environment variable ``JAX_WORLD_SIZE > 1``
+                """
+                return self._is_distributed
 
         self.jax = JAX()
         self.torch = PyTorch()

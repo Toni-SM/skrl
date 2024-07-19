@@ -5,9 +5,23 @@ import gymnasium
 
 import flax
 import jax
+import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+
+
+@jax.jit
+def _vectorize_leaves(leaves: Sequence[jax.Array]) -> jax.Array:
+    return jnp.expand_dims(jnp.concatenate(list(map(jnp.ravel, leaves)), axis=-1), 0)
+
+@jax.jit
+def _unvectorize_leaves(leaves: Sequence[jax.Array], vector: jax.Array) -> Sequence[jax.Array]:
+    offset = 0
+    for i, leaf in enumerate(leaves):
+        leaves[i] = leaves[i].at[:].set(vector.at[0, offset:offset + leaf.size].get().reshape(leaf.shape))
+        offset += leaf.size
+    return leaves
 
 
 class StateDict(flax.struct.PyTreeNode):
@@ -513,7 +527,7 @@ class Model(flax.linen.Module):
                 name_map: Mapping[str, str] = {},
                 auto_mapping: bool = True,
                 verbose: bool = False) -> bool:
-        """Migrate the specified extrernal model's state dict to the current model
+        """Migrate the specified external model's state dict to the current model
 
         .. warning::
 
@@ -572,3 +586,51 @@ class Model(flax.linen.Module):
             params = jax.tree_util.tree_map(lambda params, model_params: polyak * model_params + (1 - polyak) * params,
                                             self.state_dict.params, model.state_dict.params)
             self.state_dict = self.state_dict.replace(params=params)
+
+    def broadcast_parameters(self, rank: int = 0):
+        """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs
+
+        After calling this method, the distributed model will contain the broadcasted parameters from ``rank``
+
+        :param rank: Worker/process rank from which to broadcast model parameters (default: ``0``)
+        :type rank: int
+
+        Example::
+
+            # broadcast model parameter from worker/process with rank 1
+            >>> if config.jax.is_distributed:
+            ...     model.broadcast_parameters(rank=1)
+        """
+        is_source = jax.process_index() == rank
+        params = jax.experimental.multihost_utils.broadcast_one_to_all(self.state_dict.params, is_source=is_source)
+        self.state_dict = self.state_dict.replace(params=params)
+
+    def reduce_parameters(self, tree: Any) -> Any:
+        """Reduce model parameters across all workers/processes in the whole group (e.g.: across all nodes)
+
+        After calling this method, the distributed model parameters will be bitwise identical for all workers/processes
+
+        :param tree: pytree to apply collective reduction
+        :type tree: Any
+
+        :return: all-reduced pytree
+        :rtype: Any
+
+        Example::
+
+            # reduce model parameter across all workers/processes
+            >>> if config.jax.is_distributed:
+            ...     model.reduce_parameters(grad)
+        """
+        # # collective all-reduce mean for each pytree leaves
+        # return jax.tree_util.tree_map(lambda g: jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')
+        #                               (jnp.expand_dims(g, 0)).squeeze(0) / config.jax.world_size, tree)
+
+        # # using https://jax.readthedocs.io/en/latest/_autosummary/jax.flatten_util.ravel_pytree.html
+        # vector, unflatten = jax.flatten_util.ravel_pytree(tree)
+        # vector = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(jnp.expand_dims(vector, 0)) / config.jax.world_size
+        # return unflatten(jnp.squeeze(vector, 0))
+
+        leaves, treedef = jax.tree.flatten(tree)
+        vector = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(_vectorize_leaves(leaves)) / config.jax.world_size
+        return jax.tree.unflatten(treedef, _unvectorize_leaves(leaves, vector))

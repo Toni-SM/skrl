@@ -5,7 +5,7 @@ import contextlib
 import sys
 import tqdm
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import Wrapper
 
@@ -72,6 +72,11 @@ class Trainer:
                 logger.info("Closing environment")
                 self.env.close()
                 logger.info("Environment closed")
+
+        # update trainer configuration to avoid duplicated info/data in distributed runs
+        if config.jax.is_distributed:
+            if config.jax.rank:
+                self.disable_progressbar = True
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer

@@ -6,7 +6,8 @@ import glob
 import os
 
 import numpy as np
-import torch
+
+from skrl import logger
 
 
 class MemoryFileIterator():
@@ -78,6 +79,7 @@ class MemoryFileIterator():
         :return: Tuple of file name and data
         :rtype: tuple
         """
+        import torch
         filename = os.path.basename(self.file_paths[self.n])
         data = torch.load(self.file_paths[self.n])
 
@@ -158,18 +160,21 @@ class TensorboardFileIterator():
         self.n += 1
 
         data = {}
-        for event in summary_iterator(file_path):
-            try:
-                # get Tensorboard data
-                step = event.step
-                tag = event.summary.value[0].tag
-                value = event.summary.value[0].simple_value
-                # record data
-                if tag in self.tags:
-                    if not tag in data:
-                        data[tag] = []
-                    data[tag].append([step, value])
-            except Exception as e:
-                pass
+        try:
+            for event in summary_iterator(file_path):
+                try:
+                    # get Tensorboard data
+                    step = event.step
+                    tag = event.summary.value[0].tag
+                    value = event.summary.value[0].simple_value
+                    # record data
+                    if tag in self.tags:
+                        if not tag in data:
+                            data[tag] = []
+                        data[tag].append([step, value])
+                except Exception as e:
+                    pass
+        except Exception as e:
+            logger.warning(str(e))
 
         return os.path.dirname(file_path).split(os.sep)[-1], data

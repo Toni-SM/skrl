@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent using it in distributed runs
 - Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
 
+### Fixed
+- Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
+
 ## [1.2.0] - 2024-06-23
 ### Added
 - Define the `environment_info` trainer config to log environment info (PyTorch implementation)
@@ -99,7 +102,7 @@ and Omniverse Isaac Gym environments when they are loaded
 
 ## [0.10.1] - 2023-01-26
 ### Fixed
-- Tensorboard writer instantiation when `write_interval` is zero
+- TensorBoard writer instantiation when `write_interval` is zero
 
 ## [0.10.0] - 2023-01-22
 ### Added
@@ -218,7 +221,7 @@ to allow storing samples in memories during evaluation
 ## [0.4.1] - 2022-03-22
 ### Added
 - Examples of all Isaac Gym environments (preview 3)
-- Tensorboard file iterator for data post-processing
+- TensorBoard file iterator for data post-processing
 
 ### Fixed
 - Init and evaluate agents in ParallelTrainer

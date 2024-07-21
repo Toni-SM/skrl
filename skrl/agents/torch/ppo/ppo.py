@@ -213,14 +213,19 @@ class PPO(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        inputs = {"states": self._state_preprocessor(states)}
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+            return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, log_prob, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = log_prob
+
+        # compute values
+        if self.value is not None and self.memory is not None:
+            self._current_values, _, _ = self.value.act(inputs, role="value")
 
         return actions, log_prob, outputs
 
@@ -264,9 +269,8 @@ class PPO(Agent):
             if self._rewards_shaper is not None:
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
-            values = self._value_preprocessor(values, inverse=True)
+            # apply value preprocessor
+            values = self._value_preprocessor(self._current_values, inverse=True)
 
             # time-limit (truncation) boostrapping
             if self._time_limit_bootstrap:

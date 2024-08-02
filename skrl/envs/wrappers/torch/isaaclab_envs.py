@@ -1,5 +1,7 @@
 from typing import Any, Tuple
 
+import gymnasium
+
 import torch
 
 from skrl.envs.wrappers.torch.base import Wrapper
@@ -17,7 +19,23 @@ class IsaacLabWrapper(Wrapper):
         self._reset_once = True
         self._obs_dict = None
 
-        self._observation_space = self._observation_space["policy"]
+    @property
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        try:
+            return self._unwrapped.single_observation_space["policy"]
+        except:
+            return self._unwrapped.observation_space["policy"]
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        try:
+            return self._unwrapped.single_action_space
+        except:
+            return self._unwrapped.action_space
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment

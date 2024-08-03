@@ -134,13 +134,14 @@ class GymnasiumWrapper(Wrapper):
         :return: Observation, info
         :rtype: torch.Tensor and any other info
         """
-        # handle vectorized envs
+        # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
-            if not self._reset_once:
-                return self._observation, self._info
-            self._reset_once = False
+            if self._reset_once:
+                observation, self._info = self._env.reset()
+                self._observation = self._observation_to_tensor(observation)
+                self._reset_once = False
+            return self._observation, self._info
 
-        # reset the env/envs
         observation, info = self._env.reset()
         return self._observation_to_tensor(observation), info
 

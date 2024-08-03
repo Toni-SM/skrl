@@ -40,6 +40,8 @@ class IsaacLabWrapper(Wrapper):
         if self._reset_once:
             self._obs_dict, info = self._env.reset()
             self._reset_once = False
+        else:
+            info = {}
         return self._obs_dict["policy"], info
 
     def render(self, *args, **kwargs) -> None:

@@ -80,6 +80,8 @@ class IsaacLabWrapper(Wrapper):
         if self._reset_once:
             self._obs_dict, info = self._env.reset()
             self._reset_once = False
+        else:
+            info = {}
         return _torch2jax(self._obs_dict["policy"], self._jax), info
 
     def render(self, *args, **kwargs) -> None:

@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
+- Fixed uninitialized info variable in IsaacLabWrappers for env reset by setting info to empty dictionary when reset_once is false.
 
 ## [1.2.0] - 2024-06-23
 ### Added

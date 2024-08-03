@@ -64,15 +64,18 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
+
+        :return: Any value from the wrapped environment
+        :rtype: any
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment
         """
-        pass
+        self._env.close()
 
     @property
     def num_envs(self) -> int:
@@ -168,15 +171,18 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
+
+        :return: Any value from the wrapped environment
+        :rtype: any
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment
         """
-        pass
+        self._env.close()
 
     @property
     def num_envs(self) -> int:

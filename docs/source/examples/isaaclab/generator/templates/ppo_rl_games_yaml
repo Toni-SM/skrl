@@ -1,0 +1,70 @@
+seed: {{ params.seed | default(42) }}
+
+# Models are instantiated using skrl's model instantiator utility
+# https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html
+models:
+  separate: {{ params.network.separate }}
+  policy:  # see skrl.utils.model_instantiators.torch.gaussian_model for parameter details
+    clip_actions: False
+    clip_log_std: True
+    min_log_std: -20.0
+    max_log_std: 2.0
+    initial_log_std: {{ params.network.space.continuous.sigma_init.val }}
+    input_shape: "Shape.STATES"
+    hiddens: {{ params.network.mlp.units }}
+    hidden_activation: [{% for i in range(params.network.mlp.units | length) %}"{{ params.network.mlp.activation }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    output_shape: "Shape.ACTIONS"
+    output_activation: ""
+    output_scale: 1.0
+  value:  # see skrl.utils.model_instantiators.torch.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES"
+    hiddens: {{ params.network.mlp.units }}
+    hidden_activation: [{% for i in range(params.network.mlp.units | length) %}"{{ params.network.mlp.activation }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    output_shape: "Shape.ONE"
+    output_activation: ""
+    output_scale: 1.0
+
+# PPO agent configuration (field names are from PPO_DEFAULT_CONFIG)
+# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html
+agent:
+  rollouts: {{ params.config.horizon_length }}
+  learning_epochs: {{ params.config.mini_epochs }}
+  mini_batches: {{ (params.config.horizon_length * metadata.num_envs / params.config.minibatch_size) | int }}
+  discount_factor: {{ params.config.gamma }}
+  lambda: {{ params.config.tau }}
+  learning_rate: {{ "%.1e" | format(params.config.learning_rate | float) }}
+  {% if params.config.lr_schedule == "adaptive" %}
+  learning_rate_scheduler: "KLAdaptiveLR"
+  learning_rate_scheduler_kwargs:
+    kl_threshold: {{ params.config.kl_threshold }}
+  {% else %}
+  learning_rate_scheduler: null
+  {% endif %}
+  state_preprocessor: {{ '"RunningStandardScaler"' if params.config.normalize_input else 'null' }}
+  state_preprocessor_kwargs: null
+  value_preprocessor: {{ '"RunningStandardScaler"' if params.config.normalize_value else 'null' }}
+  value_preprocessor_kwargs: null
+  random_timesteps: 0
+  learning_starts: 0
+  grad_norm_clip: {{ params.config.grad_norm if params.config.truncate_grads else 0.0 }}
+  ratio_clip: {{ params.config.e_clip }}
+  value_clip: {{ params.config.e_clip }}
+  clip_predicted_values: {{ params.config.clip_value }}
+  entropy_loss_scale: {{ params.config.entropy_coef }}
+  value_loss_scale: {{ params.config.critic_coef / 2 }}
+  kl_threshold: {{ params.config.kl_threshold if params.config.lr_schedule != "adaptive" else 0.0 }}
+  rewards_shaper_scale: {{ params.config.reward_shaper.scale_value }}
+  time_limit_bootstrap: True
+  # logging and checkpoint
+  experiment:
+    directory: "{{ params.config.name }}"
+    experiment_name: ""
+    write_interval: "auto"
+    checkpoint_interval: "auto"
+
+# Sequential trainer
+# https://skrl.readthedocs.io/en/latest/api/trainers/sequential.html
+trainer:
+  timesteps: {{ (params.config.horizon_length * params.config.max_epochs) | int }}
+  environment_info: "log"

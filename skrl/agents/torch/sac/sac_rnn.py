@@ -345,17 +345,18 @@ class SAC_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length)[0]
-
-        rnn_policy = {}
-        if self._rnn:
-            sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
-            rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+
+            # sample a batch from memory
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length)[0]
+
+            rnn_policy = {}
+            if self._rnn:
+                sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
+                rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)

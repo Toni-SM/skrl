@@ -34,10 +34,10 @@ Learning algorithm
 
 |
 | :literal:`_update(...)`
-| :green:`# sample a batch from memory`
-| [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
+|     :green:`# sample a batch from memory`
+|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`a',\; logp' \leftarrow \pi_\theta(s')`
 |     :math:`Q_{1_{target}} \leftarrow Q_{{\phi 1}_{target}}(s', a')`

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent using it in distributed runs
 - Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
+- Moved the batch sampling inside gradient step loop for DDPGRNN, TD3RNN, SAC, SACRNN, DQN and DDQN. 
 
 ### Fixed
 - Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils

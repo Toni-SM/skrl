@@ -66,6 +66,7 @@ def test_vectorized_env(capsys: pytest.CaptureFixture):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        observation, info = env.reset()  # edge case: vectorized environments are autoreset
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
         assert isinstance(info, Mapping)
         for _ in range(3):

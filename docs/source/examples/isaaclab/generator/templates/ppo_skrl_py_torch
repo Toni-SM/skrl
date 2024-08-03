@@ -28,14 +28,14 @@ class Policy(GaussianMixin, Model):
         {% for index in range(models.policy.hiddens | length) %}
         {% if loop.first %}
         self.net = nn.Sequential(nn.Linear(self.num_observations, {{ models.policy.hiddens | first }}),
-                                 nn.{{ models.policy.hidden_activation | first }}(),
+                                 nn.{{ models.policy.hidden_activation__torch | first }}(),
         {% elif loop.last %}
                                  nn.Linear({{ models.policy.hiddens[loop.previtem] }}, {{ models.policy.hiddens | last }}),
-                                 nn.{{ models.policy.hidden_activation | last }}(),
+                                 nn.{{ models.policy.hidden_activation__torch | last }}(),
                                  nn.Linear({{ models.policy.hiddens | last }}, self.num_actions))
         {% else %}
                                  nn.Linear({{ models.policy.hiddens[loop.previtem] }}, {{ models.policy.hiddens[index] }}),
-                                 nn.{{ models.policy.hidden_activation[index] }}(),
+                                 nn.{{ models.policy.hidden_activation__torch[index] }}(),
         {% endif %}
         {% endfor %}
         self.log_std_parameter = nn.Parameter(torch.ones(self.num_actions))
@@ -51,14 +51,14 @@ class Value(DeterministicMixin, Model):
         {% for index in range(models.value.hiddens | length) %}
         {% if loop.first %}
         self.net = nn.Sequential(nn.Linear(self.num_observations, {{ models.value.hiddens | first }}),
-                                 nn.{{ models.value.hidden_activation | first }}(),
+                                 nn.{{ models.value.hidden_activation_torch | first }}(),
         {% elif loop.last %}
                                  nn.Linear({{ models.value.hiddens[loop.previtem] }}, {{ models.value.hiddens | last }}),
-                                 nn.{{ models.value.hidden_activation | last }}(),
+                                 nn.{{ models.value.hidden_activation_torch | last }}(),
                                  nn.Linear({{ models.value.hiddens | last }}, 1))
         {% else %}
                                  nn.Linear({{ models.value.hiddens[loop.previtem] }}, {{ models.value.hiddens[index] }}),
-                                 nn.{{ models.value.hidden_activation[index] }}(),
+                                 nn.{{ models.value.hidden_activation_torch[index] }}(),
         {% endif %}
         {% endfor %}
 
@@ -160,7 +160,7 @@ cfg["kl_threshold"] = {{ agent.kl_threshold }}
 {% if agent.rewards_shaper_scale == 1.0 %}
 cfg["rewards_shaper"] = None
 {% else %}
-cfg["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * {{ agent.rewards_shaper_scale }}
+cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * {{ agent.rewards_shaper_scale }}
 {% endif %}
 cfg["time_limit_bootstrap"] = True
 {% if agent.state_preprocessor == "RunningStandardScaler" %}

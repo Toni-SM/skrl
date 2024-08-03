@@ -110,44 +110,58 @@ class Config:
             file.write(content)
 
     def generate_python_script(self) -> None:
-        def convert_hidden_activation(activations):
+        def convert_hidden_activation(activations, framework):
             mapping = {
-                "": "Identity",
-                "relu": "ReLU",
-                "tanh": "Tanh",
-                "sigmoid": "Sigmoid",
-                "leaky_relu": "LeakyReLU",
-                "elu": "ELU",
-                "softplus": "Softplus",
-                "softsign": "Softsign",
-                "selu": "SELU",
-                "softmax": "Softmax",
+                "torch": {
+                    "": "Identity",
+                    "relu": "ReLU",
+                    "tanh": "Tanh",
+                    "sigmoid": "Sigmoid",
+                    "leaky_relu": "LeakyReLU",
+                    "elu": "ELU",
+                    "softplus": "Softplus",
+                    "softsign": "Softsign",
+                    "selu": "SELU",
+                    "softmax": "Softmax",
+                },
+                "jax": {
+                    "relu": "relu",
+                    "tanh": "tanh",
+                    "sigmoid": "sigmoid",
+                    "leaky_relu": "leaky_relu",
+                    "elu": "elu",
+                    "softplus": "softplus",
+                    "softsign": "soft_sign",
+                    "selu": "selu",
+                    "softmax": "softmax",
+                },
             }
-            return [mapping[activation] for activation in activations]
+            return [mapping[framework][activation] for activation in activations]
 
-        content = ""
-        if self.library == "skrl":
-            # generate file name
-            os.makedirs("skrl_examples", exist_ok=True)
-            task_name = "_".join([item.lower() for item in self.cfg["metadata"]["task"].split("-")[1:-1]])
-            path = os.path.join("skrl_examples", f"torch_{task_name}_ppo.py")
-            with open("templates/ppo_skrl_py_torch") as file:
-                content = file.read()
-        if not content:
-            raise ValueError
-        # update config
-        self.cfg["models"]["policy"]["hidden_activation"] = convert_hidden_activation(
-            self.cfg["models"]["policy"]["hidden_activation"]
-        )
-        self.cfg["models"]["value"]["hidden_activation"] = convert_hidden_activation(
-            self.cfg["models"]["value"]["hidden_activation"]
-        )
-        # render template
-        template = Template(content, keep_trailing_newline=True, trim_blocks=True, lstrip_blocks=True)
-        content = template.render(self.cfg)
-        # save file
-        with open(path, "w") as file:
-            file.write(content)
+        task_name = "_".join([item.lower() for item in self.cfg["metadata"]["task"].split("-")[1:-1]])
+        for framework in ["torch", "jax"]:
+            content = ""
+            if self.library == "skrl":
+                # generate file name
+                os.makedirs("skrl_examples", exist_ok=True)
+                path = os.path.join("skrl_examples", f"{framework}_{task_name}_ppo.py")
+                with open(f"templates/ppo_skrl_py_{framework}") as file:
+                    content = file.read()
+            if not content:
+                raise ValueError
+            # update config
+            self.cfg["models"]["policy"][f"hidden_activation__{framework}"] = convert_hidden_activation(
+                self.cfg["models"]["policy"]["hidden_activation"], framework
+            )
+            self.cfg["models"]["value"][f"hidden_activation__{framework}"] = convert_hidden_activation(
+                self.cfg["models"]["value"]["hidden_activation"], framework
+            )
+            # render template
+            template = Template(content, keep_trailing_newline=True, trim_blocks=True, lstrip_blocks=True)
+            content = template.render(self.cfg)
+            # save file
+            with open(path, "w") as file:
+                file.write(content)
 
 
 if __name__ == "__main__":

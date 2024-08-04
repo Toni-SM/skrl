@@ -1,7 +1,6 @@
 from typing import Any, Union
 
-import gym
-import gymnasium
+import re
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
@@ -70,10 +69,13 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
     :rtype: Wrapper or MultiAgentEnvWrapper
     """
     def _get_wrapper_name(env, verbose):
-        def _in(value, container):
+        def _in(values, container):
+            if type(values) == str:
+                values = [values]
             for item in container:
-                if value in item:
-                    return True
+                for value in values:
+                    if value in item or re.match(value, item):
+                        return True
             return False
 
         base_classes = [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__]
@@ -85,7 +87,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
 
-        if _in("omni.isaac.lab.envs.manager_based_env.ManagerBasedEnv", base_classes) or _in("omni.isaac.lab.envs.direct_rl_env.DirectRLEnv", base_classes):
+        if _in("omni.isaac.lab.envs..*", base_classes):
             return "isaaclab"
         elif _in("omni.isaac.gym.vec_env.vec_env_base.VecEnvBase", base_classes) or _in("omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT", base_classes):
             return "omniverse-isaacgym"
@@ -97,7 +99,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             return "dm"
         elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
             return "pettingzoo"
-        elif _in("gymnasium.core.Env", base_classes) or _in("gymnasium.core.Wrapper", base_classes):
+        elif _in("gymnasium..*", base_classes):
             return "gymnasium"
         elif _in("gym.core.Env", base_classes) or _in("gym.core.Wrapper", base_classes):
             return "gym"

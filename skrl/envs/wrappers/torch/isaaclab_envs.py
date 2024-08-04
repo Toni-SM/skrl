@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 import gymnasium
 
@@ -21,13 +21,17 @@ class IsaacLabWrapper(Wrapper):
         self._info = {}
 
     @property
-    def state_space(self) -> gymnasium.Space:
+    def state_space(self) -> Union[gymnasium.Space, None]:
         """State space
         """
         try:
             return self._unwrapped.single_observation_space["critic"]
-        except:
+        except KeyError:
+            pass
+        try:
             return self._unwrapped.state_space
+        except AttributeError:
+            return None
 
     @property
     def observation_space(self) -> gymnasium.Space:

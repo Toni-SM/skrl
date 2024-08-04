@@ -18,6 +18,16 @@ class IsaacLabWrapper(Wrapper):
 
         self._reset_once = True
         self._obs_dict = None
+        self._info = {}
+
+    @property
+    def state_space(self) -> gymnasium.Space:
+        """State space
+        """
+        try:
+            return self._unwrapped.single_observation_space["critic"]
+        except:
+            return self._unwrapped.state_space
 
     @property
     def observation_space(self) -> gymnasium.Space:
@@ -46,8 +56,8 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._obs_dict, reward, terminated, truncated, info = self._env.step(actions)
-        return self._obs_dict["policy"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
+        self._obs_dict, reward, terminated, truncated, self._info = self._env.step(actions)
+        return self._obs_dict["policy"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -56,9 +66,9 @@ class IsaacLabWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._obs_dict, info = self._env.reset()
+            self._obs_dict, self._info = self._env.reset()
             self._reset_once = False
-        return self._obs_dict["policy"], info
+        return self._obs_dict["policy"], self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

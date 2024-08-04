@@ -14,6 +14,8 @@ def test_env(capsys: pytest.CaptureFixture):
 
     # load wrap the environment
     original_env = gym.make("Pendulum-v1")
+    env = wrap_env(original_env, "auto")
+    assert isinstance(env, GymnasiumWrapper)
     env = wrap_env(original_env, "gymnasium")
     assert isinstance(env, GymnasiumWrapper)
 
@@ -49,6 +51,8 @@ def test_vectorized_env(capsys: pytest.CaptureFixture):
 
     # load wrap the environment
     original_env = gym.make_vec("Pendulum-v1", num_envs=num_envs)
+    env = wrap_env(original_env, "auto")
+    assert isinstance(env, GymnasiumWrapper)
     env = wrap_env(original_env, "gymnasium")
     assert isinstance(env, GymnasiumWrapper)
 

@@ -16,10 +16,10 @@ VecEnvStepReturn = tuple[VecEnvObs, torch.Tensor, torch.Tensor, torch.Tensor, di
 
 
 class IsaacLabEnv(gym.Env):
-    def __init__(self) -> None:
+    def __init__(self, num_states) -> None:
         self.num_actions = 1
         self.num_observations = 4
-        self.num_states = 5
+        self.num_states = num_states
         self.num_envs = 10
         self.extras = {}
         self.device = "cpu"
@@ -63,18 +63,23 @@ class IsaacLabEnv(gym.Env):
         pass
 
 
-def test_env(capsys: pytest.CaptureFixture):
+@pytest.mark.parametrize("num_states", [0, 5])
+def test_env(capsys: pytest.CaptureFixture, num_states):
     num_envs = 10
     action = torch.ones((num_envs, 1))
 
     # load wrap the environment
-    original_env = IsaacLabEnv()
+    original_env = IsaacLabEnv(num_states)
+    env = wrap_env(original_env, "auto")
+    # TODO: assert isinstance(env, IsaacLabWrapper)
     env = wrap_env(original_env, "isaaclab")
     assert isinstance(env, IsaacLabWrapper)
 
     # check properties
-    # assert env.state_space is None
-    assert isinstance(env.state_space, gym.Space) and env.state_space.shape == (5,)
+    if num_states:
+        assert isinstance(env.state_space, gym.Space) and env.state_space.shape == (num_states,)
+    else:
+        assert env.state_space is None
     assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (4,)
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs

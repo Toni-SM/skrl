@@ -101,7 +101,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             return "pettingzoo"
         elif _in("gymnasium..*", base_classes):
             return "gymnasium"
-        elif _in("gym.core.Env", base_classes) or _in("gym.core.Wrapper", base_classes):
+        elif _in("gym..*", base_classes):
             return "gym"
         return base_classes
 

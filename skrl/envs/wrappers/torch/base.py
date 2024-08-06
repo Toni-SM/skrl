@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 import gym
 
@@ -13,20 +13,16 @@ class Wrapper(object):
         :type env: Any supported RL environment
         """
         self._env = env
+        try:
+            self._unwrapped = self._env.unwrapped
+        except:
+            self._unwrapped = env
 
         # device (faster than @property)
-        if hasattr(self._env, "device"):
-            self.device = torch.device(self._env.device)
+        if hasattr(self._unwrapped, "device"):
+            self.device = torch.device(self._unwrapped.device)
         else:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        # spaces
-        try:
-            self._action_space = self._env.single_action_space
-            self._observation_space = self._env.single_observation_space
-        except AttributeError:
-            self._action_space = self._env.action_space
-            self._observation_space = self._env.observation_space
-        self._state_space = self._env.state_space if hasattr(self._env, "state_space") else self._observation_space
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -41,7 +37,9 @@ class Wrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
+        if hasattr(self._unwrapped, key):
+            return getattr(self._unwrapped, key)
+        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -66,15 +64,18 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
+
+        :return: Any value from the wrapped environment
+        :rtype: any
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment
         """
-        pass
+        self._env.close()
 
     @property
     def num_envs(self) -> int:
@@ -82,7 +83,7 @@ class Wrapper(object):
 
         If the wrapped environment does not have the ``num_envs`` property, it will be set to 1
         """
-        return self._env.num_envs if hasattr(self._env, "num_envs") else 1
+        return self._unwrapped.num_envs if hasattr(self._unwrapped, "num_envs") else 1
 
     @property
     def num_agents(self) -> int:
@@ -90,28 +91,27 @@ class Wrapper(object):
 
         If the wrapped environment does not have the ``num_agents`` property, it will be set to 1
         """
-        return self._env.num_agents if hasattr(self._env, "num_agents") else 1
+        return self._unwrapped.num_agents if hasattr(self._unwrapped, "num_agents") else 1
 
     @property
-    def state_space(self) -> gym.Space:
+    def state_space(self) -> Union[gym.Space, None]:
         """State space
 
-        If the wrapped environment does not have the ``state_space`` property,
-        the value of the ``observation_space`` property will be used
+        If the wrapped environment does not have the ``state_space`` property, ``None`` will be returned
         """
-        return self._state_space
+        return self._unwrapped.state_space if hasattr(self._unwrapped, "state_space") else None
 
     @property
     def observation_space(self) -> gym.Space:
         """Observation space
         """
-        return self._observation_space
+        return self._unwrapped.observation_space
 
     @property
     def action_space(self) -> gym.Space:
         """Action space
         """
-        return self._action_space
+        return self._unwrapped.action_space
 
 
 class MultiAgentEnvWrapper(object):
@@ -175,15 +175,18 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
+
+        :return: Any value from the wrapped environment
+        :rtype: any
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment
         """
-        pass
+        self._env.close()
 
     @property
     def num_envs(self) -> int:

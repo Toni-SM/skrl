@@ -20,23 +20,13 @@ class GymnasiumWrapper(Wrapper):
 
         self._vectorized = False
         try:
-            if isinstance(env, gymnasium.vector.SyncVectorEnv) or isinstance(env, gymnasium.vector.AsyncVectorEnv):
+            if isinstance(env, gymnasium.vector.VectorEnv) or isinstance(env, gymnasium.experimental.vector.VectorEnv):
                 self._vectorized = True
                 self._reset_once = True
-                self._obs_tensor = None
-                self._info_dict = None
+                self._observation = None
+                self._info = None
         except Exception as e:
             logger.warning(f"Failed to check for a vectorized environment: {e}")
-
-    @property
-    def state_space(self) -> gymnasium.Space:
-        """State space
-
-        An alias for the ``observation_space`` property
-        """
-        if self._vectorized:
-            return self._env.single_observation_space
-        return self._env.observation_space
 
     @property
     def observation_space(self) -> gymnasium.Space:
@@ -133,8 +123,8 @@ class GymnasiumWrapper(Wrapper):
 
         # save observation and info for vectorized envs
         if self._vectorized:
-            self._obs_tensor = observation
-            self._info_dict = info
+            self._observation = observation
+            self._info = info
 
         return observation, reward, terminated, truncated, info
 
@@ -144,22 +134,20 @@ class GymnasiumWrapper(Wrapper):
         :return: Observation, info
         :rtype: torch.Tensor and any other info
         """
-        # handle vectorized envs
+        # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
-            if not self._reset_once:
-                return self._obs_tensor, self._info_dict
-            self._reset_once = False
+            if self._reset_once:
+                observation, self._info = self._env.reset()
+                self._observation = self._observation_to_tensor(observation)
+                self._reset_once = False
+            return self._observation, self._info
 
-        # reset the env/envs
         observation, info = self._env.reset()
         return self._observation_to_tensor(observation), info
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
         """
-        self._env.render(*args, **kwargs)
-
-    def close(self) -> None:
-        """Close the environment
-        """
-        self._env.close()
+        if self._vectorized:
+            return self._env.call("render", *args, **kwargs)
+        return self._env.render(*args, **kwargs)

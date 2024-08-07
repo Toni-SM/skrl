@@ -9,7 +9,11 @@ from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.torch.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
-from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabWrapper
+from skrl.envs.wrappers.torch.isaaclab_envs import (
+    IsaacLabMultiAgentWrapper,
+    IsaacLabSingleAgentWrapper,
+    IsaacLabWrapper
+)
 from skrl.envs.wrappers.torch.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 from skrl.envs.wrappers.torch.robosuite_envs import RobosuiteWrapper
@@ -34,31 +38,43 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:
 
-                    +--------------------+-------------------------+
-                    |Environment         |Wrapper tag              |
-                    +====================+=========================+
-                    |OpenAI Gym          |``"gym"``                |
-                    +--------------------+-------------------------+
-                    |Gymnasium           |``"gymnasium"``          |
-                    +--------------------+-------------------------+
-                    |Petting Zoo         |``"pettingzoo"``         |
-                    +--------------------+-------------------------+
-                    |DeepMind            |``"dm"``                 |
-                    +--------------------+-------------------------+
-                    |Robosuite           |``"robosuite"``          |
-                    +--------------------+-------------------------+
-                    |Bi-DexHands         |``"bidexhands"``         |
-                    +--------------------+-------------------------+
-                    |Isaac Gym preview 2 |``"isaacgym-preview2"``  |
-                    +--------------------+-------------------------+
-                    |Isaac Gym preview 3 |``"isaacgym-preview3"``  |
-                    +--------------------+-------------------------+
-                    |Isaac Gym preview 4 |``"isaacgym-preview4"``  |
-                    +--------------------+-------------------------+
-                    |Omniverse Isaac Gym |``"omniverse-isaacgym"`` |
-                    +--------------------+-------------------------+
-                    |Isaac Lab           |``"isaaclab"``           |
-                    +--------------------+-------------------------+
+                    .. list-table:: Single-agent environments |br|
+                        :header-rows: 1
+
+                        * - Environment
+                          - Wrapper tag
+                        * - OpenAI Gym
+                          - ``"gym"``
+                        * - Gymnasium
+                          - ``"gymnasium"``
+                        * - DeepMind
+                          - ``"dm"``
+                        * - Robosuite
+                          - ``"robosuite"``
+                        * - Isaac Gym preview 2
+                          - ``"isaacgym-preview2"``
+                        * - Isaac Gym preview 3
+                          - ``"isaacgym-preview3"``
+                        * - Isaac Gym preview 4
+                          - ``"isaacgym-preview4"``
+                        * - Omniverse Isaac Gym
+                          - ``"omniverse-isaacgym"``
+                        * - Isaac Lab
+                          - ``"isaaclab"``
+                        * - Isaac Lab (multi-agent as single-agent)
+                          - ``"isaaclab-single-agent"``
+
+                    .. list-table:: Multi-agent environments |br|
+                        :header-rows: 1
+
+                        * - Environment
+                          - Wrapper tag
+                        * - Petting Zoo
+                          - ``"pettingzoo"``
+                        * - Bi-DexHands
+                          - ``"bidexhands"``
+                        * - Isaac Lab
+                          - ``"isaaclab-multi-agent"``
     :type wrapper: str, optional
     :param verbose: Whether to print the wrapper type (default: ``True``)
     :type verbose: bool, optional
@@ -88,7 +104,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
 
         if _in("omni.isaac.lab.envs..*", base_classes):
-            return "isaaclab"
+            return "isaaclab-*"
         elif _in("omni.isaac.gym.vec_env.vec_env_base.VecEnvBase", base_classes) or _in("omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT", base_classes):
             return "omniverse-isaacgym"
         elif _in(["isaacgymenvs..*", "tasks..*.VecTask"], base_classes):
@@ -150,9 +166,29 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info("Environment wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
-    elif wrapper == "isaaclab" or wrapper == "isaac-orbit":
+    elif wrapper.startswith("isaaclab"):
+        env_type = "single-agent"
+        env_wrapper = IsaacLabWrapper
+        # detect the wrapper
+        if wrapper == "isaaclab":
+            pass
+        elif wrapper == "isaaclab-single-agent":
+            env_type = "multi-agent as single-agent"
+            env_wrapper = IsaacLabSingleAgentWrapper
+        elif wrapper == "isaaclab-multi-agent":
+            env_type = "multi-agent"
+            env_wrapper = IsaacLabMultiAgentWrapper
+        else:
+            if hasattr(env.unwrapped, "possible_agents"):
+                if env.unwrapped.num_agents == 1:
+                    env_type = "multi-agent as single-agent"
+                    env_wrapper = IsaacLabSingleAgentWrapper
+                else:
+                    env_type = "multi-agent"
+                    env_wrapper = IsaacLabMultiAgentWrapper
+        # wrap the environment
         if verbose:
-            logger.info("Environment wrapper: Isaac Lab")
-        return IsaacLabWrapper(env)
+            logger.info(f"Environment wrapper: Isaac Lab ({env_type})")
+        return env_wrapper(env)
     else:
         raise ValueError(f"Unknown wrapper type: {wrapper}")

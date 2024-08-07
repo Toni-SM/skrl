@@ -1,10 +1,10 @@
-from typing import Any, Tuple, Union
+from typing import Any, Mapping, Tuple, Union
 
 import gymnasium
 
 import torch
 
-from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
 
 
 class IsaacLabWrapper(Wrapper):
@@ -73,6 +73,103 @@ class IsaacLabWrapper(Wrapper):
             self._observations, self._info = self._env.reset()
             self._reset_once = False
         return self._observations["policy"], self._info
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        pass
+
+
+class IsaacLabSingleAgentWrapper(Wrapper):
+    def __init__(self, env: Any) -> None:
+        """Isaac Lab environment wrapper for multi-agent implementation with one agent as single-agent implementation
+
+        :param env: The environment to wrap
+        :type env: Any supported Isaac Lab environment
+        """
+        self._agent_id = env.possible_agents[0]
+        setattr(env, "single_observation_space", env.observation_spaces[self._agent_id])
+        setattr(env, "single_action_space", env.action_spaces[self._agent_id])
+        super().__init__(env)
+
+        self._reset_once = True
+        self._observations = None
+        self._info = {}
+
+    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: torch.Tensor
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of torch.Tensor and any other info
+        """
+        self._observations, rewards, terminated, truncated, self._info = self._env.step({self._agent_id: actions})
+        return self._observations[self._agent_id], \
+               rewards[self._agent_id].view(-1, 1), \
+               terminated[self._agent_id].view(-1, 1), \
+               truncated[self._agent_id].view(-1, 1), \
+               self._info
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment
+
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
+        """
+        if self._reset_once:
+            self._observations, self._info = self._env.reset()
+            self._reset_once = False
+        return self._observations[self._agent_id], self._info
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        pass
+
+
+class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
+    def __init__(self, env: Any) -> None:
+        """Isaac Lab environment wrapper for multi-agent implementation
+
+        :param env: The environment to wrap
+        :type env: Any supported Isaac Lab environment
+        """
+        super().__init__(env)
+
+        self._reset_once = True
+        self._observations = None
+        self._info = {}
+
+    def step(self, actions: Mapping[str, torch.Tensor]) -> \
+        Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],
+              Mapping[str, torch.Tensor], Mapping[str, torch.Tensor], Mapping[str, Any]]:
+        """Perform a step in the environment
+
+        :param actions: The actions to perform
+        :type actions: dictionary of torch.Tensor
+
+        :return: Observation, reward, terminated, truncated, info
+        :rtype: tuple of dictionaries torch.Tensor and any other info
+        """
+        self._observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+        return self._observations, \
+               {k: v.view(-1, 1) for k, v in rewards.items()}, \
+               {k: v.view(-1, 1) for k, v in terminated.items()}, \
+               {k: v.view(-1, 1) for k, v in truncated.items()}, \
+               self._info
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment
+
+        :return: Observation, info
+        :rtype: torch.Tensor and any other info
+        """
+        if self._reset_once:
+            self._observations, self._info = self._env.reset()
+            self._reset_once = False
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

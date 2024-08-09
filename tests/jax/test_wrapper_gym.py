@@ -3,9 +3,9 @@ import pytest
 from collections.abc import Mapping
 import gym
 
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from skrl import config
 from skrl.envs.wrappers.jax import GymWrapper, wrap_env

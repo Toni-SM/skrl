@@ -89,7 +89,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
 
         if _in("omni.isaac.lab.envs..*", base_classes):
             return "isaaclab"
-        elif _in("omni.isaac.gym.vec_env.vec_env_base.VecEnvBase", base_classes) or _in("omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT", base_classes):
+        elif _in("omni.isaac.gym..*", base_classes):
             return "omniverse-isaacgym"
         elif _in(["isaacgymenvs..*", "tasks..*.VecTask"], base_classes):
             return "isaacgym-preview4"  # preview 4 is the same as 3

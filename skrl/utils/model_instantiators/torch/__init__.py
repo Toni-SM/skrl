@@ -125,6 +125,10 @@ def _generate_sequential(model: Model,
     :rtype: nn.Sequential
     """
     modules = []
+    if not hiddens:
+        modules.append(f"nn.Linear({_get_num_units_by_shape(None, input_shape, as_string=True)}, {_get_num_units_by_shape(None, output_shape, as_string=True)})")
+        if output_activation:
+            modules.append(_get_activation_function(output_activation, as_string=True))
     for i in range(len(hiddens)):
         # first layer
         if not i:
@@ -141,7 +145,7 @@ def _generate_sequential(model: Model,
             modules.append(f"nn.Linear({hiddens[i]}, {hiddens[i + 1]})")
             if hidden_activation[i]:
                 modules.append(_get_activation_function(hidden_activation[i], as_string=True))
-    return f'self.net = nn.Sequential({", ".join(modules)})'
+    return f'nn.Sequential({", ".join(modules)})'
 
 def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                    action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -195,50 +199,40 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :return: Gaussian model instance
     :rtype: Model
     """
-    class GaussianModel(GaussianMixin, Model):
-        def __init__(self, observation_space, action_space, device, clip_actions,
-                     clip_log_std, min_log_std, max_log_std, reduction="sum"):
-            Model.__init__(self, observation_space, action_space, device)
-            GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-            self.instantiator_output_scale = metadata["output_scale"]
-            self.instantiator_input_type = metadata["input_shape"].value
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))'
+    if output_scale != 1:
+        forward = f"{output_scale} * {forward}"
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"],
-                                            output_scale=metadata["output_scale"])
-            self.log_std_parameter = nn.Parameter(metadata["initial_log_std"] \
-                                                  * torch.ones(_get_num_units_by_shape(self, metadata["output_shape"])))
+    template = f"""class GaussianModel(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions,
+                    clip_log_std, min_log_std, max_log_std, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
-        def compute(self, inputs, role=""):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
+        self.net = {net}
+        self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({_get_num_units_by_shape(None, output_shape, as_string=True)}))
 
-            return output * self.instantiator_output_scale, self.log_std_parameter, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation,
-                "output_scale": output_scale,
-                "initial_log_std": initial_log_std}
-
-    return GaussianModel(observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         clip_actions=clip_actions,
-                         clip_log_std=clip_log_std,
-                         min_log_std=min_log_std,
-                         max_log_std=max_log_std)
+    def compute(self, inputs, role=""):
+        return {forward}, self.log_std_parameter, {{}}
+    """
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["GaussianModel"](observation_space=observation_space,
+                                    action_space=action_space,
+                                    device=device,
+                                    clip_actions=clip_actions,
+                                    clip_log_std=clip_log_std,
+                                    min_log_std=min_log_std,
+                                    max_log_std=max_log_std)
 
 def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -292,50 +286,40 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     :return: Multivariate Gaussian model instance
     :rtype: Model
     """
-    class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
-        def __init__(self, observation_space, action_space, device, clip_actions,
-                     clip_log_std, min_log_std, max_log_std):
-            Model.__init__(self, observation_space, action_space, device)
-            MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-            self.instantiator_output_scale = metadata["output_scale"]
-            self.instantiator_input_type = metadata["input_shape"].value
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))'
+    if output_scale != 1:
+        forward = f"{output_scale} * {forward}"
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"],
-                                            output_scale=metadata["output_scale"])
-            self.log_std_parameter = nn.Parameter(metadata["initial_log_std"] \
-                                                  * torch.ones(_get_num_units_by_shape(self, metadata["output_shape"])))
+    template = f"""class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions,
+                    clip_log_std, min_log_std, max_log_std):
+        Model.__init__(self, observation_space, action_space, device)
+        MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
-        def compute(self, inputs, role=""):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
+        self.net = {net}
+        self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({_get_num_units_by_shape(None, output_shape, as_string=True)}))
 
-            return output * self.instantiator_output_scale, self.log_std_parameter, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation,
-                "output_scale": output_scale,
-                "initial_log_std": initial_log_std}
-
-    return MultivariateGaussianModel(observation_space=observation_space,
-                                     action_space=action_space,
-                                     device=device,
-                                     clip_actions=clip_actions,
-                                     clip_log_std=clip_log_std,
-                                     min_log_std=min_log_std,
-                                     max_log_std=max_log_std)
+    def compute(self, inputs, role=""):
+        return {forward}, self.log_std_parameter, {{}}
+    """
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["MultivariateGaussianModel"](observation_space=observation_space,
+                                                action_space=action_space,
+                                                device=device,
+                                                clip_actions=clip_actions,
+                                                clip_log_std=clip_log_std,
+                                                min_log_std=min_log_std,
+                                                max_log_std=max_log_std)
 
 def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                         action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -395,20 +379,17 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
         Model.__init__(self, observation_space, action_space, device)
         DeterministicMixin.__init__(self, clip_actions)
 
-        {net}
+        self.net = {net}
 
     def compute(self, inputs, role=""):
         return {forward}, {{}}
     """
-    print(template)
     _locals = {}
     exec(template, globals(), _locals)
-    DeterministicModel = _locals["DeterministicModel"]
-    model = DeterministicModel(observation_space=observation_space,
-                               action_space=action_space,
-                               device=device,
-                               clip_actions=clip_actions)
-    return model
+    return _locals["DeterministicModel"](observation_space=observation_space,
+                                         action_space=action_space,
+                                         device=device,
+                                         clip_actions=clip_actions)
 
 def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                       action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -449,40 +430,33 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :return: Categorical model instance
     :rtype: Model
     """
-    class CategoricalModel(CategoricalMixin, Model):
-        def __init__(self, observation_space, action_space, device, unnormalized_log_prob):
-            Model.__init__(self, observation_space, action_space, device)
-            CategoricalMixin.__init__(self, unnormalized_log_prob)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-            self.instantiator_input_type = metadata["input_shape"].value
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))'
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"])
+    template = f"""class CategoricalModel(CategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob):
+        Model.__init__(self, observation_space, action_space, device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
 
-        def compute(self, inputs, role=""):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))
+        self.net = {net}
 
-            return output, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation}
-
-    return CategoricalModel(observation_space=observation_space,
-                            action_space=action_space,
-                            device=device,
-                            unnormalized_log_prob=unnormalized_log_prob)
+    def compute(self, inputs, role=""):
+        return {forward}, {{}}
+    """
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["CategoricalModel"](observation_space=observation_space,
+                                      action_space=action_space,
+                                      device=device,
+                                      unnormalized_log_prob=unnormalized_log_prob)
 
 def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                  action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -515,80 +489,79 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     :return: Shared model instance
     :rtype: Model
     """
-    class GaussianDeterministicModel(GaussianMixin, DeterministicMixin, Model):
-        def __init__(self, observation_space, action_space, device, roles, metadata, single_forward_pass):
-            Model.__init__(self, observation_space, action_space, device)
-            GaussianMixin.__init__(self,
-                                   clip_actions=metadata[0]["clip_actions"],
-                                   clip_log_std=metadata[0]["clip_log_std"],
-                                   min_log_std=metadata[0]["min_log_std"],
-                                   max_log_std=metadata[0]["max_log_std"],
-                                   role=roles[0])
-            DeterministicMixin.__init__(self, clip_actions=metadata[1]["clip_actions"], role=roles[1])
+    # network
+    net = _generate_sequential(None,
+                               parameters[0]["input_shape"],
+                               parameters[0]["hiddens"][:-1],
+                               parameters[0]["hidden_activation"][:-1],
+                               parameters[0]["hiddens"][-1],
+                               parameters[0]["hidden_activation"][-1])
+    policy_net = _generate_sequential(None,
+                                      parameters[0]["hiddens"][-1],
+                                      [],
+                                      [],
+                                      parameters[0]["output_shape"],
+                                      parameters[0]["output_activation"])
+    value_net = _generate_sequential(None,
+                                     parameters[1]["hiddens"][-1],
+                                     [],
+                                     [],
+                                     parameters[1]["output_shape"],
+                                     parameters[1]["output_activation"])
 
-            self._roles = roles
-            self._single_forward_pass = single_forward_pass
-            self.instantiator_input_type = metadata[0]["input_shape"].value
-            self.instantiator_output_scales = [m["output_scale"] for m in metadata]
+    # compute
+    if parameters[0]["input_shape"] == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif parameters[0]["input_shape"] == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif parameters[0]["input_shape"] == Shape.STATES_ACTIONS:
+        forward = 'self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))'
 
-            # shared layers/network
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata[0]["input_shape"],
-                                            hiddens=metadata[0]["hiddens"][:-1],
-                                            hidden_activation=metadata[0]["hidden_activation"][:-1],
-                                            output_shape=metadata[0]["hiddens"][-1],
-                                            output_activation=metadata[0]["hidden_activation"][-1])
+    if single_forward_pass:
+        policy_return = f"""self._shared_output = {forward}
+            return <SCALE>self.policy_net(self._shared_output), self.log_std_parameter, {{}}"""
+        value_return = f"""shared_output = {forward} if self._shared_output is None else self._shared_output
+            self._shared_output = None
+            return <SCALE>self.value_net(shared_output), {{}}"""
+    else:
+        policy_return = f'return <SCALE>self.policy_net{forward}), self.log_std_parameter, {{}}'
+        value_return = f'return <SCALE>self.value_net{forward}), {{}}'
 
-            # separated layers ("policy")
-            mean_layers = [nn.Linear(metadata[0]["hiddens"][-1], _get_num_units_by_shape(self, metadata[0]["output_shape"]))]
-            if metadata[0]["output_activation"] is not None:
-                mean_layers.append(_get_activation_function(metadata[0]["output_activation"]))
-            self.mean_net = nn.Sequential(*mean_layers)
+    policy_scale = parameters[0]["output_scale"]
+    value_scale = parameters[1]["output_scale"]
+    policy_return = policy_return.replace("<SCALE>", policy_scale if policy_scale != 1 else "")
+    value_return = value_return.replace("<SCALE>", value_scale if value_scale != 1 else "")
 
-            self.log_std_parameter = nn.Parameter(metadata[0]["initial_log_std"] \
-                                                  * torch.ones(_get_num_units_by_shape(self, metadata[0]["output_shape"])))
+    template = f"""class GaussianDeterministicModel(GaussianMixin, DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device):
+        Model.__init__(self, observation_space, action_space, device)
+        GaussianMixin.__init__(self,
+                               clip_actions={parameters[0]["clip_actions"]},
+                               clip_log_std={parameters[0]["clip_log_std"]},
+                               min_log_std={parameters[0]["min_log_std"]},
+                               max_log_std={parameters[0]["max_log_std"]},
+                               role="{roles[0]}")
+        DeterministicMixin.__init__(self, clip_actions={parameters[1]["clip_actions"]}, role="{roles[1]}")
 
-            # separated layer ("value")
-            value_layers = [nn.Linear(metadata[1]["hiddens"][-1], _get_num_units_by_shape(self, metadata[1]["output_shape"]))]
-            if metadata[1]["output_activation"] is not None:
-                value_layers.append(_get_activation_function(metadata[1]["output_activation"]))
-            self.value_net = nn.Sequential(*value_layers)
+        self.net = {net}
+        self.policy_net = {policy_net}
+        self.log_std_parameter = nn.Parameter({parameters[0]["initial_log_std"]} * torch.ones({_get_num_units_by_shape(None, parameters[0]["output_shape"], as_string=True)}))
+        self.value_net = {value_net}
 
-        def act(self, inputs, role):
-            if role == self._roles[0]:
-                return GaussianMixin.act(self, inputs, role)
-            elif role == self._roles[1]:
-                return DeterministicMixin.act(self, inputs, role)
+    def act(self, inputs, role):
+        if role == "{roles[0]}":
+            return GaussianMixin.act(self, inputs, role)
+        elif role == "{roles[1]}":
+            return DeterministicMixin.act(self, inputs, role)
 
-        def compute(self, inputs, role):
-            if self.instantiator_input_type == 0:
-                net_inputs = inputs["states"]
-            elif self.instantiator_input_type == -1:
-                net_inputs = inputs["taken_actions"]
-            elif self.instantiator_input_type == -2:
-                net_inputs = torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)
-
-            # single shared layers/network forward-pass
-            if self._single_forward_pass:
-                if role == self._roles[0]:
-                    self._shared_output = self.net(net_inputs)
-                    return self.instantiator_output_scales[0] * self.mean_net(self._shared_output), self.log_std_parameter, {}
-                elif role == self._roles[1]:
-                    shared_output = self.net(net_inputs) if self._shared_output is None else self._shared_output
-                    self._shared_output = None
-                    return self.instantiator_output_scales[1] * self.value_net(shared_output), {}
-            # multiple shared layers/network forward-pass
-            else:
-                if role == self._roles[0]:
-                    return self.instantiator_output_scales[0] * self.mean_net(self.net(net_inputs)), self.log_std_parameter, {}
-                elif role == self._roles[1]:
-                    return self.instantiator_output_scales[1] * self.value_net(self.net(net_inputs)), {}
-
-    # TODO: define the model using the specified structure
-
-    return GaussianDeterministicModel(observation_space=observation_space,
-                                      action_space=action_space,
-                                      device=device,
-                                      roles=roles,
-                                      metadata=parameters,
-                                      single_forward_pass=single_forward_pass)
+    def compute(self, inputs, role=""):
+        if role == "{roles[0]}":
+            {policy_return}
+        elif role == "{roles[1]}":
+            {value_return}
+    """
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["GaussianDeterministicModel"](observation_space=observation_space,
+                                                 action_space=action_space,
+                                                 device=device)

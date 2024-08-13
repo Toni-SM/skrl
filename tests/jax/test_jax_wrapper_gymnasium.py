@@ -17,7 +17,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     Array = jax.Array if backend == "jax" else np.ndarray
 
     num_envs = 1
-    action = jnp.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
 
     # load wrap the environment
     original_env = gym.make("Pendulum-v1")

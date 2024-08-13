@@ -1,13 +1,12 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Optional, Tuple, Union
 
-import sys
 from enum import Enum
 import gym
 import gymnasium
 
 import flax.linen as nn
 import jax
-import jax.numpy as jnp
+import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import Model  # noqa
 from skrl.models.jax import CategoricalMixin, DeterministicMixin, GaussianMixin  # noqa
@@ -27,7 +26,7 @@ class Shape(Enum):
     STATES_ACTIONS = -2
 
 
-def _get_activation_function(activation: str) -> nn.Module:
+def _get_activation_function(activation: str, as_string: bool = False) -> Union[nn.Module, str]:
     """Get the activation function
 
     Supported activation functions:
@@ -45,6 +44,8 @@ def _get_activation_function(activation: str) -> nn.Module:
     :param activation: activation function name.
                        If activation is an empty string, a placeholder will be returned (``lambda x: x``)
     :type activation: str
+    :param as_string: Whether to return the activation function as string.
+    :type as_string: bool
 
     :raises: ValueError if activation is not a valid activation function
 
@@ -52,43 +53,45 @@ def _get_activation_function(activation: str) -> nn.Module:
     :rtype: nn.Module
     """
     if not activation:
-        return lambda x: x
+        return None if as_string else lambda x: x
     elif activation == "relu":
-        return nn.relu
+        return "nn.relu" if as_string else nn.relu
     elif activation == "tanh":
-        return nn.tanh
+        return "nn.tanh" if as_string else nn.tanh
     elif activation == "sigmoid":
-        return nn.sigmoid
+        return "nn.sigmoid" if as_string else nn.sigmoid
     elif activation == "leaky_relu":
-        return nn.leaky_relu
+        return "nn.leaky_relu" if as_string else nn.leaky_relu
     elif activation == "elu":
-        return nn.elu
+        return "nn.elu" if as_string else nn.elu
     elif activation == "softplus":
-        return nn.softplus
+        return "nn.softplus" if as_string else nn.softplus
     elif activation == "softsign":
-        return nn.soft_sign
+        return "nn.soft_sign" if as_string else nn.soft_sign
     elif activation == "selu":
-        return nn.selu
+        return "nn.selu" if as_string else nn.selu
     elif activation == "softmax":
-        return nn.softmax
+        return "nn.softmax" if as_string else nn.softmax
     else:
         raise ValueError(f"Unknown activation function: {activation}")
 
-def _get_num_units_by_shape(model: Model, shape: Shape) -> int:
+def _get_num_units_by_shape(model: Model, shape: Shape, as_string: bool = False) -> Union[int, str]:
     """Get the number of units in a layer by shape
 
     :param model: Model to get the number of units for
     :type model: Model
     :param shape: Shape of the layer
     :type shape: Shape or int
+    :param as_string: Whether to return the activation function as string.
+    :type as_string: bool
 
     :return: Number of units in the layer
     :rtype: int
     """
-    num_units = {Shape.ONE: 1,
-                 Shape.STATES: model.num_observations,
-                 Shape.ACTIONS: model.num_actions,
-                 Shape.STATES_ACTIONS: model.num_observations + model.num_actions}
+    num_units = {Shape.ONE: "1" if as_string else 1,
+                 Shape.STATES: "self.num_observations" if as_string else model.num_observations,
+                 Shape.ACTIONS: "self.num_actions" if as_string else model.num_actions,
+                 Shape.STATES_ACTIONS: "self.num_observations + self.num_actions" if as_string else model.num_observations + model.num_actions}
     try:
         return num_units[shape]
     except:
@@ -122,20 +125,18 @@ def _generate_sequential(model: Model,
     :return: sequential model
     :rtype: nn.Sequential
     """
-    # input layer
-    input_layer = [nn.Dense(hiddens[0])]
-    # hidden layers
-    hidden_layers = []
-    for i in range(len(hiddens) - 1):
-        hidden_layers.append(_get_activation_function(hidden_activation[i]))
-        hidden_layers.append(nn.Dense(hiddens[i + 1]))
-    hidden_layers.append(_get_activation_function(hidden_activation[-1]))
-    # output layer
-    output_layer = [nn.Dense(_get_num_units_by_shape(model, output_shape))]
-    if output_activation is not None:
-        output_layer.append(_get_activation_function(output_activation))
-
-    return nn.Sequential(input_layer + hidden_layers + output_layer)
+    modules = []
+    for i in range(len(hiddens)):
+        # first and middle layers
+        modules.append(f"nn.Dense({hiddens[i]})")
+        if hidden_activation[i]:
+            modules.append(_get_activation_function(hidden_activation[i], as_string=True))
+        # last layer
+        if i == len(hiddens) - 1:
+            modules.append(f"nn.Dense({_get_num_units_by_shape(None, output_shape, as_string=True)})")
+            if output_activation:
+                modules.append(_get_activation_function(output_activation, as_string=True))
+    return f'nn.Sequential([{", ".join(modules)}])'
 
 def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                    action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -150,7 +151,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                    hidden_activation: list = ["relu", "relu"],
                    output_shape: Shape = Shape.ACTIONS,
                    output_activation: Optional[str] = "tanh",
-                   output_scale: float = 1.0) -> Model:
+                   output_scale: float = 1.0,
+                   return_source: bool = False) -> Union[Model, str]:
     """Instantiate a Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -185,61 +187,50 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :param output_scale: Scale of the output layer (default: 1.0).
                          If None, the output layer will not be scaled
     :type output_scale: float, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
-    :return: Gaussian model instance
+    :return: Gaussian model instance or definition source
     :rtype: Model
     """
-    class GaussianModel(GaussianMixin, Model):
-        def __init__(self, observation_space, action_space, device, clip_actions=False,
-                     clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
-            Model.__init__(self, observation_space, action_space, device, **kwargs)
-            GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-        # override the hash method for Python versions prior to 3.8 to avoid the following error:
-        # TypeError: Failed to hash Flax Module. The module probably contains unhashable attributes.
-        if sys.version_info < (3, 8):
-            def __hash__(self):
-                return id(self)
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))'
+    if output_scale != 1:
+        forward = f"{output_scale} * {forward}"
 
-        def setup(self):
-            self.instantiator_output_scale = metadata["output_scale"]
-            self.instantiator_input_type = metadata["input_shape"].value
+    template = f"""class GaussianModel(GaussianMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions=False,
+                    clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"],
-                                            output_scale=metadata["output_scale"])
-            self.log_std_parameter = self.param("log_std_parameter", lambda _: metadata["initial_log_std"] \
-                                                * jnp.ones(_get_num_units_by_shape(self, metadata["output_shape"])))
+    def setup(self):
+        self.net = {net}
+        self.log_std_parameter = self.param("log_std_parameter", lambda _: {initial_log_std} * jnp.ones({_get_num_units_by_shape(None, output_shape, as_string=True)}))
 
-        def __call__(self, inputs, role):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))
-
-            return output * self.instantiator_output_scale, self.log_std_parameter, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation,
-                "output_scale": output_scale,
-                "initial_log_std": initial_log_std}
-
-    return GaussianModel(observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         clip_actions=clip_actions,
-                         clip_log_std=clip_log_std,
-                         min_log_std=min_log_std,
-                         max_log_std=max_log_std)
+    def __call__(self, inputs, role):
+        return {forward}, self.log_std_parameter, {{}}
+    """
+    if return_source:
+        return template
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["GaussianModel"](observation_space=observation_space,
+                                    action_space=action_space,
+                                    device=device,
+                                    clip_actions=clip_actions,
+                                    clip_log_std=clip_log_std,
+                                    min_log_std=min_log_std,
+                                    max_log_std=max_log_std)
 
 def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                         action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -250,7 +241,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                         hidden_activation: list = ["relu", "relu"],
                         output_shape: Shape = Shape.ACTIONS,
                         output_activation: Optional[str] = "tanh",
-                        output_scale: float = 1.0) -> Model:
+                        output_scale: float = 1.0,
+                        return_source: bool = False) -> Union[Model, str]:
     """Instantiate a deterministic model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -277,54 +269,45 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     :param output_scale: Scale of the output layer (default: 1.0).
                          If None, the output layer will not be scaled
     :type output_scale: float, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
-    :return: Deterministic model instance
+    :return: Deterministic model instance or definition source
     :rtype: Model
     """
-    class DeterministicModel(DeterministicMixin, Model):
-        def __init__(self, observation_space, action_space, device, clip_actions=False, **kwargs):
-            Model.__init__(self, observation_space, action_space, device, **kwargs)
-            DeterministicMixin.__init__(self, clip_actions)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-        # override the hash method for Python versions prior to 3.8 to avoid the following error:
-        # TypeError: Failed to hash Flax Module. The module probably contains unhashable attributes.
-        if sys.version_info < (3, 8):
-            def __hash__(self):
-                return id(self)
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))'
+    if output_scale != 1:
+        forward = f"{output_scale} * {forward}"
 
-        def setup(self):
-            self.instantiator_output_scale = metadata["output_scale"]
-            self.instantiator_input_type = metadata["input_shape"].value
+    template = f"""class DeterministicModel(DeterministicMixin, Model):
+    def __init__(self, observation_space, action_space, device, clip_actions=False, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        DeterministicMixin.__init__(self, clip_actions)
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"],
-                                            output_scale=metadata["output_scale"])
+    def setup(self):
+        self.net = {net}
 
-        def __call__(self, inputs, role):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))
-
-            return output * self.instantiator_output_scale, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation,
-                "output_scale": output_scale}
-
-    return DeterministicModel(observation_space=observation_space,
-                              action_space=action_space,
-                              device=device,
-                              clip_actions=clip_actions)
+    def __call__(self, inputs, role):
+        return {forward}, {{}}
+    """
+    if return_source:
+        return template
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["DeterministicModel"](observation_space=observation_space,
+                                         action_space=action_space,
+                                         device=device,
+                                         clip_actions=clip_actions)
 
 def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                       action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -334,7 +317,8 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                       hiddens: list = [256, 256],
                       hidden_activation: list = ["relu", "relu"],
                       output_shape: Shape = Shape.ACTIONS,
-                      output_activation: Optional[str] = None) -> Model:
+                      output_activation: Optional[str] = None,
+                      return_source: bool = False) -> Union[Model, str]:
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -361,48 +345,40 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :type output_shape: Shape, optional
     :param output_activation: Activation function for the output layer (default: None)
     :type output_activation: str or None, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
-    :return: Categorical model instance
+    :return: Categorical model instance or definition source
     :rtype: Model
     """
-    class CategoricalModel(CategoricalMixin, Model):
-        def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, **kwargs):
-            Model.__init__(self, observation_space, action_space, device, **kwargs)
-            CategoricalMixin.__init__(self, unnormalized_log_prob)
+    # network
+    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
 
-        # override the hash method for Python versions prior to 3.8 to avoid the following error:
-        # TypeError: Failed to hash Flax Module. The module probably contains unhashable attributes.
-        if sys.version_info < (3, 8):
-            def __hash__(self):
-                return id(self)
+    # compute
+    if input_shape == Shape.OBSERVATIONS:
+        forward = 'self.net(inputs["states"])'
+    elif input_shape == Shape.ACTIONS:
+        forward = 'self.net(inputs["taken_actions"])'
+    elif input_shape == Shape.STATES_ACTIONS:
+        forward = 'self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))'
 
-        def setup(self):
-            self.instantiator_input_type = metadata["input_shape"].value
+    template = f"""class CategoricalModel(CategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        CategoricalMixin.__init__(self, unnormalized_log_prob)
 
-            self.net = _generate_sequential(model=self,
-                                            input_shape=metadata["input_shape"],
-                                            hiddens=metadata["hiddens"],
-                                            hidden_activation=metadata["hidden_activation"],
-                                            output_shape=metadata["output_shape"],
-                                            output_activation=metadata["output_activation"])
+    def setup(self):
+        self.net = {net}
 
-        def __call__(self, inputs, role):
-            if self.instantiator_input_type == 0:
-                output = self.net(inputs["states"])
-            elif self.instantiator_input_type == -1:
-                output = self.net(inputs["taken_actions"])
-            elif self.instantiator_input_type == -2:
-                output = self.net(jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1))
-
-            return output, {}
-
-    metadata = {"input_shape": input_shape,
-                "hiddens": hiddens,
-                "hidden_activation": hidden_activation,
-                "output_shape": output_shape,
-                "output_activation": output_activation}
-
-    return CategoricalModel(observation_space=observation_space,
-                            action_space=action_space,
-                            device=device,
-                            unnormalized_log_prob=unnormalized_log_prob)
+    def __call__(self, inputs, role):
+        return {forward}, {{}}
+    """
+    if return_source:
+        return template
+    _locals = {}
+    exec(template, globals(), _locals)
+    return _locals["CategoricalModel"](observation_space=observation_space,
+                                      action_space=action_space,
+                                      device=device,
+                                      unnormalized_log_prob=unnormalized_log_prob)

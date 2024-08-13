@@ -152,7 +152,7 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                    output_shape: Shape = Shape.ACTIONS,
                    output_activation: Optional[str] = "tanh",
                    output_scale: float = 1.0,
-                   return_source: bool = False) -> Model:
+                   return_source: bool = False) -> Union[Model, str]:
     """Instantiate a Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -191,7 +191,7 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                           instantiate the model rather than the model instance (default: False).
     :type return_source: bool, optional
 
-    :return: Gaussian model instance
+    :return: Gaussian model instance or definition source
     :rtype: Model
     """
     # network
@@ -242,7 +242,7 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                         output_shape: Shape = Shape.ACTIONS,
                         output_activation: Optional[str] = "tanh",
                         output_scale: float = 1.0,
-                        return_source: bool = False) -> Model:
+                        return_source: bool = False) -> Union[Model, str]:
     """Instantiate a deterministic model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -273,7 +273,7 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                           instantiate the model rather than the model instance (default: False).
     :type return_source: bool, optional
 
-    :return: Deterministic model instance
+    :return: Deterministic model instance or definition source
     :rtype: Model
     """
     # network
@@ -318,7 +318,7 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                       hidden_activation: list = ["relu", "relu"],
                       output_shape: Shape = Shape.ACTIONS,
                       output_activation: Optional[str] = None,
-                      return_source: bool = False) -> Model:
+                      return_source: bool = False) -> Union[Model, str]:
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -349,7 +349,7 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                           instantiate the model rather than the model instance (default: False).
     :type return_source: bool, optional
 
-    :return: Categorical model instance
+    :return: Categorical model instance or definition source
     :rtype: Model
     """
     # network

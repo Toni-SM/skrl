@@ -160,7 +160,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
                    hidden_activation: list = ["relu", "relu"],
                    output_shape: Shape = Shape.ACTIONS,
                    output_activation: Optional[str] = "tanh",
-                   output_scale: float = 1.0) -> Model:
+                   output_scale: float = 1.0,
+                   return_source: bool = False) -> Model:
     """Instantiate a Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -195,6 +196,9 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :param output_scale: Scale of the output layer (default: 1.0).
                          If None, the output layer will not be scaled
     :type output_scale: float, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
     :return: Gaussian model instance
     :rtype: Model
@@ -224,6 +228,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     def compute(self, inputs, role=""):
         return {forward}, self.log_std_parameter, {{}}
     """
+    if return_source:
+        return template
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["GaussianModel"](observation_space=observation_space,
@@ -247,7 +253,8 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
                                 hidden_activation: list = ["relu", "relu"],
                                 output_shape: Shape = Shape.ACTIONS,
                                 output_activation: Optional[str] = "tanh",
-                                output_scale: float = 1.0) -> Model:
+                                output_scale: float = 1.0,
+                                return_source: bool = False) -> Model:
     """Instantiate a multivariate Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -282,6 +289,9 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     :param output_scale: Scale of the output layer (default: 1.0).
                          If None, the output layer will not be scaled
     :type output_scale: float, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
     :return: Multivariate Gaussian model instance
     :rtype: Model
@@ -311,6 +321,8 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     def compute(self, inputs, role=""):
         return {forward}, self.log_std_parameter, {{}}
     """
+    if return_source:
+        return template
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["MultivariateGaussianModel"](observation_space=observation_space,
@@ -330,7 +342,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
                         hidden_activation: list = ["relu", "relu"],
                         output_shape: Shape = Shape.ACTIONS,
                         output_activation: Optional[str] = "tanh",
-                        output_scale: float = 1.0) -> Model:
+                        output_scale: float = 1.0,
+                        return_source: bool = False) -> Model:
     """Instantiate a deterministic model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -357,6 +370,9 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     :param output_scale: Scale of the output layer (default: 1.0).
                          If None, the output layer will not be scaled
     :type output_scale: float, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
     :return: Deterministic model instance
     :rtype: Model
@@ -384,6 +400,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     def compute(self, inputs, role=""):
         return {forward}, {{}}
     """
+    if return_source:
+        return template
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["DeterministicModel"](observation_space=observation_space,
@@ -399,7 +417,8 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                       hiddens: list = [256, 256],
                       hidden_activation: list = ["relu", "relu"],
                       output_shape: Shape = Shape.ACTIONS,
-                      output_activation: Optional[str] = None) -> Model:
+                      output_activation: Optional[str] = None,
+                      return_source: bool = False) -> Model:
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -426,6 +445,9 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :type output_shape: Shape, optional
     :param output_activation: Activation function for the output layer (default: None)
     :type output_activation: str or None, optional
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
     :return: Categorical model instance
     :rtype: Model
@@ -451,6 +473,8 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     def compute(self, inputs, role=""):
         return {forward}, {{}}
     """
+    if return_source:
+        return template
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["CategoricalModel"](observation_space=observation_space,
@@ -464,7 +488,8 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
                  structure: str = "",
                  roles: Sequence[str] = [],
                  parameters: Sequence[Mapping[str, Any]] = [],
-                 single_forward_pass: bool = True) -> Model:
+                 single_forward_pass: bool = True,
+                 return_source: bool = False) -> Model:
     """Instantiate a shared model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -485,6 +510,9 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     :type parameters: sequence of dict, optional
     :param single_forward_pass: Whether to perform a single forward-pass for the shared layers/network (default: ``True``)
     :type single_forward_pass: bool
+    :param return_source: Whether to return the source string containing the model class used to
+                          instantiate the model rather than the model instance (default: False).
+    :type return_source: bool, optional
 
     :return: Shared model instance
     :rtype: Model
@@ -560,6 +588,8 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
         elif role == "{roles[1]}":
             {value_return}
     """
+    if return_source:
+        return template
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["GaussianDeterministicModel"](observation_space=observation_space,

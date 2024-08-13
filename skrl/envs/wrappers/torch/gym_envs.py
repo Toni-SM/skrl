@@ -168,7 +168,6 @@ class GymWrapper(Wrapper):
                 self._reset_once = False
             return self._observation, self._info
 
-        # reset the env/envs
         if self._deprecated_api:
             observation = self._env.reset()
             info = {}

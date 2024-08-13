@@ -1,7 +1,8 @@
-import gymnasium as gym
 import hypothesis
 import hypothesis.strategies as st
 import pytest
+
+import gymnasium as gym
 
 import numpy as np
 import torch

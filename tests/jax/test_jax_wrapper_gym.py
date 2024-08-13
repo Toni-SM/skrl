@@ -39,8 +39,6 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
-        with capsys.disabled():
-            print(observation.shape, type(observation.shape))
         assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
         assert isinstance(info, Mapping)
         for _ in range(3):

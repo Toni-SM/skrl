@@ -41,8 +41,9 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
-        self._obs_dict = None
+        self._observations = None
 
     def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
         """Run the simulation in the main thread
@@ -65,15 +66,15 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of np.ndarray or jax.Array and any other info
         """
-        actions = _jax2torch(actions, self._env._task.device, self._jax)
+        actions = _jax2torch(actions, self._env_device, self._jax)
 
         with torch.no_grad():
-            self._obs_dict, reward, terminated, info = self._env.step(actions)
+            self._observations, reward, terminated, info = self._env.step(actions)
 
         terminated = terminated.to(dtype=torch.int8)
         truncated = info["time_outs"].to(dtype=torch.int8) if "time_outs" in info else torch.zeros_like(terminated)
 
-        return _torch2jax(self._obs_dict["obs"], self._jax), \
+        return _torch2jax(self._observations["obs"], self._jax), \
                _torch2jax(reward.view(-1, 1), self._jax), \
                _torch2jax(terminated.view(-1, 1), self._jax), \
                _torch2jax(truncated.view(-1, 1), self._jax), \
@@ -86,9 +87,9 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._obs_dict = self._env.reset()
+            self._observations = self._env.reset()
             self._reset_once = False
-        return _torch2jax(self._obs_dict["obs"], self._jax), {}
+        return _torch2jax(self._observations["obs"], self._jax), {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

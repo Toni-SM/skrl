@@ -160,7 +160,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
                {k: v.view(-1, 1) for k, v in truncated.items()}, \
                self._info
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
+    def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
         """Reset the environment
 
         :return: Observation, info

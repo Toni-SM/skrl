@@ -104,8 +104,8 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
 
         if _in("omni.isaac.lab.envs..*", base_classes):
-            return "isaaclab-*"
-        elif _in("omni.isaac.gym.vec_env.vec_env_base.VecEnvBase", base_classes) or _in("omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT", base_classes):
+            return "isaaclab"
+        elif _in("omni.isaac.gym..*", base_classes):
             return "omniverse-isaacgym"
         elif _in(["isaacgymenvs..*", "tasks..*.VecTask"], base_classes):
             return "isaacgym-preview4"  # preview 4 is the same as 3
@@ -113,7 +113,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             return "isaacgym-preview2"
         elif _in("robosuite.environments.", base_classes):
             return "robosuite"
-        elif _in("dm_env._environment.Environment.", base_classes):
+        elif _in("dm_env..*", base_classes):
             return "dm"
         elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
             return "pettingzoo"

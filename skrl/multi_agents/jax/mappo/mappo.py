@@ -497,7 +497,7 @@ class MAPPO(MultiAgent):
 
             # compute returns and advantages
             value.training = False
-            last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states[uid])}, role="value")  # TODO: .float()
+            last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states)}, role="value")  # TODO: .float()
             value.training = True
             if not self._jax:  # numpy backend
                 last_values = jax.device_get(last_values)

@@ -369,7 +369,7 @@ class MultiAgent:
         :type timesteps: int
         """
         if self.write_interval > 0:
-            _rewards = next(iter(rewards.values()))
+            _rewards = sum(rewards.values())
             _terminated = next(iter(terminated.values()))
             _truncated = next(iter(truncated.values()))
 

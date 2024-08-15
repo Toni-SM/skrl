@@ -139,6 +139,10 @@ class MultiAgentEnvWrapper(object):
         self._jax = config.jax.backend == "jax"
 
         self._env = env
+        try:
+            self._unwrapped = self._env.unwrapped
+        except:
+            self._unwrapped = env
 
         # device (faster than @property)
         self.device = None
@@ -154,8 +158,6 @@ class MultiAgentEnvWrapper(object):
         if self.device is None:
             self.device = jax.devices()[0]
 
-        self.possible_agents = []
-
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
 
@@ -169,7 +171,9 @@ class MultiAgentEnvWrapper(object):
         """
         if hasattr(self._env, key):
             return getattr(self._env, key)
-        raise AttributeError(f"Wrapped environment ({self._env.__class__.__name__}) does not have attribute '{key}'")
+        if hasattr(self._unwrapped, key):
+            return getattr(self._unwrapped, key)
+        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
@@ -216,15 +220,29 @@ class MultiAgentEnvWrapper(object):
 
         If the wrapped environment does not have the ``num_envs`` property, it will be set to 1
         """
-        return self._env.num_envs if hasattr(self._env, "num_envs") else 1
+        return self._unwrapped.num_envs if hasattr(self._unwrapped, "num_envs") else 1
 
     @property
     def num_agents(self) -> int:
-        """Number of agents
+        """Number of current agents
 
-        If the wrapped environment does not have the ``num_agents`` property, it will be set to 1
+        Read from the length of the ``agents`` property if the wrapped environment doesn't define it
         """
-        return self._env.num_agents if hasattr(self._env, "num_agents") else 1
+        try:
+            return self._unwrapped.num_agents
+        except:
+            return len(self.agents)
+
+    @property
+    def max_num_agents(self) -> int:
+        """Number of possible agents the environment could generate
+
+        Read from the length of the ``possible_agents`` property if the wrapped environment doesn't define it
+        """
+        try:
+            return self._unwrapped.max_num_agents
+        except:
+            return len(self.possible_agents)
 
     @property
     def agents(self) -> Sequence[str]:
@@ -232,44 +250,45 @@ class MultiAgentEnvWrapper(object):
 
         These may be changed as an environment progresses (i.e. agents can be added or removed)
         """
-        raise NotImplementedError
+        return self._unwrapped.agents
+
+    @property
+    def possible_agents(self) -> Sequence[str]:
+        """Names of all possible agents the environment could generate
+
+        These can not be changed as an environment progresses
+        """
+        return self._unwrapped.possible_agents
 
     @property
     def state_spaces(self) -> Mapping[str, gym.Space]:
         """State spaces
 
-        An alias for the ``observation_spaces`` property
+        Since the state space is a global view of the environment (and therefore the same for all the agents),
+        this property returns a dictionary (for consistency with the other space-related properties) with the same
+        space for all the agents
         """
-        return self.observation_spaces
+        space = self._unwrapped.state_space
+        return {agent: space for agent in self.possible_agents}
 
     @property
     def observation_spaces(self) -> Mapping[str, gym.Space]:
         """Observation spaces
         """
-        raise NotImplementedError
+        return self._unwrapped.observation_spaces
 
     @property
     def action_spaces(self) -> Mapping[str, gym.Space]:
         """Action spaces
         """
-        raise NotImplementedError
-
-    @property
-    def shared_state_spaces(self) -> Mapping[str, gym.Space]:
-        """Shared state spaces
-
-        An alias for the ``shared_observation_spaces`` property
-        """
-        return self.shared_observation_spaces
-
-    @property
-    def shared_observation_spaces(self) -> Mapping[str, gym.Space]:
-        """Shared observation spaces
-        """
-        raise NotImplementedError
+        return self._unwrapped.action_spaces
 
     def state_space(self, agent: str) -> gym.Space:
         """State space
+
+        Since the state space is a global view of the environment (and therefore the same for all the agents),
+        this method (implemented for consistency with the other space-related methods) returns the same
+        space for each queried agent
 
         :param agent: Name of the agent
         :type agent: str
@@ -300,25 +319,3 @@ class MultiAgentEnvWrapper(object):
         :rtype: gym.Space
         """
         return self.action_spaces[agent]
-
-    def shared_state_space(self, agent: str) -> gym.Space:
-        """Shared state space
-
-        :param agent: Name of the agent
-        :type agent: str
-
-        :return: The shared state space for the specified agent
-        :rtype: gym.Space
-        """
-        return self.shared_state_spaces[agent]
-
-    def shared_observation_space(self, agent: str) -> gym.Space:
-        """Shared observation space
-
-        :param agent: Name of the agent
-        :type agent: str
-
-        :return: The shared observation space for the specified agent
-        :rtype: gym.Space
-        """
-        return self.shared_observation_spaces[agent]

@@ -201,6 +201,16 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
+    def state() -> Union[np.ndarray, jax.Array]:
+        """Get the environment state
+
+        :raises NotImplementedError: Not implemented
+
+        :return: State
+        :rtype: np.ndarray or jax.Array
+        """
+        raise NotImplementedError
+
     def render(self, *args, **kwargs) -> Any:
         """Render the environment
 

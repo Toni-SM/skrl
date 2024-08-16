@@ -96,6 +96,7 @@ html_theme_options = {
     "source_repository": "https://github.com/Toni-SM/skrl",
     "source_branch": "../tree/main",
     "source_directory": "docs/source",
+    "top_of_page_buttons": ["view"],
     # css
     "light_css_variables": {
         "color-brand-primary": "#FF4800",

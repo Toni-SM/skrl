@@ -111,3 +111,13 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
             self._shared_obs_buf = {uid: shared_obs_buf[:,i] for i, uid in enumerate(self.possible_agents)}
             self._reset_once = False
         return self._obs_buf, {"shared_states": self._shared_obs_buf}
+
+    def render(self, *args, **kwargs) -> None:
+        """Render the environment
+        """
+        return None
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()

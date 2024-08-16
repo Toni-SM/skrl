@@ -197,3 +197,8 @@ class GymWrapper(Wrapper):
         if self._vectorized:
             return None
         return self._env.render(*args, **kwargs)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()

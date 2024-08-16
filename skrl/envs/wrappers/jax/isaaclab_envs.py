@@ -117,7 +117,12 @@ class IsaacLabWrapper(Wrapper):
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
 
 
 class IsaacLabSingleAgentWrapper(Wrapper):
@@ -168,7 +173,12 @@ class IsaacLabSingleAgentWrapper(Wrapper):
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()
 
 
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
@@ -213,7 +223,20 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._reset_once = False
         return self._observations, self._info
 
+    def state(self) -> Union[np.ndarray, jax.Array]:
+        """Get the environment state
+
+        :return: State
+        :rtype: np.ndarray or jax.Array
+        """
+        return _torch2jax(self._env.state(), self._jax)
+
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()

@@ -67,15 +67,19 @@ class Wrapper(object):
     def render(self, *args, **kwargs) -> Any:
         """Render the environment
 
+        :raises NotImplementedError: Not implemented
+
         :return: Any value from the wrapped environment
         :rtype: any
         """
-        return None
+        raise NotImplementedError
 
     def close(self) -> None:
         """Close the environment
+
+        :raises NotImplementedError: Not implemented
         """
-        self._env.close()
+        raise NotImplementedError
 
     @property
     def num_envs(self) -> int:
@@ -175,7 +179,7 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
-    def state() -> torch.Tensor:
+    def state(self) -> torch.Tensor:
         """Get the environment state
 
         :raises NotImplementedError: Not implemented
@@ -188,15 +192,19 @@ class MultiAgentEnvWrapper(object):
     def render(self, *args, **kwargs) -> Any:
         """Render the environment
 
+        :raises NotImplementedError: Not implemented
+
         :return: Any value from the wrapped environment
         :rtype: any
         """
-        return None
+        raise NotImplementedError
 
     def close(self) -> None:
         """Close the environment
+
+        :raises NotImplementedError: Not implemented
         """
-        self._env.close()
+        raise NotImplementedError
 
     @property
     def num_envs(self) -> int:

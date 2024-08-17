@@ -47,7 +47,7 @@ class IsaacGymPreview2Wrapper(Wrapper):
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment
@@ -106,7 +106,7 @@ class IsaacGymPreview3Wrapper(Wrapper):
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment

@@ -154,3 +154,8 @@ class DeepMindWrapper(Wrapper):
         except ImportError as e:
             logger.warning(f"Unable to import opencv-python: {e}. Frame will not be rendered.")
         return frame
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()

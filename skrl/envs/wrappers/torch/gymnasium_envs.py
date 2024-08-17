@@ -151,3 +151,8 @@ class GymnasiumWrapper(Wrapper):
         if self._vectorized:
             return self._env.call("render", *args, **kwargs)
         return self._env.render(*args, **kwargs)
+
+    def close(self) -> None:
+        """Close the environment
+        """
+        self._env.close()

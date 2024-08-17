@@ -94,7 +94,7 @@ class OmniverseIsaacGymWrapper(Wrapper):
     def render(self, *args, **kwargs) -> None:
         """Render the environment
         """
-        pass
+        return None
 
     def close(self) -> None:
         """Close the environment

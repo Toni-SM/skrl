@@ -18,49 +18,6 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-        self.possible_agents = self._env.possible_agents
-        self._shared_observation_space = self._compute_shared_observation_space(self._env.observation_spaces)
-
-    def _compute_shared_observation_space(self, observation_spaces):
-        space = next(iter(observation_spaces.values()))
-        shape = (len(self.possible_agents),) + space.shape
-        return gymnasium.spaces.Box(low=np.stack([space.low for _ in self.possible_agents], axis=0),
-                                    high=np.stack([space.high for _ in self.possible_agents], axis=0),
-                                    dtype=space.dtype,
-                                    shape=shape)
-
-    @property
-    def num_agents(self) -> int:
-        """Number of agents
-        """
-        return len(self.possible_agents)
-
-    @property
-    def agents(self) -> Sequence[str]:
-        """Names of all current agents
-
-        These may be changed as an environment progresses (i.e. agents can be added or removed)
-        """
-        return self._env.agents
-
-    @property
-    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Observation spaces
-        """
-        return {uid: self._env.observation_space(uid) for uid in self.possible_agents}
-
-    @property
-    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Action spaces
-        """
-        return {uid: self._env.action_space(uid) for uid in self.possible_agents}
-
-    @property
-    def shared_observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Shared observation spaces
-        """
-        return {uid: self._shared_observation_space for uid in self.possible_agents}
-
     def _observation_to_tensor(self, observation: Any, space: gymnasium.Space) -> torch.Tensor:
         """Convert the Gymnasium observation to a flat tensor
 
@@ -75,7 +32,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         if isinstance(observation, int):
             return torch.tensor(observation, device=self.device, dtype=torch.int64).view(self.num_envs, -1)
         elif isinstance(observation, np.ndarray):
-            return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
+            return torch.tensor(np.ascontiguousarray(observation), device=self.device, dtype=torch.float32).view(self.num_envs, -1)
         elif isinstance(space, gymnasium.spaces.Discrete):
             return torch.tensor(observation, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
         elif isinstance(space, gymnasium.spaces.Box):
@@ -118,17 +75,20 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         actions = {uid: self._tensor_to_action(action, self._env.action_space(uid)) for uid, action in actions.items()}
         observations, rewards, terminated, truncated, infos = self._env.step(actions)
 
-        # build shared observation
-        shared_observations = np.stack([observations[uid] for uid in self.possible_agents], axis=0)
-        shared_observations = self._observation_to_tensor(shared_observations, self._shared_observation_space)
-        infos["shared_states"] = {uid: shared_observations for uid in self.possible_agents}
-
         # convert response to torch
         observations = {uid: self._observation_to_tensor(value, self._env.observation_space(uid)) for uid, value in observations.items()}
         rewards = {uid: torch.tensor(value, device=self.device, dtype=torch.float32).view(self.num_envs, -1) for uid, value in rewards.items()}
         terminated = {uid: torch.tensor(value, device=self.device, dtype=torch.bool).view(self.num_envs, -1) for uid, value in terminated.items()}
         truncated = {uid: torch.tensor(value, device=self.device, dtype=torch.bool).view(self.num_envs, -1) for uid, value in truncated.items()}
         return observations, rewards, terminated, truncated, infos
+
+    def state(self) -> torch.Tensor:
+        """Get the environment state
+
+        :return: State
+        :rtype: torch.Tensor
+        """
+        return self._observation_to_tensor(self._env.state(), next(iter(self.state_spaces.values())))
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
         """Reset the environment
@@ -142,11 +102,6 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             infos = {uid: {} for uid in self.possible_agents}
         else:
             observations, infos = outputs
-
-        # build shared observation
-        shared_observations = np.stack([observations[uid] for uid in self.possible_agents], axis=0)
-        shared_observations = self._observation_to_tensor(shared_observations, self._shared_observation_space)
-        infos["shared_states"] = {uid: shared_observations for uid in self.possible_agents}
 
         # convert response to torch
         observations = {uid: self._observation_to_tensor(observation, self._env.observation_space(uid)) for uid, observation in observations.items()}

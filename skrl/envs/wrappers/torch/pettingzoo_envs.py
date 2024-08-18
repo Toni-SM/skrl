@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Tuple
 
 import collections
 import gymnasium
@@ -72,11 +72,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dictionaries torch.Tensor and any other info
         """
-        actions = {uid: self._tensor_to_action(action, self._env.action_space(uid)) for uid, action in actions.items()}
+        actions = {uid: self._tensor_to_action(action, self.action_space(uid)) for uid, action in actions.items()}
         observations, rewards, terminated, truncated, infos = self._env.step(actions)
 
         # convert response to torch
-        observations = {uid: self._observation_to_tensor(value, self._env.observation_space(uid)) for uid, value in observations.items()}
+        observations = {uid: self._observation_to_tensor(value, self.observation_space(uid)) for uid, value in observations.items()}
         rewards = {uid: torch.tensor(value, device=self.device, dtype=torch.float32).view(self.num_envs, -1) for uid, value in rewards.items()}
         terminated = {uid: torch.tensor(value, device=self.device, dtype=torch.bool).view(self.num_envs, -1) for uid, value in terminated.items()}
         truncated = {uid: torch.tensor(value, device=self.device, dtype=torch.bool).view(self.num_envs, -1) for uid, value in truncated.items()}
@@ -104,13 +104,13 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             observations, infos = outputs
 
         # convert response to torch
-        observations = {uid: self._observation_to_tensor(observation, self._env.observation_space(uid)) for uid, observation in observations.items()}
+        observations = {uid: self._observation_to_tensor(value, self.observation_space(uid)) for uid, value in observations.items()}
         return observations, infos
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
         """
-        self._env.render(*args, **kwargs)
+        return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment

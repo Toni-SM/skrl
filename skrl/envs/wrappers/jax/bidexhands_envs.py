@@ -3,24 +3,32 @@ from typing import Any, Mapping, Sequence, Tuple, Union
 import gym
 
 import jax
-import jax.dlpack
+import jax.dlpack as jax_dlpack
 import numpy as np
 
 
 try:
     import torch
-    import torch.utils.dlpack
+    import torch.utils.dlpack as torch_dlpack
 except:
     pass  # TODO: show warning message
 
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper
 
 
+# ML frameworks conversion utilities
+# jaxlib.xla_extension.XlaRuntimeError: INVALID_ARGUMENT: DLPack tensor is on GPU, but no GPU backend was provided.
+_CPU = jax.devices()[0].device_kind.lower() == "cpu"
+
 def _jax2torch(array, device, from_jax=True):
-    return torch.utils.dlpack.from_dlpack(jax.dlpack.to_dlpack(array)) if from_jax else torch.tensor(array, device=device)
+    if from_jax:
+        return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
+    return torch.tensor(array, device=device)
 
 def _torch2jax(tensor, to_jax=True):
-    return jax.dlpack.from_dlpack(torch.utils.dlpack.to_dlpack(tensor.contiguous())) if to_jax else tensor.cpu().numpy()
+    if to_jax:
+        return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
+    return tensor.cpu().numpy()
 
 
 class BiDexHandsWrapper(MultiAgentEnvWrapper):
@@ -33,10 +41,9 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         super().__init__(env)
 
         self._reset_once = True
-        self._obs_buf = None
-        self._shared_obs_buf = None
-
-        self.possible_agents = [f"agent_{i}" for i in range(self.num_agents)]
+        self._states = None
+        self._observations = None
+        self._info = {}
 
     @property
     def agents(self) -> Sequence[str]:
@@ -45,6 +52,24 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         These may be changed as an environment progresses (i.e. agents can be added or removed)
         """
         return self.possible_agents
+
+    @property
+    def possible_agents(self) -> Sequence[str]:
+        """Names of all possible agents the environment could generate
+
+        These can not be changed as an environment progresses
+        """
+        return [f"agent_{i}" for i in range(self.num_agents)]
+
+    @property
+    def state_spaces(self) -> Mapping[str, gym.Space]:
+        """State spaces
+
+        Since the state space is a global view of the environment (and therefore the same for all the agents),
+        this property returns a dictionary (for consistency with the other space-related properties) with the same
+        space for all the agents
+        """
+        return {uid: space for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
 
     @property
     def observation_spaces(self) -> Mapping[str, gym.Space]:
@@ -58,12 +83,6 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         """
         return {uid: space for uid, space in zip(self.possible_agents, self._env.action_space)}
 
-    @property
-    def shared_observation_spaces(self) -> Mapping[str, gym.Space]:
-        """Shared observation spaces
-        """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
-
     def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
         Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
               Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
@@ -76,24 +95,31 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dict of nd.ndarray or jax.Array and any other info
         """
-        actions = [_jax2torch(actions[uid], self.device, self._jax) for uid in self.possible_agents]
+        actions = [_jax2torch(actions[uid], self._env.rl_device, self._jax) for uid in self.possible_agents]
 
         with torch.no_grad():
-            obs_buf, shared_obs_buf, reward_buf, terminated_buf, info, _ = self._env.step(actions)
+            observations, states, rewards, terminated, _, _ = self._env.step(actions)
 
-        obs_buf = _torch2jax(obs_buf, self._jax)
-        shared_obs_buf = _torch2jax(shared_obs_buf, self._jax)
-        reward_buf = _torch2jax(reward_buf, self._jax)
-        terminated_buf = _torch2jax(terminated_buf.to(dtype=torch.int8), self._jax)
+        observations = _torch2jax(observations, self._jax)
+        states = _torch2jax(states, self._jax)
+        rewards = _torch2jax(rewards, self._jax)
+        terminated = _torch2jax(terminated.to(dtype=torch.int8), self._jax)
 
-        self._obs_buf = {uid: obs_buf[:,i] for i, uid in enumerate(self.possible_agents)}
-        self._shared_obs_buf = {uid: shared_obs_buf[:,i] for i, uid in enumerate(self.possible_agents)}
-        reward = {uid: reward_buf[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
-        terminated = {uid: terminated_buf[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        self._states = states[:, 0]
+        self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
+        rewards = {uid: rewards[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        terminated = {uid: terminated[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
         truncated = terminated
-        info = {"shared_states": self._shared_obs_buf}
 
-        return self._obs_buf, reward, terminated, truncated, info
+        return self._observations, rewards, terminated, truncated, self._info
+
+    def state(self) -> Union[np.ndarray, jax.Array]:
+        """Get the environment state
+
+        :return: State
+        :rtype: np.ndarray of jax.Array
+        """
+        return self._states
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
@@ -102,15 +128,15 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         :rtype: tuple of dict of np.ndarray of jax.Array and any other info
         """
         if self._reset_once:
-            obs_buf, shared_obs_buf, _ = self._env.reset()
+            observations, states, _ = self._env.reset()
 
-            obs_buf = _torch2jax(obs_buf, self._jax)
-            shared_obs_buf = _torch2jax(shared_obs_buf, self._jax)
+            observations = _torch2jax(observations, self._jax)
+            states = _torch2jax(states, self._jax)
 
-            self._obs_buf = {uid: obs_buf[:,i] for i, uid in enumerate(self.possible_agents)}
-            self._shared_obs_buf = {uid: shared_obs_buf[:,i] for i, uid in enumerate(self.possible_agents)}
+            self._states = states[:, 0]
+            self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
             self._reset_once = False
-        return self._obs_buf, {"shared_states": self._shared_obs_buf}
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -120,4 +146,4 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
     def close(self) -> None:
         """Close the environment
         """
-        self._env.close()
+        pass

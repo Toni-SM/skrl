@@ -352,12 +352,6 @@ Internal API (PyTorch)
 
     .. automethod:: __init__
 
-    .. py:property:: device
-
-        The device used by the environment
-
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
-
 .. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
@@ -429,12 +423,6 @@ Internal API (JAX)
     :members:
 
     .. automethod:: __init__
-
-    .. py:property:: device
-
-        The device used by the environment
-
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda"`` or ``"cpu"`` depending on the device availability
 
 .. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
     :undoc-members:

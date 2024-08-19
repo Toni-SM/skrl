@@ -23,19 +23,19 @@ class Wrapper(object):
         except:
             self._unwrapped = env
 
-        # device (faster than @property)
-        self.device = None
-        if hasattr(self._env, "device"):
-            if type(self._env.device) == str:
-                device_type, device_index = f"{self._env.device}:0".split(':')[:2]
+        # device
+        self._device = None
+        if hasattr(self._unwrapped, "device"):
+            if type(self._unwrapped.device) == str:
+                device_type, device_index = f"{self._unwrapped.device}:0".split(':')[:2]
                 try:
-                    self.device = jax.devices(device_type)[int(device_index)]
+                    self._device = jax.devices(device_type)[int(device_index)]
                 except (RuntimeError, IndexError):
-                    self.device = None
+                    self._device = None
             else:
-                self.device = self._env.device
-        if self.device is None:
-            self.device = jax.devices()[0]
+                self._device = self._unwrapped.device
+        if self._device is None:
+            self._device = jax.devices()[0]
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -97,6 +97,15 @@ class Wrapper(object):
         raise NotImplementedError
 
     @property
+    def device(self) -> jax.Device:
+        """The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property
+        will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+        """
+        return self._device
+
+    @property
     def num_envs(self) -> int:
         """Number of environments
 
@@ -148,19 +157,19 @@ class MultiAgentEnvWrapper(object):
         except:
             self._unwrapped = env
 
-        # device (faster than @property)
-        self.device = None
-        if hasattr(self._env, "device"):
-            if type(self._env.device) == str:
-                device_type, device_index = f"{self._env.device}:0".split(':')[:2]
+        # device
+        self._device = None
+        if hasattr(self._unwrapped, "device"):
+            if type(self._unwrapped.device) == str:
+                device_type, device_index = f"{self._unwrapped.device}:0".split(':')[:2]
                 try:
-                    self.device = jax.devices(device_type)[int(device_index)]
+                    self._device = jax.devices(device_type)[int(device_index)]
                 except (RuntimeError, IndexError):
-                    self.device = None
+                    self._device = None
             else:
-                self.device = self._env.device
-        if self.device is None:
-            self.device = jax.devices()[0]
+                self._device = self._unwrapped.device
+        if self._device is None:
+            self._device = jax.devices()[0]
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -231,6 +240,15 @@ class MultiAgentEnvWrapper(object):
         :raises NotImplementedError: Not implemented
         """
         raise NotImplementedError
+
+    @property
+    def device(self) -> jax.Device:
+        """The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property
+        will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+        """
+        return self._device
 
     @property
     def num_envs(self) -> int:

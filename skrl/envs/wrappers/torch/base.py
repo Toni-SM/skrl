@@ -18,11 +18,11 @@ class Wrapper(object):
         except:
             self._unwrapped = env
 
-        # device (faster than @property)
+        # device
         if hasattr(self._unwrapped, "device"):
-            self.device = torch.device(self._unwrapped.device)
+            self._device = torch.device(self._unwrapped.device)
         else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -82,6 +82,15 @@ class Wrapper(object):
         raise NotImplementedError
 
     @property
+    def device(self) -> torch.device:
+        """The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property
+        will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+        """
+        return self._device
+
+    @property
     def num_envs(self) -> int:
         """Number of environments
 
@@ -131,11 +140,11 @@ class MultiAgentEnvWrapper(object):
         except:
             self._unwrapped = env
 
-        # device (faster than @property)
+        # device
         if hasattr(self._unwrapped, "device"):
-            self.device = torch.device(self._unwrapped.device)
+            self._device = torch.device(self._unwrapped.device)
         else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -205,6 +214,15 @@ class MultiAgentEnvWrapper(object):
         :raises NotImplementedError: Not implemented
         """
         raise NotImplementedError
+
+    @property
+    def device(self) -> torch.device:
+        """The device used by the environment
+
+        If the wrapped environment does not have the ``device`` property, the value of this property
+        will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+        """
+        return self._device
 
     @property
     def num_envs(self) -> int:

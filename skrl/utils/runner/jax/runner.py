@@ -29,7 +29,12 @@ class Runner:
         self._env = env
         self._cfg = cfg
 
-        self._cfg["agent"]["rewards_shaper"] = None  # FIXME: avoid 'dictionary changed size during iteration'
+        # set random seed
+        set_seed(self._cfg.get("seed", None))
+
+        # set backend
+        config.jax.backend = self._cfg.get("backend", "jax")
+        logger.info(f"Backend: {config.jax.backend}")
 
         self._class_mapping = {
             # model
@@ -46,11 +51,7 @@ class Runner:
             "sequentialtrainer": SequentialTrainer,
         }
 
-        # set backend
-        config.jax.backend = self._cfg.get("backend", "jax")
-
-        # set random seed
-        set_seed(self._cfg.get("seed", None))
+        self._cfg["agent"]["rewards_shaper"] = None  # FIXME: avoid 'dictionary changed size during iteration'
 
         self._models = self._generate_models(self._env, copy.deepcopy(self._cfg))
         self._agent = self._generate_agent(self._env, copy.deepcopy(self._cfg), self._models)
@@ -70,6 +71,12 @@ class Runner:
 
     @staticmethod
     def load_cfg_from_yaml(path: str) -> dict:
+        """Load a runner configuration from a yaml file
+
+        :param path: File path
+
+        :return: Loaded configuration, or an empty dict if an error has occurred
+        """
         try:
             import yaml
         except Exception as e:
@@ -210,8 +217,9 @@ class Runner:
                 models[agent_id]["value"] = models[agent_id]["policy"]
 
         # instantiate models' state dict
-        for role, model in models.items():
-            model.init_state_dict(role)
+        for agent_id in possible_agents:
+            for role, model in models[agent_id].items():
+                model.init_state_dict(role)
 
         return models
 

@@ -39,16 +39,19 @@ A set of utilities and configurations for managing an RL setup is provided as pa
     * - :doc:`Random seed <utils/seed>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - Memory and Tensorboard :doc:`file post-processing <utils/postprocessing>`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
     * - :doc:`Model instantiators <utils/model_instantiators>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - :doc:`Hugging Face integration <utils/huggingface>`
+    * - :doc:`Runner <utils/runner>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Distributed runs <utils/distributed>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - Memory and Tensorboard :doc:`file post-processing <utils/postprocessing>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`Hugging Face integration <utils/huggingface>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Isaac Gym utils <utils/isaacgym_utils>`

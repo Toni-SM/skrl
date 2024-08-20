@@ -7,9 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Distributed multi-GPU and multi-node learning (JAX implementation)
 - Utilities to start multiple processes from a single program invocation for distributed learning using JAX
 - Model instantiators `return_source` parameter to get the source class definition used to instantiate the models
+- `Runner` utility to run training/evaluation workflows in a few lines of code
 
 ### Changed
-- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent using it in distributed runs
+- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent that uses it in distributed runs
 - Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
 - Implement model instantiators using dynamic execution of Python code
 

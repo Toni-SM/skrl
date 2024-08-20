@@ -29,7 +29,7 @@ Usage
 
             .. group-tab:: Python code
 
-                .. literalinclude:: ../../snippets/runner.py
+                .. literalinclude:: ../../snippets/runner.txt
                     :language: python
                     :emphasize-lines: 1, 10, 13, 16
                     :start-after: [start-runner-train-torch]
@@ -37,7 +37,7 @@ Usage
 
             .. group-tab:: Example .yaml file (PPO)
 
-                .. literalinclude:: ../../snippets/runner.py
+                .. literalinclude:: ../../snippets/runner.txt
                     :language: yaml
                     :start-after: [start-cfg-yaml]
                     :end-before: [end-cfg-yaml]
@@ -48,7 +48,7 @@ Usage
 
             .. group-tab:: Python code
 
-                .. literalinclude:: ../../snippets/runner.py
+                .. literalinclude:: ../../snippets/runner.txt
                     :language: python
                     :emphasize-lines: 1, 10, 13, 16
                     :start-after: [start-runner-train-jax]
@@ -56,7 +56,7 @@ Usage
 
             .. group-tab:: Example .yaml file (PPO)
 
-                .. literalinclude:: ../../snippets/runner.py
+                .. literalinclude:: ../../snippets/runner.txt
                     :language: yaml
                     :start-after: [start-cfg-yaml]
                     :end-before: [end-cfg-yaml]

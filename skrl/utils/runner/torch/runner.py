@@ -23,13 +23,6 @@ class Runner:
 
         Class that configures and instantiates skrl components to execute training/evaluation workflows in a few lines of code
 
-        .. note::
-
-            This class encapsulates, and greatly simplifies, the definitions and instantiations needed to execute RL tasks.
-            However, such simplification hides and makes difficult the modification and readability of the code (models, agents, etc.).
-
-            For more control and readability over the RL system setup refer to the *Examples* section's training scripts (recommended!)
-
         :param env: Environment to train on
         :param cfg: Runner configuration
         """
@@ -71,6 +64,21 @@ class Runner:
         """Agent instance
         """
         return self._agent
+
+    @staticmethod
+    def load_cfg_from_yaml(path: str) -> dict:
+        try:
+            import yaml
+        except Exception as e:
+            logger.error(f"{e}. Install PyYAML with 'pip install pyyaml'")
+            return {}
+
+        try:
+            with open(path) as file:
+                return yaml.safe_load(file)
+        except Exception as e:
+            logger.error(f"Loading yaml error: {e}")
+            return {}
 
     def _class(self, value: str) -> Type:
         """Get skrl component class (e.g.: agent, trainer, etc..) from string identifier
@@ -305,12 +313,16 @@ class Runner:
         # instantiate trainer
         return trainer_class(env=env, agents=agent, cfg=cfg["trainer"])
 
-    def train(self) -> None:
-        """Train the agent
-        """
-        self._trainer.train()
+    def run(self, mode: str = "train") -> None:
+        """Run the training/evaluation
 
-    def eval(self) -> None:
-        """Evaluate agent
+        :param mode: Running mode: ``"train"`` for training or ``"eval"`` for evaluation (default: ``"train"``)
+
+        :raises ValueError: The specified running mode is not valid
         """
-        self._trainer.eval()
+        if mode == "train":
+            self._trainer.train()
+        elif mode == "eval":
+            self._trainer.eval()
+        else:
+            raise ValueError(f"Unknown running mode: {mode}")

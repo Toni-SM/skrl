@@ -64,6 +64,16 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
+    def state(self) -> torch.Tensor:
+        """Get the environment state
+
+        :raises NotImplementedError: Not implemented
+
+        :return: State
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
     def render(self, *args, **kwargs) -> Any:
         """Render the environment
 

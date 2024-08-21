@@ -5,6 +5,7 @@ import re
 from skrl import logger
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
 from skrl.envs.wrappers.torch.bidexhands_envs import BiDexHandsWrapper
+from skrl.envs.wrappers.torch.brax_envs import BraxWrapper
 from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
@@ -51,6 +52,8 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                           - ``"dm"``
                         * - Robosuite
                           - ``"robosuite"``
+                        * - Brax
+                          - ``"brax"``
                         * - Isaac Gym preview 2
                           - ``"isaacgym-preview2"``
                         * - Isaac Gym preview 3
@@ -111,6 +114,8 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             return "isaacgym-preview4"  # preview 4 is the same as 3
         elif _in("rlgpu.tasks..*.VecTask", base_classes):
             return "isaacgym-preview2"
+        elif _in("brax.envs..*", base_classes):
+            return "brax"
         elif _in("robosuite.environments.", base_classes):
             return "robosuite"
         elif _in("dm_env..*", base_classes):
@@ -150,6 +155,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info("Environment wrapper: Bi-DexHands")
         return BiDexHandsWrapper(env)
+    elif wrapper == "brax":
+        if verbose:
+            logger.info("Environment wrapper: Brax")
+        return BraxWrapper(env)
     elif wrapper == "isaacgym-preview2":
         if verbose:
             logger.info("Environment wrapper: Isaac Gym (preview 2)")
@@ -166,7 +175,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info("Environment wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
-    elif wrapper.startswith("isaaclab"):
+    elif type(wrapper) is str and wrapper.startswith("isaaclab"):
         env_type = "single-agent"
         env_wrapper = IsaacLabWrapper
         # detect the wrapper

@@ -32,10 +32,6 @@ class Runner:
         # set random seed
         set_seed(self._cfg.get("seed", None))
 
-        # set backend
-        config.jax.backend = self._cfg.get("backend", "jax")
-        logger.info(f"Backend: {config.jax.backend}")
-
         self._class_mapping = {
             # model
             "gaussianmixin": gaussian_model,

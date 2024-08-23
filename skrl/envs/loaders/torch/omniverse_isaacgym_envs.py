@@ -51,7 +51,7 @@ def load_omniverse_isaacgym_env(task_name: str = "",
                                 timeout: int = 30) -> Union["VecEnvBase", "VecEnvMT"]:
     """Load an Omniverse Isaac Gym environment (OIGE)
 
-    Omniverse Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
+    Omniverse Isaac Gym benchmark environments: https://github.com/isaac-sim/OmniIsaacGymEnvs
 
     :param task_name: The name of the task (default: ``""``).
                       If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).

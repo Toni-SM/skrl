@@ -14,7 +14,7 @@ This library works with a common API to interact with the following RL environme
 * `DeepMind <https://github.com/deepmind/dm_env>`_
 * `robosuite <https://robosuite.ai/>`_
 * `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
-* `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_
+* `NVIDIA Omniverse Isaac Gym <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_
 * `NVIDIA Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below

@@ -9,7 +9,8 @@ Wrapping (multi-agents)
 
 This library works with a common API to interact with the following RL multi-agent environments:
 
-* Farama `PettingZoo <https://pettingzoo.farama.org>`_ (parallel API)
+* Farama `PettingZoo <https://pettingzoo.farama.org>`_ (parallel API) and `Shimmy <https://shimmy.farama.org/>`_
+* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 * `Bi-DexHands <https://github.com/PKU-MARL/DexterousHands>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
@@ -39,6 +40,24 @@ Usage
 
 .. tabs::
 
+    .. tab:: Isaac Lab
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-isaaclab-multi-agent]
+                    :end-before: [pytorch-end-isaaclab-multi-agent]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-isaaclab-multi-agent]
+                    :end-before: [jax-end-isaaclab-multi-agent]
+
     .. tab:: PettingZoo
 
         .. tabs::
@@ -56,6 +75,24 @@ Usage
                     :language: python
                     :start-after: [start-pettingzoo-jax]
                     :end-before: [end-pettingzoo-jax]
+
+    .. tab:: Shimmy
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-shimmy-multi-agent]
+                    :end-before: [pytorch-end-shimmy-multi-agent]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-shimmy-multi-agent]
+                    :end-before: [jax-end-shimmy-multi-agent]
 
     .. tab:: Bi-DexHands
 

@@ -383,6 +383,24 @@ Among the methods and properties defined in the wrapped environment, the state, 
 
         .. tabs::
 
+            .. tab:: Isaac Lab
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaaclab-multi-agent]
+                            :end-before: [pytorch-end-isaaclab-multi-agent]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaaclab-multi-agent]
+                            :end-before: [jax-end-isaaclab-multi-agent]
+
             .. tab:: PettingZoo
 
                 .. tabs::
@@ -400,6 +418,24 @@ Among the methods and properties defined in the wrapped environment, the state, 
                             :language: python
                             :start-after: [start-pettingzoo-jax]
                             :end-before: [end-pettingzoo-jax]
+
+            .. tab:: Shimmy
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-shimmy-multi-agent]
+                            :end-before: [pytorch-end-shimmy-multi-agent]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-shimmy-multi-agent]
+                            :end-before: [jax-end-shimmy-multi-agent]
 
             .. tab:: Bi-DexHands
 

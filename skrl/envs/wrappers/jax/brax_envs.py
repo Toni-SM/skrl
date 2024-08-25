@@ -51,6 +51,11 @@ class BraxWrapper(Wrapper):
         """
         observation, reward, terminated, info = self._env.step(actions)
         truncated = jnp.zeros_like(terminated)
+        if not self._jax:
+            observation = np.asarray(jax.device_get(observation))
+            reward = np.asarray(jax.device_get(reward))
+            terminated = np.asarray(jax.device_get(terminated))
+            truncated = np.asarray(jax.device_get(truncated))
         return observation, reward.reshape(-1, 1), terminated.reshape(-1, 1), truncated.reshape(-1, 1), info
 
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
@@ -60,6 +65,8 @@ class BraxWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         observation = self._env.reset()
+        if not self._jax:
+            observation = np.asarray(jax.device_get(observation))
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:

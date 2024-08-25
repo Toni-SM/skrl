@@ -56,7 +56,7 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load the environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
@@ -69,11 +69,37 @@ from skrl.envs.wrappers.jax import wrap_env
 from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load the environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
 # [jax-end-isaaclab]
+
+
+# [pytorch-start-isaaclab-multi-agent]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Cart-Double-Pendulum-Direct-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
+# [pytorch-end-isaaclab-multi-agent]
+
+
+# [jax-start-isaaclab-multi-agent]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Cart-Double-Pendulum-Direct-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
+# [jax-end-isaaclab-multi-agent]
 
 # =============================================================================
 
@@ -328,6 +354,36 @@ env = gym.make("ALE/Pong-v5")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-shimmy]
+
+
+# [pytorch-start-shimmy-multi-agent]
+# import the environment wrapper
+from skrl.envs.wrappers.torch import wrap_env
+
+# import the shimmy module
+from shimmy import MeltingPotCompatibilityV0
+
+# load the environment (API conversion)
+env = MeltingPotCompatibilityV0(substrate_name="prisoners_dilemma_in_the_matrix__arena")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [pytorch-end-shimmy-multi-agent]
+
+
+# [jax-start-shimmy-multi-agent]
+# import the environment wrapper
+from skrl.envs.wrappers.jax import wrap_env
+
+# import the shimmy module
+from shimmy import MeltingPotCompatibilityV0
+
+# load the environment (API conversion)
+env = MeltingPotCompatibilityV0(substrate_name="prisoners_dilemma_in_the_matrix__arena")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [jax-end-shimmy-multi-agent]
 
 # =============================================================================
 

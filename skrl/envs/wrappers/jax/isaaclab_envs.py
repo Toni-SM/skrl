@@ -126,62 +126,6 @@ class IsaacLabWrapper(Wrapper):
         self._env.close()
 
 
-class IsaacLabSingleAgentWrapper(Wrapper):
-    def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper for multi-agent implementation with one agent as single-agent implementation
-
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
-        """
-        self._agent_id = env.possible_agents[0]
-        setattr(env, "single_observation_space", env.observation_spaces[self._agent_id])
-        setattr(env, "single_action_space", env.action_spaces[self._agent_id])
-        super().__init__(env)
-
-        self._reset_once = True
-        self._observations = None
-        self._info = {}
-
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
-        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
-              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
-        """Perform a step in the environment
-
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
-
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
-        """
-        self._observations, rewards, terminated, truncated, self._info = self._env.step({self._agent_id: actions})
-        return self._observations[self._agent_id], \
-               rewards[self._agent_id].view(-1, 1), \
-               terminated[self._agent_id].view(-1, 1), \
-               truncated[self._agent_id].view(-1, 1), \
-               self._info
-
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
-
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
-        """
-        if self._reset_once:
-            self._observations, self._info = self._env.reset()
-            self._reset_once = False
-        return self._observations[self._agent_id], self._info
-
-    def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
-        return None
-
-    def close(self) -> None:
-        """Close the environment
-        """
-        self._env.close()
-
-
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
         """Isaac Lab environment wrapper for multi-agent implementation

@@ -9,7 +9,7 @@ from skrl.envs.wrappers.jax.brax_envs import BraxWrapper
 from skrl.envs.wrappers.jax.gym_envs import GymWrapper
 from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.jax.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
-from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabSingleAgentWrapper, IsaacLabWrapper
+from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 from skrl.envs.wrappers.jax.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
 
@@ -45,9 +45,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                         * - Brax
                           - ``"brax"``
                         * - Isaac Lab
-                          - ``"isaaclab"``
-                        * - Isaac Lab (multi-agent as single-agent)
-                          - ``"isaaclab-single-agent"``
+                          - ``"isaaclab"`` (``"isaaclab-single-agent"``)
                         * - Isaac Gym preview 2
                           - ``"isaacgym-preview2"``
                         * - Isaac Gym preview 3
@@ -65,7 +63,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                         * - Petting Zoo
                           - ``"pettingzoo"``
                         * - Isaac Lab
-                          - ``"isaaclab-multi-agent"``
+                          - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
                         * - Bi-DexHands
                           - ``"bidexhands"``
     :type wrapper: str, optional
@@ -158,25 +156,20 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
             logger.info("Environment wrapper: Omniverse Isaac Gym")
         return OmniverseIsaacGymWrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
-        env_type = "single-agent"
-        env_wrapper = IsaacLabWrapper
-        # detect the wrapper
-        if wrapper == "isaaclab":
-            pass
-        elif wrapper == "isaaclab-single-agent":
-            env_type = "multi-agent as single-agent"
-            env_wrapper = IsaacLabSingleAgentWrapper
+        # use specified wrapper
+        if wrapper == "isaaclab-single-agent":
+            env_type = "single-agent"
+            env_wrapper = IsaacLabWrapper
         elif wrapper == "isaaclab-multi-agent":
             env_type = "multi-agent"
             env_wrapper = IsaacLabMultiAgentWrapper
+        # detect the wrapper
         else:
+            env_type = "single-agent"
+            env_wrapper = IsaacLabWrapper
             if hasattr(env.unwrapped, "possible_agents"):
-                if env.unwrapped.num_agents == 1:
-                    env_type = "multi-agent as single-agent"
-                    env_wrapper = IsaacLabSingleAgentWrapper
-                else:
-                    env_type = "multi-agent"
-                    env_wrapper = IsaacLabMultiAgentWrapper
+                env_type = "multi-agent"
+                env_wrapper = IsaacLabMultiAgentWrapper
         # wrap the environment
         if verbose:
             logger.info(f"Environment wrapper: Isaac Lab ({env_type})")

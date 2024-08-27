@@ -43,6 +43,7 @@ class IsaacLabWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
         self._info = {}
@@ -89,7 +90,7 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of np.ndarray or jax.Array and any other info
         """
-        actions = _jax2torch(actions, self._env.device, self._jax)
+        actions = _jax2torch(actions, self._env_device, self._jax)
 
         with torch.no_grad():
             self._observations, reward, terminated, truncated, self._info = self._env.step(actions)
@@ -190,6 +191,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
+        self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
         self._info = {}
@@ -205,11 +207,16 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dictionaries of np.ndarray or jax.Array and any other info
         """
-        self._observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+        actions = {uid: _jax2torch(value, self._env_device, self._jax) for uid, value in actions.items()}
+
+        with torch.no_grad():
+            observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+
+        self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
         return self._observations, \
-               {k: v.view(-1, 1) for k, v in rewards.items()}, \
-               {k: v.view(-1, 1) for k, v in terminated.items()}, \
-               {k: v.view(-1, 1) for k, v in truncated.items()}, \
+               {uid: _torch2jax(value.view(-1, 1), self._jax) for uid, value in rewards.items()}, \
+               {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1), self._jax) for uid, value in terminated.items()}, \
+               {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1), self._jax) for uid, value in truncated.items()}, \
                self._info
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
@@ -219,17 +226,19 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset()
+            self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
             self._reset_once = False
         return self._observations, self._info
 
-    def state(self) -> Union[np.ndarray, jax.Array]:
+    def state(self) -> Union[np.ndarray, jax.Array, None]:
         """Get the environment state
 
         :return: State
-        :rtype: np.ndarray or jax.Array
+        :rtype: np.ndarray, jax.Array or None
         """
-        return _torch2jax(self._env.state(), self._jax)
+        state = self._env.state()
+        return None if state is None else _torch2jax(state, self._jax)
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

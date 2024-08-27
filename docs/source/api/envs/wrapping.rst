@@ -368,14 +368,21 @@ Internal API (PyTorch)
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacLabSingleAgentWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -418,6 +425,13 @@ Internal API (PyTorch)
 
     .. automethod:: __init__
 
+.. autoclass:: skrl.envs.wrappers.torch.BraxWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
 .. autoclass:: skrl.envs.wrappers.torch.RobosuiteWrapper
     :undoc-members:
     :show-inheritance:
@@ -440,14 +454,21 @@ Internal API (JAX)
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacLabSingleAgentWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -469,6 +490,13 @@ Internal API (JAX)
     .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __init__
+
+.. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
     :undoc-members:
     :show-inheritance:
     :members:

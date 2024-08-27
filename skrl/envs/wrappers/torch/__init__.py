@@ -50,10 +50,12 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                           - ``"gymnasium"``
                         * - DeepMind
                           - ``"dm"``
-                        * - Robosuite
-                          - ``"robosuite"``
                         * - Brax
                           - ``"brax"``
+                        * - Isaac Lab
+                          - ``"isaaclab"``
+                        * - Isaac Lab (multi-agent as single-agent)
+                          - ``"isaaclab-single-agent"``
                         * - Isaac Gym preview 2
                           - ``"isaacgym-preview2"``
                         * - Isaac Gym preview 3
@@ -62,10 +64,8 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                           - ``"isaacgym-preview4"``
                         * - Omniverse Isaac Gym
                           - ``"omniverse-isaacgym"``
-                        * - Isaac Lab
-                          - ``"isaaclab"``
-                        * - Isaac Lab (multi-agent as single-agent)
-                          - ``"isaaclab-single-agent"``
+                        * - Robosuite
+                          - ``"robosuite"``
 
                     .. list-table:: Multi-agent environments |br|
                         :header-rows: 1
@@ -74,10 +74,10 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
                           - Wrapper tag
                         * - Petting Zoo
                           - ``"pettingzoo"``
-                        * - Bi-DexHands
-                          - ``"bidexhands"``
                         * - Isaac Lab
                           - ``"isaaclab-multi-agent"``
+                        * - Bi-DexHands
+                          - ``"bidexhands"``
     :type wrapper: str, optional
     :param verbose: Whether to print the wrapper type (default: ``True``)
     :type verbose: bool, optional

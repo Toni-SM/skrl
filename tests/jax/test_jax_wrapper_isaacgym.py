@@ -58,7 +58,7 @@ class IsaacGymEnv:
 
 @pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_env(capsys: pytest.CaptureFixture, backend: str, num_states):
+def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: str):
     config.jax.backend = backend
     Array = jax.Array if backend == "jax" else np.ndarray
 

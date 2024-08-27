@@ -64,7 +64,7 @@ class IsaacLabEnv(gym.Env):
 
 
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_env(capsys: pytest.CaptureFixture, num_states):
+def test_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
     action = torch.ones((num_envs, 1))
 

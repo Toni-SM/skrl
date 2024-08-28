@@ -75,7 +75,7 @@ models = {}
 for agent_name in env.possible_agents:
     models[agent_name] = {}
     models[agent_name]["policy"] = Policy(env.observation_space(agent_name), env.action_space(agent_name), device)
-    models[agent_name]["value"] = Value(env.shared_observation_space(agent_name), env.action_space(agent_name), device)
+    models[agent_name]["value"] = Value(env.state_space(agent_name), env.action_space(agent_name), device)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
@@ -101,9 +101,7 @@ cfg["kl_threshold"] = 0
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": next(iter(env.observation_spaces.values())), "device": device}
 cfg["shared_state_preprocessor"] = RunningStandardScaler
-cfg["shared_state_preprocessor_kwargs"] = {
-    "size": next(iter(env.shared_observation_spaces.values())), "device": device
-}
+cfg["shared_state_preprocessor_kwargs"] = {"size": next(iter(env.state_spaces.values())), "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler
 cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
@@ -118,7 +116,7 @@ agent = MAPPO(possible_agents=env.possible_agents,
               observation_spaces=env.observation_spaces,
               action_spaces=env.action_spaces,
               device=device,
-              shared_observation_spaces=env.shared_observation_spaces)
+              shared_observation_spaces=env.state_spaces)
 
 
 # configure and instantiate the RL trainer

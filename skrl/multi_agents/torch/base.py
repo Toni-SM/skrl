@@ -313,7 +313,7 @@ class MultiAgent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        _rewards = next(iter(rewards.values()))
+        _rewards = sum(rewards.values())
 
         # compute the cumulative sum of the rewards and timesteps
         if self._cumulative_rewards is None:

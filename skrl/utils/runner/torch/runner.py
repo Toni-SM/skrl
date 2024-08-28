@@ -148,6 +148,13 @@ class Runner:
         observation_spaces = env.observation_spaces if multi_agent else {"agent": env.observation_space}
         action_spaces = env.action_spaces if multi_agent else {"agent": env.action_space}
 
+        try:
+            agent_class = self._class(cfg["agent"]["class"])
+            del cfg["agent"]["class"]
+        except KeyError:
+            agent_class = self._class("PPO")
+            logger.warning("No 'class' field defined in 'agent' cfg. 'PPO' will be used as default")
+
         # instantiate models
         models = {}
         for agent_id in possible_agents:
@@ -178,7 +185,7 @@ class Runner:
                     logger.warning("No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default")
                 # instantiate model
                 models[agent_id]["value"] = model_class(
-                    observation_space=(state_spaces if self._class(_cfg["agent"]["class"]) in [MAPPO] else observation_spaces)[agent_id],
+                    observation_space=(state_spaces if agent_class in [MAPPO] else observation_spaces)[agent_id],
                     action_space=action_spaces[agent_id],
                     device=device,
                     **self._process_cfg(_cfg["models"]["value"]),
@@ -228,8 +235,10 @@ class Runner:
         observation_spaces = env.observation_spaces if multi_agent else {"agent": env.observation_space}
         action_spaces = env.action_spaces if multi_agent else {"agent": env.action_space}
 
-        # instantiate memories
-        memories = {}
+        # check for memory configuration (backward compatibility)
+        if not "memory" in cfg:
+            logger.warning("Deprecation warning: No 'memory' field defined in cfg. Using the default generated configuration")
+            cfg["memory"] = {"class": "RandomMemory", "memory_size": -1}
         # get memory class and remove 'class' field
         try:
             memory_class = self._class(cfg["memory"]["class"])
@@ -237,6 +246,7 @@ class Runner:
         except KeyError:
             memory_class = self._class("RandomMemory")
             logger.warning("No 'class' field defined in 'memory' cfg. 'RandomMemory' will be used as default")
+        memories = {}
         # instantiate memory
         if cfg["memory"]["memory_size"] < 0:
             cfg["memory"]["memory_size"] = cfg["agent"]["rollouts"]  # memory_size is the agent's number of rollouts

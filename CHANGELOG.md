@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
 - Fix automatic wrapper detection for Isaac Gym (previews), DeepMind and vectorized Gymnasium environments
 - Fix vectorized/parallel environments `reset` method return values when called more than once
+- IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
 
 ## [1.2.0] - 2024-06-23
 ### Added

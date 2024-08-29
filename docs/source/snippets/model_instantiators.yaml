@@ -1,0 +1,59 @@
+
+# [start-structure-yaml]
+network:
+  <CONTAINER>:
+    input:  # container inputs
+    layers:  # list of supported layers
+    activations:  # list of supported activation functions
+# [end-structure-yaml]
+
+# =============================================================================
+
+# [start-layer-linear-single]
+layers:
+  - linear: 32
+# [end-layer-linear-single]
+
+
+# [start-layer-linear-list]
+layers:
+  - linear: [32]
+# [end-layer-linear-list]
+
+
+# [start-layer-linear-dict]
+layers:
+  - linear: {out_features: 32}
+# [end-layer-linear-dict]
+
+# =============================================================================
+
+# [start-layer-conv-list]
+layers:
+  - conv: [32, 8, [4, 4]]
+# [end-layer-conv-list]
+
+
+# [start-layer-conv-dict]
+layers:
+  - conv: {out_channels: 32, kernel_size: 8, stride: [4, 4]}
+# [end-layer-conv-dict]
+
+# =============================================================================
+
+# [start-layer-flatten-single]
+layers:
+  - flatten
+# [end-layer-flatten-single]
+
+
+# [start-layer-flatten-list]
+layers:
+  - flatten: [1, -1]
+# [end-layer-flatten-list]
+
+
+# [start-layer-flatten-dict]
+layers:
+  - flatten: {start_dim: 1, end_dim: -1}
+# [end-layer-flatten-dict]

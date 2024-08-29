@@ -375,8 +375,8 @@ class IPPO(MultiAgent):
         outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
         if not self._jax:  # numpy backend
-            actions = {jax.device_get(_actions) for _actions in actions}
-            log_prob = {jax.device_get(_log_prob) for _log_prob in log_prob}
+            actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
+            log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
 
         self._current_log_prob = log_prob
 

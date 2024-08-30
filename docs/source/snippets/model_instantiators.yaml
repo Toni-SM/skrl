@@ -1,10 +1,16 @@
 
 # [start-structure-yaml]
 network:
-  <CONTAINER>:
-    input:  # container inputs
+  - name: <NAME>  # container name
+    input: <INPUT>  # container input (certain operations are supported)
     layers:  # list of supported layers
+      - <LAYER 1>
+      - ...
+      - <LAYER N>
     activations:  # list of supported activation functions
+      - <ACTIVATION 1>
+      - ...
+      - <ACTIVATION N>
 # [end-structure-yaml]
 
 # =============================================================================

@@ -64,21 +64,29 @@ Implementation details:
 Inputs
 ^^^^^^
 
-The input can be specified using the enum ``Shape`` (see :py:class:`skrl.utils.model_instantiators.torch.Shape`) or previously defined container names.
+The input can be specified using the enum ``Shape`` (see :py:class:`skrl.utils.model_instantiators.torch.Shape`) or previously defined container outputs (by container name).
 Certain operations could be specified on them, including indexing (by a range of numbers in sequences, by key in dictionaries) and slicing
+
+.. hint::
+
+    Operations can be mixed to create more complex inputs
 
 .. list-table::
     :header-rows: 1
 
     * - Operations
       - Example
-    * - Concatenation
-      - ``concatenate(features_extractor, ACTIONS)``
-    * - Indexing
+    * - Dictionary indexing
+        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
       - ``OBSERVATIONS["camera"]``
+    * - Tensor/array indexing and slicing
+        |br| E.g.: :py:class:`gymnasium.spaces.Box`
+      - ``OBSERVATIONS[:, 0]``
         |br| ``OBSERVATIONS[:, 2:5]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
-      - ``features_extractor + OBSERVATIONS``
+      - ``features_extractor + ACTIONS``
+    * - Concatenation
+      - ``concatenate([features_extractor, ACTIONS])``
 
 |
 

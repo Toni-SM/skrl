@@ -2,21 +2,19 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
-import yaml
 import gymnasium as gym
+import yaml
 
 import numpy as np
 import torch
 
-
-from skrl.utils.model_instantiators.torch import Shape 
-from skrl.utils.model_instantiators.torch.common import _parse_input, _generate_sequential
+from skrl.utils.model_instantiators.torch.common import Shape, _generate_sequential, _parse_input
 
 
 def test_parse_input(capsys):
     # check for Shape enum
     for input in [Shape.STATES, Shape.OBSERVATIONS, Shape.ACTIONS, Shape.STATES_ACTIONS, Shape.OBSERVATIONS_ACTIONS]:
-        # Shape enum with/without class 
+        # Shape enum with/without class
         output = _parse_input(str(input))
         output_1 = _parse_input(str(input).replace("Shape.", ""))
         assert output == output_1, f"'{output}' != '{output_1}'"
@@ -30,25 +28,74 @@ def test_parse_input(capsys):
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
 
 def test_generate_sequential(capsys):
+    _globals = {"nn": torch.nn}
+
+    # linear
     content = r"""
 layers:
-  - linear: 32
-  - linear: [32]
-  - linear: {out_features: 32}
+  - 8
+  - linear: 16
+  - linear: [32, True]
+  - linear: {out_features: 64, bias: True}
+  - linear: {features: 64, use_bias: False}
 activations: elu
 """
     content = yaml.safe_load(content)
+    modules = _generate_sequential(content["layers"], content["activations"])
+    _locals = {}
+    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    container = _locals["container"]
     with capsys.disabled():
-        print()
-        print(content)
-        _generate_sequential(content["layers"], content["activations"])
+        print("\nlinear:", container)
+    assert isinstance(container, torch.nn.Sequential)
+    assert len(container) == 10
+
+    # conv2d
+    content = r"""
+layers:
+  - conv2d: [2, 4, [8, 16]]
+  - conv2d: {out_channels: 16, kernel_size: 8, stride: [4, 2], padding: valid, bias: True}
+  - conv2d: {features: 16, kernel_size: 8, strides: [4, 2], padding: VALID, use_bias: False}
+activations:
+  - elu
+"""
+    content = yaml.safe_load(content)
+    modules = _generate_sequential(content["layers"], content["activations"])
+    _locals = {}
+    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    container = _locals["container"]
+    with capsys.disabled():
+        print("\nconv2d:", container)
+    assert isinstance(container, torch.nn.Sequential)
+    assert len(container) == 6
+
+    # flatten
+    content = r"""
+layers:
+  - flatten
+  - flatten: [2, -2]
+  - flatten: {start_dim: 3, end_dim: -3}
+activations:
+  - elu
+  - elu
+  - elu
+"""
+    content = yaml.safe_load(content)
+    modules = _generate_sequential(content["layers"], content["activations"])
+    _locals = {}
+    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    container = _locals["container"]
+    with capsys.disabled():
+        print("\nflatten:", container)
+    assert isinstance(container, torch.nn.Sequential)
+    assert len(container) == 3
 
 
 # def test_gaussian_model(capsys):
 #     device = "cpu"
 #     observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
 #     action_space = gym.spaces.Discrete(2)
-        
+
 #     cfg = r"""
 # clip_actions: True
 # clip_log_std: True

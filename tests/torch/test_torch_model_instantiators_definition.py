@@ -30,16 +30,30 @@ def test_parse_input(capsys):
 def test_generate_sequential(capsys):
     _globals = {"nn": torch.nn}
 
+    # activation functions
+    content = r"""
+    activations: [relu, tanh, sigmoid, leaky_relu, elu, softplus, softsign, selu, softmax]
+    """
+    content = yaml.safe_load(content)
+    modules = _generate_sequential([1] * len(content["activations"]), content["activations"])
+    _locals = {}
+    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    container = _locals["container"]
+    with capsys.disabled():
+        print("\nactivations:", container)
+    assert isinstance(container, torch.nn.Sequential)
+    assert len(container) == len(content["activations"]) * 2
+
     # linear
     content = r"""
-layers:
-  - 8
-  - linear: 16
-  - linear: [32, True]
-  - linear: {out_features: 64, bias: True}
-  - linear: {features: 64, use_bias: False}
-activations: elu
-"""
+    layers:
+    - 8
+    - linear: 16
+    - linear: [32, True]
+    - linear: {out_features: 64, bias: True}
+    - linear: {features: 64, use_bias: False}
+    activations: elu
+    """
     content = yaml.safe_load(content)
     modules = _generate_sequential(content["layers"], content["activations"])
     _locals = {}
@@ -52,13 +66,13 @@ activations: elu
 
     # conv2d
     content = r"""
-layers:
-  - conv2d: [2, 4, [8, 16]]
-  - conv2d: {out_channels: 16, kernel_size: 8, stride: [4, 2], padding: valid, bias: True}
-  - conv2d: {features: 16, kernel_size: 8, strides: [4, 2], padding: VALID, use_bias: False}
-activations:
-  - elu
-"""
+    layers:
+    - conv2d: [2, 4, [8, 16]]
+    - conv2d: {out_channels: 16, kernel_size: 8, stride: [4, 2], padding: valid, bias: True}
+    - conv2d: {features: 16, kernel_size: 8, strides: [4, 2], padding: VALID, use_bias: False}
+    activations:
+    - elu
+    """
     content = yaml.safe_load(content)
     modules = _generate_sequential(content["layers"], content["activations"])
     _locals = {}
@@ -71,15 +85,15 @@ activations:
 
     # flatten
     content = r"""
-layers:
-  - flatten
-  - flatten: [2, -2]
-  - flatten: {start_dim: 3, end_dim: -3}
-activations:
-  - elu
-  - elu
-  - elu
-"""
+    layers:
+    - flatten
+    - flatten: [2, -2]
+    - flatten: {start_dim: 3, end_dim: -3}
+    activations:
+    - elu
+    - elu
+    - elu
+    """
     content = yaml.safe_load(content)
     modules = _generate_sequential(content["layers"], content["activations"])
     _locals = {}
@@ -92,10 +106,10 @@ activations:
 
     # non-lazy layers
     content = r"""
-layers:
-  - linear: {in_features: STATES, out_features: Shape.ONE}
-  - conv2d: {in_channels: 3, out_channels: 16, kernel_size: 8}
-"""
+    layers:
+    - linear: {in_features: STATES, out_features: Shape.ONE}
+    - conv2d: {in_channels: 3, out_channels: 16, kernel_size: 8}
+    """
     content = yaml.safe_load(content)
     modules = _generate_sequential(content["layers"], content.get("activations", []))
     _locals = {}

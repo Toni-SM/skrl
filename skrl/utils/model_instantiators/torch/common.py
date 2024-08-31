@@ -50,6 +50,20 @@ def _parse_input(source: str) -> str:
     return source
 
 def _generate_sequential(layers, activations) -> str:
+    def _num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
+        num_units = {
+            "ONE": "1",
+            "STATES": "self.num_observations",
+            "OBSERVATIONS": "self.num_observations",
+            "ACTIONS": "self.num_actions",
+            "STATES_ACTIONS": "self.num_observations + self.num_actions",
+            "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
+        }
+        shape_as_str = str(shape).replace("Shape.", "")
+        if shape_as_str in num_units:
+            return num_units[shape_as_str]
+        return shape
+
     # expand activations
     if type(activations) is str:
         activations = [activations] * len(layers)
@@ -88,6 +102,11 @@ def _generate_sequential(layers, activations) -> str:
                         "use_bias": "bias",
                     }
                     kwargs = {mapping.get(k, k): v for k, v in kwargs.items()}
+                    kwargs["out_features"] = _num_units(kwargs["out_features"])
+                    # non-lazy module
+                    if "in_features" in kwargs:
+                        cls = "nn.Linear"
+                        kwargs["in_features"] = _num_units(kwargs["in_features"])
                 else:
                     raise ValueError(f"Invalid or unsupported 'linear' layer definition: {kwargs}")
             # convolutional 2D
@@ -103,6 +122,9 @@ def _generate_sequential(layers, activations) -> str:
                         "use_bias": "bias",
                     }
                     kwargs = {mapping.get(k, k): f'"{v.lower()}"' if type(v) is str else v for k, v in kwargs.items()}
+                    # non-lazy module
+                    if "in_channels" in kwargs:
+                        cls = "nn.Conv2d"
                 else:
                     raise ValueError(f"Invalid or unsupported 'conv2d' layer definition: {kwargs}")
             # flatten
@@ -133,6 +155,6 @@ def generate_containers(network: Sequence[Mapping[str, Any]]) -> Sequence[str]:
         container = {}
         container["name"] = item["name"]
         container["input"] = _parse_input(item["input"])
-        container["sequential"] = _generate_sequential(item["layers"], item["activations"])
+        container["sequential"] = _generate_sequential(item["layers"], item.get("activations", []))
         containers.append(container)
     return containers

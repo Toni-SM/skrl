@@ -90,6 +90,23 @@ activations:
     assert isinstance(container, torch.nn.Sequential)
     assert len(container) == 3
 
+    # non-lazy layers
+    content = r"""
+layers:
+  - linear: {in_features: STATES, out_features: Shape.ONE}
+  - conv2d: {in_channels: 3, out_channels: 16, kernel_size: 8}
+"""
+    content = yaml.safe_load(content)
+    modules = _generate_sequential(content["layers"], content.get("activations", []))
+    _locals = {}
+    _globals["self"] = lambda: None
+    _globals["self"].num_observations = 5
+    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    container = _locals["container"]
+    with capsys.disabled():
+        print("\nnon-lazy:", container)
+    assert isinstance(container, torch.nn.Sequential)
+    assert len(container) == 2
 
 # def test_gaussian_model(capsys):
 #     device = "cpu"

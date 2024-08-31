@@ -54,7 +54,7 @@ Implementation details:
 
     .. group-tab:: YAML
 
-        .. literalinclude:: ../../snippets/model_instantiators.yaml
+        .. literalinclude:: ../../snippets/model_instantiators.txt
             :language: yaml
             :start-after: [start-structure-yaml]
             :end-before: [end-structure-yaml]
@@ -161,7 +161,7 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 
 .. note::
 
-    PyTorch's ``in_features`` parameter size is inferred
+    If the PyTorch's ``in_features`` parameter is not specified it will be inferred by using the :py:class:`torch.nn.LazyLinear` module
 
 .. list-table::
     :header-rows: 1
@@ -172,19 +172,19 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
       - Type
       - Required
       - Description
-    * - 0
+    * -
       - ``in_features``
       - .. centered:: -
       - ``int``
-      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - Number of input features
-    * - 1
+    * - 0
       - ``out_features``
       - ``features``
       - ``int``
       - .. centered:: :math:`\blacksquare`
       - Number of output features
-    * - 2
+    * - 1
       - ``bias``
       - ``use_bias``
       - ``bool``
@@ -199,21 +199,28 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 
             .. group-tab:: Single value
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
-                    :start-after: [start-layer-linear-single]
-                    :end-before: [end-layer-linear-single]
+                    :start-after: [start-layer-linear-basic]
+                    :end-before: [end-layer-linear-basic]
+
+            .. group-tab:: As int
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-linear-int]
+                    :end-before: [end-layer-linear-int]
 
             .. group-tab:: As list
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-linear-list]
                     :end-before: [end-layer-linear-list]
 
             .. group-tab:: As dict
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-linear-dict]
                     :end-before: [end-layer-linear-dict]
@@ -227,7 +234,7 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
 
 .. note::
 
-    PyTorch's ``in_channels`` parameter value is inferred from input or previous layer
+    If the PyTorch's ``in_channels`` parameter is not specified it will be inferred by using the :py:class:`torch.nn.LazyConv2d` module
 
 .. list-table::
     :header-rows: 1
@@ -238,37 +245,37 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
       - Type
       - Required
       - Description
-    * - 0
+    * -
       - ``in_channels``
       - .. centered:: -
       - ``int``
-      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - Number of input channels
-    * - 1
+    * - 0
       - ``out_channels``
       - ``features``
       - ``int``
       - .. centered:: :math:`\blacksquare`
       - Number of output channels (filters)
-    * - 2
+    * - 1
       - ``kernel_size``
       - ``kernel_size``
       - ``int``, ``tuple[int]``
       - .. centered:: :math:`\blacksquare`
       - Convolutional kernel size
-    * - 3
+    * - 2
       - ``stride``
       - ``strides``
       - ``int``, ``tuple[int]``
       - .. centered:: :math:`\square`
       - Inter-window strides
-    * - 4
+    * - 3
       - ``padding``
       - ``padding``
       - ``str``, ``int``, ``tuple[int]``
       - .. centered:: :math:`\square`
       - Padding added to all dimensions
-    * - 5
+    * - 4
       - ``bias``
       - ``use_bias``
       - ``bool``
@@ -283,17 +290,17 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
 
             .. group-tab:: As list
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
-                    :start-after: [start-layer-conv-list]
-                    :end-before: [end-layer-conv-list]
+                    :start-after: [start-layer-conv2d-list]
+                    :end-before: [end-layer-conv2d-list]
 
             .. group-tab:: As dict
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
-                    :start-after: [start-layer-conv-dict]
-                    :end-before: [end-layer-conv-dict]
+                    :start-after: [start-layer-conv2d-dict]
+                    :end-before: [end-layer-conv2d-dict]
 
 |
 
@@ -332,21 +339,21 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
 
             .. group-tab:: Single value
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
-                    :start-after: [start-layer-flatten-single]
-                    :end-before: [end-layer-flatten-single]
+                    :start-after: [start-layer-flatten-basic]
+                    :end-before: [end-layer-flatten-basic]
 
             .. group-tab:: As list
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-flatten-list]
                     :end-before: [end-layer-flatten-list]
 
             .. group-tab:: As dict
 
-                .. literalinclude:: ../../snippets/model_instantiators.yaml
+                .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-flatten-dict]
                     :end-before: [end-layer-flatten-dict]

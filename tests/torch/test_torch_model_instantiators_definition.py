@@ -8,7 +8,12 @@ import yaml
 import numpy as np
 import torch
 
-from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, multivariate_gaussian_model
+from skrl.utils.model_instantiators.torch import (
+    categorical_model,
+    deterministic_model,
+    gaussian_model,
+    multivariate_gaussian_model
+)
 from skrl.utils.model_instantiators.torch.common import Shape, _generate_modules, _get_activation_function, _parse_input
 
 
@@ -263,3 +268,43 @@ def test_deterministic_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 3)
+
+def test_categorical_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.Discrete(2)
+
+    content = r"""
+    unnormalized_log_prob: False
+    network:
+      - name: net
+        input: Shape.OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+        activations: elu
+    output: ACTIONS
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = categorical_model(observation_space=observation_space,
+                              action_space=action_space,
+                              device=device,
+                              return_source=True,
+                              **content)
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = categorical_model(observation_space=observation_space,
+                              action_space=action_space,
+                              device=device,
+                              return_source=False,
+                              **content)
+    model.to(device=device)
+    with capsys.disabled():
+        print(model)
+
+    observations = torch.ones((10, model.num_observations), device=device)
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 1)

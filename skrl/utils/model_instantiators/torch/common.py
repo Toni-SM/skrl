@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import ast
 from enum import Enum
@@ -15,20 +15,46 @@ class Shape(Enum):
     STATES_ACTIONS = -2
     OBSERVATIONS_ACTIONS = -2
 
-ACTIVATIONS = {
-    "relu": "nn.ReLU()",
-    "tanh": "nn.Tanh()",
-    "sigmoid": "nn.Sigmoid()",
-    "leaky_relu": "nn.LeakyReLU()",
-    "elu": "nn.ELU()",
-    "softplus": "nn.Softplus()",
-    "softsign": "nn.Softsign()",
-    "selu": "nn.SELU()",
-    "softmax": "nn.Softmax()",
-}
+def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
+    """Get the activation function
 
+    Supported activation functions:
+
+    - "elu"
+    - "leaky_relu"
+    - "relu"
+    - "selu"
+    - "sigmoid"
+    - "softmax"
+    - "softplus"
+    - "softsign"
+    - "tanh"
+
+    :param activation: Activation function name
+    :param as_module: Whether to return a PyTorch module instance rather than a functional method
+
+    :return: Activation function or None if the activation is not supported
+    """
+    activations = {
+        "elu": "nn.ELU()" if as_module else "functional.elu",
+        "leaky_relu": "nn.LeakyReLU()" if as_module else "functional.leaky_relu",
+        "relu": "nn.ReLU()" if as_module else "functional.relu",
+        "selu": "nn.SELU()" if as_module else "functional.selu",
+        "sigmoid": "nn.Sigmoid()" if as_module else "functional.sigmoid",
+        "softmax": "nn.Softmax()" if as_module else "functional.softmax",
+        "softplus": "nn.Softplus()" if as_module else "functional.softplus",
+        "softsign": "nn.Softsign()" if as_module else "functional.softsign",
+        "tanh": "nn.Tanh()" if as_module else "functional.tanh",
+    }
+    return activations.get(activation.lower() if type(activation) is str else activation, None)
 
 def _parse_input(source: str) -> str:
+    """Parse a network input expression by replacing substitutions and applying operations
+
+    :param source: Input expression
+
+    :return: Parsed network input
+    """
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
             if isinstance(node.func, ast.Name):
@@ -37,11 +63,12 @@ def _parse_input(source: str) -> str:
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
                     node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
             return node
-    # apply operations
+
+    # apply operations by modifying the source syntax grammar
     tree = ast.parse(source)
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
-    # Shape enum
+    # enum substitutions
     source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
     source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
     source = source.replace("Shape.STATES", "STATES").replace("STATES", 'inputs["states"]')
@@ -49,21 +76,54 @@ def _parse_input(source: str) -> str:
     source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'inputs["taken_actions"]')
     return source
 
-def _generate_sequential(layers, activations) -> str:
-    def _num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
-        num_units = {
-            "ONE": "1",
-            "STATES": "self.num_observations",
-            "OBSERVATIONS": "self.num_observations",
-            "ACTIONS": "self.num_actions",
-            "STATES_ACTIONS": "self.num_observations + self.num_actions",
-            "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
-        }
-        shape_as_str = str(shape).replace("Shape.", "")
-        if shape_as_str in num_units:
-            return num_units[shape_as_str]
-        return shape
+def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str]]:
+    """Parse the network output expression by replacing substitutions and applying operations
 
+    :param source: Output expression
+
+    :return: Tuple with the parsed network output and generated modules
+    """
+    class NodeTransformer(ast.NodeTransformer):
+        def visit_Call(self, node: ast.Call):
+            if isinstance(node.func, ast.Name):
+                # operation: concatenate
+                if node.func.id == "concatenate":
+                    node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
+                    node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
+                # activation functions
+                activation = _get_activation_function(node.func.id, as_module=False)
+                if activation:
+                    node.func = ast.Attribute(value=ast.Name("nn"), attr=activation)
+            return node
+
+    modules = []
+    if type(source) is str:
+        # enum substitutions
+        source = source.replace("Shape.ACTIONS", "ACTIONS").replace("Shape.ONE", "ONE")
+        token = "ACTIONS" if "ACTIONS" in source else None
+        token = "ONE" if "ONE" in source else token
+        if token:
+            modules = [f"nn.LazyLinear(out_features={get_num_units(token)})"]
+            source = source.replace(token, "CONTAINER_NAME")
+        # apply operations by modifying the source syntax grammar
+        tree = ast.parse(source)
+        NodeTransformer().visit(tree)
+        source = ast.unparse(tree)
+    elif type(source) in [list, tuple]:
+        raise NotImplementedError
+    else:
+        raise ValueError(f"Invalid or unsupported network output definition: {source}")
+    return source, modules
+
+def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
+    """Generate network modules
+
+    :param layers: Layer definitions
+    :param activations: Activation function definitions applied after each layer (except ``flatten`` layers).
+                        If a single activation function is specified (str or lis), it will be applied after each layer
+
+    :return: A list of generated modules
+    """
     # expand activations
     if type(activations) is str:
         activations = [activations] * len(layers)
@@ -73,15 +133,16 @@ def _generate_sequential(layers, activations) -> str:
         elif len(activations) == 1:
             activations = activations * len(layers)
         else:
-            pass # TODO: check the length of activations
+            # TODO: check the length of activations
+            raise NotImplementedError(f"Activations length ({len(activations)}) don't match layers ({len(layers)})")
 
     modules = []
     for layer, activation in zip(layers, activations):
-        # special cases
-        # linear (as int)
-        if type(layer) in [int, float]:
+        # single-values cases
+        # linear (as number)
+        if type(layer) in [int, float]:  # TODO: support token, e.g.: - ACTIONS??
             layer = {"linear": layer}
-        # flatten (without value)
+        # flatten (as string)
         elif type(layer) is str:
             layer = {"flatten": {}}
 
@@ -102,11 +163,11 @@ def _generate_sequential(layers, activations) -> str:
                         "use_bias": "bias",
                     }
                     kwargs = {mapping.get(k, k): v for k, v in kwargs.items()}
-                    kwargs["out_features"] = _num_units(kwargs["out_features"])
+                    kwargs["out_features"] = get_num_units(kwargs["out_features"])
                     # non-lazy module
                     if "in_features" in kwargs:
                         cls = "nn.Linear"
-                        kwargs["in_features"] = _num_units(kwargs["in_features"])
+                        kwargs["in_features"] = get_num_units(kwargs["in_features"])
                 else:
                     raise ValueError(f"Invalid or unsupported 'linear' layer definition: {kwargs}")
             # convolutional 2D
@@ -145,16 +206,71 @@ def _generate_sequential(layers, activations) -> str:
         # define layer and activation function
         kwargs = ", ".join([f"{k}={v}" for k, v in kwargs.items()])
         modules.append(f"{cls}({kwargs})")
-        if activation.lower() in ACTIVATIONS:
-            modules.append(ACTIVATIONS[activation.lower()])
+        activation = _get_activation_function(activation)
+        if activation:
+            modules.append(activation)
     return modules
 
-def generate_containers(network: Sequence[Mapping[str, Any]]) -> Sequence[str]:
+def get_num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
+    """Get the number of units/features by shape
+
+    :param shape: Shape
+
+    :return: Number of units/features by shape. If shape is unknown, its value will be returned as it
+    """
+    num_units = {
+        "ONE": "1",
+        "STATES": "self.num_observations",
+        "OBSERVATIONS": "self.num_observations",
+        "ACTIONS": "self.num_actions",
+        "STATES_ACTIONS": "self.num_observations + self.num_actions",
+        "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
+    }
+    shape_as_str = str(shape).replace("Shape.", "")
+    if shape_as_str in num_units:
+        return num_units[shape_as_str]
+    return shape
+
+def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]],
+                        embed_output: bool = True, indent: int = -1) -> \
+                        Tuple[Sequence[Mapping[str, Any]], Union[str, Sequence[str], None], Sequence[str]]:
+    """Generate network containers
+
+    :param network: Network definition
+    :param output: Network's output expression
+    :param embed_output: Whether to embed the output modules (if any) in the container definition.
+                         If True, the output modules will be append to the last container module
+    :param indent: Indentation level used to generate the Sequential definition.
+                   If negative, no indentation will be applied
+
+    :return: Network containers, output statements and output modules
+    """
     containers = []
-    for item in network:
+    output, output_modules = _parse_output(output)
+    for i, item in enumerate(network):
         container = {}
         container["name"] = item["name"]
         container["input"] = _parse_input(item["input"])
-        container["sequential"] = _generate_sequential(item["layers"], item.get("activations", []))
+        container["modules"] = _generate_modules(item["layers"], item.get("activations", []))
+        # embed output in the container definition
+        if embed_output and i == len(network) - 1:
+            container["modules"] += output_modules
+            output_modules = []
+            # single expression
+            if type(output) is str:
+                # avoid 'output = container_name'
+                if output == "CONTAINER_NAME":
+                    output = None
+                # substitute container name in output expression
+                else:
+                    output = output.replace("CONTAINER_NAME", container["name"])
+        # define a Sequential container
+        if indent < 0:
+            container["sequential"] = f'nn.Sequential({", ".join(container["modules"])})'
+        else:
+            container["sequential"] = "nn.Sequential("
+            for item in container["modules"]:
+                container["sequential"] += f"\n{' ' * 4 * indent}{item},"
+            container["sequential"] += f"\n{' ' * 4 * (indent - 1)})"
         containers.append(container)
-    return containers
+    return containers, output, output_modules

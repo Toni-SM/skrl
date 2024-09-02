@@ -76,12 +76,12 @@ def _parse_input(source: str) -> str:
     source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'inputs["taken_actions"]')
     return source
 
-def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str]]:
+def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:
     """Parse the network output expression by replacing substitutions and applying operations
 
     :param source: Output expression
 
-    :return: Tuple with the parsed network output and generated modules
+    :return: Tuple with the parsed network output, generated modules and output size/shape
     """
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
@@ -96,6 +96,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
                     node.func = ast.Attribute(value=ast.Name("nn"), attr=activation)
             return node
 
+    size = get_num_units("ACTIONS")
     modules = []
     if type(source) is str:
         # enum substitutions
@@ -103,6 +104,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
         token = "ACTIONS" if "ACTIONS" in source else None
         token = "ONE" if "ONE" in source else token
         if token:
+            size = get_num_units(token)
             modules = [f"nn.LazyLinear(out_features={get_num_units(token)})"]
             source = source.replace(token, "CONTAINER_NAME")
         # apply operations by modifying the source syntax grammar
@@ -113,7 +115,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
         raise NotImplementedError
     else:
         raise ValueError(f"Invalid or unsupported network output definition: {source}")
-    return source, modules
+    return source, modules, size
 
 def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
     """Generate network modules
@@ -132,6 +134,8 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
             activations = [""] * len(layers)
         elif len(activations) == 1:
             activations = activations * len(layers)
+        elif len(activations) == len(layers):
+            pass
         else:
             # TODO: check the length of activations
             raise NotImplementedError(f"Activations length ({len(activations)}) don't match layers ({len(layers)})")
@@ -233,7 +237,7 @@ def get_num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
 
 def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]],
                         embed_output: bool = True, indent: int = -1) -> \
-                        Tuple[Sequence[Mapping[str, Any]], Union[str, Sequence[str], None], Sequence[str]]:
+                        Tuple[Sequence[Mapping[str, Any]], Mapping[str, Any]]:
     """Generate network containers
 
     :param network: Network definition
@@ -243,10 +247,12 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
     :param indent: Indentation level used to generate the Sequential definition.
                    If negative, no indentation will be applied
 
-    :return: Network containers, output statements and output modules
+    :return: Network containers and output
     """
+    # parse output
+    output, output_modules, output_size = _parse_output(output)
+    # build containers
     containers = []
-    output, output_modules = _parse_output(output)
     for i, item in enumerate(network):
         container = {}
         container["name"] = item["name"]
@@ -273,4 +279,6 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
                 container["sequential"] += f"\n{' ' * 4 * indent}{item},"
             container["sequential"] += f"\n{' ' * 4 * (indent - 1)})"
         containers.append(container)
-    return containers, output, output_modules
+    # compose output
+    output = {"output": output, "modules": output_modules, "size": output_size}
+    return containers, output

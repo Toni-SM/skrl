@@ -10,9 +10,10 @@ import torch.nn as nn
 from skrl.models.torch import Model  # noqa
 from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
 from skrl.utils.model_instantiators.torch.gaussian import gaussian_model
+from skrl.utils.model_instantiators.torch.multivariate_gaussian import multivariate_gaussian_model
 
 
-__all__ = ["categorical_model", "deterministic_model", "multivariate_gaussian_model", "Shape"]
+__all__ = ["categorical_model", "deterministic_model", "Shape"]
 
 
 class Shape(Enum):
@@ -147,99 +148,6 @@ def _generate_sequential(model: Model,
             if hidden_activation[i]:
                 modules.append(_get_activation_function(hidden_activation[i], as_string=True))
     return f'nn.Sequential({", ".join(modules)})'
-
-def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                                action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                                device: Optional[Union[str, torch.device]] = None,
-                                clip_actions: bool = False,
-                                clip_log_std: bool = True,
-                                min_log_std: float = -20,
-                                max_log_std: float = 2,
-                                initial_log_std: float = 0,
-                                input_shape: Shape = Shape.STATES,
-                                hiddens: list = [256, 256],
-                                hidden_activation: list = ["relu", "relu"],
-                                output_shape: Shape = Shape.ACTIONS,
-                                output_activation: Optional[str] = "tanh",
-                                output_scale: float = 1.0,
-                                return_source: bool = False) -> Union[Model, str]:
-    """Instantiate a multivariate Gaussian model
-
-    :param observation_space: Observation/state space or shape (default: None).
-                              If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param action_space: Action space or shape (default: None).
-                         If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
-    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or torch.device, optional
-    :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
-    :type clip_actions: bool, optional
-    :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: True)
-    :type clip_log_std: bool, optional
-    :param min_log_std: Minimum value of the log standard deviation (default: -20)
-    :type min_log_std: float, optional
-    :param max_log_std: Maximum value of the log standard deviation (default: 2)
-    :type max_log_std: float, optional
-    :param initial_log_std: Initial value for the log standard deviation (default: 0)
-    :type initial_log_std: float, optional
-    :param input_shape: Shape of the input (default: Shape.STATES)
-    :type input_shape: Shape, optional
-    :param hiddens: Number of hidden units in each hidden layer
-    :type hiddens: int or list of ints
-    :param hidden_activation: Activation function for each hidden layer (default: "relu").
-    :type hidden_activation: list of strings
-    :param output_shape: Shape of the output (default: Shape.ACTIONS)
-    :type output_shape: Shape, optional
-    :param output_activation: Activation function for the output layer (default: "tanh")
-    :type output_activation: str or None, optional
-    :param output_scale: Scale of the output layer (default: 1.0).
-                         If None, the output layer will not be scaled
-    :type output_scale: float, optional
-    :param return_source: Whether to return the source string containing the model class used to
-                          instantiate the model rather than the model instance (default: False).
-    :type return_source: bool, optional
-
-    :return: Multivariate Gaussian model instance or definition source
-    :rtype: Model
-    """
-    # network
-    net = _generate_sequential(None, input_shape, hiddens, hidden_activation, output_shape, output_activation)
-
-    # compute
-    if input_shape == Shape.OBSERVATIONS:
-        forward = 'self.net(inputs["states"])'
-    elif input_shape == Shape.ACTIONS:
-        forward = 'self.net(inputs["taken_actions"])'
-    elif input_shape == Shape.STATES_ACTIONS:
-        forward = 'self.net(torch.cat((inputs["states"], inputs["taken_actions"]), dim=1))'
-    if output_scale != 1:
-        forward = f"{output_scale} * {forward}"
-
-    template = f"""class MultivariateGaussianModel(MultivariateGaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions,
-                    clip_log_std, min_log_std, max_log_std):
-        Model.__init__(self, observation_space, action_space, device)
-        MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
-
-        self.net = {net}
-        self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({_get_num_units_by_shape(None, output_shape, as_string=True)}))
-
-    def compute(self, inputs, role=""):
-        return {forward}, self.log_std_parameter, {{}}
-    """
-    if return_source:
-        return template
-    _locals = {}
-    exec(template, globals(), _locals)
-    return _locals["MultivariateGaussianModel"](observation_space=observation_space,
-                                                action_space=action_space,
-                                                device=device,
-                                                clip_actions=clip_actions,
-                                                clip_log_std=clip_log_std,
-                                                min_log_std=min_log_std,
-                                                max_log_std=max_log_std)
 
 def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
                         action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,

@@ -8,7 +8,7 @@ import yaml
 import numpy as np
 import torch
 
-from skrl.utils.model_instantiators.torch import gaussian_model
+from skrl.utils.model_instantiators.torch import gaussian_model, multivariate_gaussian_model
 from skrl.utils.model_instantiators.torch.common import Shape, _generate_modules, _get_activation_function, _parse_input
 
 
@@ -171,6 +171,51 @@ def test_gaussian_model(capsys):
                            device=device,
                            return_source=False,
                            **content)
+
+    model.to(device=device)
+    with capsys.disabled():
+        print(model)
+
+    observations = torch.ones((10, model.num_observations), device=device)
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 2)
+
+def test_multivariate_gaussian_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.Discrete(2)
+
+    content = r"""
+    clip_actions: False
+    clip_log_std: True
+    initial_log_std: 0
+    min_log_std: -20.0
+    max_log_std: 2.0
+    network:
+      - name: net
+        input: Shape.OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+        activations: elu
+    output: ACTIONS
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = multivariate_gaussian_model(observation_space=observation_space,
+                                        action_space=action_space,
+                                        device=device,
+                                        return_source=True,
+                                        **content)
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = multivariate_gaussian_model(observation_space=observation_space,
+                                        action_space=action_space,
+                                        device=device,
+                                        return_source=False,
+                                        **content)
 
     model.to(device=device)
     with capsys.disabled():

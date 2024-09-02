@@ -8,8 +8,21 @@ import yaml
 import numpy as np
 import torch
 
-from skrl.utils.model_instantiators.torch.common import Shape, _generate_sequential, _parse_input
+from skrl.utils.model_instantiators.torch import gaussian_model
+from skrl.utils.model_instantiators.torch.common import Shape, _generate_modules, _get_activation_function, _parse_input
 
+
+def test_get_activation_function(capsys):
+    _globals = {"nn": torch.nn, "functional": torch.nn.functional}
+
+    activations = ["relu", "tanh", "sigmoid", "leaky_relu", "elu", "softplus", "softsign", "selu", "softmax"]
+    for item in activations:
+        activation = _get_activation_function(item, as_module=True)
+        assert activation is not None, f"{item} -> None"
+        exec(activation, _globals, {})
+        activation = _get_activation_function(item, as_module=False)
+        assert activation is not None, f"{item} -> None"
+        exec(activation, _globals, {})
 
 def test_parse_input(capsys):
     # check for Shape enum
@@ -27,7 +40,7 @@ def test_parse_input(capsys):
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
 
-def test_generate_sequential(capsys):
+def test_generate_modules(capsys):
     _globals = {"nn": torch.nn}
 
     # activation functions
@@ -35,7 +48,7 @@ def test_generate_sequential(capsys):
     activations: [relu, tanh, sigmoid, leaky_relu, elu, softplus, softsign, selu, softmax]
     """
     content = yaml.safe_load(content)
-    modules = _generate_sequential([1] * len(content["activations"]), content["activations"])
+    modules = _generate_modules([1] * len(content["activations"]), content["activations"])
     _locals = {}
     exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
     container = _locals["container"]
@@ -55,7 +68,7 @@ def test_generate_sequential(capsys):
     activations: elu
     """
     content = yaml.safe_load(content)
-    modules = _generate_sequential(content["layers"], content["activations"])
+    modules = _generate_modules(content["layers"], content["activations"])
     _locals = {}
     exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
     container = _locals["container"]
@@ -74,7 +87,7 @@ def test_generate_sequential(capsys):
     - elu
     """
     content = yaml.safe_load(content)
-    modules = _generate_sequential(content["layers"], content["activations"])
+    modules = _generate_modules(content["layers"], content["activations"])
     _locals = {}
     exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
     container = _locals["container"]
@@ -95,7 +108,7 @@ def test_generate_sequential(capsys):
     - elu
     """
     content = yaml.safe_load(content)
-    modules = _generate_sequential(content["layers"], content["activations"])
+    modules = _generate_modules(content["layers"], content["activations"])
     _locals = {}
     exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
     container = _locals["container"]
@@ -111,7 +124,7 @@ def test_generate_sequential(capsys):
     - conv2d: {in_channels: 3, out_channels: 16, kernel_size: 8}
     """
     content = yaml.safe_load(content)
-    modules = _generate_sequential(content["layers"], content.get("activations", []))
+    modules = _generate_modules(content["layers"], content.get("activations", []))
     _locals = {}
     _globals["self"] = lambda: None
     _globals["self"].num_observations = 5
@@ -122,45 +135,47 @@ def test_generate_sequential(capsys):
     assert isinstance(container, torch.nn.Sequential)
     assert len(container) == 2
 
-# def test_gaussian_model(capsys):
-#     device = "cpu"
-#     observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
-#     action_space = gym.spaces.Discrete(2)
+def test_gaussian_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.Discrete(2)
 
-#     cfg = r"""
-# clip_actions: True
-# clip_log_std: True
-# initial_log_std: 0
-# min_log_std: -20.0
-# max_log_std: 2.0
-# network:
-#   - name: net
-#     input: Shape.OBSERVATIONS
-#     layers:
-#       - linear: 32
-#       - linear: [32]
-#       - linear: {out_features: 32}
-#     activations: elu
-# output_shape: "Shape.ACTIONS"
-# output_activation: "tanh"
-# output_scale: 1.0
-# """
+    content = r"""
+    clip_actions: False
+    clip_log_std: True
+    initial_log_std: 0
+    min_log_std: -20.0
+    max_log_std: 2.0
+    network:
+      - name: net
+        input: Shape.OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+        activations: elu
+    output: 2 * tanh(ACTIONS)
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = gaussian_model(observation_space=observation_space,
+                           action_space=action_space,
+                           device=device,
+                           return_source=True,
+                           **content)
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = gaussian_model(observation_space=observation_space,
+                           action_space=action_space,
+                           device=device,
+                           return_source=False,
+                           **content)
 
-#     values = yaml.safe_load(cfg)
-#     with capsys.disabled():
-#         import pprint
-#         pprint.pprint(values)
+    model.to(device=device)
+    with capsys.disabled():
+        print(model)
 
-#         # TODO: randomize all parameters
-#         model = gaussian_model(observation_space=observation_space,
-#                             action_space=action_space,
-#                             device=device,
-#                             return_source=True,
-#                             **values)
-#     # model.to(device=device)
-#     # with capsys.disabled():
-#     #     print(model)
-
-#     # observations = torch.ones((10, model.num_observations), device=device)
-#     # output = model.act({"states": observations})
-#     # # assert output[0].shape == (10, 1)
+    observations = torch.ones((10, model.num_observations), device=device)
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 2)

@@ -8,7 +8,7 @@ import yaml
 import numpy as np
 import torch
 
-from skrl.utils.model_instantiators.torch import gaussian_model, multivariate_gaussian_model
+from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, multivariate_gaussian_model
 from skrl.utils.model_instantiators.torch.common import Shape, _generate_modules, _get_activation_function, _parse_input
 
 
@@ -171,7 +171,6 @@ def test_gaussian_model(capsys):
                            device=device,
                            return_source=False,
                            **content)
-
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -216,7 +215,6 @@ def test_multivariate_gaussian_model(capsys):
                                         device=device,
                                         return_source=False,
                                         **content)
-
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -224,3 +222,44 @@ def test_multivariate_gaussian_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 2)
+
+def test_deterministic_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.Box(np.array([-1] * 3), np.array([1] * 3))
+
+    content = r"""
+    clip_actions: True
+    network:
+      - name: net
+        input: Shape.OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+          - linear: {out_features: ACTIONS}
+        activations: elu
+    output: net / 10
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = deterministic_model(observation_space=observation_space,
+                                action_space=action_space,
+                                device=device,
+                                return_source=True,
+                                **content)
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = deterministic_model(observation_space=observation_space,
+                                action_space=action_space,
+                                device=device,
+                                return_source=False,
+                                **content)
+    model.to(device=device)
+    with capsys.disabled():
+        print(model)
+
+    observations = torch.ones((10, model.num_observations), device=device)
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 3)

@@ -106,7 +106,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
         if token:
             size = get_num_units(token)
             modules = [f"nn.LazyLinear(out_features={get_num_units(token)})"]
-            source = source.replace(token, "CONTAINER_NAME")
+            source = source.replace(token, "PLACEHOLDER")
         # apply operations by modifying the source syntax grammar
         tree = ast.parse(source)
         NodeTransformer().visit(tree)
@@ -262,14 +262,6 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
         if embed_output and i == len(network) - 1:
             container["modules"] += output_modules
             output_modules = []
-            # single expression
-            if type(output) is str:
-                # avoid 'output = container_name'
-                if output == "CONTAINER_NAME":
-                    output = None
-                # substitute container name in output expression
-                else:
-                    output = output.replace("CONTAINER_NAME", container["name"])
         # define a Sequential container
         if indent < 0:
             container["sequential"] = f'nn.Sequential({", ".join(container["modules"])})'
@@ -280,5 +272,12 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
             container["sequential"] += f"\n{' ' * 4 * (indent - 1)})"
         containers.append(container)
     # compose output
+    if type(output) is str:
+        # avoid 'output = placeholder'
+        if output == "PLACEHOLDER" or output == container["name"]:
+            output = None
+        # substitute placeholder in output expression
+        else:
+            output = output.replace("PLACEHOLDER", container["name"] if embed_output else "output")
     output = {"output": output, "modules": output_modules, "size": output_size}
     return containers, output

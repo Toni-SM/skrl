@@ -55,10 +55,10 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     if output["modules"]:
         networks.append(f'self.output_layer = {output["modules"][0]}')
         forward.append(f'output = self.output_layer({container["name"]})')
-    elif output["output"]:
+    if output["output"]:
         forward.append(f'output = {output["output"]}')
     else:
-        forward[-1] = forward[-1].replace(container["name"], "output", 1)
+        forward[-1] = forward[-1].replace(f'{container["name"]} =', "output =", 1)
 
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]

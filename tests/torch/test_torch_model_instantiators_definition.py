@@ -9,13 +9,14 @@ import numpy as np
 import torch
 
 from skrl.utils.model_instantiators.torch import (
+    Shape,
     categorical_model,
     deterministic_model,
     gaussian_model,
     multivariate_gaussian_model,
     shared_model
 )
-from skrl.utils.model_instantiators.torch.common import Shape, _generate_modules, _get_activation_function, _parse_input
+from skrl.utils.model_instantiators.torch.common import _generate_modules, _get_activation_function, _parse_input
 
 
 def test_get_activation_function(capsys):
@@ -31,17 +32,22 @@ def test_get_activation_function(capsys):
         exec(activation, _globals, {})
 
 def test_parse_input(capsys):
-    # check for Shape enum
-    for input in [Shape.STATES, Shape.OBSERVATIONS, Shape.ACTIONS, Shape.STATES_ACTIONS, Shape.OBSERVATIONS_ACTIONS]:
+    # check for Shape enum (compatibility with prior versions)
+    for input in [Shape.STATES, Shape.OBSERVATIONS, Shape.ACTIONS, Shape.STATES_ACTIONS]:
         # Shape enum with/without class
         output = _parse_input(str(input))
         output_1 = _parse_input(str(input).replace("Shape.", ""))
         assert output == output_1, f"'{output}' != '{output_1}'"
         # Shape is not in output
-        for item in ["Shape", "STATES", "OBSERVATIONS", "ACTIONS", "STATES_ACTIONS", "OBSERVATIONS_ACTIONS"]:
+        for item in ["Shape", "STATES", "OBSERVATIONS", "ACTIONS", "STATES_ACTIONS"]:
+            assert item not in output, f"'{item}' in '{output}'"
+    # check for tokens
+    for input in ["STATES", "OBSERVATIONS", "ACTIONS", "STATES_ACTIONS"]:
+        output = _parse_input(input)
+        for item in ["STATES", "OBSERVATIONS", "ACTIONS", "STATES_ACTIONS"]:
             assert item not in output, f"'{item}' in '{output}'"
     # Mixed operation
-    input = 'Shape.OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]])'
+    input = 'OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]])'
     statement = 'inputs["states"]["joint"] + torch.cat([net * inputs["taken_actions"][:, -3:]], dim=1)'
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
@@ -126,7 +132,7 @@ def test_generate_modules(capsys):
     # non-lazy layers
     content = r"""
     layers:
-    - linear: {in_features: STATES, out_features: Shape.ONE}
+    - linear: {in_features: STATES, out_features: ONE}
     - conv2d: {in_channels: 3, out_channels: 16, kernel_size: 8}
     """
     content = yaml.safe_load(content)
@@ -154,7 +160,7 @@ def test_gaussian_model(capsys):
     max_log_std: 2.0
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]
@@ -198,7 +204,7 @@ def test_multivariate_gaussian_model(capsys):
     max_log_std: 2.0
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]
@@ -238,7 +244,7 @@ def test_deterministic_model(capsys):
     clip_actions: True
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]
@@ -279,7 +285,7 @@ def test_categorical_model(capsys):
     unnormalized_log_prob: True
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]
@@ -323,7 +329,7 @@ def test_shared_model(capsys):
     max_log_std: 2.0
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]
@@ -335,7 +341,7 @@ def test_shared_model(capsys):
     clip_actions: False
     network:
       - name: net
-        input: Shape.OBSERVATIONS
+        input: OBSERVATIONS
         layers:
           - linear: 32
           - linear: [32]

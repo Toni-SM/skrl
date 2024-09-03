@@ -1,19 +1,7 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Sequence, Tuple, Union
 
 import ast
-from enum import Enum
 
-
-class Shape(Enum):
-    """
-    Enum to select the shape of the model's inputs and outputs
-    """
-    ONE = 1
-    STATES = 0
-    OBSERVATIONS = 0
-    ACTIONS = -1
-    STATES_ACTIONS = -2
-    OBSERVATIONS_ACTIONS = -2
 
 def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
     """Get the activation function
@@ -215,12 +203,12 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
             modules.append(activation)
     return modules
 
-def get_num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
-    """Get the number of units/features by shape
+def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
+    """Get the number of units/features a token represent
 
-    :param shape: Shape
+    :param token: Token
 
-    :return: Number of units/features by shape. If shape is unknown, its value will be returned as it
+    :return: Number of units/features a token represent. If the token is unknown, its value will be returned as it
     """
     num_units = {
         "ONE": "1",
@@ -230,10 +218,10 @@ def get_num_units(shape: Union[Shape, str, Any]) -> Union[str, Any]:
         "STATES_ACTIONS": "self.num_observations + self.num_actions",
         "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
     }
-    shape_as_str = str(shape).replace("Shape.", "")
-    if shape_as_str in num_units:
-        return num_units[shape_as_str]
-    return shape
+    token_as_str = str(token).replace("Shape.", "")
+    if token_as_str in num_units:
+        return num_units[token_as_str]
+    return token
 
 def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]],
                         embed_output: bool = True, indent: int = -1) -> \

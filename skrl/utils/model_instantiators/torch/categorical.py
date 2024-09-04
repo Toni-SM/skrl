@@ -7,6 +7,7 @@ import gymnasium
 import torch
 import torch.nn as nn  # noqa
 
+from skrl import logger
 from skrl.models.torch import CategoricalMixin  # noqa
 from skrl.models.torch import Model
 from skrl.utils.model_instantiators.torch.common import generate_containers
@@ -18,7 +19,9 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
                       unnormalized_log_prob: bool = True,
                       network: Sequence[Mapping[str, Any]] = [],
                       output: Union[str, Sequence[str]] = "",
-                      return_source: bool = False) -> Union[Model, str]:
+                      return_source: bool = False,
+                      *args,
+                      **kwargs) -> Union[Model, str]:
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -46,6 +49,24 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
     :return: Categorical model instance or definition source
     :rtype: Model
     """
+    # compatibility with versions prior to 1.3.0
+    if not network and kwargs:
+        logger.warning(f'The following parameters ({", ".join(list(kwargs.keys()))}) are deprecated. '
+                       "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html")
+        network = [
+            {
+                "name": "net",
+                "input": str(kwargs.get("input_shape", "STATES")),
+                "layers": kwargs.get("hiddens", []),
+                "activations": kwargs.get("hidden_activation", []),
+            }
+        ]
+        if kwargs.get("output_activation", None):
+            output = f'{kwargs["output_activation"]}({str(kwargs.get("output_shape", "ACTIONS"))})'
+        else:
+            output = f'{str(kwargs.get("output_shape", "ACTIONS"))}'
+
+    # parse model definition
     containers, output = generate_containers(network, output, embed_output=True, indent=1)
 
     # network definitions

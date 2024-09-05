@@ -2,6 +2,8 @@ from typing import Any, Mapping, Sequence, Tuple, Union
 
 import ast
 
+from skrl import logger
+
 
 def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
     """Get the activation function
@@ -269,3 +271,31 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
             output = output.replace("PLACEHOLDER", container["name"] if embed_output else "output")
     output = {"output": output, "modules": output_modules, "size": output_size}
     return containers, output
+
+def convert_deprecated_parameters(parameters: Mapping[str, Any]) -> Tuple[Mapping[str, Any], str]:
+    """Function to convert deprecated parameters to network-output format
+
+    :param parameters: Deprecated parameters and their values.
+
+    :return: Network and output definitions
+    """
+    logger.warning(f'The following parameters ({", ".join(list(parameters.keys()))}) are deprecated. '
+                    "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html")
+    # network definition
+    network = [
+        {
+            "name": "net",
+            "input": str(parameters.get("input_shape", "STATES")),
+            "layers": parameters.get("hiddens", []),
+            "activations": parameters.get("hidden_activation", []),
+        }
+    ]
+    # output
+    output_scale = parameters.get("output_scale", 1.0)
+    scale_operation = f"{output_scale} * " if output_scale != 1.0 else ""
+    if parameters.get("output_activation", None):
+        output = f'{scale_operation}{parameters["output_activation"]}({str(parameters.get("output_shape", "ACTIONS"))})'
+    else:
+        output = f'{scale_operation}{str(parameters.get("output_shape", "ACTIONS"))}'
+
+    return network, output

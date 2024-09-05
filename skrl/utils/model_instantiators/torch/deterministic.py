@@ -7,10 +7,9 @@ import gymnasium
 import torch
 import torch.nn as nn  # noqa
 
-from skrl import logger
 from skrl.models.torch import DeterministicMixin  # noqa
 from skrl.models.torch import Model
-from skrl.utils.model_instantiators.torch.common import generate_containers
+from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 
 
 def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -48,20 +47,7 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
     """
     # compatibility with versions prior to 1.3.0
     if not network and kwargs:
-        logger.warning(f'The following parameters ({", ".join(list(kwargs.keys()))}) are deprecated. '
-                       "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html")
-        network = [
-            {
-                "name": "net",
-                "input": str(kwargs.get("input_shape", "STATES")),
-                "layers": kwargs.get("hiddens", []),
-                "activations": kwargs.get("hidden_activation", []),
-            }
-        ]
-        if kwargs.get("output_activation", None):
-            output = f'{kwargs.get("output_scale", 1.0)} * {kwargs["output_activation"]}({str(kwargs.get("output_shape", "ACTIONS"))})'
-        else:
-            output = f'{kwargs.get("output_scale", 1.0)} * {str(kwargs.get("output_shape", "ACTIONS"))}'
+        network, output = convert_deprecated_parameters(kwargs)
 
     # parse model definition
     containers, output = generate_containers(network, output, embed_output=True, indent=1)

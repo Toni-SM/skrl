@@ -9,7 +9,7 @@ import torch.nn as nn  # noqa
 
 from skrl.models.torch import Model  # noqa
 from skrl.models.torch import DeterministicMixin, GaussianMixin  # noqa
-from skrl.utils.model_instantiators.torch.common import generate_containers
+from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 
 
 def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -47,6 +47,18 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     :return: Shared model instance or definition source
     :rtype: Model
     """
+    # compatibility with versions prior to 1.3.0
+    if not "network" in parameters[0]:
+        parameters[0]["network"], parameters[0]["output"] = convert_deprecated_parameters(parameters[0])
+        parameters[1]["network"], parameters[1]["output"] = convert_deprecated_parameters(parameters[1])
+        # delete deprecated parameters
+        for parameter in ["input_shape", "hiddens", "hidden_activation", "output_shape", "output_activation", "output_scale"]:
+            if parameter in parameters[0]:
+                del parameters[0][parameter]
+            if parameter in parameters[1]:
+                del parameters[1][parameter]
+
+    # parse model definitions
     containers_gaussian, output_gaussian = generate_containers(parameters[0]["network"], parameters[0]["output"], embed_output=False, indent=1)
     containers_deterministic, output_deterministic = generate_containers(parameters[1]["network"], parameters[1]["output"], embed_output=False, indent=1)
 

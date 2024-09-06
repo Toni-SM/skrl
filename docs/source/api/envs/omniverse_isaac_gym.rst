@@ -13,11 +13,11 @@ Omniverse Isaac Gym environments
 Environments
 ------------
 
-The repository https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs provides the example reinforcement learning environments for Omniverse Isaac Gym.
+The repository https://github.com/isaac-sim/OmniIsaacGymEnvs provides the example reinforcement learning environments for Omniverse Isaac Gym.
 
-These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see OmniIsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
+These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see OmniIsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/isaac-sim/OmniIsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
 
-Additionally, multi-threaded environments can be loaded. These are designed to isolate the RL policy in a new thread, separate from the main simulation and rendering thread. Read more about it in the OmniIsaacGymEnvs framework documentation: `Multi-Threaded Environment Wrapper <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/blob/220d34c6b68d3f7518c4aa008ae009d13cc60c03/docs/framework.md#multi-threaded-environment-wrapper>`_.
+Additionally, multi-threaded environments can be loaded. These are designed to isolate the RL policy in a new thread, separate from the main simulation and rendering thread. Read more about it in the OmniIsaacGymEnvs framework documentation: `Multi-Threaded Environment Wrapper <https://github.com/isaac-sim/OmniIsaacGymEnvs/blob/main/docs/framework/framework.md#multi-threaded-environment-wrapper-for-extension-workflows>`_.
 
 .. note::
 

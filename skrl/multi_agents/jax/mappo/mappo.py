@@ -340,19 +340,20 @@ class MAPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -390,8 +391,8 @@ class MAPPO(MultiAgent):
         outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
         if not self._jax:  # numpy backend
-            actions = {jax.device_get(_actions) for _actions in actions}
-            log_prob = {jax.device_get(_log_prob) for _log_prob in log_prob}
+            actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
+            log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
 
         self._current_log_prob = log_prob
 
@@ -440,7 +441,7 @@ class MAPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states[uid])}, role="value")
+                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states)}, role="value")
                 if not self._jax:  # numpy backend
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
@@ -452,7 +453,7 @@ class MAPPO(MultiAgent):
                 # storage transition in memory
                 self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],
                                                terminated=terminated[uid], truncated=truncated[uid], log_prob=self._current_log_prob[uid], values=values,
-                                               shared_states=shared_states[uid])
+                                               shared_states=shared_states)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -496,7 +497,7 @@ class MAPPO(MultiAgent):
 
             # compute returns and advantages
             value.training = False
-            last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states[uid])}, role="value")  # TODO: .float()
+            last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states)}, role="value")  # TODO: .float()
             value.training = True
             if not self._jax:  # numpy backend
                 last_values = jax.device_get(last_values)

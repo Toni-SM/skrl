@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any, Mapping, Tuple, Union
 
 import collections
 import gymnasium
@@ -17,49 +17,6 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :type env: Any supported PettingZoo (parallel) environment
         """
         super().__init__(env)
-
-        self.possible_agents = self._env.possible_agents
-        self._shared_observation_space = self._compute_shared_observation_space(self._env.observation_spaces)
-
-    def _compute_shared_observation_space(self, observation_spaces):
-        space = next(iter(observation_spaces.values()))
-        shape = (len(self.possible_agents),) + space.shape
-        return gymnasium.spaces.Box(low=np.stack([space.low for _ in self.possible_agents], axis=0),
-                                    high=np.stack([space.high for _ in self.possible_agents], axis=0),
-                                    dtype=space.dtype,
-                                    shape=shape)
-
-    @property
-    def num_agents(self) -> int:
-        """Number of agents
-        """
-        return len(self.possible_agents)
-
-    @property
-    def agents(self) -> Sequence[str]:
-        """Names of all current agents
-
-        These may be changed as an environment progresses (i.e. agents can be added or removed)
-        """
-        return self._env.agents
-
-    @property
-    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Observation spaces
-        """
-        return {uid: self._env.observation_space(uid) for uid in self.possible_agents}
-
-    @property
-    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Action spaces
-        """
-        return {uid: self._env.action_space(uid) for uid in self.possible_agents}
-
-    @property
-    def shared_observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Shared observation spaces
-        """
-        return {uid: self._shared_observation_space for uid in self.possible_agents}
 
     def _observation_to_tensor(self, observation: Any, space: gymnasium.Space) -> np.ndarray:
         """Convert the Gymnasium observation to a flat tensor
@@ -118,20 +75,31 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         if self._jax:
             actions = jax.device_get(actions)
-        actions = {uid: self._tensor_to_action(action, self._env.action_space(uid)) for uid, action in actions.items()}
+        actions = {uid: self._tensor_to_action(action, self.action_space(uid)) for uid, action in actions.items()}
         observations, rewards, terminated, truncated, infos = self._env.step(actions)
 
-        # build shared observation
-        shared_observations = np.stack([observations[uid] for uid in self.possible_agents], axis=0)
-        shared_observations = self._observation_to_tensor(shared_observations, self._shared_observation_space)
-        infos["shared_states"] = {uid: shared_observations for uid in self.possible_agents}
-
         # convert response to numpy or jax
-        observations = {uid: self._observation_to_tensor(value, self._env.observation_space(uid)) for uid, value in observations.items()}
+        observations = {uid: self._observation_to_tensor(value, self.observation_space(uid)) for uid, value in observations.items()}
         rewards = {uid: np.array(value, dtype=np.float32).reshape(self.num_envs, -1) for uid, value in rewards.items()}
         terminated = {uid: np.array(value, dtype=np.int8).reshape(self.num_envs, -1) for uid, value in terminated.items()}
         truncated = {uid: np.array(value, dtype=np.int8).reshape(self.num_envs, -1) for uid, value in truncated.items()}
+        if self._jax:
+            observations = {uid: jax.device_put(value, device=self.device) for uid, value in observations.items()}
+            rewards = {uid: jax.device_put(value, device=self.device) for uid, value in rewards.items()}
+            terminated = {uid: jax.device_put(value, device=self.device) for uid, value in terminated.items()}
+            truncated = {uid: jax.device_put(value, device=self.device) for uid, value in truncated.items()}
         return observations, rewards, terminated, truncated, infos
+
+    def state(self) -> Union[np.ndarray, jax.Array]:
+        """Get the environment state
+
+        :return: State
+        :rtype: np.ndarray or jax.Array
+        """
+        state = self._observation_to_tensor(self._env.state(), next(iter(self.state_spaces.values())))
+        if self._jax:
+            state = jax.device_put(state, device=self.device)
+        return state
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
@@ -146,19 +114,16 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         else:
             observations, infos = outputs
 
-        # build shared observation
-        shared_observations = np.stack([observations[uid] for uid in self.possible_agents], axis=0)
-        shared_observations = self._observation_to_tensor(shared_observations, self._shared_observation_space)
-        infos["shared_states"] = {uid: shared_observations for uid in self.possible_agents}
-
         # convert response to numpy or jax
-        observations = {uid: self._observation_to_tensor(observation, self._env.observation_space(uid)) for uid, observation in observations.items()}
+        observations = {uid: self._observation_to_tensor(value, self.observation_space(uid)) for uid, value in observations.items()}
+        if self._jax:
+            observations = {uid: jax.device_put(value, device=self.device) for uid, value in observations.items()}
         return observations, infos
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment
         """
-        self._env.render(*args, **kwargs)
+        return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment

@@ -93,7 +93,7 @@ class AMP(Agent):
         https://arxiv.org/abs/2104.02180
 
         The implementation is adapted from the NVIDIA IsaacGymEnvs
-        (https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/blob/main/isaacgymenvs/learning/amp_continuous.py)
+        (https://github.com/isaac-sim/IsaacGymEnvs/blob/main/isaacgymenvs/learning/amp_continuous.py)
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model

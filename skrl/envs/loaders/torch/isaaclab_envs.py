@@ -122,13 +122,10 @@ def load_isaaclab_env(task_name: str = "",
 
     # parse arguments
     parser = argparse.ArgumentParser("Isaac Lab: Omniverse Robotics Environments!")
-    parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
     parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
     parser.add_argument("--task", type=str, default=None, help="Name of the task.")
     parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
     parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
-    parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
-    parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
     parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations.")
     parser.add_argument("--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes.")
 
@@ -146,7 +143,7 @@ def load_isaaclab_env(task_name: str = "",
     import omni.isaac.lab_tasks  # type: ignore
     from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
 
-    cfg = parse_env_cfg(args.task, use_gpu=not args.cpu, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
+    cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
 
     # print config
     if show_cfg:

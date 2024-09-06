@@ -325,18 +325,19 @@ class IPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -374,8 +375,8 @@ class IPPO(MultiAgent):
         outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
         if not self._jax:  # numpy backend
-            actions = {jax.device_get(_actions) for _actions in actions}
-            log_prob = {jax.device_get(_log_prob) for _log_prob in log_prob}
+            actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
+            log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
 
         self._current_log_prob = log_prob
 

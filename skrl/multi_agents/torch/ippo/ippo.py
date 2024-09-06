@@ -195,18 +195,19 @@ class IPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []

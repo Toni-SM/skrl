@@ -6,6 +6,7 @@ import gym
 import numpy as np
 import torch
 
+from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
 
 
@@ -21,29 +22,17 @@ class DeepMindWrapper(Wrapper):
         from dm_env import specs
         self._specs = specs
 
-        # observation and action spaces
-        self._observation_space = self._spec_to_space(self._env.observation_spec())
-        self._action_space = self._spec_to_space(self._env.action_spec())
-
-    @property
-    def state_space(self) -> gym.Space:
-        """State space
-
-        An alias for the ``observation_space`` property
-        """
-        return self._observation_space
-
     @property
     def observation_space(self) -> gym.Space:
         """Observation space
         """
-        return self._observation_space
+        return self._spec_to_space(self._env.observation_spec())
 
     @property
     def action_space(self) -> gym.Space:
         """Action space
         """
-        return self._action_space
+        return self._spec_to_space(self._env.action_spec())
 
     def _spec_to_space(self, spec: Any) -> gym.Space:
         """Convert the DeepMind spec to a Gym space
@@ -149,7 +138,7 @@ class DeepMindWrapper(Wrapper):
         timestep = self._env.reset()
         return self._observation_to_tensor(timestep.observation), {}
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> np.ndarray:
         """Render the environment
 
         OpenCV is used to render the environment.
@@ -158,9 +147,13 @@ class DeepMindWrapper(Wrapper):
         frame = self._env.physics.render(480, 640, camera_id=0)
 
         # render the frame using OpenCV
-        import cv2
-        cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        cv2.waitKey(1)
+        try:
+            import cv2
+            cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            cv2.waitKey(1)
+        except ImportError as e:
+            logger.warning(f"Unable to import opencv-python: {e}. Frame will not be rendered.")
+        return frame
 
     def close(self) -> None:
         """Close the environment

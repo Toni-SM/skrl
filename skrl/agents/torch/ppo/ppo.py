@@ -380,6 +380,8 @@ class PPO(Agent):
 
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
+        for batch in sampled_batches:
+            batch[0] = self._state_preprocessor(batch[0], train=True)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -391,8 +393,6 @@ class PPO(Agent):
 
             # mini-batches loop
             for sampled_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages in sampled_batches:
-
-                sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
 

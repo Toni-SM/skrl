@@ -14,7 +14,7 @@ from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer, Trainer
 from skrl.utils import set_seed
-from skrl.utils.model_instantiators.jax import Shape, deterministic_model, gaussian_model
+from skrl.utils.model_instantiators.jax import deterministic_model, gaussian_model
 
 
 class Runner:
@@ -107,8 +107,6 @@ class Runner:
             "shared_state_preprocessor",
             "state_preprocessor",
             "value_preprocessor",
-            "input_shape",
-            "output_shape",
         ]
 
         def reward_shaper_function(scale):
@@ -172,6 +170,17 @@ class Runner:
                 except KeyError:
                     model_class = self._class("GaussianMixin")
                     logger.warning("No 'class' field defined in 'models:policy' cfg. 'GaussianMixin' will be used as default")
+                # print model source
+                source = model_class(
+                    observation_space=observation_spaces[agent_id],
+                    action_space=action_spaces[agent_id],
+                    device=device,
+                    **self._process_cfg(_cfg["models"]["policy"]),
+                    return_source=True,
+                )
+                print("--------------------------------------------------\n")
+                print(source)
+                print("--------------------------------------------------")
                 # instantiate model
                 models[agent_id]["policy"] = model_class(
                     observation_space=observation_spaces[agent_id],
@@ -186,6 +195,17 @@ class Runner:
                 except KeyError:
                     model_class = self._class("DeterministicMixin")
                     logger.warning("No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default")
+                # print model source
+                source = model_class(
+                    observation_space=(state_spaces if agent_class in [MAPPO] else observation_spaces)[agent_id],
+                    action_space=action_spaces[agent_id],
+                    device=device,
+                    **self._process_cfg(_cfg["models"]["value"]),
+                    return_source=True,
+                )
+                print("--------------------------------------------------\n")
+                print(source)
+                print("--------------------------------------------------")
                 # instantiate model
                 models[agent_id]["value"] = model_class(
                     observation_space=(state_spaces if agent_class in [MAPPO] else observation_spaces)[agent_id],
@@ -204,8 +224,24 @@ class Runner:
                     del _cfg["models"]["value"]["class"]
                 except KeyError:
                     logger.warning("No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default")
-                # instantiate model
                 model_class = self._class("Shared")
+                # print model source
+                source = model_class(
+                    observation_space=observation_spaces[agent_id],
+                    action_space=action_spaces[agent_id],
+                    device=device,
+                    structure=None,
+                    roles=["policy", "value"],
+                    parameters=[
+                        self._process_cfg(_cfg["models"]["policy"]),
+                        self._process_cfg(_cfg["models"]["value"]),
+                    ],
+                    return_source=True,
+                )
+                print("--------------------------------------------------\n")
+                print(source)
+                print("--------------------------------------------------")
+                # instantiate model
                 models[agent_id]["policy"] = model_class(
                     observation_space=observation_spaces[agent_id],
                     action_space=action_spaces[agent_id],

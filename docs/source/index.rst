@@ -197,8 +197,10 @@ Utils and configurations
 
     * :doc:`ML frameworks <api/config/frameworks>` configuration
     * :doc:`Random seed <api/utils/seed>`
-    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
+    * :doc:`Runner <api/utils/runner>`
+    * :doc:`Distributed runs <api/utils/distributed>`
+    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`
     * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
     * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

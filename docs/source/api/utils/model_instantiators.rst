@@ -64,12 +64,20 @@ Implementation details:
 Inputs
 ^^^^^^
 
-The input can be specified using the enum ``Shape`` (see :py:class:`skrl.utils.model_instantiators.torch.Shape`) or previously defined container outputs (by container name).
+Inputs can be specified using tokens or previously defined container outputs (by container name).
 Certain operations could be specified on them, including indexing (by a range of numbers in sequences, by key in dictionaries) and slicing
 
 .. hint::
 
-    Operations can be mixed to create more complex inputs
+    Operations can be mixed to create complex input statements
+
+Available tokens:
+
+* ``STATES``: Token indicating the input states (``inputs["states"]``) forwarded to the model
+* ``ACTIONS``: Token indicating the input actions (``inputs["taken_actions"]``) forwarded to the model
+* ``STATES_ACTIONS``: Token indicating the concatenation of the forwarded input states and actions
+
+Supported operations:
 
 .. list-table::
     :header-rows: 1
@@ -78,15 +86,50 @@ Certain operations could be specified on them, including indexing (by a range of
       - Example
     * - Dictionary indexing
         |br| E.g.: :py:class:`gymnasium.spaces.Dict`
-      - ``OBSERVATIONS["camera"]``
+      - ``STATES["camera"]``
     * - Tensor/array indexing and slicing
         |br| E.g.: :py:class:`gymnasium.spaces.Box`
-      - ``OBSERVATIONS[:, 0]``
-        |br| ``OBSERVATIONS[:, 2:5]``
+      - ``STATES[:, 0]``
+        |br| ``STATES[:, 2:5]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
+
+|
+
+Output
+^^^^^^
+
+The output can be specified using tokens or defined container outputs (by container name).
+Certain operations could be specified on it
+
+.. note::
+
+    If a token is used, a linear layer will be created with the last container in the list (as the number of input features) and the value represented by the token (as the number of output features)
+
+.. hint::
+
+    Operations can be mixed to create complex output statement
+
+Available tokens:
+
+* ``ACTIONS``: Token indicating that the output shape is the number of elements in the action space
+* ``ONE``: Token indicating that the output shape is 1
+
+Supported operations:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Operations
+      - Example
+    * - Activation function
+      - ``tanh(ACTIONS)``
+    * - Arithmetic (``+``, ``-``, ``*``, ``/``)
+      - ``features_extractor + ONE``
+    * - Concatenation
+      - ``concatenate([features_extractor, net])``
 
 |
 
@@ -161,6 +204,10 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 
 .. note::
 
+    The tokens ``STATES`` (number of elements in the observation/state space), ``ACTIONS`` (number of elements in the action space), ``STATES_ACTIONS`` (the sum of the number of elements of the observation/state space and of the action space) and ``ONE`` (1) can be used as the layer's number of input/output features
+
+.. note::
+
     If the PyTorch's ``in_features`` parameter is not specified it will be inferred by using the :py:class:`torch.nn.LazyLinear` module
 
 .. list-table::
@@ -219,6 +266,10 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
                     :end-before: [end-layer-linear-list]
 
             .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
@@ -297,6 +348,10 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
 
             .. group-tab:: As dict
 
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
                 .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-conv2d-dict]
@@ -353,6 +408,10 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
 
             .. group-tab:: As dict
 
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
                 .. literalinclude:: ../../snippets/model_instantiators.txt
                     :language: yaml
                     :start-after: [start-layer-flatten-dict]
@@ -364,31 +423,6 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
 
 API (PyTorch)
 -------------
-
-.. autoclass:: skrl.utils.model_instantiators.torch.Shape
-
-    .. py:property:: ONE
-
-        Flag to indicate that the model's input/output has shape (1,)
-
-        This flag is useful for the definition of critic models, where the critic's output is a scalar
-
-    .. py:property:: STATES
-
-        Flag to indicate that the model's input/output is the state (observation) space of the environment
-        It is an alias for :py:attr:`OBSERVATIONS`
-
-    .. py:property:: OBSERVATIONS
-
-        Flag to indicate that the model's input/output is the observation space of the environment
-
-    .. py:property:: ACTIONS
-
-        Flag to indicate that the model's input/output is the action space of the environment
-
-    .. py:property:: STATES_ACTIONS
-
-        Flag to indicate that the model's input/output is the combination (concatenation) of the state (observation) and action spaces of the environment
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
 
@@ -406,31 +440,6 @@ API (PyTorch)
 
 API (JAX)
 ---------
-
-.. autoclass:: skrl.utils.model_instantiators.jax.Shape
-
-    .. py:property:: ONE
-
-        Flag to indicate that the model's input/output has shape (1,)
-
-        This flag is useful for the definition of critic models, where the critic's output is a scalar
-
-    .. py:property:: STATES
-
-        Flag to indicate that the model's input/output is the state (observation) space of the environment
-        It is an alias for :py:attr:`OBSERVATIONS`
-
-    .. py:property:: OBSERVATIONS
-
-        Flag to indicate that the model's input/output is the observation space of the environment
-
-    .. py:property:: ACTIONS
-
-        Flag to indicate that the model's input/output is the action space of the environment
-
-    .. py:property:: STATES_ACTIONS
-
-        Flag to indicate that the model's input/output is the combination (concatenation) of the state (observation) and action spaces of the environment
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
 

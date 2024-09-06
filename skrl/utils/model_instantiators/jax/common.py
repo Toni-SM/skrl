@@ -275,12 +275,15 @@ def convert_deprecated_parameters(parameters: Mapping[str, Any]) -> Tuple[Mappin
     logger.warning(f'The following parameters ({", ".join(list(parameters.keys()))}) are deprecated. '
                     "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html")
     # network definition
+    activations = parameters.get("hidden_activation", [])
+    if type(activations) in [list, tuple] and len(set(activations)) == 1:
+        activations = activations[0]
     network = [
         {
             "name": "net",
             "input": str(parameters.get("input_shape", "STATES")),
             "layers": parameters.get("hiddens", []),
-            "activations": parameters.get("hidden_activation", []),
+            "activations": activations,
         }
     ]
     # output

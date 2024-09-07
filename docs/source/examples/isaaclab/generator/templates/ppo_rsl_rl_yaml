@@ -1,0 +1,84 @@
+seed: {{ seed | default(42) }}
+
+
+# Models are instantiated using skrl's model instantiator utility
+# https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html
+models:
+  separate: {{ policy.actor_hidden_dims != policy.critic_hidden_dims }}
+  policy:  # see gaussian_model parameters
+    class: GaussianMixin
+    clip_actions: False
+    clip_log_std: True
+    min_log_std: -20.0
+    max_log_std: 2.0
+    initial_log_std: {{ policy.init_noise_std }}  # TODO
+    network:
+      - name: net
+        input: STATES
+        layers: {{ policy.actor_hidden_dims }}
+        activations: {{ policy.activation }}
+    output: ACTIONS
+  value:  # see deterministic_model parameters
+    class: DeterministicMixin
+    clip_actions: False
+    network:
+      - name: net
+        input: STATES
+        layers: {{ policy.critic_hidden_dims }}
+        activations: {{ policy.activation }}
+    output: ONE
+
+
+# Rollout memory
+# https://skrl.readthedocs.io/en/latest/api/memories/random.html
+memory:
+  class: RandomMemory
+  memory_size: -1  # automatically determined (same as agent:rollouts)
+
+
+# PPO agent configuration (field names are from PPO_DEFAULT_CONFIG)
+# https://skrl.readthedocs.io/en/latest/api/agents/ppo.html
+agent:
+  class: PPO
+  rollouts: {{ num_steps_per_env }}
+  learning_epochs: {{ algorithm.num_learning_epochs }}
+  mini_batches: {{ algorithm.num_mini_batches }}
+  discount_factor: {{ algorithm.gamma }}
+  lambda: {{ algorithm.lam }}
+  learning_rate: {{ "%.1e" | format(algorithm.learning_rate | float) }}
+  {% if algorithm.schedule == "adaptive" %}
+  learning_rate_scheduler: KLAdaptiveLR
+  learning_rate_scheduler_kwargs:
+    kl_threshold: {{ algorithm.desired_kl }}
+  {% else %}
+  learning_rate_scheduler: null
+  {% endif %}
+  state_preprocessor: {{ 'RunningStandardScaler' if empirical_normalization else 'null' }}
+  state_preprocessor_kwargs: null
+  value_preprocessor: {{ 'RunningStandardScaler' if empirical_normalization else 'null' }}
+  value_preprocessor_kwargs: null
+  random_timesteps: 0
+  learning_starts: 0
+  grad_norm_clip: {{ algorithm.max_grad_norm }}
+  ratio_clip: {{ algorithm.clip_param }}
+  value_clip: {{ algorithm.clip_param }}
+  clip_predicted_values: {{ algorithm.use_clipped_value_loss }}
+  entropy_loss_scale: {{ algorithm.entropy_coef }}
+  value_loss_scale: {{ algorithm.value_loss_coef }}
+  kl_threshold: {{ algorithm.desired_kl if algorithm.schedule != "adaptive" else 0.0 }}
+  rewards_shaper_scale: 1.0
+  time_limit_bootstrap: True
+  # logging and checkpoint
+  experiment:
+    directory: "{{ experiment_name }}"
+    experiment_name: ""
+    write_interval: auto
+    checkpoint_interval: auto
+
+
+# Sequential trainer
+# https://skrl.readthedocs.io/en/latest/api/trainers/sequential.html
+trainer:
+  class: SequentialTrainer
+  timesteps: {{ (num_steps_per_env * max_iterations) | int }}
+  environment_info: log

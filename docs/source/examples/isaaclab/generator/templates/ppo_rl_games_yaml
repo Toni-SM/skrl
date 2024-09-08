@@ -11,7 +11,7 @@ models:
     clip_log_std: True
     min_log_std: -20.0
     max_log_std: 2.0
-    initial_log_std: {{ params.network.space.continuous.sigma_init.val }}
+    initial_log_std: {{ params.network.space.continuous.sigma_init.val | float }}
     network:
       - name: net
         input: STATES

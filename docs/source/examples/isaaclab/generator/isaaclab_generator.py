@@ -6,6 +6,7 @@ from omni.isaac.lab.app import AppLauncher
 app_launcher = AppLauncher()
 simulation_app = app_launcher.app
 
+import math
 import gymnasium as gym
 import importlib
 import inspect
@@ -23,6 +24,7 @@ class Config:
 
         self.cfg = {}
         self.path = ""
+        self.filename = ""
         self.valid = False
         self.env_name = None
         self.num_envs = None
@@ -66,6 +68,8 @@ class Config:
         algorithm = self.cfg["algorithm"]["class_name"]
         assert algorithm.lower() == "ppo", f"Unknown rsl_rl agent: {algorithm}"
         self.algorithm = "ppo"
+        # convert config
+        self.cfg["policy"]["init_noise_std__converted"] = math.log(self.cfg["policy"]["init_noise_std"])
 
     def _parse_skrl(self, cfg: dict) -> None:
         self.cfg = cfg
@@ -83,8 +87,9 @@ class Config:
             if isinstance(cfg_entry_point, str):
                 mod_name, file_name = cfg_entry_point.split(":")
                 if "rsl_rl" in mod_name:
-                    file_name = mod_name.split(".")[-1] + ".yaml"
+                    file_name = mod_name.split(".")[-1] + ".py"
                     mod_name = ".".join(mod_name.split(".")[:-1])
+                self.filename = file_name
                 mod_path = os.path.dirname(importlib.import_module(mod_name).__file__)
                 self.path = os.path.join(mod_path, file_name)
             elif callable(cfg_entry_point):
@@ -118,7 +123,10 @@ class Config:
             filename = os.path.basename(self.path).replace("rl_games", "")
             filename = filename.replace(f"_{self.algorithm}_", "_")
             filename = filename.replace(f"_{self.algorithm}.", ".")
-            filename = f"skrl_{self.algorithm}_{filename}".replace("__", "_")
+            filename = filename.replace(f"_cfg_", "_")
+            filename = filename.replace(f"_cfg.", ".")
+            filename = filename.replace(f".yaml", "")
+            filename = f"skrl_{filename}_{self.algorithm}_cfg.yaml".replace("__", "_").replace("__", "_")
             path = os.path.join(os.path.dirname(self.path), filename)
             # open template
             with open(os.path.join(self._templates, f"{self.algorithm}_rl_games_yaml")) as file:
@@ -133,7 +141,10 @@ class Config:
             filename = os.path.basename(self.path).replace("rsl_rl", "")
             filename = filename.replace(f"_{self.algorithm}_", "_")
             filename = filename.replace(f"_{self.algorithm}.", ".")
-            filename = f"skrl_{self.algorithm}_{token}_{filename}".replace("__", "_").replace("__", "_")
+            filename = filename.replace(f"_cfg_", "_")
+            filename = filename.replace(f"_cfg.", ".")
+            filename = filename.replace(f".py", "")
+            filename = f"skrl_{token}_{filename}_{self.algorithm}_cfg.yaml".replace("__", "_").replace("__", "_")
             path = os.path.join(os.path.dirname(self.path), filename)
             # open template
             with open(os.path.join(self._templates, f"{self.algorithm}_rsl_rl_yaml")) as file:
@@ -299,18 +310,31 @@ if __name__ == "__main__":
         return ""
 
     table = PrettyTable()
-    table.field_names = ["Task", "Unregistered", "RL libraries", "Generated", "Status"]
+    table.field_names = ["Task", "Registered", "RL libraries", "Generated", "Status"]
     table.align["Task"] = "l"
     table.align["RL libraries"] = "l"
     table.align["Generated"] = "l"
     for data in stats:
-        unregistered = "X" if "skrl" not in data["registered"] else ""
+        if "skrl" in data["registered"]:
+            registered = f'- {len(data["registered"]["skrl"])} -' if len(data["registered"]["skrl"]) > 1 else ""
+            filenames = [item.get("filename") for item in data["generated"]]
+            if filenames == ["-"]:
+                pass
+            elif filenames:
+                exist = False
+                for item in data["registered"]["skrl"]:
+                    if item.filename in filenames:
+                        exist = True
+                if not exist:
+                    registered = f"{registered} other" if registered else "other"
+        else:
+            registered = "No"
         libraries = sorted(data["registered"].keys())
         filenames = [f'{item.get("filename")}' + (f' ({item.get("library")})' if "library" in item else "")
                      for item in data["generated"] if item]
         table.add_row([
             data["env"],
-            unregistered,
+            registered,
             ", ".join(libraries),
             ", ".join(filenames),
             status(data["generated"]),

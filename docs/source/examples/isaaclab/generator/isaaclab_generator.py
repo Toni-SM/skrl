@@ -137,6 +137,10 @@ class Config:
                 token = "flat"
             elif "-rough-" in self.cfg["metadata"]["task"].lower():
                 token = "rough"
+            elif "-ff-" in self.cfg["metadata"]["task"].lower():
+                token = "ff"
+            elif "-lstm-" in self.cfg["metadata"]["task"].lower():
+                token = "lstm"
             # generate file name
             filename = os.path.basename(self.path).replace("rsl_rl", "")
             filename = filename.replace(f"_{self.algorithm}_", "_")

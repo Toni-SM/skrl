@@ -47,6 +47,11 @@ class Config:
             * self.num_envs
             / self.cfg["params"]["config"]["minibatch_size"]
         )
+        # rnn/cnn
+        assert "central_value_config" not in self.cfg["params"]["config"], f"rl_games's config includes central_value_config"
+        assert "rnn" not in self.cfg["params"]["network"], f"rl_games's network includes RNN"
+        assert "cnn" not in self.cfg["params"]["network"], f"rl_games's network includes CNN"
+        # mini batches
         if isinstance(mini_batches, float):
             assert mini_batches.is_integer(), (
                 "Invalid rl_games configuration: mini_batches is not integer:"
@@ -106,7 +111,7 @@ class Config:
             self.valid = True
         return self
 
-    def generate_yaml(self) -> str:
+    def generate_yaml(self) -> tuple[str, str]:
         content = None
         if self.library == "rl_games":
             # generate file name
@@ -141,7 +146,8 @@ class Config:
         # save file
         with open(path, "w") as file:
             file.write(content)
-        return filename
+        dirname = os.path.dirname(self.path)[len(os.getcwd()) + 1:]
+        return dirname, filename
 
     def generate_python_script(self) -> None:
         def convert_hidden_activation(activations, framework):
@@ -242,7 +248,7 @@ if __name__ == "__main__":
 
         # ignore PLAY configs: Isaac-ENV-NAME-Play-v0
         if env_name.lower().endswith("-play-v0"):
-            stats[-1]["generated"].append("-")
+            stats[-1]["generated"].append({"filename": "-"})
             continue
 
         # generate config file
@@ -252,16 +258,16 @@ if __name__ == "__main__":
             assert len(rl_games_configs) == 1
             config = rl_games_configs[0]
             if config.valid:
-                filename = config.generate_yaml()
-                stats[-1]["generated"].append(f"{filename} (rl_games)")
+                dirname, filename = config.generate_yaml()
+                stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rl_games"})
                 generated = True
-         # rl_games config
+         # rsl_rl config
         if not generated and len(rsl_rl_configs):
             assert len(rsl_rl_configs) == 1
             config = rsl_rl_configs[0]
             if config.valid:
-                filename = config.generate_yaml()
-                stats[-1]["generated"].append(f"{filename} (rsl_rl)")
+                dirname, filename = config.generate_yaml()
+                stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rsl_rl"})
                 generated = True
 
         # generate Python scripts
@@ -281,18 +287,33 @@ if __name__ == "__main__":
     print("#################################")
     print()
 
+    cmd = "git status --porcelain | grep skrl_.*.yaml"
+    git_status = subprocess.check_output(cmd, shell=True, text=True).split("\n")
+
+    def status(generated):
+        for item in generated:
+            if item and "dirname" in item:
+                for row in git_status:
+                    if os.path.join(item["dirname"], item["filename"]) in row:
+                        return row.lstrip().split(" ")[0]
+        return ""
+
     table = PrettyTable()
-    table.field_names = ["Task", "Unregistered", "RL libraries", "Generated"]
+    table.field_names = ["Task", "Unregistered", "RL libraries", "Generated", "Status"]
     table.align["Task"] = "l"
     table.align["RL libraries"] = "l"
     table.align["Generated"] = "l"
     for data in stats:
         unregistered = "X" if "skrl" not in data["registered"] else ""
         libraries = sorted(data["registered"].keys())
-        table.add_row([data["env"], unregistered, ", ".join(libraries), ", ".join(data["generated"])])
+        filenames = [f'{item.get("filename")}' + (f' ({item.get("library")})' if "library" in item else "")
+                     for item in data["generated"] if item]
+        table.add_row([
+            data["env"],
+            unregistered,
+            ", ".join(libraries),
+            ", ".join(filenames),
+            status(data["generated"]),
+        ])
     print(table)
     print()
-
-    cmd = "git status | grep skrl_.*.yaml"
-    output = subprocess.check_output(cmd, shell=True, text=True)
-    print(output)

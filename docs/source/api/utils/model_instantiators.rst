@@ -95,6 +95,8 @@ Supported operations:
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
+    * - Permute dimensions
+      - ``permute(STATES, (0, 3, 1, 2))``
 
 |
 

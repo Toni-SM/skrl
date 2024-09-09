@@ -6,6 +6,7 @@ from omni.isaac.lab.app import AppLauncher
 app_launcher = AppLauncher()
 simulation_app = app_launcher.app
 
+import copy
 import math
 import gymnasium as gym
 import importlib
@@ -16,6 +17,11 @@ from prettytable import PrettyTable
 
 from omni.isaac.lab.utils import class_to_dict
 from omni.isaac.lab_tasks.utils import load_cfg_from_registry
+
+from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, shared_model
+
+GENERATE_YAML = True
+GENERATE_SCRIPTS = True
 
 
 class Config:
@@ -164,59 +170,62 @@ class Config:
         dirname = os.path.dirname(self.path)[len(os.getcwd()) + 1:]
         return dirname, filename
 
-    def generate_python_script(self) -> None:
-        def convert_hidden_activation(activations, framework):
-            mapping = {
-                "torch": {
-                    "": "Identity",
-                    "relu": "ReLU",
-                    "tanh": "Tanh",
-                    "sigmoid": "Sigmoid",
-                    "leaky_relu": "LeakyReLU",
-                    "elu": "ELU",
-                    "softplus": "Softplus",
-                    "softsign": "Softsign",
-                    "selu": "SELU",
-                    "softmax": "Softmax",
-                },
-                "jax": {
-                    "relu": "relu",
-                    "tanh": "tanh",
-                    "sigmoid": "sigmoid",
-                    "leaky_relu": "leaky_relu",
-                    "elu": "elu",
-                    "softplus": "softplus",
-                    "softsign": "soft_sign",
-                    "selu": "selu",
-                    "softmax": "softmax",
-                },
-            }
-            return [mapping[framework][activation] for activation in activations]
-
-        task_name = "_".join([item.lower() for item in self.cfg["metadata"]["task"].split("-")[1:-1]])
-        for framework in ["torch", "jax"]:
+    def generate_python_script(self) -> list[str]:
+        paths = []
+        task_name = "_".join([item.lower() for item in self.cfg["metadata"]["task"].split("-")[1:]])
+        for framework in ["torch"]: # TODO: , "jax"]:
             content = ""
             if self.library == "skrl":
                 # generate file name
                 os.makedirs("skrl_examples", exist_ok=True)
-                path = os.path.join("skrl_examples", f"{framework}_{task_name}_ppo.py")
-                with open(os.path.join(self._templates, f"ppo_skrl_py_{framework}")) as file:
+                path = os.path.join("skrl_examples", f"{framework}_{task_name}_{self.algorithm}.py")
+                with open(os.path.join(self._templates, f"{self.algorithm}_skrl_py_{framework}")) as file:
                     content = file.read()
             if not content:
                 raise ValueError
             # update config
-            self.cfg["models"]["policy"][f"hidden_activation__{framework}"] = convert_hidden_activation(
-                self.cfg["models"]["policy"]["hidden_activation"], framework
-            )
-            self.cfg["models"]["value"][f"hidden_activation__{framework}"] = convert_hidden_activation(
-                self.cfg["models"]["value"]["hidden_activation"], framework
-            )
+            policy = copy.deepcopy(self.cfg["models"]["policy"])
+            value = copy.deepcopy(self.cfg["models"]["value"])
+            del policy["class"]
+            del value["class"]
+            if self.cfg["models"]["separate"]:
+                source = gaussian_model(
+                    observation_space=1,
+                    action_space=1,
+                    device="cuda:0",
+                    return_source=True,
+                    **policy,
+                ).rstrip()
+                source = source.replace("GaussianModel", "Policy")
+                self.cfg["models"]["generated"] = {"policy": source}
+                source = deterministic_model(
+                    observation_space=1,
+                    action_space=1,
+                    device="cuda:0",
+                    return_source=True,
+                    **value,
+                ).rstrip()
+                source = source.replace("DeterministicModel", "Value")
+                self.cfg["models"]["generated"]["value"] = source
+            else:
+                source = shared_model(
+                    observation_space=1,
+                    action_space=1,
+                    device="cuda:0",
+                    roles=["policy", "value"],
+                    parameters=[policy, value],
+                    return_source=True,
+                ).rstrip()
+                source = source.replace("GaussianDeterministicModel", "Shared")
+                self.cfg["models"]["generated"] = source
             # render template
             template = Template(content, keep_trailing_newline=True, trim_blocks=True, lstrip_blocks=True)
             content = template.render(self.cfg)
             # save file
             with open(path, "w") as file:
                 file.write(content)
+            paths.append(os.path.basename(path))
+        return paths
 
 
 if __name__ == "__main__":
@@ -227,7 +236,7 @@ if __name__ == "__main__":
         # ignore non-Isaac Lab envs
         if not env_name.lower().startswith("isaac-"):
             continue
-        stats.append({"env": env_name, "registered": {}, "generated": []})
+        stats.append({"env": env_name, "registered": {}, "generated": [], "generated_scripts": []})
         print(f"\n{'=' * len(env_name)}\n{env_name}\n{'=' * len(env_name)}")
 
         # get number of environments
@@ -264,43 +273,71 @@ if __name__ == "__main__":
         # ignore PLAY configs: Isaac-ENV-NAME-Play-v0
         if env_name.lower().endswith("-play-v0"):
             stats[-1]["generated"].append({"filename": "-"})
+            stats[-1]["generated_scripts"].append({"filename": "-"})
             continue
 
         # generate config file
-        generated = False
-        # rl_games config
-        if len(rl_games_configs):
-            assert len(rl_games_configs) == 1
-            config = rl_games_configs[0]
-            if config.valid:
-                dirname, filename = config.generate_yaml()
-                stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rl_games"})
-                generated = True
-         # rsl_rl config
-        if not generated and len(rsl_rl_configs):
-            assert len(rsl_rl_configs) == 1
-            config = rsl_rl_configs[0]
-            if config.valid:
-                dirname, filename = config.generate_yaml()
-                stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rsl_rl"})
-                generated = True
+        if GENERATE_YAML:
+            generated = False
+            # rl_games config
+            if len(rl_games_configs):
+                assert len(rl_games_configs) == 1
+                config = rl_games_configs[0]
+                if config.valid:
+                    dirname, filename = config.generate_yaml()
+                    stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rl_games"})
+                    generated = True
+            # rsl_rl config
+            if not generated and len(rsl_rl_configs):
+                assert len(rsl_rl_configs) == 1
+                config = rsl_rl_configs[0]
+                if config.valid:
+                    dirname, filename = config.generate_yaml()
+                    stats[-1]["generated"].append({"dirname": dirname, "filename": filename, "library": "rsl_rl"})
+                    generated = True
 
         # generate Python scripts
-        library = "skrl"
-        skrl_configs = [
-            Config(library).parse(entry, env_name, num_envs)
-            for entry, _ in env_data.kwargs.items()
-            if entry.startswith(library)
-        ]
-        if len(skrl_configs):
-            assert len(skrl_configs) == 1
-            config = skrl_configs[0]
-            if config.valid:
-                config.generate_python_script()
+        if GENERATE_SCRIPTS:
+            if len(skrl_configs):
+                # assert len(skrl_configs) == 1 # TODO
+                config = skrl_configs[0]
+                if config.valid:
+                    paths = config.generate_python_script()
+                    stats[-1]["generated_scripts"].append({"filename": ", ".join(paths) if paths else ""})
+
+    stats = sorted(stats, key=lambda x: x["env"])
 
     print()
     print("#################################")
     print()
+
+    if GENERATE_SCRIPTS:
+        table = PrettyTable()
+        table.field_names = ["Task", "Registered", "Generated"]
+        table.align["Task"] = "l"
+        table.align["Generated"] = "l"
+        for data in stats:
+            if "skrl" in data["registered"]:
+                registered = f'- {len(data["registered"]["skrl"])} -' if len(data["registered"]["skrl"]) > 1 else ""
+                filenames = [item.get("filename") for item in data["generated"]]
+                if filenames == ["-"]:
+                    pass
+                elif filenames:
+                    exist = False
+                    for item in data["registered"]["skrl"]:
+                        if item.filename in filenames:
+                            exist = True
+                    if not exist:
+                        registered = f"{registered} other" if registered else "other"
+            else:
+                registered = "No"
+            filenames = [f'{item.get("filename")}' for item in data["generated_scripts"] if item]
+            table.add_row([data["env"], registered, ", ".join(filenames)])
+        print(table)
+        print()
+
+    if not GENERATE_YAML:
+        exit()
 
     cmd = "git status --porcelain | grep skrl_.*.yaml"
     git_status = subprocess.check_output(cmd, shell=True, text=True).split("\n")

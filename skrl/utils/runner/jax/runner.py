@@ -2,7 +2,7 @@ from typing import Any, Mapping, Type, Union
 
 import copy
 
-from skrl import config, logger
+from skrl import logger
 from skrl.agents.jax import Agent
 from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
@@ -10,8 +10,8 @@ from skrl.memories.jax import RandomMemory
 from skrl.models.jax import Model
 from skrl.multi_agents.jax.ippo import IPPO, IPPO_DEFAULT_CONFIG
 from skrl.multi_agents.jax.mappo import MAPPO, MAPPO_DEFAULT_CONFIG
-from skrl.resources.preprocessors.jax import RunningStandardScaler
-from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.resources.preprocessors.jax import RunningStandardScaler  # noqa
+from skrl.resources.schedulers.jax import KLAdaptiveLR  # noqa
 from skrl.trainers.jax import SequentialTrainer, Trainer
 from skrl.utils import set_seed
 from skrl.utils.model_instantiators.jax import deterministic_model, gaussian_model
@@ -121,12 +121,12 @@ class Runner:
                     update_dict(value)
                 else:
                     if key in _direct_eval:
-                        d[key] = eval(value)
+                        if type(d[key]) is str:
+                            d[key] = eval(value)
                     elif key.endswith("_kwargs"):
                         d[key] = value if value is not None else {}
                     elif key in ["rewards_shaper_scale"]:
                         d["rewards_shaper"] = reward_shaper_function(value)
-
             return d
 
         return update_dict(copy.deepcopy(cfg))

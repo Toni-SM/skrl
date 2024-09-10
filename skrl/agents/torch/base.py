@@ -6,6 +6,7 @@ import datetime
 import os
 import gym
 import gymnasium
+from packaging import version
 
 import numpy as np
 import torch
@@ -374,7 +375,10 @@ class Agent:
         :param path: Path to load the model from
         :type path: str
         """
-        modules = torch.load(path, map_location=self.device)
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            modules = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
             for name, data in modules.items():
                 module = self.checkpoint_modules.get(name, None)

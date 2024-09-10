@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 import collections
 import gym
 import gymnasium
+from packaging import version
 
 import numpy as np
 import torch
@@ -488,7 +489,11 @@ class Model(torch.nn.Module):
             >>> model = Model(observation_space, action_space, device="cuda:1")
             >>> model.load("model.pt")
         """
-        self.load_state_dict(torch.load(path, map_location=self.device))
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            state_dict = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            state_dict = torch.load(path, map_location=self.device)
+        self.load_state_dict(state_dict)
         self.eval()
 
     def migrate(self,

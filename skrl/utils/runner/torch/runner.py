@@ -10,8 +10,8 @@ from skrl.memories.torch import RandomMemory
 from skrl.models.torch import Model
 from skrl.multi_agents.torch.ippo import IPPO, IPPO_DEFAULT_CONFIG
 from skrl.multi_agents.torch.mappo import MAPPO, MAPPO_DEFAULT_CONFIG
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveLR
+from skrl.resources.preprocessors.torch import RunningStandardScaler  # noqa
+from skrl.resources.schedulers.torch import KLAdaptiveLR  # noqa
 from skrl.trainers.torch import SequentialTrainer, Trainer
 from skrl.utils import set_seed
 from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, shared_model
@@ -121,12 +121,12 @@ class Runner:
                     update_dict(value)
                 else:
                     if key in _direct_eval:
-                        d[key] = eval(value)
+                        if type(d[key]) is str:
+                            d[key] = eval(value)
                     elif key.endswith("_kwargs"):
                         d[key] = value if value is not None else {}
                     elif key in ["rewards_shaper_scale"]:
                         d["rewards_shaper"] = reward_shaper_function(value)
-
             return d
 
         return update_dict(copy.deepcopy(cfg))

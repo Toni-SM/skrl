@@ -52,6 +52,9 @@ def _parse_input(source: str) -> str:
                 if node.func.id == "concatenate":
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
                     node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
+                # operation: permute
+                if node.func.id == "permute":
+                    node.func = ast.Attribute(value=ast.Name("torch"), attr="permute")
             return node
 
     # apply operations by modifying the source syntax grammar

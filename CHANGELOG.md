@@ -14,7 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent that uses it in distributed runs
 - Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
-- Implement model instantiators using dynamic execution of Python code
+- Upgrade model instantiator implementations to support CNN layers and complex network definitions,
+  and implement them using dynamic execution of Python code
 - Update Isaac Lab environment loader argument parser options to match Isaac Lab version
 
 ### Changed (breaking changes)
@@ -24,7 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
-- Fix automatic wrapper detection for Isaac Gym (previews), DeepMind and vectorized Gymnasium environments
+- Fix automatic wrapper detection issue (introduced in previous version) for Isaac Gym (previews),
+  DeepMind and vectorized Gymnasium environments
 - Fix vectorized/parallel environments `reset` method return values when called more than once
 - IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
 

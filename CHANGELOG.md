@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.3.0] - Unreleased
+## [1.3.0] - 2024-09-11
 ### Added
 - Distributed multi-GPU and multi-node learning (JAX implementation)
 - Utilities to start multiple processes from a single program invocation for distributed learning using JAX
@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix automatic wrapper detection issue (introduced in previous version) for Isaac Gym (previews),
   DeepMind and vectorized Gymnasium environments
 - Fix vectorized/parallel environments `reset` method return values when called more than once
-- IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
+- Fix IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
 
 ## [1.2.0] - 2024-06-23
 ### Added

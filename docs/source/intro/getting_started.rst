@@ -41,11 +41,11 @@ At each step (also called timestep) of interaction with the environment, the age
 1. Environments
 ^^^^^^^^^^^^^^^
 
-The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as OpenAI Gym / Farama Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
+The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as Gym/Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-* For **single-agent** environments, skrl offers a function to **wrap environments** based on the Gym/Gymnasium, DeepMind, NVIDIA Isaac Gym, Omniverse Isaac Gym and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (based on Gym/Gymnasium) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, and NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
-* For **multi-agent** environments, skrl offers a function to **wrap environments** based on the PettingZoo and Bi-DexHands interfaces. The wrapped environments provide, to the library components, a common interface (based on PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
+* For **multi-agent** environments, skrl offers a function to **wrap environments** based on PettingZoo and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
 .. tabs::
 
@@ -77,7 +77,7 @@ The environment plays a fundamental role in the definition of the RL schema. For
             :class: only-dark
             :alt: Environment wrapping
 
-Among the methods and properties defined in the wrapped environment, the observation and action spaces are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
+Among the methods and properties defined in the wrapped environment, the state, observation and action spaces are one of the most relevant for instantiating other library components. The following code snippets show how to load and wrap environments based on the supported interfaces:
 
 .. tabs::
 
@@ -219,15 +219,57 @@ Among the methods and properties defined in the wrapped environment, the observa
                                     :start-after: [jax-start-isaacgym-preview2]
                                     :end-before: [jax-end-isaacgym-preview2]
 
-            .. tab:: Gym / Gymnasium
+            .. tab:: Gymnasium / Gym
 
                 .. tabs::
+
+                    .. tab:: Gymnasium
+
+                        .. tabs::
+
+                            .. group-tab:: Single environment
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gymnasium]
+                                            :end-before: [pytorch-end-gymnasium]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gymnasium]
+                                            :end-before: [jax-end-gymnasium]
+
+                            .. group-tab:: Vectorized environment
+
+                                Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
+
+                                .. tabs::
+
+                                    .. group-tab:: |_4| |pytorch| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [pytorch-start-gymnasium-vectorized]
+                                            :end-before: [pytorch-end-gymnasium-vectorized]
+
+                                    .. group-tab:: |_4| |jax| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [jax-start-gymnasium-vectorized]
+                                            :end-before: [jax-end-gymnasium-vectorized]
 
                     .. tab:: Gym
 
                         .. tabs::
 
-                            .. tab:: Single environment
+                            .. group-tab:: Single environment
 
                                 .. tabs::
 
@@ -245,7 +287,7 @@ Among the methods and properties defined in the wrapped environment, the observa
                                             :start-after: [jax-start-gym]
                                             :end-before: [jax-end-gym]
 
-                            .. tab:: Vectorized environment
+                            .. group-tab:: Vectorized environment
 
                                 Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
 
@@ -265,47 +307,41 @@ Among the methods and properties defined in the wrapped environment, the observa
                                             :start-after: [jax-start-gym-vectorized]
                                             :end-before: [jax-end-gym-vectorized]
 
-                    .. tab:: Gymnasium
+            .. tab:: Shimmy
 
-                        .. tabs::
+                .. tabs::
 
-                            .. tab:: Single environment
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                                .. tabs::
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-shimmy]
+                            :end-before: [pytorch-end-shimmy]
 
-                                    .. group-tab:: |_4| |pytorch| |_4|
+                    .. group-tab:: |_4| |jax| |_4|
 
-                                        .. literalinclude:: ../snippets/wrapping.py
-                                            :language: python
-                                            :start-after: [pytorch-start-gymnasium]
-                                            :end-before: [pytorch-end-gymnasium]
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-shimmy]
+                            :end-before: [jax-end-shimmy]
 
-                                    .. group-tab:: |_4| |jax| |_4|
+            .. tab:: Brax
 
-                                        .. literalinclude:: ../snippets/wrapping.py
-                                            :language: python
-                                            :start-after: [jax-start-gymnasium]
-                                            :end-before: [jax-end-gymnasium]
+                .. tabs::
 
-                            .. tab:: Vectorized environment
+                    .. group-tab:: |_4| |pytorch| |_4|
 
-                                Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-brax]
+                            :end-before: [pytorch-end-brax]
 
-                                .. tabs::
+                    .. group-tab:: |_4| |jax| |_4|
 
-                                    .. group-tab:: |_4| |pytorch| |_4|
-
-                                        .. literalinclude:: ../snippets/wrapping.py
-                                            :language: python
-                                            :start-after: [pytorch-start-gymnasium-vectorized]
-                                            :end-before: [pytorch-end-gymnasium-vectorized]
-
-                                    .. group-tab:: |_4| |jax| |_4|
-
-                                        .. literalinclude:: ../snippets/wrapping.py
-                                            :language: python
-                                            :start-after: [jax-start-gymnasium-vectorized]
-                                            :end-before: [jax-end-gymnasium-vectorized]
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-brax]
+                            :end-before: [jax-end-brax]
 
             .. tab:: DeepMind
 
@@ -347,6 +383,24 @@ Among the methods and properties defined in the wrapped environment, the observa
 
         .. tabs::
 
+            .. tab:: Isaac Lab
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-isaaclab-multi-agent]
+                            :end-before: [pytorch-end-isaaclab-multi-agent]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-isaaclab-multi-agent]
+                            :end-before: [jax-end-isaaclab-multi-agent]
+
             .. tab:: PettingZoo
 
                 .. tabs::
@@ -364,6 +418,24 @@ Among the methods and properties defined in the wrapped environment, the observa
                             :language: python
                             :start-after: [start-pettingzoo-jax]
                             :end-before: [end-pettingzoo-jax]
+
+            .. tab:: Shimmy
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-shimmy-multi-agent]
+                            :end-before: [pytorch-end-shimmy-multi-agent]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-shimmy-multi-agent]
+                            :end-before: [jax-end-shimmy-multi-agent]
 
             .. tab:: Bi-DexHands
 

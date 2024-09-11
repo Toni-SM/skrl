@@ -10,13 +10,13 @@ import skrl
 
 # project information
 project = "skrl"
-copyright = "2021, Toni-SM"
+copyright = "2021-2024, Toni-SM"
 author = "Toni-SM"
 
 if skrl.__version__ != "unknown":
     release = version = skrl.__version__
 else:
-    release = version = "1.2.0"
+    release = version = "1.3.0"
 
 master_doc = "index"
 
@@ -96,6 +96,7 @@ html_theme_options = {
     "source_repository": "https://github.com/Toni-SM/skrl",
     "source_branch": "../tree/main",
     "source_directory": "docs/source",
+    "top_of_page_buttons": ["view"],
     # css
     "light_css_variables": {
         "color-brand-primary": "#FF4800",

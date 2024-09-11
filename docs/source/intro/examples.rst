@@ -551,7 +551,7 @@ Multi-agent training/evaluation in a `Bi-DexHands <https://github.com/PKU-MARL/D
 Isaac Gym environments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Training/evaluation of an agent in `Isaac Gym environments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ (**one agent, multiple environments**)
+Training/evaluation of an agent in `Isaac Gym environments <https://github.com/isaac-sim/IsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_isaacgym.png
     :width: 100%
@@ -562,7 +562,7 @@ Training/evaluation of an agent in `Isaac Gym environments <https://github.com/N
 
     <br>
 
-The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs configuration <https://github.com/isaac-sim/IsaacGymEnvs/tree/main/isaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. tabs::
 
@@ -947,7 +947,7 @@ The agent configuration is mapped, as far as possible, from the Isaac Lab config
 Omniverse Isaac Gym environments (OIGE)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Training/evaluation of an agent in `Omniverse Isaac Gym environments (OIGE) <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
+Training/evaluation of an agent in `Omniverse Isaac Gym environments (OIGE) <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_ (**one agent, multiple environments**)
 
 .. image:: ../_static/imgs/example_omniverse_isaacgym.png
     :width: 100%
@@ -958,7 +958,7 @@ Training/evaluation of an agent in `Omniverse Isaac Gym environments (OIGE) <htt
 
     <br>
 
-The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnvs configuration <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
+The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnvs configuration <https://github.com/isaac-sim/OmniIsaacGymEnvs/tree/main/omniisaacgymenvs/cfg/train>`_ for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
 
 .. tabs::
 
@@ -1159,7 +1159,7 @@ The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnv
 Omniverse Isaac Gym environments (simultaneous learning by scope)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Simultaneous training/evaluation by scopes (subsets of environments among all available environments) of several agents in the same run in `OIGE <https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs>`_'s Ant environment (**multiple agents and environments**)
+Simultaneous training/evaluation by scopes (subsets of environments among all available environments) of several agents in the same run in `OIGE <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_'s Ant environment (**multiple agents and environments**)
 
 .. image:: ../_static/imgs/example_parallel.jpg
     :width: 100%
@@ -1448,7 +1448,7 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Prerequisites:**
 
-                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
+                All installation steps described in `Omniverse Isaac Gym's Installation <https://github.com/isaac-sim/OmniIsaacGymEnvs?tab=readme-ov-file#installation>`_ section must be fulfilled
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
@@ -1499,7 +1499,7 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Prerequisites:**
 
-                All installation steps described in Isaac Gym's `Installation <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#installation>`_ section must be fulfilled
+                All installation steps described in `Isaac Gym's Installation <https://github.com/isaac-sim/IsaacGymEnvs#installation>`_ section must be fulfilled
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
@@ -1679,7 +1679,7 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Prerequisites:**
 
-                All installation steps described in Omniverse Isaac Gym's `Overview & Getting Started <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_ section must be fulfilled (especially the subsection 1.3. Installing Examples Repository)
+                All installation steps described in `Omniverse Isaac Gym's Installation <https://github.com/isaac-sim/OmniIsaacGymEnvs?tab=readme-ov-file#installation>`_ section must be fulfilled
 
                 **Files** (the implementation is self-contained so no specific location is required):
 

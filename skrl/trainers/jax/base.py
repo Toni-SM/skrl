@@ -5,7 +5,7 @@ import contextlib
 import sys
 import tqdm
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import Wrapper
 
@@ -72,6 +72,11 @@ class Trainer:
                 logger.info("Closing environment")
                 self.env.close()
                 logger.info("Environment closed")
+
+        # update trainer configuration to avoid duplicated info/data in distributed runs
+        if config.jax.is_distributed:
+            if config.jax.rank:
+                self.disable_progressbar = True
 
     def __str__(self) -> str:
         """Generate a string representation of the trainer
@@ -273,7 +278,7 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
@@ -286,7 +291,7 @@ class Trainer:
 
             # step the environments
             next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
+            shared_next_states = self.env.state()
             infos["shared_states"] = shared_states
             infos["shared_next_states"] = shared_next_states
 
@@ -313,7 +318,7 @@ class Trainer:
             with contextlib.nullcontext():
                 if not self.env.agents:
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
+                    shared_states = self.env.state()
                 else:
                     states = next_states
                     shared_states = shared_next_states
@@ -333,7 +338,7 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
@@ -343,7 +348,7 @@ class Trainer:
 
             # step the environments
             next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
+            shared_next_states = self.env.state()
             infos["shared_states"] = shared_states
             infos["shared_next_states"] = shared_next_states
 
@@ -367,7 +372,7 @@ class Trainer:
                 # reset environments
                 if not self.env.agents:
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
+                    shared_states = self.env.state()
                 else:
                     states = next_states
                     shared_states = shared_next_states

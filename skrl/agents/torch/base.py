@@ -6,6 +6,7 @@ import datetime
 import os
 import gym
 import gymnasium
+from packaging import version
 
 import numpy as np
 import torch
@@ -84,12 +85,6 @@ class Agent:
         if not experiment_name:
             experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
         self.experiment_dir = os.path.join(directory, experiment_name)
-
-        # set up distributed runs
-        if config.torch.is_distributed:
-            logger.info(f"Distributed (rank: {config.torch.rank}, local rank: {config.torch.local_rank}, world size: {config.torch.world_size})")
-            torch.distributed.init_process_group("nccl", rank=config.torch.rank, world_size=config.torch.world_size)
-            torch.cuda.set_device(config.torch.local_rank)
 
     def __str__(self) -> str:
         """Generate a representation of the agent as string
@@ -380,7 +375,10 @@ class Agent:
         :param path: Path to load the model from
         :type path: str
         """
-        modules = torch.load(path, map_location=self.device)
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            modules = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
             for name, data in modules.items():
                 module = self.checkpoint_modules.get(name, None)

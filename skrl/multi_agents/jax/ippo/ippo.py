@@ -9,6 +9,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from skrl import config, logger
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.multi_agents.jax import MultiAgent
@@ -232,8 +233,17 @@ class IPPO(MultiAgent):
         self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
 
         for uid in self.possible_agents:
+            # checkpoint models
             self.checkpoint_modules[uid]["policy"] = self.policies[uid]
             self.checkpoint_modules[uid]["value"] = self.values[uid]
+
+            # broadcast models' parameters in distributed runs
+            if config.jax.is_distributed:
+                logger.info(f"Broadcasting models' parameters")
+                if self.policies[uid] is not None:
+                    self.policies[uid].broadcast_parameters()
+                    if self.values[uid] is not None:
+                        self.values[uid].broadcast_parameters()
 
         # configuration
         self._learning_epochs = self._as_dict(self.cfg["learning_epochs"])
@@ -315,18 +325,19 @@ class IPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -364,8 +375,8 @@ class IPPO(MultiAgent):
         outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
         if not self._jax:  # numpy backend
-            actions = {jax.device_get(_actions) for _actions in actions}
-            log_prob = {jax.device_get(_log_prob) for _log_prob in log_prob}
+            actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
+            log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
 
         self._current_log_prob = log_prob
 
@@ -528,6 +539,8 @@ class IPPO(MultiAgent):
                         break
 
                     # optimization step (policy)
+                    if config.jax.is_distributed:
+                        grad = policy.reduce_parameters(grad)
                     self.policy_optimizer[uid] = self.policy_optimizer[uid].step(grad, policy, self.schedulers[uid]._lr if self.schedulers[uid] else None)
 
                     # compute value loss
@@ -541,6 +554,8 @@ class IPPO(MultiAgent):
                                                     self._value_clip[uid])
 
                     # optimization step (value)
+                    if config.jax.is_distributed:
+                        grad = value.reduce_parameters(grad)
                     self.value_optimizer[uid] = self.value_optimizer[uid].step(grad, value, self.schedulers[uid]._lr if self.schedulers[uid] else None)
 
                     # update cumulative losses
@@ -552,7 +567,12 @@ class IPPO(MultiAgent):
                 # update learning rate
                 if self._learning_rate_scheduler[uid]:
                     if isinstance(self.schedulers[uid], KLAdaptiveLR):
-                        self.schedulers[uid].step(np.mean(kl_divergences))
+                        kl = np.mean(kl_divergences)
+                        # reduce (collect from all workers/processes) KL in distributed runs
+                        if config.jax.is_distributed:
+                            kl = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(kl.reshape(1)).item()
+                            kl /= config.jax.world_size
+                        self.schedulers[uid].step(kl)
 
             # record data
             self.track_data(f"Loss / Policy loss ({uid})", cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))

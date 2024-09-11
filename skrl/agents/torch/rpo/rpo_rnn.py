@@ -521,7 +521,12 @@ class RPO_RNN(Agent):
             # update learning rate
             if self._learning_rate_scheduler:
                 if isinstance(self.scheduler, KLAdaptiveLR):
-                    self.scheduler.step(torch.tensor(kl_divergences, device=self.device).mean())
+                    kl = torch.tensor(kl_divergences, device=self.device).mean()
+                    # reduce (collect from all workers/processes) KL in distributed runs
+                    if config.torch.is_distributed:
+                        torch.distributed.all_reduce(kl, op=torch.distributed.ReduceOp.SUM)
+                        kl /= config.torch.world_size
+                    self.scheduler.step(kl.item())
                 else:
                     self.scheduler.step()
 

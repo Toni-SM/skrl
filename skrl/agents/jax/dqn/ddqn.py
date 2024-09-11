@@ -9,6 +9,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -134,6 +135,12 @@ class DDQN(Agent):
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network
         self.checkpoint_modules["target_q_network"] = self.target_q_network
+
+        # broadcast models' parameters in distributed runs
+        if config.jax.is_distributed:
+            logger.info(f"Broadcasting models' parameters")
+            if self.q_network is not None:
+                self.q_network.broadcast_parameters()
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -354,6 +361,8 @@ class DDQN(Agent):
                                                                     self._discount_factor)
 
             # optimization step (Q-network)
+            if config.jax.is_distributed:
+                grad = self.q_network.reduce_parameters(grad)
             self.optimizer = self.optimizer.step(grad, self.q_network)
 
             # update target network

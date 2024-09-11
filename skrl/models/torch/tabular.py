@@ -1,5 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+from packaging import version
+
 import torch
 
 from skrl.models.torch import Model
@@ -196,7 +198,10 @@ class TabularMixin:
             >>> model = Model(observation_space, action_space, device="cuda:1")
             >>> model.load("model.pt")
         """
-        tensors = torch.load(path)
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            tensors = torch.load(path, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            tensors = torch.load(path)
         for name, tensor in tensors.items():
             if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
                 _tensor = getattr(self, name)

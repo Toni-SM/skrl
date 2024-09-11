@@ -2,6 +2,35 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - Unreleased
+### Added
+- Distributed multi-GPU and multi-node learning (JAX implementation)
+- Utilities to start multiple processes from a single program invocation for distributed learning using JAX
+- Model instantiators `return_source` parameter to get the source class definition used to instantiate the models
+- `Runner` utility to run training/evaluation workflows in a few lines of code
+- Wrapper for Isaac Lab multi-agent environments
+- Wrapper for Google Brax environments
+
+### Changed
+- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent that uses it in distributed runs
+- Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
+- Upgrade model instantiator implementations to support CNN layers and complex network definitions,
+  and implement them using dynamic execution of Python code
+- Update Isaac Lab environment loader argument parser options to match Isaac Lab version
+- Allow to store tensors/arrays with their original dimensions in memory and make it the default option
+
+### Changed (breaking changes)
+- Decouple the observation and state spaces in single and multi-agent environment wrappers and add the `state`
+  method to get the state of the environment
+- Simplify multi-agent environment wrapper API by removing shared space properties and methods
+
+### Fixed
+- Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
+- Fix automatic wrapper detection issue (introduced in previous version) for Isaac Gym (previews),
+  DeepMind and vectorized Gymnasium environments
+- Fix vectorized/parallel environments `reset` method return values when called more than once
+- IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
+
 ## [1.2.0] - 2024-06-23
 ### Added
 - Define the `environment_info` trainer config to log environment info (PyTorch implementation)
@@ -30,7 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Transition from pre-release versions (`1.0.0-rc.1` and`1.0.0-rc.2`) to a stable version.
 
-This release also announces the publication of the **skrl** paper in the Journal of Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
+This release also announces the publication of the **skrl** paper in the Journal of
+Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
 
 Summary of the most relevant features:
 - JAX support
@@ -44,7 +74,7 @@ Summary of the most relevant features:
 - Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
 
 ### Changed (breaking changes)
-- Structure environment loaders and wrappers file hierarchy coherently
+- Structure environment loaders and wrappers file hierarchy coherently.
   Import statements now follow the next convention:
   - Wrappers (e.g.):
     - `from skrl.envs.wrappers.torch import wrap_env`
@@ -63,9 +93,10 @@ Summary of the most relevant features:
 - IPPO and MAPPO multi-agent
 - Multi-agent base class
 - Bi-DexHands environment loader
-- Wrapper for PettingZoo and Bi-DexHands environments
+- Wrapper for Bi-DexHands environments
+- Wrapper for PettingZoo environments
 - Parameters `num_envs`, `headless` and `cli_args` for configuring Isaac Gym, Isaac Orbit
-and Omniverse Isaac Gym environments when they are loaded
+  and Omniverse Isaac Gym environments when they are loaded
 
 ### Changed
 - Migrate to `pyproject.toml` Python package development
@@ -80,7 +111,7 @@ and Omniverse Isaac Gym environments when they are loaded
 - Disable PyTorch gradient computation during the environment stepping
 - Get categorical models' entropy
 - Typo in `KLAdaptiveLR` learning rate scheduler
-  (keep the old name for compatibility with the examples of previous versions.
+  (Keep the old name for compatibility with the examples of previous versions.
   The old name will be removed in future releases)
 
 ## [0.10.2] - 2023-03-23
@@ -90,7 +121,7 @@ and Omniverse Isaac Gym environments when they are loaded
 
 ## [0.10.1] - 2023-01-26
 ### Fixed
-- Tensorboard writer instantiation when `write_interval` is zero
+- TensorBoard writer instantiation when `write_interval` is zero
 
 ## [0.10.0] - 2023-01-22
 ### Added
@@ -189,7 +220,7 @@ to allow storing samples in memories during evaluation
 ## [0.5.0] - 2022-05-18
 ### Added
 - TRPO agent
-- DeepMind environment wrapper
+- Wrapper for DeepMind environments
 - KL Adaptive learning rate scheduler
 - Handle `gym.spaces.Dict` observation spaces (OpenAI Gym and DeepMind environments)
 - Forward environment info to agent `record_transition` method
@@ -209,7 +240,7 @@ to allow storing samples in memories during evaluation
 ## [0.4.1] - 2022-03-22
 ### Added
 - Examples of all Isaac Gym environments (preview 3)
-- Tensorboard file iterator for data post-processing
+- TensorBoard file iterator for data post-processing
 
 ### Fixed
 - Init and evaluate agents in ParallelTrainer

@@ -65,7 +65,7 @@ Inputs
 ^^^^^^
 
 Inputs can be specified using tokens or previously defined container outputs (by container name).
-Certain operations could be specified on them, including indexing (by a range of numbers in sequences, by key in dictionaries) and slicing
+Certain operations could be specified on them, including indexing and slicing
 
 .. hint::
 
@@ -84,9 +84,6 @@ Supported operations:
 
     * - Operations
       - Example
-    * - Dictionary indexing
-        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
-      - ``STATES["camera"]``
     * - Tensor/array indexing and slicing
         |br| E.g.: :py:class:`gymnasium.spaces.Box`
       - ``STATES[:, 0]``
@@ -284,6 +281,12 @@ conv2d
 """"""
 
 Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.linen.Conv` in JAX)
+
+.. warning::
+
+    * PyTorch :py:class:`torch.nn.Conv2d` expects the input to be in the form NCHW (*N*: batch, *C*: channels, *H*: height, *W*: width).
+      A permutation operation may be necessary to modify the dimensions of a batch of images which are typically NHWC.
+    * JAX :py:class:`flax.linen.Conv` expects the input to be in the form NHWC (the typical dimensions of a batch of images).
 
 .. note::
 

@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Upgrade model instantiator implementations to support CNN layers and complex network definitions,
   and implement them using dynamic execution of Python code
 - Update Isaac Lab environment loader argument parser options to match Isaac Lab version
+- Allow to store tensors/arrays with their original dimensions in memory and make it the default option
 
 ### Changed (breaking changes)
 - Decouple the observation and state spaces in single and multi-agent environment wrappers and add the `state`

@@ -76,11 +76,15 @@ split_complex_comprehension = true
 coalesce_brackets = true
 
 
+[tool.black]
+line-length = 120
+
+
 [tool.codespell]
 # run: codespell <folder>
-skip = "./docs/_build,./docs/source/_static"
+skip = "./docs/source/_static,./docs/_build,pyproject.toml"
 quiet-level = 3
-count = ""
+count = true
 
 
 [tool.isort]

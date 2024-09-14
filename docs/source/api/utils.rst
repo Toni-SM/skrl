@@ -6,6 +6,7 @@ Utils and configurations
 
     ML frameworks configuration <config/frameworks>
     Random seed <utils/seed>
+    Spaces <utils/spaces>
     Model instantiators <utils/model_instantiators>
     Runner <utils/runner>
     Distributed runs <utils/distributed>
@@ -37,6 +38,9 @@ A set of utilities and configurations for managing an RL setup is provided as pa
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`Random seed <utils/seed>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`Spaces <utils/spaces>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Model instantiators <utils/model_instantiators>`

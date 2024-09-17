@@ -171,7 +171,7 @@ class Memory:
                       name: str,
                       size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
                       dtype: Optional[torch.dtype] = None,
-                      keep_dimensions: bool = True) -> bool:
+                      keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).

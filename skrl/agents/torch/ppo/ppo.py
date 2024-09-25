@@ -227,7 +227,7 @@ class PPO(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        with torch.autocast(device_type=self._device_type, enabled=(self._mixed_precision)):
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
             actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
             self._current_log_prob = log_prob
 
@@ -274,7 +274,7 @@ class PPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            with torch.autocast(device_type=self._device_type, enabled=(self._mixed_precision)):
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                 values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
                 values = self._value_preprocessor(values, inverse=True)
 

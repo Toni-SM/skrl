@@ -155,10 +155,8 @@ class PPO_RNN(Agent):
 
         self._mixed_precision = self.cfg["mixed_precision"]
 
-        # cuda or cpu
+        # set up automatic mixed precision
         self._device_type = torch.device(device).type
-
-        # set up scaler
         self._scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler

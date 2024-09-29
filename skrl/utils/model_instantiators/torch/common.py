@@ -53,7 +53,7 @@ def _parse_input(source: str) -> str:
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
                     node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
                 # operation: permute
-                if node.func.id == "permute":
+                elif node.func.id == "permute":
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="permute")
             return node
 
@@ -62,11 +62,11 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
-    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
-    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
-    source = source.replace("Shape.STATES", "STATES").replace("STATES", 'inputs["states"]')
-    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", 'inputs["states"]')
-    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'inputs["taken_actions"]')
+    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", 'torch.cat((states, taken_actions), dim=1)')
+    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", 'torch.cat((states, taken_actions), dim=1)')
+    source = source.replace("Shape.STATES", "STATES").replace("STATES", 'states')
+    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", 'states')
+    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'taken_actions')
     return source
 
 def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:

@@ -27,6 +27,8 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
 
     :return: Sample/value space with items converted to tensors.
     """
+    if x is None:
+        return None
     # fundamental spaces
     # Box
     if isinstance(space, spaces.Box):
@@ -85,6 +87,7 @@ def flatten_tensorized_space(x: Any) -> torch.Tensor:
     # Tuple / Sequence
     elif type(x) in [list, tuple]:
         return torch.cat([flatten_tensorized_space(_x) for _x in x], dim=-1)
+    return x
 
 def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x: torch.Tensor) -> Any:
     """Unflatten a tensor to create a tensorized space.
@@ -94,6 +97,8 @@ def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x
 
     :return: Tensorized space value.
     """
+    if x is None:
+        return None
     # fundamental spaces
     # Box
     if isinstance(space, spaces.Box):

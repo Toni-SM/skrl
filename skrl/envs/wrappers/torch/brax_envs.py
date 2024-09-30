@@ -7,6 +7,7 @@ import torch
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
 
 
 class BraxWrapper(Wrapper):
@@ -49,6 +50,7 @@ class BraxWrapper(Wrapper):
         :rtype: tuple of torch.Tensor and any other info
         """
         observation, reward, terminated, info = self._env.step(actions)
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         truncated = torch.zeros_like(terminated)
         return observation, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
@@ -59,6 +61,7 @@ class BraxWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         observation = self._env.reset()
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:

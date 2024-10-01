@@ -1,18 +1,22 @@
 import hypothesis
 import hypothesis.strategies as st
 
-import gymnasium as gym
+import gym
+import gymnasium
 
 import numpy as np
 import torch
 
 from skrl.utils.spaces.torch import (
     compute_space_size,
+    convert_gym_space,
     flatten_tensorized_space,
     sample_space,
     tensorize_space,
     unflatten_tensorized_space
 )
+
+from ..stategies import gym_space_stategy, gymnasium_space_stategy
 
 
 def _check_backend(x, backend):
@@ -24,84 +28,55 @@ def _check_backend(x, backend):
         raise ValueError(f"Invalid backend type: {backend}")
 
 def check_sampled_space(space, x, n, backend):
-    if isinstance(space, gym.spaces.Box):
+    if isinstance(space, gymnasium.spaces.Box):
         _check_backend(x, backend)
         assert x.shape == (n, *space.shape)
-    elif isinstance(space, gym.spaces.Discrete):
+    elif isinstance(space, gymnasium.spaces.Discrete):
         _check_backend(x, backend)
         assert x.shape == (n, 1)
-    elif isinstance(space, gym.spaces.MultiDiscrete):
+    elif isinstance(space, gymnasium.spaces.MultiDiscrete):
         assert x.shape == (n, *space.nvec.shape)
-    elif isinstance(space, gym.spaces.Dict):
+    elif isinstance(space, gymnasium.spaces.Dict):
         list(map(check_sampled_space, space.values(), x.values(), [n] * len(space), [backend] * len(space)))
-    elif isinstance(space, gym.spaces.Tuple):
+    elif isinstance(space, gymnasium.spaces.Tuple):
         list(map(check_sampled_space, space, x, [n] * len(space), [backend] * len(space)))
     else:
         raise ValueError(f"Invalid space type: {type(space)}")
 
-@st.composite
-def space_stategy(draw, space_type: str = "", remaining_iterations: int = 5) -> gym.spaces.Space:
-    if not space_type:
-        space_type = draw(st.sampled_from(["Box", "Discrete", "MultiDiscrete", "Dict", "Tuple"]))
-    # recursion base case
-    if remaining_iterations <= 0 and space_type == "Dict":
-        space_type = "Box"
 
-    if space_type == "Box":
-        shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=1, max_size=5))
-        return gym.spaces.Box(low=-1, high=1, shape=shape)
-    elif space_type == "Discrete":
-        n = draw(st.integers(min_value=1, max_value=5))
-        return gym.spaces.Discrete(n)
-    elif space_type == "MultiDiscrete":
-        nvec = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=1, max_size=5))
-        return gym.spaces.MultiDiscrete(nvec)
-    elif space_type == "Dict":
-        remaining_iterations -= 1
-        keys = draw(st.lists(st.text(st.characters(codec="ascii"), min_size=1, max_size=5), min_size=1, max_size=3))
-        spaces = {key: draw(space_stategy(remaining_iterations=remaining_iterations)) for key in keys}
-        return gym.spaces.Dict(spaces)
-    elif space_type == "Tuple":
-        remaining_iterations -= 1
-        spaces = draw(st.lists(space_stategy(remaining_iterations=remaining_iterations), min_size=1, max_size=3))
-        return gym.spaces.Tuple(spaces)
-    else:
-        raise ValueError(f"Invalid space type: {space_type}")
-
-
-@hypothesis.given(space=space_stategy())
+@hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_compute_space_size(capsys, space: gym.spaces.Space):
+def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
     def occupied_size(s):
-        if isinstance(s, gym.spaces.Discrete):
+        if isinstance(s, gymnasium.spaces.Discrete):
             return 1
-        elif isinstance(s, gym.spaces.MultiDiscrete):
+        elif isinstance(s, gymnasium.spaces.MultiDiscrete):
             return s.nvec.shape[0]
-        elif isinstance(s, gym.spaces.Dict):
+        elif isinstance(s, gymnasium.spaces.Dict):
             return sum([occupied_size(_s) for _s in s.values()])
-        elif isinstance(s, gym.spaces.Tuple):
+        elif isinstance(s, gymnasium.spaces.Tuple):
             return sum([occupied_size(_s) for _s in s])
-        return gym.spaces.flatdim(s)
+        return gymnasium.spaces.flatdim(s)
 
     space_size = compute_space_size(space, occupied_size=False)
-    assert space_size == gym.spaces.flatdim(space)
+    assert space_size == gymnasium.spaces.flatdim(space)
 
     space_size = compute_space_size(space, occupied_size=True)
     assert space_size == occupied_size(space)
 
-@hypothesis.given(space=space_stategy())
+@hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_tensorize_space(capsys, space: gym.spaces.Space):
+def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
     def check_tensorized_space(s, x, n):
-        if isinstance(s, gym.spaces.Box):
+        if isinstance(s, gymnasium.spaces.Box):
             assert isinstance(x, torch.Tensor) and x.shape == (n, *s.shape)
-        elif isinstance(s, gym.spaces.Discrete):
+        elif isinstance(s, gymnasium.spaces.Discrete):
             assert isinstance(x, torch.Tensor) and x.shape == (n, 1)
-        elif isinstance(s, gym.spaces.MultiDiscrete):
+        elif isinstance(s, gymnasium.spaces.MultiDiscrete):
             assert isinstance(x, torch.Tensor) and x.shape == (n, *s.nvec.shape)
-        elif isinstance(s, gym.spaces.Dict):
+        elif isinstance(s, gymnasium.spaces.Dict):
             list(map(check_tensorized_space, s.values(), x.values(), [n] * len(s)))
-        elif isinstance(s, gym.spaces.Tuple):
+        elif isinstance(s, gymnasium.spaces.Tuple):
             list(map(check_tensorized_space, s, x, [n] * len(s)))
         else:
             raise ValueError(f"Invalid space type: {type(s)}")
@@ -120,9 +95,9 @@ def test_tensorize_space(capsys, space: gym.spaces.Space):
     tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
-@hypothesis.given(space=space_stategy(), batch_size=st.integers(min_value=1, max_value=10))
+@hypothesis.given(space=gymnasium_space_stategy(), batch_size=st.integers(min_value=1, max_value=10))
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_sample_space(capsys, space: gym.spaces.Space, batch_size: int):
+def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
     sampled_space = sample_space(space, batch_size, backend="numpy")
     check_sampled_space(space, sampled_space, batch_size, backend="numpy")
@@ -130,9 +105,9 @@ def test_sample_space(capsys, space: gym.spaces.Space, batch_size: int):
     sampled_space = sample_space(space, batch_size, backend="torch")
     check_sampled_space(space, sampled_space, batch_size, backend="torch")
 
-@hypothesis.given(space=space_stategy())
+@hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_flatten_tensorized_space(capsys, space: gym.spaces.Space):
+def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     space_size = compute_space_size(space, occupied_size=True)
 
     tensorized_space = tensorize_space(space, space.sample())
@@ -143,9 +118,9 @@ def test_flatten_tensorized_space(capsys, space: gym.spaces.Space):
     flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (5, space_size)
 
-@hypothesis.given(space=space_stategy())
+@hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_unflatten_tensorized_space(capsys, space: gym.spaces.Space):
+def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     tensorized_space = tensorize_space(space, space.sample())
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
@@ -155,3 +130,33 @@ def test_unflatten_tensorized_space(capsys, space: gym.spaces.Space):
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
     check_sampled_space(space, unflattened_space, 5, backend="torch")
+
+@hypothesis.given(space=gym_space_stategy())
+@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+def test_convert_gym_space(capsys, space: gym.spaces.Space):
+    def check_converted_space(gym_space, gymnasium_space):
+        if isinstance(gym_space, gym.spaces.Box):
+            assert isinstance(gymnasium_space, gymnasium.spaces.Box)
+            assert np.all(gym_space.low == gymnasium_space.low)
+            assert np.all(gym_space.high == gymnasium_space.high)
+            assert gym_space.shape == gymnasium_space.shape
+            assert gym_space.dtype == gymnasium_space.dtype
+        elif isinstance(gym_space, gym.spaces.Discrete):
+            assert isinstance(gymnasium_space, gymnasium.spaces.Discrete)
+            assert gym_space.n == gymnasium_space.n
+        elif isinstance(gym_space, gym.spaces.MultiDiscrete):
+            assert isinstance(gymnasium_space, gymnasium.spaces.MultiDiscrete)
+            assert np.all(gym_space.nvec) == np.all(gymnasium_space.nvec)
+        elif isinstance(gym_space, gym.spaces.Tuple):
+            assert isinstance(gymnasium_space, gymnasium.spaces.Tuple)
+            assert len(gym_space) == len(gymnasium_space)
+            list(map(check_converted_space, gym_space, gymnasium_space))
+        elif isinstance(gym_space, gym.spaces.Dict):
+            assert isinstance(gymnasium_space, gymnasium.spaces.Dict)
+            assert sorted(list(gym_space.keys())) == sorted(list(gymnasium_space.keys()))
+            for k in gym_space.keys():
+                check_converted_space(gym_space[k], gymnasium_space[k])
+        else:
+            raise ValueError(f"Invalid space type: {type(gym_space)}")
+
+    check_converted_space(space, convert_gym_space(space))

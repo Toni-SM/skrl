@@ -31,8 +31,6 @@ def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
         return spaces.Tuple(spaces=tuple(map(convert_gym_space, space.spaces)))
     elif isinstance(space, gym.spaces.Dict):
         return spaces.Dict(spaces={k: convert_gym_space(v) for k, v in space.spaces.items()})
-    elif isinstance(space, gym.spaces.Sequence):
-        return spaces.Sequence(space=convert_gym_space(space.feature_space))
     raise NotImplementedError(f"Unsupported space ({space})")
 
 def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, torch.device]] = None) -> Any:
@@ -40,8 +38,8 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
 
     Fundamental spaces (:py:class:`~gymnasium.spaces.Box`, :py:class:`~gymnasium.spaces.Discrete`, and
     :py:class:`~gymnasium.spaces.MultiDiscrete`) are converted to :py:class:`~torch.Tensor` with shape
-    (-1, space's shape). Composite spaces (:py:class:`~gymnasium.spaces.Dict`, :py:class:`~gymnasium.spaces.Tuple`,
-    and :py:class:`~gymnasium.spaces.Sequence`) are converted by recursively calling this function on their elements.
+    (-1, space's shape). Composite spaces (:py:class:`~gymnasium.spaces.Dict` and :py:class:`~gymnasium.spaces.Tuple`)
+    are converted by recursively calling this function on their elements.
 
     :param space: Gymnasium space.
     :param x: Sample/value of the given space to tensorize to.
@@ -90,9 +88,6 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
     # Tuple
     elif isinstance(space, spaces.Tuple):
         return tuple([tensorize_space(s, _x, device) for s, _x in zip(space, x)])
-    # Sequence
-    elif isinstance(space, spaces.Sequence):
-        return tuple([tensorize_space(space.feature_space, _x, device) for _x in x])
 
 def flatten_tensorized_space(x: Any) -> torch.Tensor:
     """Flatten a tensorized space.
@@ -109,7 +104,7 @@ def flatten_tensorized_space(x: Any) -> torch.Tensor:
     # Dict
     elif isinstance(x, dict):
         return torch.cat([flatten_tensorized_space(x[k])for k in sorted(x.keys())], dim=-1)
-    # Tuple / Sequence
+    # Tuple
     elif type(x) in [list, tuple]:
         return torch.cat([flatten_tensorized_space(_x) for _x in x], dim=-1)
     return x

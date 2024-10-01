@@ -13,7 +13,8 @@ from skrl.utils.spaces.torch import (
     flatten_tensorized_space,
     sample_space,
     tensorize_space,
-    unflatten_tensorized_space
+    unflatten_tensorized_space,
+    untensorize_space
 )
 
 from ..stategies import gym_space_stategy, gymnasium_space_stategy
@@ -94,6 +95,33 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
     sampled_space = sample_space(space, 5, backend="torch")
     tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
+
+@hypothesis.given(space=gymnasium_space_stategy())
+@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
+    def check_untensorized_space(s, x, squeeze_batch_dimension):
+        if isinstance(s, gymnasium.spaces.Box):
+            assert isinstance(x, np.ndarray)
+            assert x.shape == s.shape if squeeze_batch_dimension else (1, *s.shape)
+        elif isinstance(s, gymnasium.spaces.Discrete):
+            assert isinstance(x, (np.ndarray, int))
+            assert isinstance(x, int) if squeeze_batch_dimension else x.shape == (1, 1)
+        elif isinstance(s, gymnasium.spaces.MultiDiscrete):
+            assert isinstance(x, np.ndarray) and x.shape == s.nvec.shape if squeeze_batch_dimension else (1, *s.nvec.shape)
+        elif isinstance(s, gymnasium.spaces.Dict):
+            list(map(check_untensorized_space, s.values(), x.values(), [squeeze_batch_dimension] * len(s)))
+        elif isinstance(s, gymnasium.spaces.Tuple):
+            list(map(check_untensorized_space, s, x, [squeeze_batch_dimension] * len(s)))
+        else:
+            raise ValueError(f"Invalid space type: {type(s)}")
+
+    tensorized_space = tensorize_space(space, space.sample())
+
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
+    check_untensorized_space(space, untensorized_space, squeeze_batch_dimension=False)
+
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=True)
+    check_untensorized_space(space, untensorized_space, squeeze_batch_dimension=True)
 
 @hypothesis.given(space=gymnasium_space_stategy(), batch_size=st.integers(min_value=1, max_value=10))
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)

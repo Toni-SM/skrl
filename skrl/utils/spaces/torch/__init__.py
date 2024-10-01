@@ -7,9 +7,6 @@ import numpy as np
 import torch
 
 
-__all__ = ["convert_gym_space", "tensorize_space", "flatten_tensorized_space", "compute_space_size", "unflatten_tensorized_space", "sample_space"]
-
-
 def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
     """Converts a gym space to a gymnasium space.
 
@@ -88,6 +85,53 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
     # Tuple
     elif isinstance(space, spaces.Tuple):
         return tuple([tensorize_space(s, _x, device) for s, _x in zip(space, x)])
+
+def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool = True) -> Any:
+    """Convert a tensorized space to a gymnasium space with expected sample/value item types.
+
+    :param space: Gymnasium space.
+    :param x: Tensorized space (Sample/value space where items are tensors).
+    :param squeeze_batch_dimension: Whether to remove the batch dimension. If True, only the
+                                    sample/value with a batch dimension of size 1 will be affected
+
+    :raises ValueError: The sample/value type is not a tensor.
+
+    :return: Sample/value space with expected item types.
+    """
+    if x is None:
+        return None
+    # fundamental spaces
+    # Box
+    if isinstance(space, spaces.Box):
+        if isinstance(x, torch.Tensor):
+            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            if squeeze_batch_dimension and array.shape[0] == 1:
+                return array.reshape(space.shape)
+            return array.reshape(-1, *space.shape)
+        raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+    # Discrete
+    elif isinstance(space, spaces.Discrete):
+        if isinstance(x, torch.Tensor):
+            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            if squeeze_batch_dimension and array.shape[0] == 1:
+                return array.item()
+            return array.reshape(-1, 1)
+        raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+    # MultiDiscrete
+    elif isinstance(space, spaces.MultiDiscrete):
+        if isinstance(x, torch.Tensor):
+            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            if squeeze_batch_dimension and array.shape[0] == 1:
+                return array.reshape(space.nvec.shape)
+            return array.reshape(-1, *space.nvec.shape)
+        raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+    # composite spaces
+    # Dict
+    elif isinstance(space, spaces.Dict):
+        return {k: untensorize_space(s, x[k], squeeze_batch_dimension) for k, s in space.items()}
+    # Tuple
+    elif isinstance(space, spaces.Tuple):
+        return tuple([untensorize_space(s, _x, squeeze_batch_dimension) for s, _x in zip(space, x)])
 
 def flatten_tensorized_space(x: Any) -> torch.Tensor:
     """Flatten a tensorized space.

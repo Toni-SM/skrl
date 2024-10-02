@@ -1,10 +1,11 @@
 from typing import Any, Tuple, Union
 
-import gym
+import gymnasium
 
 import torch
 
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import convert_gym_space, flatten_tensorized_space, tensorize_space
 
 
 class IsaacGymPreview2Wrapper(Wrapper):
@@ -20,6 +21,18 @@ class IsaacGymPreview2Wrapper(Wrapper):
         self._observations = None
         self._info = {}
 
+    @property
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        return convert_gym_space(self._unwrapped.observation_space)
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        return convert_gym_space(self._unwrapped.action_space)
+
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
@@ -29,7 +42,8 @@ class IsaacGymPreview2Wrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._observations, reward, terminated, self._info = self._env.step(actions)
+        observations, reward, terminated, self._info = self._env.step(actions)
+        self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
         truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
@@ -40,7 +54,8 @@ class IsaacGymPreview2Wrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
             self._reset_once = False
         return self._observations, self._info
 
@@ -69,12 +84,24 @@ class IsaacGymPreview3Wrapper(Wrapper):
         self._info = {}
 
     @property
-    def state_space(self) -> Union[gym.Space, None]:
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        return convert_gym_space(self._unwrapped.observation_space)
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        return convert_gym_space(self._unwrapped.action_space)
+
+    @property
+    def state_space(self) -> Union[gymnasium.Space, None]:
         """State space
         """
         try:
             if self.num_states:
-                return self._unwrapped.state_space
+                return convert_gym_space(self._unwrapped.state_space)
         except:
             pass
         return None
@@ -88,9 +115,10 @@ class IsaacGymPreview3Wrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._observations, reward, terminated, self._info = self._env.step(actions)
+        observations, reward, terminated, self._info = self._env.step(actions)
+        self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
         truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
-        return self._observations["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
+        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -99,9 +127,10 @@ class IsaacGymPreview3Wrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
             self._reset_once = False
-        return self._observations["obs"], self._info
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

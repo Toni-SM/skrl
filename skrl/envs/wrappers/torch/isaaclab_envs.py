@@ -5,7 +5,7 @@ import gymnasium
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class IsaacLabWrapper(Wrapper):
@@ -61,6 +61,7 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
+        actions = unflatten_tensorized_space(self.action_space, actions)
         observations, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
@@ -112,6 +113,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dictionaries torch.Tensor and any other info
         """
+        actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
         observations, rewards, terminated, truncated, self._info = self._env.step(actions)
         self._observations = {k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()}
         return self._observations, \

@@ -2,7 +2,6 @@ from typing import Any, Tuple
 
 import gymnasium
 
-import numpy as np
 import torch
 
 from skrl import logger

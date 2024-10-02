@@ -7,7 +7,12 @@ import numpy as np
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
+from skrl.utils.spaces.torch import (
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space,
+    untensorize_space
+)
 
 
 class PettingZooWrapper(MultiAgentEnvWrapper):
@@ -18,23 +23,6 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :type env: Any supported PettingZoo (parallel) environment
         """
         super().__init__(env)
-
-    def _tensor_to_action(self, actions: torch.Tensor, space: gymnasium.Space) -> Any:
-        """Convert the action to the Gymnasium expected format
-
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
-
-        :raise ValueError: If the action space type is not supported
-
-        :return: The action in the Gymnasium format
-        :rtype: Any supported Gymnasium action space
-        """
-        if isinstance(space, gymnasium.spaces.Discrete):
-            return actions.item()
-        elif isinstance(space, gymnasium.spaces.Box):
-            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
 
     def step(self, actions: Mapping[str, torch.Tensor]) -> \
         Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],
@@ -47,7 +35,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dictionaries torch.Tensor and any other info
         """
-        actions = {uid: self._tensor_to_action(action, self.action_space(uid)) for uid, action in actions.items()}
+        actions = {uid: untensorize_space(self.action_spaces[uid], unflatten_tensorized_space(self.action_spaces[uid], action)) for uid, action in actions.items()}
         observations, rewards, terminated, truncated, infos = self._env.step(actions)
 
         # convert response to torch

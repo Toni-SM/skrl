@@ -7,7 +7,12 @@ import torch
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
+from skrl.utils.spaces.torch import (
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space,
+    untensorize_space
+)
 
 
 class GymnasiumWrapper(Wrapper):
@@ -45,35 +50,6 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the Gymnasium expected format
-
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
-
-        :raise ValueError: If the action space type is not supported
-
-        :return: The action in the Gymnasium format
-        :rtype: Any supported Gymnasium action space
-        """
-        space = self._env.action_space if self._vectorized else self.action_space
-
-        if self._vectorized:
-            if isinstance(space, gymnasium.spaces.MultiDiscrete):
-                return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-            elif isinstance(space, gymnasium.spaces.Tuple):
-                if isinstance(space[0], gymnasium.spaces.Box):
-                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(space.shape)
-                elif isinstance(space[0], gymnasium.spaces.Discrete):
-                    return np.array(actions.cpu().numpy(), dtype=space[0].dtype).reshape(-1)
-        if isinstance(space, gymnasium.spaces.Discrete):
-            return actions.item()
-        elif isinstance(space, gymnasium.spaces.MultiDiscrete):
-            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        elif isinstance(space, gymnasium.spaces.Box):
-            return np.array(actions.cpu().numpy(), dtype=space.dtype).reshape(space.shape)
-        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
-
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
@@ -83,7 +59,11 @@ class GymnasiumWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
+        actions = untensorize_space(self.action_space,
+                                    unflatten_tensorized_space(self.action_space, actions),
+                                    squeeze_batch_dimension=not self._vectorized)
+
+        observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to torch
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))

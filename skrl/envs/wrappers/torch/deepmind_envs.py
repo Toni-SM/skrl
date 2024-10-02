@@ -8,7 +8,12 @@ import torch
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
+from skrl.utils.spaces.torch import (
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space,
+    untensorize_space
+)
 
 
 class DeepMindWrapper(Wrapper):
@@ -63,26 +68,6 @@ class DeepMindWrapper(Wrapper):
         else:
             raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
 
-    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the DeepMind expected format
-
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
-
-        :raise ValueError: If the action space type is not supported
-
-        :return: The action in the DeepMind expected format
-        :rtype: Any supported DeepMind action
-        """
-        spec = self._env.action_spec()
-
-        if isinstance(spec, self._specs.DiscreteArray):
-            return np.array(actions.item(), dtype=spec.dtype)
-        elif isinstance(spec, self._specs.Array):  # includes BoundedArray
-            return np.array(actions.cpu().numpy(), dtype=spec.dtype).reshape(spec.shape)
-        else:
-            raise ValueError(f"Action spec type {type(spec)} not supported. Please report this issue")
-
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
 
@@ -92,7 +77,8 @@ class DeepMindWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        timestep = self._env.step(self._tensor_to_action(actions))
+        actions = untensorize_space(self.action_space, unflatten_tensorized_space(self.action_space, actions))
+        timestep = self._env.step(actions)
 
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, timestep.observation, self.device))
         reward = timestep.reward if timestep.reward is not None else 0

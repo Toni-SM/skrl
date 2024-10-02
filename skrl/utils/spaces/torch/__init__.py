@@ -12,7 +12,7 @@ def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
 
     :param space: Gym space to convert to.
 
-    :raises NotImplementedError: The conversion is not supported for the given space.
+    :raises ValueError: The given space is not supported.
 
     :return: Converted space.
     """
@@ -28,7 +28,7 @@ def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
         return spaces.Tuple(spaces=tuple(map(convert_gym_space, space.spaces)))
     elif isinstance(space, gym.spaces.Dict):
         return spaces.Dict(spaces={k: convert_gym_space(v) for k, v in space.spaces.items()})
-    raise NotImplementedError(f"Unsupported space ({space})")
+    raise ValueError(f"Unsupported space ({space})")
 
 def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, torch.device]] = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
@@ -43,7 +43,7 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    This parameter is used when the space value is not a PyTorch tensor (e.g.: numpy array, number).
 
-    :raises ValueError: The conversion of the sample/value type is not supported for the given space.
+    :raises ValueError: The given space or the sample/value type is not supported.
 
     :return: Sample/value space with items converted to tensors.
     """
@@ -85,6 +85,7 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
     # Tuple
     elif isinstance(space, spaces.Tuple):
         return tuple([tensorize_space(s, _x, device) for s, _x in zip(space, x)])
+    raise ValueError(f"Unsupported space ({space})")
 
 def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
@@ -94,7 +95,7 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
     :param squeeze_batch_dimension: Whether to remove the batch dimension. If True, only the
                                     sample/value with a batch dimension of size 1 will be affected
 
-    :raises ValueError: The sample/value type is not a tensor.
+    :raises ValueError: The given space or the sample/value type is not supported.
 
     :return: Sample/value space with expected item types.
     """
@@ -132,11 +133,14 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
     # Tuple
     elif isinstance(space, spaces.Tuple):
         return tuple([untensorize_space(s, _x, squeeze_batch_dimension) for s, _x in zip(space, x)])
+    raise ValueError(f"Unsupported space ({space})")
 
 def flatten_tensorized_space(x: Any) -> torch.Tensor:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
+
+    :raises ValueError: The given sample/value type is not supported.
 
     :return: A tensor. The returned tensor will have shape (batch, space size).
     """
@@ -151,13 +155,15 @@ def flatten_tensorized_space(x: Any) -> torch.Tensor:
     # Tuple
     elif type(x) in [list, tuple]:
         return torch.cat([flatten_tensorized_space(_x) for _x in x], dim=-1)
-    return x
+    raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x: torch.Tensor) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
     :param space: Gymnasium space.
     :param x: A tensor with shape (batch, space size).
+
+    :raises ValueError: The given space is not supported.
 
     :return: Tensorized space value.
     """
@@ -192,6 +198,7 @@ def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x
             output.append(unflatten_tensorized_space(s, x[:, start:end]))
             start = end
         return output
+    raise ValueError(f"Unsupported space ({space})")
 
 def compute_space_size(space: Union[spaces.Space, Sequence[int], int], occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
@@ -235,6 +242,8 @@ def sample_space(space: spaces.Space, batch_size: int = 1, backend: str = Litera
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    This parameter is used when the backend is ``"torch"``.
 
+    :raises ValueError: The given space or backend is not supported.
+
     :return: Sample of the space
     """
     # fundamental spaces
@@ -269,3 +278,4 @@ def sample_space(space: spaces.Space, batch_size: int = 1, backend: str = Litera
     # Tuple
     elif isinstance(space, spaces.Tuple):
         return tuple([sample_space(s, batch_size, backend, device) for s in space])
+    raise ValueError(f"Unsupported space ({space})")

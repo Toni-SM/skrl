@@ -7,10 +7,12 @@ import numpy as np
 import torch
 
 
-def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
+def convert_gym_space(space: "gym.Space", squeeze_batch_dimension: bool = False) -> gymnasium.Space:
     """Converts a gym space to a gymnasium space.
 
     :param space: Gym space to convert to.
+    :param squeeze_batch_dimension: Whether to remove fundamental spaces' first dimension.
+                                    It currently affects ``Box`` space only.
 
     :raises ValueError: The given space is not supported.
 
@@ -21,6 +23,8 @@ def convert_gym_space(space: "gym.Space") -> gymnasium.Space:
     if isinstance(space, gym.spaces.Discrete):
         return spaces.Discrete(n=space.n)
     elif isinstance(space, gym.spaces.Box):
+        if squeeze_batch_dimension:
+            return spaces.Box(low=space.low[0], high=space.high[0], shape=space.shape[1:], dtype=space.dtype)
         return spaces.Box(low=space.low, high=space.high, shape=space.shape, dtype=space.dtype)
     elif isinstance(space, gym.spaces.MultiDiscrete):
         return spaces.MultiDiscrete(nvec=space.nvec)

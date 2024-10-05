@@ -140,6 +140,20 @@ class _Config(object):
                                                process_id=self._rank,
                                                local_device_ids=self._local_rank)
 
+            @staticmethod
+            def parse_device(device):
+                import jax
+
+                if isinstance(device, str):
+                    device_type, device_index = f"{device}:0".split(':')[:2]
+                    try:
+                        return jax.devices(device_type)[int(device_index)]
+                    except (RuntimeError, IndexError):
+                        device = None
+                if device is None:
+                    return jax.devices()[0]
+                return device
+
             @property
             def device(self) -> "jax.Device":
                 """Default device
@@ -147,19 +161,7 @@ class _Config(object):
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
                 if CUDA is available, ``cpu`` otherwise
                 """
-                try:
-                    import jax
-                    if type(self._device) == str:
-                        device_type, device_index = f"{self._device}:0".split(':')[:2]
-                        try:
-                            self._device = jax.devices(device_type)[int(device_index)]
-                        except (RuntimeError, IndexError):
-                            self._device = None
-                    if self._device is None:
-                        self._device = jax.devices()[0]
-                except ImportError:
-                    pass
-                return self._device
+                return self.parse_device(self._device)
 
             @device.setter
             def device(self, device: Union[str, "jax.Device"]) -> None:

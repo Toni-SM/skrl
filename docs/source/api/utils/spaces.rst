@@ -48,3 +48,24 @@ API (PyTorch)
 .. autofunction:: skrl.utils.spaces.torch.unflatten_tensorized_space
 
 .. autofunction:: skrl.utils.spaces.torch.untensorize_space
+
+.. raw:: html
+
+    <br>
+
+API (JAX)
+---------
+
+.. autofunction:: skrl.utils.spaces.jax.compute_space_size
+
+.. autofunction:: skrl.utils.spaces.jax.convert_gym_space
+
+.. autofunction:: skrl.utils.spaces.jax.flatten_tensorized_space
+
+.. autofunction:: skrl.utils.spaces.jax.sample_space
+
+.. autofunction:: skrl.utils.spaces.jax.tensorize_space
+
+.. autofunction:: skrl.utils.spaces.jax.unflatten_tensorized_space
+
+.. autofunction:: skrl.utils.spaces.jax.untensorize_space

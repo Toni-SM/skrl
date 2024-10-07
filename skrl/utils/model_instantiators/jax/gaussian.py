@@ -11,6 +11,7 @@ import jax.numpy as jnp  # noqa
 from skrl.models.jax import GaussianMixin  # noqa
 from skrl.models.jax import Model  # noqa
 from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
 def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -95,6 +96,8 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
         self.log_std_parameter = self.param("log_std_parameter", lambda _: {initial_log_std} * jnp.ones({output["size"]}))
 
     def __call__(self, inputs, role):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, self.log_std_parameter, {{}}
     """

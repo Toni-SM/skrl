@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.spaces.jax import compute_space_size
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -100,7 +101,7 @@ class RunningStandardScaler:
                 device_type, device_index = f"{device}:0".split(':')[:2]
                 self.device = jax.devices(device_type)[int(device_index)]
 
-        size = self._get_space_size(size)
+        size = compute_space_size(size, occupied_size=True)
 
         if self._jax:
             with jax.default_device(self.device):
@@ -139,37 +140,6 @@ class RunningStandardScaler:
             np.copyto(self.running_mean, value["running_mean"])
             np.copyto(self.running_variance, value["running_variance"])
             np.copyto(self.current_count, value["current_count"])
-
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
-        """Get the size (number of elements) of a space
-
-        :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
-
-        :raises ValueError: If the space is not supported
-
-        :return: Size of the space data
-        :rtype: Space size (number of elements)
-        """
-        if type(space) in [int, float]:
-            return int(space)
-        elif type(space) in [tuple, list]:
-            return np.prod(space)
-        elif issubclass(type(space), gym.Space):
-            if issubclass(type(space), gym.spaces.Discrete):
-                return 1
-            elif issubclass(type(space), gym.spaces.Box):
-                return np.prod(space.shape)
-            elif issubclass(type(space), gym.spaces.Dict):
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        elif issubclass(type(space), gymnasium.Space):
-            if issubclass(type(space), gymnasium.spaces.Discrete):
-                return 1
-            elif issubclass(type(space), gymnasium.spaces.Box):
-                return np.prod(space.shape)
-            elif issubclass(type(space), gymnasium.spaces.Dict):
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError(f"Space type {type(space)} not supported")
 
     def _parallel_variance(self,
                            input_mean: Union[np.ndarray, jax.Array],

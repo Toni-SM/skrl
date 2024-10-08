@@ -1,13 +1,19 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 import collections
-import gym
+import gymnasium
 
 import numpy as np
 import torch
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import (
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space,
+    untensorize_space
+)
 
 
 class DeepMindWrapper(Wrapper):
@@ -23,87 +29,44 @@ class DeepMindWrapper(Wrapper):
         self._specs = specs
 
     @property
-    def observation_space(self) -> gym.Space:
+    def observation_space(self) -> gymnasium.Space:
         """Observation space
         """
         return self._spec_to_space(self._env.observation_spec())
 
     @property
-    def action_space(self) -> gym.Space:
+    def action_space(self) -> gymnasium.Space:
         """Action space
         """
         return self._spec_to_space(self._env.action_spec())
 
-    def _spec_to_space(self, spec: Any) -> gym.Space:
-        """Convert the DeepMind spec to a Gym space
+    def _spec_to_space(self, spec: Any) -> gymnasium.Space:
+        """Convert the DeepMind spec to a gymnasium space
 
         :param spec: The DeepMind spec to convert
         :type spec: Any supported DeepMind spec
 
         :raises: ValueError if the spec type is not supported
 
-        :return: The Gym space
-        :rtype: gym.Space
+        :return: The gymnasium space
+        :rtype: gymnasium.Space
         """
         if isinstance(spec, self._specs.DiscreteArray):
-            return gym.spaces.Discrete(spec.num_values)
+            return gymnasium.spaces.Discrete(spec.num_values)
         elif isinstance(spec, self._specs.BoundedArray):
-            return gym.spaces.Box(shape=spec.shape,
+            return gymnasium.spaces.Box(shape=spec.shape,
                                   dtype=spec.dtype,
                                   low=spec.minimum if spec.minimum.ndim else np.full(spec.shape, spec.minimum),
                                   high=spec.maximum if spec.maximum.ndim else np.full(spec.shape, spec.maximum))
         elif isinstance(spec, self._specs.Array):
-            return gym.spaces.Box(shape=spec.shape,
+            return gymnasium.spaces.Box(shape=spec.shape,
                                   dtype=spec.dtype,
                                   low=np.full(spec.shape, float("-inf")),
                                   high=np.full(spec.shape, float("inf")))
         elif isinstance(spec, collections.OrderedDict):
-            return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
+            return gymnasium.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
             raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
-
-    def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
-        """Convert the DeepMind observation to a flat tensor
-
-        :param observation: The DeepMind observation to convert to a tensor
-        :type observation: Any supported DeepMind observation
-
-        :raises: ValueError if the observation spec type is not supported
-
-        :return: The observation as a flat tensor
-        :rtype: torch.Tensor
-        """
-        spec = spec if spec is not None else self._env.observation_spec()
-
-        if isinstance(spec, self._specs.DiscreteArray):
-            return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
-        elif isinstance(spec, self._specs.Array):  # includes BoundedArray
-            return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
-        elif isinstance(spec, collections.OrderedDict):
-            return torch.cat([self._observation_to_tensor(observation[k], spec[k]) \
-                for k in sorted(spec.keys())], dim=-1).reshape(self.num_envs, -1)
-        else:
-            raise ValueError(f"Observation spec type {type(spec)} not supported. Please report this issue")
-
-    def _tensor_to_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the DeepMind expected format
-
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
-
-        :raise ValueError: If the action space type is not supported
-
-        :return: The action in the DeepMind expected format
-        :rtype: Any supported DeepMind action
-        """
-        spec = self._env.action_spec()
-
-        if isinstance(spec, self._specs.DiscreteArray):
-            return np.array(actions.item(), dtype=spec.dtype)
-        elif isinstance(spec, self._specs.Array):  # includes BoundedArray
-            return np.array(actions.cpu().numpy(), dtype=spec.dtype).reshape(spec.shape)
-        else:
-            raise ValueError(f"Action spec type {type(spec)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -114,16 +77,17 @@ class DeepMindWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        timestep = self._env.step(self._tensor_to_action(actions))
+        actions = untensorize_space(self.action_space, unflatten_tensorized_space(self.action_space, actions))
+        timestep = self._env.step(actions)
 
-        observation = timestep.observation
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, timestep.observation, self.device))
         reward = timestep.reward if timestep.reward is not None else 0
         terminated = timestep.last()
         truncated = False
         info = {}
 
         # convert response to torch
-        return self._observation_to_tensor(observation), \
+        return observation, \
                torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
                torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
                torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
@@ -136,7 +100,8 @@ class DeepMindWrapper(Wrapper):
         :rtype: torch.Tensor
         """
         timestep = self._env.reset()
-        return self._observation_to_tensor(timestep.observation), {}
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, timestep.observation, self.device))
+        return observation, {}
 
     def render(self, *args, **kwargs) -> np.ndarray:
         """Render the environment

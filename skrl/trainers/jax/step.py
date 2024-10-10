@@ -20,6 +20,7 @@ STEP_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
+    "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-jax]
 
@@ -95,82 +96,56 @@ class StepTrainer(Trainer):
             self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
+        # hack to simplify code
+        if self.num_simultaneous_agents == 1:
+            self.agents = [self.agents]
+
         # set running mode
-        if self.num_simultaneous_agents > 1:
-            for agent in self.agents:
-                agent.set_running_mode("train")
-        else:
-            self.agents.set_running_mode("train")
+        for agent in self.agents:
+            agent.set_running_mode("train")
 
         # reset env
         if self.states is None:
             self.states, infos = self.env.reset()
 
-        if self.num_simultaneous_agents == 1:
-            # pre-interaction
-            self.agents.pre_interaction(timestep=timestep, timesteps=timesteps)
+        # pre-interaction
+        for agent in self.agents:
+            agent.pre_interaction(timestep=timestep, timesteps=timesteps)
 
+        with contextlib.nullcontext():
             # compute actions
-            with contextlib.nullcontext():
-                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
+            actions = jnp.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
+                                  for agent, scope in zip(self.agents, self.agents_scope)])
 
-        else:
-            # pre-interaction
-            for agent in self.agents:
-                agent.pre_interaction(timestep=timestep, timesteps=timesteps)
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # compute actions
-            with contextlib.nullcontext():
-                actions = jnp.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
-                                      for agent, scope in zip(self.agents, self.agents_scope)])
+            # render scene
+            if not self.headless:
+                self.env.render()
 
-        # step the environments
-        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-
-        # render scene
-        if not self.headless:
-            self.env.render()
-
-        if self.num_simultaneous_agents == 1:
             # record the environments' transitions
-            with contextlib.nullcontext():
-                self.agents.record_transition(states=self.states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=timesteps)
+            for agent, scope in zip(self.agents, self.agents_scope):
+                agent.record_transition(states=self.states[scope[0]:scope[1]],
+                                        actions=actions[scope[0]:scope[1]],
+                                        rewards=rewards[scope[0]:scope[1]],
+                                        next_states=next_states[scope[0]:scope[1]],
+                                        terminated=terminated[scope[0]:scope[1]],
+                                        truncated=truncated[scope[0]:scope[1]],
+                                        infos=infos,
+                                        timestep=timestep,
+                                        timesteps=timesteps)
 
-            # post-interaction
-            self.agents.post_interaction(timestep=timestep, timesteps=timesteps)
-
-        else:
-            # record the environments' transitions
-            with contextlib.nullcontext():
-                for agent, scope in zip(self.agents, self.agents_scope):
-                    agent.record_transition(states=self.states[scope[0]:scope[1]],
-                                            actions=actions[scope[0]:scope[1]],
-                                            rewards=rewards[scope[0]:scope[1]],
-                                            next_states=next_states[scope[0]:scope[1]],
-                                            terminated=terminated[scope[0]:scope[1]],
-                                            truncated=truncated[scope[0]:scope[1]],
-                                            infos=infos,
-                                            timestep=timestep,
-                                            timesteps=timesteps)
-
-            # post-interaction
-            for agent in self.agents:
-                agent.post_interaction(timestep=timestep, timesteps=timesteps)
+        # post-interaction
+        for agent in self.agents:
+            agent.post_interaction(timestep=timestep, timesteps=timesteps)
 
         # reset environments
-        with contextlib.nullcontext():
-            if terminated.any() or truncated.any():
+        if terminated.any() or truncated.any():
+            with contextlib.nullcontext():
                 self.states, infos = self.env.reset()
-            else:
-                self.states = next_states
+        else:
+            self.states = next_states
 
         return next_states, rewards, terminated, truncated, infos
 
@@ -205,66 +180,55 @@ class StepTrainer(Trainer):
             self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
+        # hack to simplify code
+        if self.num_simultaneous_agents == 1:
+            self.agents = [self.agents]
+
         # set running mode
-        if self.num_simultaneous_agents > 1:
-            for agent in self.agents:
-                agent.set_running_mode("eval")
-        else:
-            self.agents.set_running_mode("eval")
+        for agent in self.agents:
+            agent.set_running_mode("eval")
 
         # reset env
         if self.states is None:
             self.states, infos = self.env.reset()
 
-        with contextlib.nullcontext():
-            if self.num_simultaneous_agents == 1:
-                # compute actions
-                actions = self.agents.act(self.states, timestep=timestep, timesteps=timesteps)[0]
-
-            else:
-                # compute actions
-                actions = jnp.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
-                                      for agent, scope in zip(self.agents, self.agents_scope)])
-
-        # step the environments
-        next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-
-        # render scene
-        if not self.headless:
-            self.env.render()
+        # pre-interaction
+        for agent in self.agents:
+            agent.pre_interaction(timestep=timestep, timesteps=timesteps)
 
         with contextlib.nullcontext():
-            if self.num_simultaneous_agents == 1:
-                # write data to TensorBoard
-                self.agents.record_transition(states=self.states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
+            # compute actions
+            actions = jnp.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
+                                  for agent, scope in zip(self.agents, self.agents_scope)])
 
-            else:
-                # write data to TensorBoard
-                for agent, scope in zip(self.agents, self.agents_scope):
-                    agent.record_transition(states=self.states[scope[0]:scope[1]],
-                                            actions=actions[scope[0]:scope[1]],
-                                            rewards=rewards[scope[0]:scope[1]],
-                                            next_states=next_states[scope[0]:scope[1]],
-                                            terminated=terminated[scope[0]:scope[1]],
-                                            truncated=truncated[scope[0]:scope[1]],
-                                            infos=infos,
-                                            timestep=timestep,
-                                            timesteps=timesteps)
-                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
+            # step the environments
+            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # reset environments
-            if terminated.any() or truncated.any():
+            # render scene
+            if not self.headless:
+                self.env.render()
+
+            # write data to TensorBoard
+            for agent, scope in zip(self.agents, self.agents_scope):
+                agent.record_transition(states=self.states[scope[0]:scope[1]],
+                                        actions=actions[scope[0]:scope[1]],
+                                        rewards=rewards[scope[0]:scope[1]],
+                                        next_states=next_states[scope[0]:scope[1]],
+                                        terminated=terminated[scope[0]:scope[1]],
+                                        truncated=truncated[scope[0]:scope[1]],
+                                        infos=infos,
+                                        timestep=timestep,
+                                        timesteps=timesteps)
+
+        # post-interaction
+        for agent in self.agents:
+            super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
+
+        # reset environments
+        if terminated.any() or truncated.any():
+            with contextlib.nullcontext():
                 self.states, infos = self.env.reset()
-            else:
-                self.states = next_states
+        else:
+            self.states = next_states
 
         return next_states, rewards, terminated, truncated, infos

@@ -100,7 +100,7 @@ def fn_processor(process_index, *args):
                                         infos=queue.get(),
                                         timestep=msg['timestep'],
                                         timesteps=msg['timesteps'])
-                super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
+                super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'], save_checkpoints=False)
                 barrier.wait()
 
 

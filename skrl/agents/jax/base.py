@@ -466,7 +466,7 @@ class Agent:
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
+    def post_interaction(self, timestep: int, timesteps: int, save_checkpoints: bool = True) -> None:
         """Callback called after the interaction with the environment
 
         :param timestep: Current timestep
@@ -477,7 +477,7 @@ class Agent:
         timestep += 1
 
         # update best models and write checkpoints
-        if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
+        if save_checkpoints and timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
             if reward > self.checkpoint_best_modules["reward"]:

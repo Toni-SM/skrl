@@ -254,7 +254,7 @@ class StepTrainer(Trainer):
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=timesteps, save_checkpoints=False)
 
                 # log environment info
                 if self.environment_info in infos:
@@ -274,7 +274,7 @@ class StepTrainer(Trainer):
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=timesteps)
-                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
+                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps, save_checkpoints=False)
 
                 # log environment info
                 if self.environment_info in infos:

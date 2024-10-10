@@ -254,7 +254,7 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
                 # log environment info
                 if self.environment_info in infos:
@@ -383,7 +383,7 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
                 # log environment info
                 if self.environment_info in infos:

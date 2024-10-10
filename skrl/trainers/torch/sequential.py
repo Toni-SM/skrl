@@ -190,7 +190,7 @@ class SequentialTrainer(Trainer):
                                             infos=infos,
                                             timestep=timestep,
                                             timesteps=self.timesteps)
-                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                    super(type(agent), agent).post_interaction(timestep=timestep, timesteps=self.timesteps, save_checkpoints=False)
 
                 # log environment info
                 if self.environment_info in infos:

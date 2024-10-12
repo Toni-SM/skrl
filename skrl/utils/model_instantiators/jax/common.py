@@ -52,7 +52,7 @@ def _parse_input(source: str) -> str:
                     node.func = ast.Attribute(value=ast.Name("jnp"), attr="concatenate")
                     node.keywords = [ast.keyword(arg="axis", value=ast.Constant(value=-1))]
                 # operation: permute
-                if node.func.id == "permute":
+                elif node.func.id == "permute":
                     node.func = ast.Attribute(value=ast.Name("jnp"), attr="permute_dims")
             return node
 
@@ -61,11 +61,11 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
-    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", 'jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)')
-    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", 'jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)')
-    source = source.replace("Shape.STATES", "STATES").replace("STATES", 'inputs["states"]')
-    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", 'inputs["states"]')
-    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'inputs["taken_actions"]')
+    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", "jnp.concatenate([states, taken_actions], axis=-1)")
+    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", "jnp.concatenate([states, taken_actions], axis=-1)")
+    source = source.replace("Shape.STATES", "STATES").replace("STATES", "states")
+    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", "states")
+    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", "taken_actions")
     return source
 
 def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:

@@ -37,7 +37,7 @@ def convert_gym_space(space: "gym.Space", squeeze_batch_dimension: bool = False)
         return spaces.Dict(spaces={k: convert_gym_space(v) for k, v in space.spaces.items()})
     raise ValueError(f"Unsupported space ({space})")
 
-def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax.Device]] = None) -> Any:
+def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax.Device]] = None, _jax: bool = True) -> Any:
     """Convert the sample/value items of a given gymnasium space to JAX array.
 
     Fundamental spaces (:py:class:`~gymnasium.spaces.Box`, :py:class:`~gymnasium.spaces.Discrete`, and
@@ -49,6 +49,7 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax
     :param x: Sample/value of the given space to tensorize to.
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    This parameter is used when the space value is not a JAX array (e.g.: numpy array, number).
+    :param _jax: Whether the converted value should be a JAX array. It only affects numpy space values.
 
     :raises ValueError: The given space or the sample/value type is not supported.
 
@@ -62,7 +63,9 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax
         if isinstance(x, jax.Array):
             return x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
-            return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+            if _jax:
+                return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+            return x.reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # Discrete
@@ -70,9 +73,13 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax
         if isinstance(x, jax.Array):
             return x.reshape(-1, 1)
         elif isinstance(x, np.ndarray):
-            return jax.device_put(x.reshape(-1, 1), config.jax.parse_device(device))
+            if _jax:
+                return jax.device_put(x.reshape(-1, 1), config.jax.parse_device(device))
+            return x.reshape(-1, 1)
         elif isinstance(x, np.number) or type(x) in [int, float]:
-            return jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
+            if _jax:
+                return jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
+            return np.array([x], dtype=np.int32).reshape(-1, 1)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # MultiDiscrete
@@ -80,9 +87,13 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax
         if isinstance(x, jax.Array):
             return x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
-            return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+            if _jax:
+                return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+            return x.reshape(-1, *space.shape)
         elif type(x) in [list, tuple]:
-            return jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
+            if _jax:
+                return jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
+            return np.array(x, dtype=np.int32).reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
@@ -116,6 +127,10 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.shape)
             return array.reshape(-1, *space.shape)
+        elif isinstance(x, np.ndarray):
+            if squeeze_batch_dimension and x.shape[0] == 1:
+                return x.reshape(space.shape)
+            return x.reshape(-1, *space.shape)
         raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # Discrete
     elif isinstance(space, spaces.Discrete):
@@ -124,6 +139,10 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.item()
             return array.reshape(-1, 1)
+        elif isinstance(x, np.ndarray):
+            if squeeze_batch_dimension and x.shape[0] == 1:
+                return x.item()
+            return x.reshape(-1, 1)
         raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
@@ -132,6 +151,10 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.nvec.shape)
             return array.reshape(-1, *space.nvec.shape)
+        elif isinstance(x, np.ndarray):
+            if squeeze_batch_dimension and x.shape[0] == 1:
+                return x.reshape(space.nvec.shape)
+            return x.reshape(-1, *space.nvec.shape)
         raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
     # Dict
@@ -142,10 +165,12 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
         return tuple([untensorize_space(s, _x, squeeze_batch_dimension) for s, _x in zip(space, x)])
     raise ValueError(f"Unsupported space ({space})")
 
-def flatten_tensorized_space(x: Any) -> jax.Array:
+def flatten_tensorized_space(x: Any, _jax: bool = True) -> jax.Array:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
+    :param _jax: Whether the space should be handled using JAX operations.
+                 It only affects composite spaces.
 
     :raises ValueError: The given sample/value type is not supported.
 
@@ -153,15 +178,19 @@ def flatten_tensorized_space(x: Any) -> jax.Array:
     """
     # fundamental spaces
     # Box / Discrete / MultiDiscrete
-    if isinstance(x, jax.Array):
+    if isinstance(x, (jax.Array, np.ndarray)):
         return x.reshape(x.shape[0], -1) if x.ndim > 1 else x.reshape(1, -1)
     # composite spaces
     # Dict
     elif isinstance(x, dict):
-        return jnp.concatenate([flatten_tensorized_space(x[k])for k in sorted(x.keys())], axis=-1)
+        if _jax:
+            return jnp.concatenate([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], axis=-1)
+        return np.concatenate([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], axis=-1)
     # Tuple
     elif type(x) in [list, tuple]:
-        return jnp.concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
+        if _jax:
+            return jnp.concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
+        return np.concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x: jax.Array) -> Any:

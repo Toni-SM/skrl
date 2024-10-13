@@ -141,14 +141,26 @@ class _Config(object):
                                                local_device_ids=self._local_rank)
 
             @staticmethod
-            def parse_device(device):
+            def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
+                """Parse the input device and return a :py:class:`~jax.Device` instance.
+
+                .. hint::
+
+                    This function supports the PyTorch-like ``"type:ordinal"`` string specification (e.g.: ``"cuda:0"``).
+
+                :param device: Device specification. If the specified device is ``None`` ot it cannot be resolved,
+                               the default available device will be returned instead.
+
+                :return: JAX Device.
+                """
                 import jax
 
                 if isinstance(device, str):
                     device_type, device_index = f"{device}:0".split(':')[:2]
                     try:
                         return jax.devices(device_type)[int(device_index)]
-                    except (RuntimeError, IndexError):
+                    except (RuntimeError, IndexError) as e:
+                        logger.info(f"Invalid device specification ({device}): {e}")
                         device = None
                 if device is None:
                     return jax.devices()[0]

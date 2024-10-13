@@ -12,15 +12,16 @@ try:
     import torch.utils.dlpack as torch_dlpack
 except:
     pass  # TODO: show warning message
+else:
+    from skrl.utils.spaces.torch import (
+        convert_gym_space,
+        flatten_tensorized_space,
+        tensorize_space,
+        unflatten_tensorized_space
+    )
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper
-from skrl.utils.spaces.torch import (
-    convert_gym_space,
-    flatten_tensorized_space,
-    tensorize_space,
-    unflatten_tensorized_space
-)
 
 
 # ML frameworks conversion utilities

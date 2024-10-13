@@ -1,9 +1,7 @@
 from typing import Any, Mapping, Tuple
 
 import collections
-import gymnasium
 
-import numpy as np
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper

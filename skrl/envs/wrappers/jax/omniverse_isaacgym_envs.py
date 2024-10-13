@@ -13,6 +13,7 @@ except:
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 # ML frameworks conversion utilities
@@ -69,12 +70,14 @@ class OmniverseIsaacGymWrapper(Wrapper):
         actions = _jax2torch(actions, self._env_device, self._jax)
 
         with torch.no_grad():
-            self._observations, reward, terminated, info = self._env.step(actions)
+            observations, reward, terminated, info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
 
+        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
         terminated = terminated.to(dtype=torch.int8)
         truncated = info["time_outs"].to(dtype=torch.int8) if "time_outs" in info else torch.zeros_like(terminated)
 
-        return _torch2jax(self._observations["obs"], self._jax), \
+        self._observations = _torch2jax(observations, self._jax)
+        return self._observations, \
                _torch2jax(reward.view(-1, 1), self._jax), \
                _torch2jax(terminated.view(-1, 1), self._jax), \
                _torch2jax(truncated.view(-1, 1), self._jax), \
@@ -87,9 +90,11 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
+            self._observations = _torch2jax(observations, self._jax)
             self._reset_once = False
-        return _torch2jax(self._observations["obs"], self._jax), {}
+        return self._observations, {}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

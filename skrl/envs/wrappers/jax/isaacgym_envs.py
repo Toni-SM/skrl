@@ -1,6 +1,6 @@
 from typing import Any, Tuple, Union
 
-import gym
+import gymnasium
 
 import jax
 import jax.dlpack as jax_dlpack
@@ -15,6 +15,12 @@ except:
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper
+from skrl.utils.spaces.torch import (
+    convert_gym_space,
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space
+)
 
 
 # ML frameworks conversion utilities
@@ -47,6 +53,18 @@ class IsaacGymPreview2Wrapper(Wrapper):
         self._observations = None
         self._info = {}
 
+    @property
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        return convert_gym_space(self._unwrapped.observation_space)
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        return convert_gym_space(self._unwrapped.action_space)
+
     def step(self, actions: Union[np.ndarray, jax.Array]) -> \
         Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
               Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
@@ -61,12 +79,14 @@ class IsaacGymPreview2Wrapper(Wrapper):
         actions = _jax2torch(actions, self._env.device, self._jax)
 
         with torch.no_grad():
-            self._observations, reward, terminated, self._info = self._env.step(actions)
+            observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
 
+        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
         terminated = terminated.to(dtype=torch.int8)
         truncated = self._info["time_outs"].to(dtype=torch.int8) if "time_outs" in self._info else torch.zeros_like(terminated)
 
-        return _torch2jax(self._observations, self._jax), \
+        self._observations = _torch2jax(observations, self._jax)
+        return self._observations, \
                _torch2jax(reward.view(-1, 1), self._jax), \
                _torch2jax(terminated.view(-1, 1), self._jax), \
                _torch2jax(truncated.view(-1, 1), self._jax), \
@@ -79,9 +99,11 @@ class IsaacGymPreview2Wrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
+            self._observations = _torch2jax(observations, self._jax)
             self._reset_once = False
-        return _torch2jax(self._observations, self._jax), self._info
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -108,12 +130,24 @@ class IsaacGymPreview3Wrapper(Wrapper):
         self._info = {}
 
     @property
-    def state_space(self) -> Union[gym.Space, None]:
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space
+        """
+        return convert_gym_space(self._unwrapped.observation_space)
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space
+        """
+        return convert_gym_space(self._unwrapped.action_space)
+
+    @property
+    def state_space(self) -> Union[gymnasium.Space, None]:
         """State space
         """
         try:
             if self.num_states:
-                return self._unwrapped.state_space
+                return convert_gym_space(self._unwrapped.state_space)
         except:
             pass
         return None
@@ -132,12 +166,14 @@ class IsaacGymPreview3Wrapper(Wrapper):
         actions = _jax2torch(actions, self._env.device, self._jax)
 
         with torch.no_grad():
-            self._observations, reward, terminated, self._info = self._env.step(actions)
+            observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
 
+        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
         terminated = terminated.to(dtype=torch.int8)
         truncated = self._info["time_outs"].to(dtype=torch.int8) if "time_outs" in self._info else torch.zeros_like(terminated)
 
-        return _torch2jax(self._observations["obs"], self._jax), \
+        self._observations = _torch2jax(observations, self._jax)
+        return self._observations, \
                _torch2jax(reward.view(-1, 1), self._jax), \
                _torch2jax(terminated.view(-1, 1), self._jax), \
                _torch2jax(truncated.view(-1, 1), self._jax), \
@@ -150,9 +186,11 @@ class IsaacGymPreview3Wrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
+            self._observations = _torch2jax(observations, self._jax)
             self._reset_once = False
-        return _torch2jax(self._observations["obs"], self._jax), self._info
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

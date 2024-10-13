@@ -140,7 +140,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: State
         :rtype: torch.Tensor
         """
-        return self._env.state()
+        state = self._env.state()
+        if state is not None:
+            return flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
+        return state
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

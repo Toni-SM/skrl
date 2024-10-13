@@ -192,7 +192,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :rtype: np.ndarray, jax.Array or None
         """
         state = self._env.state()
-        return None if state is None else _torch2jax(state, self._jax)
+        if state is not None:
+            state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
+            return _torch2jax(state, self._jax)
+        return state
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

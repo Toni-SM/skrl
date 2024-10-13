@@ -15,6 +15,7 @@ except:
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 # ML frameworks conversion utilities
@@ -91,14 +92,17 @@ class IsaacLabWrapper(Wrapper):
         :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         actions = _jax2torch(actions, self._env_device, self._jax)
+        actions = unflatten_tensorized_space(self.action_space, actions)
 
         with torch.no_grad():
-            self._observations, reward, terminated, truncated, self._info = self._env.step(actions)
+            observations, reward, terminated, truncated, self._info = self._env.step(actions)
+        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
 
         terminated = terminated.to(dtype=torch.int8)
         truncated = truncated.to(dtype=torch.int8)
 
-        return _torch2jax(self._observations["policy"], self._jax), \
+        self._observations = _torch2jax(observations, self._jax)
+        return self._observations, \
                _torch2jax(reward.view(-1, 1), self._jax), \
                _torch2jax(terminated.view(-1, 1), self._jax), \
                _torch2jax(truncated.view(-1, 1), self._jax), \
@@ -111,9 +115,11 @@ class IsaacLabWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         if self._reset_once:
-            self._observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset()
+            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+            self._observations = _torch2jax(observations, self._jax)
             self._reset_once = False
-        return _torch2jax(self._observations["policy"], self._jax), self._info
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment
@@ -152,9 +158,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :rtype: tuple of dictionaries of np.ndarray or jax.Array and any other info
         """
         actions = {uid: _jax2torch(value, self._env_device, self._jax) for uid, value in actions.items()}
+        actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
 
         with torch.no_grad():
             observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+        observations = {k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()}
 
         self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
         return self._observations, \
@@ -171,6 +179,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
+            observations = {k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()}
             self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
             self._reset_once = False
         return self._observations, self._info

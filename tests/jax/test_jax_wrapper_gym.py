@@ -62,7 +62,7 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorizati
     action = jnp.ones((num_envs, 1))
 
     # load wrap the environment
-    original_env = gym.vector.make("Pendulum-v1", num_envs=num_envs, asynchronous=(vectorization_mode == "async"))
+    original_env = gym.make_vec("Pendulum-v1", num_envs=num_envs, vectorization_mode=vectorization_mode)
     env = wrap_env(original_env, "auto")
     assert isinstance(env, GymWrapper)
     env = wrap_env(original_env, "gym")

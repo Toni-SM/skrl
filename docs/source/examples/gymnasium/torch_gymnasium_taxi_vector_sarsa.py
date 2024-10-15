@@ -38,11 +38,11 @@ class EpilonGreedyPolicy(TabularMixin, Model):
 # load and wrap the gymnasium environment.
 # note: the environment version may change depending on the gymnasium version
 try:
-    env = gym.vector.make("Taxi-v3", num_envs=10, asynchronous=False)
+    env = gym.make_vec("Taxi-v3", num_envs=10)
 except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
     env_id = [spec for spec in gym.envs.registry if spec.startswith("Taxi-v")][0]
     print("Taxi-v3 not found. Trying {}".format(env_id))
-    env = gym.vector.make(env_id, num_envs=10, asynchronous=False)
+    env = gym.make_vec(env_id, num_envs=10)
 env = wrap_env(env)
 
 device = env.device

@@ -16,11 +16,11 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 # load and wrap the gym environment.
 # note: the environment version may change depending on the gym version
 try:
-    env = gym.vector.make("CartPole-v0", num_envs=5, asynchronous=False)
+    env = gym.make_vec("CartPole-v0", num_envs=5)
 except gym.error.DeprecatedEnv as e:
     env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
     print("CartPole-v0 not found. Trying {}".format(env_id))
-    env = gym.vector.make(env_id, num_envs=5, asynchronous=False)
+    env = gym.make_vec(env_id, num_envs=5)
 env = wrap_env(env)
 
 device = env.device

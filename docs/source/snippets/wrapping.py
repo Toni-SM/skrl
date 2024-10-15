@@ -256,7 +256,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -269,7 +269,7 @@ from skrl.envs.wrappers.jax import wrap_env
 import gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -309,7 +309,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
@@ -322,7 +322,7 @@ from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'

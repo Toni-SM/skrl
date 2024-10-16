@@ -17,6 +17,7 @@ class OmniverseIsaacGymWrapper(Wrapper):
 
         self._reset_once = True
         self._observations = None
+        self._info = {}
 
     def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
         """Run the simulation in the main thread
@@ -37,10 +38,10 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observations, reward, terminated, info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+        observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
-        truncated = info["time_outs"] if "time_outs" in info else torch.zeros_like(terminated)
-        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
+        truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
+        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -52,7 +53,7 @@ class OmniverseIsaacGymWrapper(Wrapper):
             observations = self._env.reset()
             self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
             self._reset_once = False
-        return self._observations, {}
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

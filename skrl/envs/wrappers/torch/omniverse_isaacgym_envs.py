@@ -3,6 +3,7 @@ from typing import Any, Optional, Tuple
 import torch
 
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class OmniverseIsaacGymWrapper(Wrapper):
@@ -16,6 +17,7 @@ class OmniverseIsaacGymWrapper(Wrapper):
 
         self._reset_once = True
         self._observations = None
+        self._info = {}
 
     def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
         """Run the simulation in the main thread
@@ -36,9 +38,10 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._observations, reward, terminated, info = self._env.step(actions)
-        truncated = info["time_outs"] if "time_outs" in info else torch.zeros_like(terminated)
-        return self._observations["obs"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
+        observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+        self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
+        truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
+        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -47,9 +50,10 @@ class OmniverseIsaacGymWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._observations = self._env.reset()
+            observations = self._env.reset()
+            self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
             self._reset_once = False
-        return self._observations["obs"], {}
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment

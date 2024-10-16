@@ -2,7 +2,7 @@ import pytest
 import warnings
 
 from collections.abc import Mapping
-import gym
+import gymnasium as gym
 
 import torch
 

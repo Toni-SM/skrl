@@ -10,6 +10,7 @@ import torch.nn as nn  # noqa
 from skrl.models.torch import Model  # noqa
 from skrl.models.torch import DeterministicMixin, GaussianMixin  # noqa
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
 def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -68,6 +69,8 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, g
     for container in containers_gaussian:
         networks_common.append(f'self.{container["name"]}_container = {container["sequential"]}')
         forward_common.append(f'{container["name"]} = self.{container["name"]}_container({container["input"]})')
+    forward_common.insert(0, 'taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))')
+    forward_common.insert(0, 'states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))')
 
     # process output
     networks_gaussian = []

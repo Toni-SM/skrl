@@ -155,16 +155,15 @@ class _Config(object):
                 """
                 import jax
 
-                if isinstance(device, str):
+                if isinstance(device, jax.Device):
+                    return device
+                elif isinstance(device, str):
                     device_type, device_index = f"{device}:0".split(':')[:2]
                     try:
                         return jax.devices(device_type)[int(device_index)]
                     except (RuntimeError, IndexError) as e:
-                        logger.info(f"Invalid device specification ({device}): {e}")
-                        device = None
-                if device is None:
-                    return jax.devices()[0]
-                return device
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                return jax.devices()[0]
 
             @property
             def device(self) -> "jax.Device":
@@ -173,7 +172,8 @@ class _Config(object):
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
                 if CUDA is available, ``cpu`` otherwise
                 """
-                return self.parse_device(self._device)
+                self._device = self.parse_device(self._device)
+                return self._device
 
             @device.setter
             def device(self, device: Union[str, "jax.Device"]) -> None:

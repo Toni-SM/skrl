@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [1.4.0] - Unreleased
 ### Added
 - Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
-- Parse JAX device method in ML framework configuration
+- `parse_device` static method in ML framework configuration for JAX
 
 ### Changed
 - Call agent's `pre_interaction` method during evaluation

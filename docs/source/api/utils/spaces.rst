@@ -1,7 +1,7 @@
 Spaces
 ======
 
-Utilities to operate on gymnasium `spaces <https://gymnasium.farama.org/api/spaces>`_.
+Utilities to operate on Gymnasium `spaces <https://gymnasium.farama.org/api/spaces>`_.
 
 .. raw:: html
 
@@ -10,7 +10,7 @@ Utilities to operate on gymnasium `spaces <https://gymnasium.farama.org/api/spac
 Overview
 --------
 
-The utilities described in this section supports the following gymnasium spaces:
+The utilities described in this section supports the following Gymnasium spaces:
 
 .. list-table::
     :header-rows: 1

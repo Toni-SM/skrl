@@ -7,30 +7,45 @@ Utilities to operate on gymnasium `spaces <https://gymnasium.farama.org/api/spac
 
     <br><hr>
 
+Overview
+--------
+
+The utilities described in this section supports the following gymnasium spaces:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Type
+      - Supported spaces
+    * - Fundamental
+      - :py:class:`~gymnasium.spaces.Box`, :py:class:`~gymnasium.spaces.Discrete`, and :py:class:`~gymnasium.spaces.MultiDiscrete`
+    * - Composite
+      - :py:class:`~gymnasium.spaces.Dict` and :py:class:`~gymnasium.spaces.Tuple`
+
+The following table provides a snapshot of the space sample conversion functions:
+
 .. list-table::
     :header-rows: 1
 
     * - Input
       - Function
       - Output
-    * - Space sample with
-        |br| NumPy values
+    * - Space (NumPy / int)
       - :py:func:`~skrl.utils.spaces.torch.tensorize_space`
-      - Space sample with
-        |br| PyTorch / JAX values
-    * - Space sample with
-        |br| PyTorch / JAX values
+      - Space (PyTorch / JAX)
+    * - Space (PyTorch / JAX)
       - :py:func:`~skrl.utils.spaces.torch.untensorize_space`
-      - Space sample with
-        |br| NumPy values
-    * - Space sample with
-        |br| PyTorch / JAX values
+      - Space (NumPy / int)
+    * - Space (PyTorch / JAX)
       - :py:func:`~skrl.utils.spaces.torch.flatten_tensorized_space`
       - PyTorch tensor / JAX array
     * - PyTorch tensor / JAX array
       - :py:func:`~skrl.utils.spaces.torch.unflatten_tensorized_space`
-      - Space sample with
-        |br| PyTorch / JAX values
+      - Space (PyTorch / JAX)
+
+.. raw:: html
+
+    <br>
 
 API (PyTorch)
 -------------

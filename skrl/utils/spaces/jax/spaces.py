@@ -40,16 +40,11 @@ def convert_gym_space(space: "gym.Space", squeeze_batch_dimension: bool = False)
 def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, jax.Device]] = None, _jax: bool = True) -> Any:
     """Convert the sample/value items of a given gymnasium space to JAX array.
 
-    Fundamental spaces (:py:class:`~gymnasium.spaces.Box`, :py:class:`~gymnasium.spaces.Discrete`, and
-    :py:class:`~gymnasium.spaces.MultiDiscrete`) are converted to :py:class:`~jax.Array` with shape
-    (-1, space's shape). Composite spaces (:py:class:`~gymnasium.spaces.Dict` and :py:class:`~gymnasium.spaces.Tuple`)
-    are converted by recursively calling this function on their elements.
-
     :param space: Gymnasium space.
     :param x: Sample/value of the given space to tensorize to.
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   This parameter is used when the space value is not a JAX array (e.g.: numpy array, number).
-    :param _jax: Whether the converted value should be a JAX array. It only affects numpy space values.
+                   This parameter is used when the space value is not a JAX array (e.g.: NumPy array, number).
+    :param _jax: Whether the converted value should be a JAX array. It only affects NumPy space values.
 
     :raises ValueError: The given space or the sample/value type is not supported.
 

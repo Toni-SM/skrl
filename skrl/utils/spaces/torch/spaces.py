@@ -37,15 +37,10 @@ def convert_gym_space(space: "gym.Space", squeeze_batch_dimension: bool = False)
 def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, torch.device]] = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
 
-    Fundamental spaces (:py:class:`~gymnasium.spaces.Box`, :py:class:`~gymnasium.spaces.Discrete`, and
-    :py:class:`~gymnasium.spaces.MultiDiscrete`) are converted to :py:class:`~torch.Tensor` with shape
-    (-1, space's shape). Composite spaces (:py:class:`~gymnasium.spaces.Dict` and :py:class:`~gymnasium.spaces.Tuple`)
-    are converted by recursively calling this function on their elements.
-
     :param space: Gymnasium space.
     :param x: Sample/value of the given space to tensorize to.
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   This parameter is used when the space value is not a PyTorch tensor (e.g.: numpy array, number).
+                   This parameter is used when the space value is not a PyTorch tensor (e.g.: NumPy array, number).
 
     :raises ValueError: The given space or the sample/value type is not supported.
 

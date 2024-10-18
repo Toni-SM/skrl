@@ -248,26 +248,29 @@ def sample_space(space: spaces.Space, batch_size: int = 1, backend: str = Litera
     # fundamental spaces
     # Box
     if isinstance(space, spaces.Box):
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
         if backend == "numpy":
-            return np.stack([space.sample() for _ in range(batch_size)])
+            return np.array(sample).reshape(batch_size, *space.shape)
         elif backend == "torch":
-            return torch.tensor(np.stack([space.sample() for _ in range(batch_size)]), device=device)
+            return torch.tensor(sample, device=device).reshape(batch_size, *space.shape)
         else:
             raise ValueError(f"Unsupported backend type ({backend})")
     # Discrete
     elif isinstance(space, spaces.Discrete):
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
         if backend == "numpy":
-            return np.stack([[space.sample()] for _ in range(batch_size)])
+            return np.array(sample).reshape(batch_size, -1)
         elif backend == "torch":
-            return torch.tensor(np.stack([[space.sample()] for _ in range(batch_size)]), device=device)
+            return torch.tensor(sample, device=device).reshape(batch_size, -1)
         else:
             raise ValueError(f"Unsupported backend type ({backend})")
     # MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
         if backend == "numpy":
-            return np.stack([space.sample() for _ in range(batch_size)])
+            return np.array(sample).reshape(batch_size, *space.nvec.shape)
         elif backend == "torch":
-            return torch.tensor(np.stack([space.sample() for _ in range(batch_size)]), device=device)
+            return torch.tensor(sample, device=device).reshape(batch_size, *space.nvec.shape)
         else:
             raise ValueError(f"Unsupported backend type ({backend})")
     # composite spaces

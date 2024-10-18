@@ -10,6 +10,7 @@ import torch.nn as nn  # noqa
 from skrl.models.torch import MultivariateGaussianMixin  # noqa
 from skrl.models.torch import Model
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
 def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
@@ -93,6 +94,8 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
         self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({output["size"]}))
 
     def compute(self, inputs, role=""):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, self.log_std_parameter, {{}}
     """

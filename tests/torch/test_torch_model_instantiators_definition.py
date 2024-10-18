@@ -48,7 +48,7 @@ def test_parse_input(capsys):
             assert item not in output, f"'{item}' in '{output}'"
     # Mixed operation
     input = 'OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]])'
-    statement = 'inputs["states"]["joint"] + torch.cat([net * inputs["taken_actions"][:, -3:]], dim=1)'
+    statement = 'states["joint"] + torch.cat([net * taken_actions[:, -3:]], dim=1)'
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
 

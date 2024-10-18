@@ -3,8 +3,15 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.4.0] - Unreleased
+### Added
+- Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
+- `parse_device` static method in ML framework configuration for JAX
+
 ### Changed
 - Call agent's `pre_interaction` method during evaluation
+- Use spaces utilities to process states, observations and actions for all the library components
+- Update model instantiators definitions to process supported fundamental and composite Gymnasium spaces
+- Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
 
 ## [1.3.0] - 2024-09-11
 ### Added
@@ -74,7 +81,7 @@ Summary of the most relevant features:
 ## [1.0.0-rc.2] - 2023-08-11
 ### Added
 - Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
-- Time-limit (truncation) boostrapping in on-policy actor-critic agents
+- Time-limit (truncation) bootstrapping in on-policy actor-critic agents
 - Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
 
 ### Changed (breaking changes)

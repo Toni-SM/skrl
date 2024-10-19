@@ -43,8 +43,8 @@ class MultiCategoricalMixin:
             ...     def compute(self, inputs, role):
             ...         return self.net(inputs["states"]), {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (4,)
-            >>> # and an action_space: gym.spaces.MultiDiscrete with nvec = [3, 2]
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (4,)
+            >>> # and an action_space: gymnasium.spaces.MultiDiscrete with nvec = [3, 2]
             >>> model = Policy(observation_space, action_space)
             >>>
             >>> print(model)

@@ -1,6 +1,5 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
-import gym
 import gymnasium
 
 import flax
@@ -36,8 +35,8 @@ class DeterministicMixin:
             ...         x = nn.Dense(1)(x)
             ...         return x, {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (60,)
-            >>> # and an action_space: gym.spaces.Box with shape (8,)
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (60,)
+            >>> # and an action_space: gymnasium.spaces.Box with shape (8,)
             >>> model = Value(observation_space, action_space)
             >>>
             >>> print(model)
@@ -50,8 +49,7 @@ class DeterministicMixin:
         """
         if not hasattr(self, "_d_clip_actions"):
             self._d_clip_actions = {}
-        self._d_clip_actions[role] = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
-            issubclass(type(self.action_space), gymnasium.Space))
+        self._d_clip_actions[role] = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
         if self._d_clip_actions[role]:
             self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)

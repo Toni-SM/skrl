@@ -1,9 +1,7 @@
 from typing import Optional, Tuple, Union
 
-import gym
 import gymnasium
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -12,7 +10,7 @@ from skrl.utils.spaces.torch import compute_space_size
 
 class RunningStandardScaler(nn.Module):
     def __init__(self,
-                 size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                 size: Union[int, Tuple[int], gymnasium.Space],
                  epsilon: float = 1e-8,
                  clip_threshold: float = 5.0,
                  device: Optional[Union[str, torch.device]] = None) -> None:
@@ -31,7 +29,7 @@ class RunningStandardScaler(nn.Module):
                     [0.8540, 0.1982]])
 
         :param size: Size of the input space
-        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
+        :type size: int, tuple or list of integers, or gymnasium.Space
         :param epsilon: Small number to avoid division by zero (default: ``1e-8``)
         :type epsilon: float
         :param clip_threshold: Threshold to clip the data (default: ``5.0``)

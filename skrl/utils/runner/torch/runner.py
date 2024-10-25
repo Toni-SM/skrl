@@ -14,7 +14,7 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler  # noqa
 from skrl.resources.schedulers.torch import KLAdaptiveLR  # noqa
 from skrl.trainers.torch import SequentialTrainer, Trainer
 from skrl.utils import set_seed
-from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, shared_model
+from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, shared_model, categorical_model
 
 
 class Runner:
@@ -37,6 +37,7 @@ class Runner:
             "gaussianmixin": gaussian_model,
             "deterministicmixin": deterministic_model,
             "shared": shared_model,
+            "categoricalmixin": categorical_model,
             # memory
             "randommemory": RandomMemory,
             # agent

@@ -5,7 +5,6 @@ import datetime
 import functools
 import operator
 import os
-import gym
 import gymnasium
 
 import jax
@@ -160,7 +159,7 @@ class Memory:
 
     def create_tensor(self,
                       name: str,
-                      size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                      size: Union[int, Tuple[int], gymnasium.Space],
                       dtype: Optional[np.dtype] = None,
                       keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
@@ -171,8 +170,8 @@ class Memory:
         :param name: Tensor name (the name has to follow the python PEP 8 style)
         :type name: str
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for sequences or gym/gymnasium spaces
-        :type size: int, tuple or list of integers or gym.Space
+                     The product of the elements will be computed for sequences or gymnasium spaces
+        :type size: int, tuple or list of integers or gymnasium space
         :param dtype: Data type (np.dtype) (default: ``None``).
                       If None, the global default jax.numpy.float32 data type will be used
         :type dtype: np.dtype or None, optional

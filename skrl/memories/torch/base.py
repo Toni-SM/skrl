@@ -5,7 +5,6 @@ import datetime
 import functools
 import operator
 import os
-import gym
 import gymnasium
 
 import numpy as np
@@ -128,7 +127,7 @@ class Memory:
 
     def create_tensor(self,
                       name: str,
-                      size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                      size: Union[int, Tuple[int], gymnasium.Space],
                       dtype: Optional[torch.dtype] = None,
                       keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
@@ -139,8 +138,8 @@ class Memory:
         :param name: Tensor name (the name has to follow the python PEP 8 style)
         :type name: str
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for sequences or gym/gymnasium spaces
-        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
+                     The product of the elements will be computed for sequences or gymnasium spaces
+        :type size: int, tuple or list of integers or gymnasium space
         :param dtype: Data type (torch.dtype) (default: ``None``).
                       If None, the global default torch data type will be used
         :type dtype: torch.dtype or None, optional

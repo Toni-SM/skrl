@@ -30,7 +30,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         >>> env = wrap_env(env)
 
     :param env: The environment to be wrapped
-    :type env: gym.Env, gymnasium.Env, dm_env.Environment or VecTask
+    :type env: Any
     :param wrapper: The type of wrapper to use (default: ``"auto"``).
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:

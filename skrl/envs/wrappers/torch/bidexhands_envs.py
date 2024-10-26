@@ -1,10 +1,11 @@
 from typing import Any, Mapping, Sequence, Tuple
 
-import gym
+import gymnasium
 
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
+from skrl.utils.spaces.torch import convert_gym_space
 
 
 class BiDexHandsWrapper(MultiAgentEnvWrapper):
@@ -38,26 +39,26 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return [f"agent_{i}" for i in range(self.num_agents)]
 
     @property
-    def state_spaces(self) -> Mapping[str, gym.Space]:
+    def state_spaces(self) -> Mapping[str, gymnasium.Space]:
         """State spaces
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
         this property returns a dictionary (for consistency with the other space-related properties) with the same
         space for all the agents
         """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
+        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
 
     @property
-    def observation_spaces(self) -> Mapping[str, gym.Space]:
+    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
         """Observation spaces
         """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.observation_space)}
+        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.observation_space)}
 
     @property
-    def action_spaces(self) -> Mapping[str, gym.Space]:
+    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
         """Action spaces
         """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.action_space)}
+        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.action_space)}
 
     def step(self, actions: Mapping[str, torch.Tensor]) -> \
         Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],

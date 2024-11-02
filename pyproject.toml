@@ -22,15 +22,14 @@ classifiers = [
 ]
 # dependencies / optional-dependencies
 dependencies = [
-  "gym",
   "gymnasium",
-  "tqdm",
   "packaging",
   "tensorboard",
+  "tqdm",
 ]
 [project.optional-dependencies]
 torch = [
-  "torch>=1.9",
+  "torch>=1.10",
 ]
 jax = [
   "jax>=0.4.3",

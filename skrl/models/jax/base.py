@@ -1,6 +1,5 @@
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
-import gym
 import gymnasium
 
 import flax
@@ -35,13 +34,13 @@ class StateDict(flax.struct.PyTreeNode):
 
 
 class Model(flax.linen.Module):
-    observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space]
-    action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space]
+    observation_space: Union[int, Sequence[int], gymnasium.Space]
+    action_space: Union[int, Sequence[int], gymnasium.Space]
     device: Optional[Union[str, jax.Device]] = None
 
     def __init__(self,
-                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 observation_space: Union[int, Sequence[int], gymnasium.Space],
+                 action_space: Union[int, Sequence[int], gymnasium.Space],
                  device: Optional[Union[str, jax.Device]] = None,
                  parent: Optional[Any] = None,
                  name: Optional[str] = None) -> None:
@@ -50,17 +49,17 @@ class Model(flax.linen.Module):
         The following properties are defined:
 
         - ``device`` (jax.Device): Device to be used for the computations
-        - ``observation_space`` (int, sequence of int, gym.Space, gymnasium.Space): Observation/state space
-        - ``action_space`` (int, sequence of int, gym.Space, gymnasium.Space): Action space
+        - ``observation_space`` (int, sequence of int, gymnasium.Space): Observation/state space
+        - ``action_space`` (int, sequence of int, gymnasium.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
         - ``num_actions`` (int): Number of elements in the action space
 
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type observation_space: int, sequence of int, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type action_space: int, sequence of int, gymnasium.Space
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional
@@ -142,7 +141,7 @@ class Model(flax.linen.Module):
 
     def tensor_to_space(self,
                         tensor: Union[np.ndarray, jax.Array],
-                        space: Union[gym.Space, gymnasium.Space],
+                        space: gymnasium.Space,
                         start: int = 0) -> Union[Union[np.ndarray, jax.Array], dict]:
         """Map a flat tensor to a Gym/Gymnasium space
 
@@ -153,7 +152,7 @@ class Model(flax.linen.Module):
         :param tensor: Tensor to map from
         :type tensor: np.ndarray or jax.Array
         :param space: Space to map the tensor to
-        :type space: gym.Space or gymnasium.Space
+        :type space: gymnasium.Space
         :param start: Index of the first element of the tensor to map (default: ``0``)
         :type start: int, optional
 
@@ -164,8 +163,8 @@ class Model(flax.linen.Module):
 
         Example::
 
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
-            ...                          'b': gym.spaces.Discrete(4)})
+            >>> space = gymnasium.spaces.Dict({'a': gymnasium.spaces.Box(low=-1, high=1, shape=(2, 3)),
+            ...                                'b': gymnasium.spaces.Discrete(4)})
             >>> tensor = jnp.array([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
             >>>
             >>> model.tensor_to_space(tensor, space)
@@ -198,10 +197,10 @@ class Model(flax.linen.Module):
         :rtype: tuple of np.ndarray or jax.Array, None, and dict
         """
         # discrete action space (Discrete)
-        if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+        if isinstance(self.action_space, gymnasium.spaces.Discrete):
             actions = np.random.randint(self.action_space.n, size=(inputs["states"].shape[0], 1))
         # continuous action space (Box)
-        elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
+        elif isinstance(self.action_space, gymnasium.spaces.Box):
             actions = np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions))
         else:
             raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")

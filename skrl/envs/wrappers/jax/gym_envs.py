@@ -1,6 +1,5 @@
 from typing import Any, Tuple, Union
 
-import gym
 import gymnasium
 from packaging import version
 
@@ -33,6 +32,7 @@ class GymWrapper(Wrapper):
         except AttributeError:
             np.bool8 = np.bool
 
+        import gym
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):

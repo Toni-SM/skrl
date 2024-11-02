@@ -54,7 +54,7 @@ Read the code a little bit and you will understand it at first glance... Also
   ```ini
   function annotation (e.g. typing)
   # insert an empty line
-  python libraries and other libraries (e.g. gym, numpy, time, etc.)
+  python libraries and other libraries (e.g. gymnasium, numpy, time, etc.)
   # insert an empty line
   machine learning framework modules (e.g. torch, torch.nn)
   # insert an empty line

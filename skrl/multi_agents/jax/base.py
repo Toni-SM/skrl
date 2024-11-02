@@ -5,7 +5,6 @@ import copy
 import datetime
 import os
 import pickle
-import gym
 import gymnasium
 
 import flax
@@ -22,8 +21,8 @@ class MultiAgent:
                  possible_agents: Sequence[str],
                  models: Mapping[str, Mapping[str, Model]],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
                  device: Optional[Union[str, jax.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL multi-agent
@@ -36,9 +35,9 @@ class MultiAgent:
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.jax.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional

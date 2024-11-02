@@ -1,6 +1,5 @@
 from typing import Mapping, Optional, Tuple, Union
 
-import gym
 import gymnasium
 
 import jax
@@ -61,7 +60,7 @@ def _standardization(running_mean: jax.Array,
 
 class RunningStandardScaler:
     def __init__(self,
-                 size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                 size: Union[int, Tuple[int], gymnasium.Space],
                  epsilon: float = 1e-8,
                  clip_threshold: float = 5.0,
                  device: Optional[Union[str, jax.Device]] = None) -> None:
@@ -80,7 +79,7 @@ class RunningStandardScaler:
                    [0.59656656, 0.45325184]], dtype=float32)
 
         :param size: Size of the input space
-        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
+        :type size: int, tuple or list of integers, or gymnasium.Space
         :param epsilon: Small number to avoid division by zero (default: ``1e-8``)
         :type epsilon: float
         :param clip_threshold: Threshold to clip the data (default: ``5.0``)

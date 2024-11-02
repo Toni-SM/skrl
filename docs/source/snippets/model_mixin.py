@@ -1,7 +1,7 @@
 # [start-model-torch]
 from typing import Optional, Union, Mapping, Sequence, Tuple, Any
 
-import gym, gymnasium
+import gymnasium
 
 import torch
 
@@ -10,17 +10,17 @@ from skrl.models.torch import Model
 
 class CustomModel(Model):
     def __init__(self,
-                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 observation_space: Union[int, Sequence[int], gymnasium.Space],
+                 action_space: Union[int, Sequence[int], gymnasium.Space],
                  device: Optional[Union[str, torch.device]] = None) -> None:
         """Custom model
 
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type observation_space: int, sequence of int, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type action_space: int, sequence of int, gymnasium.Space
         :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -58,7 +58,7 @@ class CustomModel(Model):
 # [start-model-jax]
 from typing import Optional, Union, Mapping, Tuple, Any
 
-import gym, gymnasium
+import gymnasium
 
 import flax
 import jaxlib
@@ -69,8 +69,8 @@ from skrl.models.jax import Model
 
 class CustomModel(Model):
     def __init__(self,
-                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
+                 observation_space: Union[int, Sequence[int], gymnasium.Space],
+                 action_space: Union[int, Sequence[int], gymnasium.Space],
                  device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
                  parent: Optional[Any] = None,
                  name: Optional[str] = None) -> None:
@@ -78,10 +78,10 @@ class CustomModel(Model):
 
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type observation_space: int, sequence of int, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type action_space: int, sequence of int, gymnasium.Space
         :param device: Device on which a jax array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or jaxlib.xla_extension.Device, optional

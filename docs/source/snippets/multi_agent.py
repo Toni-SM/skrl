@@ -1,7 +1,7 @@
 # [start-multi-agent-base-class-torch]
 from typing import Union, Dict, Any, Optional, Sequence, Mapping
 
-import gym, gymnasium
+import gymnasium
 import copy
 
 import torch
@@ -34,8 +34,8 @@ class CUSTOM(MultiAgent):
                  possible_agents: Sequence[str],
                  models: Dict[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Custom multi-agent
@@ -48,9 +48,9 @@ class CUSTOM(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -182,7 +182,7 @@ class CUSTOM(MultiAgent):
 # [start-multi-agent-base-class-jax]
 from typing import Union, Dict, Any, Optional, Sequence, Mapping
 
-import gym, gymnasium
+import gymnasium
 import copy
 
 import jaxlib
@@ -217,8 +217,8 @@ class CUSTOM(MultiAgent):
                  possible_agents: Sequence[str],
                  models: Dict[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
                  device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Custom multi-agent
@@ -231,9 +231,9 @@ class CUSTOM(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a jax array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or jaxlib.xla_extension.Device, optional

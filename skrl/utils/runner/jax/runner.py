@@ -14,7 +14,7 @@ from skrl.resources.preprocessors.jax import RunningStandardScaler  # noqa
 from skrl.resources.schedulers.jax import KLAdaptiveLR  # noqa
 from skrl.trainers.jax import SequentialTrainer, Trainer
 from skrl.utils import set_seed
-from skrl.utils.model_instantiators.jax import deterministic_model, gaussian_model, categorical_model
+from skrl.utils.model_instantiators.jax import categorical_model, deterministic_model, gaussian_model
 
 
 class Runner:
@@ -35,9 +35,9 @@ class Runner:
         self._class_mapping = {
             # model
             "gaussianmixin": gaussian_model,
+            "categoricalmixin": categorical_model,
             "deterministicmixin": deterministic_model,
             "shared": None,
-            "categoricalmixin": categorical_model,
             # memory
             "randommemory": RandomMemory,
             # agent

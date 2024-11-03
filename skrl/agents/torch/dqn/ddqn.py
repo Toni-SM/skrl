@@ -283,7 +283,7 @@ class DDQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        
+
         # gradient steps
         for gradient_step in range(self._gradient_steps):
 

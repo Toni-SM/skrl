@@ -339,11 +339,11 @@ class DDQN(Agent):
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
-            
+
             # sample a batch from memory
             sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
                 self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
-            
+
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 

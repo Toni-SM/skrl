@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
 - Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9).
 
+### Fixed
+- Moved the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
+
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,
   it is just not installed as part of the library. If it is needed, it needs to be installed manually.

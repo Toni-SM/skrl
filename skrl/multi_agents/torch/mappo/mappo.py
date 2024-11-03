@@ -2,7 +2,6 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import copy
 import itertools
-import gym
 import gymnasium
 
 import torch
@@ -72,11 +71,11 @@ class MAPPO(MultiAgent):
                  possible_agents: Sequence[str],
                  models: Mapping[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None,
-                 shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None) -> None:
+                 shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO)
 
         https://arxiv.org/abs/2103.01955
@@ -89,16 +88,16 @@ class MAPPO(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         :param shared_observation_spaces: Shared observation/state space or shape (default: ``None``)
-        :type shared_observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type shared_observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         """
         _cfg = copy.deepcopy(MAPPO_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -210,19 +209,20 @@ class MAPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -300,7 +300,7 @@ class MAPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states[uid])}, role="value")
+                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states)}, role="value")
                 values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) boostrapping
@@ -310,7 +310,7 @@ class MAPPO(MultiAgent):
                 # storage transition in memory
                 self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],
                                                terminated=terminated[uid], truncated=truncated[uid], log_prob=self._current_log_prob[uid], values=values,
-                                               shared_states=shared_states[uid])
+                                               shared_states=shared_states)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -396,7 +396,7 @@ class MAPPO(MultiAgent):
             # compute returns and advantages
             with torch.no_grad():
                 value.train(False)
-                last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states[uid].float())}, role="value")
+                last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states.float())}, role="value")
                 value.train(True)
             last_values = self._value_preprocessor[uid](last_values, inverse=True)
 

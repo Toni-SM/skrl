@@ -5,12 +5,13 @@ import datetime
 import functools
 import operator
 import os
-import gym
 import gymnasium
 
 import numpy as np
 import torch
 from torch.utils.data.sampler import BatchSampler
+
+from skrl.utils.spaces.torch import compute_space_size
 
 
 class Memory:
@@ -80,49 +81,6 @@ class Memory:
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _get_space_size(self,
-                        space: Union[int, Tuple[int], gym.Space, gymnasium.Space],
-                        keep_dimensions: bool = False) -> Union[Tuple, int]:
-        """Get the size (number of elements) of a space
-
-        :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
-        :param keep_dimensions: Whether or not to keep the space dimensions (default: ``False``)
-        :type keep_dimensions: bool, optional
-
-        :raises ValueError: If the space is not supported
-
-        :return: Size of the space. If ``keep_dimensions`` is True, the space size will be a tuple
-        :rtype: int or tuple of int
-        """
-        if type(space) in [int, float]:
-            return (int(space),) if keep_dimensions else int(space)
-        elif type(space) in [tuple, list]:
-            return tuple(space) if keep_dimensions else np.prod(space)
-        elif issubclass(type(space), gym.Space):
-            if issubclass(type(space), gym.spaces.Discrete):
-                return (1,) if keep_dimensions else 1
-            elif issubclass(type(space), gym.spaces.MultiDiscrete):
-                return space.nvec.shape[0]
-            elif issubclass(type(space), gym.spaces.Box):
-                return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
-            elif issubclass(type(space), gym.spaces.Dict):
-                if keep_dimensions:
-                    raise ValueError("keep_dimensions=True cannot be used with Dict spaces")
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        elif issubclass(type(space), gymnasium.Space):
-            if issubclass(type(space), gymnasium.spaces.Discrete):
-                return (1,) if keep_dimensions else 1
-            elif issubclass(type(space), gymnasium.spaces.MultiDiscrete):
-                return space.nvec.shape[0]
-            elif issubclass(type(space), gymnasium.spaces.Box):
-                return tuple(space.shape) if keep_dimensions else np.prod(space.shape)
-            elif issubclass(type(space), gymnasium.spaces.Dict):
-                if keep_dimensions:
-                    raise ValueError("keep_dimensions=True cannot be used with Dict spaces")
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError(f"Space type {type(space)} not supported")
-
     def share_memory(self) -> None:
         """Share the tensors between processes
         """
@@ -169,7 +127,7 @@ class Memory:
 
     def create_tensor(self,
                       name: str,
-                      size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
+                      size: Union[int, Tuple[int], gymnasium.Space],
                       dtype: Optional[torch.dtype] = None,
                       keep_dimensions: bool = False) -> bool:
         """Create a new internal tensor in memory
@@ -180,8 +138,8 @@ class Memory:
         :param name: Tensor name (the name has to follow the python PEP 8 style)
         :type name: str
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for sequences or gym/gymnasium spaces
-        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
+                     The product of the elements will be computed for sequences or gymnasium spaces
+        :type size: int, tuple or list of integers or gymnasium space
         :param dtype: Data type (torch.dtype) (default: ``None``).
                       If None, the global default torch data type will be used
         :type dtype: torch.dtype or None, optional
@@ -194,7 +152,7 @@ class Memory:
         :rtype: bool
         """
         # compute data size
-        size = self._get_space_size(size, keep_dimensions)
+        size = compute_space_size(size, occupied_size=True)
         # check dtype and size if the tensor exists
         if name in self.tensors:
             tensor = self.tensors[name]
@@ -264,19 +222,19 @@ class Memory:
         dim, shape = tmp.ndim, tmp.shape
 
         # multi environment (number of environments equals num_envs)
-        if dim == 2 and shape[0] == self.num_envs:
+        if dim > 1 and shape[0] == self.num_envs:
             for name, tensor in tensors.items():
                 if name in self.tensors:
                     self.tensors[name][self.memory_index].copy_(tensor)
             self.memory_index += 1
         # multi environment (number of environments less than num_envs)
-        elif dim == 2 and shape[0] < self.num_envs:
+        elif dim > 1 and shape[0] < self.num_envs:
             for name, tensor in tensors.items():
                 if name in self.tensors:
                     self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
             self.env_index += tensor.shape[0]
         # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
-        elif dim == 2 and self.num_envs == 1:
+        elif dim > 1 and self.num_envs == 1:
             for name, tensor in tensors.items():
                 if name in self.tensors:
                     num_samples = min(shape[0], self.memory_size - self.memory_index)

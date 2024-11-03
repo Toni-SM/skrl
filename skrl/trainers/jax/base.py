@@ -58,6 +58,7 @@ class Trainer:
         self.headless = self.cfg.get("headless", False)
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
         self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
+        self.environment_info = self.cfg.get("environment_info", "episode")
 
         self.initial_timestep = 0
 
@@ -172,19 +173,18 @@ class Trainer:
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
 
-            # compute actions
             with contextlib.nullcontext():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with contextlib.nullcontext():
+                # record the environments' transitions
                 self.agents.record_transition(states=states,
                                               actions=actions,
                                               rewards=rewards,
@@ -226,18 +226,20 @@ class Trainer:
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
-            # compute actions
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
             with contextlib.nullcontext():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with contextlib.nullcontext():
                 # write data to TensorBoard
                 self.agents.record_transition(states=states,
                                               actions=actions,
@@ -248,7 +250,9 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # post-interaction
+            super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
             if self.env.num_envs > 1:
@@ -278,29 +282,28 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
 
-            # compute actions
             with contextlib.nullcontext():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
-            infos["shared_states"] = shared_states
-            infos["shared_next_states"] = shared_next_states
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                shared_next_states = self.env.state()
+                infos["shared_states"] = shared_states
+                infos["shared_next_states"] = shared_next_states
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            # record the environments' transitions
-            with contextlib.nullcontext():
+                # record the environments' transitions
                 self.agents.record_transition(states=states,
                                               actions=actions,
                                               rewards=rewards,
@@ -315,13 +318,13 @@ class Trainer:
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
-            with contextlib.nullcontext():
-                if not self.env.agents:
+            if not self.env.agents:
+                with contextlib.nullcontext():
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
-                else:
-                    states = next_states
-                    shared_states = shared_next_states
+                    shared_states = self.env.state()
+            else:
+                states = next_states
+                shared_states = shared_next_states
 
     def multi_agent_eval(self) -> None:
         """Evaluate multi-agents
@@ -338,25 +341,27 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
-            # compute actions
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
             with contextlib.nullcontext():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
-            # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-            shared_next_states = infos.get("shared_states", None)
-            infos["shared_states"] = shared_states
-            infos["shared_next_states"] = shared_next_states
+                # step the environments
+                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                shared_next_states = self.env.state()
+                infos["shared_states"] = shared_states
+                infos["shared_next_states"] = shared_next_states
 
-            # render scene
-            if not self.headless:
-                self.env.render()
+                # render scene
+                if not self.headless:
+                    self.env.render()
 
-            with contextlib.nullcontext():
                 # write data to TensorBoard
                 self.agents.record_transition(states=states,
                                               actions=actions,
@@ -367,12 +372,15 @@ class Trainer:
                                               infos=infos,
                                               timestep=timestep,
                                               timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
-                # reset environments
-                if not self.env.agents:
+            # post-interaction
+            super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            if not self.env.agents:
+                with contextlib.nullcontext():
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
-                else:
-                    states = next_states
-                    shared_states = shared_next_states
+                    shared_states = self.env.state()
+            else:
+                states = next_states
+                shared_states = shared_next_states

@@ -4,8 +4,8 @@ import collections
 import copy
 import datetime
 import os
-import gym
 import gymnasium
+from packaging import version
 
 import numpy as np
 import torch
@@ -21,8 +21,8 @@ class MultiAgent:
                  possible_agents: Sequence[str],
                  models: Mapping[str, Mapping[str, Model]],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gym.Space, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Base class that represent a RL multi-agent
@@ -35,9 +35,9 @@ class MultiAgent:
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -313,7 +313,7 @@ class MultiAgent:
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        _rewards = next(iter(rewards.values()))
+        _rewards = sum(rewards.values())
 
         # compute the cumulative sum of the rewards and timesteps
         if self._cumulative_rewards is None:
@@ -393,7 +393,10 @@ class MultiAgent:
         :param path: Path to load the model from
         :type path: str
         """
-        modules = torch.load(path, map_location=self.device)
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            modules = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
             for uid in self.possible_agents:
                 if uid not in modules:

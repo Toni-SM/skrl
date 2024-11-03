@@ -1,6 +1,5 @@
 from typing import Any, Mapping, Tuple, Union
 
-import gym
 import gymnasium
 
 import torch
@@ -36,8 +35,8 @@ class DeterministicMixin:
             ...     def compute(self, inputs, role):
             ...         return self.net(inputs["states"]), {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (60,)
-            >>> # and an action_space: gym.spaces.Box with shape (8,)
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (60,)
+            >>> # and an action_space: gymnasium.spaces.Box with shape (8,)
             >>> model = Value(observation_space, action_space)
             >>>
             >>> print(model)
@@ -51,8 +50,7 @@ class DeterministicMixin:
               )
             )
         """
-        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
-            issubclass(type(self.action_space), gymnasium.Space))
+        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
         if self._clip_actions:
             self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)

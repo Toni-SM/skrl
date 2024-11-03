@@ -12,10 +12,10 @@ In this section, you will find the steps to install the library, troubleshoot kn
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://www.gymlibrary.dev>`_ / `gymnasium <https://gymnasium.farama.org/>`_
-    * `tqdm <https://tqdm.github.io>`_
+    * `gymnasium <https://gymnasium.farama.org/>`_
     * `packaging <https://packaging.pypa.io>`_
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
+    * `tqdm <https://tqdm.github.io>`_
 
 Machine learning (ML) framework
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,7 +25,7 @@ According to the specific ML frameworks, the following libraries are required:
 PyTorch
 """""""
 
-    * `torch <https://pytorch.org>`_ 1.9.0 or higher
+    * `torch <https://pytorch.org>`_ 1.10.0 or higher
 
 JAX
 """

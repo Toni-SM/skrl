@@ -86,6 +86,8 @@ API
 
     The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise
 
+.. autofunction:: skrl.config.jax.parse_device
+
 .. py:data:: skrl.config.jax.backend
     :type: str
     :value: "numpy"

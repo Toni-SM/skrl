@@ -199,7 +199,7 @@ def load_isaacgym_env_preview3(task_name: str = "",
                                show_cfg: bool = True):
     """Load an Isaac Gym environment (preview 3)
 
-    Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
+    Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
 
     :param task_name: The name of the task (default: ``""``).
                       If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
@@ -351,7 +351,7 @@ def load_isaacgym_env_preview4(task_name: str = "",
                                show_cfg: bool = True):
     """Load an Isaac Gym environment (preview 4)
 
-    Isaac Gym benchmark environments: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
+    Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
 
     :param task_name: The name of the task (default: ``""``).
                       If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).

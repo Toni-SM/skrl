@@ -28,15 +28,15 @@ SKRL - Reinforcement Learning library (|version|)
     </a>
     <br><br>
 
-**skrl** is an open-source library for Reinforcement Learning written in Python (on top of `PyTorch <https://pytorch.org/>`_ and `JAX <https://jax.readthedocs.io>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_, `DeepMind <https://github.com/deepmind/dm_env>`_ and other environment interfaces, it allows loading and configuring `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_, `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_, and `NVIDIA Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
+**skrl** is an open-source library for Reinforcement Learning written in Python (on top of `PyTorch <https://pytorch.org/>`_ and `JAX <https://jax.readthedocs.io>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (as well as `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `Omniverse Isaac Gym <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
 
 **Main features:**
     * PyTorch (|_1| |pytorch| |_1|) and JAX (|_1| |jax| |_1|)
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Support for Gym/Gymnasium (single and vectorized), DeepMind, NVIDIA Isaac Gym (preview 2, 3 and 4), NVIDIA Omniverse Isaac Gym environments, NVIDIA Isaac Lab, among others
-    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), NVIDIA Isaac Gym, NVIDIA Omniverse Isaac Gym, and NVIDIA Isaac Lab
+    * Support for Gym/Gymnasium (single and vectorized), Google DeepMind and Brax, NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) environments, among others
+    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), Google Brax, and NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym)
 
 .. raw:: html
 
@@ -132,13 +132,13 @@ Multi-agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym (preview 2, 3 and 4), Omniverse Isaac Gym, and Isaac Lab environment loaders, and wrappers for the Gym/Gymnasium, DeepMind, Isaac Gym, Omniverse Isaac Gym environments, Isaac Lab, among others
+    Definition of the Isaac Gym (preview 2, 3 and 4), Omniverse Isaac Gym, and Isaac Lab environment loaders, and wrappers for Gym/Gymnasium, DeepMind, Brax, Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) environments, among others
 
-    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Isaac Gym**, **Omniverse Isaac Gym**, **Isaac Lab** environments, among others
-    * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo** and **Bi-DexHands** environments
+    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Brax**, **Isaac Lab** (as well as **Isaac Gym** and **Omniverse Isaac Gym**) environments, among others
+    * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo**, **Isaac Lab** environments, among others
+    * Loading :doc:`Isaac Lab environments <api/envs/isaaclab>`
     * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
     * Loading :doc:`Omniverse Isaac Gym environments <api/envs/omniverse_isaac_gym>`
-    * Loading :doc:`Isaac Lab environments <api/envs/isaaclab>`
 
 Memories
 ^^^^^^^^
@@ -197,8 +197,11 @@ Utils and configurations
 
     * :doc:`ML frameworks <api/config/frameworks>` configuration
     * :doc:`Random seed <api/utils/seed>`
-    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
+    * :doc:`Spaces <api/utils/spaces>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
+    * :doc:`Runner <api/utils/runner>`
+    * :doc:`Distributed runs <api/utils/distributed>`
+    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`
     * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
     * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

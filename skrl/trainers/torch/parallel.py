@@ -343,6 +343,11 @@ class ParallelTrainer(Trainer):
 
         for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
 
+            # pre-interaction
+            for pipe in producer_pipes:
+                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.timesteps})
+            barrier.wait()
+
             # compute actions
             with torch.no_grad():
                 for pipe, queue in zip(producer_pipes, queues):
@@ -369,18 +374,20 @@ class ParallelTrainer(Trainer):
                 if not truncated.is_cuda:
                     truncated.share_memory_()
 
-                for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "eval-record_transition-post_interaction",
-                               "timestep": timestep,
-                               "timesteps": self.timesteps})
-                    queue.put(rewards)
-                    queue.put(next_states)
-                    queue.put(terminated)
-                    queue.put(truncated)
-                    queue.put(infos)
-                barrier.wait()
+            # post-interaction
+            for pipe, queue in zip(producer_pipes, queues):
+                pipe.send({"task": "eval-record_transition-post_interaction",
+                            "timestep": timestep,
+                            "timesteps": self.timesteps})
+                queue.put(rewards)
+                queue.put(next_states)
+                queue.put(terminated)
+                queue.put(truncated)
+                queue.put(infos)
+            barrier.wait()
 
-                # reset environments
+            # reset environments
+            with torch.no_grad():
                 if terminated.any() or truncated.any():
                     states, infos = self.env.reset()
                     if not states.is_cuda:

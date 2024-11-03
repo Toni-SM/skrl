@@ -2,7 +2,6 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import copy
 import itertools
-import gym
 import gymnasium
 
 import torch
@@ -70,8 +69,8 @@ class IPPO(MultiAgent):
                  possible_agents: Sequence[str],
                  models: Mapping[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Independent Proximal Policy Optimization (IPPO)
@@ -86,9 +85,9 @@ class IPPO(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -195,18 +194,19 @@ class IPPO(MultiAgent):
         self.set_mode("eval")
 
         # create tensors in memories
-        for uid in self.possible_agents:
-            self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
-            self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
-            self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
+        if self.memories:
+            for uid in self.possible_agents:
+                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
+                self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+                # tensors sampled during training
+                self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []

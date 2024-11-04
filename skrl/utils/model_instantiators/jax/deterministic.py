@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import textwrap
-import gym
 import gymnasium
 
 import flax.linen as nn  # noqa
@@ -11,10 +10,11 @@ import jax.numpy as jnp  # noqa
 from skrl.models.jax import DeterministicMixin  # noqa
 from skrl.models.jax import Model  # noqa
 from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
-def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                        action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+                        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
                         device: Optional[Union[str, jax.Device]] = None,
                         clip_actions: bool = False,
                         network: Sequence[Mapping[str, Any]] = [],
@@ -26,10 +26,10 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or jax.Device, optional
@@ -81,6 +81,8 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gym.S
         {networks}
 
     def __call__(self, inputs, role):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, {{}}
     """

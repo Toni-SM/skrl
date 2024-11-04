@@ -1,7 +1,7 @@
 # [start-agent-base-class-torch]
 from typing import Union, Tuple, Dict, Any, Optional
 
-import gym, gymnasium
+import gymnasium
 import copy
 
 import torch
@@ -33,8 +33,8 @@ class CUSTOM(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Custom agent
@@ -46,9 +46,9 @@ class CUSTOM(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
         :param device: Device on which a torch tensor is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -179,7 +179,7 @@ class CUSTOM(Agent):
 # [start-agent-base-class-jax]
 from typing import Union, Tuple, Dict, Any, Optional
 
-import gym, gymnasium
+import gymnasium
 import copy
 
 import jaxlib
@@ -213,8 +213,8 @@ class CUSTOM(Agent):
     def __init__(self,
                  models: Dict[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
                  device: Optional[Union[str, jaxlib.xla_extension.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Custom agent
@@ -226,9 +226,9 @@ class CUSTOM(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
         :param observation_space: Observation/state space or shape (default: None)
-        :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: None)
-        :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
         :param device: Device on which a jax array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
         :type device: str or jaxlib.xla_extension.Device, optional

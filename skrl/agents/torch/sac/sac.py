@@ -2,7 +2,6 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import itertools
-import gym
 import gymnasium
 
 import numpy as np
@@ -63,8 +62,8 @@ class SAC(Agent):
     def __init__(self,
                  models: Mapping[str, Model],
                  memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
                  device: Optional[Union[str, torch.device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Soft Actor-Critic (SAC)
@@ -78,9 +77,9 @@ class SAC(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -159,9 +158,9 @@ class SAC(Agent):
         if self._learn_entropy:
             self._target_entropy = self.cfg["target_entropy"]
             if self._target_entropy is None:
-                if issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
+                if issubclass(type(self.action_space), gymnasium.spaces.Box):
                     self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
-                elif issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+                elif issubclass(type(self.action_space), gymnasium.spaces.Discrete):
                     self._target_entropy = -self.action_space.n
                 else:
                     self._target_entropy = 0
@@ -308,12 +307,13 @@ class SAC(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+
+            # sample a batch from memory
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
+                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)

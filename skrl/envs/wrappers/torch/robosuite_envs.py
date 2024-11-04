@@ -1,12 +1,13 @@
 from typing import Any, Optional, Tuple
 
 import collections
-import gym
+import gymnasium
 
 import numpy as np
 import torch
 
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import convert_gym_space
 
 
 class RobosuiteWrapper(Wrapper):
@@ -23,26 +24,26 @@ class RobosuiteWrapper(Wrapper):
         self._action_space = self._spec_to_space(self._env.action_spec)
 
     @property
-    def state_space(self) -> gym.Space:
+    def state_space(self) -> gymnasium.Space:
         """State space
 
         An alias for the ``observation_space`` property
         """
-        return self._observation_space
+        return convert_gym_space(self._observation_space)
 
     @property
-    def observation_space(self) -> gym.Space:
+    def observation_space(self) -> gymnasium.Space:
         """Observation space
         """
-        return self._observation_space
+        return convert_gym_space(self._observation_space)
 
     @property
-    def action_space(self) -> gym.Space:
+    def action_space(self) -> gymnasium.Space:
         """Action space
         """
-        return self._action_space
+        return convert_gym_space(self._action_space)
 
-    def _spec_to_space(self, spec: Any) -> gym.Space:
+    def _spec_to_space(self, spec: Any) -> gymnasium.Space:
         """Convert the robosuite spec to a Gym space
 
         :param spec: The robosuite spec to convert
@@ -51,20 +52,20 @@ class RobosuiteWrapper(Wrapper):
         :raises: ValueError if the spec type is not supported
 
         :return: The Gym space
-        :rtype: gym.Space
+        :rtype: gymnasium.Space
         """
         if type(spec) is tuple:
-            return gym.spaces.Box(shape=spec[0].shape,
-                                  dtype=np.float32,
-                                  low=spec[0],
-                                  high=spec[1])
+            return gymnasium.spaces.Box(shape=spec[0].shape,
+                                        dtype=np.float32,
+                                        low=spec[0],
+                                        high=spec[1])
         elif isinstance(spec, np.ndarray):
-            return gym.spaces.Box(shape=spec.shape,
-                                  dtype=np.float32,
-                                  low=np.full(spec.shape, float("-inf")),
-                                  high=np.full(spec.shape, float("inf")))
+            return gymnasium.spaces.Box(shape=spec.shape,
+                                        dtype=np.float32,
+                                        low=np.full(spec.shape, float("-inf")),
+                                        high=np.full(spec.shape, float("inf")))
         elif isinstance(spec, collections.OrderedDict):
-            return gym.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
+            return gymnasium.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
             raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
 

@@ -2,7 +2,7 @@ import pytest
 import warnings
 
 from collections.abc import Mapping
-import gymnasium as gym
+import gymnasium
 
 import torch
 
@@ -28,8 +28,8 @@ def test_env(capsys: pytest.CaptureFixture):
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (4,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (4,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, torch.device)
@@ -44,7 +44,10 @@ def test_env(capsys: pytest.CaptureFixture):
         assert isinstance(info, Mapping)
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
-            env.render()
+            try:
+                env.render()
+            except AttributeError as e:
+                warnings.warn(f"Brax exception when rendering: {e}")
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])

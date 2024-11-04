@@ -1,6 +1,5 @@
 from typing import Optional, Sequence
 
-import os
 import sys
 
 from skrl import logger
@@ -61,11 +60,11 @@ def load_isaaclab_env(task_name: str = "",
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
 
     :return: Isaac Lab environment
-    :rtype: gym.Env
+    :rtype: gymnasium.Env
     """
     import argparse
     import atexit
-    import gymnasium as gym
+    import gymnasium
 
     # check task from command line arguments
     defined = False
@@ -154,6 +153,6 @@ def load_isaaclab_env(task_name: str = "",
             pass
 
     # load environment
-    env = gym.make(args.task, cfg=cfg, render_mode="rgb_array" if args.video else None)
+    env = gymnasium.make(args.task, cfg=cfg, render_mode="rgb_array" if args.video else None)
 
     return env

@@ -1,8 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Union
 
-import copy
 import functools
-import gym
 import gymnasium
 
 import jax
@@ -192,8 +190,8 @@ class IPPO(MultiAgent):
                  possible_agents: Sequence[str],
                  models: Mapping[str, Model],
                  memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
+                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
                  device: Optional[Union[str, jax.Device]] = None,
                  cfg: Optional[dict] = None) -> None:
         """Independent Proximal Policy Optimization (IPPO)
@@ -208,9 +206,9 @@ class IPPO(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.jax.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional

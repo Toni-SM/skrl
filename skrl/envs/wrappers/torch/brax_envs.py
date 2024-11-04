@@ -2,11 +2,16 @@ from typing import Any, Tuple
 
 import gymnasium
 
-import numpy as np
 import torch
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.spaces.torch import (
+    convert_gym_space,
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space
+)
 
 
 class BraxWrapper(Wrapper):
@@ -29,15 +34,13 @@ class BraxWrapper(Wrapper):
     def observation_space(self) -> gymnasium.Space:
         """Observation space
         """
-        limit = np.inf * np.ones(self._unwrapped.observation_space.shape[1:], dtype='float32')
-        return gymnasium.spaces.Box(-limit, limit, dtype='float32')
+        return convert_gym_space(self._unwrapped.observation_space, squeeze_batch_dimension=True)
 
     @property
     def action_space(self) -> gymnasium.Space:
         """Action space
         """
-        limit = np.inf * np.ones(self._unwrapped.action_space.shape[1:], dtype='float32')
-        return gymnasium.spaces.Box(-limit, limit, dtype='float32')
+        return convert_gym_space(self._unwrapped.action_space, squeeze_batch_dimension=True)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment
@@ -48,7 +51,8 @@ class BraxWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observation, reward, terminated, info = self._env.step(actions)
+        observation, reward, terminated, info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         truncated = torch.zeros_like(terminated)
         return observation, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
@@ -59,6 +63,7 @@ class BraxWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         observation = self._env.reset()
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:

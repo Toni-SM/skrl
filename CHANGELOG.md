@@ -2,6 +2,26 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.0] - Unreleased
+### Added
+- Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
+- `parse_device` static method in ML framework configuration for JAX
+
+### Changed
+- Call agent's `pre_interaction` method during evaluation
+- Use spaces utilities to process states, observations and actions for all the library components
+- Update model instantiators definitions to process supported fundamental and composite Gymnasium spaces
+- Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
+- Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9).
+
+### Fixed
+- Moved the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
+
+### Removed
+- Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,
+  it is just not installed as part of the library. If it is needed, it needs to be installed manually.
+  Any gym-based environment wrapper must use the `convert_gym_space` space utility to operate
+
 ## [1.3.0] - 2024-09-11
 ### Added
 - Distributed multi-GPU and multi-node learning (JAX implementation)
@@ -70,7 +90,7 @@ Summary of the most relevant features:
 ## [1.0.0-rc.2] - 2023-08-11
 ### Added
 - Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
-- Time-limit (truncation) boostrapping in on-policy actor-critic agents
+- Time-limit (truncation) bootstrapping in on-policy actor-critic agents
 - Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
 
 ### Changed (breaking changes)
@@ -84,7 +104,7 @@ Summary of the most relevant features:
     - `from skrl.envs.loaders.jax import load_omniverse_isaacgym_env`
 
 ### Changed
-- Drop support for versions prior to PyTorch 1.9 (1.8.0 and 1.8.1)
+- Drop support for PyTorch versions prior to 1.9 (the previous supported version was 1.8)
 
 ## [1.0.0-rc.1] - 2023-07-25
 ### Added
@@ -177,7 +197,7 @@ to allow storing samples in memories during evaluation
 - Parameter `role` to model methods
 - Wrapper compatibility with the new OpenAI Gym environment API
 - Internal library colored logger
-- Migrate checkpoints/models from other RL libraries to skrl models/agents
+- Migrate checkpoints/models from other RL libraries to **skrl** models/agents
 - Configuration parameter `store_separately` to agent configuration dict
 - Save/load agent modules (models, optimizers, preprocessors)
 - Set random seed and configure deterministic behavior for reproducibility

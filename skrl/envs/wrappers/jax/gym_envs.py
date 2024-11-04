@@ -1,6 +1,6 @@
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
-import gym
+import gymnasium
 from packaging import version
 
 import jax
@@ -8,6 +8,13 @@ import numpy as np
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import Wrapper
+from skrl.utils.spaces.jax import (
+    convert_gym_space,
+    flatten_tensorized_space,
+    tensorize_space,
+    unflatten_tensorized_space,
+    untensorize_space
+)
 
 
 class GymWrapper(Wrapper):
@@ -25,6 +32,7 @@ class GymWrapper(Wrapper):
         except AttributeError:
             np.bool8 = np.bool
 
+        import gym
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):
@@ -40,80 +48,20 @@ class GymWrapper(Wrapper):
             logger.warning(f"Using a deprecated version of OpenAI Gym's API: {gym.__version__}")
 
     @property
-    def observation_space(self) -> gym.Space:
+    def observation_space(self) -> gymnasium.Space:
         """Observation space
         """
         if self._vectorized:
-            return self._env.single_observation_space
-        return self._env.observation_space
+            return convert_gym_space(self._env.single_observation_space)
+        return convert_gym_space(self._env.observation_space)
 
     @property
-    def action_space(self) -> gym.Space:
+    def action_space(self) -> gymnasium.Space:
         """Action space
         """
         if self._vectorized:
-            return self._env.single_action_space
-        return self._env.action_space
-
-    def _observation_to_tensor(self, observation: Any, space: Optional[gym.Space] = None) -> np.ndarray:
-        """Convert the OpenAI Gym observation to a flat tensor
-
-        :param observation: The OpenAI Gym observation to convert to a tensor
-        :type observation: Any supported OpenAI Gym observation space
-
-        :raises: ValueError if the observation space type is not supported
-
-        :return: The observation as a flat tensor
-        :rtype: np.ndarray
-        """
-        observation_space = self._env.observation_space if self._vectorized else self.observation_space
-        space = space if space is not None else observation_space
-
-        if self._vectorized and isinstance(space, gym.spaces.MultiDiscrete):
-            return observation.reshape(self.num_envs, -1).astype(np.int32)
-        elif isinstance(observation, int):
-            return np.array(observation, dtype=np.int32).reshape(self.num_envs, -1)
-        elif isinstance(observation, np.ndarray):
-            return observation.reshape(self.num_envs, -1).astype(np.float32)
-        elif isinstance(space, gym.spaces.Discrete):
-            return np.array(observation, dtype=np.float32).reshape(self.num_envs, -1)
-        elif isinstance(space, gym.spaces.Box):
-            return observation.reshape(self.num_envs, -1).astype(np.float32)
-        elif isinstance(space, gym.spaces.Dict):
-            tmp = np.concatenate([self._observation_to_tensor(observation[k], space[k]) \
-                for k in sorted(space.keys())], axis=-1).reshape(self.num_envs, -1)
-            return tmp
-        else:
-            raise ValueError(f"Observation space type {type(space)} not supported. Please report this issue")
-
-    def _tensor_to_action(self, actions: np.ndarray) -> Any:
-        """Convert the action to the OpenAI Gym expected format
-
-        :param actions: The actions to perform
-        :type actions: np.ndarray
-
-        :raise ValueError: If the action space type is not supported
-
-        :return: The action in the OpenAI Gym format
-        :rtype: Any supported OpenAI Gym action space
-        """
-        space = self._env.action_space if self._vectorized else self.action_space
-
-        if self._vectorized:
-            if isinstance(space, gym.spaces.MultiDiscrete):
-                return actions.astype(space.dtype).reshape(space.shape)
-            elif isinstance(space, gym.spaces.Tuple):
-                if isinstance(space[0], gym.spaces.Box):
-                    return actions.astype(space[0].dtype).reshape(space.shape)
-                elif isinstance(space[0], gym.spaces.Discrete):
-                    return actions.astype(space[0].dtype).reshape(-1)
-        if isinstance(space, gym.spaces.Discrete):
-            return actions.item()
-        elif isinstance(space, gym.spaces.MultiDiscrete):
-            return actions.astype(space.dtype).reshape(space.shape)
-        elif isinstance(space, gym.spaces.Box):
-            return actions.astype(space.dtype).reshape(space.shape)
-        raise ValueError(f"Action space type {type(space)} not supported. Please report this issue")
+            return convert_gym_space(self._env.single_action_space)
+        return convert_gym_space(self._env.action_space)
 
     def step(self, actions: Union[np.ndarray, jax.Array]) -> \
         Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
@@ -128,8 +76,12 @@ class GymWrapper(Wrapper):
         """
         if self._jax or isinstance(actions, jax.Array):
             actions = np.asarray(jax.device_get(actions))
+        actions = untensorize_space(self.action_space,
+                                    unflatten_tensorized_space(self.action_space, actions),
+                                    squeeze_batch_dimension=not self._vectorized)
+
         if self._deprecated_api:
-            observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
+            observation, reward, terminated, info = self._env.step(actions)
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
             if type(info) is list:
                 truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
@@ -139,10 +91,10 @@ class GymWrapper(Wrapper):
                 if truncated:
                     terminated = False
         else:
-            observation, reward, terminated, truncated, info = self._env.step(self._tensor_to_action(actions))
+            observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to numpy or jax
-        observation = self._observation_to_tensor(observation)
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device, False), False)
         reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
         terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
         truncated = np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1)
@@ -173,7 +125,7 @@ class GymWrapper(Wrapper):
                     self._info = {}
                 else:
                     observation, self._info = self._env.reset()
-                self._observation = self._observation_to_tensor(observation)
+                self._observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device, False), False)
                 if self._jax:
                     self._observation = jax.device_put(self._observation, device=self.device)
                 self._reset_once = False
@@ -186,7 +138,7 @@ class GymWrapper(Wrapper):
             observation, info = self._env.reset()
 
         # convert response to numpy or jax
-        observation = self._observation_to_tensor(observation)
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device, False), False)
         if self._jax:
             observation = jax.device_put(observation, device=self.device)
         return observation, info

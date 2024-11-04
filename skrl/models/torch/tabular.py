@@ -35,8 +35,8 @@ class TabularMixin:
             ...                                dim=-1, keepdim=True).view(-1,1)
             ...         return actions, {}
             ...
-            >>> # given an observation_space: gym.spaces.Discrete with n=100
-            >>> # and an action_space: gym.spaces.Discrete with n=5
+            >>> # given an observation_space: gymnasium.spaces.Discrete with n=100
+            >>> # and an action_space: gymnasium.spaces.Discrete with n=5
             >>> model = GreedyPolicy(observation_space, action_space, num_envs=1)
             >>>
             >>> print(model)

@@ -1,6 +1,6 @@
 [project]
 name = "skrl"
-version = "1.3.0"
+version = "1.4.0"
 description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -22,15 +22,14 @@ classifiers = [
 ]
 # dependencies / optional-dependencies
 dependencies = [
-  "gym",
   "gymnasium",
-  "tqdm",
   "packaging",
   "tensorboard",
+  "tqdm",
 ]
 [project.optional-dependencies]
 torch = [
-  "torch>=1.9",
+  "torch>=1.10",
 ]
 jax = [
   "jax>=0.4.3",

@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import textwrap
-import gym
 import gymnasium
 
 import torch
@@ -10,10 +9,11 @@ import torch.nn as nn  # noqa
 from skrl.models.torch import CategoricalMixin  # noqa
 from skrl.models.torch import Model
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
-def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                      action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
+def categorical_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+                      action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
                       device: Optional[Union[str, torch.device]] = None,
                       unnormalized_log_prob: bool = True,
                       network: Sequence[Mapping[str, Any]] = [],
@@ -25,10 +25,10 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
@@ -82,6 +82,8 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gym.Spa
         {networks}
 
     def compute(self, inputs, role=""):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, {{}}
     """

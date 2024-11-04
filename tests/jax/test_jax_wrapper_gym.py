@@ -2,6 +2,7 @@ import pytest
 
 from collections.abc import Mapping
 import gym
+import gymnasium
 
 import jax
 import jax.numpy as jnp
@@ -28,8 +29,8 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (3,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (3,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, jax.Device)
@@ -70,8 +71,8 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorizati
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (3,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (3,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, jax.Device)

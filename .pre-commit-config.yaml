@@ -21,6 +21,7 @@ repos:
   rev: v2.3.0
   hooks:
     - id: codespell
+      exclude: ^(docs/source/_static|docs/_build|pyproject.toml)
       additional_dependencies:
         - tomli
 - repo: https://github.com/python/black

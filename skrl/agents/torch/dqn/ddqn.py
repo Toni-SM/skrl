@@ -60,13 +60,15 @@ DDQN_DEFAULT_CONFIG = {
 
 
 class DDQN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Double Deep Q-Network (DDQN)
 
         https://ojs.aaai.org/index.php/AAAI/article/view/10295
@@ -91,12 +93,14 @@ class DDQN(Agent):
         """
         _cfg = copy.deepcopy(DDQN_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.q_network = self.models.get("q_network", None)
@@ -147,7 +151,9 @@ class DDQN(Agent):
         if self.q_network is not None:
             self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -159,8 +165,7 @@ class DDQN(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
@@ -189,7 +194,11 @@ class DDQN(Agent):
         states = self._state_preprocessor(states)
 
         if not self._exploration_timesteps:
-            return torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True), None, None
+            return (
+                torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True),
+                None,
+                None,
+            )
 
         # sample random actions
         actions = self.q_network.random_act({"states": states}, role="q_network")[0]
@@ -197,28 +206,33 @@ class DDQN(Agent):
             return actions, None, None
 
         # sample actions with epsilon-greedy policy
-        epsilon = self._exploration_final_epsilon + (self._exploration_initial_epsilon - self._exploration_final_epsilon) \
-                * math.exp(-1.0 * timestep / self._exploration_timesteps)
+        epsilon = self._exploration_final_epsilon + (
+            self._exploration_initial_epsilon - self._exploration_final_epsilon
+        ) * math.exp(-1.0 * timestep / self._exploration_timesteps)
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True)
+            actions[indexes] = torch.argmax(
+                self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True
+            )
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
 
         return actions, None, None
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -240,18 +254,32 @@ class DDQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
             if self._rewards_shaper is not None:
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -290,22 +318,32 @@ class DDQN(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-                self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+                names=self.tensors_names, batch_size=self._batch_size
+            )[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
             # compute target values
             with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act({"states": sampled_next_states}, role="target_q_network")
+                next_q_values, _, _ = self.target_q_network.act(
+                    {"states": sampled_next_states}, role="target_q_network"
+                )
 
-                target_q_values = torch.gather(next_q_values, dim=1, index=torch.argmax(self.q_network.act({"states": sampled_next_states}, \
-                    role="q_network")[0], dim=1, keepdim=True))
+                target_q_values = torch.gather(
+                    next_q_values,
+                    dim=1,
+                    index=torch.argmax(
+                        self.q_network.act({"states": sampled_next_states}, role="q_network")[0], dim=1, keepdim=True
+                    ),
+                )
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute Q-network loss
-            q_values = torch.gather(self.q_network.act({"states": sampled_states}, role="q_network")[0], dim=1, index=sampled_actions.long())
+            q_values = torch.gather(
+                self.q_network.act({"states": sampled_states}, role="q_network")[0], dim=1, index=sampled_actions.long()
+            )
 
             q_network_loss = F.mse_loss(q_values, target_values)
 

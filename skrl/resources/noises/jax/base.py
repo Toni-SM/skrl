@@ -6,7 +6,7 @@ import numpy as np
 from skrl import config
 
 
-class Noise():
+class Noise:
     def __init__(self, device: Optional[Union[str, jax.Device]] = None) -> None:
         """Base class representing a noise
 
@@ -33,7 +33,7 @@ class Noise():
         else:
             self.device = device
             if type(device) == str:
-                device_type, device_index = f"{device}:0".split(':')[:2]
+                device_type, device_index = f"{device}:0".split(":")[:2]
                 self.device = jax.devices(device_type)[int(device_index)]
 
     def sample_like(self, tensor: Union[np.ndarray, jax.Array]) -> Union[np.ndarray, jax.Array]:

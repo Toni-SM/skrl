@@ -27,6 +27,7 @@ def _omegaconf_to_dict(config) -> dict:
         d[k] = _omegaconf_to_dict(v) if isinstance(v, DictConfig) else v
     return d
 
+
 def _print_cfg(d, indent=0) -> None:
     """Print the environment configuration
 
@@ -41,14 +42,17 @@ def _print_cfg(d, indent=0) -> None:
         else:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
-def load_omniverse_isaacgym_env(task_name: str = "",
-                                num_envs: Optional[int] = None,
-                                headless: Optional[bool] = None,
-                                cli_args: Sequence[str] = [],
-                                omniisaacgymenvs_path: str = "",
-                                show_cfg: bool = True,
-                                multi_threaded: bool = False,
-                                timeout: int = 30) -> Union["VecEnvBase", "VecEnvMT"]:
+
+def load_omniverse_isaacgym_env(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    omniisaacgymenvs_path: str = "",
+    show_cfg: bool = True,
+    multi_threaded: bool = False,
+    timeout: int = 30,
+) -> Union["VecEnvBase", "VecEnvMT"]:
     """Load an Omniverse Isaac Gym environment (OIGE)
 
     Omniverse Isaac Gym benchmark environments: https://github.com/isaac-sim/OmniIsaacGymEnvs
@@ -103,14 +107,19 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # get task name from command line arguments
     if defined:
         if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
-            logger.warning("Overriding task name ({}) with command line argument (task={})" \
-                .format(task_name, arg.split("task=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding task name ({}) with command line argument (task={})".format(
+                    task_name, arg.split("task=")[1].split(" ")[0]
+                )
+            )
     # get task name from function arguments
     else:
         if task_name:
             sys.argv.append(f"task={task_name}")
         else:
-            raise ValueError("No task name defined. Set task_name parameter or use task=<task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set task_name parameter or use task=<task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False
@@ -121,8 +130,11 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # get num_envs from command line arguments
     if defined:
         if num_envs is not None and num_envs != int(arg.split("num_envs=")[1].split(" ")[0]):
-            logger.warning("Overriding num_envs ({}) with command line argument (num_envs={})" \
-                .format(num_envs, arg.split("num_envs=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding num_envs ({}) with command line argument (num_envs={})".format(
+                    num_envs, arg.split("num_envs=")[1].split(" ")[0]
+                )
+            )
     # get num_envs from function arguments
     elif num_envs is not None and num_envs > 0:
         sys.argv.append(f"num_envs={num_envs}")
@@ -136,8 +148,11 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # get headless from command line arguments
     if defined:
         if headless is not None and str(headless).lower() != arg.split("headless=")[1].split(" ")[0].lower():
-            logger.warning("Overriding headless ({}) with command line argument (headless={})" \
-                .format(headless, arg.split("headless=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding headless ({}) with command line argument (headless={})".format(
+                    headless, arg.split("headless=")[1].split(" ")[0]
+                )
+            )
     # get headless from function arguments
     elif headless is not None:
         sys.argv.append(f"headless={headless}")
@@ -153,16 +168,16 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     config_path = os.path.join(omniisaacgymenvs_path, "cfg")
 
     # set omegaconf resolvers
-    OmegaConf.register_new_resolver('eq', lambda x, y: x.lower() == y.lower())
-    OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())
-    OmegaConf.register_new_resolver('if', lambda condition, a, b: a if condition else b)
-    OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
+    OmegaConf.register_new_resolver("eq", lambda x, y: x.lower() == y.lower())
+    OmegaConf.register_new_resolver("contains", lambda x, y: x.lower() in y.lower())
+    OmegaConf.register_new_resolver("if", lambda condition, a, b: a if condition else b)
+    OmegaConf.register_new_resolver("resolve_default", lambda default, arg: default if arg == "" else arg)
 
     # get hydra config without use @hydra.main
     config_file = "config"
     args = get_args_parser().parse_args()
     search_path = create_automatic_config_search_path(config_file, None, config_path)
-    hydra_object = Hydra.create_main_hydra2(task_name='load_omniisaacgymenv', config_search_path=search_path)
+    hydra_object = Hydra.create_main_hydra2(task_name="load_omniisaacgymenv", config_search_path=search_path)
     config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
 
     del config.hydra
@@ -177,7 +192,9 @@ def load_omniverse_isaacgym_env(task_name: str = "",
     # internal classes
     class _OmniIsaacGymVecEnv(VecEnvBase):
         def step(self, actions):
-            actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
+            actions = (
+                torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
+            )
             self._task.pre_physics_step(actions)
 
             for _ in range(self._task.control_frequency_inv):
@@ -186,8 +203,16 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
             observations, rewards, dones, info = self._task.post_physics_step()
 
-            return {"obs": torch.clamp(observations, -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()}, \
-                rewards.to(self._task.rl_device).clone(), dones.to(self._task.rl_device).clone(), info.copy()
+            return (
+                {
+                    "obs": torch.clamp(observations, -self._task.clip_obs, self._task.clip_obs)
+                    .to(self._task.rl_device)
+                    .clone()
+                },
+                rewards.to(self._task.rl_device).clone(),
+                dones.to(self._task.rl_device).clone(),
+                info.copy(),
+            )
 
         def reset(self):
             self._task.reset()
@@ -212,7 +237,9 @@ def load_omniverse_isaacgym_env(task_name: str = "",
             super().run(_OmniIsaacGymTrainerMT() if trainer is None else trainer)
 
         def _parse_data(self, data):
-            self._observations = torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()
+            self._observations = (
+                torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()
+            )
             self._rewards = data["rew"].to(self._task.rl_device).clone()
             self._dones = data["reset"].to(self._task.rl_device).clone()
             self._info = data["extras"].copy()
@@ -253,10 +280,12 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     if multi_threaded:
         try:
-            env = _OmniIsaacGymVecEnvMT(headless=config.headless,
-                                        sim_device=config.device_id,
-                                        enable_livestream=config.enable_livestream,
-                                        enable_viewport=enable_viewport)
+            env = _OmniIsaacGymVecEnvMT(
+                headless=config.headless,
+                sim_device=config.device_id,
+                enable_livestream=config.enable_livestream,
+                enable_viewport=enable_viewport,
+            )
         except (TypeError, omegaconf.errors.ConfigAttributeError):
             logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
             env = _OmniIsaacGymVecEnvMT(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier
@@ -264,10 +293,12 @@ def load_omniverse_isaacgym_env(task_name: str = "",
         env.initialize(env.action_queue, env.data_queue, timeout=timeout)
     else:
         try:
-            env = _OmniIsaacGymVecEnv(headless=config.headless,
-                                      sim_device=config.device_id,
-                                      enable_livestream=config.enable_livestream,
-                                      enable_viewport=enable_viewport)
+            env = _OmniIsaacGymVecEnv(
+                headless=config.headless,
+                sim_device=config.device_id,
+                enable_livestream=config.enable_livestream,
+                enable_viewport=enable_viewport,
+            )
         except (TypeError, omegaconf.errors.ConfigAttributeError):
             logger.warning("Using an older version of Isaac Sim or OmniIsaacGymEnvs (2022.2.0 or earlier)")
             env = _OmniIsaacGymVecEnv(headless=config.headless)  # Isaac Sim 2022.2.0 and earlier

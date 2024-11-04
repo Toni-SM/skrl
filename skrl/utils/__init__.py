@@ -70,7 +70,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
             seed = int.from_bytes(os.urandom(4), byteorder=sys.byteorder)
         except NotImplementedError:
             seed = int(time.time() * 1000)
-        seed %= 2 ** 31  # NumPy's legacy seeding seed must be between 0 and 2**32 - 1
+        seed %= 2**31  # NumPy's legacy seeding seed must be between 0 and 2**32 - 1
     seed = int(seed)
 
     # set different seeds in distributed runs

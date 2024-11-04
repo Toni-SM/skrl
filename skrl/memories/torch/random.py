@@ -6,14 +6,16 @@ from skrl.memories.torch import Memory
 
 
 class RandomMemory(Memory):
-    def __init__(self,
-                 memory_size: int,
-                 num_envs: int = 1,
-                 device: Optional[Union[str, torch.device]] = None,
-                 export: bool = False,
-                 export_format: str = "pt",
-                 export_directory: str = "",
-                 replacement=True) -> None:
+    def __init__(
+        self,
+        memory_size: int,
+        num_envs: int = 1,
+        device: Optional[Union[str, torch.device]] = None,
+        export: bool = False,
+        export_format: str = "pt",
+        export_directory: str = "",
+        replacement=True,
+    ) -> None:
         """Random sampling memory
 
         Sample a batch from memory randomly
@@ -45,11 +47,9 @@ class RandomMemory(Memory):
 
         self._replacement = replacement
 
-    def sample(self,
-               names: Tuple[str],
-               batch_size: int,
-               mini_batches: int = 1,
-               sequence_length: int = 1) -> List[List[torch.Tensor]]:
+    def sample(
+        self, names: Tuple[str], batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> List[List[torch.Tensor]]:
         """Sample a batch from memory randomly
 
         :param names: Tensors names from which to obtain the samples

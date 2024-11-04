@@ -10,7 +10,7 @@ from skrl.utils.spaces.torch import (
     convert_gym_space,
     flatten_tensorized_space,
     tensorize_space,
-    unflatten_tensorized_space
+    unflatten_tensorized_space,
 )
 
 
@@ -25,6 +25,7 @@ class BraxWrapper(Wrapper):
 
         import brax.envs.wrappers.gym
         import brax.envs.wrappers.torch
+
         env = brax.envs.wrappers.gym.VectorGymWrapper(env)
         env = brax.envs.wrappers.torch.TorchWrapper(env, device=self.device)
         self._env = env
@@ -32,14 +33,12 @@ class BraxWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return convert_gym_space(self._unwrapped.observation_space, squeeze_batch_dimension=True)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return convert_gym_space(self._unwrapped.action_space, squeeze_batch_dimension=True)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
@@ -67,13 +66,13 @@ class BraxWrapper(Wrapper):
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         frame = self._env.render(mode="rgb_array")
 
         # render the frame using OpenCV
         try:
             import cv2
+
             cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
         except ImportError as e:
@@ -81,7 +80,6 @@ class BraxWrapper(Wrapper):
         return frame
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         # self._env.close() raises AttributeError: 'VectorGymWrapper' object has no attribute 'closed'
         pass

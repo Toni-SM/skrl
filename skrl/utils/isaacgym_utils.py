@@ -40,7 +40,7 @@ class WebViewer:
         self._app.add_url_rule("/_route_stream", view_func=self._route_stream)
         self._app.add_url_rule("/_route_input_event", view_func=self._route_input_event, methods=["POST"])
 
-        self._log = logging.getLogger('werkzeug')
+        self._log = logging.getLogger("werkzeug")
         self._log.disabled = True
         self._app.logger.disabled = True
 
@@ -54,12 +54,13 @@ class WebViewer:
         self._event_stream = threading.Event()
 
         # start server
-        self._thread = threading.Thread(target=lambda: \
-            self._app.run(host=host, port=port, debug=False, use_reloader=False), daemon=True)
+        self._thread = threading.Thread(
+            target=lambda: self._app.run(host=host, port=port, debug=False, use_reloader=False), daemon=True
+        )
         self._thread.start()
         print(f"\nStarting web viewer on http://{host}:{port}/\n")
 
-    def _route_index(self) -> 'flask.Response':
+    def _route_index(self) -> "flask.Response":
         """Render the web page
 
         :return: Flask response
@@ -145,25 +146,28 @@ class WebViewer:
         self._event_load.set()
         return flask.render_template_string(template)
 
-    def _route_stream(self) -> 'flask.Response':
+    def _route_stream(self) -> "flask.Response":
         """Stream the image to the web page
 
         :return: Flask response
         :rtype: flask.Response
         """
-        return flask.Response(self._stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+        return flask.Response(self._stream(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-    def _route_input_event(self) -> 'flask.Response':
+    def _route_input_event(self) -> "flask.Response":
         """Handle keyboard and mouse input
 
         :return: Flask response
         :rtype: flask.Response
         """
+
         def q_mult(q1, q2):
-            return [q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
-                    q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
-                    q1[0] * q2[2] + q1[2] * q2[0] + q1[3] * q2[1] - q1[1] * q2[3],
-                    q1[0] * q2[3] + q1[3] * q2[0] + q1[1] * q2[2] - q1[2] * q2[1]]
+            return [
+                q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
+                q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
+                q1[0] * q2[2] + q1[2] * q2[0] + q1[3] * q2[1] - q1[1] * q2[3],
+                q1[0] * q2[3] + q1[3] * q2[0] + q1[1] * q2[2] - q1[2] * q2[1],
+            ]
 
         def q_conj(q):
             return [q[0], -q[1], -q[2], -q[3]]
@@ -190,15 +194,14 @@ class WebViewer:
         key, mouse = data.get("key", None), data.get("mouse", None)
         dx, dy, dz = data.get("dx", None), data.get("dy", None), data.get("dz", None)
 
-        transform = self._gym.get_camera_transform(self._sim,
-                                                   self._envs[self._camera_id],
-                                                   self._cameras[self._camera_id])
+        transform = self._gym.get_camera_transform(
+            self._sim, self._envs[self._camera_id], self._cameras[self._camera_id]
+        )
 
         # zoom in/out
         if mouse == "wheel":
             # compute zoom vector
-            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z],
-                                [-0.025 * dz, 0, 0])
+            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], [-0.025 * dz, 0, 0])
 
             # update transform
             transform.p.x += vector[0]
@@ -216,8 +219,10 @@ class WebViewer:
             q = q_mult(q, q_from_angle_axis(dy, [1, 0, 0]))
 
             # apply rotation
-            t = p_target([transform.p.x, transform.p.y, transform.p.z],
-                        [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
+            t = p_target(
+                [transform.p.x, transform.p.y, transform.p.z],
+                [transform.r.w, transform.r.x, transform.r.y, transform.r.z],
+            )
             p = qv_mult(q, [transform.p.x - t[0], transform.p.y - t[1], transform.p.z - t[2]])
             q = q_mult(q, [transform.r.w, transform.r.x, transform.r.y, transform.r.z])
 
@@ -246,8 +251,7 @@ class WebViewer:
         # walk camera
         elif mouse == "middle":
             # compute displacement
-            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z],
-                             [0, 0.001 * dx, 0.001 * dy])
+            vector = qv_mult([transform.r.w, transform.r.x, transform.r.y, transform.r.z], [0, 0.001 * dx, 0.001 * dy])
 
             # update transform
             transform.p.x += vector[0]
@@ -270,9 +274,7 @@ class WebViewer:
         else:
             return flask.Response(status=200)
 
-        self._gym.set_camera_transform(self._cameras[self._camera_id],
-                                       self._envs[self._camera_id],
-                                       transform)
+        self._gym.set_camera_transform(self._cameras[self._camera_id], self._envs[self._camera_id], transform)
 
         return flask.Response(status=200)
 
@@ -289,13 +291,14 @@ class WebViewer:
             image = imageio.imwrite("<bytes>", self._image, format="JPEG")
 
             # stream image
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
+            yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + image + b"\r\n")
 
             self._event_stream.clear()
             self._notified = False
 
-    def setup(self, gym: 'isaacgym.gymapi.Gym', sim: 'isaacgym.gymapi.Sim', envs: List[int], cameras: List[int]) -> None:
+    def setup(
+        self, gym: "isaacgym.gymapi.Gym", sim: "isaacgym.gymapi.Sim", envs: List[int], cameras: List[int]
+    ) -> None:
         """Setup the web viewer
 
         :param gym: The gym
@@ -312,11 +315,13 @@ class WebViewer:
         self._envs = envs
         self._cameras = cameras
 
-    def render(self,
-               fetch_results: bool = True,
-               step_graphics: bool = True,
-               render_all_camera_sensors: bool = True,
-               wait_for_page_load: bool = True) -> None:
+    def render(
+        self,
+        fetch_results: bool = True,
+        step_graphics: bool = True,
+        render_all_camera_sensors: bool = True,
+        wait_for_page_load: bool = True,
+    ) -> None:
         """Render and get the image from the current camera
 
         This function must be called after the simulation is stepped (post_physics_step).
@@ -361,10 +366,9 @@ class WebViewer:
             self._gym.render_all_camera_sensors(self._sim)
 
         # get image
-        image = self._gym.get_camera_image(self._sim,
-                                           self._envs[self._camera_id],
-                                           self._cameras[self._camera_id],
-                                           self._camera_type)
+        image = self._gym.get_camera_image(
+            self._sim, self._envs[self._camera_id], self._cameras[self._camera_id], self._camera_type
+        )
         if self._camera_type == gymapi.IMAGE_COLOR:
             self._image = image.reshape(image.shape[0], -1, 4)[..., :3]
         elif self._camera_type == gymapi.IMAGE_DEPTH:
@@ -381,13 +385,15 @@ class WebViewer:
         self._notified = True
 
 
-def ik(jacobian_end_effector: torch.Tensor,
-       current_position: torch.Tensor,
-       current_orientation: torch.Tensor,
-       goal_position: torch.Tensor,
-       goal_orientation: Optional[torch.Tensor] = None,
-       damping_factor: float = 0.05,
-       squeeze_output: bool = True) -> torch.Tensor:
+def ik(
+    jacobian_end_effector: torch.Tensor,
+    current_position: torch.Tensor,
+    current_orientation: torch.Tensor,
+    goal_position: torch.Tensor,
+    goal_orientation: Optional[torch.Tensor] = None,
+    damping_factor: float = 0.05,
+    squeeze_output: bool = True,
+) -> torch.Tensor:
     """
     Inverse kinematics using damped least squares method
 
@@ -414,17 +420,22 @@ def ik(jacobian_end_effector: torch.Tensor,
 
     # compute error
     q = torch_utils.quat_mul(goal_orientation, torch_utils.quat_conjugate(current_orientation))
-    error = torch.cat([goal_position - current_position,  # position error
-                       q[:, 0:3] * torch.sign(q[:, 3]).unsqueeze(-1)],  # orientation error
-                      dim=-1).unsqueeze(-1)
+    error = torch.cat(
+        [
+            goal_position - current_position,  # position error
+            q[:, 0:3] * torch.sign(q[:, 3]).unsqueeze(-1),
+        ],  # orientation error
+        dim=-1,
+    ).unsqueeze(-1)
 
     # solve damped least squares (dO = J.T * V)
     transpose = torch.transpose(jacobian_end_effector, 1, 2)
-    lmbda = torch.eye(6, device=jacobian_end_effector.device) * (damping_factor ** 2)
+    lmbda = torch.eye(6, device=jacobian_end_effector.device) * (damping_factor**2)
     if squeeze_output:
         return (transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(dim=2)
     else:
         return transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error
+
 
 def print_arguments(args):
     print("")
@@ -432,24 +443,66 @@ def print_arguments(args):
     for a in args.__dict__:
         print(f"  |-- {a}: {args.__getattribute__(a)}")
 
-def print_asset_options(asset_options: 'isaacgym.gymapi.AssetOptions', asset_name: str = ""):
-    attrs = ["angular_damping", "armature", "collapse_fixed_joints", "convex_decomposition_from_submeshes",
-             "default_dof_drive_mode", "density", "disable_gravity", "fix_base_link", "flip_visual_attachments",
-             "linear_damping", "max_angular_velocity", "max_linear_velocity", "mesh_normal_mode", "min_particle_mass",
-             "override_com", "override_inertia", "replace_cylinder_with_capsule", "tendon_limit_stiffness", "thickness",
-             "use_mesh_materials", "use_physx_armature", "vhacd_enabled"]  # vhacd_params
+
+def print_asset_options(asset_options: "isaacgym.gymapi.AssetOptions", asset_name: str = ""):
+    attrs = [
+        "angular_damping",
+        "armature",
+        "collapse_fixed_joints",
+        "convex_decomposition_from_submeshes",
+        "default_dof_drive_mode",
+        "density",
+        "disable_gravity",
+        "fix_base_link",
+        "flip_visual_attachments",
+        "linear_damping",
+        "max_angular_velocity",
+        "max_linear_velocity",
+        "mesh_normal_mode",
+        "min_particle_mass",
+        "override_com",
+        "override_inertia",
+        "replace_cylinder_with_capsule",
+        "tendon_limit_stiffness",
+        "thickness",
+        "use_mesh_materials",
+        "use_physx_armature",
+        "vhacd_enabled",
+    ]  # vhacd_params
     print("\nAsset options{}".format(f" ({asset_name})" if asset_name else ""))
     for attr in attrs:
         print("  |-- {}: {}".format(attr, getattr(asset_options, attr) if hasattr(asset_options, attr) else "--"))
         # vhacd attributes
         if attr == "vhacd_enabled" and hasattr(asset_options, attr) and getattr(asset_options, attr):
-            vhacd_attrs = ["alpha", "beta", "concavity", "convex_hull_approximation", "convex_hull_downsampling",
-                           "max_convex_hulls", "max_num_vertices_per_ch", "min_volume_per_ch", "mode", "ocl_acceleration",
-                           "pca", "plane_downsampling", "project_hull_vertices", "resolution"]
+            vhacd_attrs = [
+                "alpha",
+                "beta",
+                "concavity",
+                "convex_hull_approximation",
+                "convex_hull_downsampling",
+                "max_convex_hulls",
+                "max_num_vertices_per_ch",
+                "min_volume_per_ch",
+                "mode",
+                "ocl_acceleration",
+                "pca",
+                "plane_downsampling",
+                "project_hull_vertices",
+                "resolution",
+            ]
             print("  |-- vhacd_params:")
             for vhacd_attr in vhacd_attrs:
-                print("  |   |-- {}: {}".format(vhacd_attr, getattr(asset_options.vhacd_params, vhacd_attr) \
-                    if hasattr(asset_options.vhacd_params, vhacd_attr) else "--"))
+                print(
+                    "  |   |-- {}: {}".format(
+                        vhacd_attr,
+                        (
+                            getattr(asset_options.vhacd_params, vhacd_attr)
+                            if hasattr(asset_options.vhacd_params, vhacd_attr)
+                            else "--"
+                        ),
+                    )
+                )
+
 
 def print_sim_components(gym, sim):
     print("")
@@ -461,6 +514,7 @@ def print_sim_components(gym, sim):
     print("  |--  dof count:", gym.get_sim_dof_count(sim))
     print("  |--  force sensor count:", gym.get_sim_force_sensor_count(sim))
 
+
 def print_env_components(gym, env):
     print("")
     print("Env components")
@@ -468,6 +522,7 @@ def print_env_components(gym, env):
     print("  |--  rigid body count:", gym.get_env_rigid_body_count(env))
     print("  |--  joint count:", gym.get_env_joint_count(env))
     print("  |--  dof count:", gym.get_env_dof_count(env))
+
 
 def print_actor_components(gym, env, actor):
     print("")
@@ -479,6 +534,7 @@ def print_actor_components(gym, env, actor):
     print("  |--  rigid shape count:", gym.get_actor_rigid_shape_count(env, actor))
     print("  |--  soft body count:", gym.get_actor_soft_body_count(env, actor))
     print("  |--  tendon count:", gym.get_actor_tendon_count(env, actor))
+
 
 def print_dof_properties(gymapi, props):
     print("")
@@ -497,6 +553,7 @@ def print_dof_properties(gymapi, props):
     print("  |--  effort (max):", props["effort"])
     print("  |--  friction:", props["friction"])
     print("  |--  armature:", props["armature"])
+
 
 def print_links_and_dofs(gym, asset):
     link_dict = gym.get_asset_rigid_body_dict(asset)

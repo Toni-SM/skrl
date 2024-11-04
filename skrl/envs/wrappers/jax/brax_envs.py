@@ -12,7 +12,7 @@ from skrl.utils.spaces.jax import (
     convert_gym_space,
     flatten_tensorized_space,
     tensorize_space,
-    unflatten_tensorized_space
+    unflatten_tensorized_space,
 )
 
 
@@ -26,25 +26,28 @@ class BraxWrapper(Wrapper):
         super().__init__(env)
 
         import brax.envs.wrappers.gym
+
         env = brax.envs.wrappers.gym.VectorGymWrapper(env)
         self._env = env
         self._unwrapped = env.unwrapped
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return convert_gym_space(self._unwrapped.observation_space, squeeze_batch_dimension=True)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return convert_gym_space(self._unwrapped.action_space, squeeze_batch_dimension=True)
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
-        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
-              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Any,
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -76,13 +79,13 @@ class BraxWrapper(Wrapper):
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         frame = self._env.render(mode="rgb_array")
 
         # render the frame using OpenCV
         try:
             import cv2
+
             cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
         except ImportError as e:
@@ -90,7 +93,6 @@ class BraxWrapper(Wrapper):
         return frame
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         # self._env.close() raises AttributeError: 'VectorGymWrapper' object has no attribute 'closed'
         pass

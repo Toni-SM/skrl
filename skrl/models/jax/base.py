@@ -15,11 +15,12 @@ from skrl.utils.spaces.torch import compute_space_size, unflatten_tensorized_spa
 def _vectorize_leaves(leaves: Sequence[jax.Array]) -> jax.Array:
     return jnp.expand_dims(jnp.concatenate(list(map(jnp.ravel, leaves)), axis=-1), 0)
 
+
 @jax.jit
 def _unvectorize_leaves(leaves: Sequence[jax.Array], vector: jax.Array) -> Sequence[jax.Array]:
     offset = 0
     for i, leaf in enumerate(leaves):
-        leaves[i] = leaves[i].at[:].set(vector.at[0, offset:offset + leaf.size].get().reshape(leaf.shape))
+        leaves[i] = leaves[i].at[:].set(vector.at[0, offset : offset + leaf.size].get().reshape(leaf.shape))
         offset += leaf.size
     return leaves
 
@@ -38,12 +39,14 @@ class Model(flax.linen.Module):
     action_space: Union[int, Sequence[int], gymnasium.Space]
     device: Optional[Union[str, jax.Device]] = None
 
-    def __init__(self,
-                 observation_space: Union[int, Sequence[int], gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gymnasium.Space],
-                 device: Optional[Union[str, jax.Device]] = None,
-                 parent: Optional[Any] = None,
-                 name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        observation_space: Union[int, Sequence[int], gymnasium.Space],
+        action_space: Union[int, Sequence[int], gymnasium.Space],
+        device: Optional[Union[str, jax.Device]] = None,
+        parent: Optional[Any] = None,
+        name: Optional[str] = None,
+    ) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
@@ -95,7 +98,7 @@ class Model(flax.linen.Module):
         else:
             self.device = device
             if type(device) == str:
-                device_type, device_index = f"{device}:0".split(':')[:2]
+                device_type, device_index = f"{device}:0".split(":")[:2]
                 self.device = jax.devices(device_type)[int(device_index)]
 
         self.observation_space = observation_space
@@ -110,10 +113,9 @@ class Model(flax.linen.Module):
         self.parent = parent
         self.name = name
 
-    def init_state_dict(self,
-                        role: str,
-                        inputs: Mapping[str, Union[np.ndarray, jax.Array]] = {},
-                        key: Optional[jax.Array] = None) -> None:
+    def init_state_dict(
+        self, role: str, inputs: Mapping[str, Union[np.ndarray, jax.Array]] = {}, key: Optional[jax.Array] = None
+    ) -> None:
         """Initialize state dictionary
 
         :param role: Role play by the model
@@ -134,15 +136,14 @@ class Model(flax.linen.Module):
         if key is None:
             key = config.jax.key
         if isinstance(inputs["states"], (int, np.int32, np.int64)):
-            inputs["states"] = np.array(inputs["states"]).reshape(-1,1)
+            inputs["states"] = np.array(inputs["states"]).reshape(-1, 1)
         # init internal state dict
         with jax.default_device(self.device):
             self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
-    def tensor_to_space(self,
-                        tensor: Union[np.ndarray, jax.Array],
-                        space: gymnasium.Space,
-                        start: int = 0) -> Union[Union[np.ndarray, jax.Array], dict]:
+    def tensor_to_space(
+        self, tensor: Union[np.ndarray, jax.Array], space: gymnasium.Space, start: int = 0
+    ) -> Union[Union[np.ndarray, jax.Array], dict]:
         """Map a flat tensor to a Gym/Gymnasium space
 
         .. warning::
@@ -174,10 +175,16 @@ class Model(flax.linen.Module):
         """
         return unflatten_tensorized_space(space, tensor)
 
-    def random_act(self,
-                   inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-                   role: str = "",
-                   params: Optional[jax.Array] = None) -> Tuple[Union[np.ndarray, jax.Array], Union[Union[np.ndarray, jax.Array], None], Mapping[str, Union[Union[np.ndarray, jax.Array], Any]]]:
+    def random_act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[
+        Union[np.ndarray, jax.Array],
+        Union[Union[np.ndarray, jax.Array], None],
+        Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+    ]:
         """Act randomly according to the action space
 
         :param inputs: Model inputs. The most common keys are:
@@ -201,7 +208,11 @@ class Model(flax.linen.Module):
             actions = np.random.randint(self.action_space.n, size=(inputs["states"].shape[0], 1))
         # continuous action space (Box)
         elif isinstance(self.action_space, gymnasium.spaces.Box):
-            actions = np.random.uniform(low=self.action_space.low[0], high=self.action_space.high[0], size=(inputs["states"].shape[0], self.num_actions))
+            actions = np.random.uniform(
+                low=self.action_space.low[0],
+                high=self.action_space.high[0],
+                size=(inputs["states"].shape[0], self.num_actions),
+            )
         else:
             raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
 
@@ -262,8 +273,10 @@ class Model(flax.linen.Module):
             method = eval(f"flax.linen.initializers.{method_name}")
         else:
             method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
-        params = jax.tree_util.tree_map_with_path(lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "kernel" else param,
-                                                  self.state_dict.params)
+        params = jax.tree_util.tree_map_with_path(
+            lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "kernel" else param,
+            self.state_dict.params,
+        )
         self.state_dict = self.state_dict.replace(params=params)
 
     def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
@@ -291,8 +304,10 @@ class Model(flax.linen.Module):
             method = eval(f"flax.linen.initializers.{method_name}")
         else:
             method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
-        params = jax.tree_util.tree_map_with_path(lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "bias" else param,
-                                                  self.state_dict.params)
+        params = jax.tree_util.tree_map_with_path(
+            lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "bias" else param,
+            self.state_dict.params,
+        )
         self.state_dict = self.state_dict.replace(params=params)
 
     def get_specification(self) -> Mapping[str, Any]:
@@ -319,10 +334,12 @@ class Model(flax.linen.Module):
         """
         return {}
 
-    def act(self,
-            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-            role: str = "",
-            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
+    def act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -401,12 +418,14 @@ class Model(flax.linen.Module):
         self.state_dict = self.state_dict.replace(params=params)
         self.set_mode("eval")
 
-    def migrate(self,
-                state_dict: Optional[Mapping[str, Any]] = None,
-                path: Optional[str] = None,
-                name_map: Mapping[str, str] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        state_dict: Optional[Mapping[str, Any]] = None,
+        path: Optional[str] = None,
+        name_map: Mapping[str, str] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified external model's state dict to the current model
 
         .. warning::
@@ -463,8 +482,11 @@ class Model(flax.linen.Module):
         # soft update
         else:
             # HACK: Does it make sense to use https://optax.readthedocs.io/en/latest/api.html?#optax.incremental_update
-            params = jax.tree_util.tree_map(lambda params, model_params: polyak * model_params + (1 - polyak) * params,
-                                            self.state_dict.params, model.state_dict.params)
+            params = jax.tree_util.tree_map(
+                lambda params, model_params: polyak * model_params + (1 - polyak) * params,
+                self.state_dict.params,
+                model.state_dict.params,
+            )
             self.state_dict = self.state_dict.replace(params=params)
 
     def broadcast_parameters(self, rank: int = 0):
@@ -512,5 +534,7 @@ class Model(flax.linen.Module):
         # return unflatten(jnp.squeeze(vector, 0))
 
         leaves, treedef = jax.tree.flatten(tree)
-        vector = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(_vectorize_leaves(leaves)) / config.jax.world_size
+        vector = (
+            jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(_vectorize_leaves(leaves)) / config.jax.world_size
+        )
         return jax.tree.unflatten(treedef, _unvectorize_leaves(leaves, vector))

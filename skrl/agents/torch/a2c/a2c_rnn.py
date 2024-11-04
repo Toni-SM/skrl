@@ -60,13 +60,15 @@ A2C_DEFAULT_CONFIG = {
 
 
 class A2C_RNN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Advantage Actor Critic (A2C) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1602.01783
@@ -91,12 +93,14 @@ class A2C_RNN(Agent):
         """
         _cfg = copy.deepcopy(A2C_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -143,10 +147,13 @@ class A2C_RNN(Agent):
             if self.policy is self.value:
                 self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             else:
-                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()),
-                                                  lr=self._learning_rate)
+                self.optimizer = torch.optim.Adam(
+                    itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._learning_rate
+                )
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -164,8 +171,7 @@ class A2C_RNN(Agent):
             self._value_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -194,7 +200,9 @@ class A2C_RNN(Agent):
             self._rnn = True
             # create tensors in memory
             if self.memory is not None:
-                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                self.memory.create_tensor(
+                    name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True
+                )
                 self._rnn_tensors_names.append(f"rnn_policy_{i}")
             # default RNN states
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
@@ -208,7 +216,9 @@ class A2C_RNN(Agent):
                     self._rnn = True
                     # create tensors in memory
                     if self.memory is not None:
-                        self.memory.create_tensor(name=f"rnn_value_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                        self.memory.create_tensor(
+                            name=f"rnn_value_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True
+                        )
                         self._rnn_tensors_names.append(f"rnn_value_{i}")
                     # default RNN states
                     self._rnn_initial_states["value"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
@@ -246,16 +256,18 @@ class A2C_RNN(Agent):
 
         return actions, log_prob, outputs
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -277,7 +289,9 @@ class A2C_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             self._current_next_states = next_states
@@ -298,20 +312,44 @@ class A2C_RNN(Agent):
             # package RNN states
             rnn_states = {}
             if self._rnn:
-                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
+                rnn_states.update(
+                    {f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])}
+                )
                 if self.policy is not self.value:
-                    rnn_states.update({f"rnn_value_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["value"])})
+                    rnn_states.update(
+                        {f"rnn_value_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["value"])}
+                    )
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+                log_prob=self._current_log_prob,
+                values=values,
+                **rnn_states,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values, **rnn_states)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    log_prob=self._current_log_prob,
+                    values=values,
+                    **rnn_states,
+                )
 
         # update RNN states
         if self._rnn:
-            self._rnn_final_states["value"] = self._rnn_final_states["policy"] if self.policy is self.value else outputs.get("rnn", [])
+            self._rnn_final_states["value"] = (
+                self._rnn_final_states["policy"] if self.policy is self.value else outputs.get("rnn", [])
+            )
 
             # reset states if the episodes have ended
             finished_episodes = terminated.nonzero(as_tuple=False)
@@ -359,12 +397,15 @@ class A2C_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor,
-                        dones: torch.Tensor,
-                        values: torch.Tensor,
-                        next_values: torch.Tensor,
-                        discount_factor: float = 0.99,
-                        lambda_coefficient: float = 0.95) -> torch.Tensor:
+
+        def compute_gae(
+            rewards: torch.Tensor,
+            dones: torch.Tensor,
+            values: torch.Tensor,
+            next_values: torch.Tensor,
+            discount_factor: float = 0.99,
+            lambda_coefficient: float = 0.95,
+        ) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
             :param rewards: Rewards obtained by the agent
@@ -391,7 +432,11 @@ class A2C_RNN(Agent):
             # advantages computation
             for i in reversed(range(memory_size)):
                 next_values = values[i + 1] if i < memory_size - 1 else last_values
-                advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                advantage = (
+                    rewards[i]
+                    - values[i]
+                    + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                )
                 advantages[i] = advantage
             # returns computation
             returns = advantages + values
@@ -404,28 +449,38 @@ class A2C_RNN(Agent):
         with torch.no_grad():
             self.value.train(False)
             rnn = {"rnn": self._rnn_initial_states["value"]} if self._rnn else {}
-            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float()), **rnn}, role="value")
+            last_values, _, _ = self.value.act(
+                {"states": self._state_preprocessor(self._current_next_states.float()), **rnn}, role="value"
+            )
             self.value.train(True)
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
-        returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                          dones=self.memory.get_tensor_by_name("terminated"),
-                                          values=values,
-                                          next_values=last_values,
-                                          discount_factor=self._discount_factor,
-                                          lambda_coefficient=self._lambda)
+        returns, advantages = compute_gae(
+            rewards=self.memory.get_tensor_by_name("rewards"),
+            dones=self.memory.get_tensor_by_name("terminated"),
+            values=values,
+            next_values=last_values,
+            discount_factor=self._discount_factor,
+            lambda_coefficient=self._lambda,
+        )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
+        sampled_batches = self.memory.sample_all(
+            names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length
+        )
 
         rnn_policy, rnn_value = {}, {}
         if self._rnn:
-            sampled_rnn_batches = self.memory.sample_all(names=self._rnn_tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length)
+            sampled_rnn_batches = self.memory.sample_all(
+                names=self._rnn_tensors_names,
+                mini_batches=self._mini_batches,
+                sequence_length=self._rnn_sequence_length,
+            )
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -434,19 +489,45 @@ class A2C_RNN(Agent):
         kl_divergences = []
 
         # mini-batches loop
-        for i, (sampled_states, sampled_actions, sampled_dones, sampled_log_prob, sampled_returns, sampled_advantages) in enumerate(sampled_batches):
+        for i, (
+            sampled_states,
+            sampled_actions,
+            sampled_dones,
+            sampled_log_prob,
+            sampled_returns,
+            sampled_advantages,
+        ) in enumerate(sampled_batches):
 
             if self._rnn:
                 if self.policy is self.value:
-                    rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]], "terminated": sampled_dones}
+                    rnn_policy = {
+                        "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]],
+                        "terminated": sampled_dones,
+                    }
                     rnn_value = rnn_policy
                 else:
-                    rnn_policy = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "policy" in n], "terminated": sampled_dones}
-                    rnn_value = {"rnn": [s.transpose(0, 1) for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names) if "value" in n], "terminated": sampled_dones}
+                    rnn_policy = {
+                        "rnn": [
+                            s.transpose(0, 1)
+                            for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
+                            if "policy" in n
+                        ],
+                        "terminated": sampled_dones,
+                    }
+                    rnn_value = {
+                        "rnn": [
+                            s.transpose(0, 1)
+                            for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
+                            if "value" in n
+                        ],
+                        "terminated": sampled_dones,
+                    }
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-            _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="policy")
+            _, next_log_prob, _ = self.policy.act(
+                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="policy"
+            )
 
             # compute approximate KL divergence for KLAdaptive learning rate scheduler
             if isinstance(self.scheduler, KLAdaptiveLR):
@@ -480,7 +561,9 @@ class A2C_RNN(Agent):
                 if self.policy is self.value:
                     nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 else:
-                    nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
+                    nn.utils.clip_grad_norm_(
+                        itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip
+                    )
             self.optimizer.step()
 
             # update cumulative losses

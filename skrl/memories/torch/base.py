@@ -15,13 +15,15 @@ from skrl.utils.spaces.torch import compute_space_size
 
 
 class Memory:
-    def __init__(self,
-                 memory_size: int,
-                 num_envs: int = 1,
-                 device: Optional[Union[str, torch.device]] = None,
-                 export: bool = False,
-                 export_format: str = "pt",
-                 export_directory: str = "") -> None:
+    def __init__(
+        self,
+        memory_size: int,
+        num_envs: int = 1,
+        device: Optional[Union[str, torch.device]] = None,
+        export: bool = False,
+        export_format: str = "pt",
+        export_directory: str = "",
+    ) -> None:
         """Base class representing a memory with circular buffers
 
         Buffers are torch tensors with shape (memory size, number of environments, data size).
@@ -48,7 +50,9 @@ class Memory:
         """
         self.memory_size = memory_size
         self.num_envs = num_envs
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        self.device = (
+            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        )
 
         # internal variables
         self.filled = False
@@ -60,7 +64,9 @@ class Memory:
         self.tensors_keep_dimensions = {}
 
         self.sampling_indexes = None
-        self.all_sequence_indexes = np.concatenate([np.arange(i, memory_size * num_envs + i, num_envs) for i in range(num_envs)])
+        self.all_sequence_indexes = np.concatenate(
+            [np.arange(i, memory_size * num_envs + i, num_envs) for i in range(num_envs)]
+        )
 
         # exporting data
         self.export = export
@@ -82,8 +88,7 @@ class Memory:
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
     def share_memory(self) -> None:
-        """Share the tensors between processes
-        """
+        """Share the tensors between processes"""
         for tensor in self.tensors.values():
             if not tensor.is_cuda:
                 tensor.share_memory_()
@@ -125,11 +130,13 @@ class Memory:
         with torch.no_grad():
             self.tensors[name].copy_(tensor)
 
-    def create_tensor(self,
-                      name: str,
-                      size: Union[int, Tuple[int], gymnasium.Space],
-                      dtype: Optional[torch.dtype] = None,
-                      keep_dimensions: bool = False) -> bool:
+    def create_tensor(
+        self,
+        name: str,
+        size: Union[int, Tuple[int], gymnasium.Space],
+        dtype: Optional[torch.dtype] = None,
+        keep_dimensions: bool = False,
+    ) -> bool:
         """Create a new internal tensor in memory
 
         The tensor will have a 3-components shape (memory size, number of environments, size).
@@ -162,7 +169,9 @@ class Memory:
                 raise ValueError(f"Dtype of tensor {name} ({dtype}) doesn't match the existing one ({tensor.dtype})")
             return False
         # define tensor shape
-        tensor_shape = (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
+        tensor_shape = (
+            (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
+        )
         view_shape = (-1, *size) if keep_dimensions else (-1, size)
         # create tensor (_tensor_<name>) and add it to the internal storage
         setattr(self, f"_tensor_{name}", torch.zeros(tensor_shape, device=self.device, dtype=dtype))
@@ -215,7 +224,9 @@ class Memory:
         :raises ValueError: No tensors were provided or the tensors have incompatible shapes
         """
         if not tensors:
-            raise ValueError("No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)")
+            raise ValueError(
+                "No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)"
+            )
 
         # dimensions and shapes of the tensors (assume all tensors have the dimensions of the first tensor)
         tmp = tensors.get("states", tensors[next(iter(tensors))])  # ask for states first
@@ -231,7 +242,9 @@ class Memory:
         elif dim > 1 and shape[0] < self.num_envs:
             for name, tensor in tensors.items():
                 if name in self.tensors:
-                    self.tensors[name][self.memory_index, self.env_index:self.env_index + tensor.shape[0]].copy_(tensor)
+                    self.tensors[name][self.memory_index, self.env_index : self.env_index + tensor.shape[0]].copy_(
+                        tensor
+                    )
             self.env_index += tensor.shape[0]
         # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
         elif dim > 1 and self.num_envs == 1:
@@ -240,7 +253,9 @@ class Memory:
                     num_samples = min(shape[0], self.memory_size - self.memory_index)
                     remaining_samples = shape[0] - num_samples
                     # copy the first n samples
-                    self.tensors[name][self.memory_index:self.memory_index + num_samples].copy_(tensor[:num_samples].unsqueeze(dim=1))
+                    self.tensors[name][self.memory_index : self.memory_index + num_samples].copy_(
+                        tensor[:num_samples].unsqueeze(dim=1)
+                    )
                     self.memory_index += num_samples
                     # storage remaining samples
                     if remaining_samples > 0:
@@ -267,11 +282,9 @@ class Memory:
             if self.export:
                 self.save(directory=self.export_directory, format=self.export_format)
 
-    def sample(self,
-               names: Tuple[str],
-               batch_size: int,
-               mini_batches: int = 1,
-               sequence_length: int = 1) -> List[List[torch.Tensor]]:
+    def sample(
+        self, names: Tuple[str], batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> List[List[torch.Tensor]]:
         """Data sampling method to be implemented by the inheriting classes
 
         :param names: Tensors names from which to obtain the samples
@@ -291,7 +304,9 @@ class Memory:
         """
         raise NotImplementedError("The sampling method (.sample()) is not implemented")
 
-    def sample_by_index(self, names: Tuple[str], indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1) -> List[List[torch.Tensor]]:
+    def sample_by_index(
+        self, names: Tuple[str], indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1
+    ) -> List[List[torch.Tensor]]:
         """Sample data from memory according to their indexes
 
         :param names: Tensors names from which to obtain the samples
@@ -310,7 +325,9 @@ class Memory:
             return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name][indexes] for name in names]]
 
-    def sample_all(self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1) -> List[List[torch.Tensor]]:
+    def sample_all(
+        self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1
+    ) -> List[List[torch.Tensor]]:
         """Sample all data from memory
 
         :param names: Tensors names from which to obtain the samples
@@ -327,7 +344,9 @@ class Memory:
         # sequential order
         if sequence_length > 1:
             if mini_batches > 1:
-                batches = BatchSampler(self.all_sequence_indexes, batch_size=len(self.all_sequence_indexes) // mini_batches, drop_last=True)
+                batches = BatchSampler(
+                    self.all_sequence_indexes, batch_size=len(self.all_sequence_indexes) // mini_batches, drop_last=True
+                )
                 return [[self.tensors_view[name][batch] for name in names] for batch in batches]
             return [[self.tensors_view[name][self.all_sequence_indexes] for name in names]]
 
@@ -366,8 +385,11 @@ class Memory:
         if not directory:
             directory = self.export_directory
         os.makedirs(os.path.join(directory, "memories"), exist_ok=True)
-        memory_path = os.path.join(directory, "memories", \
-            "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format))
+        memory_path = os.path.join(
+            directory,
+            "memories",
+            "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format),
+        )
 
         # torch
         if format == "pt":
@@ -386,7 +408,9 @@ class Memory:
                 writer.writerow([item for sublist in headers for item in sublist])
                 # write rows
                 for i in range(len(self)):
-                    writer.writerow(functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], []))
+                    writer.writerow(
+                        functools.reduce(operator.iconcat, [self.tensors_view[name][i].tolist() for name in names], [])
+                    )
         # unsupported format
         else:
             raise ValueError(f"Unsupported format: {format}. Available formats: pt, csv, npz")

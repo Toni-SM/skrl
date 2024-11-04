@@ -13,15 +13,17 @@ from skrl.utils.model_instantiators.jax.common import convert_deprecated_paramet
 from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
-def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                        device: Optional[Union[str, jax.Device]] = None,
-                        clip_actions: bool = False,
-                        network: Sequence[Mapping[str, Any]] = [],
-                        output: Union[str, Sequence[str]] = "",
-                        return_source: bool = False,
-                        *args,
-                        **kwargs) -> Union[Model, str]:
+def deterministic_model(
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, jax.Device]] = None,
+    clip_actions: bool = False,
+    network: Sequence[Mapping[str, Any]] = [],
+    output: Union[str, Sequence[str]] = "",
+    return_source: bool = False,
+    *args,
+    **kwargs,
+) -> Union[Model, str]:
     """Instantiate a deterministic model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -93,7 +95,6 @@ def deterministic_model(observation_space: Optional[Union[int, Tuple[int], gymna
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["DeterministicModel"](observation_space=observation_space,
-                                         action_space=action_space,
-                                         device=device,
-                                         clip_actions=clip_actions)
+    return _locals["DeterministicModel"](
+        observation_space=observation_space, action_space=action_space, device=device, clip_actions=clip_actions
+    )

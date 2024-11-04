@@ -13,6 +13,7 @@ __all__ = ["__version__", "logger", "config"]
 # read library version from metadata
 try:
     import importlib.metadata
+
     __version__ = importlib.metadata.version("skrl")
 except ImportError:
     __version__ = "unknown"
@@ -21,14 +22,17 @@ except ImportError:
 # logger with format
 class _Formatter(logging.Formatter):
     _format = "[%(name)s:%(levelname)s] %(message)s"
-    _formats = {logging.DEBUG: f"\x1b[38;20m{_format}\x1b[0m",
-                logging.INFO: f"\x1b[38;20m{_format}\x1b[0m",
-                logging.WARNING: f"\x1b[33;20m{_format}\x1b[0m",
-                logging.ERROR: f"\x1b[31;20m{_format}\x1b[0m",
-                logging.CRITICAL: f"\x1b[31;1m{_format}\x1b[0m"}
+    _formats = {
+        logging.DEBUG: f"\x1b[38;20m{_format}\x1b[0m",
+        logging.INFO: f"\x1b[38;20m{_format}\x1b[0m",
+        logging.WARNING: f"\x1b[33;20m{_format}\x1b[0m",
+        logging.ERROR: f"\x1b[31;20m{_format}\x1b[0m",
+        logging.CRITICAL: f"\x1b[31;1m{_format}\x1b[0m",
+    }
 
     def format(self, record):
         return logging.Formatter(self._formats.get(record.levelno)).format(record)
+
 
 _handler = logging.StreamHandler()
 _handler.setLevel(logging.DEBUG)
@@ -42,13 +46,11 @@ logger.addHandler(_handler)
 # machine learning framework configuration
 class _Config(object):
     def __init__(self) -> None:
-        """Machine learning framework specific configuration
-        """
+        """Machine learning framework specific configuration"""
 
         class PyTorch(object):
             def __init__(self) -> None:
-                """PyTorch configuration
-                """
+                """PyTorch configuration"""
                 self._device = None
                 # torch.distributed config
                 self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
@@ -59,7 +61,10 @@ class _Config(object):
                 # set up distributed runs
                 if self._is_distributed:
                     import torch
-                    logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
+
+                    logger.info(
+                        f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})"
+                    )
                     torch.distributed.init_process_group("nccl", rank=self._rank, world_size=self._world_size)
                     torch.cuda.set_device(self._local_rank)
 
@@ -72,6 +77,7 @@ class _Config(object):
                 """
                 try:
                     import torch
+
                     if self._device is None:
                         return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
                     return torch.device(self._device)
@@ -116,8 +122,7 @@ class _Config(object):
 
         class JAX(object):
             def __init__(self) -> None:
-                """JAX configuration
-                """
+                """JAX configuration"""
                 self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
@@ -126,7 +131,9 @@ class _Config(object):
                 self._local_rank = int(os.getenv("JAX_LOCAL_RANK", "0"))
                 self._rank = int(os.getenv("JAX_RANK", "0"))
                 self._world_size = int(os.getenv("JAX_WORLD_SIZE", "1"))
-                self._coordinator_address = os.getenv("JAX_COORDINATOR_ADDR", "127.0.0.1") + ":" + os.getenv("JAX_COORDINATOR_PORT", "1234")
+                self._coordinator_address = (
+                    os.getenv("JAX_COORDINATOR_ADDR", "127.0.0.1") + ":" + os.getenv("JAX_COORDINATOR_PORT", "1234")
+                )
                 self._is_distributed = self._world_size > 1
                 # device
                 self._device = f"cuda:{self._local_rank}"
@@ -134,11 +141,16 @@ class _Config(object):
                 # set up distributed runs
                 if self._is_distributed:
                     import jax
-                    logger.info(f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})")
-                    jax.distributed.initialize(coordinator_address=self._coordinator_address,
-                                               num_processes=self._world_size,
-                                               process_id=self._rank,
-                                               local_device_ids=self._local_rank)
+
+                    logger.info(
+                        f"Distributed (rank: {self._rank}, local rank: {self._local_rank}, world size: {self._world_size})"
+                    )
+                    jax.distributed.initialize(
+                        coordinator_address=self._coordinator_address,
+                        num_processes=self._world_size,
+                        process_id=self._rank,
+                        local_device_ids=self._local_rank,
+                    )
 
             @staticmethod
             def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
@@ -158,7 +170,7 @@ class _Config(object):
                 if isinstance(device, jax.Device):
                     return device
                 elif isinstance(device, str):
-                    device_type, device_index = f"{device}:0".split(':')[:2]
+                    device_type, device_index = f"{device}:0".split(":")[:2]
                     try:
                         return jax.devices(device_type)[int(device_index)]
                     except (RuntimeError, IndexError) as e:
@@ -196,11 +208,11 @@ class _Config(object):
 
             @property
             def key(self) -> "jax.Array":
-                """Pseudo-random number generator (PRNG) key
-                """
+                """Pseudo-random number generator (PRNG) key"""
                 if isinstance(self._key, np.ndarray):
                     try:
                         import jax
+
                         with jax.default_device(self.device):
                             self._key = jax.random.PRNGKey(self._key[1])
                     except ImportError:
@@ -256,5 +268,6 @@ class _Config(object):
 
         self.jax = JAX()
         self.torch = PyTorch()
+
 
 config = _Config()

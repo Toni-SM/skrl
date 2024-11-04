@@ -7,12 +7,14 @@ from torch.distributions import MultivariateNormal
 
 
 class MultivariateGaussianMixin:
-    def __init__(self,
-                 clip_actions: bool = False,
-                 clip_log_std: bool = True,
-                 min_log_std: float = -20,
-                 max_log_std: float = 2,
-                 role: str = "") -> None:
+    def __init__(
+        self,
+        clip_actions: bool = False,
+        clip_log_std: bool = True,
+        min_log_std: float = -20,
+        max_log_std: float = 2,
+        role: str = "",
+    ) -> None:
         """Multivariate Gaussian mixin model (stochastic model)
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
@@ -78,9 +80,9 @@ class MultivariateGaussianMixin:
         self._num_samples = None
         self._distribution = None
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

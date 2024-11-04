@@ -75,6 +75,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
     :return: Wrapped environment
     :rtype: Wrapper or MultiAgentEnvWrapper
     """
+
     def _get_wrapper_name(env, verbose):
         def _in(values, container):
             if type(values) == str:
@@ -87,7 +88,9 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
 
         base_classes = [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__]
         try:
-            base_classes += [str(base).replace("<class '", "").replace("'>", "") for base in env.unwrapped.__class__.__bases__]
+            base_classes += [
+                str(base).replace("<class '", "").replace("'>", "") for base in env.unwrapped.__class__.__bases__
+            ]
         except:
             pass
         base_classes = sorted(list(set(base_classes)))

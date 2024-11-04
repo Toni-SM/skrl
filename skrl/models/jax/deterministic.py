@@ -58,10 +58,12 @@ class DeterministicMixin:
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
 
-    def act(self,
-            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-            role: str = "",
-            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
+    def act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act deterministically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

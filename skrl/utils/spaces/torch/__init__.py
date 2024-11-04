@@ -5,5 +5,5 @@ from skrl.utils.spaces.torch.spaces import (
     sample_space,
     tensorize_space,
     unflatten_tensorized_space,
-    untensorize_space
+    untensorize_space,
 )

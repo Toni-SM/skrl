@@ -12,7 +12,7 @@ from skrl.utils.spaces.torch import (
     flatten_tensorized_space,
     tensorize_space,
     unflatten_tensorized_space,
-    untensorize_space
+    untensorize_space,
 )
 
 
@@ -26,18 +26,17 @@ class DeepMindWrapper(Wrapper):
         super().__init__(env)
 
         from dm_env import specs
+
         self._specs = specs
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return self._spec_to_space(self._env.observation_spec())
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return self._spec_to_space(self._env.action_spec())
 
     def _spec_to_space(self, spec: Any) -> gymnasium.Space:
@@ -54,15 +53,19 @@ class DeepMindWrapper(Wrapper):
         if isinstance(spec, self._specs.DiscreteArray):
             return gymnasium.spaces.Discrete(spec.num_values)
         elif isinstance(spec, self._specs.BoundedArray):
-            return gymnasium.spaces.Box(shape=spec.shape,
-                                  dtype=spec.dtype,
-                                  low=spec.minimum if spec.minimum.ndim else np.full(spec.shape, spec.minimum),
-                                  high=spec.maximum if spec.maximum.ndim else np.full(spec.shape, spec.maximum))
+            return gymnasium.spaces.Box(
+                shape=spec.shape,
+                dtype=spec.dtype,
+                low=spec.minimum if spec.minimum.ndim else np.full(spec.shape, spec.minimum),
+                high=spec.maximum if spec.maximum.ndim else np.full(spec.shape, spec.maximum),
+            )
         elif isinstance(spec, self._specs.Array):
-            return gymnasium.spaces.Box(shape=spec.shape,
-                                  dtype=spec.dtype,
-                                  low=np.full(spec.shape, float("-inf")),
-                                  high=np.full(spec.shape, float("inf")))
+            return gymnasium.spaces.Box(
+                shape=spec.shape,
+                dtype=spec.dtype,
+                low=np.full(spec.shape, float("-inf")),
+                high=np.full(spec.shape, float("inf")),
+            )
         elif isinstance(spec, collections.OrderedDict):
             return gymnasium.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
@@ -80,18 +83,22 @@ class DeepMindWrapper(Wrapper):
         actions = untensorize_space(self.action_space, unflatten_tensorized_space(self.action_space, actions))
         timestep = self._env.step(actions)
 
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, timestep.observation, self.device))
+        observation = flatten_tensorized_space(
+            tensorize_space(self.observation_space, timestep.observation, self.device)
+        )
         reward = timestep.reward if timestep.reward is not None else 0
         terminated = timestep.last()
         truncated = False
         info = {}
 
         # convert response to torch
-        return observation, \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               info
+        return (
+            observation,
+            torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1),
+            torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1),
+            torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1),
+            info,
+        )
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -100,7 +107,9 @@ class DeepMindWrapper(Wrapper):
         :rtype: torch.Tensor
         """
         timestep = self._env.reset()
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, timestep.observation, self.device))
+        observation = flatten_tensorized_space(
+            tensorize_space(self.observation_space, timestep.observation, self.device)
+        )
         return observation, {}
 
     def render(self, *args, **kwargs) -> np.ndarray:
@@ -114,6 +123,7 @@ class DeepMindWrapper(Wrapper):
         # render the frame using OpenCV
         try:
             import cv2
+
             cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
         except ImportError as e:
@@ -121,6 +131,5 @@ class DeepMindWrapper(Wrapper):
         return frame
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()

@@ -7,14 +7,16 @@ from skrl.memories.jax import Memory
 
 
 class RandomMemory(Memory):
-    def __init__(self,
-                 memory_size: int,
-                 num_envs: int = 1,
-                 device: Optional[jax.Device] = None,
-                 export: bool = False,
-                 export_format: str = "pt",
-                 export_directory: str = "",
-                 replacement=True) -> None:
+    def __init__(
+        self,
+        memory_size: int,
+        num_envs: int = 1,
+        device: Optional[jax.Device] = None,
+        export: bool = False,
+        export_format: str = "pt",
+        export_directory: str = "",
+        replacement=True,
+    ) -> None:
         """Random sampling memory
 
         Sample a batch from memory randomly

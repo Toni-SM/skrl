@@ -34,6 +34,7 @@ def convert_gym_space(space: "gym.Space", squeeze_batch_dimension: bool = False)
         return spaces.Dict(spaces={k: convert_gym_space(v) for k, v in space.spaces.items()})
     raise ValueError(f"Unsupported space ({space})")
 
+
 def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, torch.device]] = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
 
@@ -86,6 +87,7 @@ def tensorize_space(space: spaces.Space, x: Any, device: Optional[Union[str, tor
         return tuple([tensorize_space(s, _x, device) for s, _x in zip(space, x)])
     raise ValueError(f"Unsupported space ({space})")
 
+
 def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
 
@@ -134,6 +136,7 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
         return tuple([untensorize_space(s, _x, squeeze_batch_dimension) for s, _x in zip(space, x)])
     raise ValueError(f"Unsupported space ({space})")
 
+
 def flatten_tensorized_space(x: Any) -> torch.Tensor:
     """Flatten a tensorized space.
 
@@ -150,11 +153,12 @@ def flatten_tensorized_space(x: Any) -> torch.Tensor:
     # composite spaces
     # Dict
     elif isinstance(x, dict):
-        return torch.cat([flatten_tensorized_space(x[k])for k in sorted(x.keys())], dim=-1)
+        return torch.cat([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], dim=-1)
     # Tuple
     elif type(x) in [list, tuple]:
         return torch.cat([flatten_tensorized_space(_x) for _x in x], dim=-1)
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
+
 
 def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x: torch.Tensor) -> Any:
     """Unflatten a tensor to create a tensorized space.
@@ -199,6 +203,7 @@ def unflatten_tensorized_space(space: Union[spaces.Space, Sequence[int], int], x
         return output
     raise ValueError(f"Unsupported space ({space})")
 
+
 def compute_space_size(space: Union[spaces.Space, Sequence[int], int], occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
 
@@ -232,7 +237,10 @@ def compute_space_size(space: Union[spaces.Space, Sequence[int], int], occupied_
     # gymnasium computation
     return gymnasium.spaces.flatdim(space)
 
-def sample_space(space: spaces.Space, batch_size: int = 1, backend: str = Literal["numpy", "torch"], device = None) -> Any:
+
+def sample_space(
+    space: spaces.Space, batch_size: int = 1, backend: str = Literal["numpy", "torch"], device=None
+) -> Any:
     """Generates a random sample from the specified space.
 
     :param space: Gymnasium space.

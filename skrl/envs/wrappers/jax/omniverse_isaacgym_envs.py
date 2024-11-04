@@ -23,14 +23,18 @@ _CPU = jax.devices()[0].device_kind.lower() == "cpu"
 if _CPU:
     logger.warning("OmniIsaacGymEnvs runs on GPU, but there is no GPU backend for JAX. JAX operations will run on CPU.")
 
+
 def _jax2torch(array, device, from_jax=True):
     if from_jax:
         return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
     return torch.tensor(array, device=device)
 
+
 def _torch2jax(tensor, to_jax=True):
     if to_jax:
-        return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
+        return jax_dlpack.from_dlpack(
+            torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
+        )
     return tensor.cpu().numpy()
 
 
@@ -58,9 +62,13 @@ class OmniverseIsaacGymWrapper(Wrapper):
         """
         self._env.run(trainer)
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
-        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
-              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Any,
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -72,18 +80,24 @@ class OmniverseIsaacGymWrapper(Wrapper):
         actions = _jax2torch(actions, self._env_device, self._jax)
 
         with torch.no_grad():
-            observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+            observations, reward, terminated, self._info = self._env.step(
+                unflatten_tensorized_space(self.action_space, actions)
+            )
 
         observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
         terminated = terminated.to(dtype=torch.int8)
-        truncated = self._info["time_outs"].to(dtype=torch.int8) if "time_outs" in self._info else torch.zeros_like(terminated)
+        truncated = (
+            self._info["time_outs"].to(dtype=torch.int8) if "time_outs" in self._info else torch.zeros_like(terminated)
+        )
 
         self._observations = _torch2jax(observations, self._jax)
-        return self._observations, \
-               _torch2jax(reward.view(-1, 1), self._jax), \
-               _torch2jax(terminated.view(-1, 1), self._jax), \
-               _torch2jax(truncated.view(-1, 1), self._jax), \
-               self._info
+        return (
+            self._observations,
+            _torch2jax(reward.view(-1, 1), self._jax),
+            _torch2jax(terminated.view(-1, 1), self._jax),
+            _torch2jax(truncated.view(-1, 1), self._jax),
+            self._info,
+        )
 
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
@@ -99,11 +113,9 @@ class OmniverseIsaacGymWrapper(Wrapper):
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()

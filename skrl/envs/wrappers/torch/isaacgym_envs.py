@@ -9,7 +9,7 @@ from skrl.utils.spaces.torch import (
     convert_gym_space,
     flatten_tensorized_space,
     tensorize_space,
-    unflatten_tensorized_space
+    unflatten_tensorized_space,
 )
 
 
@@ -28,14 +28,12 @@ class IsaacGymPreview2Wrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return convert_gym_space(self._unwrapped.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return convert_gym_space(self._unwrapped.action_space)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
@@ -47,7 +45,9 @@ class IsaacGymPreview2Wrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+        observations, reward, terminated, self._info = self._env.step(
+            unflatten_tensorized_space(self.action_space, actions)
+        )
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
         truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
@@ -65,13 +65,11 @@ class IsaacGymPreview2Wrapper(Wrapper):
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         pass
 
 
@@ -90,20 +88,17 @@ class IsaacGymPreview3Wrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return convert_gym_space(self._unwrapped.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return convert_gym_space(self._unwrapped.action_space)
 
     @property
     def state_space(self) -> Union[gymnasium.Space, None]:
-        """State space
-        """
+        """State space"""
         try:
             if self.num_states:
                 return convert_gym_space(self._unwrapped.state_space)
@@ -120,7 +115,9 @@ class IsaacGymPreview3Wrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        observations, reward, terminated, self._info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
+        observations, reward, terminated, self._info = self._env.step(
+            unflatten_tensorized_space(self.action_space, actions)
+        )
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
         truncated = self._info["time_outs"] if "time_outs" in self._info else torch.zeros_like(terminated)
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
@@ -138,11 +135,9 @@ class IsaacGymPreview3Wrapper(Wrapper):
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         pass

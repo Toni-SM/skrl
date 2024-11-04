@@ -15,6 +15,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -47,6 +48,7 @@ CEM_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 class CEM(Agent):

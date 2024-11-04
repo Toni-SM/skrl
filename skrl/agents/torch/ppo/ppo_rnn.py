@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-torch]
 PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -62,6 +63,7 @@ PPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class PPO_RNN(Agent):

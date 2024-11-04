@@ -10,6 +10,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 Q_LEARNING_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
@@ -34,6 +35,7 @@ Q_LEARNING_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class Q_LEARNING(Agent):

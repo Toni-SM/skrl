@@ -15,6 +15,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-torch]
 A2C_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -55,6 +56,7 @@ A2C_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class A2C_RNN(Agent):

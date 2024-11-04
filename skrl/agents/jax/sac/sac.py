@@ -16,6 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 SAC_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -57,6 +58,7 @@ SAC_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function

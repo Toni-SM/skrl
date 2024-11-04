@@ -11,6 +11,7 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# fmt: off
 # [start-config-dict-torch]
 SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -20,6 +21,7 @@ SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class SequentialTrainer(Trainer):

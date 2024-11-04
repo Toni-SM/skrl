@@ -16,6 +16,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-jax]
 PPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -63,6 +64,7 @@ PPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 def compute_gae(rewards: np.ndarray,

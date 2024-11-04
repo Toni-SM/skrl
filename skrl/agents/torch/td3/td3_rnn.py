@@ -14,6 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 TD3_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -61,6 +62,7 @@ TD3_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class TD3_RNN(Agent):

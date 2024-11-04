@@ -15,6 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 SAC_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -56,6 +57,7 @@ SAC_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class SAC(Agent):

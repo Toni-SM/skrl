@@ -15,6 +15,7 @@ from skrl.multi_agents.torch import MultiAgent
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-torch]
 IPPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -62,6 +63,7 @@ IPPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class IPPO(MultiAgent):

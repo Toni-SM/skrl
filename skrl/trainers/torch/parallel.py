@@ -12,6 +12,7 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# fmt: off
 # [start-config-dict-torch]
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -21,6 +22,7 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 def fn_processor(process_index, *args):

@@ -14,6 +14,7 @@ from skrl.envs.wrappers.jax import Wrapper
 from skrl.trainers.jax import Trainer
 
 
+# fmt: off
 # [start-config-dict-jax]
 STEP_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -23,6 +24,7 @@ STEP_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 class StepTrainer(Trainer):

@@ -12,6 +12,7 @@ from skrl.envs.wrappers.jax import Wrapper
 from skrl.trainers.jax import Trainer
 
 
+# fmt: off
 # [start-config-dict-jax]
 SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -21,6 +22,7 @@ SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 class SequentialTrainer(Trainer):

@@ -15,6 +15,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-jax]
 MAPPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -64,6 +65,7 @@ MAPPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 def compute_gae(rewards: np.ndarray,

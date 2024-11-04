@@ -13,6 +13,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 DQN_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -55,6 +56,7 @@ DQN_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class DQN(Agent):

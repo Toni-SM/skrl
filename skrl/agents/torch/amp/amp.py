@@ -15,6 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 AMP_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -72,6 +73,7 @@ AMP_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class AMP(Agent):

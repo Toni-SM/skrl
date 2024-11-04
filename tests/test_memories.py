@@ -17,7 +17,9 @@ def classes_and_kwargs():
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_device(capsys, classes_and_kwargs, device):
-    _device = torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    _device = (
+        torch.device(device) if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    )
 
     for klass, kwargs in classes_and_kwargs:
         try:
@@ -30,7 +32,12 @@ def test_device(capsys, classes_and_kwargs, device):
 
         assert memory.device == _device  # defined device
 
-@hypothesis.given(names=st.sets(st.text(alphabet=string.ascii_letters + string.digits + "_", min_size=1, max_size=10), min_size=1, max_size=10))
+
+@hypothesis.given(
+    names=st.sets(
+        st.text(alphabet=string.ascii_letters + string.digits + "_", min_size=1, max_size=10), min_size=1, max_size=10
+    )
+)
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_create_tensors(capsys, classes_and_kwargs, names):
     for klass, kwargs in classes_and_kwargs:
@@ -41,9 +48,12 @@ def test_create_tensors(capsys, classes_and_kwargs, names):
 
         assert memory.get_tensor_names() == sorted(names)
 
-@hypothesis.given(memory_size=st.integers(min_value=1, max_value=100),
-                  num_envs=st.integers(min_value=1, max_value=10),
-                  num_samples=st.integers(min_value=1, max_value=500))
+
+@hypothesis.given(
+    memory_size=st.integers(min_value=1, max_value=100),
+    num_envs=st.integers(min_value=1, max_value=10),
+    num_samples=st.integers(min_value=1, max_value=500),
+)
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_add_samples(capsys, classes_and_kwargs, memory_size, num_envs, num_samples):
     for klass, kwargs in classes_and_kwargs:

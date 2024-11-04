@@ -5,7 +5,7 @@ import torch
 
 
 class DummyEnv(gym.Env):
-    def __init__(self, num_envs, device = "cpu"):
+    def __init__(self, num_envs, device="cpu"):
         self.num_agents = 1
         self.num_envs = num_envs
         self.device = torch.device(device)
@@ -46,7 +46,9 @@ class _DummyBaseAgent:
     def __init__(self):
         pass
 
-    def record_transition(self, states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps):
+    def record_transition(
+        self, states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+    ):
         pass
 
     def pre_interaction(self, timestep, timesteps):
@@ -69,7 +71,9 @@ class DummyAgent(_DummyBaseAgent):
     def act(self, states, timestep, timesteps):
         return torch.tensor([]), None, {}
 
-    def record_transition(self, states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps):
+    def record_transition(
+        self, states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+    ):
         pass
 
     def pre_interaction(self, timestep, timesteps):

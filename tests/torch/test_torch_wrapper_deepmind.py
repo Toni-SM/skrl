@@ -28,7 +28,10 @@ def test_env(capsys: pytest.CaptureFixture):
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and sorted(list(env.observation_space.keys())) == ["orientation", "velocity"]
+    assert isinstance(env.observation_space, gym.Space) and sorted(list(env.observation_space.keys())) == [
+        "orientation",
+        "velocity",
+    ]
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1

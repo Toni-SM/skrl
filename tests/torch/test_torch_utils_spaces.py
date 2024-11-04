@@ -14,7 +14,7 @@ from skrl.utils.spaces.torch import (
     sample_space,
     tensorize_space,
     unflatten_tensorized_space,
-    untensorize_space
+    untensorize_space,
 )
 
 from ..stategies import gym_space_stategy, gymnasium_space_stategy
@@ -27,6 +27,7 @@ def _check_backend(x, backend):
         assert isinstance(x, np.ndarray)
     else:
         raise ValueError(f"Invalid backend type: {backend}")
+
 
 def check_sampled_space(space, x, n, backend):
     if isinstance(space, gymnasium.spaces.Box):
@@ -65,6 +66,7 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
     space_size = compute_space_size(space, occupied_size=True)
     assert space_size == occupied_size(space)
 
+
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
@@ -96,6 +98,7 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
     tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
+
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
@@ -107,7 +110,9 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
             assert isinstance(x, (np.ndarray, int))
             assert isinstance(x, int) if squeeze_batch_dimension else x.shape == (1, 1)
         elif isinstance(s, gymnasium.spaces.MultiDiscrete):
-            assert isinstance(x, np.ndarray) and x.shape == s.nvec.shape if squeeze_batch_dimension else (1, *s.nvec.shape)
+            assert (
+                isinstance(x, np.ndarray) and x.shape == s.nvec.shape if squeeze_batch_dimension else (1, *s.nvec.shape)
+            )
         elif isinstance(s, gymnasium.spaces.Dict):
             list(map(check_untensorized_space, s.values(), x.values(), [squeeze_batch_dimension] * len(s)))
         elif isinstance(s, gymnasium.spaces.Tuple):
@@ -123,6 +128,7 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
     untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=True)
     check_untensorized_space(space, untensorized_space, squeeze_batch_dimension=True)
 
+
 @hypothesis.given(space=gymnasium_space_stategy(), batch_size=st.integers(min_value=1, max_value=10))
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
@@ -132,6 +138,7 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
     sampled_space = sample_space(space, batch_size, backend="torch")
     check_sampled_space(space, sampled_space, batch_size, backend="torch")
+
 
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
@@ -146,6 +153,7 @@ def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (5, space_size)
 
+
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
@@ -158,6 +166,7 @@ def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
     check_sampled_space(space, unflattened_space, 5, backend="torch")
+
 
 @hypothesis.given(space=gym_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)

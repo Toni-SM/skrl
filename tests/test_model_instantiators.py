@@ -11,16 +11,13 @@ from skrl.utils.model_instantiators import (
     categorical_model,
     deterministic_model,
     gaussian_model,
-    multivariate_gaussian_model
+    multivariate_gaussian_model,
 )
 
 
 @pytest.fixture
 def classes_and_kwargs():
-    return [(categorical_model, {}),
-            (deterministic_model, {}),
-            (gaussian_model, {}),
-            (multivariate_gaussian_model, {})]
+    return [(categorical_model, {}), (deterministic_model, {}), (gaussian_model, {}), (multivariate_gaussian_model, {})]
 
 
 def test_models(capsys, classes_and_kwargs):

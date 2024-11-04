@@ -21,7 +21,10 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     num_envs = 1
     num_agents = 20
     possible_agents = [f"piston_{i}" for i in range(num_agents)]
-    action = {f"piston_{i}": jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1)) for i in range(num_agents)}
+    action = {
+        f"piston_{i}": jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+        for i in range(num_agents)
+    }
 
     # load wrap the environment
     original_env = pistonball_v6.parallel_env(n_pistons=num_agents, continuous=True, max_cycles=125)
@@ -38,7 +41,11 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     assert isinstance(env.action_spaces, Mapping) and len(env.action_spaces) == num_agents
     for agent in possible_agents:
         assert isinstance(env.state_space(agent), gym.Space) and env.state_space(agent).shape == (560, 880, 3)
-        assert isinstance(env.observation_space(agent), gym.Space) and env.observation_space(agent).shape == (457, 120, 3)
+        assert isinstance(env.observation_space(agent), gym.Space) and env.observation_space(agent).shape == (
+            457,
+            120,
+            3,
+        )
         assert isinstance(env.action_space(agent), gym.Space) and env.action_space(agent).shape == (1,)
     assert isinstance(env.possible_agents, list) and sorted(env.possible_agents) == sorted(possible_agents)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
@@ -54,7 +61,10 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
         assert isinstance(observation, Mapping)
         assert isinstance(info, Mapping)
         for agent in possible_agents:
-            assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, math.prod((457, 120, 3)))
+            assert isinstance(observation[agent], Array) and observation[agent].shape == (
+                num_envs,
+                math.prod((457, 120, 3)),
+            )
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
@@ -65,7 +75,10 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for agent in possible_agents:
-                assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, math.prod((457, 120, 3)))
+                assert isinstance(observation[agent], Array) and observation[agent].shape == (
+                    num_envs,
+                    math.prod((457, 120, 3)),
+                )
                 assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
                 assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
                 assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)

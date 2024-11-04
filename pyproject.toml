@@ -60,6 +60,11 @@ tests = [
 
 [tool.black]
 line-length = 120
+extend-exclude = """
+(
+  ^/docs
+)
+"""
 
 
 [tool.codespell]

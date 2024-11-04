@@ -499,7 +499,7 @@ class MAPPO(MultiAgent):
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
 
-                # time-limit (truncation) boostrapping
+                # time-limit (truncation) bootstrapping
                 if self._time_limit_bootstrap[uid]:
                     rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
 

@@ -160,7 +160,7 @@ class _Config(object):
 
                     This function supports the PyTorch-like ``"type:ordinal"`` string specification (e.g.: ``"cuda:0"``).
 
-                :param device: Device specification. If the specified device is ``None`` ot it cannot be resolved,
+                :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
                                the default available device will be returned instead.
 
                 :return: JAX Device.

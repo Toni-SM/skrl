@@ -105,7 +105,7 @@ if __name__ == "__main__":
     import sys
 
     if not sys.argv[-1] == "--debug":
-        raise RuntimeError("Test can only be runned manually with --debug flag")
+        raise RuntimeError("Test can only be run manually with --debug flag")
 
     test = TestCase()
     test.setUp()

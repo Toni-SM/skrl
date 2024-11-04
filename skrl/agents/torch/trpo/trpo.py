@@ -275,7 +275,7 @@ class TRPO(Agent):
             values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
-            # time-limit (truncation) boostrapping
+            # time-limit (truncation) bootstrapping
             if self._time_limit_bootstrap:
                 rewards += self._discount_factor * values * truncated
 

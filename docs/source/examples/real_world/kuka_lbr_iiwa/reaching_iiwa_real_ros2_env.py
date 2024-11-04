@@ -113,8 +113,8 @@ class ReachingIiwa(gym.Env):
         self.robot_state["joint_velocity"] = np.array(msg.velocity)
 
     def _callback_end_effector_pose(self, msg):
-        positon = msg.position
-        self.robot_state["cartesian_position"] = np.array([positon.x, positon.y, positon.z])
+        position = msg.position
+        self.robot_state["cartesian_position"] = np.array([position.x, position.y, position.z])
 
     def _get_observation_reward_done(self):
         # observation
@@ -146,7 +146,7 @@ class ReachingIiwa(gym.Env):
         return self.obs_buf, reward, done
 
     def reset(self):
-        print("Reseting...")
+        print("Resetting...")
 
         # go to 1) safe position, 2) random position
         msg = sensor_msgs.msg.JointState()

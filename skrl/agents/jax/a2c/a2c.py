@@ -413,7 +413,7 @@ class A2C(Agent):
                 values = jax.device_get(values)
             values = self._value_preprocessor(values, inverse=True)
 
-            # time-limit (truncation) boostrapping
+            # time-limit (truncation) bootstrapping
             if self._time_limit_bootstrap:
                 rewards += self._discount_factor * values * truncated
 

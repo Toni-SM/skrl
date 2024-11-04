@@ -20,7 +20,7 @@ def _copyto(dst, src):
 @jax.jit
 def _parallel_variance(
     running_mean: jax.Array, running_variance: jax.Array, current_count: jax.Array, array: jax.Array
-) -> Tuple[jax.Array, jax.Array, jax.Array]:  # yapf: disable
+) -> Tuple[jax.Array, jax.Array, jax.Array]:
     # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
     if array.ndim == 3:
         input_mean = jnp.mean(array, axis=(0, 1))
@@ -45,7 +45,7 @@ def _parallel_variance(
 @jax.jit
 def _inverse(
     running_mean: jax.Array, running_variance: jax.Array, clip_threshold: float, array: jax.Array
-) -> jax.Array:  # yapf: disable
+) -> jax.Array:
     return jnp.sqrt(running_variance) * jnp.clip(array, -clip_threshold, clip_threshold) + running_mean
 
 

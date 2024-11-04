@@ -50,7 +50,7 @@ class SARSA(Agent):
     ) -> None:
         """State Action Reward State Action (SARSA)
 
-        https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.2539
+        https://scholar.google.com/scholar?q=On-line+Q-learning+using+connectionist+system
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model

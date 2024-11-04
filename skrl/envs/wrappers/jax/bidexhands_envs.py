@@ -98,10 +98,10 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: dict of nd.ndarray or jax.Array
+        :type actions: dict of np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dict of nd.ndarray or jax.Array and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         actions = [_jax2torch(actions[uid], self._env.rl_device, self._jax) for uid in self.possible_agents]
 

@@ -285,7 +285,7 @@ class RPO(Agent):
             )
             values = self._value_preprocessor(values, inverse=True)
 
-            # time-limit (truncation) boostrapping
+            # time-limit (truncation) bootstrapping
             if self._time_limit_bootstrap:
                 rewards += self._discount_factor * values * truncated
 

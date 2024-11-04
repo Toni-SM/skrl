@@ -18,7 +18,7 @@ from skrl.utils.spaces.jax import (
     untensorize_space,
 )
 
-from ..stategies import gym_space_stategy, gymnasium_space_stategy
+from ..strategies import gym_space_stategy, gymnasium_space_stategy
 
 
 def _check_backend(x, backend):

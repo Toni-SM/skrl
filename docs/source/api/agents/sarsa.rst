@@ -3,7 +3,7 @@ State Action Reward State Action (SARSA)
 
 SARSA is a **model-free** **on-policy** algorithm that uses a **tabular** Q-function to handle **discrete** observations and action spaces
 
-Paper: `On-Line Q-Learning Using Connectionist Systems <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.2539>`_
+Paper: `On-Line Q-Learning Using Connectionist Systems <https://scholar.google.com/scholar?q=On-line+Q-learning+using+connectionist+system>`_
 
 .. raw:: html
 

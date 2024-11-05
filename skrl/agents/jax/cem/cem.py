@@ -15,6 +15,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -47,16 +48,19 @@ CEM_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 class CEM(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Cross-Entropy Method (CEM)
 
         https://ieeexplore.ieee.org/abstract/document/6796865/
@@ -82,12 +86,14 @@ class CEM(Agent):
         # _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = CEM_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -119,7 +125,9 @@ class CEM(Agent):
             with jax.default_device(self.device):
                 self.optimizer = Adam(model=self.policy, lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -131,8 +139,7 @@ class CEM(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -174,16 +181,18 @@ class CEM(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -205,7 +214,9 @@ class CEM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
@@ -213,11 +224,23 @@ class CEM(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
         # track episodes internally
         if self._rollout:
@@ -280,9 +303,13 @@ class CEM(Agent):
         for e in range(sampled_rewards.shape[-1]):
             for i, j in zip(self._episode_tracking[e][:-1], self._episode_tracking[e][1:]):
                 limits.append([e + i, e + j])
-                rewards = sampled_rewards[e + i: e + j]
-                returns.append(np.sum(rewards * self._discount_factor ** \
-                    np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)))
+                rewards = sampled_rewards[e + i : e + j]
+                returns.append(
+                    np.sum(
+                        rewards
+                        * self._discount_factor ** np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)
+                    )
+                )
 
         if not len(returns):
             logger.warning("No returns to update. Consider increasing the number of rollouts")
@@ -293,8 +320,10 @@ class CEM(Agent):
 
         # get elite states and actions
         indexes = (returns >= return_threshold).nonzero()[0]
-        elite_states = np.concatenate([sampled_states[limits[i][0]:limits[i][1]] for i in indexes], axis=0)
-        elite_actions = np.concatenate([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes], axis=0).reshape(-1)
+        elite_states = np.concatenate([sampled_states[limits[i][0] : limits[i][1]] for i in indexes], axis=0)
+        elite_actions = np.concatenate([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes], axis=0).reshape(
+            -1
+        )
 
         # compute policy loss
         def _policy_loss(params):

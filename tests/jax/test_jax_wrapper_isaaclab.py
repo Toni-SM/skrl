@@ -26,6 +26,7 @@ EnvStepReturn = tuple[
     Dict[AgentID, dict],
 ]
 
+
 class IsaacLabEnv(gym.Env):
     def __init__(self, num_states) -> None:
         self.num_actions = 1
@@ -61,7 +62,9 @@ class IsaacLabEnv(gym.Env):
 
     def step(self, action: torch.Tensor) -> VecEnvStepReturn:
         assert action.clone().shape == torch.Size([self.num_envs, 1])
-        observations = {"policy": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)}
+        observations = {
+            "policy": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)
+        }
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         terminated = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
         truncated = torch.zeros_like(terminated)
@@ -102,9 +105,7 @@ class IsaacLabMultiAgentEnv:
         if not self.num_states:
             self.state_space = None
         if self.num_states < 0:
-            self.state_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(sum(self.num_observations.values()),)
-            )
+            self.state_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(sum(self.num_observations.values()),))
         else:
             self.state_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(self.num_states,))
 
@@ -112,16 +113,28 @@ class IsaacLabMultiAgentEnv:
     def unwrapped(self):
         return self
 
-    def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Dict[AgentID, ObsType], dict]:
-        observations = {agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device) for agent in self.possible_agents}
+    def reset(
+        self, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[Dict[AgentID, ObsType], dict]:
+        observations = {
+            agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device)
+            for agent in self.possible_agents
+        }
         return observations, self.extras
 
     def step(self, action: Dict[AgentID, torch.Tensor]) -> EnvStepReturn:
         for agent in self.possible_agents:
             assert action[agent].clone().shape == torch.Size([self.num_envs, self.num_actions[agent]])
-        observations = {agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device) for agent in self.possible_agents}
-        rewards = {agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.float32) for agent in self.possible_agents}
-        terminated = {agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.bool) for agent in self.possible_agents}
+        observations = {
+            agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device)
+            for agent in self.possible_agents
+        }
+        rewards = {
+            agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.float32) for agent in self.possible_agents
+        }
+        terminated = {
+            agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.bool) for agent in self.possible_agents
+        }
         truncated = {agent: torch.zeros_like(terminated[agent]) for agent in self.possible_agents}
         return observations, rewards, terminated, truncated, self.extras
 
@@ -183,6 +196,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
 
     env.close()
 
+
 @pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
 def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
@@ -192,7 +206,10 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states
     num_envs = 10
     num_agents = 3
     possible_agents = [f"agent_{i}" for i in range(num_agents)]
-    action = {f"agent_{i}": jnp.ones((num_envs, i + 10)) if backend == "jax" else np.ones((num_envs, i + 10)) for i in range(num_agents)}
+    action = {
+        f"agent_{i}": jnp.ones((num_envs, i + 10)) if backend == "jax" else np.ones((num_envs, i + 10))
+        for i in range(num_agents)
+    }
 
     # load wrap the environment
     original_env = IsaacLabMultiAgentEnv(num_states)

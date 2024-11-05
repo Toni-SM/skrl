@@ -63,12 +63,15 @@ class MultiCategoricalMixin:
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
-            else torch.prod if reduction == "prod" else None
+        self._reduction = (
+            torch.mean
+            if reduction == "mean"
+            else torch.sum if reduction == "sum" else torch.prod if reduction == "prod" else None
+        )
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
@@ -97,17 +100,29 @@ class MultiCategoricalMixin:
 
         # unnormalized log probabilities
         if self._unnormalized_log_prob:
-            self._distributions = [Categorical(logits=logits) for logits in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)]
+            self._distributions = [
+                Categorical(logits=logits)
+                for logits in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)
+            ]
         # normalized probabilities
         else:
-            self._distributions = [Categorical(probs=probs) for probs in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)]
+            self._distributions = [
+                Categorical(probs=probs) for probs in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)
+            ]
 
         # actions
         actions = torch.stack([distribution.sample() for distribution in self._distributions], dim=-1)
 
         # log of the probability density function
-        log_prob = torch.stack([distribution.log_prob(_actions.view(-1)) for _actions, distribution \
-                                in zip(torch.unbind(inputs.get("taken_actions", actions), dim=-1), self._distributions)], dim=-1)
+        log_prob = torch.stack(
+            [
+                distribution.log_prob(_actions.view(-1))
+                for _actions, distribution in zip(
+                    torch.unbind(inputs.get("taken_actions", actions), dim=-1), self._distributions
+                )
+            ],
+            dim=-1,
+        )
         if self._reduction is not None:
             log_prob = self._reduction(log_prob, dim=-1)
         if log_prob.dim() != actions.dim():
@@ -131,7 +146,9 @@ class MultiCategoricalMixin:
             torch.Size([4096, 1])
         """
         if self._distributions:
-            entropy = torch.stack([distribution.entropy().to(self.device) for distribution in self._distributions], dim=-1)
+            entropy = torch.stack(
+                [distribution.entropy().to(self.device) for distribution in self._distributions], dim=-1
+            )
             if self._reduction is not None:
                 return self._reduction(entropy, dim=-1).unsqueeze(-1)
             return entropy

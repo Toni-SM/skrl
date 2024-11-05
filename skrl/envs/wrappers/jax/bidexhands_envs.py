@@ -21,14 +21,18 @@ from skrl.utils.spaces.jax import convert_gym_space
 # jaxlib.xla_extension.XlaRuntimeError: INVALID_ARGUMENT: DLPack tensor is on GPU, but no GPU backend was provided.
 _CPU = jax.devices()[0].device_kind.lower() == "cpu"
 
+
 def _jax2torch(array, device, from_jax=True):
     if from_jax:
         return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
     return torch.tensor(array, device=device)
 
+
 def _torch2jax(tensor, to_jax=True):
     if to_jax:
-        return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
+        return jax_dlpack.from_dlpack(
+            torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
+        )
     return tensor.cpu().numpy()
 
 
@@ -70,31 +74,34 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         this property returns a dictionary (for consistency with the other space-related properties) with the same
         space for all the agents
         """
-        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
+        return {
+            uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.share_observation_space)
+        }
 
     @property
     def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Observation spaces
-        """
+        """Observation spaces"""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.observation_space)}
 
     @property
     def action_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Action spaces
-        """
+        """Action spaces"""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.action_space)}
 
-    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
-        Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
-              Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
-              Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> Tuple[
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Any],
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
-        :type actions: dict of nd.ndarray or jax.Array
+        :type actions: dict of np.ndarray or jax.Array
 
         :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dict of nd.ndarray or jax.Array and any other info
+        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
         """
         actions = [_jax2torch(actions[uid], self._env.rl_device, self._jax) for uid in self.possible_agents]
 
@@ -107,9 +114,9 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         terminated = _torch2jax(terminated.to(dtype=torch.int8), self._jax)
 
         self._states = states[:, 0]
-        self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
-        rewards = {uid: rewards[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
-        terminated = {uid: terminated[:,i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        self._observations = {uid: observations[:, i] for i, uid in enumerate(self.possible_agents)}
+        rewards = {uid: rewards[:, i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        terminated = {uid: terminated[:, i].reshape(-1, 1) for i, uid in enumerate(self.possible_agents)}
         truncated = terminated
 
         return self._observations, rewards, terminated, truncated, self._info
@@ -135,16 +142,14 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
             states = _torch2jax(states, self._jax)
 
             self._states = states[:, 0]
-            self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
+            self._observations = {uid: observations[:, i] for i, uid in enumerate(self.possible_agents)}
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         pass

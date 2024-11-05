@@ -56,14 +56,12 @@ class Runner:
 
     @property
     def trainer(self) -> Trainer:
-        """Trainer instance
-        """
+        """Trainer instance"""
         return self._trainer
 
     @property
     def agent(self) -> Agent:
-        """Agent instance
-        """
+        """Agent instance"""
         return self._agent
 
     @staticmethod
@@ -132,7 +130,9 @@ class Runner:
 
         return update_dict(copy.deepcopy(cfg))
 
-    def _generate_models(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]) -> Mapping[str, Mapping[str, Model]]:
+    def _generate_models(
+        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]
+    ) -> Mapping[str, Mapping[str, Model]]:
         """Generate model instances according to the environment specification and the given config
 
         :param env: Wrapped environment
@@ -167,7 +167,9 @@ class Runner:
                     del _cfg["models"]["policy"]["class"]
                 except KeyError:
                     model_class = self._class("GaussianMixin")
-                    logger.warning("No 'class' field defined in 'models:policy' cfg. 'GaussianMixin' will be used as default")
+                    logger.warning(
+                        "No 'class' field defined in 'models:policy' cfg. 'GaussianMixin' will be used as default"
+                    )
                 # print model source
                 source = model_class(
                     observation_space=observation_spaces[agent_id],
@@ -192,7 +194,9 @@ class Runner:
                     del _cfg["models"]["value"]["class"]
                 except KeyError:
                     model_class = self._class("DeterministicMixin")
-                    logger.warning("No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default")
+                    logger.warning(
+                        "No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default"
+                    )
                 # print model source
                 source = model_class(
                     observation_space=(state_spaces if agent_class in [MAPPO] else observation_spaces)[agent_id],
@@ -217,11 +221,15 @@ class Runner:
                 try:
                     del _cfg["models"]["policy"]["class"]
                 except KeyError:
-                    logger.warning("No 'class' field defined in 'models:policy' cfg. 'GaussianMixin' will be used as default")
+                    logger.warning(
+                        "No 'class' field defined in 'models:policy' cfg. 'GaussianMixin' will be used as default"
+                    )
                 try:
                     del _cfg["models"]["value"]["class"]
                 except KeyError:
-                    logger.warning("No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default")
+                    logger.warning(
+                        "No 'class' field defined in 'models:value' cfg. 'DeterministicMixin' will be used as default"
+                    )
                 model_class = self._class("Shared")
                 # print model source
                 source = model_class(
@@ -255,7 +263,12 @@ class Runner:
 
         return models
 
-    def _generate_agent(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], models: Mapping[str, Mapping[str, Model]]) -> Agent:
+    def _generate_agent(
+        self,
+        env: Union[Wrapper, MultiAgentEnvWrapper],
+        cfg: Mapping[str, Any],
+        models: Mapping[str, Mapping[str, Model]],
+    ) -> Agent:
         """Generate agent instance according to the environment specification and the given config and models
 
         :param env: Wrapped environment
@@ -274,7 +287,9 @@ class Runner:
 
         # check for memory configuration (backward compatibility)
         if not "memory" in cfg:
-            logger.warning("Deprecation warning: No 'memory' field defined in cfg. Using the default generated configuration")
+            logger.warning(
+                "Deprecation warning: No 'memory' field defined in cfg. Using the default generated configuration"
+            )
             cfg["memory"] = {"class": "RandomMemory", "memory_size": -1}
         # get memory class and remove 'class' field
         try:
@@ -314,10 +329,9 @@ class Runner:
         elif agent_class in [IPPO]:
             agent_cfg = IPPO_DEFAULT_CONFIG.copy()
             agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update({
-                agent_id: {"size": observation_spaces[agent_id], "device": device}
-                for agent_id in possible_agents
-            })
+            agent_cfg["state_preprocessor_kwargs"].update(
+                {agent_id: {"size": observation_spaces[agent_id], "device": device} for agent_id in possible_agents}
+            )
             agent_cfg["value_preprocessor_kwargs"].update({"size": 1, "device": device})
             agent_kwargs = {
                 "models": models,
@@ -329,10 +343,9 @@ class Runner:
         elif agent_class in [MAPPO]:
             agent_cfg = MAPPO_DEFAULT_CONFIG.copy()
             agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update({
-                agent_id: {"size": observation_spaces[agent_id], "device": device}
-                for agent_id in possible_agents
-            })
+            agent_cfg["state_preprocessor_kwargs"].update(
+                {agent_id: {"size": observation_spaces[agent_id], "device": device} for agent_id in possible_agents}
+            )
             agent_cfg["shared_state_preprocessor_kwargs"].update(
                 {agent_id: {"size": state_spaces[agent_id], "device": device} for agent_id in possible_agents}
             )
@@ -347,7 +360,9 @@ class Runner:
             }
         return agent_class(cfg=agent_cfg, device=device, **agent_kwargs)
 
-    def _generate_trainer(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], agent: Agent) -> Trainer:
+    def _generate_trainer(
+        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], agent: Agent
+    ) -> Trainer:
         """Generate trainer instance according to the environment specification and the given config and agent
 
         :param env: Wrapped environment

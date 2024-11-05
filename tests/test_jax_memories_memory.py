@@ -46,13 +46,25 @@ class TestCase(unittest.TestCase):
             # test memory.get_tensor_by_name
             for name, size, dtype in zip(self.names, self.sizes, self.dtypes):
                 tensor = memory.get_tensor_by_name(name, keepdim=True)
-                self.assertSequenceEqual(memory.get_tensor_by_name(name, keepdim=True).shape, (memory_size, num_envs, size), "get_tensor_by_name(..., keepdim=True)")
-                self.assertSequenceEqual(memory.get_tensor_by_name(name, keepdim=False).shape, (memory_size * num_envs, size), "get_tensor_by_name(..., keepdim=False)")
-                self.assertEqual(memory.get_tensor_by_name(name, keepdim=True).dtype, dtype, "get_tensor_by_name(...).dtype")
+                self.assertSequenceEqual(
+                    memory.get_tensor_by_name(name, keepdim=True).shape,
+                    (memory_size, num_envs, size),
+                    "get_tensor_by_name(..., keepdim=True)",
+                )
+                self.assertSequenceEqual(
+                    memory.get_tensor_by_name(name, keepdim=False).shape,
+                    (memory_size * num_envs, size),
+                    "get_tensor_by_name(..., keepdim=False)",
+                )
+                self.assertEqual(
+                    memory.get_tensor_by_name(name, keepdim=True).dtype, dtype, "get_tensor_by_name(...).dtype"
+                )
 
             # test memory.set_tensor_by_name
             for name, size, dtype in zip(self.names, self.sizes, self.raw_dtypes):
-                new_tensor = jnp.arange(memory_size * num_envs * size).reshape(memory_size, num_envs, size).astype(dtype)
+                new_tensor = (
+                    jnp.arange(memory_size * num_envs * size).reshape(memory_size, num_envs, size).astype(dtype)
+                )
                 memory.set_tensor_by_name(name, new_tensor)
                 tensor = memory.get_tensor_by_name(name, keepdim=True)
                 self.assertTrue((tensor == new_tensor).all().item(), "set_tensor_by_name(...)")
@@ -68,30 +80,39 @@ class TestCase(unittest.TestCase):
 
             # fill memory
             for name, size, dtype in zip(self.names, self.sizes, self.raw_dtypes):
-                new_tensor = jnp.arange(memory_size * num_envs * size).reshape(memory_size, num_envs, size).astype(dtype)
+                new_tensor = (
+                    jnp.arange(memory_size * num_envs * size).reshape(memory_size, num_envs, size).astype(dtype)
+                )
                 memory.set_tensor_by_name(name, new_tensor)
 
             # test memory.sample_all
             for i, mini_batches in enumerate(self.mini_batches):
                 samples = memory.sample_all(self.names, mini_batches=mini_batches)
                 for sample, name, size in zip(samples[i], self.names, self.sizes):
-                    self.assertSequenceEqual(sample.shape, (memory_size * num_envs, size), f"sample_all(...).shape with mini_batches={mini_batches}")
+                    self.assertSequenceEqual(
+                        sample.shape,
+                        (memory_size * num_envs, size),
+                        f"sample_all(...).shape with mini_batches={mini_batches}",
+                    )
                     tensor = memory.get_tensor_by_name(name, keepdim=True)
-                    self.assertTrue((sample.reshape(memory_size, num_envs, size) == tensor).all().item(), f"sample_all(...) with mini_batches={mini_batches}")
+                    self.assertTrue(
+                        (sample.reshape(memory_size, num_envs, size) == tensor).all().item(),
+                        f"sample_all(...) with mini_batches={mini_batches}",
+                    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
-    if not sys.argv[-1] == '--debug':
-        raise RuntimeError('Test can only be runned manually with --debug flag')
+    if not sys.argv[-1] == "--debug":
+        raise RuntimeError("Test can only be run manually with --debug flag")
 
     test = TestCase()
     test.setUp()
     for method in dir(test):
-        if method.startswith('test_'):
-            print('Running test: {}'.format(method))
+        if method.startswith("test_"):
+            print("Running test: {}".format(method))
             getattr(test, method)()
     test.tearDown()
 
-    print('All tests passed.')
+    print("All tests passed.")

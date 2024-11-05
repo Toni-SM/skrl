@@ -12,10 +12,7 @@ from skrl import config
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @partial(jax.jit, static_argnames=("unnormalized_log_prob"))
-def _categorical(net_output,
-                 unnormalized_log_prob,
-                 taken_actions,
-                 key):
+def _categorical(net_output, unnormalized_log_prob, taken_actions, key):
     # normalize
     if unnormalized_log_prob:
         logits = net_output - jax.scipy.special.logsumexp(net_output, axis=-1, keepdims=True)
@@ -33,6 +30,7 @@ def _categorical(net_output,
     log_prob = jax.nn.log_softmax(logits)[jnp.arange(taken_actions.shape[0]), taken_actions]
 
     return actions.reshape(-1, 1), log_prob.reshape(-1, 1)
+
 
 @jax.jit
 def _entropy(logits):
@@ -94,8 +92,11 @@ class MultiCategoricalMixin:
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = jnp.mean if reduction == "mean" else jnp.sum if reduction == "sum" \
-            else jnp.prod if reduction == "prod" else None
+        self._reduction = (
+            jnp.mean
+            if reduction == "mean"
+            else jnp.sum if reduction == "sum" else jnp.prod if reduction == "prod" else None
+        )
 
         self._i = 0
         self._key = config.jax.key
@@ -106,10 +107,12 @@ class MultiCategoricalMixin:
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
 
-    def act(self,
-            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-            role: str = "",
-            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
+    def act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
@@ -154,10 +157,7 @@ class MultiCategoricalMixin:
         # compute actions and log_prob
         actions, log_prob = [], []
         for _net_output, _taken_actions in zip(net_outputs, taken_actions):
-            _actions, _log_prob = _categorical(_net_output,
-                                               self._unnormalized_log_prob,
-                                               _taken_actions,
-                                               subkey)
+            _actions, _log_prob = _categorical(_net_output, self._unnormalized_log_prob, _taken_actions, subkey)
             actions.append(_actions)
             log_prob.append(_log_prob)
 

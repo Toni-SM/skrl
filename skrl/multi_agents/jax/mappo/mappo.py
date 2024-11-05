@@ -15,6 +15,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-jax]
 MAPPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -64,14 +65,17 @@ MAPPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
-def compute_gae(rewards: np.ndarray,
-                dones: np.ndarray,
-                values: np.ndarray,
-                next_values: np.ndarray,
-                discount_factor: float = 0.99,
-                lambda_coefficient: float = 0.95) -> np.ndarray:
+def compute_gae(
+    rewards: np.ndarray,
+    dones: np.ndarray,
+    values: np.ndarray,
+    next_values: np.ndarray,
+    discount_factor: float = 0.99,
+    lambda_coefficient: float = 0.95,
+) -> np.ndarray:
     """Compute the Generalized Advantage Estimator (GAE)
 
     :param rewards: Rewards obtained by the agent
@@ -98,7 +102,9 @@ def compute_gae(rewards: np.ndarray,
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantage = (
+            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        )
         advantages[i] = advantage
     # returns computation
     returns = advantages + values
@@ -107,14 +113,17 @@ def compute_gae(rewards: np.ndarray,
 
     return returns, advantages
 
+
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
-def _compute_gae(rewards: jax.Array,
-                 dones: jax.Array,
-                 values: jax.Array,
-                 next_values: jax.Array,
-                 discount_factor: float = 0.99,
-                 lambda_coefficient: float = 0.95) -> jax.Array:
+def _compute_gae(
+    rewards: jax.Array,
+    dones: jax.Array,
+    values: jax.Array,
+    next_values: jax.Array,
+    discount_factor: float = 0.99,
+    lambda_coefficient: float = 0.95,
+) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
     not_dones = jnp.logical_not(dones)
@@ -123,7 +132,9 @@ def _compute_gae(rewards: jax.Array,
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantage = (
+            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        )
         advantages = advantages.at[i].set(advantage)
     # returns computation
     returns = advantages + values
@@ -132,19 +143,24 @@ def _compute_gae(rewards: jax.Array,
 
     return returns, advantages
 
+
 @functools.partial(jax.jit, static_argnames=("policy_act", "get_entropy", "entropy_loss_scale"))
-def _update_policy(policy_act,
-                   policy_state_dict,
-                   sampled_states,
-                   sampled_actions,
-                   sampled_log_prob,
-                   sampled_advantages,
-                   ratio_clip,
-                   get_entropy,
-                   entropy_loss_scale):
+def _update_policy(
+    policy_act,
+    policy_state_dict,
+    sampled_states,
+    sampled_actions,
+    sampled_log_prob,
+    sampled_advantages,
+    ratio_clip,
+    get_entropy,
+    entropy_loss_scale,
+):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, outputs = policy_act({"states": sampled_states, "taken_actions": sampled_actions}, "policy", params)
+        _, next_log_prob, outputs = policy_act(
+            {"states": sampled_states, "taken_actions": sampled_actions}, "policy", params
+        )
 
         # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -162,19 +178,24 @@ def _update_policy(policy_act,
 
         return -jnp.minimum(surrogate, surrogate_clipped).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
 
-    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
+    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
+        policy_state_dict.params
+    )
 
     return grad, policy_loss, entropy_loss, kl_divergence, stddev
 
+
 @functools.partial(jax.jit, static_argnames=("value_act", "clip_predicted_values"))
-def _update_value(value_act,
-                  value_state_dict,
-                  sampled_states,
-                  sampled_values,
-                  sampled_returns,
-                  value_loss_scale,
-                  clip_predicted_values,
-                  value_clip):
+def _update_value(
+    value_act,
+    value_state_dict,
+    sampled_states,
+    sampled_values,
+    sampled_returns,
+    value_loss_scale,
+    clip_predicted_values,
+    value_clip,
+):
     # compute value loss
     def _value_loss(params):
         predicted_values, _, _ = value_act({"states": sampled_states}, "value", params)
@@ -188,15 +209,17 @@ def _update_value(value_act,
 
 
 class MAPPO(MultiAgent):
-    def __init__(self,
-                 possible_agents: Sequence[str],
-                 models: Mapping[str, Model],
-                 memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None,
-                 shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None) -> None:
+    def __init__(
+        self,
+        possible_agents: Sequence[str],
+        models: Mapping[str, Model],
+        memories: Optional[Mapping[str, Memory]] = None,
+        observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+        shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+    ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO)
 
         https://arxiv.org/abs/2103.01955
@@ -223,13 +246,15 @@ class MAPPO(MultiAgent):
         # _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = MAPPO_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(possible_agents=possible_agents,
-                         models=models,
-                         memories=memories,
-                         observation_spaces=observation_spaces,
-                         action_spaces=action_spaces,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            possible_agents=possible_agents,
+            models=models,
+            memories=memories,
+            observation_spaces=observation_spaces,
+            action_spaces=action_spaces,
+            device=device,
+            cfg=_cfg,
+        )
 
         self.shared_observation_spaces = shared_observation_spaces
 
@@ -302,12 +327,20 @@ class MAPPO(MultiAgent):
                 if self._learning_rate_scheduler[uid] is not None:
                     if self._learning_rate_scheduler[uid] == KLAdaptiveLR:
                         scale = False
-                        self.schedulers[uid] = self._learning_rate_scheduler[uid](self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid])
+                        self.schedulers[uid] = self._learning_rate_scheduler[uid](
+                            self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid]
+                        )
                     else:
-                        self._learning_rate[uid] = self._learning_rate_scheduler[uid](self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid])
+                        self._learning_rate[uid] = self._learning_rate_scheduler[uid](
+                            self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid]
+                        )
                 # optimizer
-                self.policy_optimizer[uid] = Adam(model=policy, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale)
-                self.value_optimizer[uid] = Adam(model=value, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale)
+                self.policy_optimizer[uid] = Adam(
+                    model=policy, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale
+                )
+                self.value_optimizer[uid] = Adam(
+                    model=value, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale
+                )
 
                 self.checkpoint_modules[uid]["policy_optimizer"] = self.policy_optimizer[uid]
                 self.checkpoint_modules[uid]["value_optimizer"] = self.value_optimizer[uid]
@@ -320,7 +353,9 @@ class MAPPO(MultiAgent):
                 self._state_preprocessor[uid] = self._empty_preprocessor
 
             if self._shared_state_preprocessor[uid] is not None:
-                self._shared_state_preprocessor[uid] = self._shared_state_preprocessor[uid](**self._shared_state_preprocessor_kwargs[uid])
+                self._shared_state_preprocessor[uid] = self._shared_state_preprocessor[uid](
+                    **self._shared_state_preprocessor_kwargs[uid]
+                )
                 self.checkpoint_modules[uid]["shared_state_preprocessor"] = self._shared_state_preprocessor[uid]
             else:
                 self._shared_state_preprocessor[uid] = self._empty_preprocessor
@@ -332,8 +367,7 @@ class MAPPO(MultiAgent):
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -341,7 +375,9 @@ class MAPPO(MultiAgent):
         if self.memories:
             for uid in self.possible_agents:
                 self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
-                self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=jnp.float32)
+                self.memories[uid].create_tensor(
+                    name="shared_states", size=self.shared_observation_spaces[uid], dtype=jnp.float32
+                )
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
@@ -351,7 +387,15 @@ class MAPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
                 # tensors sampled during training
-                self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
+                self._tensors_names = [
+                    "states",
+                    "shared_states",
+                    "actions",
+                    "log_prob",
+                    "values",
+                    "returns",
+                    "advantages",
+                ]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -363,7 +407,9 @@ class MAPPO(MultiAgent):
             if self.values[uid] is not None:
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
-    def act(self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
+    def act(
+        self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int
+    ) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policies
 
         :param states: Environment's states
@@ -382,7 +428,10 @@ class MAPPO(MultiAgent):
         #     return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        data = [self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy") for uid in self.possible_agents]
+        data = [
+            self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
+            for uid in self.possible_agents
+        ]
 
         actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
         log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
@@ -396,16 +445,18 @@ class MAPPO(MultiAgent):
 
         return actions, log_prob, outputs
 
-    def record_transition(self,
-                          states: Mapping[str, Union[np.ndarray, jax.Array]],
-                          actions: Mapping[str, Union[np.ndarray, jax.Array]],
-                          rewards: Mapping[str, Union[np.ndarray, jax.Array]],
-                          next_states: Mapping[str, Union[np.ndarray, jax.Array]],
-                          terminated: Mapping[str, Union[np.ndarray, jax.Array]],
-                          truncated: Mapping[str, Union[np.ndarray, jax.Array]],
-                          infos: Mapping[str, Any],
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Mapping[str, Union[np.ndarray, jax.Array]],
+        actions: Mapping[str, Union[np.ndarray, jax.Array]],
+        rewards: Mapping[str, Union[np.ndarray, jax.Array]],
+        next_states: Mapping[str, Union[np.ndarray, jax.Array]],
+        terminated: Mapping[str, Union[np.ndarray, jax.Array]],
+        truncated: Mapping[str, Union[np.ndarray, jax.Array]],
+        infos: Mapping[str, Any],
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -427,7 +478,9 @@ class MAPPO(MultiAgent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memories:
             shared_states = infos["shared_states"]
@@ -439,19 +492,29 @@ class MAPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states)}, role="value")
+                values, _, _ = self.values[uid].act(
+                    {"states": self._shared_state_preprocessor[uid](shared_states)}, role="value"
+                )
                 if not self._jax:  # numpy backend
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
 
-                # time-limit (truncation) boostrapping
+                # time-limit (truncation) bootstrapping
                 if self._time_limit_bootstrap[uid]:
                     rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
 
                 # storage transition in memory
-                self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],
-                                               terminated=terminated[uid], truncated=truncated[uid], log_prob=self._current_log_prob[uid], values=values,
-                                               shared_states=shared_states)
+                self.memories[uid].add_samples(
+                    states=states[uid],
+                    actions=actions[uid],
+                    rewards=rewards[uid],
+                    next_states=next_states[uid],
+                    terminated=terminated[uid],
+                    truncated=truncated[uid],
+                    log_prob=self._current_log_prob[uid],
+                    values=values,
+                    shared_states=shared_states,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -495,7 +558,9 @@ class MAPPO(MultiAgent):
 
             # compute returns and advantages
             value.training = False
-            last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states)}, role="value")  # TODO: .float()
+            last_values, _, _ = value.act(
+                {"states": self._shared_state_preprocessor[uid](self._current_shared_next_states)}, role="value"
+            )  # TODO: .float()
             value.training = True
             if not self._jax:  # numpy backend
                 last_values = jax.device_get(last_values)
@@ -503,19 +568,23 @@ class MAPPO(MultiAgent):
 
             values = memory.get_tensor_by_name("values")
             if self._jax:
-                returns, advantages = _compute_gae(rewards=memory.get_tensor_by_name("rewards"),
-                                                   dones=memory.get_tensor_by_name("terminated"),
-                                                   values=values,
-                                                   next_values=last_values,
-                                                   discount_factor=self._discount_factor[uid],
-                                                   lambda_coefficient=self._lambda[uid])
+                returns, advantages = _compute_gae(
+                    rewards=memory.get_tensor_by_name("rewards"),
+                    dones=memory.get_tensor_by_name("terminated"),
+                    values=values,
+                    next_values=last_values,
+                    discount_factor=self._discount_factor[uid],
+                    lambda_coefficient=self._lambda[uid],
+                )
             else:
-                returns, advantages = compute_gae(rewards=memory.get_tensor_by_name("rewards"),
-                                                  dones=memory.get_tensor_by_name("terminated"),
-                                                  values=values,
-                                                  next_values=last_values,
-                                                  discount_factor=self._discount_factor[uid],
-                                                  lambda_coefficient=self._lambda[uid])
+                returns, advantages = compute_gae(
+                    rewards=memory.get_tensor_by_name("rewards"),
+                    dones=memory.get_tensor_by_name("terminated"),
+                    values=values,
+                    next_values=last_values,
+                    discount_factor=self._discount_factor[uid],
+                    lambda_coefficient=self._lambda[uid],
+                )
 
             memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
             memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
@@ -533,22 +602,31 @@ class MAPPO(MultiAgent):
                 kl_divergences = []
 
                 # mini-batches loop
-                for sampled_states, sampled_shared_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages \
-                    in sampled_batches:
+                for (
+                    sampled_states,
+                    sampled_shared_states,
+                    sampled_actions,
+                    sampled_log_prob,
+                    sampled_values,
+                    sampled_returns,
+                    sampled_advantages,
+                ) in sampled_batches:
 
                     sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
                     sampled_shared_states = self._shared_state_preprocessor[uid](sampled_shared_states, train=not epoch)
 
                     # compute policy loss
-                    grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(policy.act,
-                                                                                            policy.state_dict,
-                                                                                            sampled_states,
-                                                                                            sampled_actions,
-                                                                                            sampled_log_prob,
-                                                                                            sampled_advantages,
-                                                                                            self._ratio_clip[uid],
-                                                                                            policy.get_entropy,
-                                                                                            self._entropy_loss_scale[uid])
+                    grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
+                        policy.act,
+                        policy.state_dict,
+                        sampled_states,
+                        sampled_actions,
+                        sampled_log_prob,
+                        sampled_advantages,
+                        self._ratio_clip[uid],
+                        policy.get_entropy,
+                        self._entropy_loss_scale[uid],
+                    )
 
                     kl_divergences.append(kl_divergence.item())
 
@@ -559,22 +637,28 @@ class MAPPO(MultiAgent):
                     # optimization step (policy)
                     if config.jax.is_distributed:
                         grad = policy.reduce_parameters(grad)
-                    self.policy_optimizer[uid] = self.policy_optimizer[uid].step(grad, policy, self.schedulers[uid]._lr if self.schedulers[uid] else None)
+                    self.policy_optimizer[uid] = self.policy_optimizer[uid].step(
+                        grad, policy, self.schedulers[uid]._lr if self.schedulers[uid] else None
+                    )
 
                     # compute value loss
-                    grad, value_loss = _update_value(value.act,
-                                                    value.state_dict,
-                                                    sampled_shared_states,
-                                                    sampled_values,
-                                                    sampled_returns,
-                                                    self._value_loss_scale[uid],
-                                                    self._clip_predicted_values[uid],
-                                                    self._value_clip[uid])
+                    grad, value_loss = _update_value(
+                        value.act,
+                        value.state_dict,
+                        sampled_shared_states,
+                        sampled_values,
+                        sampled_returns,
+                        self._value_loss_scale[uid],
+                        self._clip_predicted_values[uid],
+                        self._value_clip[uid],
+                    )
 
                     # optimization step (value)
                     if config.jax.is_distributed:
                         grad = value.reduce_parameters(grad)
-                    self.value_optimizer[uid] = self.value_optimizer[uid].step(grad, value, self.schedulers[uid]._lr if self.schedulers[uid] else None)
+                    self.value_optimizer[uid] = self.value_optimizer[uid].step(
+                        grad, value, self.schedulers[uid]._lr if self.schedulers[uid] else None
+                    )
 
                     # update cumulative losses
                     cumulative_policy_loss += policy_loss.item()
@@ -588,15 +672,24 @@ class MAPPO(MultiAgent):
                         kl = np.mean(kl_divergences)
                         # reduce (collect from all workers/processes) KL in distributed runs
                         if config.jax.is_distributed:
-                            kl = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(kl.reshape(1)).item()
+                            kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                             kl /= config.jax.world_size
                         self.schedulers[uid].step(kl)
 
             # record data
-            self.track_data(f"Loss / Policy loss ({uid})", cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
-            self.track_data(f"Loss / Value loss ({uid})", cumulative_value_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
+            self.track_data(
+                f"Loss / Policy loss ({uid})",
+                cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            )
+            self.track_data(
+                f"Loss / Value loss ({uid})",
+                cumulative_value_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            )
             if self._entropy_loss_scale:
-                self.track_data(f"Loss / Entropy loss ({uid})", cumulative_entropy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
+                self.track_data(
+                    f"Loss / Entropy loss ({uid})",
+                    cumulative_entropy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+                )
 
             self.track_data(f"Policy / Standard deviation ({uid})", stddev.mean().item())
 

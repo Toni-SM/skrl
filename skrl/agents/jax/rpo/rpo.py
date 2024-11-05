@@ -16,6 +16,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-jax]
 RPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -64,14 +65,17 @@ RPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
-def compute_gae(rewards: np.ndarray,
-                dones: np.ndarray,
-                values: np.ndarray,
-                next_values: np.ndarray,
-                discount_factor: float = 0.99,
-                lambda_coefficient: float = 0.95) -> np.ndarray:
+def compute_gae(
+    rewards: np.ndarray,
+    dones: np.ndarray,
+    values: np.ndarray,
+    next_values: np.ndarray,
+    discount_factor: float = 0.99,
+    lambda_coefficient: float = 0.95,
+) -> np.ndarray:
     """Compute the Generalized Advantage Estimator (GAE)
 
     :param rewards: Rewards obtained by the agent
@@ -98,7 +102,9 @@ def compute_gae(rewards: np.ndarray,
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantage = (
+            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        )
         advantages[i] = advantage
     # returns computation
     returns = advantages + values
@@ -107,14 +113,17 @@ def compute_gae(rewards: np.ndarray,
 
     return returns, advantages
 
+
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
-def _compute_gae(rewards: jax.Array,
-                 dones: jax.Array,
-                 values: jax.Array,
-                 next_values: jax.Array,
-                 discount_factor: float = 0.99,
-                 lambda_coefficient: float = 0.95) -> jax.Array:
+def _compute_gae(
+    rewards: jax.Array,
+    dones: jax.Array,
+    values: jax.Array,
+    next_values: jax.Array,
+    discount_factor: float = 0.99,
+    lambda_coefficient: float = 0.95,
+) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
     not_dones = jnp.logical_not(dones)
@@ -123,7 +132,9 @@ def _compute_gae(rewards: jax.Array,
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantage = (
+            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        )
         advantages = advantages.at[i].set(advantage)
     # returns computation
     returns = advantages + values
@@ -132,20 +143,25 @@ def _compute_gae(rewards: jax.Array,
 
     return returns, advantages
 
+
 @functools.partial(jax.jit, static_argnames=("policy_act", "get_entropy", "entropy_loss_scale"))
-def _update_policy(policy_act,
-                   policy_state_dict,
-                   sampled_states,
-                   sampled_actions,
-                   sampled_log_prob,
-                   sampled_advantages,
-                   ratio_clip,
-                   get_entropy,
-                   entropy_loss_scale,
-                   alpha):
+def _update_policy(
+    policy_act,
+    policy_state_dict,
+    sampled_states,
+    sampled_actions,
+    sampled_log_prob,
+    sampled_advantages,
+    ratio_clip,
+    get_entropy,
+    entropy_loss_scale,
+    alpha,
+):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, outputs = policy_act({"states": sampled_states, "taken_actions": sampled_actions, "alpha": alpha}, "policy", params)
+        _, next_log_prob, outputs = policy_act(
+            {"states": sampled_states, "taken_actions": sampled_actions, "alpha": alpha}, "policy", params
+        )
 
         # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -163,20 +179,25 @@ def _update_policy(policy_act,
 
         return -jnp.minimum(surrogate, surrogate_clipped).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
 
-    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(policy_state_dict.params)
+    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
+        policy_state_dict.params
+    )
 
     return grad, policy_loss, entropy_loss, kl_divergence, stddev
 
+
 @functools.partial(jax.jit, static_argnames=("value_act", "clip_predicted_values"))
-def _update_value(value_act,
-                  value_state_dict,
-                  sampled_states,
-                  sampled_values,
-                  sampled_returns,
-                  value_loss_scale,
-                  clip_predicted_values,
-                  value_clip,
-                  alpha):
+def _update_value(
+    value_act,
+    value_state_dict,
+    sampled_states,
+    sampled_values,
+    sampled_returns,
+    value_loss_scale,
+    clip_predicted_values,
+    value_clip,
+    alpha,
+):
     # compute value loss
     def _value_loss(params):
         predicted_values, _, _ = value_act({"states": sampled_states, "alpha": alpha}, "value", params)
@@ -190,13 +211,15 @@ def _update_value(value_act,
 
 
 class RPO(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Robust Policy Optimization (RPO)
 
         https://arxiv.org/abs/2212.07536
@@ -222,12 +245,14 @@ class RPO(Agent):
         # _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = RPO_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -285,13 +310,21 @@ class RPO(Agent):
             if self._learning_rate_scheduler is not None:
                 if self._learning_rate_scheduler == KLAdaptiveLR:
                     scale = False
-                    self.scheduler = self._learning_rate_scheduler(self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"])
+                    self.scheduler = self._learning_rate_scheduler(
+                        self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"]
+                    )
                 else:
-                    self._learning_rate = self._learning_rate_scheduler(self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"])
+                    self._learning_rate = self._learning_rate_scheduler(
+                        self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"]
+                    )
             # optimizer
             with jax.default_device(self.device):
-                self.policy_optimizer = Adam(model=self.policy, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
-                self.value_optimizer = Adam(model=self.value, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale)
+                self.policy_optimizer = Adam(
+                    model=self.policy, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale
+                )
+                self.value_optimizer = Adam(
+                    model=self.value, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale
+                )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
@@ -310,8 +343,7 @@ class RPO(Agent):
             self._value_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -357,7 +389,9 @@ class RPO(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states), "alpha": self._alpha}, role="policy")
+        actions, log_prob, outputs = self.policy.act(
+            {"states": self._state_preprocessor(states), "alpha": self._alpha}, role="policy"
+        )
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
             log_prob = jax.device_get(log_prob)
@@ -366,16 +400,18 @@ class RPO(Agent):
 
         return actions, log_prob, outputs
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -397,7 +433,9 @@ class RPO(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             self._current_next_states = next_states
@@ -407,21 +445,39 @@ class RPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            values, _, _ = self.value.act({"states": self._state_preprocessor(states), "alpha": self._alpha}, role="value")
+            values, _, _ = self.value.act(
+                {"states": self._state_preprocessor(states), "alpha": self._alpha}, role="value"
+            )
             if not self._jax:  # numpy backend
                 values = jax.device_get(values)
             values = self._value_preprocessor(values, inverse=True)
 
-            # time-limit (truncation) boostrapping
+            # time-limit (truncation) bootstrapping
             if self._time_limit_bootstrap:
                 rewards += self._discount_factor * values * truncated
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+                log_prob=self._current_log_prob,
+                values=values,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    log_prob=self._current_log_prob,
+                    values=values,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -460,7 +516,9 @@ class RPO(Agent):
         """
         # compute returns and advantages
         self.value.training = False
-        last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states), "alpha": self._alpha}, role="value")  # TODO: .float()
+        last_values, _, _ = self.value.act(
+            {"states": self._state_preprocessor(self._current_next_states), "alpha": self._alpha}, role="value"
+        )  # TODO: .float()
         self.value.training = True
         if not self._jax:  # numpy backend
             last_values = jax.device_get(last_values)
@@ -468,19 +526,23 @@ class RPO(Agent):
 
         values = self.memory.get_tensor_by_name("values")
         if self._jax:
-            returns, advantages = _compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                               dones=self.memory.get_tensor_by_name("terminated"),
-                                               values=values,
-                                               next_values=last_values,
-                                               discount_factor=self._discount_factor,
-                                               lambda_coefficient=self._lambda)
+            returns, advantages = _compute_gae(
+                rewards=self.memory.get_tensor_by_name("rewards"),
+                dones=self.memory.get_tensor_by_name("terminated"),
+                values=values,
+                next_values=last_values,
+                discount_factor=self._discount_factor,
+                lambda_coefficient=self._lambda,
+            )
         else:
-            returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                              dones=self.memory.get_tensor_by_name("terminated"),
-                                              values=values,
-                                              next_values=last_values,
-                                              discount_factor=self._discount_factor,
-                                              lambda_coefficient=self._lambda)
+            returns, advantages = compute_gae(
+                rewards=self.memory.get_tensor_by_name("rewards"),
+                dones=self.memory.get_tensor_by_name("terminated"),
+                values=values,
+                next_values=last_values,
+                discount_factor=self._discount_factor,
+                lambda_coefficient=self._lambda,
+            )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
@@ -498,21 +560,30 @@ class RPO(Agent):
             kl_divergences = []
 
             # mini-batches loop
-            for sampled_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages in sampled_batches:
+            for (
+                sampled_states,
+                sampled_actions,
+                sampled_log_prob,
+                sampled_values,
+                sampled_returns,
+                sampled_advantages,
+            ) in sampled_batches:
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
 
                 # compute policy loss
-                grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(self.policy.act,
-                                                                                        self.policy.state_dict,
-                                                                                        sampled_states,
-                                                                                        sampled_actions,
-                                                                                        sampled_log_prob,
-                                                                                        sampled_advantages,
-                                                                                        self._ratio_clip,
-                                                                                        self.policy.get_entropy,
-                                                                                        self._entropy_loss_scale,
-                                                                                        self._alpha)
+                grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
+                    self.policy.act,
+                    self.policy.state_dict,
+                    sampled_states,
+                    sampled_actions,
+                    sampled_log_prob,
+                    sampled_advantages,
+                    self._ratio_clip,
+                    self.policy.get_entropy,
+                    self._entropy_loss_scale,
+                    self._alpha,
+                )
 
                 kl_divergences.append(kl_divergence.item())
 
@@ -523,23 +594,29 @@ class RPO(Agent):
                 # optimization step (policy)
                 if config.jax.is_distributed:
                     grad = self.policy.reduce_parameters(grad)
-                self.policy_optimizer = self.policy_optimizer.step(grad, self.policy, self.scheduler._lr if self.scheduler else None)
+                self.policy_optimizer = self.policy_optimizer.step(
+                    grad, self.policy, self.scheduler._lr if self.scheduler else None
+                )
 
                 # compute value loss
-                grad, value_loss = _update_value(self.value.act,
-                                                 self.value.state_dict,
-                                                 sampled_states,
-                                                 sampled_values,
-                                                 sampled_returns,
-                                                 self._value_loss_scale,
-                                                 self._clip_predicted_values,
-                                                 self._value_clip,
-                                                 self._alpha)
+                grad, value_loss = _update_value(
+                    self.value.act,
+                    self.value.state_dict,
+                    sampled_states,
+                    sampled_values,
+                    sampled_returns,
+                    self._value_loss_scale,
+                    self._clip_predicted_values,
+                    self._value_clip,
+                    self._alpha,
+                )
 
                 # optimization step (value)
                 if config.jax.is_distributed:
                     grad = self.value.reduce_parameters(grad)
-                self.value_optimizer = self.value_optimizer.step(grad, self.value, self.scheduler._lr if self.scheduler else None)
+                self.value_optimizer = self.value_optimizer.step(
+                    grad, self.value, self.scheduler._lr if self.scheduler else None
+                )
 
                 # update cumulative losses
                 cumulative_policy_loss += policy_loss.item()
@@ -553,7 +630,7 @@ class RPO(Agent):
                     kl = np.mean(kl_divergences)
                     # reduce (collect from all workers/processes) KL in distributed runs
                     if config.jax.is_distributed:
-                        kl = jax.pmap(lambda x: jax.lax.psum(x, 'i'), axis_name='i')(kl.reshape(1)).item()
+                        kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                         kl /= config.jax.world_size
                     self.scheduler.step(kl)
 
@@ -561,7 +638,9 @@ class RPO(Agent):
         self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
         if self._entropy_loss_scale:
-            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
+            self.track_data(
+                "Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches)
+            )
 
         self.track_data("Policy / Standard deviation", stddev.mean().item())
 

@@ -27,16 +27,20 @@ def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) 
     if sum(scopes):
         scopes[-1] += num_envs - sum(scopes)
     else:
-        raise ValueError(f"The number of simultaneous agents ({num_simultaneous_agents}) is greater than the number of environments ({num_envs})")
+        raise ValueError(
+            f"The number of simultaneous agents ({num_simultaneous_agents}) is greater than the number of environments ({num_envs})"
+        )
     return scopes
 
 
 class Trainer:
-    def __init__(self,
-                 env: Wrapper,
-                 agents: Union[Agent, List[Agent]],
-                 agents_scope: Optional[List[int]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        env: Wrapper,
+        agents: Union[Agent, List[Agent]],
+        agents_scope: Optional[List[int]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Base class for trainers
 
         :param env: Environment to train on
@@ -68,6 +72,7 @@ class Trainer:
 
         # register environment closing if configured
         if self.close_environment_at_exit:
+
             @atexit.register
             def close_env():
                 logger.info("Closing environment")
@@ -120,11 +125,17 @@ class Trainer:
                     if sum(self.agents_scope):
                         self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)
                     else:
-                        raise ValueError(f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})")
+                        raise ValueError(
+                            f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})"
+                        )
                 elif len(self.agents_scope) != len(self.agents):
-                    raise ValueError(f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})")
+                    raise ValueError(
+                        f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})"
+                    )
                 elif sum(self.agents_scope) != self.env.num_envs:
-                    raise ValueError(f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})")
+                    raise ValueError(
+                        f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})"
+                    )
                 # generate agents' scopes
                 index = 0
                 for i in range(len(self.agents_scope)):
@@ -168,7 +179,9 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -185,15 +198,17 @@ class Trainer:
                     self.env.render()
 
                 # record the environments' transitions
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -224,7 +239,9 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -241,15 +258,17 @@ class Trainer:
                     self.env.render()
 
                 # write data to TensorBoard
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
             # post-interaction
             super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -284,7 +303,9 @@ class Trainer:
         states, infos = self.env.reset()
         shared_states = self.env.state()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -304,15 +325,17 @@ class Trainer:
                     self.env.render()
 
                 # record the environments' transitions
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -343,7 +366,9 @@ class Trainer:
         states, infos = self.env.reset()
         shared_states = self.env.state()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
@@ -363,15 +388,17 @@ class Trainer:
                     self.env.render()
 
                 # write data to TensorBoard
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
             # post-interaction
             super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)

@@ -11,10 +11,12 @@ from skrl.utils.spaces.torch import compute_space_size, unflatten_tensorized_spa
 
 
 class Model(torch.nn.Module):
-    def __init__(self,
-                 observation_space: Union[int, Sequence[int], gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gymnasium.Space],
-                 device: Optional[Union[str, torch.device]] = None) -> None:
+    def __init__(
+        self,
+        observation_space: Union[int, Sequence[int], gymnasium.Space],
+        action_space: Union[int, Sequence[int], gymnasium.Space],
+        device: Optional[Union[str, torch.device]] = None,
+    ) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
@@ -54,7 +56,9 @@ class Model(torch.nn.Module):
         """
         super(Model, self).__init__()
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        self.device = (
+            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        )
 
         self.observation_space = observation_space
         self.action_space = action_space
@@ -63,10 +67,9 @@ class Model(torch.nn.Module):
 
         self._random_distribution = None
 
-    def tensor_to_space(self,
-                        tensor: torch.Tensor,
-                        space: gymnasium.Space,
-                        start: int = 0) -> Union[torch.Tensor, dict]:
+    def tensor_to_space(
+        self, tensor: torch.Tensor, space: gymnasium.Space, start: int = 0
+    ) -> Union[torch.Tensor, dict]:
         """Map a flat tensor to a Gym/Gymnasium space
 
         .. warning::
@@ -98,9 +101,9 @@ class Model(torch.nn.Module):
         """
         return unflatten_tensorized_space(space, tensor)
 
-    def random_act(self,
-                   inputs: Mapping[str, Union[torch.Tensor, Any]],
-                   role: str = "") -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
+    def random_act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
         """Act randomly according to the action space
 
         :param inputs: Model inputs. The most common keys are:
@@ -124,9 +127,14 @@ class Model(torch.nn.Module):
             if self._random_distribution is None:
                 self._random_distribution = torch.distributions.uniform.Uniform(
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
-                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32),
+                )
 
-            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, {}
+            return (
+                self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)),
+                None,
+                {},
+            )
         else:
             raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
 
@@ -178,6 +186,7 @@ class Model(torch.nn.Module):
             # initialize all weights with normal distribution with mean 0 and standard deviation 0.25
             >>> model.init_weights(method_name="normal_", mean=0.0, std=0.25)
         """
+
         def _update_weights(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
@@ -211,6 +220,7 @@ class Model(torch.nn.Module):
             # initialize all biases with normal distribution with mean 0 and standard deviation 0.25
             >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
         """
+
         def _update_biases(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
@@ -244,9 +254,9 @@ class Model(torch.nn.Module):
         """
         return {}
 
-    def forward(self,
-                inputs: Mapping[str, Union[torch.Tensor, Any]],
-                role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def forward(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
         This method calls the ``.act()`` method and returns its outputs
@@ -266,9 +276,9 @@ class Model(torch.nn.Module):
         """
         return self.act(inputs, role)
 
-    def compute(self,
-                inputs: Mapping[str, Union[torch.Tensor, Any]],
-                role: str = "") -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
+    def compute(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param inputs: Model inputs. The most common keys are:
@@ -286,9 +296,9 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -375,12 +385,14 @@ class Model(torch.nn.Module):
         self.load_state_dict(state_dict)
         self.eval()
 
-    def migrate(self,
-                state_dict: Optional[Mapping[str, torch.Tensor]] = None,
-                path: Optional[str] = None,
-                name_map: Mapping[str, str] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        state_dict: Optional[Mapping[str, torch.Tensor]] = None,
+        path: Optional[str] = None,
+        name_map: Mapping[str, str] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified extrernal model's state dict to the current model
 
         The final storage device is determined by the constructor of the model
@@ -491,9 +503,10 @@ class Model(torch.nn.Module):
             # stable-baselines3
             elif path.endswith(".zip"):
                 import zipfile
+
                 try:
-                    archive = zipfile.ZipFile(path, 'r')
-                    with archive.open('policy.pth', mode="r") as file:
+                    archive = zipfile.ZipFile(path, "r")
+                    with archive.open("policy.pth", mode="r") as file:
                         state_dict = torch.load(file, map_location=self.device)
                 except KeyError as e:
                     logger.warning(str(e))
@@ -528,7 +541,9 @@ class Model(torch.nn.Module):
                             logger.info(f"  |-- map:  {name} <- {external_name}")
                         break
                     else:
-                        logger.warning(f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}")
+                        logger.warning(
+                            f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}"
+                        )
                 # auto-mapped names
                 if auto_mapping and name not in name_map:
                     if tensor.shape == external_tensor.shape:
@@ -669,6 +684,8 @@ class Model(torch.nn.Module):
         offset = 0
         for parameters in self.parameters():
             if parameters.grad is not None:
-                parameters.grad.data.copy_(gradients[offset:offset + parameters.numel()] \
-                                           .view_as(parameters.grad.data) / config.torch.world_size)
+                parameters.grad.data.copy_(
+                    gradients[offset : offset + parameters.numel()].view_as(parameters.grad.data)
+                    / config.torch.world_size
+                )
                 offset += parameters.numel()

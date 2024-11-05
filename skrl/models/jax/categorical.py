@@ -12,10 +12,7 @@ from skrl import config
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @partial(jax.jit, static_argnames=("unnormalized_log_prob"))
-def _categorical(net_output,
-                 unnormalized_log_prob,
-                 taken_actions,
-                 key):
+def _categorical(net_output, unnormalized_log_prob, taken_actions, key):
     # normalize
     if unnormalized_log_prob:
         logits = net_output - jax.scipy.special.logsumexp(net_output, axis=-1, keepdims=True)
@@ -33,6 +30,7 @@ def _categorical(net_output,
     log_prob = jax.nn.log_softmax(logits)[jnp.arange(taken_actions.shape[0]), taken_actions]
 
     return actions.reshape(-1, 1), log_prob.reshape(-1, 1)
+
 
 @jax.jit
 def _entropy(logits):
@@ -92,10 +90,12 @@ class CategoricalMixin:
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
 
-    def act(self,
-            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-            role: str = "",
-            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
+    def act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
@@ -130,10 +130,9 @@ class CategoricalMixin:
         # map from states/observations to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
-        actions, log_prob = _categorical(net_output,
-                                         self._unnormalized_log_prob,
-                                         inputs.get("taken_actions", None),
-                                         subkey)
+        actions, log_prob = _categorical(
+            net_output, self._unnormalized_log_prob, inputs.get("taken_actions", None), subkey
+        )
 
         outputs["net_output"] = net_output
         # avoid jax.errors.UnexpectedTracerError

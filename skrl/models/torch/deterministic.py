@@ -56,9 +56,9 @@ class DeterministicMixin:
             self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
             self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act deterministically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

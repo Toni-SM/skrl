@@ -11,6 +11,7 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# fmt: off
 # [start-config-dict-torch]
 STEP_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -20,14 +21,17 @@ STEP_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class StepTrainer(Trainer):
-    def __init__(self,
-                 env: Wrapper,
-                 agents: Union[Agent, List[Agent]],
-                 agents_scope: Optional[List[int]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        env: Wrapper,
+        agents: Union[Agent, List[Agent]],
+        agents_scope: Optional[List[int]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Step-by-step trainer
 
         Train agents by controlling the training/evaluation loop step by step
@@ -59,8 +63,9 @@ class StepTrainer(Trainer):
 
         self.states = None
 
-    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def train(
+        self, timestep: Optional[int] = None, timesteps: Optional[int] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute a training iteration
 
         This method executes the following steps once:
@@ -110,8 +115,12 @@ class StepTrainer(Trainer):
 
         with torch.no_grad():
             # compute actions
-            actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
-                                    for agent, scope in zip(self.agents, self.agents_scope)])
+            actions = torch.vstack(
+                [
+                    agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)[0]
+                    for agent, scope in zip(self.agents, self.agents_scope)
+                ]
+            )
 
             # step the environments
             next_states, rewards, terminated, truncated, infos = self.env.step(actions)
@@ -122,15 +131,17 @@ class StepTrainer(Trainer):
 
             # record the environments' transitions
             for agent, scope in zip(self.agents, self.agents_scope):
-                agent.record_transition(states=self.states[scope[0]:scope[1]],
-                                        actions=actions[scope[0]:scope[1]],
-                                        rewards=rewards[scope[0]:scope[1]],
-                                        next_states=next_states[scope[0]:scope[1]],
-                                        terminated=terminated[scope[0]:scope[1]],
-                                        truncated=truncated[scope[0]:scope[1]],
-                                        infos=infos,
-                                        timestep=timestep,
-                                        timesteps=timesteps)
+                agent.record_transition(
+                    states=self.states[scope[0] : scope[1]],
+                    actions=actions[scope[0] : scope[1]],
+                    rewards=rewards[scope[0] : scope[1]],
+                    next_states=next_states[scope[0] : scope[1]],
+                    terminated=terminated[scope[0] : scope[1]],
+                    truncated=truncated[scope[0] : scope[1]],
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=timesteps,
+                )
 
             # log environment info
             if self.environment_info in infos:
@@ -152,8 +163,9 @@ class StepTrainer(Trainer):
 
         return next_states, rewards, terminated, truncated, infos
 
-    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> \
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def eval(
+        self, timestep: Optional[int] = None, timesteps: Optional[int] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Evaluate the agents sequentially
 
         This method executes the following steps in loop:
@@ -200,8 +212,12 @@ class StepTrainer(Trainer):
 
         with torch.no_grad():
             # compute actions
-            actions = torch.vstack([agent.act(self.states[scope[0]:scope[1]], timestep=timestep, timesteps=timesteps)[0] \
-                                    for agent, scope in zip(self.agents, self.agents_scope)])
+            actions = torch.vstack(
+                [
+                    agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)[0]
+                    for agent, scope in zip(self.agents, self.agents_scope)
+                ]
+            )
 
             # step the environments
             next_states, rewards, terminated, truncated, infos = self.env.step(actions)
@@ -212,15 +228,17 @@ class StepTrainer(Trainer):
 
             # write data to TensorBoard
             for agent, scope in zip(self.agents, self.agents_scope):
-                agent.record_transition(states=self.states[scope[0]:scope[1]],
-                                        actions=actions[scope[0]:scope[1]],
-                                        rewards=rewards[scope[0]:scope[1]],
-                                        next_states=next_states[scope[0]:scope[1]],
-                                        terminated=terminated[scope[0]:scope[1]],
-                                        truncated=truncated[scope[0]:scope[1]],
-                                        infos=infos,
-                                        timestep=timestep,
-                                        timesteps=timesteps)
+                agent.record_transition(
+                    states=self.states[scope[0] : scope[1]],
+                    actions=actions[scope[0] : scope[1]],
+                    rewards=rewards[scope[0] : scope[1]],
+                    next_states=next_states[scope[0] : scope[1]],
+                    terminated=terminated[scope[0] : scope[1]],
+                    truncated=truncated[scope[0] : scope[1]],
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=timesteps,
+                )
 
             # log environment info
             if self.environment_info in infos:

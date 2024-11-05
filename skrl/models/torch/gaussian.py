@@ -7,13 +7,15 @@ from torch.distributions import Normal
 
 
 class GaussianMixin:
-    def __init__(self,
-                 clip_actions: bool = False,
-                 clip_log_std: bool = True,
-                 min_log_std: float = -20,
-                 max_log_std: float = 2,
-                 reduction: str = "sum",
-                 role: str = "") -> None:
+    def __init__(
+        self,
+        clip_actions: bool = False,
+        clip_log_std: bool = True,
+        min_log_std: float = -20,
+        max_log_std: float = 2,
+        reduction: str = "sum",
+        role: str = "",
+    ) -> None:
         """Gaussian mixin model (stochastic model)
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
@@ -87,12 +89,15 @@ class GaussianMixin:
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
-            else torch.prod if reduction == "prod" else None
+        self._reduction = (
+            torch.mean
+            if reduction == "mean"
+            else torch.sum if reduction == "sum" else torch.prod if reduction == "prod" else None
+        )
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

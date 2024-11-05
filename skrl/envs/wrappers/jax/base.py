@@ -27,7 +27,7 @@ class Wrapper(object):
         self._device = None
         if hasattr(self._unwrapped, "device"):
             if type(self._unwrapped.device) == str:
-                device_type, device_index = f"{self._unwrapped.device}:0".split(':')[:2]
+                device_type, device_index = f"{self._unwrapped.device}:0".split(":")[:2]
                 try:
                     self._device = jax.devices(device_type)[int(device_index)]
                 except (RuntimeError, IndexError):
@@ -52,7 +52,9 @@ class Wrapper(object):
             return getattr(self._env, key)
         if hasattr(self._unwrapped, key):
             return getattr(self._unwrapped, key)
-        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
+        raise AttributeError(
+            f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
+        )
 
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
@@ -64,9 +66,13 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> \
-        Tuple[Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array],
-              Union[np.ndarray, jax.Array], Union[np.ndarray, jax.Array], Any]:
+    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Union[np.ndarray, jax.Array],
+        Any,
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -141,14 +147,12 @@ class Wrapper(object):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return self._unwrapped.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return self._unwrapped.action_space
 
 
@@ -171,7 +175,7 @@ class MultiAgentEnvWrapper(object):
         self._device = None
         if hasattr(self._unwrapped, "device"):
             if type(self._unwrapped.device) == str:
-                device_type, device_index = f"{self._unwrapped.device}:0".split(':')[:2]
+                device_type, device_index = f"{self._unwrapped.device}:0".split(":")[:2]
                 try:
                     self._device = jax.devices(device_type)[int(device_index)]
                 except (RuntimeError, IndexError):
@@ -196,7 +200,9 @@ class MultiAgentEnvWrapper(object):
             return getattr(self._env, key)
         if hasattr(self._unwrapped, key):
             return getattr(self._unwrapped, key)
-        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
+        raise AttributeError(
+            f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
+        )
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
         """Reset the environment
@@ -208,10 +214,13 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
-    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> \
-        Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
-              Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[np.ndarray, jax.Array]],
-              Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> Tuple[
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Union[np.ndarray, jax.Array]],
+        Mapping[str, Any],
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -319,14 +328,12 @@ class MultiAgentEnvWrapper(object):
 
     @property
     def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Observation spaces
-        """
+        """Observation spaces"""
         return self._unwrapped.observation_spaces
 
     @property
     def action_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Action spaces
-        """
+        """Action spaces"""
         return self._unwrapped.action_spaces
 
     def state_space(self, agent: str) -> gymnasium.Space:

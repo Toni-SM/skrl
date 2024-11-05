@@ -23,6 +23,7 @@ EnvStepReturn = tuple[
     Dict[AgentID, dict],
 ]
 
+
 class IsaacLabEnv(gym.Env):
     def __init__(self, num_states) -> None:
         self.num_actions = 1
@@ -58,7 +59,9 @@ class IsaacLabEnv(gym.Env):
 
     def step(self, action: torch.Tensor) -> VecEnvStepReturn:
         assert action.clone().shape == torch.Size([self.num_envs, 1])
-        observations = {"policy": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)}
+        observations = {
+            "policy": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)
+        }
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         terminated = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
         truncated = torch.zeros_like(terminated)
@@ -99,9 +102,7 @@ class IsaacLabMultiAgentEnv:
         if not self.num_states:
             self.state_space = None
         if self.num_states < 0:
-            self.state_space = gym.spaces.Box(
-                low=-np.inf, high=np.inf, shape=(sum(self.num_observations.values()),)
-            )
+            self.state_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(sum(self.num_observations.values()),))
         else:
             self.state_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(self.num_states,))
 
@@ -109,16 +110,28 @@ class IsaacLabMultiAgentEnv:
     def unwrapped(self):
         return self
 
-    def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Dict[AgentID, ObsType], dict]:
-        observations = {agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device) for agent in self.possible_agents}
+    def reset(
+        self, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[Dict[AgentID, ObsType], dict]:
+        observations = {
+            agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device)
+            for agent in self.possible_agents
+        }
         return observations, self.extras
 
     def step(self, action: Dict[AgentID, torch.Tensor]) -> EnvStepReturn:
         for agent in self.possible_agents:
             assert action[agent].clone().shape == torch.Size([self.num_envs, self.num_actions[agent]])
-        observations = {agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device) for agent in self.possible_agents}
-        rewards = {agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.float32) for agent in self.possible_agents}
-        terminated = {agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.bool) for agent in self.possible_agents}
+        observations = {
+            agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device)
+            for agent in self.possible_agents
+        }
+        rewards = {
+            agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.float32) for agent in self.possible_agents
+        }
+        terminated = {
+            agent: torch.zeros(self.num_envs, device=self.device, dtype=torch.bool) for agent in self.possible_agents
+        }
         truncated = {agent: torch.zeros_like(terminated[agent]) for agent in self.possible_agents}
         return observations, rewards, terminated, truncated, self.extras
 
@@ -176,6 +189,7 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
 
     env.close()
 
+
 @pytest.mark.parametrize("num_states", [0, 5])
 def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
@@ -212,7 +226,9 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
         assert isinstance(observation, Mapping)
         assert isinstance(info, Mapping)
         for i, agent in enumerate(possible_agents):
-            assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size([num_envs, i + 20])
+            assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
+                [num_envs, i + 20]
+            )
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
@@ -223,10 +239,16 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for i, agent in enumerate(possible_agents):
-                assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size([num_envs, i + 20])
+                assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
+                    [num_envs, i + 20]
+                )
                 assert isinstance(reward[agent], torch.Tensor) and reward[agent].shape == torch.Size([num_envs, 1])
-                assert isinstance(terminated[agent], torch.Tensor) and terminated[agent].shape == torch.Size([num_envs, 1])
-                assert isinstance(truncated[agent], torch.Tensor) and truncated[agent].shape == torch.Size([num_envs, 1])
+                assert isinstance(terminated[agent], torch.Tensor) and terminated[agent].shape == torch.Size(
+                    [num_envs, 1]
+                )
+                assert isinstance(truncated[agent], torch.Tensor) and truncated[agent].shape == torch.Size(
+                    [num_envs, 1]
+                )
             if num_states:
                 assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
             else:

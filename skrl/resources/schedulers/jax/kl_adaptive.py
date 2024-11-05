@@ -4,13 +4,15 @@ import numpy as np
 
 
 class KLAdaptiveLR:
-    def __init__(self,
-                 init_value: float,
-                 kl_threshold: float = 0.008,
-                 min_lr: float = 1e-6,
-                 max_lr: float = 1e-2,
-                 kl_factor: float = 2,
-                 lr_factor: float = 1.5) -> None:
+    def __init__(
+        self,
+        init_value: float,
+        kl_threshold: float = 0.008,
+        min_lr: float = 1e-6,
+        max_lr: float = 1e-2,
+        kl_factor: float = 2,
+        lr_factor: float = 1.5,
+    ) -> None:
         """Adaptive KL scheduler
 
         Adjusts the learning rate according to the KL divergence.
@@ -54,8 +56,7 @@ class KLAdaptiveLR:
 
     @property
     def lr(self) -> float:
-        """Learning rate
-        """
+        """Learning rate"""
         return self._lr
 
     def step(self, kl: Optional[Union[np.ndarray, float]] = None) -> None:

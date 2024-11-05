@@ -7,9 +7,7 @@ from contextlib import contextmanager
 from skrl import logger
 
 
-__all__ = ["load_isaacgym_env_preview2",
-           "load_isaacgym_env_preview3",
-           "load_isaacgym_env_preview4"]
+__all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3", "load_isaacgym_env_preview4"]
 
 
 @contextmanager
@@ -28,6 +26,7 @@ def cwd(new_path: str) -> None:
     finally:
         os.chdir(current_path)
 
+
 def _omegaconf_to_dict(config) -> dict:
     """Convert OmegaConf config to dict
 
@@ -45,6 +44,7 @@ def _omegaconf_to_dict(config) -> dict:
         d[k] = _omegaconf_to_dict(v) if isinstance(v, DictConfig) else v
     return d
 
+
 def _print_cfg(d, indent=0) -> None:
     """Print the environment configuration
 
@@ -60,12 +60,14 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_isaacgym_env_preview2(task_name: str = "",
-                               num_envs: Optional[int] = None,
-                               headless: Optional[bool] = None,
-                               cli_args: Sequence[str] = [],
-                               isaacgymenvs_path: str = "",
-                               show_cfg: bool = True):
+def load_isaacgym_env_preview2(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    isaacgymenvs_path: str = "",
+    show_cfg: bool = True,
+):
     """Load an Isaac Gym environment (preview 2)
 
     :param task_name: The name of the task (default: ``""``).
@@ -107,7 +109,9 @@ def load_isaacgym_env_preview2(task_name: str = "",
     if defined:
         arg_index = sys.argv.index("--task") + 1
         if arg_index >= len(sys.argv):
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
         if task_name and task_name != sys.argv[arg_index]:
             logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
     # get task name from function arguments
@@ -116,7 +120,9 @@ def load_isaacgym_env_preview2(task_name: str = "",
             sys.argv.append("--task")
             sys.argv.append(task_name)
         else:
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False
@@ -153,7 +159,9 @@ def load_isaacgym_env_preview2(task_name: str = "",
     # get isaacgym envs path from isaacgym package metadata
     if not isaacgymenvs_path:
         if not hasattr(isaacgym, "__path__"):
-            raise RuntimeError("isaacgym package is not installed or could not be accessed by the current Python environment")
+            raise RuntimeError(
+                "isaacgym package is not installed or could not be accessed by the current Python environment"
+            )
         path = isaacgym.__path__
         path = os.path.join(path[0], "..", "rlgpu")
     else:
@@ -170,7 +178,9 @@ def load_isaacgym_env_preview2(task_name: str = "",
         status = False
         logger.error(f"Failed to import required packages: {e}")
     if not status:
-        raise RuntimeError(f"Path ({path}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)")
+        raise RuntimeError(
+            f"Path ({path}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)"
+        )
 
     args = get_args()
 
@@ -191,12 +201,15 @@ def load_isaacgym_env_preview2(task_name: str = "",
 
     return env
 
-def load_isaacgym_env_preview3(task_name: str = "",
-                               num_envs: Optional[int] = None,
-                               headless: Optional[bool] = None,
-                               cli_args: Sequence[str] = [],
-                               isaacgymenvs_path: str = "",
-                               show_cfg: bool = True):
+
+def load_isaacgym_env_preview3(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    isaacgymenvs_path: str = "",
+    show_cfg: bool = True,
+):
     """Load an Isaac Gym environment (preview 3)
 
     Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
@@ -243,14 +256,19 @@ def load_isaacgym_env_preview3(task_name: str = "",
     # get task name from command line arguments
     if defined:
         if task_name and task_name != arg.split("task=")[1].split(" ")[0]:
-            logger.warning("Overriding task name ({}) with command line argument ({})" \
-                .format(task_name, arg.split("task=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding task name ({}) with command line argument ({})".format(
+                    task_name, arg.split("task=")[1].split(" ")[0]
+                )
+            )
     # get task name from function arguments
     else:
         if task_name:
             sys.argv.append(f"task={task_name}")
         else:
-            raise ValueError("No task name defined. Set task_name parameter or use task=<task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set task_name parameter or use task=<task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False
@@ -261,8 +279,11 @@ def load_isaacgym_env_preview3(task_name: str = "",
     # get num_envs from command line arguments
     if defined:
         if num_envs is not None and num_envs != int(arg.split("num_envs=")[1].split(" ")[0]):
-            logger.warning("Overriding num_envs ({}) with command line argument (num_envs={})" \
-                .format(num_envs, arg.split("num_envs=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding num_envs ({}) with command line argument (num_envs={})".format(
+                    num_envs, arg.split("num_envs=")[1].split(" ")[0]
+                )
+            )
     # get num_envs from function arguments
     elif num_envs is not None and num_envs > 0:
         sys.argv.append(f"num_envs={num_envs}")
@@ -276,8 +297,11 @@ def load_isaacgym_env_preview3(task_name: str = "",
     # get headless from command line arguments
     if defined:
         if headless is not None and str(headless).lower() != arg.split("headless=")[1].split(" ")[0].lower():
-            logger.warning("Overriding headless ({}) with command line argument (headless={})" \
-                .format(headless, arg.split("headless=")[1].split(" ")[0]))
+            logger.warning(
+                "Overriding headless ({}) with command line argument (headless={})".format(
+                    headless, arg.split("headless=")[1].split(" ")[0]
+                )
+            )
     # get headless from function arguments
     elif headless is not None:
         sys.argv.append(f"headless={headless}")
@@ -294,19 +318,19 @@ def load_isaacgym_env_preview3(task_name: str = "",
 
     # set omegaconf resolvers
     try:
-        OmegaConf.register_new_resolver('eq', lambda x, y: x.lower() == y.lower())
+        OmegaConf.register_new_resolver("eq", lambda x, y: x.lower() == y.lower())
     except Exception as e:
         pass
     try:
-        OmegaConf.register_new_resolver('contains', lambda x, y: x.lower() in y.lower())
+        OmegaConf.register_new_resolver("contains", lambda x, y: x.lower() in y.lower())
     except Exception as e:
         pass
     try:
-        OmegaConf.register_new_resolver('if', lambda condition, a, b: a if condition else b)
+        OmegaConf.register_new_resolver("if", lambda condition, a, b: a if condition else b)
     except Exception as e:
         pass
     try:
-        OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
+        OmegaConf.register_new_resolver("resolve_default", lambda default, arg: default if arg == "" else arg)
     except Exception as e:
         pass
 
@@ -314,7 +338,7 @@ def load_isaacgym_env_preview3(task_name: str = "",
     config_file = "config"
     args = get_args_parser().parse_args()
     search_path = create_automatic_config_search_path(config_file, None, config_path)
-    hydra_object = Hydra.create_main_hydra2(task_name='load_isaacgymenv', config_search_path=search_path)
+    hydra_object = Hydra.create_main_hydra2(task_name="load_isaacgymenv", config_search_path=search_path)
     config = hydra_object.compose_config(config_file, args.overrides, run_mode=RunMode.RUN)
 
     cfg = _omegaconf_to_dict(config.task)
@@ -327,28 +351,36 @@ def load_isaacgym_env_preview3(task_name: str = "",
     # load environment
     sys.path.append(isaacgymenvs_path)
     from tasks import isaacgym_task_map  # type: ignore
+
     try:
-        env = isaacgym_task_map[config.task.name](cfg=cfg,
-                                                  sim_device=config.sim_device,
-                                                  graphics_device_id=config.graphics_device_id,
-                                                  headless=config.headless)
+        env = isaacgym_task_map[config.task.name](
+            cfg=cfg,
+            sim_device=config.sim_device,
+            graphics_device_id=config.graphics_device_id,
+            headless=config.headless,
+        )
     except TypeError as e:
-        env = isaacgym_task_map[config.task.name](cfg=cfg,
-                                                  rl_device=config.rl_device,
-                                                  sim_device=config.sim_device,
-                                                  graphics_device_id=config.graphics_device_id,
-                                                  headless=config.headless,
-                                                  virtual_screen_capture=config.capture_video,  # TODO: check
-                                                  force_render=config.force_render)
+        env = isaacgym_task_map[config.task.name](
+            cfg=cfg,
+            rl_device=config.rl_device,
+            sim_device=config.sim_device,
+            graphics_device_id=config.graphics_device_id,
+            headless=config.headless,
+            virtual_screen_capture=config.capture_video,  # TODO: check
+            force_render=config.force_render,
+        )
 
     return env
 
-def load_isaacgym_env_preview4(task_name: str = "",
-                               num_envs: Optional[int] = None,
-                               headless: Optional[bool] = None,
-                               cli_args: Sequence[str] = [],
-                               isaacgymenvs_path: str = "",
-                               show_cfg: bool = True):
+
+def load_isaacgym_env_preview4(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    isaacgymenvs_path: str = "",
+    show_cfg: bool = True,
+):
     """Load an Isaac Gym environment (preview 4)
 
     Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs

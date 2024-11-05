@@ -17,14 +17,16 @@ from skrl.models.torch import Model
 
 
 class MultiAgent:
-    def __init__(self,
-                 possible_agents: Sequence[str],
-                 models: Mapping[str, Mapping[str, Model]],
-                 memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
-                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        possible_agents: Sequence[str],
+        models: Mapping[str, Mapping[str, Model]],
+        memories: Optional[Mapping[str, Memory]] = None,
+        observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+        action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Base class that represent a RL multi-agent
 
         :param possible_agents: Name of all possible agents the environment could generate
@@ -53,7 +55,9 @@ class MultiAgent:
         self.action_spaces = action_spaces
 
         self.cfg = cfg if cfg is not None else {}
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        self.device = (
+            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        )
 
         # convert the models to their respective device
         for _models in self.models.values():
@@ -75,7 +79,7 @@ class MultiAgent:
         self.checkpoint_modules = {uid: {} for uid in self.possible_agents}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
-        self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": True, "modules": {}}
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": True, "modules": {}}
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")
@@ -166,10 +170,14 @@ class MultiAgent:
         if self.cfg.get("experiment", {}).get("wandb", False):
             # save experiment configuration
             try:
-                models_cfg = {uid: {k: v.net._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents}
+                models_cfg = {
+                    uid: {k: v.net._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents
+                }
             except AttributeError:
-                models_cfg = {uid: {k: v._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents}
-            wandb_config={**self.cfg, **trainer_cfg, **models_cfg}
+                models_cfg = {
+                    uid: {k: v._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents
+                }
+            wandb_config = {**self.cfg, **trainer_cfg, **models_cfg}
             # set default values
             wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
             wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
@@ -178,6 +186,7 @@ class MultiAgent:
             wandb_kwargs["config"].update(wandb_config)
             # init Weights & Biases
             import wandb
+
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
@@ -239,12 +248,16 @@ class MultiAgent:
         if self.checkpoint_store_separately:
             for uid in self.possible_agents:
                 for name, module in self.checkpoint_modules[uid].items():
-                    torch.save(self._get_internal_value(module),
-                               os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pt"))
+                    torch.save(
+                        self._get_internal_value(module),
+                        os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pt"),
+                    )
         # whole agent
         else:
-            modules = {uid: {name: self._get_internal_value(module) for name, module in self.checkpoint_modules[uid].items()} \
-                       for uid in self.possible_agents}
+            modules = {
+                uid: {name: self._get_internal_value(module) for name, module in self.checkpoint_modules[uid].items()}
+                for uid in self.possible_agents
+            }
             torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
@@ -253,12 +266,19 @@ class MultiAgent:
             if self.checkpoint_store_separately:
                 for uid in self.possible_agents:
                     for name in self.checkpoint_modules[uid].keys():
-                        torch.save(self.checkpoint_best_modules["modules"][uid][name],
-                                os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pt"))
+                        torch.save(
+                            self.checkpoint_best_modules["modules"][uid][name],
+                            os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pt"),
+                        )
             # whole agent
             else:
-                modules = {uid: {name: self.checkpoint_best_modules["modules"][uid][name] \
-                                 for name in self.checkpoint_modules[uid].keys()} for uid in self.possible_agents}
+                modules = {
+                    uid: {
+                        name: self.checkpoint_best_modules["modules"][uid][name]
+                        for name in self.checkpoint_modules[uid].keys()
+                    }
+                    for uid in self.possible_agents
+                }
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
@@ -279,16 +299,18 @@ class MultiAgent:
         """
         raise NotImplementedError
 
-    def record_transition(self,
-                          states: Mapping[str, torch.Tensor],
-                          actions: Mapping[str, torch.Tensor],
-                          rewards: Mapping[str, torch.Tensor],
-                          next_states: Mapping[str, torch.Tensor],
-                          terminated: Mapping[str, torch.Tensor],
-                          truncated: Mapping[str, torch.Tensor],
-                          infos: Mapping[str, Any],
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Mapping[str, torch.Tensor],
+        actions: Mapping[str, torch.Tensor],
+        rewards: Mapping[str, torch.Tensor],
+        next_states: Mapping[str, torch.Tensor],
+        terminated: Mapping[str, torch.Tensor],
+        truncated: Mapping[str, torch.Tensor],
+        infos: Mapping[str, Any],
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
@@ -381,8 +403,10 @@ class MultiAgent:
         :param path: Path to save the model to
         :type path: str
         """
-        modules = {uid: {name: self._get_internal_value(module) for name, module in self.checkpoint_modules[uid].items()} \
-                   for uid in self.possible_agents}
+        modules = {
+            uid: {name: self._get_internal_value(module) for name, module in self.checkpoint_modules[uid].items()}
+            for uid in self.possible_agents
+        }
         torch.save(modules, path)
 
     def load(self, path: str) -> None:
@@ -414,11 +438,13 @@ class MultiAgent:
                     else:
                         logger.warning(f"Cannot load the {uid}:{name} module. The agent doesn't have such an instance")
 
-    def migrate(self,
-                path: str,
-                name_map: Mapping[str, Mapping[str, str]] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        path: str,
+        name_map: Mapping[str, Mapping[str, str]] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified extrernal checkpoint to the current agent
 
         The final storage device is determined by the constructor of the agent.
@@ -467,13 +493,17 @@ class MultiAgent:
         # update best models and write checkpoints
         if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
-            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
+            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -(2**31)))
             if reward > self.checkpoint_best_modules["reward"]:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {uid: {k: copy.deepcopy(self._get_internal_value(v)) \
-                    for k, v in self.checkpoint_modules[uid].items()} for uid in self.possible_agents}
+                self.checkpoint_best_modules["modules"] = {
+                    uid: {
+                        k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules[uid].items()
+                    }
+                    for uid in self.possible_agents
+                }
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

@@ -14,6 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 TD3_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -61,16 +62,19 @@ TD3_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class TD3_RNN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Twin Delayed DDPG (TD3) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1802.09477
@@ -95,12 +99,14 @@ class TD3_RNN(Agent):
         """
         _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -175,11 +181,16 @@ class TD3_RNN(Agent):
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
-            self.critic_optimizer = torch.optim.Adam(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()),
-                                                     lr=self._critic_learning_rate)
+            self.critic_optimizer = torch.optim.Adam(
+                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate
+            )
             if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
-                self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.policy_scheduler = self._learning_rate_scheduler(
+                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
+                self.critic_scheduler = self._learning_rate_scheduler(
+                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
@@ -192,8 +203,7 @@ class TD3_RNN(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -219,7 +229,9 @@ class TD3_RNN(Agent):
             self._rnn = True
             # create tensors in memory
             if self.memory is not None:
-                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                self.memory.create_tensor(
+                    name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True
+                )
                 self._rnn_tensors_names.append(f"rnn_policy_{i}")
             # default RNN states
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
@@ -266,9 +278,9 @@ class TD3_RNN(Agent):
 
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) \
-                      * (self._exploration_initial_scale - self._exploration_final_scale) \
-                      + self._exploration_final_scale
+                scale = (1 - timestep / self._exploration_timesteps) * (
+                    self._exploration_initial_scale - self._exploration_final_scale
+                ) + self._exploration_final_scale
                 noises.mul_(scale)
 
                 # modify actions
@@ -288,16 +300,18 @@ class TD3_RNN(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -319,7 +333,9 @@ class TD3_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
@@ -329,14 +345,30 @@ class TD3_RNN(Agent):
             # package RNN states
             rnn_states = {}
             if self._rnn:
-                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
+                rnn_states.update(
+                    {f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])}
+                )
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, **rnn_states)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+                **rnn_states,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, **rnn_states)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    **rnn_states,
+                )
 
         # update RNN states
         if self._rnn:
@@ -387,12 +419,15 @@ class TD3_RNN(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length)[0]
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+                names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length
+            )[0]
 
             rnn_policy = {}
             if self._rnn:
-                sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
+                sampled_rnn = self.memory.sample_by_index(
+                    names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes()
+                )[0]
                 rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
@@ -400,23 +435,35 @@ class TD3_RNN(Agent):
 
             with torch.no_grad():
                 # target policy smoothing
-                next_actions, _, _ = self.target_policy.act({"states": sampled_next_states, **rnn_policy}, role="target_policy")
+                next_actions, _, _ = self.target_policy.act(
+                    {"states": sampled_next_states, **rnn_policy}, role="target_policy"
+                )
                 if self._smooth_regularization_noise is not None:
-                    noises = torch.clamp(self._smooth_regularization_noise.sample(next_actions.shape),
-                                        min=-self._smooth_regularization_clip,
-                                        max=self._smooth_regularization_clip)
+                    noises = torch.clamp(
+                        self._smooth_regularization_noise.sample(next_actions.shape),
+                        min=-self._smooth_regularization_clip,
+                        max=self._smooth_regularization_clip,
+                    )
                     next_actions.add_(noises)
                     next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
                 # compute target values
-                target_q1_values, _, _ = self.target_critic_1.act({"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_1")
-                target_q2_values, _, _ = self.target_critic_2.act({"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_2")
+                target_q1_values, _, _ = self.target_critic_1.act(
+                    {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_1"
+                )
+                target_q2_values, _, _ = self.target_critic_2.act(
+                    {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_2"
+                )
                 target_q_values = torch.min(target_q1_values, target_q2_values)
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            critic_1_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_1")
-            critic_2_values, _, _ = self.critic_2.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_2")
+            critic_1_values, _, _ = self.critic_1.act(
+                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_1"
+            )
+            critic_2_values, _, _ = self.critic_2.act(
+                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_2"
+            )
 
             critic_loss = F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
 
@@ -427,7 +474,9 @@ class TD3_RNN(Agent):
                 self.critic_1.reduce_parameters()
                 self.critic_2.reduce_parameters()
             if self._grad_norm_clip > 0:
-                nn.utils.clip_grad_norm_(itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip)
+                nn.utils.clip_grad_norm_(
+                    itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip
+                )
             self.critic_optimizer.step()
 
             # delayed update
@@ -436,7 +485,9 @@ class TD3_RNN(Agent):
 
                 # compute policy (actor) loss
                 actions, _, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
-                critic_values, _, _ = self.critic_1.act({"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_1")
+                critic_values, _, _ = self.critic_1.act(
+                    {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_1"
+                )
 
                 policy_loss = -critic_values.mean()
 

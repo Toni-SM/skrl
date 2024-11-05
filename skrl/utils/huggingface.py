@@ -38,9 +38,8 @@ def download_model_from_huggingface(repo_id: str, filename: str = "agent.pt") ->
         raise ImportError("Hugging Face Hub package is not installed. Use 'pip install huggingface-hub' to install it")
 
     # download and cache the model from Hugging Face Hub
-    downloaded_model_file = huggingface_hub.hf_hub_download(repo_id=repo_id,
-                                                            filename=filename,
-                                                            library_name="skrl",
-                                                            library_version=__version__)
+    downloaded_model_file = huggingface_hub.hf_hub_download(
+        repo_id=repo_id, filename=filename, library_name="skrl", library_version=__version__
+    )
 
     return downloaded_model_file

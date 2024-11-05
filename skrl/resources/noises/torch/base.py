@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 import torch
 
 
-class Noise():
+class Noise:
     def __init__(self, device: Optional[Union[str, torch.device]] = None) -> None:
         """Base class representing a noise
 

@@ -23,11 +23,13 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_isaaclab_env(task_name: str = "",
-                      num_envs: Optional[int] = None,
-                      headless: Optional[bool] = None,
-                      cli_args: Sequence[str] = [],
-                      show_cfg: bool = True):
+def load_isaaclab_env(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    show_cfg: bool = True,
+):
     """Load an Isaac Lab environment
 
     Isaac Lab: https://isaac-sim.github.io/IsaacLab
@@ -76,7 +78,9 @@ def load_isaaclab_env(task_name: str = "",
     if defined:
         arg_index = sys.argv.index("--task") + 1
         if arg_index >= len(sys.argv):
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
         if task_name and task_name != sys.argv[arg_index]:
             logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
     # get task name from function arguments
@@ -85,7 +89,9 @@ def load_isaaclab_env(task_name: str = "",
             sys.argv.append("--task")
             sys.argv.append(task_name)
         else:
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False
@@ -125,8 +131,12 @@ def load_isaaclab_env(task_name: str = "",
     parser.add_argument("--task", type=str, default=None, help="Name of the task.")
     parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
     parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
-    parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations.")
-    parser.add_argument("--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes.")
+    parser.add_argument(
+        "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
+    )
+    parser.add_argument(
+        "--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes."
+    )
 
     # launch the simulation app
     from omni.isaac.lab.app import AppLauncher

@@ -12,14 +12,16 @@ from skrl.utils.model_instantiators.torch.common import convert_deprecated_param
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
-def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 structure: str = "",
-                 roles: Sequence[str] = [],
-                 parameters: Sequence[Mapping[str, Any]] = [],
-                 single_forward_pass: bool = True,
-                 return_source: bool = False) -> Union[Model, str]:
+def shared_model(
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    structure: str = "",
+    roles: Sequence[str] = [],
+    parameters: Sequence[Mapping[str, Any]] = [],
+    single_forward_pass: bool = True,
+    return_source: bool = False,
+) -> Union[Model, str]:
     """Instantiate a shared model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -52,15 +54,26 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
         parameters[0]["network"], parameters[0]["output"] = convert_deprecated_parameters(parameters[0])
         parameters[1]["network"], parameters[1]["output"] = convert_deprecated_parameters(parameters[1])
         # delete deprecated parameters
-        for parameter in ["input_shape", "hiddens", "hidden_activation", "output_shape", "output_activation", "output_scale"]:
+        for parameter in [
+            "input_shape",
+            "hiddens",
+            "hidden_activation",
+            "output_shape",
+            "output_activation",
+            "output_scale",
+        ]:
             if parameter in parameters[0]:
                 del parameters[0][parameter]
             if parameter in parameters[1]:
                 del parameters[1][parameter]
 
     # parse model definitions
-    containers_gaussian, output_gaussian = generate_containers(parameters[0]["network"], parameters[0]["output"], embed_output=False, indent=1)
-    containers_deterministic, output_deterministic = generate_containers(parameters[1]["network"], parameters[1]["output"], embed_output=False, indent=1)
+    containers_gaussian, output_gaussian = generate_containers(
+        parameters[0]["network"], parameters[0]["output"], embed_output=False, indent=1
+    )
+    containers_deterministic, output_deterministic = generate_containers(
+        parameters[1]["network"], parameters[1]["output"], embed_output=False, indent=1
+    )
 
     # network definitions
     networks_common = []
@@ -68,7 +81,9 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
     for container in containers_gaussian:
         networks_common.append(f'self.{container["name"]}_container = {container["sequential"]}')
         forward_common.append(f'{container["name"]} = self.{container["name"]}_container({container["input"]})')
-    forward_common.insert(0, 'taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))')
+    forward_common.insert(
+        0, 'taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))'
+    )
     forward_common.insert(0, 'states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))')
 
     # process output
@@ -86,7 +101,9 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
     forward_deterministic = []
     if output_deterministic["modules"]:
         networks_deterministic.append(f'self.{roles[1]}_layer = {output_deterministic["modules"][0]}')
-        forward_deterministic.append(f'output = self.{roles[1]}_layer({"shared_output" if single_forward_pass else container["name"]})')
+        forward_deterministic.append(
+            f'output = self.{roles[1]}_layer({"shared_output" if single_forward_pass else container["name"]})'
+        )
     if output_deterministic["output"]:
         forward_deterministic.append(f'output = {output_deterministic["output"]}')
     else:
@@ -98,14 +115,19 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
     networks_deterministic = textwrap.indent("\n".join(networks_deterministic), prefix=" " * 8)[8:]
 
     if single_forward_pass:
-        forward_deterministic = [
-            "if self._shared_output is None:",
-        ] + ["    " + item for item in forward_common] + [
-            f'    shared_output = {container["name"]}',
-            "else:",
-            "    shared_output = self._shared_output",
-            "self._shared_output = None",
-        ] + forward_deterministic
+        forward_deterministic = (
+            [
+                "if self._shared_output is None:",
+            ]
+            + ["    " + item for item in forward_common]
+            + [
+                f'    shared_output = {container["name"]}',
+                "else:",
+                "    shared_output = self._shared_output",
+                "self._shared_output = None",
+            ]
+            + forward_deterministic
+        )
         forward_common.append(f'self._shared_output = {container["name"]}')
         forward_common = textwrap.indent("\n".join(forward_common), prefix=" " * 12)[12:]
     else:
@@ -137,7 +159,7 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
             return DeterministicMixin.act(self, inputs, role)
     """
     if single_forward_pass:
-        template +=f"""
+        template += f"""
     def compute(self, inputs, role=""):
         if role == "{roles[0]}":
             {forward_common}
@@ -148,7 +170,7 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
             return output, {{}}
     """
     else:
-        template +=f"""
+        template += f"""
     def compute(self, inputs, role=""):
         {forward_common}
         if role == "{roles[0]}":
@@ -165,6 +187,6 @@ def shared_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Sp
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["GaussianDeterministicModel"](observation_space=observation_space,
-                                                 action_space=action_space,
-                                                 device=device)
+    return _locals["GaussianDeterministicModel"](
+        observation_space=observation_space, action_space=action_space, device=device
+    )

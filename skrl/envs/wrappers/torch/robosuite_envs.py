@@ -33,14 +33,12 @@ class RobosuiteWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         return convert_gym_space(self._observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         return convert_gym_space(self._action_space)
 
     def _spec_to_space(self, spec: Any) -> gymnasium.Space:
@@ -55,15 +53,14 @@ class RobosuiteWrapper(Wrapper):
         :rtype: gymnasium.Space
         """
         if type(spec) is tuple:
-            return gymnasium.spaces.Box(shape=spec[0].shape,
-                                        dtype=np.float32,
-                                        low=spec[0],
-                                        high=spec[1])
+            return gymnasium.spaces.Box(shape=spec[0].shape, dtype=np.float32, low=spec[0], high=spec[1])
         elif isinstance(spec, np.ndarray):
-            return gymnasium.spaces.Box(shape=spec.shape,
-                                        dtype=np.float32,
-                                        low=np.full(spec.shape, float("-inf")),
-                                        high=np.full(spec.shape, float("inf")))
+            return gymnasium.spaces.Box(
+                shape=spec.shape,
+                dtype=np.float32,
+                low=np.full(spec.shape, float("-inf")),
+                high=np.full(spec.shape, float("inf")),
+            )
         elif isinstance(spec, collections.OrderedDict):
             return gymnasium.spaces.Dict({k: self._spec_to_space(v) for k, v in spec.items()})
         else:
@@ -85,8 +82,9 @@ class RobosuiteWrapper(Wrapper):
         if isinstance(spec, np.ndarray):
             return torch.tensor(observation, device=self.device, dtype=torch.float32).reshape(self.num_envs, -1)
         elif isinstance(spec, collections.OrderedDict):
-            return torch.cat([self._observation_to_tensor(observation[k], spec[k]) \
-                for k in sorted(spec.keys())], dim=-1).reshape(self.num_envs, -1)
+            return torch.cat(
+                [self._observation_to_tensor(observation[k], spec[k]) for k in sorted(spec.keys())], dim=-1
+            ).reshape(self.num_envs, -1)
         else:
             raise ValueError(f"Observation spec type {type(spec)} not supported. Please report this issue")
 
@@ -122,11 +120,13 @@ class RobosuiteWrapper(Wrapper):
         info = {}
 
         # convert response to torch
-        return self._observation_to_tensor(observation), \
-               torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1), \
-               torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1), \
-               info
+        return (
+            self._observation_to_tensor(observation),
+            torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1),
+            torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1),
+            torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1),
+            info,
+        )
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -138,11 +138,9 @@ class RobosuiteWrapper(Wrapper):
         return self._observation_to_tensor(observation), {}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()

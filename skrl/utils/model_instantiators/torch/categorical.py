@@ -12,15 +12,17 @@ from skrl.utils.model_instantiators.torch.common import convert_deprecated_param
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
-def categorical_model(observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                      action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                      device: Optional[Union[str, torch.device]] = None,
-                      unnormalized_log_prob: bool = True,
-                      network: Sequence[Mapping[str, Any]] = [],
-                      output: Union[str, Sequence[str]] = "",
-                      return_source: bool = False,
-                      *args,
-                      **kwargs) -> Union[Model, str]:
+def categorical_model(
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    unnormalized_log_prob: bool = True,
+    network: Sequence[Mapping[str, Any]] = [],
+    output: Union[str, Sequence[str]] = "",
+    return_source: bool = False,
+    *args,
+    **kwargs,
+) -> Union[Model, str]:
     """Instantiate a categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
@@ -94,7 +96,9 @@ def categorical_model(observation_space: Optional[Union[int, Tuple[int], gymnasi
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["CategoricalModel"](observation_space=observation_space,
-                                      action_space=action_space,
-                                      device=device,
-                                      unnormalized_log_prob=unnormalized_log_prob)
+    return _locals["CategoricalModel"](
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        unnormalized_log_prob=unnormalized_log_prob,
+    )

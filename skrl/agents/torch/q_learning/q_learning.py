@@ -10,6 +10,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 Q_LEARNING_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
@@ -34,16 +35,19 @@ Q_LEARNING_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class Q_LEARNING(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Q-learning
 
         https://www.academia.edu/3294050/Learning_from_delayed_rewards
@@ -68,12 +72,14 @@ class Q_LEARNING(Agent):
         """
         _cfg = copy.deepcopy(Q_LEARNING_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -99,8 +105,7 @@ class Q_LEARNING(Agent):
         self._current_dones = None
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
@@ -123,16 +128,18 @@ class Q_LEARNING(Agent):
         # sample actions from policy
         return self.policy.act({"states": states}, role="policy")
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -154,7 +161,9 @@ class Q_LEARNING(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         # reward shaping
         if self._rewards_shaper is not None:
@@ -167,11 +176,23 @@ class Q_LEARNING(Agent):
         self._current_dones = terminated + truncated
 
         if self.memory is not None:
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -209,10 +230,13 @@ class Q_LEARNING(Agent):
         env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
 
         # compute next actions
-        next_actions = torch.argmax(q_table[env_ids, self._current_next_states], dim=-1, keepdim=True).view(-1,1)
+        next_actions = torch.argmax(q_table[env_ids, self._current_next_states], dim=-1, keepdim=True).view(-1, 1)
 
         # update Q-table
-        q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate \
-            * (self._current_rewards + self._discount_factor * self._current_dones.logical_not() \
-                * q_table[env_ids, self._current_next_states, next_actions] \
-                    - q_table[env_ids, self._current_states, self._current_actions])
+        q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate * (
+            self._current_rewards
+            + self._discount_factor
+            * self._current_dones.logical_not()
+            * q_table[env_ids, self._current_next_states, next_actions]
+            - q_table[env_ids, self._current_states, self._current_actions]
+        )

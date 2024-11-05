@@ -13,7 +13,7 @@ from skrl.utils.spaces.torch import (
     flatten_tensorized_space,
     tensorize_space,
     unflatten_tensorized_space,
-    untensorize_space
+    untensorize_space,
 )
 
 
@@ -33,6 +33,7 @@ class GymWrapper(Wrapper):
             np.bool8 = np.bool
 
         import gym
+
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):
@@ -49,16 +50,14 @@ class GymWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         if self._vectorized:
             return convert_gym_space(self._env.single_observation_space)
         return convert_gym_space(self._env.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         if self._vectorized:
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
@@ -72,9 +71,11 @@ class GymWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        actions = untensorize_space(self.action_space,
-                                    unflatten_tensorized_space(self.action_space, actions),
-                                    squeeze_batch_dimension=not self._vectorized)
+        actions = untensorize_space(
+            self.action_space,
+            unflatten_tensorized_space(self.action_space, actions),
+            squeeze_batch_dimension=not self._vectorized,
+        )
 
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
@@ -116,7 +117,9 @@ class GymWrapper(Wrapper):
                     self._info = {}
                 else:
                     observation, self._info = self._env.reset()
-                self._observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+                self._observation = flatten_tensorized_space(
+                    tensorize_space(self.observation_space, observation, self.device)
+                )
                 self._reset_once = False
             return self._observation, self._info
 
@@ -129,13 +132,11 @@ class GymWrapper(Wrapper):
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment
-        """
+        """Render the environment"""
         if self._vectorized:
             return None
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()

@@ -15,6 +15,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 DDPG_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -58,27 +59,29 @@ DDPG_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
-def _apply_exploration_noise(actions: jax.Array,
-                             noises: jax.Array,
-                             clip_actions_min: jax.Array,
-                             clip_actions_max: jax.Array,
-                             scale: float) -> jax.Array:
+def _apply_exploration_noise(
+    actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
+) -> jax.Array:
     noises = noises.at[:].multiply(scale)
     return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
 
+
 @functools.partial(jax.jit, static_argnames=("critic_act"))
-def _update_critic(critic_act,
-                   critic_state_dict,
-                   target_q_values: jax.Array,
-                   sampled_states: Union[np.ndarray, jax.Array],
-                   sampled_actions: Union[np.ndarray, jax.Array],
-                   sampled_rewards: Union[np.ndarray, jax.Array],
-                   sampled_dones: Union[np.ndarray, jax.Array],
-                   discount_factor: float):
+def _update_critic(
+    critic_act,
+    critic_state_dict,
+    target_q_values: jax.Array,
+    sampled_states: Union[np.ndarray, jax.Array],
+    sampled_actions: Union[np.ndarray, jax.Array],
+    sampled_rewards: Union[np.ndarray, jax.Array],
+    sampled_dones: Union[np.ndarray, jax.Array],
+    discount_factor: float,
+):
     # compute target values
     target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
 
@@ -92,31 +95,32 @@ def _update_critic(critic_act,
 
     return grad, critic_loss, critic_values, target_values
 
+
 @functools.partial(jax.jit, static_argnames=("policy_act", "critic_act"))
-def _update_policy(policy_act,
-                   critic_act,
-                   policy_state_dict,
-                   critic_state_dict,
-                   sampled_states):
+def _update_policy(policy_act, critic_act, policy_state_dict, critic_state_dict, sampled_states):
     # compute policy (actor) loss
     def _policy_loss(policy_params, critic_params):
         actions, _, _ = policy_act({"states": sampled_states}, "policy", policy_params)
         critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": actions}, "critic", critic_params)
         return -critic_values.mean()
 
-    policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params, critic_state_dict.params)
+    policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(
+        policy_state_dict.params, critic_state_dict.params
+    )
 
     return grad, policy_loss
 
 
 class DDPG(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Deep Deterministic Policy Gradient (DDPG)
 
         https://arxiv.org/abs/1509.02971
@@ -142,12 +146,14 @@ class DDPG(Agent):
         # _cfg = copy.deepcopy(DDPG_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = DDPG_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -197,11 +203,19 @@ class DDPG(Agent):
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
             with jax.default_device(self.device):
-                self.policy_optimizer = Adam(model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip)
-                self.critic_optimizer = Adam(model=self.critic, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip)
+                self.policy_optimizer = Adam(
+                    model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip
+                )
+                self.critic_optimizer = Adam(
+                    model=self.critic, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip
+                )
             if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
-                self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.policy_scheduler = self._learning_rate_scheduler(
+                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
+                self.critic_scheduler = self._learning_rate_scheduler(
+                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
@@ -224,8 +238,7 @@ class DDPG(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -290,13 +303,15 @@ class DDPG(Agent):
 
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) \
-                      * (self._exploration_initial_scale - self._exploration_final_scale) \
-                      + self._exploration_final_scale
+                scale = (1 - timestep / self._exploration_timesteps) * (
+                    self._exploration_initial_scale - self._exploration_final_scale
+                ) + self._exploration_final_scale
 
                 # modify actions
                 if self._jax:
-                    actions, noises = _apply_exploration_noise(actions, noises, self.clip_actions_min, self.clip_actions_max, scale)
+                    actions, noises = _apply_exploration_noise(
+                        actions, noises, self.clip_actions_min, self.clip_actions_max, scale
+                    )
                 else:
                     noises *= scale
                     actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
@@ -314,16 +329,18 @@ class DDPG(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -345,7 +362,9 @@ class DDPG(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
@@ -353,11 +372,23 @@ class DDPG(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -398,8 +429,9 @@ class DDPG(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-                self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+                names=self._tensors_names, batch_size=self._batch_size
+            )[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
@@ -407,17 +439,21 @@ class DDPG(Agent):
             # compute target values
             next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
 
-            target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic")
+            target_q_values, _, _ = self.target_critic.act(
+                {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic"
+            )
 
             # compute critic loss
-            grad, critic_loss, critic_values, target_values = _update_critic(self.critic.act,
-                                                                             self.critic.state_dict,
-                                                                             target_q_values,
-                                                                             sampled_states,
-                                                                             sampled_actions,
-                                                                             sampled_rewards,
-                                                                             sampled_dones,
-                                                                             self._discount_factor)
+            grad, critic_loss, critic_values, target_values = _update_critic(
+                self.critic.act,
+                self.critic.state_dict,
+                target_q_values,
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_dones,
+                self._discount_factor,
+            )
 
             # optimization step (critic)
             if config.jax.is_distributed:
@@ -425,11 +461,9 @@ class DDPG(Agent):
             self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
 
             # compute policy (actor) loss
-            grad, policy_loss = _update_policy(self.policy.act,
-                                               self.critic.act,
-                                               self.policy.state_dict,
-                                               self.critic.state_dict,
-                                               sampled_states)
+            grad, policy_loss = _update_policy(
+                self.policy.act, self.critic.act, self.policy.state_dict, self.critic.state_dict, sampled_states
+            )
 
             # optimization step (policy)
             if config.jax.is_distributed:

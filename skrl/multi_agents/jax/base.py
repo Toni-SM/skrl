@@ -17,14 +17,16 @@ from skrl.models.jax import Model
 
 
 class MultiAgent:
-    def __init__(self,
-                 possible_agents: Sequence[str],
-                 models: Mapping[str, Mapping[str, Model]],
-                 memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
-                 action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        possible_agents: Sequence[str],
+        models: Mapping[str, Mapping[str, Model]],
+        memories: Optional[Mapping[str, Memory]] = None,
+        observation_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+        action_spaces: Optional[Mapping[str, Union[int, Sequence[int], gymnasium.Space]]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Base class that represent a RL multi-agent
 
         :param possible_agents: Name of all possible agents the environment could generate
@@ -61,7 +63,7 @@ class MultiAgent:
         else:
             self.device = device
             if type(device) == str:
-                device_type, device_index = f"{device}:0".split(':')[:2]
+                device_type, device_index = f"{device}:0".split(":")[:2]
                 self.device = jax.devices(device_type)[int(device_index)]
 
         # convert the models to their respective device
@@ -84,7 +86,7 @@ class MultiAgent:
         self.checkpoint_modules = {uid: {} for uid in self.possible_agents}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
-        self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": True, "modules": {}}
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": True, "modules": {}}
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")
@@ -178,10 +180,14 @@ class MultiAgent:
         if self.cfg.get("experiment", {}).get("wandb", False):
             # save experiment configuration
             try:
-                models_cfg = {uid: {k: v.net._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents}
+                models_cfg = {
+                    uid: {k: v.net._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents
+                }
             except AttributeError:
-                models_cfg = {uid: {k: v._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents}
-            wandb_config={**self.cfg, **trainer_cfg, **models_cfg}
+                models_cfg = {
+                    uid: {k: v._modules for (k, v) in self.models[uid].items()} for uid in self.possible_agents
+                }
+            wandb_config = {**self.cfg, **trainer_cfg, **models_cfg}
             # set default values
             wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
             wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
@@ -190,6 +196,7 @@ class MultiAgent:
             wandb_kwargs["config"].update(wandb_config)
             # init Weights & Biases
             import wandb
+
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
@@ -200,6 +207,7 @@ class MultiAgent:
             # tensorboard via torch SummaryWriter
             try:
                 from torch.utils.tensorboard import SummaryWriter
+
                 self.writer = SummaryWriter(log_dir=self.experiment_dir)
             except ImportError as e:
                 pass
@@ -223,6 +231,7 @@ class MultiAgent:
             if self.writer is None:
                 try:
                     import tensorboardX
+
                     self.writer = tensorboardX.SummaryWriter(log_dir=self.experiment_dir)
                 except ImportError as e:
                     pass
@@ -290,12 +299,19 @@ class MultiAgent:
         if self.checkpoint_store_separately:
             for uid in self.possible_agents:
                 for name, module in self.checkpoint_modules[uid].items():
-                    with open(os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pickle"), "wb") as file:
+                    with open(
+                        os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pickle"), "wb"
+                    ) as file:
                         pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
         # whole agent
         else:
-            modules = {uid: {name: flax.serialization.to_bytes(self._get_internal_value(module)) for name, module in self.checkpoint_modules[uid].items()} \
-                       for uid in self.possible_agents}
+            modules = {
+                uid: {
+                    name: flax.serialization.to_bytes(self._get_internal_value(module))
+                    for name, module in self.checkpoint_modules[uid].items()
+                }
+                for uid in self.possible_agents
+            }
 
             with open(os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pickle"), "wb") as file:
                 pickle.dump(modules, file, protocol=4)
@@ -306,17 +322,30 @@ class MultiAgent:
             if self.checkpoint_store_separately:
                 for uid in self.possible_agents:
                     for name, module in self.checkpoint_modules.items():
-                        with open(os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pickle"), "wb") as file:
-                            pickle.dump(flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name]), file, protocol=4)
+                        with open(
+                            os.path.join(self.experiment_dir, "checkpoints", f"best_{uid}_{name}.pickle"), "wb"
+                        ) as file:
+                            pickle.dump(
+                                flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name]),
+                                file,
+                                protocol=4,
+                            )
             # whole agent
             else:
-                modules = {uid: {name: flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name]) \
-                                 for name in self.checkpoint_modules[uid].keys()} for uid in self.possible_agents}
+                modules = {
+                    uid: {
+                        name: flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][uid][name])
+                        for name in self.checkpoint_modules[uid].keys()
+                    }
+                    for uid in self.possible_agents
+                }
                 with open(os.path.join(self.experiment_dir, "checkpoints", "best_agent.pickle"), "wb") as file:
                     pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
+    def act(
+        self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int
+    ) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policy
 
         :param states: Environment's states
@@ -333,16 +362,18 @@ class MultiAgent:
         """
         raise NotImplementedError
 
-    def record_transition(self,
-                          states: Mapping[str, Union[np.ndarray, jax.Array]],
-                          actions: Mapping[str, Union[np.ndarray, jax.Array]],
-                          rewards: Mapping[str, Union[np.ndarray, jax.Array]],
-                          next_states: Mapping[str, Union[np.ndarray, jax.Array]],
-                          terminated: Mapping[str, Union[np.ndarray, jax.Array]],
-                          truncated: Mapping[str, Union[np.ndarray, jax.Array]],
-                          infos: Mapping[str, Any],
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Mapping[str, Union[np.ndarray, jax.Array]],
+        actions: Mapping[str, Union[np.ndarray, jax.Array]],
+        rewards: Mapping[str, Union[np.ndarray, jax.Array]],
+        next_states: Mapping[str, Union[np.ndarray, jax.Array]],
+        terminated: Mapping[str, Union[np.ndarray, jax.Array]],
+        truncated: Mapping[str, Union[np.ndarray, jax.Array]],
+        infos: Mapping[str, Any],
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
@@ -443,8 +474,13 @@ class MultiAgent:
         :param path: Path to save the model to
         :type path: str
         """
-        modules = {uid: {name: flax.serialization.to_bytes(self._get_internal_value(module)) \
-                         for name, module in self.checkpoint_modules[uid].items()} for uid in self.possible_agents}
+        modules = {
+            uid: {
+                name: flax.serialization.to_bytes(self._get_internal_value(module))
+                for name, module in self.checkpoint_modules[uid].items()
+            }
+            for uid in self.possible_agents
+        }
 
         # HACK: Does it make sense to use https://github.com/google/orbax
         # file.write(flax.serialization.to_bytes(modules))
@@ -475,11 +511,13 @@ class MultiAgent:
                     else:
                         logger.warning(f"Cannot load the {uid}:{name} module. The agent doesn't have such an instance")
 
-    def migrate(self,
-                path: str,
-                name_map: Mapping[str, Mapping[str, str]] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        path: str,
+        name_map: Mapping[str, Mapping[str, str]] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified extrernal checkpoint to the current agent
 
         :raises NotImplementedError: Not yet implemented
@@ -509,13 +547,17 @@ class MultiAgent:
         # update best models and write checkpoints
         if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
-            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
+            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -(2**31)))
             if reward > self.checkpoint_best_modules["reward"]:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
-                self.checkpoint_best_modules["modules"] = {uid: {k: copy.deepcopy(self._get_internal_value(v)) \
-                    for k, v in self.checkpoint_modules[uid].items()} for uid in self.possible_agents}
+                self.checkpoint_best_modules["modules"] = {
+                    uid: {
+                        k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules[uid].items()
+                    }
+                    for uid in self.possible_agents
+                }
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

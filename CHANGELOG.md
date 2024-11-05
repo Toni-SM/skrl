@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
 - Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9).
 
+### Changed (breaking changes: style)
+- Format code using Black code formatter (it's ugly, yes, but it does its job)
+
 ### Fixed
 - Moved the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
 

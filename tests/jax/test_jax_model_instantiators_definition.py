@@ -22,6 +22,7 @@ def test_get_activation_function(capsys):
         assert activation is not None, f"{item} -> None"
         exec(f"{activation}(x)", _globals, {})
 
+
 def test_parse_input(capsys):
     # check for Shape enum (compatibility with prior versions)
     for input in [Shape.STATES, Shape.OBSERVATIONS, Shape.ACTIONS, Shape.STATES_ACTIONS]:
@@ -42,6 +43,7 @@ def test_parse_input(capsys):
     statement = 'states["joint"] + jnp.concatenate([net * taken_actions[:, -3:]], axis=-1)'
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
+
 
 def test_generate_modules(capsys):
     _globals = {"nn": flax.linen}
@@ -138,6 +140,7 @@ def test_generate_modules(capsys):
     assert isinstance(container, flax.linen.Sequential)
     assert len(container.layers) == 2
 
+
 def test_gaussian_model(capsys):
     device = "cpu"
     observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
@@ -161,19 +164,15 @@ def test_gaussian_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = gaussian_model(observation_space=observation_space,
-                           action_space=action_space,
-                           device=device,
-                           return_source=True,
-                           **content)
+    model = gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = gaussian_model(observation_space=observation_space,
-                           action_space=action_space,
-                           device=device,
-                           return_source=False,
-                           **content)
+    model = gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.init_state_dict("model")
     with capsys.disabled():
         print(model)
@@ -181,6 +180,7 @@ def test_gaussian_model(capsys):
     observations = jnp.ones((10, model.num_observations))
     output = model.act({"states": observations})
     assert output[0].shape == (10, 2)
+
 
 def test_deterministic_model(capsys):
     device = "cpu"
@@ -202,19 +202,15 @@ def test_deterministic_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = deterministic_model(observation_space=observation_space,
-                                action_space=action_space,
-                                device=device,
-                                return_source=True,
-                                **content)
+    model = deterministic_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = deterministic_model(observation_space=observation_space,
-                                action_space=action_space,
-                                device=device,
-                                return_source=False,
-                                **content)
+    model = deterministic_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.init_state_dict("model")
     with capsys.disabled():
         print(model)
@@ -222,6 +218,7 @@ def test_deterministic_model(capsys):
     observations = jnp.ones((10, model.num_observations))
     output = model.act({"states": observations})
     assert output[0].shape == (10, 3)
+
 
 def test_categorical_model(capsys):
     device = "cpu"
@@ -242,19 +239,15 @@ def test_categorical_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = categorical_model(observation_space=observation_space,
-                              action_space=action_space,
-                              device=device,
-                              return_source=True,
-                              **content)
+    model = categorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = categorical_model(observation_space=observation_space,
-                              action_space=action_space,
-                              device=device,
-                              return_source=False,
-                              **content)
+    model = categorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.init_state_dict("model")
     with capsys.disabled():
         print(model)

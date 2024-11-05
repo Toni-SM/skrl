@@ -12,6 +12,7 @@ from skrl.envs.wrappers.torch import Wrapper
 from skrl.trainers.torch import Trainer
 
 
+# fmt: off
 # [start-config-dict-torch]
 PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "timesteps": 100000,            # number of timesteps to train for
@@ -21,6 +22,7 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "environment_info": "episode",  # key used to get and log environment info
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 def fn_processor(process_index, *args):
@@ -41,14 +43,14 @@ def fn_processor(process_index, *args):
 
     while True:
         msg = pipe.recv()
-        task = msg['task']
+        task = msg["task"]
 
         # terminate process
-        if task == 'terminate':
+        if task == "terminate":
             break
 
         # initialize agent
-        elif task == 'init':
+        elif task == "init":
             agent = queue.get()
             agent.init(trainer_cfg=trainer_cfg)
             print(f"[INFO] Processor {process_index}: init agent {type(agent).__name__} with scope {scope}")
@@ -56,14 +58,14 @@ def fn_processor(process_index, *args):
 
         # execute agent's pre-interaction step
         elif task == "pre_interaction":
-            agent.pre_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
+            agent.pre_interaction(timestep=msg["timestep"], timesteps=msg["timesteps"])
             barrier.wait()
 
         # get agent's actions
         elif task == "act":
-            _states = queue.get()[scope[0]:scope[1]]
+            _states = queue.get()[scope[0] : scope[1]]
             with torch.no_grad():
-                _actions = agent.act(_states, timestep=msg['timestep'], timesteps=msg['timesteps'])[0]
+                _actions = agent.act(_states, timestep=msg["timestep"], timesteps=msg["timesteps"])[0]
                 if not _actions.is_cuda:
                     _actions.share_memory_()
                 queue.put(_actions)
@@ -72,44 +74,50 @@ def fn_processor(process_index, *args):
         # record agent's experience
         elif task == "record_transition":
             with torch.no_grad():
-                agent.record_transition(states=_states,
-                                        actions=_actions,
-                                        rewards=queue.get()[scope[0]:scope[1]],
-                                        next_states=queue.get()[scope[0]:scope[1]],
-                                        terminated=queue.get()[scope[0]:scope[1]],
-                                        truncated=queue.get()[scope[0]:scope[1]],
-                                        infos=queue.get(),
-                                        timestep=msg['timestep'],
-                                        timesteps=msg['timesteps'])
+                agent.record_transition(
+                    states=_states,
+                    actions=_actions,
+                    rewards=queue.get()[scope[0] : scope[1]],
+                    next_states=queue.get()[scope[0] : scope[1]],
+                    terminated=queue.get()[scope[0] : scope[1]],
+                    truncated=queue.get()[scope[0] : scope[1]],
+                    infos=queue.get(),
+                    timestep=msg["timestep"],
+                    timesteps=msg["timesteps"],
+                )
                 barrier.wait()
 
         # execute agent's post-interaction step
         elif task == "post_interaction":
-            agent.post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
+            agent.post_interaction(timestep=msg["timestep"], timesteps=msg["timesteps"])
             barrier.wait()
 
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
-                agent.record_transition(states=_states,
-                                        actions=_actions,
-                                        rewards=queue.get()[scope[0]:scope[1]],
-                                        next_states=queue.get()[scope[0]:scope[1]],
-                                        terminated=queue.get()[scope[0]:scope[1]],
-                                        truncated=queue.get()[scope[0]:scope[1]],
-                                        infos=queue.get(),
-                                        timestep=msg['timestep'],
-                                        timesteps=msg['timesteps'])
-                super(type(agent), agent).post_interaction(timestep=msg['timestep'], timesteps=msg['timesteps'])
+                agent.record_transition(
+                    states=_states,
+                    actions=_actions,
+                    rewards=queue.get()[scope[0] : scope[1]],
+                    next_states=queue.get()[scope[0] : scope[1]],
+                    terminated=queue.get()[scope[0] : scope[1]],
+                    truncated=queue.get()[scope[0] : scope[1]],
+                    infos=queue.get(),
+                    timestep=msg["timestep"],
+                    timesteps=msg["timesteps"],
+                )
+                super(type(agent), agent).post_interaction(timestep=msg["timestep"], timesteps=msg["timesteps"])
                 barrier.wait()
 
 
 class ParallelTrainer(Trainer):
-    def __init__(self,
-                 env: Wrapper,
-                 agents: Union[Agent, List[Agent]],
-                 agents_scope: Optional[List[int]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        env: Wrapper,
+        agents: Union[Agent, List[Agent]],
+        agents_scope: Optional[List[int]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Parallel trainer
 
         Train agents in parallel using multiple processes
@@ -129,7 +137,7 @@ class ParallelTrainer(Trainer):
         agents_scope = agents_scope if agents_scope is not None else []
         super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
 
-        mp.set_start_method(method='spawn', force=True)
+        mp.set_start_method(method="spawn", force=True)
 
     def train(self) -> None:
         """Train the agents in parallel
@@ -187,16 +195,16 @@ class ParallelTrainer(Trainer):
 
         # spawn and wait for all processes to start
         for i in range(self.num_simultaneous_agents):
-            process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
-                                 daemon=True)
+            process = mp.Process(
+                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg), daemon=True
+            )
             processes.append(process)
             process.start()
         barrier.wait()
 
         # initialize agents
         for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
-            pipe.send({'task': 'init'})
+            pipe.send({"task": "init"})
             queue.put(agent)
         barrier.wait()
 
@@ -205,7 +213,9 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -323,16 +333,16 @@ class ParallelTrainer(Trainer):
 
         # spawn and wait for all processes to start
         for i in range(self.num_simultaneous_agents):
-            process = mp.Process(target=fn_processor,
-                                 args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg),
-                                 daemon=True)
+            process = mp.Process(
+                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg), daemon=True
+            )
             processes.append(process)
             process.start()
         barrier.wait()
 
         # initialize agents
         for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
-            pipe.send({'task': 'init'})
+            pipe.send({"task": "init"})
             queue.put(agent)
         barrier.wait()
 
@@ -341,7 +351,9 @@ class ParallelTrainer(Trainer):
         if not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             for pipe in producer_pipes:
@@ -376,9 +388,13 @@ class ParallelTrainer(Trainer):
 
             # post-interaction
             for pipe, queue in zip(producer_pipes, queues):
-                pipe.send({"task": "eval-record_transition-post_interaction",
-                            "timestep": timestep,
-                            "timesteps": self.timesteps})
+                pipe.send(
+                    {
+                        "task": "eval-record_transition-post_interaction",
+                        "timestep": timestep,
+                        "timesteps": self.timesteps,
+                    }
+                )
                 queue.put(rewards)
                 queue.put(next_states)
                 queue.put(terminated)

@@ -28,10 +28,13 @@ def gymnasium_space_stategy(draw, space_type: str = "", remaining_iterations: in
         return gymnasium.spaces.Dict(spaces)
     elif space_type == "Tuple":
         remaining_iterations -= 1
-        spaces = draw(st.lists(gymnasium_space_stategy(remaining_iterations=remaining_iterations), min_size=1, max_size=3))
+        spaces = draw(
+            st.lists(gymnasium_space_stategy(remaining_iterations=remaining_iterations), min_size=1, max_size=3)
+        )
         return gymnasium.spaces.Tuple(spaces)
     else:
         raise ValueError(f"Invalid space type: {space_type}")
+
 
 @st.composite
 def gym_space_stategy(draw, space_type: str = "", remaining_iterations: int = 5) -> gym.spaces.Space:

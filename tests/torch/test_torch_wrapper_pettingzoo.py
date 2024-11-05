@@ -31,7 +31,11 @@ def test_env(capsys: pytest.CaptureFixture):
     assert isinstance(env.action_spaces, Mapping) and len(env.action_spaces) == num_agents
     for agent in possible_agents:
         assert isinstance(env.state_space(agent), gym.Space) and env.state_space(agent).shape == (560, 880, 3)
-        assert isinstance(env.observation_space(agent), gym.Space) and env.observation_space(agent).shape == (457, 120, 3)
+        assert isinstance(env.observation_space(agent), gym.Space) and env.observation_space(agent).shape == (
+            457,
+            120,
+            3,
+        )
         assert isinstance(env.action_space(agent), gym.Space) and env.action_space(agent).shape == (1,)
     assert isinstance(env.possible_agents, list) and sorted(env.possible_agents) == sorted(possible_agents)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
@@ -47,7 +51,9 @@ def test_env(capsys: pytest.CaptureFixture):
         assert isinstance(observation, Mapping)
         assert isinstance(info, Mapping)
         for agent in possible_agents:
-            assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size([num_envs, math.prod((457, 120, 3))])
+            assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
+                [num_envs, math.prod((457, 120, 3))]
+            )
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
@@ -58,10 +64,16 @@ def test_env(capsys: pytest.CaptureFixture):
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for agent in possible_agents:
-                assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size([num_envs, math.prod((457, 120, 3))])
+                assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
+                    [num_envs, math.prod((457, 120, 3))]
+                )
                 assert isinstance(reward[agent], torch.Tensor) and reward[agent].shape == torch.Size([num_envs, 1])
-                assert isinstance(terminated[agent], torch.Tensor) and terminated[agent].shape == torch.Size([num_envs, 1])
-                assert isinstance(truncated[agent], torch.Tensor) and truncated[agent].shape == torch.Size([num_envs, 1])
+                assert isinstance(terminated[agent], torch.Tensor) and terminated[agent].shape == torch.Size(
+                    [num_envs, 1]
+                )
+                assert isinstance(truncated[agent], torch.Tensor) and truncated[agent].shape == torch.Size(
+                    [num_envs, 1]
+                )
             assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, math.prod((560, 880, 3))])
 
     env.close()

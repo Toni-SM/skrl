@@ -9,11 +9,13 @@ from skrl.utils.spaces.torch import compute_space_size
 
 
 class RunningStandardScaler(nn.Module):
-    def __init__(self,
-                 size: Union[int, Tuple[int], gymnasium.Space],
-                 epsilon: float = 1e-8,
-                 clip_threshold: float = 5.0,
-                 device: Optional[Union[str, torch.device]] = None) -> None:
+    def __init__(
+        self,
+        size: Union[int, Tuple[int], gymnasium.Space],
+        epsilon: float = 1e-8,
+        clip_threshold: float = 5.0,
+        device: Optional[Union[str, torch.device]] = None,
+    ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation
 
         The implementation is adapted from the rl_games library
@@ -67,8 +69,11 @@ class RunningStandardScaler(nn.Module):
         """
         delta = input_mean - self.running_mean
         total_count = self.current_count + input_count
-        M2 = (self.running_variance * self.current_count) + (input_var * input_count) \
-            + delta ** 2 * self.current_count * input_count / total_count
+        M2 = (
+            (self.running_variance * self.current_count)
+            + (input_var * input_count)
+            + delta**2 * self.current_count * input_count / total_count
+        )
 
         # update internal variables
         self.running_mean = self.running_mean + delta * input_count / total_count
@@ -96,18 +101,21 @@ class RunningStandardScaler(nn.Module):
 
         # scale back the data to the original representation
         if inverse:
-            return torch.sqrt(self.running_variance.float()) \
-                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
+            return (
+                torch.sqrt(self.running_variance.float())
+                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold)
+                + self.running_mean.float()
+            )
         # standardization by centering and scaling
-        return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
-                           min=-self.clip_threshold,
-                           max=self.clip_threshold)
+        return torch.clamp(
+            (x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
+            min=-self.clip_threshold,
+            max=self.clip_threshold,
+        )
 
-    def forward(self,
-                x: torch.Tensor,
-                train: bool = False,
-                inverse: bool = False,
-                no_grad: bool = True) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True
+    ) -> torch.Tensor:
         """Forward pass of the standardizer
 
         Example::

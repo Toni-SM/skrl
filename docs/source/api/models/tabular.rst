@@ -56,5 +56,3 @@ API (PyTorch)
     :show-inheritance:
     :exclude-members: to, state_dict, load_state_dict, load, save
     :members:
-
-    .. automethod:: __init__

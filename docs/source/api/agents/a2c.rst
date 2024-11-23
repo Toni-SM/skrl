@@ -252,15 +252,11 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.agents.torch.a2c.A2C_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -276,5 +272,3 @@ API (JAX)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

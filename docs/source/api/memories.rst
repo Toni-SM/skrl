@@ -66,7 +66,6 @@ API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __len__
 
 .. raw:: html
@@ -81,5 +80,4 @@ API (JAX)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __len__

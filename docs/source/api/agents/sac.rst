@@ -264,16 +264,11 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
-
 .. autoclass:: skrl.agents.torch.sac.SAC_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -289,5 +284,3 @@ API (JAX)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

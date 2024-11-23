@@ -57,8 +57,6 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -72,5 +70,3 @@ API (JAX)
     :inherited-members:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

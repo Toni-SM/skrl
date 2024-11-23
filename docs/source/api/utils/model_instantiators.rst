@@ -88,6 +88,9 @@ Supported operations:
         |br| E.g.: :py:class:`gymnasium.spaces.Box`
       - ``STATES[:, 0]``
         |br| ``STATES[:, 2:5]``
+    * - Dictionary indexing by key
+        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
+      - ``STATES["joint-pos"]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation

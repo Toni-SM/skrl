@@ -71,8 +71,6 @@ API (PyTorch)
     :inherited-members:
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -84,5 +82,3 @@ API (JAX)
     :show-inheritance:
     :inherited-members:
     :members:
-
-    .. automethod:: __init__

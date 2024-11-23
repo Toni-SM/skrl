@@ -59,7 +59,6 @@ API
     :private-members: _format_numpy, _format_torch, _format_csv
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __iter__
     .. automethod:: __next__
 
@@ -115,6 +114,5 @@ API
     :inherited-members:
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __iter__
     .. automethod:: __next__

@@ -366,49 +366,35 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.DeepMindWrapper
     :undoc-members:
@@ -416,22 +402,16 @@ Internal API (PyTorch)
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.BraxWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.RobosuiteWrapper
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -445,46 +425,32 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__

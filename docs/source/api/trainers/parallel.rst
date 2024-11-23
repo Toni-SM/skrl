@@ -72,5 +72,3 @@ API (PyTorch)
     :show-inheritance:
     :inherited-members:
     :members:
-
-    .. automethod:: __init__

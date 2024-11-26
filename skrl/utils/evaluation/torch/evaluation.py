@@ -31,8 +31,8 @@ def evaluate_single_agent(agent:Agent, env:Wrapper, num_episodes:int=100) -> Tup
       while not done:
         with torch.no_grad():
           agent.pre_interaction(random_timesteps+1, random_timesteps+2)
+          agent.set_mode("eval")
           action_t,_,_ = agent.act(obs_t, random_timesteps+1, random_timesteps+2)
-          agent.post_interaction(random_timesteps+1, random_timesteps+2)
         obs_tplus1, reward, terminated, truncated, info = env.step(action_t)
         obs_t = obs_tplus1 
         episode_reward += reward 

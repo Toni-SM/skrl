@@ -225,6 +225,8 @@ class Runner:
             # shared models
             else:
                 # remove 'class' field
+                policy_class_name = _cfg["models"]["policy"].get("class", "GaussianMixin")
+                value_class_name = _cfg["models"]["value"].get("class", "DeterministicMixin")
                 try:
                     del _cfg["models"]["policy"]["class"]
                 except KeyError:
@@ -243,7 +245,7 @@ class Runner:
                     observation_space=observation_spaces[agent_id],
                     action_space=action_spaces[agent_id],
                     device=device,
-                    structure=None,
+                    structure=[policy_class_name, value_class_name],
                     roles=["policy", "value"],
                     parameters=[
                         self._process_cfg(_cfg["models"]["policy"]),
@@ -259,7 +261,7 @@ class Runner:
                     observation_space=observation_spaces[agent_id],
                     action_space=action_spaces[agent_id],
                     device=device,
-                    structure=None,
+                    structure=[policy_class_name, value_class_name],
                     roles=["policy", "value"],
                     parameters=[
                         self._process_cfg(_cfg["models"]["policy"]),

@@ -154,7 +154,7 @@ def test_shared_model(capsys, observation_space_size, action_space_size, device)
         observation_space=observation_space,
         action_space=action_space,
         device=device,
-        structure="",
+        structure=["GaussianMixin", "DeterministicMixin"],
         roles=["policy", "value"],
         parameters=[
             {

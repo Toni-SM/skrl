@@ -48,6 +48,38 @@ def shared_model(
     :return: Shared model instance or definition source
     :rtype: Model
     """
+
+    def get_init(class_name, parameter, role):
+        if class_name.lower() == "categoricalmixin":
+            return f'CategoricalMixin.__init__(self, unnormalized_log_prob={parameter["unnormalized_log_prob"]}, role="{role}")'
+        elif class_name.lower() == "deterministicmixin":
+            return f'DeterministicMixin.__init__(self, clip_actions={parameter["clip_actions"]}, role="{role}")'
+        elif class_name.lower() == "gaussianmixin":
+            return f"""GaussianMixin.__init__(
+            self,
+            clip_actions={parameter["clip_actions"]},
+            clip_log_std={parameter["clip_log_std"]},
+            min_log_std={parameter["min_log_std"]},
+            max_log_std={parameter["max_log_std"]},
+            role="{role}",
+        )"""
+
+    def get_return(class_name):
+        if class_name.lower() == "categoricalmixin":
+            return r"output, {}"
+        elif class_name.lower() == "deterministicmixin":
+            return r"output, {}"
+        elif class_name.lower() == "gaussianmixin":
+            return r"output, self.log_std_parameter, {}"
+
+    def get_extra(class_name, parameter, role, model):
+        if class_name.lower() == "categoricalmixin":
+            return ""
+        elif class_name.lower() == "deterministicmixin":
+            return ""
+        elif class_name.lower() == "gaussianmixin":
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={float(parameter["initial_log_std"])}))'
+
     # compatibility with versions prior to 1.3.0
     if not "network" in parameters[0]:
         parameters[0]["network"], parameters[0]["output"] = convert_deprecated_parameters(parameters[0])
@@ -114,7 +146,13 @@ def shared_model(
     # build substitutions and indent content
     networks_common = textwrap.indent("\n".join(networks_common), prefix=" " * 8)[8:]
     models[0]["networks"] = textwrap.indent("\n".join(models[0]["networks"]), prefix=" " * 8)[8:]
+    extra = get_extra(structure[0], parameters[0], roles[0], models[0])
+    if extra:
+        models[0]["networks"] += "\n" + textwrap.indent(extra, prefix=" " * 8)
     models[1]["networks"] = textwrap.indent("\n".join(models[1]["networks"]), prefix=" " * 8)[8:]
+    extra = get_extra(structure[1], parameters[1], roles[1], models[1])
+    if extra:
+        models[1]["networks"] += "\n" + textwrap.indent(extra, prefix=" " * 8)
 
     if single_forward_pass:
         models[1]["forward"] = (
@@ -138,27 +176,21 @@ def shared_model(
     models[0]["forward"] = textwrap.indent("\n".join(models[0]["forward"]), prefix=" " * 12)[12:]
     models[1]["forward"] = textwrap.indent("\n".join(models[1]["forward"]), prefix=" " * 12)[12:]
 
-    template = f"""class GaussianDeterministicModel(GaussianMixin, DeterministicMixin, Model):
+    template = f"""class SharedModel({",".join(structure)}, Model):
     def __init__(self, observation_space, action_space, device):
         Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self,
-                               clip_actions={parameters[0]["clip_actions"]},
-                               clip_log_std={parameters[0]["clip_log_std"]},
-                               min_log_std={parameters[0]["min_log_std"]},
-                               max_log_std={parameters[0]["max_log_std"]},
-                               role="{roles[0]}")
-        DeterministicMixin.__init__(self, clip_actions={parameters[1]["clip_actions"]}, role="{roles[1]}")
+        {get_init(structure[0], parameters[0], roles[0])}
+        {get_init(structure[1], parameters[1], roles[1])}
 
         {networks_common}
         {models[0]["networks"]}
         {models[1]["networks"]}
-        self.log_std_parameter = nn.Parameter({parameters[0]["initial_log_std"]} * torch.ones({models[0]["output"]["size"]}))
 
     def act(self, inputs, role):
         if role == "{roles[0]}":
-            return GaussianMixin.act(self, inputs, role)
+            return {structure[0]}.act(self, inputs, role)
         elif role == "{roles[1]}":
-            return DeterministicMixin.act(self, inputs, role)
+            return {structure[1]}.act(self, inputs, role)
     """
     if single_forward_pass:
         template += f"""
@@ -166,10 +198,10 @@ def shared_model(
         if role == "{roles[0]}":
             {forward_common}
             {models[0]["forward"]}
-            return output, self.log_std_parameter, {{}}
+            return {get_return(structure[0])}
         elif role == "{roles[1]}":
             {models[1]["forward"]}
-            return output, {{}}
+            return {get_return(structure[1])}
     """
     else:
         template += f"""
@@ -177,10 +209,10 @@ def shared_model(
         {forward_common}
         if role == "{roles[0]}":
             {models[0]["forward"]}
-            return output, self.log_std_parameter, {{}}
+            return {get_return(structure[0])}
         elif role == "{roles[1]}":
             {models[1]["forward"]}
-            return output, {{}}
+            return {get_return(structure[1])}
     """
     # return source
     if return_source:
@@ -189,6 +221,4 @@ def shared_model(
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["GaussianDeterministicModel"](
-        observation_space=observation_space, action_space=action_space, device=device
-    )
+    return _locals["SharedModel"](observation_space=observation_space, action_space=action_space, device=device)

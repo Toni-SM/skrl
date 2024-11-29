@@ -8,7 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
-from skrl.utils.spaces.torch import compute_space_size, unflatten_tensorized_space
+from skrl.utils.spaces.jax import compute_space_size, flatten_tensorized_space, sample_space, unflatten_tensorized_space
 
 
 @jax.jit
@@ -132,7 +132,14 @@ class Model(flax.linen.Module):
         :type key: jax.Array, optional
         """
         if not inputs:
-            inputs = {"states": self.observation_space.sample(), "taken_actions": self.action_space.sample()}
+            inputs = {
+                "states": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="jax", device=self.device), self._jax
+                ),
+                "taken_actions": flatten_tensorized_space(
+                    sample_space(self.action_space, backend="jax", device=self.device), self._jax
+                ),
+            }
         if key is None:
             key = config.jax.key
         if isinstance(inputs["states"], (int, np.int32, np.int64)):

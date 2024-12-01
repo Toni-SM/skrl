@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import Model  # noqa
-from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin  # noqa
+from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
@@ -63,6 +63,17 @@ def shared_model(
             max_log_std={parameter["max_log_std"]},
             role="{role}",
         )"""
+        elif class_name.lower() == "multivariategaussianmixin":
+            return f"""MultivariateGaussianMixin.__init__(
+            self,
+            clip_actions={parameter["clip_actions"]},
+            clip_log_std={parameter["clip_log_std"]},
+            min_log_std={parameter["min_log_std"]},
+            max_log_std={parameter["max_log_std"]},
+            max_log_std={parameter["max_log_std"]},
+            role="{role}",
+        )"""
+        raise ValueError(f"Unknown class: {class_name}")
 
     def get_return(class_name):
         if class_name.lower() == "categoricalmixin":
@@ -71,6 +82,9 @@ def shared_model(
             return r"output, {}"
         elif class_name.lower() == "gaussianmixin":
             return r"output, self.log_std_parameter, {}"
+        elif class_name.lower() == "multivariategaussianmixin":
+            return r"output, self.log_std_parameter, {}"
+        raise ValueError(f"Unknown class: {class_name}")
 
     def get_extra(class_name, parameter, role, model):
         if class_name.lower() == "categoricalmixin":
@@ -79,6 +93,9 @@ def shared_model(
             return ""
         elif class_name.lower() == "gaussianmixin":
             return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={float(parameter["initial_log_std"])}))'
+        elif class_name.lower() == "multivariategaussianmixin":
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={float(parameter["initial_log_std"])}))'
+        raise ValueError(f"Unknown class: {class_name}")
 
     # compatibility with versions prior to 1.3.0
     if not "network" in parameters[0]:

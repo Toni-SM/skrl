@@ -70,7 +70,6 @@ def shared_model(
             clip_log_std={parameter["clip_log_std"]},
             min_log_std={parameter["min_log_std"]},
             max_log_std={parameter["max_log_std"]},
-            max_log_std={parameter["max_log_std"]},
             role="{role}",
         )"""
         raise ValueError(f"Unknown class: {class_name}")

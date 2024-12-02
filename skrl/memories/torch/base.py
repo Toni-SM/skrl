@@ -9,7 +9,6 @@ import gymnasium
 
 import numpy as np
 import torch
-from torch.utils.data.sampler import BatchSampler
 
 from skrl.utils.spaces.torch import compute_space_size
 
@@ -321,7 +320,7 @@ class Memory:
         :rtype: list of torch.Tensor list
         """
         if mini_batches > 1:
-            batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
+            batches = np.array_split(indexes, mini_batches)
             return [[self.tensors_view[name][batch] for name in names] for batch in batches]
         return [[self.tensors_view[name][indexes] for name in names]]
 
@@ -344,17 +343,15 @@ class Memory:
         # sequential order
         if sequence_length > 1:
             if mini_batches > 1:
-                batches = BatchSampler(
-                    self.all_sequence_indexes, batch_size=len(self.all_sequence_indexes) // mini_batches, drop_last=True
-                )
+                batches = np.array_split(self.all_sequence_indexes, len(self.all_sequence_indexes) // mini_batches)
                 return [[self.tensors_view[name][batch] for name in names] for batch in batches]
             return [[self.tensors_view[name][self.all_sequence_indexes] for name in names]]
 
         # default order
         if mini_batches > 1:
-            indexes = np.arange(self.memory_size * self.num_envs)
-            batches = BatchSampler(indexes, batch_size=len(indexes) // mini_batches, drop_last=True)
-            return [[self.tensors_view[name][batch] for name in names] for batch in batches]
+            batch_size = (self.memory_size * self.num_envs) // mini_batches
+            batches = [(batch_size * i, batch_size * (i + 1)) for i in range(mini_batches)]
+            return [[self.tensors_view[name][batch[0] : batch[1]] for name in names] for batch in batches]
         return [[self.tensors_view[name] for name in names]]
 
     def get_sampling_indexes(self) -> Union[tuple, np.ndarray, torch.Tensor]:

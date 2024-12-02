@@ -6,13 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
 - `parse_device` static method in ML framework configuration for JAX
+- Model instantiator support for different shared model structures in PyTorch
+- Support for other model types than Gaussian and Deterministic in runners
 
 ### Changed
 - Call agent's `pre_interaction` method during evaluation
 - Use spaces utilities to process states, observations and actions for all the library components
 - Update model instantiators definitions to process supported fundamental and composite Gymnasium spaces
 - Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
-- Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9).
+- Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9)
 - Speed up distribution construction in PyTorch by disabling checking
 
 ### Changed (breaking changes: style)
@@ -20,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Moved the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
+- Model state dictionary initialization for composite Gymnasium spaces in JAX
 
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,

@@ -6,6 +6,10 @@ from torch.distributions import Normal
 from skrl.resources.noises.torch import Noise
 
 
+# speed up distribution construction by disabling checking
+Normal.set_default_validate_args(False)
+
+
 class OrnsteinUhlenbeckNoise(Noise):
     def __init__(
         self,

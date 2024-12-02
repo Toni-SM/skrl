@@ -4,6 +4,10 @@ import torch
 from torch.distributions import Categorical
 
 
+# speed up distribution construction by disabling checking
+Categorical.set_default_validate_args(False)
+
+
 class CategoricalMixin:
     def __init__(self, unnormalized_log_prob: bool = True, role: str = "") -> None:
         """Categorical mixin model (stochastic model)

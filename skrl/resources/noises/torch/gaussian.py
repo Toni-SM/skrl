@@ -6,6 +6,10 @@ from torch.distributions import Normal
 from skrl.resources.noises.torch import Noise
 
 
+# speed up distribution construction by disabling checking
+Normal.set_default_validate_args(False)
+
+
 class GaussianNoise(Noise):
     def __init__(self, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
         """Class representing a Gaussian noise

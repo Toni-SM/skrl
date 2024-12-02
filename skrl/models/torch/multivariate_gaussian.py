@@ -6,6 +6,10 @@ import torch
 from torch.distributions import MultivariateNormal
 
 
+# speed up distribution construction by disabling checking
+MultivariateNormal.set_default_validate_args(False)
+
+
 class MultivariateGaussianMixin:
     def __init__(
         self,

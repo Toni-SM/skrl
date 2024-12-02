@@ -6,6 +6,10 @@ import torch
 from torch.distributions import Normal
 
 
+# speed up distribution construction by disabling checking
+Normal.set_default_validate_args(False)
+
+
 class GaussianMixin:
     def __init__(
         self,

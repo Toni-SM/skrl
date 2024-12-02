@@ -55,6 +55,7 @@ def tensorize_space(
     """
     if x is None:
         return None
+    device = config.jax.parse_device(device)
     # fundamental spaces
     # Box
     if isinstance(space, spaces.Box):
@@ -62,7 +63,7 @@ def tensorize_space(
             return x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
             if _jax:
-                return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+                return jax.device_put(x.reshape(-1, *space.shape), device=device)
             return x.reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
@@ -72,7 +73,7 @@ def tensorize_space(
             return x.reshape(-1, 1)
         elif isinstance(x, np.ndarray):
             if _jax:
-                return jax.device_put(x.reshape(-1, 1), config.jax.parse_device(device))
+                return jax.device_put(x.reshape(-1, 1), device=device)
             return x.reshape(-1, 1)
         elif isinstance(x, np.number) or type(x) in [int, float]:
             if _jax:
@@ -86,7 +87,7 @@ def tensorize_space(
             return x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
             if _jax:
-                return jax.device_put(x.reshape(-1, *space.shape), config.jax.parse_device(device))
+                return jax.device_put(x.reshape(-1, *space.shape), device=device)
             return x.reshape(-1, *space.shape)
         elif type(x) in [list, tuple]:
             if _jax:
@@ -285,6 +286,7 @@ def sample_space(space: spaces.Space, batch_size: int = 1, backend: str = Litera
 
     :return: Sample of the space
     """
+    device = config.jax.parse_device(device)
     # fundamental spaces
     # Box
     if isinstance(space, spaces.Box):

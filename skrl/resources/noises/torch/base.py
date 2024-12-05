@@ -2,6 +2,8 @@ from typing import Optional, Tuple, Union
 
 import torch
 
+from skrl import config
+
 
 class Noise:
     def __init__(self, device: Optional[Union[str, torch.device]] = None) -> None:
@@ -23,10 +25,7 @@ class Noise:
                 def sample(self, size):
                     return torch.rand(size, device=self.device)
         """
-        if device is None:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        else:
-            self.device = torch.device(device)
+        self.device = config.torch.parse_device(device)
 
     def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:
         """Sample a noise with the same size (shape) as the input tensor

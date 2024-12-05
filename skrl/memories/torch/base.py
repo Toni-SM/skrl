@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from torch.utils.data.sampler import BatchSampler
 
+from skrl import config
 from skrl.utils.spaces.torch import compute_space_size
 
 
@@ -50,9 +51,7 @@ class Memory:
         """
         self.memory_size = memory_size
         self.num_envs = num_envs
-        self.device = (
-            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
-        )
+        self.device = config.torch.parse_device(device)
 
         # internal variables
         self.filled = False

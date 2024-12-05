@@ -51,13 +51,7 @@ class Agent:
         self.action_space = action_space
         self.cfg = cfg if cfg is not None else {}
 
-        if device is None:
-            self.device = jax.devices()[0]
-        else:
-            self.device = device
-            if type(device) == str:
-                device_type, device_index = f"{device}:0".split(":")[:2]
-                self.device = jax.devices(device_type)[int(device_index)]
+        self.device = config.jax.parse_device(device)
 
         if type(memory) is list:
             self.memory = memory[0]

@@ -4,6 +4,8 @@ import gymnasium
 
 import torch
 
+from skrl import config
+
 
 class Wrapper(object):
     def __init__(self, env: Any) -> None:
@@ -20,9 +22,9 @@ class Wrapper(object):
 
         # device
         if hasattr(self._unwrapped, "device"):
-            self._device = torch.device(self._unwrapped.device)
+            self._device = config.torch.parse_device(self._unwrapped.device)
         else:
-            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = config.torch.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -152,9 +154,9 @@ class MultiAgentEnvWrapper(object):
 
         # device
         if hasattr(self._unwrapped, "device"):
-            self._device = torch.device(self._unwrapped.device)
+            self._device = config.torch.parse_device(self._unwrapped.device)
         else:
-            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = config.torch.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment

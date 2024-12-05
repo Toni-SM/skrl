@@ -70,26 +70,38 @@ class _Config(object):
                     torch.cuda.set_device(self._local_rank)
 
             @staticmethod
-            def parse_device(device: Union[str, "torch.device", None]) -> "torch.device":
+            def parse_device(device: Union[str, "torch.device", None], validate: bool = True) -> "torch.device":
                 """Parse the input device and return a :py:class:`~torch.device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
                                the default available device will be returned instead.
+                :param validate: Whether to check that the specified device is valid. Since PyTorch does not check if
+                                 the specified device index is valid, a tensor is created for the verification.
 
                 :return: PyTorch device.
                 """
                 import torch
 
+                _device = None
                 if isinstance(device, torch.device):
-                    return device
+                    _device = device
                 elif isinstance(device, str):
                     try:
-                        return torch.device(device)
+                        _device = torch.device(device)
                     except RuntimeError as e:
                         logger.warning(f"Invalid device specification ({device}): {e}")
-                return torch.device(
-                    "cuda:0" if torch.cuda.is_available() else "cpu"
-                )  # torch.get_default_device() was introduced in version 2.3.0
+                if _device is None:
+                    _device = torch.device(
+                        "cuda:0" if torch.cuda.is_available() else "cpu"
+                    )  # torch.get_default_device() was introduced in version 2.3.0
+                # validate device
+                if validate:
+                    try:
+                        torch.zeros((1,), device=_device)
+                    except Exception as e:
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                        _device = PyTorch.parse_device(None)
+                return _device
 
             @property
             def device(self) -> "torch.device":

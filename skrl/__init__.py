@@ -51,12 +51,13 @@ class _Config(object):
         class PyTorch(object):
             def __init__(self) -> None:
                 """PyTorch configuration"""
-                self._device = None
                 # torch.distributed config
                 self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
                 self._rank = int(os.getenv("RANK", "0"))
                 self._world_size = int(os.getenv("WORLD_SIZE", "1"))
                 self._is_distributed = self._world_size > 1
+                # device
+                self._device = f"cuda:{self._local_rank}"
 
                 # set up distributed runs
                 if self._is_distributed:
@@ -68,6 +69,28 @@ class _Config(object):
                     torch.distributed.init_process_group("nccl", rank=self._rank, world_size=self._world_size)
                     torch.cuda.set_device(self._local_rank)
 
+            @staticmethod
+            def parse_device(device: Union[str, "torch.device", None]) -> "torch.device":
+                """Parse the input device and return a :py:class:`~torch.device` instance.
+
+                :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
+                               the default available device will be returned instead.
+
+                :return: PyTorch device.
+                """
+                import torch
+
+                if isinstance(device, torch.device):
+                    return device
+                elif isinstance(device, str):
+                    try:
+                        return torch.device(device)
+                    except RuntimeError as e:
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                return torch.device(
+                    "cuda:0" if torch.cuda.is_available() else "cpu"
+                )  # torch.get_default_device() was introduced in version 2.3.0
+
             @property
             def device(self) -> "torch.device":
                 """Default device
@@ -75,14 +98,8 @@ class _Config(object):
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
                 if CUDA is available, ``cpu`` otherwise
                 """
-                try:
-                    import torch
-
-                    if self._device is None:
-                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
-                    return torch.device(self._device)
-                except ImportError:
-                    return self._device
+                self._device = self.parse_device(self._device)
+                return self._device
 
             @device.setter
             def device(self, device: Union[str, "torch.device"]) -> None:

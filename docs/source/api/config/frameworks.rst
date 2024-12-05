@@ -19,6 +19,8 @@ PyTorch specific configuration
 API
 ^^^
 
+.. autofunction:: skrl.config.torch.parse_device
+
 .. py:data:: skrl.config.torch.device
     :type: torch.device
     :value: "cuda:${LOCAL_RANK}" | "cpu"
@@ -78,6 +80,8 @@ JAX specific configuration
 API
 ^^^
 
+.. autofunction:: skrl.config.jax.parse_device
+
 .. py:data:: skrl.config.jax.device
     :type: jax.Device
     :value: "cuda:${LOCAL_RANK}" | "cpu"
@@ -85,8 +89,6 @@ API
     Default device
 
     The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise
-
-.. autofunction:: skrl.config.jax.parse_device
 
 .. py:data:: skrl.config.jax.backend
     :type: str

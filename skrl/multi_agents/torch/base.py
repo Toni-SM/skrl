@@ -53,11 +53,9 @@ class MultiAgent:
         self.memories = memories
         self.observation_spaces = observation_spaces
         self.action_spaces = action_spaces
-
         self.cfg = cfg if cfg is not None else {}
-        self.device = (
-            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
-        )
+
+        self.device = config.torch.parse_device(device)
 
         # convert the models to their respective device
         for _models in self.models.values():

@@ -5,6 +5,7 @@ import gymnasium
 import torch
 import torch.nn as nn
 
+from skrl import config
 from skrl.utils.spaces.torch import compute_space_size
 
 
@@ -44,10 +45,8 @@ class RunningStandardScaler(nn.Module):
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
-        if device is None:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        else:
-            self.device = torch.device(device)
+
+        self.device = config.torch.parse_device(device)
 
         size = compute_space_size(size, occupied_size=True)
 

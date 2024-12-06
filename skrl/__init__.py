@@ -46,17 +46,18 @@ logger.addHandler(_handler)
 # machine learning framework configuration
 class _Config(object):
     def __init__(self) -> None:
-        """Machine learning framework specific configuration"""
+        """Machine learning framework specific configuration."""
 
         class PyTorch(object):
             def __init__(self) -> None:
-                """PyTorch configuration"""
-                self._device = None
+                """PyTorch configuration."""
                 # torch.distributed config
                 self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
                 self._rank = int(os.getenv("RANK", "0"))
                 self._world_size = int(os.getenv("WORLD_SIZE", "1"))
                 self._is_distributed = self._world_size > 1
+                # device
+                self._device = f"cuda:{self._local_rank}"
 
                 # set up distributed runs
                 if self._is_distributed:
@@ -68,21 +69,49 @@ class _Config(object):
                     torch.distributed.init_process_group("nccl", rank=self._rank, world_size=self._world_size)
                     torch.cuda.set_device(self._local_rank)
 
+            @staticmethod
+            def parse_device(device: Union[str, "torch.device", None], validate: bool = True) -> "torch.device":
+                """Parse the input device and return a :py:class:`~torch.device` instance.
+
+                :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
+                               the default available device will be returned instead.
+                :param validate: Whether to check that the specified device is valid. Since PyTorch does not check if
+                                 the specified device index is valid, a tensor is created for the verification.
+
+                :return: PyTorch device.
+                """
+                import torch
+
+                _device = None
+                if isinstance(device, torch.device):
+                    _device = device
+                elif isinstance(device, str):
+                    try:
+                        _device = torch.device(device)
+                    except RuntimeError as e:
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                if _device is None:
+                    _device = torch.device(
+                        "cuda:0" if torch.cuda.is_available() else "cpu"
+                    )  # torch.get_default_device() was introduced in version 2.3.0
+                # validate device
+                if validate:
+                    try:
+                        torch.zeros((1,), device=_device)
+                    except Exception as e:
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                        _device = PyTorch.parse_device(None)
+                return _device
+
             @property
             def device(self) -> "torch.device":
-                """Default device
+                """Default device.
 
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise
+                if CUDA is available, ``cpu`` otherwise.
                 """
-                try:
-                    import torch
-
-                    if self._device is None:
-                        return torch.device(f"cuda:{self._local_rank}" if torch.cuda.is_available() else "cpu")
-                    return torch.device(self._device)
-                except ImportError:
-                    return self._device
+                self._device = self.parse_device(self._device, validate=False)
+                return self._device
 
             @device.setter
             def device(self, device: Union[str, "torch.device"]) -> None:
@@ -90,39 +119,47 @@ class _Config(object):
 
             @property
             def local_rank(self) -> int:
-                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node).
 
-                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``LOCAL_RANK`` environment variable (``0`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._local_rank
 
             @property
             def rank(self) -> int:
-                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes).
 
-                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``RANK`` environment variable (``0`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._rank
 
             @property
             def world_size(self) -> int:
-                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes).
 
-                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                This property reads from the ``WORLD_SIZE`` environment variable (``1`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._world_size
 
             @property
             def is_distributed(self) -> bool:
-                """Whether if running in a distributed environment
+                """Whether if running in a distributed environment.
 
-                This property is ``True`` when the PyTorch's distributed environment variable ``WORLD_SIZE > 1``
+                This property is ``True`` when the PyTorch's distributed environment variable ``WORLD_SIZE > 1``.
+
+                Read-only attribute.
                 """
                 return self._is_distributed
 
         class JAX(object):
             def __init__(self) -> None:
-                """JAX configuration"""
+                """JAX configuration."""
                 self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
@@ -179,10 +216,10 @@ class _Config(object):
 
             @property
             def device(self) -> "jax.Device":
-                """Default device
+                """Default device.
 
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise
+                if CUDA is available, ``cpu`` otherwise.
                 """
                 self._device = self.parse_device(self._device)
                 return self._device
@@ -190,13 +227,17 @@ class _Config(object):
             @device.setter
             def device(self, device: Union[str, "jax.Device"]) -> None:
                 self._device = device
+                if not isinstance(self._key, np.ndarray):
+                    import jax
+
+                    self._key = np.asarray(jax.device_get(self._key))
 
             @property
             def backend(self) -> str:
-                """Backend used by the different components to operate and generate arrays
+                """Backend used by the different components to operate and generate arrays.
 
                 This configuration excludes models and optimizers.
-                Supported backend are: ``"numpy"`` and ``"jax"``
+                Supported backend are: ``"numpy"`` and ``"jax"``.
                 """
                 return self._backend
 
@@ -208,7 +249,10 @@ class _Config(object):
 
             @property
             def key(self) -> "jax.Array":
-                """Pseudo-random number generator (PRNG) key"""
+                """Pseudo-random number generator (PRNG) key.
+
+                Key is formatted as 32-bit unsigned integer and the default device is used.
+                """
                 if isinstance(self._key, np.ndarray):
                     try:
                         import jax
@@ -220,49 +264,59 @@ class _Config(object):
                 return self._key
 
             @key.setter
-            def key(self, value: Union[int, "jax.Array"]) -> None:
+            def key(self, value: Union[int, np.ndarray, "jax.Array"]) -> None:
                 if isinstance(value, (int, float)):
                     value = np.array([0, value], dtype=np.uint32)
                 self._key = value
 
             @property
             def local_rank(self) -> int:
-                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node)
+                """The rank of the worker/process (e.g.: GPU) within a local worker group (e.g.: node).
 
-                This property reads from the ``JAX_LOCAL_RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``JAX_LOCAL_RANK`` environment variable (``0`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._local_rank
 
             @property
             def rank(self) -> int:
-                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes)
+                """The rank of the worker/process (e.g.: GPU) within a worker group (e.g.: across all nodes).
 
-                This property reads from the ``JAX_RANK`` environment variable (``0`` if it doesn't exist)
+                This property reads from the ``JAX_RANK`` environment variable (``0`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._rank
 
             @property
             def world_size(self) -> int:
-                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes)
+                """The total number of workers/process (e.g.: GPUs) in a worker group (e.g.: across all nodes).
 
-                This property reads from the ``JAX_WORLD_SIZE`` environment variable (``1`` if it doesn't exist)
+                This property reads from the ``JAX_WORLD_SIZE`` environment variable (``1`` if it doesn't exist).
+
+                Read-only attribute.
                 """
                 return self._world_size
 
             @property
             def coordinator_address(self) -> int:
-                """IP address and port where process 0 will start a JAX service
+                """IP address and port where process 0 will start a JAX service.
 
                 This property reads from the ``JAX_COORDINATOR_ADDR:JAX_COORDINATOR_PORT`` environment variables
-                (``127.0.0.1:1234`` if they don't exist)
+                (``127.0.0.1:1234`` if they don't exist).
+
+                Read-only attribute.
                 """
                 return self._coordinator_address
 
             @property
             def is_distributed(self) -> bool:
-                """Whether if running in a distributed environment
+                """Whether if running in a distributed environment.
 
-                This property is ``True`` when the JAX's distributed environment variable ``JAX_WORLD_SIZE > 1``
+                This property is ``True`` when the JAX's distributed environment variable ``JAX_WORLD_SIZE > 1``.
+
+                Read-only attribute.
                 """
                 return self._is_distributed
 

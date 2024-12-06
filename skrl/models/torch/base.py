@@ -56,9 +56,7 @@ class Model(torch.nn.Module):
         """
         super(Model, self).__init__()
 
-        self.device = (
-            torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
-        )
+        self.device = config.torch.parse_device(device)
 
         self.observation_space = observation_space
         self.action_space = action_space

@@ -24,18 +24,10 @@ class Wrapper(object):
             self._unwrapped = env
 
         # device
-        self._device = None
         if hasattr(self._unwrapped, "device"):
-            if type(self._unwrapped.device) == str:
-                device_type, device_index = f"{self._unwrapped.device}:0".split(":")[:2]
-                try:
-                    self._device = jax.devices(device_type)[int(device_index)]
-                except (RuntimeError, IndexError):
-                    self._device = None
-            else:
-                self._device = self._unwrapped.device
-        if self._device is None:
-            self._device = jax.devices()[0]
+            self._device = config.jax.parse_device(self._unwrapped.device)
+        else:
+            self._device = config.jax.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -172,18 +164,10 @@ class MultiAgentEnvWrapper(object):
             self._unwrapped = env
 
         # device
-        self._device = None
         if hasattr(self._unwrapped, "device"):
-            if type(self._unwrapped.device) == str:
-                device_type, device_index = f"{self._unwrapped.device}:0".split(":")[:2]
-                try:
-                    self._device = jax.devices(device_type)[int(device_index)]
-                except (RuntimeError, IndexError):
-                    self._device = None
-            else:
-                self._device = self._unwrapped.device
-        if self._device is None:
-            self._device = jax.devices()[0]
+            self._device = config.jax.parse_device(self._unwrapped.device)
+        else:
+            self._device = config.jax.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment

@@ -29,13 +29,9 @@ def test_parse_device(capsys, device: Union[str, None], validate: bool):
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda", "cuda:0", "cuda:10", "edge-case"])
 def test_device(capsys, device: Union[str, None]):
-    target_device = None
     if device in [None, "edge-case"]:
         target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    elif device.startswith("cuda"):
-        if int(f"{device}:0".split(":")[1]) >= torch.cuda.device_count():
-            target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if not target_device:
+    else:
         target_device = torch.device(device)
 
     # check setter/getter

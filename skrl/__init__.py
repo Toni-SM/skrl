@@ -110,7 +110,7 @@ class _Config(object):
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
                 if CUDA is available, ``cpu`` otherwise.
                 """
-                self._device = self.parse_device(self._device)
+                self._device = self.parse_device(self._device, validate=False)
                 return self._device
 
             @device.setter

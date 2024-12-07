@@ -70,13 +70,7 @@ class Memory:
 
         self.memory_size = memory_size
         self.num_envs = num_envs
-        if device is None:
-            self.device = jax.devices()[0]
-        else:
-            self.device = device
-            if type(device) == str:
-                device_type, device_index = f"{device}:0".split(":")[:2]
-                self.device = jax.devices(device_type)[int(device_index)]
+        self.device = config.jax.parse_device(device)
 
         # internal variables
         self.filled = False

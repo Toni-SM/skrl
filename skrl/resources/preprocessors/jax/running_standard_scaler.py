@@ -92,13 +92,7 @@ class RunningStandardScaler:
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
-        if device is None:
-            self.device = jax.devices()[0]
-        else:
-            self.device = device
-            if type(device) == str:
-                device_type, device_index = f"{device}:0".split(":")[:2]
-                self.device = jax.devices(device_type)[int(device_index)]
+        self.device = config.jax.parse_device(device)
 
         size = compute_space_size(size, occupied_size=True)
 

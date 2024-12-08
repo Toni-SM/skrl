@@ -1,6 +1,5 @@
 import hypothesis.strategies as st
 
-import gym
 import gymnasium
 
 
@@ -9,7 +8,7 @@ def gymnasium_space_stategy(draw, space_type: str = "", remaining_iterations: in
     if not space_type:
         space_type = draw(st.sampled_from(["Box", "Discrete", "MultiDiscrete", "Dict", "Tuple"]))
     # recursion base case
-    if remaining_iterations <= 0 and space_type == "Dict":
+    if remaining_iterations <= 0 and space_type in ["Dict", "Tuple"]:
         space_type = "Box"
 
     if space_type == "Box":
@@ -37,11 +36,13 @@ def gymnasium_space_stategy(draw, space_type: str = "", remaining_iterations: in
 
 
 @st.composite
-def gym_space_stategy(draw, space_type: str = "", remaining_iterations: int = 5) -> gym.spaces.Space:
+def gym_space_stategy(draw, space_type: str = "", remaining_iterations: int = 5) -> "gym.spaces.Space":
+    import gym
+
     if not space_type:
         space_type = draw(st.sampled_from(["Box", "Discrete", "MultiDiscrete", "Dict", "Tuple"]))
     # recursion base case
-    if remaining_iterations <= 0 and space_type == "Dict":
+    if remaining_iterations <= 0 and space_type in ["Dict", "Tuple"]:
         space_type = "Box"
 
     if space_type == "Box":

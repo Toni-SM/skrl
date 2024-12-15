@@ -44,6 +44,8 @@ SAC_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -160,6 +162,12 @@ class SAC_RNN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # entropy
         if self._learn_entropy:
             self._target_entropy = self.cfg["target_entropy"]
@@ -257,7 +265,8 @@ class SAC_RNN(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         if self._rnn:
             self._rnn_final_states["policy"] = outputs.get("rnn", [])
@@ -394,80 +403,102 @@ class SAC_RNN(Agent):
                 )[0]
                 rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-            # compute target values
-            with torch.no_grad():
-                next_actions, next_log_prob, _ = self.policy.act(
-                    {"states": sampled_next_states, **rnn_policy}, role="policy"
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+
+                # compute target values
+                with torch.no_grad():
+                    next_actions, next_log_prob, _ = self.policy.act(
+                        {"states": sampled_next_states, **rnn_policy}, role="policy"
+                    )
+
+                    target_q1_values, _, _ = self.target_critic_1.act(
+                        {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy},
+                        role="target_critic_1",
+                    )
+                    target_q2_values, _, _ = self.target_critic_2.act(
+                        {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy},
+                        role="target_critic_2",
+                    )
+                    target_q_values = (
+                        torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
+                    )
+                    target_values = (
+                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                    )
+
+                # compute critic loss
+                critic_1_values, _, _ = self.critic_1.act(
+                    {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_1"
+                )
+                critic_2_values, _, _ = self.critic_2.act(
+                    {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_2"
                 )
 
-                target_q1_values, _, _ = self.target_critic_1.act(
-                    {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_1"
-                )
-                target_q2_values, _, _ = self.target_critic_2.act(
-                    {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic_2"
-                )
-                target_q_values = (
-                    torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
-                )
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
-
-            # compute critic loss
-            critic_1_values, _, _ = self.critic_1.act(
-                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_1"
-            )
-            critic_2_values, _, _ = self.critic_2.act(
-                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic_2"
-            )
-
-            critic_loss = (F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)) / 2
+                critic_loss = (
+                    F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
+                ) / 2
 
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
-            critic_loss.backward()
+            self.scaler.scale(critic_loss).backward()
+
             if config.torch.is_distributed:
                 self.critic_1.reduce_parameters()
                 self.critic_2.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.critic_optimizer)
                 nn.utils.clip_grad_norm_(
                     itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip
                 )
-            self.critic_optimizer.step()
 
-            # compute policy (actor) loss
-            actions, log_prob, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
-            critic_1_values, _, _ = self.critic_1.act(
-                {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_1"
-            )
-            critic_2_values, _, _ = self.critic_2.act(
-                {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_2"
-            )
+            self.scaler.step(self.critic_optimizer)
 
-            policy_loss = (self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)).mean()
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                # compute policy (actor) loss
+                actions, log_prob, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
+                critic_1_values, _, _ = self.critic_1.act(
+                    {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_1"
+                )
+                critic_2_values, _, _ = self.critic_2.act(
+                    {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic_2"
+                )
+
+                policy_loss = (
+                    self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)
+                ).mean()
 
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
+            self.scaler.scale(policy_loss).backward()
+
             if config.torch.is_distributed:
                 self.policy.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.policy_optimizer)
                 nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-            self.policy_optimizer.step()
+
+            self.scaler.step(self.policy_optimizer)
 
             # entropy learning
             if self._learn_entropy:
-                # compute entropy loss
-                entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
+                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                    # compute entropy loss
+                    entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
                 # optimization step (entropy)
                 self.entropy_optimizer.zero_grad()
-                entropy_loss.backward()
-                self.entropy_optimizer.step()
+                self.scaler.scale(entropy_loss).backward()
+                self.scaler.step(self.entropy_optimizer)
 
                 # compute entropy coefficient
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
+
+            self.scaler.update()  # called once, after optimizers have been stepped
 
             # update target networks
             self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)

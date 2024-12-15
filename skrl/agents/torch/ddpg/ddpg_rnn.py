@@ -44,6 +44,8 @@ DDPG_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -157,6 +159,12 @@ class DDPG_RNN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
@@ -238,7 +246,8 @@ class DDPG_RNN(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         # sample deterministic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         if self._rnn:
             self._rnn_final_states["policy"] = outputs.get("rnn", [])
@@ -407,52 +416,68 @@ class DDPG_RNN(Agent):
                 )[0]
                 rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-            # compute target values
-            with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act(
-                    {"states": sampled_next_states, **rnn_policy}, role="target_policy"
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+
+                # compute target values
+                with torch.no_grad():
+                    next_actions, _, _ = self.target_policy.act(
+                        {"states": sampled_next_states, **rnn_policy}, role="target_policy"
+                    )
+
+                    target_q_values, _, _ = self.target_critic.act(
+                        {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy},
+                        role="target_critic",
+                    )
+                    target_values = (
+                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                    )
+
+                # compute critic loss
+                critic_values, _, _ = self.critic.act(
+                    {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic"
                 )
 
-                target_q_values, _, _ = self.target_critic.act(
-                    {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic"
-                )
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
-
-            # compute critic loss
-            critic_values, _, _ = self.critic.act(
-                {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic"
-            )
-
-            critic_loss = F.mse_loss(critic_values, target_values)
+                critic_loss = F.mse_loss(critic_values, target_values)
 
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
-            critic_loss.backward()
+            self.scaler.scale(critic_loss).backward()
+
             if config.torch.is_distributed:
                 self.critic.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.critic_optimizer)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
-            self.critic_optimizer.step()
 
-            # compute policy (actor) loss
-            actions, _, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
-            critic_values, _, _ = self.critic.act(
-                {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic"
-            )
+            self.scaler.step(self.critic_optimizer)
 
-            policy_loss = -critic_values.mean()
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                # compute policy (actor) loss
+                actions, _, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
+                critic_values, _, _ = self.critic.act(
+                    {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic"
+                )
+
+                policy_loss = -critic_values.mean()
 
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
+            self.scaler.scale(policy_loss).backward()
+
             if config.torch.is_distributed:
                 self.policy.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.policy_optimizer)
                 nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-            self.policy_optimizer.step()
+
+            self.scaler.step(self.policy_optimizer)
+
+            self.scaler.update()  # called once, after optimizers have been stepped
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)

@@ -32,6 +32,8 @@ CEM_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -114,7 +116,13 @@ class CEM(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
         self._episode_tracking = []
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
@@ -168,7 +176,8 @@ class CEM(Agent):
             return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        return self.policy.act({"states": states}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            return self.policy.act({"states": states}, role="policy")
 
     def record_transition(
         self,
@@ -306,17 +315,21 @@ class CEM(Agent):
             elite_states = torch.cat([sampled_states[limits[i][0] : limits[i][1]] for i in indexes[:, 0]], dim=0)
             elite_actions = torch.cat([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes[:, 0]], dim=0)
 
-        # compute scores for the elite states
-        _, _, outputs = self.policy.act({"states": elite_states}, role="policy")
-        scores = outputs["net_output"]
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-        # compute policy loss
-        policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
+            # compute scores for the elite states
+            _, _, outputs = self.policy.act({"states": elite_states}, role="policy")
+            scores = outputs["net_output"]
+
+            # compute policy loss
+            policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
         # optimization step
         self.optimizer.zero_grad()
-        policy_loss.backward()
-        self.optimizer.step()
+        self.scaler.scale(policy_loss).backward()
+
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
 
         # update learning rate
         if self._learning_rate_scheduler:

@@ -43,6 +43,8 @@ DDQN_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -147,6 +149,12 @@ class DDQN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
             self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
@@ -212,9 +220,10 @@ class DDQN(Agent):
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(
-                self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True
-            )
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                actions[indexes] = torch.argmax(
+                    self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True
+                )
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
@@ -322,37 +331,48 @@ class DDQN(Agent):
                 names=self.tensors_names, batch_size=self._batch_size
             )[0]
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-            # compute target values
-            with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act(
-                    {"states": sampled_next_states}, role="target_q_network"
-                )
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
-                target_q_values = torch.gather(
-                    next_q_values,
+                # compute target values
+                with torch.no_grad():
+                    next_q_values, _, _ = self.target_q_network.act(
+                        {"states": sampled_next_states}, role="target_q_network"
+                    )
+
+                    target_q_values = torch.gather(
+                        next_q_values,
+                        dim=1,
+                        index=torch.argmax(
+                            self.q_network.act({"states": sampled_next_states}, role="q_network")[0],
+                            dim=1,
+                            keepdim=True,
+                        ),
+                    )
+                    target_values = (
+                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                    )
+
+                # compute Q-network loss
+                q_values = torch.gather(
+                    self.q_network.act({"states": sampled_states}, role="q_network")[0],
                     dim=1,
-                    index=torch.argmax(
-                        self.q_network.act({"states": sampled_next_states}, role="q_network")[0], dim=1, keepdim=True
-                    ),
+                    index=sampled_actions.long(),
                 )
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
-            # compute Q-network loss
-            q_values = torch.gather(
-                self.q_network.act({"states": sampled_states}, role="q_network")[0], dim=1, index=sampled_actions.long()
-            )
-
-            q_network_loss = F.mse_loss(q_values, target_values)
+                q_network_loss = F.mse_loss(q_values, target_values)
 
             # optimize Q-network
             self.optimizer.zero_grad()
-            q_network_loss.backward()
+            self.scaler.scale(q_network_loss).backward()
+
             if config.torch.is_distributed:
                 self.q_network.reduce_parameters()
-            self.optimizer.step()
+
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
             # update target network
             if not timestep % self._target_update_interval:

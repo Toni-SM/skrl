@@ -30,6 +30,11 @@ PyTorch
 JAX
 """
 
+    .. warning::
+
+        It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+        Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the steps described below.
+
     * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ 0.4.3 or higher
     * `flax <https://flax.readthedocs.io>`_
     * `optax <https://optax.readthedocs.io>`_
@@ -62,8 +67,8 @@ To install **skrl** with pip, execute:
 
         .. warning::
 
-            JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-            `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+            It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+            Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
         .. code-block:: bash
 
@@ -109,8 +114,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
             .. code-block:: bash
 
@@ -142,8 +147,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
             .. code-block:: bash
 

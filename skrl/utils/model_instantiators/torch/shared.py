@@ -63,7 +63,7 @@ def shared_model(
             clip_log_std={parameter.get("clip_log_std", True)},
             min_log_std={parameter.get("min_log_std", -20)},
             max_log_std={parameter.get("max_log_std", 2)},
-            reduction={parameter.get("reduction", "sum")},
+            reduction="{parameter.get("reduction", "sum")}",
             role="{role}",
         )"""
         elif class_name.lower() == "multivariategaussianmixin":

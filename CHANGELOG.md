@@ -23,8 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Format code using Black code formatter (it's ugly, yes, but it does its job)
 
 ### Fixed
-- Moved the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
+- Move the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
 - Model state dictionary initialization for composite Gymnasium spaces in JAX
+- Add missing `reduction` parameter to Gaussian model instantiator
 
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,

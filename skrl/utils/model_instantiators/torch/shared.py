@@ -51,25 +51,28 @@ def shared_model(
 
     def get_init(class_name, parameter, role):
         if class_name.lower() == "categoricalmixin":
-            return f'CategoricalMixin.__init__(self, unnormalized_log_prob={parameter["unnormalized_log_prob"]}, role="{role}")'
+            return f'CategoricalMixin.__init__(self, unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)}, role="{role}")'
         elif class_name.lower() == "deterministicmixin":
-            return f'DeterministicMixin.__init__(self, clip_actions={parameter["clip_actions"]}, role="{role}")'
+            return (
+                f'DeterministicMixin.__init__(self, clip_actions={parameter.get("clip_actions", False)}, role="{role}")'
+            )
         elif class_name.lower() == "gaussianmixin":
             return f"""GaussianMixin.__init__(
             self,
-            clip_actions={parameter["clip_actions"]},
-            clip_log_std={parameter["clip_log_std"]},
-            min_log_std={parameter["min_log_std"]},
-            max_log_std={parameter["max_log_std"]},
+            clip_actions={parameter.get("clip_actions", False)},
+            clip_log_std={parameter.get("clip_log_std", True)},
+            min_log_std={parameter.get("min_log_std", -20)},
+            max_log_std={parameter.get("max_log_std", 2)},
+            reduction={parameter.get("reduction", "sum")},
             role="{role}",
         )"""
         elif class_name.lower() == "multivariategaussianmixin":
             return f"""MultivariateGaussianMixin.__init__(
             self,
-            clip_actions={parameter["clip_actions"]},
-            clip_log_std={parameter["clip_log_std"]},
-            min_log_std={parameter["min_log_std"]},
-            max_log_std={parameter["max_log_std"]},
+            clip_actions={parameter.get("clip_actions", False)},
+            clip_log_std={parameter.get("clip_log_std", True)},
+            min_log_std={parameter.get("min_log_std", -20)},
+            max_log_std={parameter.get("max_log_std", 2)},
             role="{role}",
         )"""
         raise ValueError(f"Unknown class: {class_name}")
@@ -91,9 +94,11 @@ def shared_model(
         elif class_name.lower() == "deterministicmixin":
             return ""
         elif class_name.lower() == "gaussianmixin":
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={float(parameter["initial_log_std"])}))'
+            initial_log_std = float(parameter.get("initial_log_std", 0))
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}))'
         elif class_name.lower() == "multivariategaussianmixin":
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={float(parameter["initial_log_std"])}))'
+            initial_log_std = float(parameter.get("initial_log_std", 0))
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}))'
         raise ValueError(f"Unknown class: {class_name}")
 
     # compatibility with versions prior to 1.3.0

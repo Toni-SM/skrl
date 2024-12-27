@@ -6,20 +6,14 @@ import gymnasium
 
 import torch
 
-from skrl.agents.torch.ppo import PPO as Agent
-from skrl.agents.torch.ppo import PPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.trpo import TRPO as Agent
+from skrl.agents.torch.trpo import TRPO_DEFAULT_CONFIG as DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.trainers.torch import SequentialTrainer
-from skrl.utils.model_instantiators.torch import (
-    categorical_model,
-    deterministic_model,
-    gaussian_model,
-    multivariate_gaussian_model,
-    shared_model,
-)
+from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, multivariate_gaussian_model
 from skrl.utils.spaces.torch import sample_space
 
 from ..utils import BaseEnv
@@ -48,7 +42,7 @@ def _check_agent_config(config, default_config):
     mini_batches=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     lambda_=st.floats(min_value=0, max_value=1),
-    learning_rate=st.floats(min_value=1.0e-10, max_value=1),
+    value_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
@@ -56,26 +50,24 @@ def _check_agent_config(config, default_config):
     random_timesteps=st.just(0),
     learning_starts=st.just(0),
     grad_norm_clip=st.floats(min_value=0, max_value=1),
-    ratio_clip=st.floats(min_value=0, max_value=1),
-    value_clip=st.floats(min_value=0, max_value=1),
-    clip_predicted_values=st.booleans(),
-    entropy_loss_scale=st.floats(min_value=0, max_value=1),
     value_loss_scale=st.floats(min_value=0, max_value=1),
-    kl_threshold=st.floats(min_value=0, max_value=1),
+    damping=st.floats(min_value=0, max_value=1),
+    max_kl_divergence=st.floats(min_value=0, max_value=1),
+    conjugate_gradient_steps=st.integers(min_value=1, max_value=5),
+    max_backtrack_steps=st.integers(min_value=1, max_value=5),
+    accept_ratio=st.floats(min_value=0, max_value=1),
+    step_fraction=st.floats(min_value=0, max_value=1),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
     time_limit_bootstrap=st.booleans(),
-    mixed_precision=st.booleans(),
 )
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
-@pytest.mark.parametrize("separate", [True, False])
-@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin", "CategoricalMixin"])
+@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin"])
 def test_agent(
     capsys,
     device,
     num_envs,
     # model config
-    separate,
     policy_structure,
     # agent config
     rollouts,
@@ -83,7 +75,7 @@ def test_agent(
     mini_batches,
     discount_factor,
     lambda_,
-    learning_rate,
+    value_learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
     state_preprocessor,
@@ -91,22 +83,19 @@ def test_agent(
     random_timesteps,
     learning_starts,
     grad_norm_clip,
-    ratio_clip,
-    value_clip,
-    clip_predicted_values,
-    entropy_loss_scale,
     value_loss_scale,
-    kl_threshold,
+    damping,
+    max_kl_divergence,
+    conjugate_gradient_steps,
+    max_backtrack_steps,
+    accept_ratio,
+    step_fraction,
     rewards_shaper,
     time_limit_bootstrap,
-    mixed_precision,
 ):
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
-    if policy_structure in ["GaussianMixin", "MultivariateGaussianMixin"]:
-        action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
-    elif policy_structure == "CategoricalMixin":
-        action_space = gymnasium.spaces.Discrete(3)
+    action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
 
     # env
     env = wrap_env(Env(observation_space, action_space, num_envs, device), wrapper="gymnasium")
@@ -121,57 +110,29 @@ def test_agent(
         }
     ]
     models = {}
-    if separate:
-        if policy_structure == "GaussianMixin":
-            models["policy"] = gaussian_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        elif policy_structure == "MultivariateGaussianMixin":
-            models["policy"] = multivariate_gaussian_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        elif policy_structure == "CategoricalMixin":
-            models["policy"] = categorical_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        models["value"] = deterministic_model(
+    if policy_structure == "GaussianMixin":
+        models["policy"] = gaussian_model(
             observation_space=env.observation_space,
             action_space=env.action_space,
             device=env.device,
             network=network,
-            output="ONE",
+            output="ACTIONS",
         )
-    else:
-        models["policy"] = shared_model(
+    elif policy_structure == "MultivariateGaussianMixin":
+        models["policy"] = multivariate_gaussian_model(
             observation_space=env.observation_space,
             action_space=env.action_space,
             device=env.device,
-            structure=[policy_structure, "DeterministicMixin"],
-            parameters=[
-                {
-                    "network": network,
-                    "output": "ACTIONS",
-                },
-                {
-                    "network": network,
-                    "output": "ONE",
-                },
-            ],
-            roles=["policy", "value"],
+            network=network,
+            output="ACTIONS",
         )
-        models["value"] = models["policy"]
+    models["value"] = deterministic_model(
+        observation_space=env.observation_space,
+        action_space=env.action_space,
+        device=env.device,
+        network=network,
+        output="ONE",
+    )
 
     # memory
     memory = RandomMemory(memory_size=rollouts, num_envs=env.num_envs, device=env.device)
@@ -183,7 +144,7 @@ def test_agent(
         "mini_batches": mini_batches,
         "discount_factor": discount_factor,
         "lambda": lambda_,
-        "learning_rate": learning_rate,
+        "value_learning_rate": value_learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
         "state_preprocessor": state_preprocessor,
@@ -193,15 +154,15 @@ def test_agent(
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
-        "ratio_clip": ratio_clip,
-        "value_clip": value_clip,
-        "clip_predicted_values": clip_predicted_values,
-        "entropy_loss_scale": entropy_loss_scale,
         "value_loss_scale": value_loss_scale,
-        "kl_threshold": kl_threshold,
+        "damping": damping,
+        "max_kl_divergence": max_kl_divergence,
+        "conjugate_gradient_steps": conjugate_gradient_steps,
+        "max_backtrack_steps": max_backtrack_steps,
+        "accept_ratio": accept_ratio,
+        "step_fraction": step_fraction,
         "rewards_shaper": rewards_shaper,
         "time_limit_bootstrap": time_limit_bootstrap,
-        "mixed_precision": mixed_precision,
         "experiment": {
             "directory": "",
             "experiment_name": "",

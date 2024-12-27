@@ -6,15 +6,14 @@ import gymnasium
 
 import torch
 
-from skrl.agents.torch.ppo import PPO as Agent
-from skrl.agents.torch.ppo import PPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.rpo import RPO as Agent
+from skrl.agents.torch.rpo import RPO_DEFAULT_CONFIG as DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import (
-    categorical_model,
     deterministic_model,
     gaussian_model,
     multivariate_gaussian_model,
@@ -46,6 +45,7 @@ def _check_agent_config(config, default_config):
     rollouts=st.integers(min_value=1, max_value=5),
     learning_epochs=st.integers(min_value=1, max_value=5),
     mini_batches=st.integers(min_value=1, max_value=5),
+    alpha=st.floats(min_value=0, max_value=1),
     discount_factor=st.floats(min_value=0, max_value=1),
     lambda_=st.floats(min_value=0, max_value=1),
     learning_rate=st.floats(min_value=1.0e-10, max_value=1),
@@ -69,7 +69,7 @@ def _check_agent_config(config, default_config):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("separate", [True, False])
-@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin", "CategoricalMixin"])
+@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin"])
 def test_agent(
     capsys,
     device,
@@ -81,6 +81,7 @@ def test_agent(
     rollouts,
     learning_epochs,
     mini_batches,
+    alpha,
     discount_factor,
     lambda_,
     learning_rate,
@@ -103,10 +104,7 @@ def test_agent(
 ):
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
-    if policy_structure in ["GaussianMixin", "MultivariateGaussianMixin"]:
-        action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
-    elif policy_structure == "CategoricalMixin":
-        action_space = gymnasium.spaces.Discrete(3)
+    action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
 
     # env
     env = wrap_env(Env(observation_space, action_space, num_envs, device), wrapper="gymnasium")
@@ -132,14 +130,6 @@ def test_agent(
             )
         elif policy_structure == "MultivariateGaussianMixin":
             models["policy"] = multivariate_gaussian_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        elif policy_structure == "CategoricalMixin":
-            models["policy"] = categorical_model(
                 observation_space=env.observation_space,
                 action_space=env.action_space,
                 device=env.device,
@@ -181,6 +171,7 @@ def test_agent(
         "rollouts": rollouts,
         "learning_epochs": learning_epochs,
         "mini_batches": mini_batches,
+        "alpha": alpha,
         "discount_factor": discount_factor,
         "lambda": lambda_,
         "learning_rate": learning_rate,

@@ -6,8 +6,8 @@ import gymnasium
 
 import torch
 
-from skrl.agents.torch.ppo import PPO as Agent
-from skrl.agents.torch.ppo import PPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.a2c import A2C as Agent
+from skrl.agents.torch.a2c import A2C_DEFAULT_CONFIG as DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
@@ -33,18 +33,13 @@ class Env(BaseEnv):
 def _check_agent_config(config, default_config):
     for k in config.keys():
         assert k in default_config
-        if k == "experiment":
-            _check_agent_config(config["experiment"], default_config["experiment"])
     for k in default_config.keys():
         assert k in config
-        if k == "experiment":
-            _check_agent_config(config["experiment"], default_config["experiment"])
 
 
 @hypothesis.given(
     num_envs=st.integers(min_value=1, max_value=5),
     rollouts=st.integers(min_value=1, max_value=5),
-    learning_epochs=st.integers(min_value=1, max_value=5),
     mini_batches=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     lambda_=st.floats(min_value=0, max_value=1),
@@ -56,12 +51,7 @@ def _check_agent_config(config, default_config):
     random_timesteps=st.just(0),
     learning_starts=st.just(0),
     grad_norm_clip=st.floats(min_value=0, max_value=1),
-    ratio_clip=st.floats(min_value=0, max_value=1),
-    value_clip=st.floats(min_value=0, max_value=1),
-    clip_predicted_values=st.booleans(),
     entropy_loss_scale=st.floats(min_value=0, max_value=1),
-    value_loss_scale=st.floats(min_value=0, max_value=1),
-    kl_threshold=st.floats(min_value=0, max_value=1),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
     time_limit_bootstrap=st.booleans(),
     mixed_precision=st.booleans(),
@@ -79,7 +69,6 @@ def test_agent(
     policy_structure,
     # agent config
     rollouts,
-    learning_epochs,
     mini_batches,
     discount_factor,
     lambda_,
@@ -91,12 +80,7 @@ def test_agent(
     random_timesteps,
     learning_starts,
     grad_norm_clip,
-    ratio_clip,
-    value_clip,
-    clip_predicted_values,
     entropy_loss_scale,
-    value_loss_scale,
-    kl_threshold,
     rewards_shaper,
     time_limit_bootstrap,
     mixed_precision,
@@ -179,7 +163,6 @@ def test_agent(
     # agent
     cfg = {
         "rollouts": rollouts,
-        "learning_epochs": learning_epochs,
         "mini_batches": mini_batches,
         "discount_factor": discount_factor,
         "lambda": lambda_,
@@ -193,12 +176,7 @@ def test_agent(
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
-        "ratio_clip": ratio_clip,
-        "value_clip": value_clip,
-        "clip_predicted_values": clip_predicted_values,
         "entropy_loss_scale": entropy_loss_scale,
-        "value_loss_scale": value_loss_scale,
-        "kl_threshold": kl_threshold,
         "rewards_shaper": rewards_shaper,
         "time_limit_bootstrap": time_limit_bootstrap,
         "mixed_precision": mixed_precision,

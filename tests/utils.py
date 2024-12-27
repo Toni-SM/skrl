@@ -5,7 +5,8 @@ import numpy as np
 
 
 class BaseEnv(gymnasium.Env):
-    def __init__(self, observation_space, action_space, num_envs):
+    def __init__(self, observation_space, action_space, num_envs, device):
+        self.device = device
         self.num_envs = num_envs
         self.action_space = action_space
         self.observation_space = observation_space

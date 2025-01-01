@@ -106,7 +106,11 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
     # Box
     if isinstance(space, spaces.Box):
         if isinstance(x, torch.Tensor):
-            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            # avoid TypeError: Got unsupported ScalarType BFloat16
+            if x.dtype == torch.bfloat16:
+                array = np.array(x.to(dtype=torch.float32).cpu().numpy(), dtype=space.dtype)
+            else:
+                array = np.array(x.cpu().numpy(), dtype=space.dtype)
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.shape)
             return array.reshape(-1, *space.shape)
@@ -114,7 +118,11 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
     # Discrete
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, torch.Tensor):
-            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            # avoid TypeError: Got unsupported ScalarType BFloat16
+            if x.dtype == torch.bfloat16:
+                array = np.array(x.to(dtype=torch.float32).cpu().numpy(), dtype=space.dtype)
+            else:
+                array = np.array(x.cpu().numpy(), dtype=space.dtype)
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.item()
             return array.reshape(-1, 1)
@@ -122,7 +130,11 @@ def untensorize_space(space: spaces.Space, x: Any, squeeze_batch_dimension: bool
     # MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, torch.Tensor):
-            array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            # avoid TypeError: Got unsupported ScalarType BFloat16
+            if x.dtype == torch.bfloat16:
+                array = np.array(x.to(dtype=torch.float32).cpu().numpy(), dtype=space.dtype)
+            else:
+                array = np.array(x.cpu().numpy(), dtype=space.dtype)
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.nvec.shape)
             return array.reshape(-1, *space.nvec.shape)

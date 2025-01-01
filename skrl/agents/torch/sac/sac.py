@@ -47,7 +47,7 @@ SAC_DEFAULT_CONFIG = {
     "mixed_precision": False,       # enable automatic mixed precision for higher performance
 
     "experiment": {
-        "base_directory": "",       # base directory for the experiment
+        "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
         "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 

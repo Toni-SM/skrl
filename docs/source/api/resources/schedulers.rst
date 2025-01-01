@@ -28,7 +28,7 @@ Learning rate schedulers are techniques that adjust the learning rate over time 
 
 - **PyTorch**: The implemented schedulers inherit from the PyTorch :literal:`_LRScheduler` class. Visit `How to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details.
 
-- **JAX**: The implemented schedulers must parameterize and return a function that maps step counts to values. Visit `Schedules <https://optax.readthedocs.io/en/latest/api.html#schedules>`_ in the Optax documentation for more details.
+- **JAX**: The implemented schedulers must parameterize and return a function that maps step counts to values. Visit `Optimizer Schedules <https://optax.readthedocs.io/en/latest/api/optimizer_schedules.html>`_ in the Optax documentation for more details.
 
 .. raw:: html
 

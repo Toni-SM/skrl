@@ -86,5 +86,5 @@ class KLAdaptiveLR:
 
 
 # Alias to maintain naming compatibility with Optax schedulers
-# https://optax.readthedocs.io/en/latest/api.html#schedules
+# https://optax.readthedocs.io/en/latest/api/optimizer_schedules.html
 kl_adaptive = KLAdaptiveLR

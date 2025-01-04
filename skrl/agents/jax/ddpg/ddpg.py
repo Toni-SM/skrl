@@ -26,7 +26,7 @@ DDPG_DEFAULT_CONFIG = {
 
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -202,19 +202,23 @@ class DDPG(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
+            # schedulers
+            if self._learning_rate_scheduler:
+                self.policy_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+                self.critic_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+            # optimizers
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
-                    model=self.policy, lr=self._actor_learning_rate, grad_norm_clip=self._grad_norm_clip
+                    model=self.policy,
+                    lr=self._actor_learning_rate,
+                    grad_norm_clip=self._grad_norm_clip,
+                    scale=not self._learning_rate_scheduler,
                 )
                 self.critic_optimizer = Adam(
-                    model=self.critic, lr=self._critic_learning_rate, grad_norm_clip=self._grad_norm_clip
-                )
-            if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(
-                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-                self.critic_scheduler = self._learning_rate_scheduler(
-                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                    model=self.critic,
+                    lr=self._critic_learning_rate,
+                    grad_norm_clip=self._grad_norm_clip,
+                    scale=not self._learning_rate_scheduler,
                 )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
@@ -458,7 +462,9 @@ class DDPG(Agent):
             # optimization step (critic)
             if config.jax.is_distributed:
                 grad = self.critic.reduce_parameters(grad)
-            self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
+            self.critic_optimizer = self.critic_optimizer.step(
+                grad, self.critic, self._critic_learning_rate if self._learning_rate_scheduler else None
+            )
 
             # compute policy (actor) loss
             grad, policy_loss = _update_policy(
@@ -468,7 +474,9 @@ class DDPG(Agent):
             # optimization step (policy)
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
-            self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
+            self.policy_optimizer = self.policy_optimizer.step(
+                grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+            )
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)
@@ -476,8 +484,8 @@ class DDPG(Agent):
 
             # update learning rate
             if self._learning_rate_scheduler:
-                self.policy_scheduler.step()
-                self.critic_scheduler.step()
+                self._actor_learning_rate *= self.policy_scheduler(timestep)
+                self._critic_learning_rate *= self.critic_scheduler(timestep)
 
             # record data
             self.track_data("Loss / Policy loss", policy_loss.item())
@@ -492,5 +500,5 @@ class DDPG(Agent):
             self.track_data("Target / Target (mean)", target_values.mean().item())
 
             if self._learning_rate_scheduler:
-                self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
-                self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])
+                self.track_data("Learning / Policy learning rate", self._actor_learning_rate)
+                self.track_data("Learning / Critic learning rate", self._critic_learning_rate)

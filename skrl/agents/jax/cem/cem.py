@@ -24,7 +24,7 @@ CEM_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
 
     "learning_rate": 1e-2,          # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -122,11 +122,13 @@ class CEM(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
+            # scheduler
+            if self._learning_rate_scheduler:
+                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+            # optimizer
             with jax.default_device(self.device):
-                self.optimizer = Adam(model=self.policy, lr=self._learning_rate)
-            if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(
-                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                self.optimizer = Adam(
+                    model=self.policy, lr=self._learning_rate, scale=not self._learning_rate_scheduler
                 )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
@@ -338,11 +340,13 @@ class CEM(Agent):
         policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(self.policy.state_dict.params)
 
         # optimization step (policy)
-        self.optimizer = self.optimizer.step(grad, self.policy)
+        self.optimizer = self.optimizer.step(
+            grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
+        )
 
         # update learning rate
         if self._learning_rate_scheduler:
-            self.scheduler.step()
+            self._learning_rate *= self.scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
@@ -351,4 +355,4 @@ class CEM(Agent):
         self.track_data("Coefficient / Mean discounted returns", returns.mean().item())
 
         if self._learning_rate_scheduler:
-            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])
+            self.track_data("Learning / Learning rate", self._learning_rate)

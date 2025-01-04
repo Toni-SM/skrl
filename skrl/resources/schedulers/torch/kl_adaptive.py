@@ -21,8 +21,7 @@ class KLAdaptiveLR(_LRScheduler):
         """Adaptive KL scheduler
 
         Adjusts the learning rate according to the KL divergence.
-        The implementation is adapted from the rl_games library
-        (https://github.com/Denys88/rl_games/blob/master/rl_games/common/schedulers.py)
+        The implementation is adapted from the *rl_games* library.
 
         .. note::
 

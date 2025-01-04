@@ -78,7 +78,4 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR
-    :show-inheritance:
-    :inherited-members:
-    :members:
+.. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR

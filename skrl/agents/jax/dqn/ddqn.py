@@ -25,7 +25,7 @@ DDQN_DEFAULT_CONFIG = {
     "polyak": 0.005,                # soft update hyperparameter (tau)
 
     "learning_rate": 1e-3,          # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -175,11 +175,15 @@ class DDQN(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
+            # scheduler
+            if self._learning_rate_scheduler:
+                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+            # optimizer
             with jax.default_device(self.device):
-                self.optimizer = Adam(model=self.q_network, lr=self._learning_rate)
-            if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(
-                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                self.optimizer = Adam(
+                    model=self.q_network,
+                    lr=self._learning_rate,
+                    scale=not self._learning_rate_scheduler,
                 )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
@@ -392,7 +396,9 @@ class DDQN(Agent):
             # optimization step (Q-network)
             if config.jax.is_distributed:
                 grad = self.q_network.reduce_parameters(grad)
-            self.optimizer = self.optimizer.step(grad, self.q_network)
+            self.optimizer = self.optimizer.step(
+                grad, self.q_network, self._learning_rate if self._learning_rate_scheduler else None
+            )
 
             # update target network
             if not timestep % self._target_update_interval:
@@ -400,7 +406,7 @@ class DDQN(Agent):
 
             # update learning rate
             if self._learning_rate_scheduler:
-                self.scheduler.step()
+                self._learning_rate *= self.scheduler(timestep)
 
             # record data
             self.track_data("Loss / Q-network loss", q_network_loss.item())
@@ -410,4 +416,4 @@ class DDQN(Agent):
             self.track_data("Target / Target (mean)", target_values.mean().item())
 
             if self._learning_rate_scheduler:
-                self.track_data("Learning / Learning rate", self.scheduler._lr)
+                self.track_data("Learning / Learning rate", self._learning_rate)

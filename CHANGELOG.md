@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Move the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
 - Model state dictionary initialization for composite Gymnasium spaces in JAX
 - Add missing `reduction` parameter to Gaussian model instantiator
-- Integration of Optax's learning rate schedulers in JAX
+- Optax's learning rate schedulers integration in JAX implementation
 
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,

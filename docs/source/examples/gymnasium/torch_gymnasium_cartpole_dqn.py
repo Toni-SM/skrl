@@ -55,6 +55,10 @@ models["target_q_network"] = deterministic_model(observation_space=env.observati
                                                  output_activation=None,
                                                  output_scale=1.0)
 
+# initialize models' lazy modules
+for role, model in models.items():
+    model.init_state_dict(role)
+
 # initialize models' parameters (weights and biases)
 for model in models.values():
     model.init_parameters(method_name="normal_", mean=0.0, std=0.1)

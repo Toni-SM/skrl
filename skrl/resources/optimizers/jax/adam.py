@@ -24,7 +24,7 @@ def _step_with_scale(transformation, grad, state, state_dict, scale):
     # optax transform
     params, optimizer_state = transformation.update(grad, state, state_dict.params)
     # custom scale
-    # https://optax.readthedocs.io/en/latest/api.html?#optax.scale
+    # https://optax.readthedocs.io/en/latest/api/transformations.html#optax.scale
     params = jax.tree_util.tree_map(lambda params: scale * params, params)
     # apply transformation
     params = optax.apply_updates(state_dict.params, params)
@@ -35,7 +35,7 @@ class Adam:
     def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
         """Adam optimizer
 
-        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api.html?#adam>`_
+        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api/optimizers.html#optax.adam>`_
         to support custom scale (learning rate)
 
         :param model: Model

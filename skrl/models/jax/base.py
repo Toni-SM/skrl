@@ -482,7 +482,7 @@ class Model(flax.linen.Module):
             self.state_dict = self.state_dict.replace(params=model.state_dict.params)
         # soft update
         else:
-            # HACK: Does it make sense to use https://optax.readthedocs.io/en/latest/api.html?#optax.incremental_update
+            # HACK: Does it make sense to use https://optax.readthedocs.io/en/latest/api/apply_updates.html#optax.incremental_update
             params = jax.tree_util.tree_map(
                 lambda params, model_params: polyak * model_params + (1 - polyak) * params,
                 self.state_dict.params,

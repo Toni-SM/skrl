@@ -26,7 +26,7 @@ A2C_DEFAULT_CONFIG = {
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
 
     "learning_rate": 1e-3,                  # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -270,25 +270,21 @@ class A2C(Agent):
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
             # scheduler
-            scale = True
-            self.scheduler = None
-            if self._learning_rate_scheduler is not None:
-                if self._learning_rate_scheduler == KLAdaptiveLR:
-                    scale = False
-                    self.scheduler = self._learning_rate_scheduler(
-                        self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"]
-                    )
-                else:
-                    self._learning_rate = self._learning_rate_scheduler(
-                        self._learning_rate, **self.cfg["learning_rate_scheduler_kwargs"]
-                    )
+            if self._learning_rate_scheduler:
+                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
             # optimizer
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
-                    model=self.policy, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale
+                    model=self.policy,
+                    lr=self._learning_rate,
+                    grad_norm_clip=self._grad_norm_clip,
+                    scale=not self._learning_rate_scheduler,
                 )
                 self.value_optimizer = Adam(
-                    model=self.value, lr=self._learning_rate, grad_norm_clip=self._grad_norm_clip, scale=scale
+                    model=self.value,
+                    lr=self._learning_rate,
+                    grad_norm_clip=self._grad_norm_clip,
+                    scale=not self._learning_rate_scheduler,
                 )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
@@ -541,7 +537,7 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self.scheduler._lr if self.scheduler else None
+                grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
             )
 
             # compute value loss
@@ -551,7 +547,7 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.value.reduce_parameters(grad)
             self.value_optimizer = self.value_optimizer.step(
-                grad, self.value, self.scheduler._lr if self.scheduler else None
+                grad, self.value, self._learning_rate if self._learning_rate_scheduler else None
             )
 
             # update cumulative losses
@@ -562,13 +558,15 @@ class A2C(Agent):
 
         # update learning rate
         if self._learning_rate_scheduler:
-            if isinstance(self.scheduler, KLAdaptiveLR):
+            if self._learning_rate_scheduler is KLAdaptiveLR:
                 kl = np.mean(kl_divergences)
                 # reduce (collect from all workers/processes) KL in distributed runs
                 if config.jax.is_distributed:
                     kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                     kl /= config.jax.world_size
-                self.scheduler.step(kl)
+                self._learning_rate = self.scheduler(timestep, self._learning_rate, kl)
+            else:
+                self._learning_rate *= self.scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
@@ -580,4 +578,4 @@ class A2C(Agent):
         self.track_data("Policy / Standard deviation", stddev.mean().item())
 
         if self._learning_rate_scheduler:
-            self.track_data("Learning / Learning rate", self.scheduler._lr)
+            self.track_data("Learning / Learning rate", self._learning_rate)

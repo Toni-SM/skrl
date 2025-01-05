@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Model instantiator support for different shared model structures in PyTorch
 - Support for other model types than Gaussian and Deterministic in runners
 - Support for automatic mixed precision training in PyTorch
+- `init_state_dict` method to initialize model's lazy modules in PyTorch
 
 ### Changed
 - Call agent's `pre_interaction` method during evaluation

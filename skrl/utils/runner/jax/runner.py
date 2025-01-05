@@ -264,7 +264,7 @@ class Runner:
                 )
                 models[agent_id]["value"] = models[agent_id]["policy"]
 
-        # instantiate models' state dict
+        # initialize models' state dict
         for agent_id in possible_agents:
             for role, model in models[agent_id].items():
                 model.init_state_dict(role)

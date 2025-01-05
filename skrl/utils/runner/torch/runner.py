@@ -270,6 +270,11 @@ class Runner:
                 )
                 models[agent_id]["value"] = models[agent_id]["policy"]
 
+        # initialize lazy modules' parameters
+        for agent_id in possible_agents:
+            for role, model in models[agent_id].items():
+                model.init_state_dict(role)
+
         return models
 
     def _generate_agent(

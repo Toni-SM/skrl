@@ -7,7 +7,12 @@ from packaging import version
 import torch
 
 from skrl import config, logger
-from skrl.utils.spaces.torch import compute_space_size, unflatten_tensorized_space
+from skrl.utils.spaces.torch import (
+    compute_space_size,
+    flatten_tensorized_space,
+    sample_space,
+    unflatten_tensorized_space,
+)
 
 
 class Model(torch.nn.Module):
@@ -64,6 +69,37 @@ class Model(torch.nn.Module):
         self.num_actions = None if action_space is None else compute_space_size(action_space)
 
         self._random_distribution = None
+
+    def init_state_dict(self, role: str, inputs: Mapping[str, torch.Tensor] = {}) -> None:
+        """Initialize lazy PyTorch modules' parameters.
+
+        .. hint::
+
+            Calling this method only makes sense when using models that contain lazy PyTorch modules
+            (e.g. model instantiators), and always before performing any operation on model parameters.
+
+        :param role: Role play by the model
+        :type role: str
+        :param inputs: Model inputs. The most common keys are:
+
+                        - ``"states"``: state of the environment used to make the decision
+                        - ``"taken_actions"``: actions taken by the policy for the given states
+
+                       If not specified, the keys will be populated with observation and action space samples
+        :type inputs: dict of torch.Tensor
+        """
+        if not inputs:
+            inputs = {
+                "states": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="torch", device=self.device)
+                ),
+                "taken_actions": flatten_tensorized_space(
+                    sample_space(self.action_space, backend="torch", device=self.device)
+                ),
+            }
+        # init parameters
+        self.to(device=self.device)
+        self.compute(inputs=inputs, role=role)
 
     def tensor_to_space(
         self, tensor: torch.Tensor, space: gymnasium.Space, start: int = 0

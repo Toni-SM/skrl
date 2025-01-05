@@ -207,7 +207,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: State
         :rtype: np.ndarray, jax.Array or None
         """
-        state = self._env.state()
+        try:
+            state = self._env.state()
+        except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
+            state = self._unwrapped.state()
         if state is not None:
             state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
             return _torch2jax(state, self._jax)

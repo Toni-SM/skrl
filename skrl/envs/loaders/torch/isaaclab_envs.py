@@ -139,7 +139,10 @@ def load_isaaclab_env(
     )
 
     # launch the simulation app
-    from omni.isaac.lab.app import AppLauncher
+    try:
+        from omni.isaac.lab.app import AppLauncher
+    except ModuleNotFoundError:
+        from isaaclab.app import AppLauncher
 
     AppLauncher.add_app_launcher_args(parser)
     args = parser.parse_args()
@@ -149,8 +152,12 @@ def load_isaaclab_env(
     def close_the_simulator():
         app_launcher.app.close()
 
-    import omni.isaac.lab_tasks  # type: ignore
-    from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
+    try:
+        import omni.isaac.lab_tasks  # type: ignore
+        from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
+    except ModuleNotFoundError:
+        import isaaclab_tasks  # type: ignore
+        from isaaclab_tasks.utils import parse_env_cfg  # type: ignore
 
     cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
 

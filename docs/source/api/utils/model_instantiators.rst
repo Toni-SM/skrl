@@ -59,6 +59,13 @@ Implementation details:
             :start-after: [start-structure-yaml]
             :end-before: [end-structure-yaml]
 
+    .. group-tab:: Python
+
+        .. literalinclude:: ../../snippets/model_instantiators.txt
+            :language: python
+            :start-after: [start-structure-python]
+            :end-before: [end-structure-python]
+
 |
 
 Inputs
@@ -278,6 +285,42 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
                     :start-after: [start-layer-linear-dict]
                     :end-before: [end-layer-linear-dict]
 
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: Single value
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-linear-basic-python]
+                    :end-before: [end-layer-linear-basic-python]
+
+            .. group-tab:: As int
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-linear-int-python]
+                    :end-before: [end-layer-linear-int-python]
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-linear-list-python]
+                    :end-before: [end-layer-linear-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-linear-dict-python]
+                    :end-before: [end-layer-linear-dict-python]
+
 |
 
 conv2d
@@ -365,6 +408,28 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
                     :start-after: [start-layer-conv2d-dict]
                     :end-before: [end-layer-conv2d-dict]
 
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-conv2d-list-python]
+                    :end-before: [end-layer-conv2d-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-conv2d-dict-python]
+                    :end-before: [end-layer-conv2d-dict-python]
+
 |
 
 flatten
@@ -424,6 +489,35 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
                     :language: yaml
                     :start-after: [start-layer-flatten-dict]
                     :end-before: [end-layer-flatten-dict]
+
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: Single value
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-flatten-basic-python]
+                    :end-before: [end-layer-flatten-basic-python]
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-flatten-list-python]
+                    :end-before: [end-layer-flatten-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: yaml
+                    :start-after: [start-layer-flatten-dict-python]
+                    :end-before: [end-layer-flatten-dict-python]
 
 .. raw:: html
 

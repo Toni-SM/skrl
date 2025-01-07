@@ -103,7 +103,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         if verbose:
             logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
 
-        if _in("omni.isaac.lab.envs..*", base_classes):
+        if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
         elif _in("omni.isaac.gym..*", base_classes):
             return "omniverse-isaacgym"

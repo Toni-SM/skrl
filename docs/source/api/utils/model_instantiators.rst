@@ -292,21 +292,21 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
             .. group-tab:: Single value
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-linear-basic-python]
                     :end-before: [end-layer-linear-basic-python]
 
             .. group-tab:: As int
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-linear-int-python]
                     :end-before: [end-layer-linear-int-python]
 
             .. group-tab:: As list
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-linear-list-python]
                     :end-before: [end-layer-linear-list-python]
 
@@ -317,7 +317,7 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
                     The parameter names can be interchanged/mixed between PyTorch and JAX
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-linear-dict-python]
                     :end-before: [end-layer-linear-dict-python]
 
@@ -415,7 +415,7 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
             .. group-tab:: As list
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-conv2d-list-python]
                     :end-before: [end-layer-conv2d-list-python]
 
@@ -426,7 +426,7 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
                     The parameter names can be interchanged/mixed between PyTorch and JAX
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-conv2d-dict-python]
                     :end-before: [end-layer-conv2d-dict-python]
 
@@ -497,14 +497,14 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
             .. group-tab:: Single value
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-flatten-basic-python]
                     :end-before: [end-layer-flatten-basic-python]
 
             .. group-tab:: As list
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-flatten-list-python]
                     :end-before: [end-layer-flatten-list-python]
 
@@ -515,7 +515,7 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
                     The parameter names can be interchanged/mixed between PyTorch and JAX
 
                 .. literalinclude:: ../../snippets/model_instantiators.txt
-                    :language: yaml
+                    :language: python
                     :start-after: [start-layer-flatten-dict-python]
                     :end-before: [end-layer-flatten-dict-python]
 

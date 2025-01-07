@@ -38,22 +38,28 @@ models["q_network"] = deterministic_model(observation_space=env.observation_spac
                                           action_space=env.action_space,
                                           device=device,
                                           clip_actions=False,
-                                          input_shape=Shape.OBSERVATIONS,
-                                          hiddens=[64, 64],
-                                          hidden_activation=["relu", "relu"],
-                                          output_shape=Shape.ACTIONS,
-                                          output_activation=None,
-                                          output_scale=1.0)
+                                          network=[{
+                                              "name": "net",
+                                              "input": "STATES",
+                                              "layers": [64, 64],
+                                              "activations": "relu",
+                                          }],
+                                          output="ACTIONS")
 models["target_q_network"] = deterministic_model(observation_space=env.observation_space,
                                                  action_space=env.action_space,
                                                  device=device,
                                                  clip_actions=False,
-                                                 input_shape=Shape.OBSERVATIONS,
-                                                 hiddens=[64, 64],
-                                                 hidden_activation=["relu", "relu"],
-                                                 output_shape=Shape.ACTIONS,
-                                                 output_activation=None,
-                                                 output_scale=1.0)
+                                                 network=[{
+                                                     "name": "net",
+                                                     "input": "STATES",
+                                                     "layers": [64, 64],
+                                                     "activations": "relu",
+                                                 }],
+                                                 output="ACTIONS")
+
+# initialize models' lazy modules
+for role, model in models.items():
+    model.init_state_dict(role)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():

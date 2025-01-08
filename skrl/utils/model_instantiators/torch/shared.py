@@ -95,10 +95,12 @@ def shared_model(
             return ""
         elif class_name.lower() == "gaussianmixin":
             initial_log_std = float(parameter.get("initial_log_std", 0))
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}))'
+            fixed_log_std = parameter.get("fixed_log_std", False)
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})'
         elif class_name.lower() == "multivariategaussianmixin":
             initial_log_std = float(parameter.get("initial_log_std", 0))
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}))'
+            fixed_log_std = parameter.get("fixed_log_std", False)
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})'
         raise ValueError(f"Unknown class: {class_name}")
 
     # compatibility with versions prior to 1.3.0

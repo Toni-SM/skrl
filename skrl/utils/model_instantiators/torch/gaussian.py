@@ -22,6 +22,7 @@ def gaussian_model(
     max_log_std: float = 2,
     reduction: str = "sum",
     initial_log_std: float = 0,
+    fixed_log_std: bool = False,
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
@@ -53,6 +54,9 @@ def gaussian_model(
     :type reduction: str, optional
     :param initial_log_std: Initial value for the log standard deviation (default: 0)
     :type initial_log_std: float, optional
+    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
+                          Fixed parameters have the gradient computation deactivated
+    :type fixed_log_std: bool, optional
     :param network: Network definition (default: [])
     :type network: list of dict, optional
     :param output: Output expression (default: "")
@@ -97,7 +101,7 @@ def gaussian_model(
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
         {networks}
-        self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({output["size"]}))
+        self.log_std_parameter = nn.Parameter(torch.full(size=({output["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})
 
     def compute(self, inputs, role=""):
         states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))

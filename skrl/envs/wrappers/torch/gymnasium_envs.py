@@ -25,13 +25,17 @@ class GymnasiumWrapper(Wrapper):
 
         self._vectorized = False
         try:
-            if isinstance(env, gymnasium.vector.VectorEnv) or isinstance(env, gymnasium.experimental.vector.VectorEnv):
-                self._vectorized = True
-                self._reset_once = True
-                self._observation = None
-                self._info = None
+            self._vectorized = self._vectorized or isinstance(env, gymnasium.vector.VectorEnv)
+        except Exception as e:
+            pass
+        try:
+            self._vectorized = self._vectorized or isinstance(env, gymnasium.experimental.vector.VectorEnv)
         except Exception as e:
             logger.warning(f"Failed to check for a vectorized environment: {e}")
+        if self._vectorized:
+            self._reset_once = True
+            self._observation = None
+            self._info = None
 
     @property
     def observation_space(self) -> gymnasium.Space:

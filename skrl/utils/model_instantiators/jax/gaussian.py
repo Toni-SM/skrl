@@ -23,6 +23,7 @@ def gaussian_model(
     max_log_std: float = 2,
     reduction: str = "sum",
     initial_log_std: float = 0,
+    fixed_log_std: bool = False,
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
@@ -54,6 +55,9 @@ def gaussian_model(
     :type reduction: str, optional
     :param initial_log_std: Initial value for the log standard deviation (default: 0)
     :type initial_log_std: float, optional
+    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
+                          Fixed parameters will be excluded from model parameters.
+    :type fixed_log_std: bool, optional
     :param network: Network definition (default: [])
     :type network: list of dict, optional
     :param output: Output expression (default: "")
@@ -90,6 +94,12 @@ def gaussian_model(
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
+    if fixed_log_std:
+        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={initial_log_std})'
+    else:
+        log_std_parameter = (
+            f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={initial_log_std}))'
+        )
 
     template = f"""class GaussianModel(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
@@ -99,7 +109,7 @@ def gaussian_model(
 
     def setup(self):
         {networks}
-        self.log_std_parameter = self.param("log_std_parameter", lambda _: {initial_log_std} * jnp.ones({output["size"]}))
+        self.log_std_parameter = {log_std_parameter}
 
     def __call__(self, inputs, role):
         states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))

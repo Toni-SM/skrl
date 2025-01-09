@@ -51,7 +51,7 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     action = torch.ones((num_envs, 1))
 
     # load wrap the environment
-    original_env = gym.make_vec("Pendulum-v1", num_envs=num_envs, vectorization_mode=vectorization_mode)
+    original_env = gym.vector.make("Pendulum-v1", num_envs=num_envs, asynchronous=(vectorization_mode == "async"))
     env = wrap_env(original_env, "auto")
     assert isinstance(env, GymWrapper)
     env = wrap_env(original_env, "gym")

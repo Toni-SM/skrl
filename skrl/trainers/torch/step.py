@@ -18,7 +18,8 @@ STEP_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
-    "environment_info": "episode",  # key used to get and log environment info
+    "environment_info": "episode",       # key used to get and log environment info
+    "stochastic_evaluation": False,      # whether to use actions rather than (deterministic) mean actions during evaluation
 }
 # [end-config-dict-torch]
 # fmt: on
@@ -212,10 +213,14 @@ class StepTrainer(Trainer):
 
         with torch.no_grad():
             # compute actions
+            outputs = [
+                agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)
+                for agent, scope in zip(self.agents, self.agents_scope)
+            ]
             actions = torch.vstack(
                 [
-                    agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)[0]
-                    for agent, scope in zip(self.agents, self.agents_scope)
+                    output[0] if self.stochastic_evaluation else output[-1].get("mean_actions", output[0])
+                    for output in outputs
                 ]
             )
 

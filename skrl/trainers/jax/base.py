@@ -63,6 +63,7 @@ class Trainer:
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
         self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
         self.environment_info = self.cfg.get("environment_info", "episode")
+        self.stochastic_evaluation = self.cfg.get("stochastic_evaluation", False)
 
         self.initial_timestep = 0
 
@@ -248,7 +249,8 @@ class Trainer:
 
             with contextlib.nullcontext():
                 # compute actions
-                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+                outputs = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
+                actions = outputs[0] if self.stochastic_evaluation else outputs[-1].get("mean_actions", outputs[0])
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
@@ -375,7 +377,12 @@ class Trainer:
 
             with contextlib.nullcontext():
                 # compute actions
-                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+                outputs = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
+                actions = (
+                    outputs[0]
+                    if self.stochastic_evaluation
+                    else {k: outputs[-1][k].get("mean_actions", outputs[0][k]) for k in outputs[-1]}
+                )
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)

@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Support for other model types than Gaussian and Deterministic in runners
 - Support for automatic mixed precision training in PyTorch
 - `init_state_dict` method to initialize model's lazy modules in PyTorch
+- Define the `stochastic_evaluation` trainer config to allow the use of the actions returned by the agent's model
+  as-is instead of deterministic actions (mean-actions in Gaussian-based models) during evaluation.
+  Make the return of deterministic actions the default behavior.
 
 ### Changed
 - Call agent's `pre_interaction` method during evaluation

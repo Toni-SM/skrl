@@ -2,6 +2,7 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn.functional as F
@@ -122,7 +123,10 @@ class CEM(Agent):
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:

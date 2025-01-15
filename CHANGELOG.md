@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
 - Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9)
 - Update KL Adaptive learning rate scheduler implementation to match Optax's behavior in JAX
+- Update AMP agent to use the environment's terminated and truncated data, and the KL Adaptive learning rate scheduler
 - Speed up PyTorch implementation:
   - Disable argument checking when instantiating distributions
   - Replace PyTorch's `BatchSampler` by Python slice when sampling data from memory

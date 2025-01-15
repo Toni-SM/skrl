@@ -26,7 +26,7 @@ IPPO_DEFAULT_CONFIG = {
     "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
 
     "learning_rate": 1e-3,                  # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -53,9 +53,9 @@ IPPO_DEFAULT_CONFIG = {
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -286,7 +286,6 @@ class IPPO(MultiAgent):
 
         self._learning_rate = self._as_dict(self.cfg["learning_rate"])
         self._learning_rate_scheduler = self._as_dict(self.cfg["learning_rate_scheduler"])
-        self._learning_rate_scheduler_kwargs = self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])
 
         self._state_preprocessor = self._as_dict(self.cfg["state_preprocessor"])
         self._state_preprocessor_kwargs = self._as_dict(self.cfg["state_preprocessor_kwargs"])
@@ -313,24 +312,23 @@ class IPPO(MultiAgent):
 
             if policy is not None and value is not None:
                 # scheduler
-                scale = True
                 self.schedulers[uid] = None
-                if self._learning_rate_scheduler[uid] is not None:
-                    if self._learning_rate_scheduler[uid] == KLAdaptiveLR:
-                        scale = False
-                        self.schedulers[uid] = self._learning_rate_scheduler[uid](
-                            self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid]
-                        )
-                    else:
-                        self._learning_rate[uid] = self._learning_rate_scheduler[uid](
-                            self._learning_rate[uid], **self._learning_rate_scheduler_kwargs[uid]
-                        )
+                if self._learning_rate_scheduler[uid]:
+                    self.schedulers[uid] = self._learning_rate_scheduler[uid](
+                        **self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])[uid]
+                    )
                 # optimizer
                 self.policy_optimizer[uid] = Adam(
-                    model=policy, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale
+                    model=policy,
+                    lr=self._learning_rate[uid],
+                    grad_norm_clip=self._grad_norm_clip[uid],
+                    scale=not self._learning_rate_scheduler[uid],
                 )
                 self.value_optimizer[uid] = Adam(
-                    model=value, lr=self._learning_rate[uid], grad_norm_clip=self._grad_norm_clip[uid], scale=scale
+                    model=value,
+                    lr=self._learning_rate[uid],
+                    grad_norm_clip=self._grad_norm_clip[uid],
+                    scale=not self._learning_rate_scheduler[uid],
                 )
 
                 self.checkpoint_modules[uid]["policy_optimizer"] = self.policy_optimizer[uid]
@@ -606,7 +604,7 @@ class IPPO(MultiAgent):
                     if config.jax.is_distributed:
                         grad = policy.reduce_parameters(grad)
                     self.policy_optimizer[uid] = self.policy_optimizer[uid].step(
-                        grad, policy, self.schedulers[uid]._lr if self.schedulers[uid] else None
+                        grad, policy, self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None
                     )
 
                     # compute value loss
@@ -625,7 +623,7 @@ class IPPO(MultiAgent):
                     if config.jax.is_distributed:
                         grad = value.reduce_parameters(grad)
                     self.value_optimizer[uid] = self.value_optimizer[uid].step(
-                        grad, value, self.schedulers[uid]._lr if self.schedulers[uid] else None
+                        grad, value, self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None
                     )
 
                     # update cumulative losses
@@ -636,13 +634,15 @@ class IPPO(MultiAgent):
 
                 # update learning rate
                 if self._learning_rate_scheduler[uid]:
-                    if isinstance(self.schedulers[uid], KLAdaptiveLR):
+                    if self._learning_rate_scheduler[uid] is KLAdaptiveLR:
                         kl = np.mean(kl_divergences)
                         # reduce (collect from all workers/processes) KL in distributed runs
                         if config.jax.is_distributed:
                             kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                             kl /= config.jax.world_size
-                        self.schedulers[uid].step(kl)
+                        self._learning_rate[uid] = self.schedulers[uid](timestep, self._learning_rate[uid], kl)
+                    else:
+                        self._learning_rate[uid] *= self.schedulers[uid](timestep)
 
             # record data
             self.track_data(
@@ -662,4 +662,4 @@ class IPPO(MultiAgent):
             self.track_data(f"Policy / Standard deviation ({uid})", stddev.mean().item())
 
             if self._learning_rate_scheduler[uid]:
-                self.track_data(f"Learning / Learning rate ({uid})", self.schedulers[uid]._lr)
+                self.track_data(f"Learning / Learning rate ({uid})", self._learning_rate[uid])

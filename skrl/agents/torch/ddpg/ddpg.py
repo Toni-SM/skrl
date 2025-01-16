@@ -2,6 +2,7 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -163,7 +164,10 @@ class DDPG(Agent):
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
@@ -199,8 +203,9 @@ class DDPG(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # clip noise bounds
         if self.action_space is not None:
@@ -362,9 +367,14 @@ class DDPG(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
-                names=self._tensors_names, batch_size=self._batch_size
-            )[0]
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
@@ -379,7 +389,10 @@ class DDPG(Agent):
                         {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic"
                     )
                     target_values = (
-                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                        sampled_rewards
+                        + self._discount_factor
+                        * (sampled_terminated | sampled_truncated).logical_not()
+                        * target_q_values
                     )
 
                 # compute critic loss

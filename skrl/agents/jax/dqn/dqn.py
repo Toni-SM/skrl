@@ -70,12 +70,15 @@ def _update_q_network(
     sampled_states,
     sampled_actions,
     sampled_rewards,
-    sampled_dones,
+    sampled_terminated,
+    sampled_truncated,
     discount_factor,
 ):
     # compute target values
     target_q_values = jnp.max(next_q_values, axis=-1, keepdims=True)
-    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+    target_values = (
+        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
+    )
 
     # compute Q-network loss
     def _q_network_loss(params):
@@ -211,8 +214,9 @@ class DQN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.int32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # set up models for just-in-time compilation with XLA
         self.q_network.apply = jax.jit(self.q_network.apply, static_argnums=2)
@@ -368,9 +372,14 @@ class DQN(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
-                names=self.tensors_names, batch_size=self._batch_size
-            )[0]
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
@@ -385,7 +394,8 @@ class DQN(Agent):
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
-                sampled_dones,
+                sampled_terminated,
+                sampled_truncated,
                 self._discount_factor,
             )
 

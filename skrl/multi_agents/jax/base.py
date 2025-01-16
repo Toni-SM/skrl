@@ -66,7 +66,7 @@ class MultiAgent:
                     pass
 
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", 1000)
+        self.write_interval = self.cfg.get("experiment", {}).get("write_interval", "auto")
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -77,9 +77,9 @@ class MultiAgent:
 
         # checkpoint
         self.checkpoint_modules = {uid: {} for uid in self.possible_agents}
-        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", 1000)
+        self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", "auto")
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
-        self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": True, "modules": {}}
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")

@@ -2,6 +2,7 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn.functional as F
@@ -122,7 +123,10 @@ class CEM(Agent):
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
@@ -152,8 +156,9 @@ class CEM(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        self.tensors_names = ["states", "actions", "rewards"]
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -283,7 +288,7 @@ class CEM(Agent):
         :type timesteps: int
         """
         # sample all memory
-        sampled_states, sampled_actions, sampled_rewards, _, _ = self.memory.sample_all(names=self.tensors_names)[0]
+        sampled_states, sampled_actions, sampled_rewards = self.memory.sample_all(names=self.tensors_names)[0]
 
         sampled_states = self._state_preprocessor(sampled_states, train=True)
 

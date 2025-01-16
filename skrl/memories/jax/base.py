@@ -188,7 +188,8 @@ class Memory:
         :rtype: bool
         """
         # compute data size
-        size = compute_space_size(size, occupied_size=True)
+        if not keep_dimensions:
+            size = compute_space_size(size, occupied_size=True)
         # check dtype and size if the tensor exists
         if name in self.tensors:
             tensor = self.tensors[name]
@@ -406,7 +407,7 @@ class Memory:
         # sequential order
         if sequence_length > 1:
             if mini_batches > 1:
-                batches = np.array_split(self.all_sequence_indexes, len(self.all_sequence_indexes) // mini_batches)
+                batches = np.array_split(self.all_sequence_indexes, mini_batches)
                 return [[self._get_tensors_view(name)[batch] for name in names] for batch in batches]
             return [[self._get_tensors_view(name)[self.all_sequence_indexes] for name in names]]
 

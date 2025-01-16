@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Tuple, Union
 import copy
 import itertools
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -148,7 +149,10 @@ class A2C(Agent):
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
@@ -189,6 +193,7 @@ class A2C(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -396,7 +401,7 @@ class A2C(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated"),
+            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
             discount_factor=self._discount_factor,

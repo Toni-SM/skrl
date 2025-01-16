@@ -345,6 +345,7 @@ class PPO(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
             self.memory.create_tensor(name="log_prob", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="values", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=jnp.float32)
@@ -513,24 +514,14 @@ class PPO(Agent):
         last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
-        if self._jax:
-            returns, advantages = _compute_gae(
-                rewards=self.memory.get_tensor_by_name("rewards"),
-                dones=self.memory.get_tensor_by_name("terminated"),
-                values=values,
-                next_values=last_values,
-                discount_factor=self._discount_factor,
-                lambda_coefficient=self._lambda,
-            )
-        else:
-            returns, advantages = compute_gae(
-                rewards=self.memory.get_tensor_by_name("rewards"),
-                dones=self.memory.get_tensor_by_name("terminated"),
-                values=values,
-                next_values=last_values,
-                discount_factor=self._discount_factor,
-                lambda_coefficient=self._lambda,
-            )
+        returns, advantages = (_compute_gae if self._jax else compute_gae)(
+            rewards=self.memory.get_tensor_by_name("rewards"),
+            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            values=values,
+            next_values=last_values,
+            discount_factor=self._discount_factor,
+            lambda_coefficient=self._lambda,
+        )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))

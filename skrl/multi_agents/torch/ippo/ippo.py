@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Sequence, Union
 import copy
 import itertools
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -50,12 +51,14 @@ IPPO_DEFAULT_CONFIG = {
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
     "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -161,6 +164,15 @@ class IPPO(MultiAgent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self._as_dict(self.cfg["time_limit_bootstrap"])
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizer and learning rate scheduler
         self.optimizers = {}
         self.schedulers = {}
@@ -208,6 +220,7 @@ class IPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="truncated", size=1, dtype=torch.bool)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -239,16 +252,17 @@ class IPPO(MultiAgent):
         #     return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        data = [
-            self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
-            for uid in self.possible_agents
-        ]
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            data = [
+                self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
+                for uid in self.possible_agents
+            ]
 
-        actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
-        log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
-        outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
+            actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
+            log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
+            outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
-        self._current_log_prob = log_prob
+            self._current_log_prob = log_prob
 
         return actions, log_prob, outputs
 
@@ -298,10 +312,11 @@ class IPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act(
-                    {"states": self._state_preprocessor[uid](states[uid])}, role="value"
-                )
-                values = self._value_preprocessor[uid](values, inverse=True)
+                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                    values, _, _ = self.values[uid].act(
+                        {"states": self._state_preprocessor[uid](states[uid])}, role="value"
+                    )
+                    values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) bootstrapping
                 if self._time_limit_bootstrap[uid]:
@@ -408,7 +423,7 @@ class IPPO(MultiAgent):
             memory = self.memories[uid]
 
             # compute returns and advantages
-            with torch.no_grad():
+            with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                 value.train(False)
                 last_values, _, _ = value.act(
                     {"states": self._state_preprocessor[uid](self._current_next_states[uid].float())}, role="value"
@@ -419,7 +434,7 @@ class IPPO(MultiAgent):
             values = memory.get_tensor_by_name("values")
             returns, advantages = compute_gae(
                 rewards=memory.get_tensor_by_name("rewards"),
-                dones=memory.get_tensor_by_name("terminated"),
+                dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
                 values=values,
                 next_values=last_values,
                 discount_factor=self._discount_factor[uid],
@@ -451,61 +466,68 @@ class IPPO(MultiAgent):
                     sampled_advantages,
                 ) in sampled_batches:
 
-                    sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
+                    with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-                    _, next_log_prob, _ = policy.act(
-                        {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
-                    )
+                        sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
 
-                    # compute approximate KL divergence
-                    with torch.no_grad():
-                        ratio = next_log_prob - sampled_log_prob
-                        kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
-                        kl_divergences.append(kl_divergence)
-
-                    # early stopping with KL divergence
-                    if self._kl_threshold[uid] and kl_divergence > self._kl_threshold[uid]:
-                        break
-
-                    # compute entropy loss
-                    if self._entropy_loss_scale[uid]:
-                        entropy_loss = -self._entropy_loss_scale[uid] * policy.get_entropy(role="policy").mean()
-                    else:
-                        entropy_loss = 0
-
-                    # compute policy loss
-                    ratio = torch.exp(next_log_prob - sampled_log_prob)
-                    surrogate = sampled_advantages * ratio
-                    surrogate_clipped = sampled_advantages * torch.clip(
-                        ratio, 1.0 - self._ratio_clip[uid], 1.0 + self._ratio_clip[uid]
-                    )
-
-                    policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
-
-                    # compute value loss
-                    predicted_values, _, _ = value.act({"states": sampled_states}, role="value")
-
-                    if self._clip_predicted_values:
-                        predicted_values = sampled_values + torch.clip(
-                            predicted_values - sampled_values, min=-self._value_clip[uid], max=self._value_clip[uid]
+                        _, next_log_prob, _ = policy.act(
+                            {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
                         )
-                    value_loss = self._value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
+
+                        # compute approximate KL divergence
+                        with torch.no_grad():
+                            ratio = next_log_prob - sampled_log_prob
+                            kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                            kl_divergences.append(kl_divergence)
+
+                        # early stopping with KL divergence
+                        if self._kl_threshold[uid] and kl_divergence > self._kl_threshold[uid]:
+                            break
+
+                        # compute entropy loss
+                        if self._entropy_loss_scale[uid]:
+                            entropy_loss = -self._entropy_loss_scale[uid] * policy.get_entropy(role="policy").mean()
+                        else:
+                            entropy_loss = 0
+
+                        # compute policy loss
+                        ratio = torch.exp(next_log_prob - sampled_log_prob)
+                        surrogate = sampled_advantages * ratio
+                        surrogate_clipped = sampled_advantages * torch.clip(
+                            ratio, 1.0 - self._ratio_clip[uid], 1.0 + self._ratio_clip[uid]
+                        )
+
+                        policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
+
+                        # compute value loss
+                        predicted_values, _, _ = value.act({"states": sampled_states}, role="value")
+
+                        if self._clip_predicted_values:
+                            predicted_values = sampled_values + torch.clip(
+                                predicted_values - sampled_values, min=-self._value_clip[uid], max=self._value_clip[uid]
+                            )
+                        value_loss = self._value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
 
                     # optimization step
                     self.optimizers[uid].zero_grad()
-                    (policy_loss + entropy_loss + value_loss).backward()
+                    self.scaler.scale(policy_loss + entropy_loss + value_loss).backward()
+
                     if config.torch.is_distributed:
                         policy.reduce_parameters()
                         if policy is not value:
                             value.reduce_parameters()
+
                     if self._grad_norm_clip[uid] > 0:
+                        self.scaler.unscale_(self.optimizers[uid])
                         if policy is value:
                             nn.utils.clip_grad_norm_(policy.parameters(), self._grad_norm_clip[uid])
                         else:
                             nn.utils.clip_grad_norm_(
                                 itertools.chain(policy.parameters(), value.parameters()), self._grad_norm_clip[uid]
                             )
-                    self.optimizers[uid].step()
+
+                    self.scaler.step(self.optimizers[uid])
+                    self.scaler.update()
 
                     # update cumulative losses
                     cumulative_policy_loss += policy_loss.item()

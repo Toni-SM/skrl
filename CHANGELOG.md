@@ -7,9 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
 - `parse_device` static method in ML framework configuration (used in library components to set up the device)
 - Model instantiator support for different shared model structures in PyTorch
-- Support for other model types than Gaussian and Deterministic in runners
 - Support for automatic mixed precision training in PyTorch
 - `init_state_dict` method to initialize model's lazy modules in PyTorch
+- Model instantiators `fixed_log_std` parameter to define immutable log standard deviations
 - Define the `stochastic_evaluation` trainer config to allow the use of the actions returned by the agent's model
   as-is instead of deterministic actions (mean-actions in Gaussian-based models) during evaluation.
   Make the return of deterministic actions the default behavior.
@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
 - Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9)
 - Update KL Adaptive learning rate scheduler implementation to match Optax's behavior in JAX
+- Update AMP agent to use the environment's terminated and truncated data, and the KL Adaptive learning rate scheduler
+- Update runner implementations to support definition of arbitrary agents and their models
 - Speed up PyTorch implementation:
   - Disable argument checking when instantiating distributions
   - Replace PyTorch's `BatchSampler` by Python slice when sampling data from memory
@@ -34,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add missing `reduction` parameter to Gaussian model instantiator
 - Optax's learning rate schedulers integration in JAX implementation
 - Isaac Lab wrapper's multi-agent state retrieval with gymnasium 1.0
+- Treat truncation signal when computing 'done' (environment reset)
 
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,

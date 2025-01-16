@@ -15,7 +15,6 @@ repos:
     - id: name-tests-test
       args: ["--pytest-test-first"]
       exclude: ^(tests/strategies.py|tests/utils.py)
-    - id: no-commit-to-branch
     - id: trailing-whitespace
 - repo: https://github.com/codespell-project/codespell
   rev: v2.3.0

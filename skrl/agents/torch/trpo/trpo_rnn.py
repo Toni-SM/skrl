@@ -191,13 +191,14 @@ class TRPO_RNN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            self._tensors_names_policy = ["states", "actions", "terminated", "log_prob", "advantages"]
-            self._tensors_names_value = ["states", "terminated", "returns"]
+            self._tensors_names_policy = ["states", "actions", "terminated", "truncated", "log_prob", "advantages"]
+            self._tensors_names_value = ["states", "terminated", "truncated", "returns"]
 
         # RNN specifications
         self._rnn = False  # flag to indicate whether RNN is available
@@ -363,7 +364,7 @@ class TRPO_RNN(Agent):
             )
 
             # reset states if the episodes have ended
-            finished_episodes = terminated.nonzero(as_tuple=False)
+            finished_episodes = (terminated | truncated).nonzero(as_tuple=False)
             if finished_episodes.numel():
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
@@ -591,7 +592,7 @@ class TRPO_RNN(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated"),
+            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
             discount_factor=self._discount_factor,
@@ -603,9 +604,11 @@ class TRPO_RNN(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample all from memory
-        sampled_states, sampled_actions, sampled_dones, sampled_log_prob, sampled_advantages = self.memory.sample_all(
-            names=self._tensors_names_policy, mini_batches=1, sequence_length=self._rnn_sequence_length
-        )[0]
+        sampled_states, sampled_actions, sampled_terminated, sampled_truncated, sampled_log_prob, sampled_advantages = (
+            self.memory.sample_all(
+                names=self._tensors_names_policy, mini_batches=1, sequence_length=self._rnn_sequence_length
+            )[0]
+        )
         sampled_rnn_batches = self.memory.sample_all(
             names=self._rnn_tensors_names, mini_batches=1, sequence_length=self._rnn_sequence_length
         )[0]
@@ -614,13 +617,16 @@ class TRPO_RNN(Agent):
 
         if self._rnn:
             if self.policy is self.value:
-                rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn_batches], "terminated": sampled_dones}
+                rnn_policy = {
+                    "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches],
+                    "terminated": sampled_terminated | sampled_truncated,
+                }
             else:
                 rnn_policy = {
                     "rnn": [
                         s.transpose(0, 1) for s, n in zip(sampled_rnn_batches, self._rnn_tensors_names) if "policy" in n
                     ],
-                    "terminated": sampled_dones,
+                    "terminated": sampled_terminated | sampled_truncated,
                 }
 
         sampled_states = self._state_preprocessor(sampled_states, train=True)
@@ -686,13 +692,15 @@ class TRPO_RNN(Agent):
         for epoch in range(self._learning_epochs):
 
             # mini-batches loop
-            for i, (sampled_states, sampled_dones, sampled_returns) in enumerate(sampled_batches):
+            for i, (sampled_states, sampled_terminated, sampled_truncated, sampled_returns) in enumerate(
+                sampled_batches
+            ):
 
                 if self._rnn:
                     if self.policy is self.value:
                         rnn_value = {
                             "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]],
-                            "terminated": sampled_dones,
+                            "terminated": sampled_terminated | sampled_truncated,
                         }
                     else:
                         rnn_value = {
@@ -701,7 +709,7 @@ class TRPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "value" in n
                             ],
-                            "terminated": sampled_dones,
+                            "terminated": sampled_terminated | sampled_truncated,
                         }
 
                 sampled_states = self._state_preprocessor(sampled_states, train=not epoch)

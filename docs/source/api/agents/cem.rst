@@ -17,7 +17,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - loss (:math:`L`)
 
 .. raw:: html
@@ -41,7 +41,7 @@ Learning algorithm
 |
 | :literal:`_update(...)`
 | :green:`# sample all memory`
-| :math:`s, a, r, s', d \leftarrow` states, actions, rewards, next_states, dones
+| :math:`s, a, r \leftarrow` states, actions, rewards
 | :green:`# compute discounted return threshold`
 | :math:`[G] \leftarrow \sum_{t=0}^{E-1}` :guilabel:`discount_factor`:math:`^{t} \, r_t` for each episode
 | :math:`G_{_{bound}} \leftarrow q_{th_{quantile}}([G])` at the given :guilabel:`percentile`

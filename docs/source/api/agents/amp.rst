@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy (:math:`\pi_\theta`), value (:math:`V_\phi`) and discriminator (:math:`D_\psi`) function approximators
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - values (:math:`V`), next values (:math:`V'`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
@@ -57,7 +57,7 @@ Learning algorithm
 | :math:`r_D \leftarrow -log(\text{max}( 1 - \hat{y}(D_\psi(s_{_{AMP}})), \, 10^{-4})) \qquad` with :math:`\; \hat{y}(x) = \dfrac{1}{1 + e^{-x}}`
 | :math:`r' \leftarrow` :guilabel:`task_reward_weight` :math:`r \, +` :guilabel:`style_reward_weight` :guilabel:`discriminator_reward_scale` :math:`r_D`
 | :green:`# compute returns and advantages`
-| :math:`R, A \leftarrow f_{GAE}(r', d, V, V')`
+| :math:`R, A \leftarrow f_{GAE}(r', d_{_{end}} \lor d_{_{timeout}}, V, V')`
 | :green:`# sample mini-batches from memory`
 | [[:math:`s, a, logp, V, R, A, s_{_{AMP}}`]] :math:`\leftarrow` states, actions, log_prob, values, returns, advantages, AMP states
 | [[:math:`s_{_{AMP}}^{^M}`]] :math:`\leftarrow` AMP states from :math:`M`

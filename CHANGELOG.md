@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add missing `reduction` parameter to Gaussian model instantiator
 - Optax's learning rate schedulers integration in JAX implementation
 - Isaac Lab wrapper's multi-agent state retrieval with gymnasium 1.0
+- Treat truncation signal when computing 'done' (environment reset)
 
 ### Removed
 - Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,

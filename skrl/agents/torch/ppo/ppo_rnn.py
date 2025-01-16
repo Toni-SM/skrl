@@ -207,13 +207,23 @@ class PPO_RNN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
             # tensors sampled during training
-            self._tensors_names = ["states", "actions", "terminated", "log_prob", "values", "returns", "advantages"]
+            self._tensors_names = [
+                "states",
+                "actions",
+                "terminated",
+                "truncated",
+                "log_prob",
+                "values",
+                "returns",
+                "advantages",
+            ]
 
         # RNN specifications
         self._rnn = False  # flag to indicate whether RNN is available
@@ -383,7 +393,7 @@ class PPO_RNN(Agent):
             )
 
             # reset states if the episodes have ended
-            finished_episodes = terminated.nonzero(as_tuple=False)
+            finished_episodes = (terminated | truncated).nonzero(as_tuple=False)
             if finished_episodes.numel():
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
@@ -489,7 +499,7 @@ class PPO_RNN(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated"),
+            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
             discount_factor=self._discount_factor,
@@ -525,7 +535,8 @@ class PPO_RNN(Agent):
             for i, (
                 sampled_states,
                 sampled_actions,
-                sampled_dones,
+                sampled_terminated,
+                sampled_truncated,
                 sampled_log_prob,
                 sampled_values,
                 sampled_returns,
@@ -536,7 +547,7 @@ class PPO_RNN(Agent):
                     if self.policy is self.value:
                         rnn_policy = {
                             "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]],
-                            "terminated": sampled_dones,
+                            "terminated": sampled_terminated | sampled_truncated,
                         }
                         rnn_value = rnn_policy
                     else:
@@ -546,7 +557,7 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "policy" in n
                             ],
-                            "terminated": sampled_dones,
+                            "terminated": sampled_terminated | sampled_truncated,
                         }
                         rnn_value = {
                             "rnn": [
@@ -554,7 +565,7 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "value" in n
                             ],
-                            "terminated": sampled_dones,
+                            "terminated": sampled_terminated | sampled_truncated,
                         }
 
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):

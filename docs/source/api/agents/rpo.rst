@@ -68,7 +68,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
@@ -102,7 +102,7 @@ Learning algorithm
 | :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
-| :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
+| :math:`R, A \leftarrow f_{GAE}(r, d_{_{end}} \lor d_{_{timeout}}, V, V_{_{last}}')`
 | :green:`# sample mini-batches from memory`
 | [[:math:`s, a, logp, V, R, A`]] :math:`\leftarrow` states, actions, log_prob, values, returns, advantages
 | :green:`# learning epochs`

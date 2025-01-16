@@ -152,6 +152,7 @@ class CEM(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.int32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
         self.tensors_names = ["states", "actions", "rewards"]
 

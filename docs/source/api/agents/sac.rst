@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), critic function approximator (:math:`Q_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - log probabilities (:math:`logp`), entropy coefficient (:math:`\alpha`)
 |   - loss (:math:`L`)
 
@@ -37,13 +37,13 @@ Learning algorithm
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# sample a batch from memory`
-|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
+|     [:math:`s, a, r, s', d_{_{end}}, d_{_{timeout}}`] with size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`a',\; logp' \leftarrow \pi_\theta(s')`
 |     :math:`Q_{1_{target}} \leftarrow Q_{{\phi 1}_{target}}(s', a')`
 |     :math:`Q_{2_{target}} \leftarrow Q_{{\phi 2}_{target}}(s', a')`
 |     :math:`Q_{_{target}} \leftarrow \text{min}(Q_{1_{target}}, Q_{2_{target}}) - \alpha \; logp'`
-|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q_{_{target}}`
+|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q_{_{target}}`
 |     :green:`# compute critic loss`
 |     :math:`Q_1 \leftarrow Q_{\phi 1}(s, a)`
 |     :math:`Q_2 \leftarrow Q_{\phi 2}(s, a)`

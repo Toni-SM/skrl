@@ -14,8 +14,8 @@ Algorithm
 
 | For each iteration do:
 |     For each agent do:
-|         :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
-|         :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d, V`]
+|         :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, terminated :math:`d_{_{end}}`, truncated :math:`d_{_{timeout}}`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
+|         :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d_{_{end}} \lor d_{_{timeout}}, V`]
 |         :math:`\bullet \;` Compute the entropy loss :math:`{L}_{entropy}`
 |         :math:`\bullet \;` Compute the clipped surrogate objective (policy loss) with :math:`ratio` as the probability ratio between the action under the current policy and the action under the previous policy: :math:`L^{clip}_{\pi_\theta} = \mathbb{E}[\min(A \; ratio, A \; \text{clip}(ratio, 1-c, 1+c))]`
 |         :math:`\bullet \;` Compute the value loss :math:`L_{V_\phi}` as the mean squared error (MSE) between the predicted values :math:`V_{_{predicted}}` and the estimated returns :math:`R`
@@ -30,7 +30,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
@@ -65,7 +65,7 @@ Learning algorithm
 | **FOR** each agent **DO**
 |     :green:`# compute returns and advantages`
 |     :math:`V_{_{last}}' \leftarrow V_\phi(s')`
-|     :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
+|     :math:`R, A \leftarrow f_{GAE}(r, d_{_{end}} \lor d_{_{timeout}}, V, V_{_{last}}')`
 |     :green:`# sample mini-batches from memory`
 |     [[:math:`s, a, logp, V, R, A`]] :math:`\leftarrow` states, actions, log_prob, values, returns, advantages
 |     :green:`# learning epochs`

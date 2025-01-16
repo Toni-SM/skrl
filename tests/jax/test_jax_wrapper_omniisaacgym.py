@@ -28,9 +28,16 @@ class OmniverseIsaacGymEnv(gym.Env):
         self.device = "cpu"
 
         # initialize data spaces (defaults to gym.Box)
-        self.action_space = gym.spaces.Box(np.ones(self.num_actions, dtype=np.float32) * -1.0, np.ones(self.num_actions, dtype=np.float32) * 1.0)
-        self.observation_space = gym.spaces.Box(np.ones(self.num_observations, dtype=np.float32) * -np.Inf, np.ones(self.num_observations, dtype=np.float32) * np.Inf)
-        self.state_space = gym.spaces.Box(np.ones(self.num_states, dtype=np.float32) * -np.Inf, np.ones(self.num_states, dtype=np.float32) * np.Inf)
+        self.action_space = gym.spaces.Box(
+            np.ones(self.num_actions, dtype=np.float32) * -1.0, np.ones(self.num_actions, dtype=np.float32) * 1.0
+        )
+        self.observation_space = gym.spaces.Box(
+            np.ones(self.num_observations, dtype=np.float32) * -np.Inf,
+            np.ones(self.num_observations, dtype=np.float32) * np.Inf,
+        )
+        self.state_space = gym.spaces.Box(
+            np.ones(self.num_states, dtype=np.float32) * -np.Inf, np.ones(self.num_states, dtype=np.float32) * np.Inf
+        )
 
     def reset(self):
         observations = {"obs": torch.ones((self.num_envs, self.num_observations), device=self.device)}
@@ -38,7 +45,9 @@ class OmniverseIsaacGymEnv(gym.Env):
 
     def step(self, actions):
         assert actions.clone().shape == torch.Size([self.num_envs, 1])
-        observations = {"obs": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)}
+        observations = {
+            "obs": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)
+        }
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         dones = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
         return observations, rewards, dones, self.extras

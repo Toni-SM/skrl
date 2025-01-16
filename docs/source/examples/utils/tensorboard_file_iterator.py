@@ -19,7 +19,7 @@ rewards = np.array(rewards)
 mean = np.mean(rewards[:,:,1], axis=0)
 std = np.std(rewards[:,:,1], axis=0)
 
-# creae two subplots (one for each reward and one for the mean)
+# create two subplots (one for each reward and one for the mean)
 fig, ax = plt.subplots(1, 2, figsize=(15, 5))
 
 # plot the rewards for each experiment

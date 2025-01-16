@@ -2,8 +2,8 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import copy
 import itertools
-import gym
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -16,6 +16,7 @@ from skrl.multi_agents.torch import MultiAgent
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-torch]
 MAPPO_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -52,12 +53,14 @@ MAPPO_DEFAULT_CONFIG = {
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
     "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
-        "write_interval": 250,      # TensorBoard writing interval (timesteps)
+        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
 
-        "checkpoint_interval": 1000,        # interval for checkpoints (timesteps)
+        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
         "store_separately": False,          # whether to store checkpoints separately
 
         "wandb": False,             # whether to use Weights & Biases
@@ -65,18 +68,21 @@ MAPPO_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class MAPPO(MultiAgent):
-    def __init__(self,
-                 possible_agents: Sequence[str],
-                 models: Mapping[str, Model],
-                 memories: Optional[Mapping[str, Memory]] = None,
-                 observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None,
-                 shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gym.Space], Mapping[str, gymnasium.Space]]] = None) -> None:
+    def __init__(
+        self,
+        possible_agents: Sequence[str],
+        models: Mapping[str, Model],
+        memories: Optional[Mapping[str, Memory]] = None,
+        observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+        shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+    ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO)
 
         https://arxiv.org/abs/2103.01955
@@ -89,26 +95,28 @@ class MAPPO(MultiAgent):
         :param memories: Memories to storage the transitions.
         :type memories: dictionary of skrl.memory.torch.Memory, optional
         :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
         :param cfg: Configuration dictionary
         :type cfg: dict
         :param shared_observation_spaces: Shared observation/state space or shape (default: ``None``)
-        :type shared_observation_spaces: dictionary of int, sequence of int, gym.Space or gymnasium.Space, optional
+        :type shared_observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
         """
         _cfg = copy.deepcopy(MAPPO_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(possible_agents=possible_agents,
-                         models=models,
-                         memories=memories,
-                         observation_spaces=observation_spaces,
-                         action_spaces=action_spaces,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            possible_agents=possible_agents,
+            models=models,
+            memories=memories,
+            observation_spaces=observation_spaces,
+            action_spaces=action_spaces,
+            device=device,
+            cfg=_cfg,
+        )
 
         self.shared_observation_spaces = shared_observation_spaces
 
@@ -165,6 +173,15 @@ class MAPPO(MultiAgent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self._as_dict(self.cfg["time_limit_bootstrap"])
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizer and learning rate scheduler
         self.optimizers = {}
         self.schedulers = {}
@@ -176,11 +193,14 @@ class MAPPO(MultiAgent):
                 if policy is value:
                     optimizer = torch.optim.Adam(policy.parameters(), lr=self._learning_rate[uid])
                 else:
-                    optimizer = torch.optim.Adam(itertools.chain(policy.parameters(), value.parameters()),
-                                                 lr=self._learning_rate[uid])
+                    optimizer = torch.optim.Adam(
+                        itertools.chain(policy.parameters(), value.parameters()), lr=self._learning_rate[uid]
+                    )
                 self.optimizers[uid] = optimizer
                 if self._learning_rate_scheduler[uid] is not None:
-                    self.schedulers[uid] = self._learning_rate_scheduler[uid](optimizer, **self._learning_rate_scheduler_kwargs[uid])
+                    self.schedulers[uid] = self._learning_rate_scheduler[uid](
+                        optimizer, **self._learning_rate_scheduler_kwargs[uid]
+                    )
 
             self.checkpoint_modules[uid]["optimizer"] = self.optimizers[uid]
 
@@ -192,7 +212,9 @@ class MAPPO(MultiAgent):
                 self._state_preprocessor[uid] = self._empty_preprocessor
 
             if self._shared_state_preprocessor[uid] is not None:
-                self._shared_state_preprocessor[uid] = self._shared_state_preprocessor[uid](**self._shared_state_preprocessor_kwargs[uid])
+                self._shared_state_preprocessor[uid] = self._shared_state_preprocessor[uid](
+                    **self._shared_state_preprocessor_kwargs[uid]
+                )
                 self.checkpoint_modules[uid]["shared_state_preprocessor"] = self._shared_state_preprocessor[uid]
             else:
                 self._shared_state_preprocessor[uid] = self._empty_preprocessor
@@ -204,8 +226,7 @@ class MAPPO(MultiAgent):
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -213,17 +234,28 @@ class MAPPO(MultiAgent):
         if self.memories:
             for uid in self.possible_agents:
                 self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
-                self.memories[uid].create_tensor(name="shared_states", size=self.shared_observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(
+                    name="shared_states", size=self.shared_observation_spaces[uid], dtype=torch.float32
+                )
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="truncated", size=1, dtype=torch.bool)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
                 # tensors sampled during training
-                self._tensors_names = ["states", "shared_states", "actions", "log_prob", "values", "returns", "advantages"]
+                self._tensors_names = [
+                    "states",
+                    "shared_states",
+                    "actions",
+                    "log_prob",
+                    "values",
+                    "returns",
+                    "advantages",
+                ]
 
         # create temporary variables needed for storage and computation
         self._current_log_prob = []
@@ -248,26 +280,32 @@ class MAPPO(MultiAgent):
         #     return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        data = [self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy") for uid in self.possible_agents]
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            data = [
+                self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
+                for uid in self.possible_agents
+            ]
 
-        actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
-        log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
-        outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
+            actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
+            log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
+            outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
 
-        self._current_log_prob = log_prob
+            self._current_log_prob = log_prob
 
         return actions, log_prob, outputs
 
-    def record_transition(self,
-                          states: Mapping[str, torch.Tensor],
-                          actions: Mapping[str, torch.Tensor],
-                          rewards: Mapping[str, torch.Tensor],
-                          next_states: Mapping[str, torch.Tensor],
-                          terminated: Mapping[str, torch.Tensor],
-                          truncated: Mapping[str, torch.Tensor],
-                          infos: Mapping[str, Any],
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Mapping[str, torch.Tensor],
+        actions: Mapping[str, torch.Tensor],
+        rewards: Mapping[str, torch.Tensor],
+        next_states: Mapping[str, torch.Tensor],
+        terminated: Mapping[str, torch.Tensor],
+        truncated: Mapping[str, torch.Tensor],
+        infos: Mapping[str, Any],
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -289,7 +327,9 @@ class MAPPO(MultiAgent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memories:
             shared_states = infos["shared_states"]
@@ -301,17 +341,28 @@ class MAPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act({"states": self._shared_state_preprocessor[uid](shared_states)}, role="value")
-                values = self._value_preprocessor[uid](values, inverse=True)
+                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                    values, _, _ = self.values[uid].act(
+                        {"states": self._shared_state_preprocessor[uid](shared_states)}, role="value"
+                    )
+                    values = self._value_preprocessor[uid](values, inverse=True)
 
-                # time-limit (truncation) boostrapping
+                # time-limit (truncation) bootstrapping
                 if self._time_limit_bootstrap[uid]:
                     rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
 
                 # storage transition in memory
-                self.memories[uid].add_samples(states=states[uid], actions=actions[uid], rewards=rewards[uid], next_states=next_states[uid],
-                                               terminated=terminated[uid], truncated=truncated[uid], log_prob=self._current_log_prob[uid], values=values,
-                                               shared_states=shared_states)
+                self.memories[uid].add_samples(
+                    states=states[uid],
+                    actions=actions[uid],
+                    rewards=rewards[uid],
+                    next_states=next_states[uid],
+                    terminated=terminated[uid],
+                    truncated=truncated[uid],
+                    log_prob=self._current_log_prob[uid],
+                    values=values,
+                    shared_states=shared_states,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -348,12 +399,15 @@ class MAPPO(MultiAgent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor,
-                        dones: torch.Tensor,
-                        values: torch.Tensor,
-                        next_values: torch.Tensor,
-                        discount_factor: float = 0.99,
-                        lambda_coefficient: float = 0.95) -> torch.Tensor:
+
+        def compute_gae(
+            rewards: torch.Tensor,
+            dones: torch.Tensor,
+            values: torch.Tensor,
+            next_values: torch.Tensor,
+            discount_factor: float = 0.99,
+            lambda_coefficient: float = 0.95,
+        ) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
             :param rewards: Rewards obtained by the agent
@@ -380,7 +434,11 @@ class MAPPO(MultiAgent):
             # advantages computation
             for i in reversed(range(memory_size)):
                 next_values = values[i + 1] if i < memory_size - 1 else last_values
-                advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                advantage = (
+                    rewards[i]
+                    - values[i]
+                    + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                )
                 advantages[i] = advantage
             # returns computation
             returns = advantages + values
@@ -395,19 +453,24 @@ class MAPPO(MultiAgent):
             memory = self.memories[uid]
 
             # compute returns and advantages
-            with torch.no_grad():
+            with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                 value.train(False)
-                last_values, _, _ = value.act({"states": self._shared_state_preprocessor[uid](self._current_shared_next_states.float())}, role="value")
+                last_values, _, _ = value.act(
+                    {"states": self._shared_state_preprocessor[uid](self._current_shared_next_states.float())},
+                    role="value",
+                )
                 value.train(True)
             last_values = self._value_preprocessor[uid](last_values, inverse=True)
 
             values = memory.get_tensor_by_name("values")
-            returns, advantages = compute_gae(rewards=memory.get_tensor_by_name("rewards"),
-                                              dones=memory.get_tensor_by_name("terminated"),
-                                              values=values,
-                                              next_values=last_values,
-                                              discount_factor=self._discount_factor[uid],
-                                              lambda_coefficient=self._lambda[uid])
+            returns, advantages = compute_gae(
+                rewards=memory.get_tensor_by_name("rewards"),
+                dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
+                values=values,
+                next_values=last_values,
+                discount_factor=self._discount_factor[uid],
+                lambda_coefficient=self._lambda[uid],
+            )
 
             memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
             memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
@@ -425,59 +488,81 @@ class MAPPO(MultiAgent):
                 kl_divergences = []
 
                 # mini-batches loop
-                for sampled_states, sampled_shared_states, sampled_actions, sampled_log_prob, sampled_values, sampled_returns, sampled_advantages \
-                    in sampled_batches:
+                for (
+                    sampled_states,
+                    sampled_shared_states,
+                    sampled_actions,
+                    sampled_log_prob,
+                    sampled_values,
+                    sampled_returns,
+                    sampled_advantages,
+                ) in sampled_batches:
 
-                    sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
-                    sampled_shared_states = self._shared_state_preprocessor[uid](sampled_shared_states, train=not epoch)
+                    with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-                    _, next_log_prob, _ = policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
+                        sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
+                        sampled_shared_states = self._shared_state_preprocessor[uid](
+                            sampled_shared_states, train=not epoch
+                        )
 
-                    # compute approximate KL divergence
-                    with torch.no_grad():
-                        ratio = next_log_prob - sampled_log_prob
-                        kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
-                        kl_divergences.append(kl_divergence)
+                        _, next_log_prob, _ = policy.act(
+                            {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
+                        )
 
-                    # early stopping with KL divergence
-                    if self._kl_threshold[uid] and kl_divergence > self._kl_threshold[uid]:
-                        break
+                        # compute approximate KL divergence
+                        with torch.no_grad():
+                            ratio = next_log_prob - sampled_log_prob
+                            kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                            kl_divergences.append(kl_divergence)
 
-                    # compute entropy loss
-                    if self._entropy_loss_scale[uid]:
-                        entropy_loss = -self._entropy_loss_scale[uid] * policy.get_entropy(role="policy").mean()
-                    else:
-                        entropy_loss = 0
+                        # early stopping with KL divergence
+                        if self._kl_threshold[uid] and kl_divergence > self._kl_threshold[uid]:
+                            break
 
-                    # compute policy loss
-                    ratio = torch.exp(next_log_prob - sampled_log_prob)
-                    surrogate = sampled_advantages * ratio
-                    surrogate_clipped = sampled_advantages * torch.clip(ratio, 1.0 - self._ratio_clip[uid], 1.0 + self._ratio_clip[uid])
+                        # compute entropy loss
+                        if self._entropy_loss_scale[uid]:
+                            entropy_loss = -self._entropy_loss_scale[uid] * policy.get_entropy(role="policy").mean()
+                        else:
+                            entropy_loss = 0
 
-                    policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
+                        # compute policy loss
+                        ratio = torch.exp(next_log_prob - sampled_log_prob)
+                        surrogate = sampled_advantages * ratio
+                        surrogate_clipped = sampled_advantages * torch.clip(
+                            ratio, 1.0 - self._ratio_clip[uid], 1.0 + self._ratio_clip[uid]
+                        )
 
-                    # compute value loss
-                    predicted_values, _, _ = value.act({"states": sampled_shared_states}, role="value")
+                        policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
-                    if self._clip_predicted_values:
-                        predicted_values = sampled_values + torch.clip(predicted_values - sampled_values,
-                                                                       min=-self._value_clip[uid],
-                                                                       max=self._value_clip[uid])
-                    value_loss = self._value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
+                        # compute value loss
+                        predicted_values, _, _ = value.act({"states": sampled_shared_states}, role="value")
+
+                        if self._clip_predicted_values:
+                            predicted_values = sampled_values + torch.clip(
+                                predicted_values - sampled_values, min=-self._value_clip[uid], max=self._value_clip[uid]
+                            )
+                        value_loss = self._value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
 
                     # optimization step
                     self.optimizers[uid].zero_grad()
-                    (policy_loss + entropy_loss + value_loss).backward()
+                    self.scaler.scale(policy_loss + entropy_loss + value_loss).backward()
+
                     if config.torch.is_distributed:
                         policy.reduce_parameters()
                         if policy is not value:
                             value.reduce_parameters()
+
                     if self._grad_norm_clip[uid] > 0:
+                        self.scaler.unscale_(self.optimizers[uid])
                         if policy is value:
                             nn.utils.clip_grad_norm_(policy.parameters(), self._grad_norm_clip[uid])
                         else:
-                            nn.utils.clip_grad_norm_(itertools.chain(policy.parameters(), value.parameters()), self._grad_norm_clip[uid])
-                    self.optimizers[uid].step()
+                            nn.utils.clip_grad_norm_(
+                                itertools.chain(policy.parameters(), value.parameters()), self._grad_norm_clip[uid]
+                            )
+
+                    self.scaler.step(self.optimizers[uid])
+                    self.scaler.update()
 
                     # update cumulative losses
                     cumulative_policy_loss += policy_loss.item()
@@ -498,12 +583,23 @@ class MAPPO(MultiAgent):
                         self.schedulers[uid].step()
 
             # record data
-            self.track_data(f"Loss / Policy loss ({uid})", cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
-            self.track_data(f"Loss / Value loss ({uid})", cumulative_value_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
+            self.track_data(
+                f"Loss / Policy loss ({uid})",
+                cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            )
+            self.track_data(
+                f"Loss / Value loss ({uid})",
+                cumulative_value_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            )
             if self._entropy_loss_scale:
-                self.track_data(f"Loss / Entropy loss ({uid})", cumulative_entropy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]))
+                self.track_data(
+                    f"Loss / Entropy loss ({uid})",
+                    cumulative_entropy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+                )
 
-            self.track_data(f"Policy / Standard deviation ({uid})", policy.distribution(role="policy").stddev.mean().item())
+            self.track_data(
+                f"Policy / Standard deviation ({uid})", policy.distribution(role="policy").stddev.mean().item()
+            )
 
             if self._learning_rate_scheduler[uid]:
                 self.track_data(f"Learning / Learning rate ({uid})", self.schedulers[uid].get_last_lr()[0])

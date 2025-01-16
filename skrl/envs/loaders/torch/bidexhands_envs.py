@@ -26,6 +26,7 @@ def cwd(new_path: str) -> None:
     finally:
         os.chdir(current_path)
 
+
 def _print_cfg(d, indent=0) -> None:
     """Print the environment configuration
 
@@ -41,12 +42,14 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_bidexhands_env(task_name: str = "",
-                        num_envs: Optional[int] = None,
-                        headless: Optional[bool] = None,
-                        cli_args: Sequence[str] = [],
-                        bidexhands_path: str = "",
-                        show_cfg: bool = True):
+def load_bidexhands_env(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    bidexhands_path: str = "",
+    show_cfg: bool = True,
+):
     """Load a Bi-DexHands environment
 
     :param task_name: The name of the task (default: ``""``).
@@ -88,7 +91,9 @@ def load_bidexhands_env(task_name: str = "",
     if defined:
         arg_index = sys.argv.index("--task") + 1
         if arg_index >= len(sys.argv):
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
         if task_name and task_name != sys.argv[arg_index]:
             logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
     # get task name from function arguments
@@ -97,7 +102,9 @@ def load_bidexhands_env(task_name: str = "",
             sys.argv.append("--task")
             sys.argv.append(task_name)
         else:
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False

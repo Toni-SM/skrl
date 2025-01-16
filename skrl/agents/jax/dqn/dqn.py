@@ -2,7 +2,6 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import functools
-import gym
 import gymnasium
 
 import jax
@@ -16,6 +15,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 DQN_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -25,7 +25,7 @@ DQN_DEFAULT_CONFIG = {
     "polyak": 0.005,                # soft update hyperparameter (tau)
 
     "learning_rate": 1e-3,          # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -58,21 +58,27 @@ DQN_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @functools.partial(jax.jit, static_argnames=("q_network_act"))
-def _update_q_network(q_network_act,
-                      q_network_state_dict,
-                      next_q_values,
-                      sampled_states,
-                      sampled_actions,
-                      sampled_rewards,
-                      sampled_dones,
-                      discount_factor):
+def _update_q_network(
+    q_network_act,
+    q_network_state_dict,
+    next_q_values,
+    sampled_states,
+    sampled_actions,
+    sampled_rewards,
+    sampled_terminated,
+    sampled_truncated,
+    discount_factor,
+):
     # compute target values
     target_q_values = jnp.max(next_q_values, axis=-1, keepdims=True)
-    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+    target_values = (
+        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
+    )
 
     # compute Q-network loss
     def _q_network_loss(params):
@@ -86,13 +92,15 @@ def _update_q_network(q_network_act,
 
 
 class DQN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Deep Q-Network (DQN)
 
         https://arxiv.org/abs/1312.5602
@@ -104,9 +112,9 @@ class DQN(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional
@@ -118,12 +126,14 @@ class DQN(Agent):
         # _cfg = copy.deepcopy(DQN_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = DQN_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.q_network = self.models.get("q_network", None)
@@ -165,10 +175,16 @@ class DQN(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
+            # scheduler
+            if self._learning_rate_scheduler:
+                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+            # optimizer
             with jax.default_device(self.device):
-                self.optimizer = Adam(model=self.q_network, lr=self._learning_rate)
-            if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.optimizer = Adam(
+                    model=self.q_network,
+                    lr=self._learning_rate,
+                    scale=not self._learning_rate_scheduler,
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -188,8 +204,7 @@ class DQN(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
@@ -199,8 +214,9 @@ class DQN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.int32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # set up models for just-in-time compilation with XLA
         self.q_network.apply = jax.jit(self.q_network.apply, static_argnums=2)
@@ -238,8 +254,9 @@ class DQN(Agent):
             return actions, None, outputs
 
         # sample actions with epsilon-greedy policy
-        epsilon = self._exploration_final_epsilon + (self._exploration_initial_epsilon - self._exploration_final_epsilon) \
-                * np.exp(-1.0 * timestep / self._exploration_timesteps)
+        epsilon = self._exploration_final_epsilon + (
+            self._exploration_initial_epsilon - self._exploration_final_epsilon
+        ) * np.exp(-1.0 * timestep / self._exploration_timesteps)
 
         indexes = (np.random.random(states.shape[0]) >= epsilon).nonzero()[0]
         if indexes.size:
@@ -256,16 +273,18 @@ class DQN(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -287,18 +306,32 @@ class DQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
             if self._rewards_shaper is not None:
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -334,12 +367,19 @@ class DQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
+
+            # sample a batch from memory
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
@@ -347,19 +387,24 @@ class DQN(Agent):
             # compute target values
             next_q_values, _, _ = self.target_q_network.act({"states": sampled_next_states}, role="target_q_network")
 
-            grad, q_network_loss, target_values = _update_q_network(self.q_network.act,
-                                                                    self.q_network.state_dict,
-                                                                    next_q_values,
-                                                                    sampled_states,
-                                                                    sampled_actions,
-                                                                    sampled_rewards,
-                                                                    sampled_dones,
-                                                                    self._discount_factor)
+            grad, q_network_loss, target_values = _update_q_network(
+                self.q_network.act,
+                self.q_network.state_dict,
+                next_q_values,
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_terminated,
+                sampled_truncated,
+                self._discount_factor,
+            )
 
             # optimization step (Q-network)
             if config.jax.is_distributed:
                 grad = self.q_network.reduce_parameters(grad)
-            self.optimizer = self.optimizer.step(grad, self.q_network)
+            self.optimizer = self.optimizer.step(
+                grad, self.q_network, self._learning_rate if self._learning_rate_scheduler else None
+            )
 
             # update target network
             if not timestep % self._target_update_interval:
@@ -367,7 +412,7 @@ class DQN(Agent):
 
             # update learning rate
             if self._learning_rate_scheduler:
-                self.scheduler.step()
+                self._learning_rate *= self.scheduler(timestep)
 
             # record data
             self.track_data("Loss / Q-network loss", q_network_loss.item())
@@ -377,4 +422,4 @@ class DQN(Agent):
             self.track_data("Target / Target (mean)", target_values.mean().item())
 
             if self._learning_rate_scheduler:
-                self.track_data("Learning / Learning rate", self.scheduler._lr)
+                self.track_data("Learning / Learning rate", self._learning_rate)

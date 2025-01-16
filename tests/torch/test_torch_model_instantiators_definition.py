@@ -14,7 +14,7 @@ from skrl.utils.model_instantiators.torch import (
     deterministic_model,
     gaussian_model,
     multivariate_gaussian_model,
-    shared_model
+    shared_model,
 )
 from skrl.utils.model_instantiators.torch.common import _generate_modules, _get_activation_function, _parse_input
 
@@ -30,6 +30,7 @@ def test_get_activation_function(capsys):
         activation = _get_activation_function(item, as_module=False)
         assert activation is not None, f"{item} -> None"
         exec(activation, _globals, {})
+
 
 def test_parse_input(capsys):
     # check for Shape enum (compatibility with prior versions)
@@ -48,9 +49,10 @@ def test_parse_input(capsys):
             assert item not in output, f"'{item}' in '{output}'"
     # Mixed operation
     input = 'OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]])'
-    statement = 'inputs["states"]["joint"] + torch.cat([net * inputs["taken_actions"][:, -3:]], dim=1)'
+    statement = 'states["joint"] + torch.cat([net * taken_actions[:, -3:]], dim=1)'
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
+
 
 def test_generate_modules(capsys):
     _globals = {"nn": torch.nn}
@@ -147,6 +149,7 @@ def test_generate_modules(capsys):
     assert isinstance(container, torch.nn.Sequential)
     assert len(container) == 2
 
+
 def test_gaussian_model(capsys):
     device = "cpu"
     observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
@@ -170,19 +173,15 @@ def test_gaussian_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = gaussian_model(observation_space=observation_space,
-                           action_space=action_space,
-                           device=device,
-                           return_source=True,
-                           **content)
+    model = gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = gaussian_model(observation_space=observation_space,
-                           action_space=action_space,
-                           device=device,
-                           return_source=False,
-                           **content)
+    model = gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -190,6 +189,7 @@ def test_gaussian_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 2)
+
 
 def test_multivariate_gaussian_model(capsys):
     device = "cpu"
@@ -214,19 +214,15 @@ def test_multivariate_gaussian_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = multivariate_gaussian_model(observation_space=observation_space,
-                                        action_space=action_space,
-                                        device=device,
-                                        return_source=True,
-                                        **content)
+    model = multivariate_gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = multivariate_gaussian_model(observation_space=observation_space,
-                                        action_space=action_space,
-                                        device=device,
-                                        return_source=False,
-                                        **content)
+    model = multivariate_gaussian_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -234,6 +230,7 @@ def test_multivariate_gaussian_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 2)
+
 
 def test_deterministic_model(capsys):
     device = "cpu"
@@ -255,19 +252,15 @@ def test_deterministic_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = deterministic_model(observation_space=observation_space,
-                                action_space=action_space,
-                                device=device,
-                                return_source=True,
-                                **content)
+    model = deterministic_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = deterministic_model(observation_space=observation_space,
-                                action_space=action_space,
-                                device=device,
-                                return_source=False,
-                                **content)
+    model = deterministic_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -275,6 +268,7 @@ def test_deterministic_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 3)
+
 
 def test_categorical_model(capsys):
     device = "cpu"
@@ -295,19 +289,15 @@ def test_categorical_model(capsys):
     """
     content = yaml.safe_load(content)
     # source
-    model = categorical_model(observation_space=observation_space,
-                              action_space=action_space,
-                              device=device,
-                              return_source=True,
-                              **content)
+    model = categorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = categorical_model(observation_space=observation_space,
-                              action_space=action_space,
-                              device=device,
-                              return_source=False,
-                              **content)
+    model = categorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
     model.to(device=device)
     with capsys.disabled():
         print(model)
@@ -315,6 +305,7 @@ def test_categorical_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 1)
+
 
 def test_shared_model(capsys):
     device = "cpu"
@@ -352,27 +343,31 @@ def test_shared_model(capsys):
     content_policy = yaml.safe_load(content_policy)
     content_value = yaml.safe_load(content_value)
     # source
-    model = shared_model(observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         roles=["policy", "value"],
-                         parameters=[
-                            content_policy,
-                            content_value,
-                         ],
-                         return_source=True)
+    model = shared_model(
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        roles=["policy", "value"],
+        parameters=[
+            content_policy,
+            content_value,
+        ],
+        return_source=True,
+    )
     with capsys.disabled():
         print(model)
     # instance
-    model = shared_model(observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         roles=["policy", "value"],
-                         parameters=[
-                            content_policy,
-                            content_value,
-                         ],
-                         return_source=False)
+    model = shared_model(
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        roles=["policy", "value"],
+        parameters=[
+            content_policy,
+            content_value,
+        ],
+        return_source=False,
+    )
     model.to(device=device)
     with capsys.disabled():
         print(model)

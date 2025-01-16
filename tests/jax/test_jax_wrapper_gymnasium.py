@@ -52,6 +52,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
 
     env.close()
 
+
 @pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("vectorization_mode", ["async", "sync"])
 def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorization_mode: str):

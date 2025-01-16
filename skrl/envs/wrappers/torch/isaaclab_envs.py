@@ -5,6 +5,7 @@ import gymnasium
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class IsaacLabWrapper(Wrapper):
@@ -22,8 +23,7 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def state_space(self) -> Union[gymnasium.Space, None]:
-        """State space
-        """
+        """State space"""
         try:
             return self._unwrapped.single_observation_space["critic"]
         except KeyError:
@@ -35,8 +35,7 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space
-        """
+        """Observation space"""
         try:
             return self._unwrapped.single_observation_space["policy"]
         except:
@@ -44,8 +43,7 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space
-        """
+        """Action space"""
         try:
             return self._unwrapped.single_action_space
         except:
@@ -60,8 +58,10 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of torch.Tensor and any other info
         """
-        self._observations, reward, terminated, truncated, self._info = self._env.step(actions)
-        return self._observations["policy"], reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
+        actions = unflatten_tensorized_space(self.action_space, actions)
+        observations, reward, terminated, truncated, self._info = self._env.step(actions)
+        self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -70,18 +70,19 @@ class IsaacLabWrapper(Wrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset()
+            self._observations = flatten_tensorized_space(
+                tensorize_space(self.observation_space, observations["policy"])
+            )
             self._reset_once = False
-        return self._observations["policy"], self._info
+        return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()
 
 
@@ -98,9 +99,13 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._observations = None
         self._info = {}
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> \
-        Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],
-              Mapping[str, torch.Tensor], Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, Any],
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -109,12 +114,18 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info
         :rtype: tuple of dictionaries torch.Tensor and any other info
         """
-        self._observations, rewards, terminated, truncated, self._info = self._env.step(actions)
-        return self._observations, \
-               {k: v.view(-1, 1) for k, v in rewards.items()}, \
-               {k: v.view(-1, 1) for k, v in terminated.items()}, \
-               {k: v.view(-1, 1) for k, v in truncated.items()}, \
-               self._info
+        actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
+        observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+        self._observations = {
+            k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
+        }
+        return (
+            self._observations,
+            {k: v.view(-1, 1) for k, v in rewards.items()},
+            {k: v.view(-1, 1) for k, v in terminated.items()},
+            {k: v.view(-1, 1) for k, v in truncated.items()},
+            self._info,
+        )
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
         """Reset the environment
@@ -123,7 +134,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :rtype: torch.Tensor and any other info
         """
         if self._reset_once:
-            self._observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset()
+            self._observations = {
+                k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
+                for k, v in observations.items()
+            }
             self._reset_once = False
         return self._observations, self._info
 
@@ -133,14 +148,18 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: State
         :rtype: torch.Tensor
         """
-        return self._env.state()
+        try:
+            state = self._env.state()
+        except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
+            state = self._unwrapped.state()
+        if state is not None:
+            return flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
+        return state
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         self._env.close()

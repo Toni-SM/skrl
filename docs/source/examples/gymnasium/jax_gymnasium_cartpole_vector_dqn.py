@@ -20,11 +20,11 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 # load and wrap the gymnasium environment.
 # note: the environment version may change depending on the gymnasium version
 try:
-    env = gym.vector.make("CartPole-v1", num_envs=5, asynchronous=False)
+    env = gym.make_vec("CartPole-v1", num_envs=5, vectorization_mode="sync")
 except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
     env_id = [spec for spec in gym.envs.registry if spec.startswith("CartPole-v")][0]
     print("CartPole-v0 not found. Trying {}".format(env_id))
-    env = gym.vector.make(env_id, num_envs=5, asynchronous=False)
+    env = gym.make_vec(env_id, num_envs=5, vectorization_mode="sync")
 env = wrap_env(env)
 
 device = env.device
@@ -42,22 +42,24 @@ models["q_network"] = deterministic_model(observation_space=env.observation_spac
                                           action_space=env.action_space,
                                           device=device,
                                           clip_actions=False,
-                                          input_shape=Shape.OBSERVATIONS,
-                                          hiddens=[64, 64],
-                                          hidden_activation=["relu", "relu"],
-                                          output_shape=Shape.ACTIONS,
-                                          output_activation=None,
-                                          output_scale=1.0)
+                                          network=[{
+                                              "name": "net",
+                                              "input": "STATES",
+                                              "layers": [64, 64],
+                                              "activations": "relu",
+                                          }],
+                                          output="ACTIONS")
 models["target_q_network"] = deterministic_model(observation_space=env.observation_space,
                                                  action_space=env.action_space,
                                                  device=device,
                                                  clip_actions=False,
-                                                 input_shape=Shape.OBSERVATIONS,
-                                                 hiddens=[64, 64],
-                                                 hidden_activation=["relu", "relu"],
-                                                 output_shape=Shape.ACTIONS,
-                                                 output_activation=None,
-                                                 output_scale=1.0)
+                                                 network=[{
+                                                     "name": "net",
+                                                     "input": "STATES",
+                                                     "layers": [64, 64],
+                                                     "activations": "relu",
+                                                 }],
+                                                 output="ACTIONS")
 
 # instantiate models' state dict
 for role, model in models.items():

@@ -12,10 +12,10 @@ In this section, you will find the steps to install the library, troubleshoot kn
 
 **skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
 
-    * `gym <https://www.gymlibrary.dev>`_ / `gymnasium <https://gymnasium.farama.org/>`_
-    * `tqdm <https://tqdm.github.io>`_
+    * `gymnasium <https://gymnasium.farama.org/>`_
     * `packaging <https://packaging.pypa.io>`_
     * `tensorboard <https://www.tensorflow.org/tensorboard>`_
+    * `tqdm <https://tqdm.github.io>`_
 
 Machine learning (ML) framework
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,10 +25,15 @@ According to the specific ML frameworks, the following libraries are required:
 PyTorch
 """""""
 
-    * `torch <https://pytorch.org>`_ 1.9.0 or higher
+    * `torch <https://pytorch.org>`_ 1.10.0 or higher
 
 JAX
 """
+
+    .. warning::
+
+        It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+        Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the steps described below.
 
     * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ 0.4.3 or higher
     * `flax <https://flax.readthedocs.io>`_
@@ -62,8 +67,8 @@ To install **skrl** with pip, execute:
 
         .. warning::
 
-            JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-            `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+            It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+            Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
         .. code-block:: bash
 
@@ -109,8 +114,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
             .. code-block:: bash
 
@@ -142,8 +147,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                JAX installs its CPU version if not specified. For GPU/TPU versions visit the JAX
-                `installation <https://github.com/google/jax#installation>`_ page before proceeding with the steps described below.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
 
             .. code-block:: bash
 

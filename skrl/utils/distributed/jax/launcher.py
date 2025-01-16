@@ -18,11 +18,18 @@ def _get_args_parser() -> argparse.ArgumentParser:
     # worker/node size related arguments
     parser.add_argument("--nnodes", type=int, default=1, help="Number of nodes")
     parser.add_argument("--nproc-per-node", "--nproc_per_node", type=int, default=1, help="Number of workers per node")
-    parser.add_argument("--node-rank", "--node_rank", type=int, default=0, help="Node rank for multi-node distributed training")
+    parser.add_argument(
+        "--node-rank", "--node_rank", type=int, default=0, help="Node rank for multi-node distributed training"
+    )
 
     # coordinator related arguments
-    parser.add_argument("--coordinator-address", "--coordinator_address", type=str, default="127.0.0.1:5000",
-                        help="IP address and port where process 0 will start a JAX service")
+    parser.add_argument(
+        "--coordinator-address",
+        "--coordinator_address",
+        type=str,
+        default="127.0.0.1:5000",
+        help="IP address and port where process 0 will start a JAX service",
+    )
 
     # positional arguments
     parser.add_argument("script", type=str, help="Training script path to be launched in parallel")
@@ -30,7 +37,14 @@ def _get_args_parser() -> argparse.ArgumentParser:
 
     return parser
 
-def _start_processes(cmd: Sequence[str], envs: Sequence[Mapping[str, str]], nprocs: int, daemon: bool = False, start_method: str = "spawn") -> None:
+
+def _start_processes(
+    cmd: Sequence[str],
+    envs: Sequence[Mapping[str, str]],
+    nprocs: int,
+    daemon: bool = False,
+    start_method: str = "spawn",
+) -> None:
     """Start child processes according the specified configuration and wait for them to join
 
     :param cmd: Command to run on each child process
@@ -57,6 +71,7 @@ def _start_processes(cmd: Sequence[str], envs: Sequence[Mapping[str, str]], npro
     for process in processes:
         process.join()
 
+
 def _process(cmd: Sequence[str], env: Mapping[str, str]) -> None:
     """Run a command in the current process
 
@@ -66,6 +81,7 @@ def _process(cmd: Sequence[str], env: Mapping[str, str]) -> None:
     :type envs: dict
     """
     subprocess.run(cmd, env=env)
+
 
 def launch():
     """Main entry point for launching distributed runs"""

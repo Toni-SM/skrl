@@ -1,15 +1,42 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.6.0
   hooks:
-  - id: check-ast
-  - id: check-case-conflict
-  - id: check-docstring-first
-  - id: check-merge-conflict
-  - id: check-yaml
-  - id: end-of-file-fixer
-  - id: trailing-whitespace
+    - id: check-ast
+    - id: check-case-conflict
+    - id: check-docstring-first
+    - id: check-json
+    - id: check-merge-conflict
+    - id: check-toml
+    - id: check-yaml
+    - id: debug-statements
+    - id: detect-private-key
+    - id: end-of-file-fixer
+    - id: name-tests-test
+      args: ["--pytest-test-first"]
+      exclude: ^(tests/strategies.py|tests/utils.py)
+    - id: no-commit-to-branch
+    - id: trailing-whitespace
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.3.0
+  hooks:
+    - id: codespell
+      exclude: ^(docs/source/_static|docs/_build|pyproject.toml)
+      additional_dependencies:
+        - tomli
+- repo: https://github.com/python/black
+  rev: 24.8.0
+  hooks:
+    - id: black
+      args: ["--line-length=120"]
+      exclude: ^(docs/)
 - repo: https://github.com/pycqa/isort
-  rev: 5.12.0
+  rev: 5.13.2
   hooks:
-  - id: isort
+    - id: isort
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: v1.10.0
+  hooks:
+    - id: rst-backticks
+    - id: rst-directive-colons
+    - id: rst-inline-touching-normal

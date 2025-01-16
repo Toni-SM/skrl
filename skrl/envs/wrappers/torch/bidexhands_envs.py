@@ -1,10 +1,11 @@
 from typing import Any, Mapping, Sequence, Tuple
 
-import gym
+import gymnasium
 
 import torch
 
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
+from skrl.utils.spaces.torch import convert_gym_space
 
 
 class BiDexHandsWrapper(MultiAgentEnvWrapper):
@@ -38,30 +39,34 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return [f"agent_{i}" for i in range(self.num_agents)]
 
     @property
-    def state_spaces(self) -> Mapping[str, gym.Space]:
+    def state_spaces(self) -> Mapping[str, gymnasium.Space]:
         """State spaces
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
         this property returns a dictionary (for consistency with the other space-related properties) with the same
         space for all the agents
         """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.share_observation_space)}
+        return {
+            uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.share_observation_space)
+        }
 
     @property
-    def observation_spaces(self) -> Mapping[str, gym.Space]:
-        """Observation spaces
-        """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.observation_space)}
+    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
+        """Observation spaces"""
+        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.observation_space)}
 
     @property
-    def action_spaces(self) -> Mapping[str, gym.Space]:
-        """Action spaces
-        """
-        return {uid: space for uid, space in zip(self.possible_agents, self._env.action_space)}
+    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
+        """Action spaces"""
+        return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.action_space)}
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> \
-        Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],
-              Mapping[str, torch.Tensor], Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, Any],
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -74,9 +79,9 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         observations, states, rewards, terminated, _, _ = self._env.step(actions)
 
         self._states = states[:, 0]
-        self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
-        rewards = {uid: rewards[:,i].view(-1, 1) for i, uid in enumerate(self.possible_agents)}
-        terminated = {uid: terminated[:,i].view(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        self._observations = {uid: observations[:, i] for i, uid in enumerate(self.possible_agents)}
+        rewards = {uid: rewards[:, i].view(-1, 1) for i, uid in enumerate(self.possible_agents)}
+        terminated = {uid: terminated[:, i].view(-1, 1) for i, uid in enumerate(self.possible_agents)}
         truncated = {uid: torch.zeros_like(value) for uid, value in terminated.items()}
 
         return self._observations, rewards, terminated, truncated, self._info
@@ -98,16 +103,14 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         if self._reset_once:
             observations, states, _ = self._env.reset()
             self._states = states[:, 0]
-            self._observations = {uid: observations[:,i] for i, uid in enumerate(self.possible_agents)}
+            self._observations = {uid: observations[:, i] for i, uid in enumerate(self.possible_agents)}
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment
-        """
+        """Render the environment"""
         return None
 
     def close(self) -> None:
-        """Close the environment
-        """
+        """Close the environment"""
         pass

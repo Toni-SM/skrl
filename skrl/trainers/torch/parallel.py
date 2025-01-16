@@ -19,7 +19,8 @@ PARALLEL_TRAINER_DEFAULT_CONFIG = {
     "headless": False,              # whether to use headless mode (no rendering)
     "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
     "close_environment_at_exit": True,   # whether to close the environment on normal program termination
-    "environment_info": "episode",  # key used to get and log environment info
+    "environment_info": "episode",       # key used to get and log environment info
+    "stochastic_evaluation": False,      # whether to use actions rather than (deterministic) mean actions during evaluation
 }
 # [end-config-dict-torch]
 # fmt: on
@@ -65,7 +66,9 @@ def fn_processor(process_index, *args):
         elif task == "act":
             _states = queue.get()[scope[0] : scope[1]]
             with torch.no_grad():
-                _actions = agent.act(_states, timestep=msg["timestep"], timesteps=msg["timesteps"])[0]
+                stochastic_evaluation = msg["stochastic_evaluation"]
+                _outputs = agent.act(_states, timestep=msg["timestep"], timesteps=msg["timesteps"])
+                _actions = _outputs[0] if stochastic_evaluation else _outputs[-1].get("mean_actions", _outputs[0])
                 if not _actions.is_cuda:
                     _actions.share_memory_()
                 queue.put(_actions)
@@ -363,7 +366,14 @@ class ParallelTrainer(Trainer):
             # compute actions
             with torch.no_grad():
                 for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "act", "timestep": timestep, "timesteps": self.timesteps})
+                    pipe.send(
+                        {
+                            "task": "act",
+                            "timestep": timestep,
+                            "timesteps": self.timesteps,
+                            "stochastic_evaluation": self.stochastic_evaluation,
+                        }
+                    )
                     queue.put(states)
 
                 barrier.wait()

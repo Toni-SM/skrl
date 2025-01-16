@@ -98,12 +98,15 @@ def _update_critic(
     sampled_states: Union[np.ndarray, jax.Array],
     sampled_actions: Union[np.ndarray, jax.Array],
     sampled_rewards: Union[np.ndarray, jax.Array],
-    sampled_dones: Union[np.ndarray, jax.Array],
+    sampled_terminated: Union[np.ndarray, jax.Array],
+    sampled_truncated: Union[np.ndarray, jax.Array],
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values)
-    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+    target_values = (
+        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
+    )
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
@@ -303,8 +306,9 @@ class TD3(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # clip noise bounds
         if self.action_space is not None:
@@ -485,9 +489,14 @@ class TD3(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
-                names=self._tensors_names, batch_size=self._batch_size
-            )[0]
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
             sampled_states = self._state_preprocessor(sampled_states, train=True)
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
@@ -531,7 +540,8 @@ class TD3(Agent):
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
-                sampled_dones,
+                sampled_terminated,
+                sampled_truncated,
                 self._discount_factor,
             )
 

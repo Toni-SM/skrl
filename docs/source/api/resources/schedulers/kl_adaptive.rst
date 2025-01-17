@@ -71,8 +71,6 @@ API (PyTorch)
     :inherited-members:
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -80,9 +78,4 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR
-    :show-inheritance:
-    :inherited-members:
-    :members:
-
-    .. automethod:: __init__
+.. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR

@@ -28,7 +28,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         >>> env = wrap_env(env)
 
     :param env: The environment to be wrapped
-    :type env: gym.Env, gymnasium.Env, dm_env.Environment or VecTask
+    :type env: Any
     :param wrapper: The type of wrapper to use (default: ``"auto"``).
                     If ``"auto"``, the wrapper will be automatically selected based on the environment class.
                     The supported wrappers are described in the following table:
@@ -75,6 +75,7 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
     :return: Wrapped environment
     :rtype: Wrapper or MultiAgentEnvWrapper
     """
+
     def _get_wrapper_name(env, verbose):
         def _in(values, container):
             if type(values) == str:
@@ -87,14 +88,16 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
 
         base_classes = [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__]
         try:
-            base_classes += [str(base).replace("<class '", "").replace("'>", "") for base in env.unwrapped.__class__.__bases__]
+            base_classes += [
+                str(base).replace("<class '", "").replace("'>", "") for base in env.unwrapped.__class__.__bases__
+            ]
         except:
             pass
         base_classes = sorted(list(set(base_classes)))
         if verbose:
             logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
 
-        if _in("omni.isaac.lab.envs..*", base_classes):
+        if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
         elif _in("omni.isaac.gym..*", base_classes):
             return "omniverse-isaacgym"

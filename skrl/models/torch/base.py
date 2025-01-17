@@ -1,36 +1,43 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import collections
-import gym
 import gymnasium
+from packaging import version
 
-import numpy as np
 import torch
 
 from skrl import config, logger
+from skrl.utils.spaces.torch import (
+    compute_space_size,
+    flatten_tensorized_space,
+    sample_space,
+    unflatten_tensorized_space,
+)
 
 
 class Model(torch.nn.Module):
-    def __init__(self,
-                 observation_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 action_space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                 device: Optional[Union[str, torch.device]] = None) -> None:
+    def __init__(
+        self,
+        observation_space: Union[int, Sequence[int], gymnasium.Space],
+        action_space: Union[int, Sequence[int], gymnasium.Space],
+        device: Optional[Union[str, torch.device]] = None,
+    ) -> None:
         """Base class representing a function approximator
 
         The following properties are defined:
 
         - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, sequence of int, gym.Space, gymnasium.Space): Observation/state space
-        - ``action_space`` (int, sequence of int, gym.Space, gymnasium.Space): Action space
+        - ``observation_space`` (int, sequence of int, gymnasium.Space): Observation/state space
+        - ``action_space`` (int, sequence of int, gymnasium.Space): Action space
         - ``num_observations`` (int): Number of elements in the observation/state space
         - ``num_actions`` (int): Number of elements in the action space
 
         :param observation_space: Observation/state space or shape.
                                   The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type observation_space: int, sequence of int, gymnasium.Space
         :param action_space: Action space or shape.
                              The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gym.Space, gymnasium.Space
+        :type action_space: int, sequence of int, gymnasium.Space
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -54,125 +61,59 @@ class Model(torch.nn.Module):
         """
         super(Model, self).__init__()
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else torch.device(device)
+        self.device = config.torch.parse_device(device)
 
         self.observation_space = observation_space
         self.action_space = action_space
-        self.num_observations = None if observation_space is None else self._get_space_size(observation_space)
-        self.num_actions = None if action_space is None else self._get_space_size(action_space)
+        self.num_observations = None if observation_space is None else compute_space_size(observation_space)
+        self.num_actions = None if action_space is None else compute_space_size(action_space)
 
         self._random_distribution = None
 
-    def _get_space_size(self,
-                        space: Union[int, Sequence[int], gym.Space, gymnasium.Space],
-                        number_of_elements: bool = True) -> int:
-        """Get the size (number of elements) of a space
+    def init_state_dict(self, role: str, inputs: Mapping[str, torch.Tensor] = {}) -> None:
+        """Initialize lazy PyTorch modules' parameters.
 
-        :param space: Space or shape from which to obtain the number of elements
-        :type space: int, sequence of int, gym.Space, or gymnasium.Space
-        :param number_of_elements: Whether the number of elements occupied by the space is returned (default: ``True``).
-                                   If ``False``, the shape of the space is returned.
-                                   It only affects Discrete and MultiDiscrete spaces
-        :type number_of_elements: bool, optional
+        .. hint::
 
-        :raises ValueError: If the space is not supported
+            Calling this method only makes sense when using models that contain lazy PyTorch modules
+            (e.g. model instantiators), and always before performing any operation on model parameters.
 
-        :return: Size of the space (number of elements)
-        :rtype: int
+        :param role: Role play by the model
+        :type role: str
+        :param inputs: Model inputs. The most common keys are:
 
-        Example::
+                        - ``"states"``: state of the environment used to make the decision
+                        - ``"taken_actions"``: actions taken by the policy for the given states
 
-            # from int
-            >>> model._get_space_size(2)
-            2
-
-            # from sequence of int
-            >>> model._get_space_size([2, 3])
-            6
-
-            # Box space
-            >>> space = gym.spaces.Box(low=-1, high=1, shape=(2, 3))
-            >>> model._get_space_size(space)
-            6
-
-            # Discrete space
-            >>> space = gym.spaces.Discrete(4)
-            >>> model._get_space_size(space)
-            4
-            >>> model._get_space_size(space, number_of_elements=False)
-            1
-
-            # MultiDiscrete space
-            >>> space = gym.spaces.MultiDiscrete([5, 3, 2])
-            >>> model._get_space_size(space)
-            10
-            >>> model._get_space_size(space, number_of_elements=False)
-            3
-
-            # Dict space
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
-            ...                          'b': gym.spaces.Discrete(4)})
-            >>> model._get_space_size(space)
-            10
-            >>> model._get_space_size(space, number_of_elements=False)
-            7
+                       If not specified, the keys will be populated with observation and action space samples
+        :type inputs: dict of torch.Tensor
         """
-        size = None
-        if type(space) in [int, float]:
-            size = space
-        elif type(space) in [tuple, list]:
-            size = np.prod(space)
-        elif issubclass(type(space), gym.Space):
-            if issubclass(type(space), gym.spaces.Discrete):
-                if number_of_elements:
-                    size = space.n
-                else:
-                    size = 1
-            elif issubclass(type(space), gym.spaces.MultiDiscrete):
-                if number_of_elements:
-                    size = np.sum(space.nvec)
-                else:
-                    size = space.nvec.shape[0]
-            elif issubclass(type(space), gym.spaces.Box):
-                size = np.prod(space.shape)
-            elif issubclass(type(space), gym.spaces.Dict):
-                size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
-        elif issubclass(type(space), gymnasium.Space):
-            if issubclass(type(space), gymnasium.spaces.Discrete):
-                if number_of_elements:
-                    size = space.n
-                else:
-                    size = 1
-            elif issubclass(type(space), gymnasium.spaces.MultiDiscrete):
-                if number_of_elements:
-                    size = np.sum(space.nvec)
-                else:
-                    size = space.nvec.shape[0]
-            elif issubclass(type(space), gymnasium.spaces.Box):
-                size = np.prod(space.shape)
-            elif issubclass(type(space), gymnasium.spaces.Dict):
-                size = sum([self._get_space_size(space.spaces[key], number_of_elements) for key in space.spaces])
-        if size is None:
-            raise ValueError(f"Space type {type(space)} not supported")
-        return int(size)
+        if not inputs:
+            inputs = {
+                "states": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="torch", device=self.device)
+                ),
+                "taken_actions": flatten_tensorized_space(
+                    sample_space(self.action_space, backend="torch", device=self.device)
+                ),
+            }
+        # init parameters
+        self.to(device=self.device)
+        self.compute(inputs=inputs, role=role)
 
-    def tensor_to_space(self,
-                        tensor: torch.Tensor,
-                        space: Union[gym.Space, gymnasium.Space],
-                        start: int = 0) -> Union[torch.Tensor, dict]:
+    def tensor_to_space(
+        self, tensor: torch.Tensor, space: gymnasium.Space, start: int = 0
+    ) -> Union[torch.Tensor, dict]:
         """Map a flat tensor to a Gym/Gymnasium space
 
-        The mapping is done in the following way:
+        .. warning::
 
-        - Tensors belonging to Discrete spaces are returned without modification
-        - Tensors belonging to Box spaces are reshaped to the corresponding space shape
-          keeping the first dimension (number of samples) as they are
-        - Tensors belonging to Dict spaces are mapped into a dictionary with the same keys as the original space
+            This method is deprecated in favor of the :py:func:`skrl.utils.spaces.torch.unflatten_tensorized_space`
 
         :param tensor: Tensor to map from
         :type tensor: torch.Tensor
         :param space: Space to map the tensor to
-        :type space: gym.Space or gymnasium.Space
+        :type space: gymnasium.Space
         :param start: Index of the first element of the tensor to map (default: ``0``)
         :type start: int, optional
 
@@ -183,8 +124,8 @@ class Model(torch.nn.Module):
 
         Example::
 
-            >>> space = gym.spaces.Dict({'a': gym.spaces.Box(low=-1, high=1, shape=(2, 3)),
-            ...                          'b': gym.spaces.Discrete(4)})
+            >>> space = gymnasium.spaces.Dict({'a': gymnasium.spaces.Box(low=-1, high=1, shape=(2, 3)),
+            ...                                'b': gymnasium.spaces.Discrete(4)})
             >>> tensor = torch.tensor([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
             >>>
             >>> model.tensor_to_space(tensor, space)
@@ -192,35 +133,11 @@ class Model(torch.nn.Module):
                            [ 0.1000,  0.2000,  0.3000]]]),
              'b': tensor([[2.]])}
         """
-        if issubclass(type(space), gym.Space):
-            if issubclass(type(space), gym.spaces.Discrete):
-                return tensor
-            elif issubclass(type(space), gym.spaces.Box):
-                return tensor.view(tensor.shape[0], *space.shape)
-            elif issubclass(type(space), gym.spaces.Dict):
-                output = {}
-                for k in sorted(space.keys()):
-                    end = start + self._get_space_size(space[k], number_of_elements=False)
-                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
-                    start = end
-                return output
-        else:
-            if issubclass(type(space), gymnasium.spaces.Discrete):
-                return tensor
-            elif issubclass(type(space), gymnasium.spaces.Box):
-                return tensor.view(tensor.shape[0], *space.shape)
-            elif issubclass(type(space), gymnasium.spaces.Dict):
-                output = {}
-                for k in sorted(space.keys()):
-                    end = start + self._get_space_size(space[k], number_of_elements=False)
-                    output[k] = self.tensor_to_space(tensor[:, start:end], space[k], end)
-                    start = end
-                return output
-        raise ValueError(f"Space type {type(space)} not supported")
+        return unflatten_tensorized_space(space, tensor)
 
-    def random_act(self,
-                   inputs: Mapping[str, Union[torch.Tensor, Any]],
-                   role: str = "") -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
+    def random_act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
         """Act randomly according to the action space
 
         :param inputs: Model inputs. The most common keys are:
@@ -237,16 +154,21 @@ class Model(torch.nn.Module):
         :rtype: tuple of torch.Tensor, None, and dict
         """
         # discrete action space (Discrete)
-        if issubclass(type(self.action_space), gym.spaces.Discrete) or issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+        if isinstance(self.action_space, gymnasium.spaces.Discrete):
             return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
         # continuous action space (Box)
-        elif issubclass(type(self.action_space), gym.spaces.Box) or issubclass(type(self.action_space), gymnasium.spaces.Box):
+        elif isinstance(self.action_space, gymnasium.spaces.Box):
             if self._random_distribution is None:
                 self._random_distribution = torch.distributions.uniform.Uniform(
                     low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
-                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32))
+                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32),
+                )
 
-            return self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)), None, {}
+            return (
+                self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)),
+                None,
+                {},
+            )
         else:
             raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
 
@@ -298,6 +220,7 @@ class Model(torch.nn.Module):
             # initialize all weights with normal distribution with mean 0 and standard deviation 0.25
             >>> model.init_weights(method_name="normal_", mean=0.0, std=0.25)
         """
+
         def _update_weights(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
@@ -331,6 +254,7 @@ class Model(torch.nn.Module):
             # initialize all biases with normal distribution with mean 0 and standard deviation 0.25
             >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
         """
+
         def _update_biases(module, method_name, args, kwargs):
             for layer in module:
                 if isinstance(layer, torch.nn.Sequential):
@@ -364,9 +288,9 @@ class Model(torch.nn.Module):
         """
         return {}
 
-    def forward(self,
-                inputs: Mapping[str, Union[torch.Tensor, Any]],
-                role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def forward(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Forward pass of the model
 
         This method calls the ``.act()`` method and returns its outputs
@@ -386,9 +310,9 @@ class Model(torch.nn.Module):
         """
         return self.act(inputs, role)
 
-    def compute(self,
-                inputs: Mapping[str, Union[torch.Tensor, Any]],
-                role: str = "") -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
+    def compute(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
         """Define the computation performed (to be implemented by the inheriting classes) by the models
 
         :param inputs: Model inputs. The most common keys are:
@@ -406,9 +330,9 @@ class Model(torch.nn.Module):
         """
         raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act according to the specified behavior (to be implemented by the inheriting classes)
 
         Agents will call this method to obtain the decision to be taken given the state of the environment.
@@ -488,15 +412,21 @@ class Model(torch.nn.Module):
             >>> model = Model(observation_space, action_space, device="cuda:1")
             >>> model.load("model.pt")
         """
-        self.load_state_dict(torch.load(path, map_location=self.device))
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            state_dict = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            state_dict = torch.load(path, map_location=self.device)
+        self.load_state_dict(state_dict)
         self.eval()
 
-    def migrate(self,
-                state_dict: Optional[Mapping[str, torch.Tensor]] = None,
-                path: Optional[str] = None,
-                name_map: Mapping[str, str] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        state_dict: Optional[Mapping[str, torch.Tensor]] = None,
+        path: Optional[str] = None,
+        name_map: Mapping[str, str] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified extrernal model's state dict to the current model
 
         The final storage device is determined by the constructor of the model
@@ -607,9 +537,10 @@ class Model(torch.nn.Module):
             # stable-baselines3
             elif path.endswith(".zip"):
                 import zipfile
+
                 try:
-                    archive = zipfile.ZipFile(path, 'r')
-                    with archive.open('policy.pth', mode="r") as file:
+                    archive = zipfile.ZipFile(path, "r")
+                    with archive.open("policy.pth", mode="r") as file:
                         state_dict = torch.load(file, map_location=self.device)
                 except KeyError as e:
                     logger.warning(str(e))
@@ -644,7 +575,9 @@ class Model(torch.nn.Module):
                             logger.info(f"  |-- map:  {name} <- {external_name}")
                         break
                     else:
-                        logger.warning(f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}")
+                        logger.warning(
+                            f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}"
+                        )
                 # auto-mapped names
                 if auto_mapping and name not in name_map:
                     if tensor.shape == external_tensor.shape:
@@ -785,6 +718,8 @@ class Model(torch.nn.Module):
         offset = 0
         for parameters in self.parameters():
             if parameters.grad is not None:
-                parameters.grad.data.copy_(gradients[offset:offset + parameters.numel()] \
-                                           .view_as(parameters.grad.data) / config.torch.world_size)
+                parameters.grad.data.copy_(
+                    gradients[offset : offset + parameters.numel()].view_as(parameters.grad.data)
+                    / config.torch.world_size
+                )
                 offset += parameters.numel()

@@ -1,8 +1,10 @@
 from typing import Any, Mapping, Sequence, Tuple, Union
 
-import gym
+import gymnasium
 
 import torch
+
+from skrl import config
 
 
 class Wrapper(object):
@@ -20,9 +22,9 @@ class Wrapper(object):
 
         # device
         if hasattr(self._unwrapped, "device"):
-            self._device = torch.device(self._unwrapped.device)
+            self._device = config.torch.parse_device(self._unwrapped.device)
         else:
-            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = config.torch.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -39,7 +41,9 @@ class Wrapper(object):
             return getattr(self._env, key)
         if hasattr(self._unwrapped, key):
             return getattr(self._unwrapped, key)
-        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
+        raise AttributeError(
+            f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
+        )
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment
@@ -117,7 +121,7 @@ class Wrapper(object):
         return self._unwrapped.num_agents if hasattr(self._unwrapped, "num_agents") else 1
 
     @property
-    def state_space(self) -> Union[gym.Space, None]:
+    def state_space(self) -> Union[gymnasium.Space, None]:
         """State space
 
         If the wrapped environment does not have the ``state_space`` property, ``None`` will be returned
@@ -125,15 +129,13 @@ class Wrapper(object):
         return self._unwrapped.state_space if hasattr(self._unwrapped, "state_space") else None
 
     @property
-    def observation_space(self) -> gym.Space:
-        """Observation space
-        """
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space"""
         return self._unwrapped.observation_space
 
     @property
-    def action_space(self) -> gym.Space:
-        """Action space
-        """
+    def action_space(self) -> gymnasium.Space:
+        """Action space"""
         return self._unwrapped.action_space
 
 
@@ -152,9 +154,9 @@ class MultiAgentEnvWrapper(object):
 
         # device
         if hasattr(self._unwrapped, "device"):
-            self._device = torch.device(self._unwrapped.device)
+            self._device = config.torch.parse_device(self._unwrapped.device)
         else:
-            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            self._device = config.torch.parse_device(None)
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute from the wrapped environment
@@ -171,7 +173,9 @@ class MultiAgentEnvWrapper(object):
             return getattr(self._env, key)
         if hasattr(self._unwrapped, key):
             return getattr(self._unwrapped, key)
-        raise AttributeError(f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'")
+        raise AttributeError(
+            f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
+        )
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
         """Reset the environment
@@ -183,9 +187,13 @@ class MultiAgentEnvWrapper(object):
         """
         raise NotImplementedError
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> \
-        Tuple[Mapping[str, torch.Tensor], Mapping[str, torch.Tensor],
-              Mapping[str, torch.Tensor], Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, torch.Tensor],
+        Mapping[str, Any],
+    ]:
         """Perform a step in the environment
 
         :param actions: The actions to perform
@@ -281,7 +289,7 @@ class MultiAgentEnvWrapper(object):
         return self._unwrapped.possible_agents
 
     @property
-    def state_spaces(self) -> Mapping[str, gym.Space]:
+    def state_spaces(self) -> Mapping[str, gymnasium.Space]:
         """State spaces
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
@@ -292,18 +300,16 @@ class MultiAgentEnvWrapper(object):
         return {agent: space for agent in self.possible_agents}
 
     @property
-    def observation_spaces(self) -> Mapping[str, gym.Space]:
-        """Observation spaces
-        """
+    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
+        """Observation spaces"""
         return self._unwrapped.observation_spaces
 
     @property
-    def action_spaces(self) -> Mapping[str, gym.Space]:
-        """Action spaces
-        """
+    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
+        """Action spaces"""
         return self._unwrapped.action_spaces
 
-    def state_space(self, agent: str) -> gym.Space:
+    def state_space(self, agent: str) -> gymnasium.Space:
         """State space
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
@@ -314,28 +320,28 @@ class MultiAgentEnvWrapper(object):
         :type agent: str
 
         :return: The state space for the specified agent
-        :rtype: gym.Space
+        :rtype: gymnasium.Space
         """
         return self.state_spaces[agent]
 
-    def observation_space(self, agent: str) -> gym.Space:
+    def observation_space(self, agent: str) -> gymnasium.Space:
         """Observation space
 
         :param agent: Name of the agent
         :type agent: str
 
         :return: The observation space for the specified agent
-        :rtype: gym.Space
+        :rtype: gymnasium.Space
         """
         return self.observation_spaces[agent]
 
-    def action_space(self, agent: str) -> gym.Space:
+    def action_space(self, agent: str) -> gymnasium.Space:
         """Action space
 
         :param agent: Name of the agent
         :type agent: str
 
         :return: The action space for the specified agent
-        :rtype: gym.Space
+        :rtype: gymnasium.Space
         """
         return self.action_spaces[agent]

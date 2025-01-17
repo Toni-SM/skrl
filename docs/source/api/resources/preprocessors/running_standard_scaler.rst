@@ -94,8 +94,6 @@ API (PyTorch)
     :private-members: _parallel_variance, _get_space_size
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -108,5 +106,4 @@ API (JAX)
     :private-members: _parallel_variance, _get_space_size
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __call__

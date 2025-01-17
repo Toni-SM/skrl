@@ -28,10 +28,12 @@ def _np_quat_mul(a, b):
 
     return np.stack([x, y, z, w], axis=-1).reshape(shape)
 
+
 def _np_quat_conjugate(a):
     shape = a.shape
     a = a.reshape(-1, 4)
     return np.concatenate((-a[:, :3], a[:, -1:]), axis=-1).reshape(shape)
+
 
 def _torch_quat_mul(a, b):
     assert a.shape == b.shape
@@ -53,19 +55,23 @@ def _torch_quat_mul(a, b):
 
     return torch.stack([w, x, y, z], dim=-1).view(shape)
 
+
 def _torch_quat_conjugate(a):  # wxyz
     shape = a.shape
     a = a.reshape(-1, 4)
     return torch.cat((a[:, :1], -a[:, 1:]), dim=-1).view(shape)
 
-def ik(jacobian_end_effector: torch.Tensor,
-       current_position: torch.Tensor,
-       current_orientation: torch.Tensor,
-       goal_position: torch.Tensor,
-       goal_orientation: Optional[torch.Tensor] = None,
-       method: str = "damped least-squares",
-       method_cfg: Mapping[str, float] = {"scale": 1, "damping": 0.05, "min_singular_value": 1e-5},
-       squeeze_output: bool = True,) -> torch.Tensor:
+
+def ik(
+    jacobian_end_effector: torch.Tensor,
+    current_position: torch.Tensor,
+    current_orientation: torch.Tensor,
+    goal_position: torch.Tensor,
+    goal_orientation: Optional[torch.Tensor] = None,
+    method: str = "damped least-squares",
+    method_cfg: Mapping[str, float] = {"scale": 1, "damping": 0.05, "min_singular_value": 1e-5},
+    squeeze_output: bool = True,
+) -> torch.Tensor:
     """Differential inverse kinematics
 
     :param jacobian_end_effector: End effector's jacobian
@@ -109,9 +115,13 @@ def ik(jacobian_end_effector: torch.Tensor,
     if isinstance(jacobian_end_effector, torch.Tensor):
         # compute error
         q = _torch_quat_mul(goal_orientation, _torch_quat_conjugate(current_orientation))
-        error = torch.cat([goal_position - current_position,  # position error
-                           q[:, 1:] * torch.sign(q[:, 0]).unsqueeze(-1)],  # orientation error
-                          dim=-1).unsqueeze(-1)
+        error = torch.cat(
+            [
+                goal_position - current_position,  # position error
+                q[:, 1:] * torch.sign(q[:, 0]).unsqueeze(-1),
+            ],  # orientation error
+            dim=-1,
+        ).unsqueeze(-1)
 
         scale = method_cfg.get("scale", 1.0)
 
@@ -143,9 +153,11 @@ def ik(jacobian_end_effector: torch.Tensor,
         elif method == "damped least-squares":
             damping = method_cfg.get("damping", 0.05)
             transpose = torch.transpose(jacobian_end_effector, 1, 2)
-            lmbda = torch.eye(jacobian_end_effector.shape[1], device=jacobian_end_effector.device) * (damping ** 2)
+            lmbda = torch.eye(jacobian_end_effector.shape[1], device=jacobian_end_effector.device) * (damping**2)
             if squeeze_output:
-                return (scale * transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(dim=2)
+                return (scale * transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error).squeeze(
+                    dim=2
+                )
             else:
                 return scale * transpose @ torch.inverse(jacobian_end_effector @ transpose + lmbda) @ error
         else:
@@ -156,21 +168,22 @@ def ik(jacobian_end_effector: torch.Tensor,
     else:
         # compute error
         q = _np_quat_mul(goal_orientation, _np_quat_conjugate(current_orientation))
-        error = np.concatenate([goal_position - current_position,  # position error
-                                q[:, 0:3] * np.sign(q[:, 3])])  # orientation error
+        error = np.concatenate(
+            [goal_position - current_position, q[:, 0:3] * np.sign(q[:, 3])]  # position error
+        )  # orientation error
 
         # solve damped least squares (dO = J.T * V)
         transpose = np.transpose(jacobian_end_effector, 1, 2)
         lmbda = np.eye(6) * (method_cfg.get("damping", 0.05) ** 2)
         if squeeze_output:
-            return (transpose @ np.linalg.inv(jacobian_end_effector @ transpose + lmbda) @ error)
+            return transpose @ np.linalg.inv(jacobian_end_effector @ transpose + lmbda) @ error
         else:
             return transpose @ np.linalg.inv(jacobian_end_effector @ transpose + lmbda) @ error
 
-def get_env_instance(headless: bool = True,
-                     enable_livestream: bool = False,
-                     enable_viewport: bool = False,
-                     multi_threaded: bool = False) -> "omni.isaac.gym.vec_env.VecEnvBase":
+
+def get_env_instance(
+    headless: bool = True, enable_livestream: bool = False, enable_viewport: bool = False, multi_threaded: bool = False
+) -> "omni.isaac.gym.vec_env.VecEnvBase":
     """
     Instantiate a VecEnvBase-based object compatible with OmniIsaacGymEnvs
 
@@ -257,7 +270,9 @@ def get_env_instance(headless: bool = True,
 
     class _OmniIsaacGymVecEnv(VecEnvBase):
         def step(self, actions):
-            actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
+            actions = (
+                torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
+            )
             self._task.pre_physics_step(actions)
 
             for _ in range(self._task.control_frequency_inv):
@@ -266,8 +281,16 @@ def get_env_instance(headless: bool = True,
 
             observations, rewards, dones, info = self._task.post_physics_step()
 
-            return {"obs": torch.clamp(observations, -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()}, \
-                rewards.to(self._task.rl_device).clone(), dones.to(self._task.rl_device).clone(), info.copy()
+            return (
+                {
+                    "obs": torch.clamp(observations, -self._task.clip_obs, self._task.clip_obs)
+                    .to(self._task.rl_device)
+                    .clone()
+                },
+                rewards.to(self._task.rl_device).clone(),
+                dones.to(self._task.rl_device).clone(),
+                info.copy(),
+            )
 
         def reset(self):
             self._task.reset()
@@ -292,7 +315,9 @@ def get_env_instance(headless: bool = True,
             super().run(_OmniIsaacGymTrainerMT() if trainer is None else trainer)
 
         def _parse_data(self, data):
-            self._observations = torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()
+            self._observations = (
+                torch.clamp(data["obs"], -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device).clone()
+            )
             self._rewards = data["rew"].to(self._task.rl_device).clone()
             self._dones = data["reset"].to(self._task.rl_device).clone()
             self._info = data["extras"].copy()
@@ -320,13 +345,17 @@ def get_env_instance(headless: bool = True,
 
     if multi_threaded:
         try:
-            return _OmniIsaacGymVecEnvMT(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+            return _OmniIsaacGymVecEnvMT(
+                headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport
+            )
         except TypeError:
             logger.warning("Using an older version of Isaac Sim (2022.2.0 or earlier)")
             return _OmniIsaacGymVecEnvMT(headless=headless)  # Isaac Sim 2022.2.0 and earlier
     else:
         try:
-            return _OmniIsaacGymVecEnv(headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport)
+            return _OmniIsaacGymVecEnv(
+                headless=headless, enable_livestream=enable_livestream, enable_viewport=enable_viewport
+            )
         except TypeError:
             logger.warning("Using an older version of Isaac Sim (2022.2.0 or earlier)")
             return _OmniIsaacGymVecEnv(headless=headless)  # Isaac Sim 2022.2.0 and earlier

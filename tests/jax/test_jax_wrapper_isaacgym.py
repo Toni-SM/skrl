@@ -4,6 +4,7 @@ import pytest
 
 from collections.abc import Mapping
 import gym
+import gymnasium
 
 import jax
 import jax.numpy as jnp
@@ -29,7 +30,7 @@ class IsaacGymEnv:
 
         self.state_space = gym.spaces.Box(np.ones(self.num_states) * -np.Inf, np.ones(self.num_states) * np.Inf)
         self.observation_space = gym.spaces.Box(np.ones(self.num_obs) * -np.Inf, np.ones(self.num_obs) * np.Inf)
-        self.action_space = gym.spaces.Box(np.ones(self.num_actions) * -1., np.ones(self.num_actions) * 1.)
+        self.action_space = gym.spaces.Box(np.ones(self.num_actions) * -1.0, np.ones(self.num_actions) * 1.0)
 
     def reset(self) -> Dict[str, torch.Tensor]:
         obs_dict = {}
@@ -74,11 +75,11 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: str):
 
     # check properties
     if num_states:
-        assert isinstance(env.state_space, gym.Space) and env.state_space.shape == (num_states,)
+        assert isinstance(env.state_space, gymnasium.Space) and env.state_space.shape == (num_states,)
     else:
         assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (4,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (4,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, jax.Device)

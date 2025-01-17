@@ -16,7 +16,7 @@ author = "Toni-SM"
 if skrl.__version__ != "unknown":
     release = version = skrl.__version__
 else:
-    release = version = "1.3.0"
+    release = version = "1.4.0"
 
 master_doc = "index"
 
@@ -41,6 +41,7 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable/", None),
     "jax": ("https://jax.readthedocs.io/en/latest/", None),
     "flax": ("https://flax.readthedocs.io/en/latest/", None),
+    "flax-linen": ("https://flax-linen.readthedocs.io/en/latest/", None),
     "optax": ("https://optax.readthedocs.io/en/latest/", None),
 }
 
@@ -112,6 +113,8 @@ html_theme_options = {
 epub_show_urls = "footnote"
 
 # autodoc ext
+autodoc_member_order = "groupwise"
+autoclass_content = "init"
 autodoc_mock_imports = [
     "gym",
     "gymnasium",

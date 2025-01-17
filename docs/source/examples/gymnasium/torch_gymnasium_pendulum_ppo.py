@@ -54,13 +54,13 @@ class Value(DeterministicMixin, Model):
 # load and wrap the gymnasium environment.
 # note: the environment version may change depending on the gymnasium version
 try:
-    env = gym.vector.make("Pendulum-v1", num_envs=4, asynchronous=False)
+    env = gym.make_vec("Pendulum-v1", num_envs=4, vectorization_mode="sync")
 except (gym.error.DeprecatedEnv, gym.error.VersionNotFound) as e:
     env_id = [spec for spec in gym.envs.registry if spec.startswith("Pendulum-v")][0]
     print("Pendulum-v1 not found. Trying {}".format(env_id))
-    env = gym.vector.make(env_id, num_envs=4, asynchronous=False)
+    env = gym.make_vec(env_id, num_envs=4, vectorization_mode="sync")
+# env.device = "cpu"
 env = wrap_env(env)
-
 device = env.device
 
 
@@ -94,6 +94,7 @@ cfg["clip_predicted_values"] = False
 cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 0.5
 cfg["kl_threshold"] = 0
+cfg["mixed_precision"] = True
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler

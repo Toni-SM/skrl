@@ -59,13 +59,20 @@ Implementation details:
             :start-after: [start-structure-yaml]
             :end-before: [end-structure-yaml]
 
+    .. group-tab:: Python
+
+        .. literalinclude:: ../../snippets/model_instantiators.txt
+            :language: python
+            :start-after: [start-structure-python]
+            :end-before: [end-structure-python]
+
 |
 
 Inputs
 ^^^^^^
 
 Inputs can be specified using tokens or previously defined container outputs (by container name).
-Certain operations could be specified on them, including indexing (by a range of numbers in sequences, by key in dictionaries) and slicing
+Certain operations could be specified on them, including indexing and slicing
 
 .. hint::
 
@@ -84,17 +91,19 @@ Supported operations:
 
     * - Operations
       - Example
-    * - Dictionary indexing
-        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
-      - ``STATES["camera"]``
     * - Tensor/array indexing and slicing
         |br| E.g.: :py:class:`gymnasium.spaces.Box`
       - ``STATES[:, 0]``
         |br| ``STATES[:, 2:5]``
+    * - Dictionary indexing by key
+        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
+      - ``STATES["joint-pos"]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
+    * - Permute dimensions
+      - ``permute(STATES, (0, 3, 1, 2))``
 
 |
 
@@ -276,12 +285,54 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
                     :start-after: [start-layer-linear-dict]
                     :end-before: [end-layer-linear-dict]
 
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: Single value
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-linear-basic-python]
+                    :end-before: [end-layer-linear-basic-python]
+
+            .. group-tab:: As int
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-linear-int-python]
+                    :end-before: [end-layer-linear-int-python]
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-linear-list-python]
+                    :end-before: [end-layer-linear-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-linear-dict-python]
+                    :end-before: [end-layer-linear-dict-python]
+
 |
 
 conv2d
 """"""
 
 Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.linen.Conv` in JAX)
+
+.. warning::
+
+    * PyTorch :py:class:`torch.nn.Conv2d` expects the input to be in the form NCHW (*N*: batch, *C*: channels, *H*: height, *W*: width).
+      A permutation operation may be necessary to modify the dimensions of a batch of images which are typically NHWC.
+    * JAX :py:class:`flax.linen.Conv` expects the input to be in the form NHWC (the typical dimensions of a batch of images).
 
 .. note::
 
@@ -357,6 +408,28 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
                     :start-after: [start-layer-conv2d-dict]
                     :end-before: [end-layer-conv2d-dict]
 
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-conv2d-list-python]
+                    :end-before: [end-layer-conv2d-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-conv2d-dict-python]
+                    :end-before: [end-layer-conv2d-dict-python]
+
 |
 
 flatten
@@ -416,6 +489,35 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
                     :language: yaml
                     :start-after: [start-layer-flatten-dict]
                     :end-before: [end-layer-flatten-dict]
+
+    .. group-tab:: Python
+
+        .. tabs::
+
+            .. group-tab:: Single value
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-flatten-basic-python]
+                    :end-before: [end-layer-flatten-basic-python]
+
+            .. group-tab:: As list
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-flatten-list-python]
+                    :end-before: [end-layer-flatten-list-python]
+
+            .. group-tab:: As dict
+
+                .. hint::
+
+                    The parameter names can be interchanged/mixed between PyTorch and JAX
+
+                .. literalinclude:: ../../snippets/model_instantiators.txt
+                    :language: python
+                    :start-after: [start-layer-flatten-dict-python]
+                    :end-before: [end-layer-flatten-dict-python]
 
 .. raw:: html
 

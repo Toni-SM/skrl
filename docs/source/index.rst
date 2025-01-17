@@ -197,6 +197,7 @@ Utils and configurations
 
     * :doc:`ML frameworks <api/config/frameworks>` configuration
     * :doc:`Random seed <api/utils/seed>`
+    * :doc:`Spaces <api/utils/spaces>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
     * :doc:`Runner <api/utils/runner>`
     * :doc:`Distributed runs <api/utils/distributed>`

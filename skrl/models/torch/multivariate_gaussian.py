@@ -1,19 +1,24 @@
 from typing import Any, Mapping, Tuple, Union
 
-import gym
 import gymnasium
 
 import torch
 from torch.distributions import MultivariateNormal
 
 
+# speed up distribution construction by disabling checking
+MultivariateNormal.set_default_validate_args(False)
+
+
 class MultivariateGaussianMixin:
-    def __init__(self,
-                 clip_actions: bool = False,
-                 clip_log_std: bool = True,
-                 min_log_std: float = -20,
-                 max_log_std: float = 2,
-                 role: str = "") -> None:
+    def __init__(
+        self,
+        clip_actions: bool = False,
+        clip_log_std: bool = True,
+        min_log_std: float = -20,
+        max_log_std: float = 2,
+        role: str = "",
+    ) -> None:
         """Multivariate Gaussian mixin model (stochastic model)
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
@@ -50,8 +55,8 @@ class MultivariateGaussianMixin:
             ...     def compute(self, inputs, role):
             ...         return self.net(inputs["states"]), self.log_std_parameter, {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (60,)
-            >>> # and an action_space: gym.spaces.Box with shape (8,)
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (60,)
+            >>> # and an action_space: gymnasium.spaces.Box with shape (8,)
             >>> model = Policy(observation_space, action_space)
             >>>
             >>> print(model)
@@ -65,8 +70,7 @@ class MultivariateGaussianMixin:
               )
             )
         """
-        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
-            issubclass(type(self.action_space), gymnasium.Space))
+        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
         if self._clip_actions:
             self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
@@ -80,9 +84,9 @@ class MultivariateGaussianMixin:
         self._num_samples = None
         self._distribution = None
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

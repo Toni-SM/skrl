@@ -4,6 +4,10 @@ import torch
 from torch.distributions import Categorical
 
 
+# speed up distribution construction by disabling checking
+Categorical.set_default_validate_args(False)
+
+
 class CategoricalMixin:
     def __init__(self, unnormalized_log_prob: bool = True, role: str = "") -> None:
         """Categorical mixin model (stochastic model)
@@ -37,8 +41,8 @@ class CategoricalMixin:
             ...     def compute(self, inputs, role):
             ...         return self.net(inputs["states"]), {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (4,)
-            >>> # and an action_space: gym.spaces.Discrete with n = 2
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (4,)
+            >>> # and an action_space: gymnasium.spaces.Discrete with n = 2
             >>> model = Policy(observation_space, action_space)
             >>>
             >>> print(model)
@@ -55,9 +59,9 @@ class CategoricalMixin:
         self._unnormalized_log_prob = unnormalized_log_prob
         self._distribution = None
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:

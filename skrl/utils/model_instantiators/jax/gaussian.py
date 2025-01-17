@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import textwrap
-import gym
 import gymnasium
 
 import flax.linen as nn  # noqa
@@ -11,29 +10,34 @@ import jax.numpy as jnp  # noqa
 from skrl.models.jax import GaussianMixin  # noqa
 from skrl.models.jax import Model  # noqa
 from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
-def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                   action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                   device: Optional[Union[str, jax.Device]] = None,
-                   clip_actions: bool = False,
-                   clip_log_std: bool = True,
-                   min_log_std: float = -20,
-                   max_log_std: float = 2,
-                   initial_log_std: float = 0,
-                   network: Sequence[Mapping[str, Any]] = [],
-                   output: Union[str, Sequence[str]] = "",
-                   return_source: bool = False,
-                   *args,
-                   **kwargs) -> Union[Model, str]:
+def gaussian_model(
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, jax.Device]] = None,
+    clip_actions: bool = False,
+    clip_log_std: bool = True,
+    min_log_std: float = -20,
+    max_log_std: float = 2,
+    reduction: str = "sum",
+    initial_log_std: float = 0,
+    fixed_log_std: bool = False,
+    network: Sequence[Mapping[str, Any]] = [],
+    output: Union[str, Sequence[str]] = "",
+    return_source: bool = False,
+    *args,
+    **kwargs,
+) -> Union[Model, str]:
     """Instantiate a Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or jax.Device, optional
@@ -45,8 +49,15 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     :type min_log_std: float, optional
     :param max_log_std: Maximum value of the log standard deviation (default: 2)
     :type max_log_std: float, optional
+    :param reduction: Reduction method for returning the log probability density function: (default: ``"sum"``).
+                        Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
+                        function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
+    :type reduction: str, optional
     :param initial_log_std: Initial value for the log standard deviation (default: 0)
     :type initial_log_std: float, optional
+    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
+                          Fixed parameters will be excluded from model parameters.
+    :type fixed_log_std: bool, optional
     :param network: Network definition (default: [])
     :type network: list of dict, optional
     :param output: Output expression (default: "")
@@ -83,6 +94,12 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
+    if fixed_log_std:
+        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={initial_log_std})'
+    else:
+        log_std_parameter = (
+            f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={initial_log_std}))'
+        )
 
     template = f"""class GaussianModel(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,
@@ -92,9 +109,11 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
 
     def setup(self):
         {networks}
-        self.log_std_parameter = self.param("log_std_parameter", lambda _: {initial_log_std} * jnp.ones({output["size"]}))
+        self.log_std_parameter = {log_std_parameter}
 
     def __call__(self, inputs, role):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, self.log_std_parameter, {{}}
     """
@@ -105,10 +124,13 @@ def gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space,
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["GaussianModel"](observation_space=observation_space,
-                                    action_space=action_space,
-                                    device=device,
-                                    clip_actions=clip_actions,
-                                    clip_log_std=clip_log_std,
-                                    min_log_std=min_log_std,
-                                    max_log_std=max_log_std)
+    return _locals["GaussianModel"](
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        clip_actions=clip_actions,
+        clip_log_std=clip_log_std,
+        min_log_std=min_log_std,
+        max_log_std=max_log_std,
+        reduction=reduction,
+    )

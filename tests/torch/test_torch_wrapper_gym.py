@@ -2,6 +2,7 @@ import pytest
 
 from collections.abc import Mapping
 import gym
+import gymnasium
 
 import torch
 
@@ -21,8 +22,8 @@ def test_env(capsys: pytest.CaptureFixture):
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (3,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (3,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, torch.device)
@@ -45,6 +46,7 @@ def test_env(capsys: pytest.CaptureFixture):
 
     env.close()
 
+
 @pytest.mark.parametrize("vectorization_mode", ["async", "sync"])
 def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     num_envs = 10
@@ -59,8 +61,8 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
 
     # check properties
     assert env.state_space is None
-    assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (3,)
-    assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
+    assert isinstance(env.observation_space, gymnasium.Space) and env.observation_space.shape == (3,)
+    assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
     assert isinstance(env.device, torch.device)

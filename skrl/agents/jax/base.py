@@ -5,7 +5,6 @@ import copy
 import datetime
 import os
 import pickle
-import gym
 import gymnasium
 
 import flax
@@ -18,13 +17,15 @@ from skrl.models.jax import Model
 
 
 class Agent:
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Base class that represent a RL agent
 
         :param models: Models used by the agent
@@ -34,9 +35,9 @@ class Agent:
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional
@@ -50,13 +51,7 @@ class Agent:
         self.action_space = action_space
         self.cfg = cfg if cfg is not None else {}
 
-        if device is None:
-            self.device = jax.devices()[0]
-        else:
-            self.device = device
-            if type(device) == str:
-                device_type, device_index = f"{device}:0".split(':')[:2]
-                self.device = jax.devices(device_type)[int(device_index)]
+        self.device = config.jax.parse_device(device)
 
         if type(memory) is list:
             self.memory = memory[0]
@@ -84,7 +79,7 @@ class Agent:
         self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.get("experiment", {}).get("checkpoint_interval", "auto")
         self.checkpoint_store_separately = self.cfg.get("experiment", {}).get("store_separately", False)
-        self.checkpoint_best_modules = {"timestep": 0, "reward": -2 ** 31, "saved": False, "modules": {}}
+        self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
 
         # experiment directory
         directory = self.cfg.get("experiment", {}).get("directory", "")
@@ -92,7 +87,9 @@ class Agent:
         if not directory:
             directory = os.path.join(os.getcwd(), "runs")
         if not experiment_name:
-            experiment_name = "{}_{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__)
+            experiment_name = "{}_{}".format(
+                datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__
+            )
         self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
@@ -159,7 +156,7 @@ class Agent:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
             except AttributeError:
                 models_cfg = {k: v._modules for (k, v) in self.models.items()}
-            wandb_config={**self.cfg, **trainer_cfg, **models_cfg}
+            wandb_config = {**self.cfg, **trainer_cfg, **models_cfg}
             # set default values
             wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))
             wandb_kwargs.setdefault("name", os.path.split(self.experiment_dir)[-1])
@@ -168,6 +165,7 @@ class Agent:
             wandb_kwargs["config"].update(wandb_config)
             # init Weights & Biases
             import wandb
+
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
@@ -178,6 +176,7 @@ class Agent:
             # tensorboard via torch SummaryWriter
             try:
                 from torch.utils.tensorboard import SummaryWriter
+
                 self.writer = SummaryWriter(log_dir=self.experiment_dir)
             except ImportError as e:
                 pass
@@ -201,6 +200,7 @@ class Agent:
             if self.writer is None:
                 try:
                     import tensorboardX
+
                     self.writer = tensorboardX.SummaryWriter(log_dir=self.experiment_dir)
                 except ImportError as e:
                     pass
@@ -284,7 +284,9 @@ class Agent:
             if self.checkpoint_store_separately:
                 for name, module in self.checkpoint_modules.items():
                     with open(os.path.join(self.experiment_dir, "checkpoints", f"best_{name}.pickle"), "wb") as file:
-                        pickle.dump(flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name]), file, protocol=4)
+                        pickle.dump(
+                            flax.serialization.to_bytes(self.checkpoint_best_modules["modules"][name]), file, protocol=4
+                        )
             # whole agent
             else:
                 modules = {}
@@ -311,16 +313,18 @@ class Agent:
         """
         raise NotImplementedError
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory (to be implemented by the inheriting classes)
 
         Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
@@ -445,11 +449,13 @@ class Agent:
                 else:
                     logger.warning(f"Cannot load the {name} module. The agent doesn't have such an instance")
 
-    def migrate(self,
-                path: str,
-                name_map: Mapping[str, Mapping[str, str]] = {},
-                auto_mapping: bool = True,
-                verbose: bool = False) -> bool:
+    def migrate(
+        self,
+        path: str,
+        name_map: Mapping[str, Mapping[str, str]] = {},
+        auto_mapping: bool = True,
+        verbose: bool = False,
+    ) -> bool:
         """Migrate the specified external checkpoint to the current agent
 
         :raises NotImplementedError: Not yet implemented
@@ -479,14 +485,15 @@ class Agent:
         # update best models and write checkpoints
         if timestep > 1 and self.checkpoint_interval > 0 and not timestep % self.checkpoint_interval:
             # update best models
-            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -2 ** 31))
+            reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -(2**31)))
             if reward > self.checkpoint_best_modules["reward"]:
                 self.checkpoint_best_modules["timestep"] = timestep
                 self.checkpoint_best_modules["reward"] = reward
                 self.checkpoint_best_modules["saved"] = False
                 with jax.default_device(self.device):
-                    self.checkpoint_best_modules["modules"] = \
-                        {k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()}
+                    self.checkpoint_best_modules["modules"] = {
+                        k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()
+                    }
             # write checkpoints
             self.write_checkpoint(timestep, timesteps)
 

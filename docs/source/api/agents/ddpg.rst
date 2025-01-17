@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\mu_\theta`), critic function approximator (:math:`Q_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - loss (:math:`L`)
 
 .. raw:: html
@@ -50,11 +50,11 @@ Learning algorithm
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# sample a batch from memory`
-|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
+|     [:math:`s, a, r, s', d_{_{end}}, d_{_{timeout}}`] with size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow Q_{\phi_{target}}(s', a')`
-|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q_{_{target}}`
+|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q_{_{target}}`
 |     :green:`# compute critic loss`
 |     :math:`Q \leftarrow Q_\phi(s, a)`
 |     :math:`L_{Q_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
@@ -236,6 +236,10 @@ Support for advanced features is described in the next table
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+    * - Mixed precision
+      - Automatic mixed precision
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
@@ -256,15 +260,11 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.agents.torch.ddpg.DDPG_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -280,5 +280,3 @@ API (JAX)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

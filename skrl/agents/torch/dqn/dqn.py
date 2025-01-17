@@ -2,8 +2,8 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import math
-import gym
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn.functional as F
@@ -14,6 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 DQN_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -43,6 +44,8 @@ DQN_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -56,16 +59,19 @@ DQN_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class DQN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Deep Q-Network (DQN)
 
         https://arxiv.org/abs/1312.5602
@@ -77,9 +83,9 @@ class DQN(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -90,12 +96,14 @@ class DQN(Agent):
         """
         _cfg = copy.deepcopy(DQN_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.q_network = self.models.get("q_network", None)
@@ -142,11 +150,22 @@ class DQN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizer and learning rate scheduler
         if self.q_network is not None:
             self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -158,8 +177,7 @@ class DQN(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
@@ -169,8 +187,9 @@ class DQN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -188,7 +207,11 @@ class DQN(Agent):
         states = self._state_preprocessor(states)
 
         if not self._exploration_timesteps:
-            return torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True), None, None
+            return (
+                torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True),
+                None,
+                None,
+            )
 
         # sample random actions
         actions = self.q_network.random_act({"states": states}, role="q_network")[0]
@@ -196,28 +219,34 @@ class DQN(Agent):
             return actions, None, None
 
         # sample actions with epsilon-greedy policy
-        epsilon = self._exploration_final_epsilon + (self._exploration_initial_epsilon - self._exploration_final_epsilon) \
-                * math.exp(-1.0 * timestep / self._exploration_timesteps)
+        epsilon = self._exploration_final_epsilon + (
+            self._exploration_initial_epsilon - self._exploration_final_epsilon
+        ) * math.exp(-1.0 * timestep / self._exploration_timesteps)
 
         indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
-            actions[indexes] = torch.argmax(self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                actions[indexes] = torch.argmax(
+                    self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True
+                )
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
 
         return actions, None, None
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -239,18 +268,32 @@ class DQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
             if self._rewards_shaper is not None:
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -284,35 +327,57 @@ class DQN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            # sample a batch from memory
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
-            # compute target values
-            with torch.no_grad():
-                next_q_values, _, _ = self.target_q_network.act({"states": sampled_next_states}, role="target_q_network")
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-                target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
-            # compute Q-network loss
-            q_values = torch.gather(self.q_network.act({"states": sampled_states}, role="q_network")[0],
-                                    dim=1, index=sampled_actions.long())
+                # compute target values
+                with torch.no_grad():
+                    next_q_values, _, _ = self.target_q_network.act(
+                        {"states": sampled_next_states}, role="target_q_network"
+                    )
 
-            q_network_loss = F.mse_loss(q_values, target_values)
+                    target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
+                    target_values = (
+                        sampled_rewards
+                        + self._discount_factor
+                        * (sampled_terminated | sampled_truncated).logical_not()
+                        * target_q_values
+                    )
+
+                # compute Q-network loss
+                q_values = torch.gather(
+                    self.q_network.act({"states": sampled_states}, role="q_network")[0],
+                    dim=1,
+                    index=sampled_actions.long(),
+                )
+
+                q_network_loss = F.mse_loss(q_values, target_values)
 
             # optimize Q-network
             self.optimizer.zero_grad()
-            q_network_loss.backward()
+            self.scaler.scale(q_network_loss).backward()
+
             if config.torch.is_distributed:
                 self.q_network.reduce_parameters()
-            self.optimizer.step()
+
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
             # update target network
             if not timestep % self._target_update_interval:

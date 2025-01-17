@@ -1,8 +1,8 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
-import gym
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -14,6 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 DDPG_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
@@ -44,6 +45,8 @@ DDPG_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -57,16 +60,19 @@ DDPG_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class DDPG_RNN(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Deep Deterministic Policy Gradient (DDPG) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.)
 
         https://arxiv.org/abs/1509.02971
@@ -78,9 +84,9 @@ class DDPG_RNN(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -91,12 +97,14 @@ class DDPG_RNN(Agent):
         """
         _cfg = copy.deepcopy(DDPG_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -119,7 +127,7 @@ class DDPG_RNN(Agent):
                 self.critic.broadcast_parameters()
 
         if self.target_policy is not None and self.target_critic is not None:
-        # freeze target networks with respect to optimizers (update via .update_parameters())
+            # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic.freeze_parameters(True)
 
@@ -152,13 +160,26 @@ class DDPG_RNN(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
             self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self._critic_learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
-                self.critic_scheduler = self._learning_rate_scheduler(self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.policy_scheduler = self._learning_rate_scheduler(
+                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
+                self.critic_scheduler = self._learning_rate_scheduler(
+                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
@@ -171,8 +192,7 @@ class DDPG_RNN(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -183,8 +203,9 @@ class DDPG_RNN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # RNN specifications
         self._rnn = False  # flag to indicate whether RNN is available
@@ -198,7 +219,9 @@ class DDPG_RNN(Agent):
             self._rnn = True
             # create tensors in memory
             if self.memory is not None:
-                self.memory.create_tensor(name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True)
+                self.memory.create_tensor(
+                    name=f"rnn_policy_{i}", size=(size[0], size[2]), dtype=torch.float32, keep_dimensions=True
+                )
                 self._rnn_tensors_names.append(f"rnn_policy_{i}")
             # default RNN states
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
@@ -228,7 +251,8 @@ class DDPG_RNN(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         # sample deterministic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states), **rnn}, role="policy")
 
         if self._rnn:
             self._rnn_final_states["policy"] = outputs.get("rnn", [])
@@ -245,9 +269,9 @@ class DDPG_RNN(Agent):
 
             # apply exploration noise
             if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) \
-                      * (self._exploration_initial_scale - self._exploration_final_scale) \
-                      + self._exploration_final_scale
+                scale = (1 - timestep / self._exploration_timesteps) * (
+                    self._exploration_initial_scale - self._exploration_final_scale
+                ) + self._exploration_final_scale
                 noises.mul_(scale)
 
                 # modify actions
@@ -267,16 +291,18 @@ class DDPG_RNN(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -298,7 +324,9 @@ class DDPG_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
@@ -308,19 +336,35 @@ class DDPG_RNN(Agent):
             # package RNN states
             rnn_states = {}
             if self._rnn:
-                rnn_states.update({f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])})
+                rnn_states.update(
+                    {f"rnn_policy_{i}": s.transpose(0, 1) for i, s in enumerate(self._rnn_initial_states["policy"])}
+                )
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, **rnn_states)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+                **rnn_states,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, **rnn_states)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    **rnn_states,
+                )
 
         # update RNN states
         if self._rnn:
             # reset states if the episodes have ended
-            finished_episodes = terminated.nonzero(as_tuple=False)
+            finished_episodes = (terminated | truncated).nonzero(as_tuple=False)
             if finished_episodes.numel():
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
@@ -361,56 +405,99 @@ class DDPG_RNN(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        # sample a batch from memory
-        sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = \
-            self.memory.sample(names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length)[0]
-
-        rnn_policy = {}
-        if self._rnn:
-            sampled_rnn = self.memory.sample_by_index(names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes())[0]
-            rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
 
         # gradient steps
         for gradient_step in range(self._gradient_steps):
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            # sample a batch from memory
+            (
+                sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminated,
+                sampled_truncated,
+            ) = self.memory.sample(
+                names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length
+            )[
+                0
+            ]
 
-            # compute target values
-            with torch.no_grad():
-                next_actions, _, _ = self.target_policy.act({"states": sampled_next_states, **rnn_policy}, role="target_policy")
+            rnn_policy = {}
+            if self._rnn:
+                sampled_rnn = self.memory.sample_by_index(
+                    names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes()
+                )[0]
+                rnn_policy = {
+                    "rnn": [s.transpose(0, 1) for s in sampled_rnn],
+                    "terminated": sampled_terminated | sampled_truncated,
+                }
 
-                target_q_values, _, _ = self.target_critic.act({"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy}, role="target_critic")
-                target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-            # compute critic loss
-            critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic")
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
-            critic_loss = F.mse_loss(critic_values, target_values)
+                # compute target values
+                with torch.no_grad():
+                    next_actions, _, _ = self.target_policy.act(
+                        {"states": sampled_next_states, **rnn_policy}, role="target_policy"
+                    )
+
+                    target_q_values, _, _ = self.target_critic.act(
+                        {"states": sampled_next_states, "taken_actions": next_actions, **rnn_policy},
+                        role="target_critic",
+                    )
+                    target_values = (
+                        sampled_rewards
+                        + self._discount_factor
+                        * (sampled_terminated | sampled_truncated).logical_not()
+                        * target_q_values
+                    )
+
+                # compute critic loss
+                critic_values, _, _ = self.critic.act(
+                    {"states": sampled_states, "taken_actions": sampled_actions, **rnn_policy}, role="critic"
+                )
+
+                critic_loss = F.mse_loss(critic_values, target_values)
 
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
-            critic_loss.backward()
+            self.scaler.scale(critic_loss).backward()
+
             if config.torch.is_distributed:
                 self.critic.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.critic_optimizer)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self._grad_norm_clip)
-            self.critic_optimizer.step()
 
-            # compute policy (actor) loss
-            actions, _, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
-            critic_values, _, _ = self.critic.act({"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic")
+            self.scaler.step(self.critic_optimizer)
 
-            policy_loss = -critic_values.mean()
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                # compute policy (actor) loss
+                actions, _, _ = self.policy.act({"states": sampled_states, **rnn_policy}, role="policy")
+                critic_values, _, _ = self.critic.act(
+                    {"states": sampled_states, "taken_actions": actions, **rnn_policy}, role="critic"
+                )
+
+                policy_loss = -critic_values.mean()
 
             # optimization step (policy)
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
+            self.scaler.scale(policy_loss).backward()
+
             if config.torch.is_distributed:
                 self.policy.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.policy_optimizer)
                 nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-            self.policy_optimizer.step()
+
+            self.scaler.step(self.policy_optimizer)
+
+            self.scaler.update()  # called once, after optimizers have been stepped
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)

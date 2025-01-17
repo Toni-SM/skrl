@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
-import gym
 import gymnasium
 
 import jax
@@ -16,6 +15,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 
 
+# fmt: off
 # [start-config-dict-jax]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -24,7 +24,7 @@ CEM_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
 
     "learning_rate": 1e-2,          # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
+    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
@@ -48,16 +48,19 @@ CEM_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-jax]
+# fmt: on
 
 
 class CEM(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, jax.Device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, jax.Device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Cross-Entropy Method (CEM)
 
         https://ieeexplore.ieee.org/abstract/document/6796865/
@@ -69,9 +72,9 @@ class CEM(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or jax.Device, optional
@@ -83,12 +86,14 @@ class CEM(Agent):
         # _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = CEM_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -117,10 +122,14 @@ class CEM(Agent):
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
+            # scheduler
+            if self._learning_rate_scheduler:
+                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
+            # optimizer
             with jax.default_device(self.device):
-                self.optimizer = Adam(model=self.policy, lr=self._learning_rate)
-            if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.optimizer = Adam(
+                    model=self.policy, lr=self._learning_rate, scale=not self._learning_rate_scheduler
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -132,8 +141,7 @@ class CEM(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -144,6 +152,7 @@ class CEM(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.int32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
         self.tensors_names = ["states", "actions", "rewards"]
 
@@ -175,16 +184,18 @@ class CEM(Agent):
 
         return actions, None, outputs
 
-    def record_transition(self,
-                          states: Union[np.ndarray, jax.Array],
-                          actions: Union[np.ndarray, jax.Array],
-                          rewards: Union[np.ndarray, jax.Array],
-                          next_states: Union[np.ndarray, jax.Array],
-                          terminated: Union[np.ndarray, jax.Array],
-                          truncated: Union[np.ndarray, jax.Array],
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: Union[np.ndarray, jax.Array],
+        actions: Union[np.ndarray, jax.Array],
+        rewards: Union[np.ndarray, jax.Array],
+        next_states: Union[np.ndarray, jax.Array],
+        terminated: Union[np.ndarray, jax.Array],
+        truncated: Union[np.ndarray, jax.Array],
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -206,7 +217,9 @@ class CEM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             # reward shaping
@@ -214,11 +227,23 @@ class CEM(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
         # track episodes internally
         if self._rollout:
@@ -281,9 +306,13 @@ class CEM(Agent):
         for e in range(sampled_rewards.shape[-1]):
             for i, j in zip(self._episode_tracking[e][:-1], self._episode_tracking[e][1:]):
                 limits.append([e + i, e + j])
-                rewards = sampled_rewards[e + i: e + j]
-                returns.append(np.sum(rewards * self._discount_factor ** \
-                    np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)))
+                rewards = sampled_rewards[e + i : e + j]
+                returns.append(
+                    np.sum(
+                        rewards
+                        * self._discount_factor ** np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)
+                    )
+                )
 
         if not len(returns):
             logger.warning("No returns to update. Consider increasing the number of rollouts")
@@ -294,8 +323,10 @@ class CEM(Agent):
 
         # get elite states and actions
         indexes = (returns >= return_threshold).nonzero()[0]
-        elite_states = np.concatenate([sampled_states[limits[i][0]:limits[i][1]] for i in indexes], axis=0)
-        elite_actions = np.concatenate([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes], axis=0).reshape(-1)
+        elite_states = np.concatenate([sampled_states[limits[i][0] : limits[i][1]] for i in indexes], axis=0)
+        elite_actions = np.concatenate([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes], axis=0).reshape(
+            -1
+        )
 
         # compute policy loss
         def _policy_loss(params):
@@ -310,11 +341,13 @@ class CEM(Agent):
         policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(self.policy.state_dict.params)
 
         # optimization step (policy)
-        self.optimizer = self.optimizer.step(grad, self.policy)
+        self.optimizer = self.optimizer.step(
+            grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
+        )
 
         # update learning rate
         if self._learning_rate_scheduler:
-            self.scheduler.step()
+            self._learning_rate *= self.scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
@@ -323,4 +356,4 @@ class CEM(Agent):
         self.track_data("Coefficient / Mean discounted returns", returns.mean().item())
 
         if self._learning_rate_scheduler:
-            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])
+            self.track_data("Learning / Learning rate", self._learning_rate)

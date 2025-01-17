@@ -1,8 +1,8 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
-import gym
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn.functional as F
@@ -13,6 +13,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
+# fmt: off
 # [start-config-dict-torch]
 CEM_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -32,6 +33,8 @@ CEM_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -45,16 +48,19 @@ CEM_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class CEM(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Cross-Entropy Method (CEM)
 
         https://ieeexplore.ieee.org/abstract/document/6796865/
@@ -66,9 +72,9 @@ class CEM(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -79,12 +85,14 @@ class CEM(Agent):
         """
         _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -109,13 +117,24 @@ class CEM(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
         self._episode_tracking = []
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
             self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -127,8 +146,7 @@ class CEM(Agent):
             self._state_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
@@ -138,8 +156,9 @@ class CEM(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        self.tensors_names = ["states", "actions", "rewards"]
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -162,18 +181,21 @@ class CEM(Agent):
             return self.policy.random_act({"states": states}, role="policy")
 
         # sample stochastic actions
-        return self.policy.act({"states": states}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            return self.policy.act({"states": states}, role="policy")
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -195,18 +217,32 @@ class CEM(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         # reward shaping
         if self._rewards_shaper is not None:
             rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
         if self.memory is not None:
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
 
         # track episodes internally
         if self._rollout:
@@ -252,7 +288,7 @@ class CEM(Agent):
         :type timesteps: int
         """
         # sample all memory
-        sampled_states, sampled_actions, sampled_rewards, _, _ = self.memory.sample_all(names=self.tensors_names)[0]
+        sampled_states, sampled_actions, sampled_rewards = self.memory.sample_all(names=self.tensors_names)[0]
 
         sampled_states = self._state_preprocessor(sampled_states, train=True)
 
@@ -263,9 +299,14 @@ class CEM(Agent):
             for e in range(sampled_rewards.size(-1)):
                 for i, j in zip(self._episode_tracking[e][:-1], self._episode_tracking[e][1:]):
                     limits.append([e + i, e + j])
-                    rewards = sampled_rewards[e + i: e + j]
-                    returns.append(torch.sum(rewards * self._discount_factor ** \
-                        torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())))
+                    rewards = sampled_rewards[e + i : e + j]
+                    returns.append(
+                        torch.sum(
+                            rewards
+                            * self._discount_factor
+                            ** torch.arange(rewards.size(0), device=rewards.device).flip(-1).view(rewards.size())
+                        )
+                    )
 
             if not len(returns):
                 logger.warning("No returns to update. Consider increasing the number of rollouts")
@@ -276,20 +317,24 @@ class CEM(Agent):
 
             # get elite states and actions
             indexes = torch.nonzero(returns >= return_threshold)
-            elite_states = torch.cat([sampled_states[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
-            elite_actions = torch.cat([sampled_actions[limits[i][0]:limits[i][1]] for i in indexes[:, 0]], dim=0)
+            elite_states = torch.cat([sampled_states[limits[i][0] : limits[i][1]] for i in indexes[:, 0]], dim=0)
+            elite_actions = torch.cat([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes[:, 0]], dim=0)
 
-        # compute scores for the elite states
-        _, _, outputs = self.policy.act({"states": elite_states}, role="policy")
-        scores = outputs["net_output"]
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-        # compute policy loss
-        policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
+            # compute scores for the elite states
+            _, _, outputs = self.policy.act({"states": elite_states}, role="policy")
+            scores = outputs["net_output"]
+
+            # compute policy loss
+            policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
 
         # optimization step
         self.optimizer.zero_grad()
-        policy_loss.backward()
-        self.optimizer.step()
+        self.scaler.scale(policy_loss).backward()
+
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
 
         # update learning rate
         if self._learning_rate_scheduler:

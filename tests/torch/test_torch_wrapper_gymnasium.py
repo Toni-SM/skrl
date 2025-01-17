@@ -45,6 +45,7 @@ def test_env(capsys: pytest.CaptureFixture):
 
     env.close()
 
+
 @pytest.mark.parametrize("vectorization_mode", ["async", "sync"])
 def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     num_envs = 10

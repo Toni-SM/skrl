@@ -38,6 +38,7 @@ def _get_activation_function(activation: Union[str, None], as_module: bool = Tru
     }
     return activations.get(activation.lower() if type(activation) is str else activation, None)
 
+
 def _parse_input(source: str) -> str:
     """Parse a network input expression by replacing substitutions and applying operations
 
@@ -45,6 +46,7 @@ def _parse_input(source: str) -> str:
 
     :return: Parsed network input
     """
+
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
             if isinstance(node.func, ast.Name):
@@ -52,6 +54,9 @@ def _parse_input(source: str) -> str:
                 if node.func.id == "concatenate":
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
                     node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
+                # operation: permute
+                elif node.func.id == "permute":
+                    node.func = ast.Attribute(value=ast.Name("torch"), attr="permute")
             return node
 
     # apply operations by modifying the source syntax grammar
@@ -59,12 +64,17 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
-    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace("STATES_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
-    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace("OBSERVATIONS_ACTIONS", 'torch.cat((inputs["states"], inputs["taken_actions"]), dim=1)')
-    source = source.replace("Shape.STATES", "STATES").replace("STATES", 'inputs["states"]')
-    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", 'inputs["states"]')
-    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", 'inputs["taken_actions"]')
+    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace(
+        "STATES_ACTIONS", "torch.cat([states, taken_actions], dim=1)"
+    )
+    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace(
+        "OBSERVATIONS_ACTIONS", "torch.cat([states, taken_actions], dim=1)"
+    )
+    source = source.replace("Shape.STATES", "STATES").replace("STATES", "states")
+    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", "states")
+    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", "taken_actions")
     return source
+
 
 def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:
     """Parse the network output expression by replacing substitutions and applying operations
@@ -73,6 +83,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
 
     :return: Tuple with the parsed network output, generated modules and output size/shape
     """
+
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
             if isinstance(node.func, ast.Name):
@@ -106,6 +117,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
     else:
         raise ValueError(f"Invalid or unsupported network output definition: {source}")
     return source, modules, size
+
 
 def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
     """Generate network modules
@@ -150,7 +162,7 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
                 if type(kwargs) in [int, float]:
                     kwargs = {"out_features": int(kwargs)}
                 elif type(kwargs) is list:
-                    kwargs = {k: v for k, v in zip(["out_features", "bias"][:len(kwargs)], kwargs)}
+                    kwargs = {k: v for k, v in zip(["out_features", "bias"][: len(kwargs)], kwargs)}
                 elif type(kwargs) is dict:
                     mapping = {
                         "features": "out_features",
@@ -169,7 +181,12 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
                 cls = "nn.LazyConv2d"
                 kwargs = layer[layer_type]
                 if type(kwargs) is list:
-                    kwargs = {k: v for k, v in zip(["out_channels", "kernel_size", "stride", "padding", "bias"][:len(kwargs)], kwargs)}
+                    kwargs = {
+                        k: v
+                        for k, v in zip(
+                            ["out_channels", "kernel_size", "stride", "padding", "bias"][: len(kwargs)], kwargs
+                        )
+                    }
                 elif type(kwargs) is dict:
                     mapping = {
                         "features": "out_channels",
@@ -188,7 +205,7 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
                 activation = ""  # don't add activation after flatten layer
                 kwargs = layer[layer_type]
                 if type(kwargs) is list:
-                    kwargs = {k: v for k, v in zip(["start_dim", "end_dim"][:len(kwargs)], kwargs)}
+                    kwargs = {k: v for k, v in zip(["start_dim", "end_dim"][: len(kwargs)], kwargs)}
                 elif type(kwargs) is dict:
                     pass
                 else:
@@ -204,6 +221,7 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
         if activation:
             modules.append(activation)
     return modules
+
 
 def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
     """Get the number of units/features a token represent
@@ -225,9 +243,10 @@ def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
         return num_units[token_as_str]
     return token
 
-def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]],
-                        embed_output: bool = True, indent: int = -1) -> \
-                        Tuple[Sequence[Mapping[str, Any]], Mapping[str, Any]]:
+
+def generate_containers(
+    network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]], embed_output: bool = True, indent: int = -1
+) -> Tuple[Sequence[Mapping[str, Any]], Mapping[str, Any]]:
     """Generate network containers
 
     :param network: Network definition
@@ -272,6 +291,7 @@ def generate_containers(network: Sequence[Mapping[str, Any]], output: Union[str,
     output = {"output": output, "modules": output_modules, "size": output_size}
     return containers, output
 
+
 def convert_deprecated_parameters(parameters: Mapping[str, Any]) -> Tuple[Mapping[str, Any], str]:
     """Function to convert deprecated parameters to network-output format
 
@@ -279,8 +299,10 @@ def convert_deprecated_parameters(parameters: Mapping[str, Any]) -> Tuple[Mappin
 
     :return: Network and output definitions
     """
-    logger.warning(f'The following parameters ({", ".join(list(parameters.keys()))}) are deprecated. '
-                    "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html")
+    logger.warning(
+        f'The following parameters ({", ".join(list(parameters.keys()))}) are deprecated. '
+        "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html"
+    )
     # network definition
     activations = parameters.get("hidden_activation", [])
     if type(activations) in [list, tuple] and len(set(activations)) == 1:

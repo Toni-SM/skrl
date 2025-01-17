@@ -12,6 +12,7 @@ class Shape(Enum):
     """
     Enum to select the shape of the model's inputs and outputs
     """
+
     ONE = 1
     STATES = 0
     OBSERVATIONS = 0

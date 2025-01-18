@@ -1,5 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+from packaging import version
+
 import torch
 
 from skrl.models.torch import Model
@@ -33,8 +35,8 @@ class TabularMixin:
             ...                                dim=-1, keepdim=True).view(-1,1)
             ...         return actions, {}
             ...
-            >>> # given an observation_space: gym.spaces.Discrete with n=100
-            >>> # and an action_space: gym.spaces.Discrete with n=5
+            >>> # given an observation_space: gymnasium.spaces.Discrete with n=100
+            >>> # and an action_space: gymnasium.spaces.Discrete with n=5
             >>> model = GreedyPolicy(observation_space, action_space, num_envs=1)
             >>>
             >>> print(model)
@@ -45,17 +47,16 @@ class TabularMixin:
         self.num_envs = num_envs
 
     def __repr__(self) -> str:
-        """String representation of an object as torch.nn.Module
-        """
+        """String representation of an object as torch.nn.Module"""
         lines = []
         for name in self._get_tensor_names():
             tensor = getattr(self, name)
             lines.append(f"({name}): {tensor.__class__.__name__}(shape={list(tensor.shape)})")
 
-        main_str = self.__class__.__name__ + '('
+        main_str = self.__class__.__name__ + "("
         if lines:
             main_str += "\n  {}\n".format("\n  ".join(lines))
-        main_str += ')'
+        main_str += ")"
         return main_str
 
     def _get_tensor_names(self) -> Sequence[str]:
@@ -70,9 +71,9 @@ class TabularMixin:
                 tensors.append(attr)
         return sorted(tensors)
 
-    def act(self,
-            inputs: Mapping[str, Union[torch.Tensor, Any]],
-            role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
+    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
         """Act in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
@@ -155,7 +156,9 @@ class TabularMixin:
                     if _tensor.shape == tensor.shape and _tensor.dtype == tensor.dtype:
                         setattr(self, name, tensor)
                     else:
-                        raise ValueError(f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch")
+                        raise ValueError(
+                            f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch"
+                        )
             else:
                 raise ValueError(f"{name} is not a tensor of {self.__class__.__name__}")
 
@@ -196,7 +199,10 @@ class TabularMixin:
             >>> model = Model(observation_space, action_space, device="cuda:1")
             >>> model.load("model.pt")
         """
-        tensors = torch.load(path)
+        if version.parse(torch.__version__) >= version.parse("1.13"):
+            tensors = torch.load(path, weights_only=False)  # prevent torch:FutureWarning
+        else:
+            tensors = torch.load(path)
         for name, tensor in tensors.items():
             if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
                 _tensor = getattr(self, name)
@@ -204,6 +210,8 @@ class TabularMixin:
                     if _tensor.shape == tensor.shape and _tensor.dtype == tensor.dtype:
                         setattr(self, name, tensor)
                     else:
-                        raise ValueError(f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch")
+                        raise ValueError(
+                            f"Tensor shape ({_tensor.shape} vs {tensor.shape}) or dtype ({_tensor.dtype} vs {tensor.dtype}) mismatch"
+                        )
             else:
                 raise ValueError(f"{name} is not a tensor of {self.__class__.__name__}")

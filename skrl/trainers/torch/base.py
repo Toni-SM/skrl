@@ -28,16 +28,20 @@ def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) 
     if sum(scopes):
         scopes[-1] += num_envs - sum(scopes)
     else:
-        raise ValueError(f"The number of simultaneous agents ({num_simultaneous_agents}) is greater than the number of environments ({num_envs})")
+        raise ValueError(
+            f"The number of simultaneous agents ({num_simultaneous_agents}) is greater than the number of environments ({num_envs})"
+        )
     return scopes
 
 
 class Trainer:
-    def __init__(self,
-                 env: Wrapper,
-                 agents: Union[Agent, List[Agent]],
-                 agents_scope: Optional[List[int]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        env: Wrapper,
+        agents: Union[Agent, List[Agent]],
+        agents_scope: Optional[List[int]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Base class for trainers
 
         :param env: Environment to train on
@@ -60,6 +64,7 @@ class Trainer:
         self.disable_progressbar = self.cfg.get("disable_progressbar", False)
         self.close_environment_at_exit = self.cfg.get("close_environment_at_exit", True)
         self.environment_info = self.cfg.get("environment_info", "episode")
+        self.stochastic_evaluation = self.cfg.get("stochastic_evaluation", False)
 
         self.initial_timestep = 0
 
@@ -69,6 +74,7 @@ class Trainer:
 
         # register environment closing if configured
         if self.close_environment_at_exit:
+
             @atexit.register
             def close_env():
                 logger.info("Closing environment")
@@ -121,11 +127,17 @@ class Trainer:
                     if sum(self.agents_scope):
                         self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)
                     else:
-                        raise ValueError(f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})")
+                        raise ValueError(
+                            f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})"
+                        )
                 elif len(self.agents_scope) != len(self.agents):
-                    raise ValueError(f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})")
+                    raise ValueError(
+                        f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})"
+                    )
                 elif sum(self.agents_scope) != self.env.num_envs:
-                    raise ValueError(f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})")
+                    raise ValueError(
+                        f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})"
+                    )
                 # generate agents' scopes
                 index = 0
                 for i in range(len(self.agents_scope)):
@@ -169,13 +181,15 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
 
-            # compute actions
             with torch.no_grad():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
                 # step the environments
@@ -186,15 +200,17 @@ class Trainer:
                     self.env.render()
 
                 # record the environments' transitions
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
                 # log environment info
                 if self.environment_info in infos:
@@ -231,11 +247,17 @@ class Trainer:
         # reset env
         states, infos = self.env.reset()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
-            # compute actions
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
             with torch.no_grad():
-                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+                # compute actions
+                outputs = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
+                actions = outputs[0] if self.stochastic_evaluation else outputs[-1].get("mean_actions", outputs[0])
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
@@ -245,22 +267,26 @@ class Trainer:
                     self.env.render()
 
                 # write data to TensorBoard
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
                 # log environment info
                 if self.environment_info in infos:
                     for k, v in infos[self.environment_info].items():
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
                             self.agents.track_data(f"Info / {k}", v.item())
+
+            # post-interaction
+            super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
             if self.env.num_envs > 1:
@@ -290,20 +316,22 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
             # pre-interaction
             self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
 
-            # compute actions
             with torch.no_grad():
+                # compute actions
                 actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-                shared_next_states = infos.get("shared_states", None)
+                shared_next_states = self.env.state()
                 infos["shared_states"] = shared_states
                 infos["shared_next_states"] = shared_next_states
 
@@ -312,15 +340,17 @@ class Trainer:
                     self.env.render()
 
                 # record the environments' transitions
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
                 # log environment info
                 if self.environment_info in infos:
@@ -332,13 +362,13 @@ class Trainer:
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
-            with torch.no_grad():
-                if not self.env.agents:
+            if not self.env.agents:
+                with torch.no_grad():
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
-                else:
-                    states = next_states
-                    shared_states = shared_next_states
+                    shared_states = self.env.state()
+            else:
+                states = next_states
+                shared_states = shared_next_states
 
     def multi_agent_eval(self) -> None:
         """Evaluate multi-agents
@@ -355,17 +385,27 @@ class Trainer:
 
         # reset env
         states, infos = self.env.reset()
-        shared_states = infos.get("shared_states", None)
+        shared_states = self.env.state()
 
-        for timestep in tqdm.tqdm(range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout):
+        for timestep in tqdm.tqdm(
+            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
+        ):
 
-            # compute actions
+            # pre-interaction
+            self.agents.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+
             with torch.no_grad():
-                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+                # compute actions
+                outputs = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)
+                actions = (
+                    outputs[0]
+                    if self.stochastic_evaluation
+                    else {k: outputs[-1][k].get("mean_actions", outputs[0][k]) for k in outputs[-1]}
+                )
 
                 # step the environments
                 next_states, rewards, terminated, truncated, infos = self.env.step(actions)
-                shared_next_states = infos.get("shared_states", None)
+                shared_next_states = self.env.state()
                 infos["shared_states"] = shared_states
                 infos["shared_next_states"] = shared_next_states
 
@@ -374,16 +414,17 @@ class Trainer:
                     self.env.render()
 
                 # write data to TensorBoard
-                self.agents.record_transition(states=states,
-                                              actions=actions,
-                                              rewards=rewards,
-                                              next_states=next_states,
-                                              terminated=terminated,
-                                              truncated=truncated,
-                                              infos=infos,
-                                              timestep=timestep,
-                                              timesteps=self.timesteps)
-                super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                self.agents.record_transition(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
+                    timestep=timestep,
+                    timesteps=self.timesteps,
+                )
 
                 # log environment info
                 if self.environment_info in infos:
@@ -391,10 +432,14 @@ class Trainer:
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
                             self.agents.track_data(f"Info / {k}", v.item())
 
-                # reset environments
-                if not self.env.agents:
+            # post-interaction
+            super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+
+            # reset environments
+            if not self.env.agents:
+                with torch.no_grad():
                     states, infos = self.env.reset()
-                    shared_states = infos.get("shared_states", None)
-                else:
-                    states = next_states
-                    shared_states = shared_next_states
+                    shared_states = self.env.state()
+            else:
+                states = next_states
+                shared_states = shared_next_states

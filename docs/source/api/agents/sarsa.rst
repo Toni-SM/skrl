@@ -3,7 +3,7 @@ State Action Reward State Action (SARSA)
 
 SARSA is a **model-free** **on-policy** algorithm that uses a **tabular** Q-function to handle **discrete** observations and action spaces
 
-Paper: `On-Line Q-Learning Using Connectionist Systems <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.2539>`_
+Paper: `On-Line Q-Learning Using Connectionist Systems <https://scholar.google.com/scholar?q=On-line+Q-learning+using+connectionist+system>`_
 
 .. raw:: html
 
@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - action-value function (:math:`Q`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 
 .. raw:: html
 
@@ -46,7 +46,7 @@ Learning algorithm
 | :green:`# compute next actions`
 | :math:`a' \leftarrow \pi_{Q[s,a]}(s') \qquad` :gray:`# the only difference with Q-learning`
 | :green:`# update Q-table`
-| :math:`Q[s,a] \leftarrow Q[s,a] \;+` :guilabel:`learning_rate` :math:`(r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q[s',a'] - Q[s,a])`
+| :math:`Q[s,a] \leftarrow Q[s,a] \;+` :guilabel:`learning_rate` :math:`(r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q[s',a'] - Q[s,a])`
 
 .. raw:: html
 
@@ -148,5 +148,3 @@ API (PyTorch)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

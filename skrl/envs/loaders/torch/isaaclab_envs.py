@@ -1,6 +1,5 @@
 from typing import Optional, Sequence
 
-import os
 import sys
 
 from skrl import logger
@@ -24,11 +23,13 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_isaaclab_env(task_name: str = "",
-                      num_envs: Optional[int] = None,
-                      headless: Optional[bool] = None,
-                      cli_args: Sequence[str] = [],
-                      show_cfg: bool = True):
+def load_isaaclab_env(
+    task_name: str = "",
+    num_envs: Optional[int] = None,
+    headless: Optional[bool] = None,
+    cli_args: Sequence[str] = [],
+    show_cfg: bool = True,
+):
     """Load an Isaac Lab environment
 
     Isaac Lab: https://isaac-sim.github.io/IsaacLab
@@ -61,11 +62,11 @@ def load_isaaclab_env(task_name: str = "",
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
 
     :return: Isaac Lab environment
-    :rtype: gym.Env
+    :rtype: gymnasium.Env
     """
     import argparse
     import atexit
-    import gymnasium as gym
+    import gymnasium
 
     # check task from command line arguments
     defined = False
@@ -77,7 +78,9 @@ def load_isaaclab_env(task_name: str = "",
     if defined:
         arg_index = sys.argv.index("--task") + 1
         if arg_index >= len(sys.argv):
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
         if task_name and task_name != sys.argv[arg_index]:
             logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
     # get task name from function arguments
@@ -86,7 +89,9 @@ def load_isaaclab_env(task_name: str = "",
             sys.argv.append("--task")
             sys.argv.append(task_name)
         else:
-            raise ValueError("No task name defined. Set the task_name parameter or use --task <task_name> as command line argument")
+            raise ValueError(
+                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
+            )
 
     # check num_envs from command line arguments
     defined = False
@@ -122,18 +127,22 @@ def load_isaaclab_env(task_name: str = "",
 
     # parse arguments
     parser = argparse.ArgumentParser("Isaac Lab: Omniverse Robotics Environments!")
-    parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
     parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
     parser.add_argument("--task", type=str, default=None, help="Name of the task.")
     parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
     parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
-    parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
-    parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
-    parser.add_argument("--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations.")
-    parser.add_argument("--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes.")
+    parser.add_argument(
+        "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
+    )
+    parser.add_argument(
+        "--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes."
+    )
 
     # launch the simulation app
-    from omni.isaac.lab.app import AppLauncher
+    try:
+        from omni.isaac.lab.app import AppLauncher
+    except ModuleNotFoundError:
+        from isaaclab.app import AppLauncher
 
     AppLauncher.add_app_launcher_args(parser)
     args = parser.parse_args()
@@ -143,10 +152,14 @@ def load_isaaclab_env(task_name: str = "",
     def close_the_simulator():
         app_launcher.app.close()
 
-    import omni.isaac.lab_tasks  # type: ignore
-    from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
+    try:
+        import omni.isaac.lab_tasks  # type: ignore
+        from omni.isaac.lab_tasks.utils import parse_env_cfg  # type: ignore
+    except ModuleNotFoundError:
+        import isaaclab_tasks  # type: ignore
+        from isaaclab_tasks.utils import parse_env_cfg  # type: ignore
 
-    cfg = parse_env_cfg(args.task, use_gpu=not args.cpu, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
+    cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs, use_fabric=not args.disable_fabric)
 
     # print config
     if show_cfg:
@@ -157,6 +170,6 @@ def load_isaaclab_env(task_name: str = "",
             pass
 
     # load environment
-    env = gym.make(args.task, cfg=cfg, render_mode="rgb_array" if args.video else None)
+    env = gymnasium.make(args.task, cfg=cfg, render_mode="rgb_array" if args.video else None)
 
     return env

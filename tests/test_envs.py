@@ -1,7 +1,7 @@
-import warnings
 import hypothesis
 import hypothesis.strategies as st
 import pytest
+import warnings
 
 import torch
 
@@ -15,8 +15,19 @@ def classes_and_kwargs():
     return []
 
 
-@pytest.mark.parametrize("wrapper", ["gym", "gymnasium", "dm", "robosuite", \
-           "isaacgym-preview2", "isaacgym-preview3", "isaacgym-preview4", "omniverse-isaacgym"])
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "gym",
+        "gymnasium",
+        "dm",
+        "robosuite",
+        "isaacgym-preview2",
+        "isaacgym-preview3",
+        "isaacgym-preview4",
+        "omniverse-isaacgym",
+    ],
+)
 def test_wrap_env(capsys, classes_and_kwargs, wrapper):
     env = DummyEnv(num_envs=1)
 

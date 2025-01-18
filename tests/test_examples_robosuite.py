@@ -1,14 +1,17 @@
-import os
-import subprocess
-import warnings
 import hypothesis
 import hypothesis.strategies as st
 import pytest
+import warnings
+
+import os
+import subprocess
 
 
 EXAMPLE_DIR = "robosuite"
 SCRIPTS = []
-EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "source", "examples"))
+EXAMPLES_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "source", "examples")
+)
 COMMANDS = [f"python {os.path.join(EXAMPLES_DIR, EXAMPLE_DIR, script)}" for script in SCRIPTS]
 
 

@@ -13,9 +13,9 @@ Isaac Gym environments
 Environments (preview 4)
 ------------------------
 
-The repository https://github.com/NVIDIA-Omniverse/IsaacGymEnvs provides the example reinforcement learning environments for Isaac Gym (preview 4).
+The repository https://github.com/isaac-sim/IsaacGymEnvs provides the example reinforcement learning environments for Isaac Gym (preview 4).
 
-With the release of Isaac Gym (preview 4), NVIDIA developers provide an easy-to-use API for creating/loading preset vectorized environments (see IsaacGymEnvs's  `creating-an-environment <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#creating-an-environment>`_).
+With the release of Isaac Gym (preview 4), NVIDIA developers provide an easy-to-use API for creating/loading preset vectorized environments (see IsaacGymEnvs's  `creating-an-environment <https://github.com/isaac-sim/IsaacGymEnvs#creating-an-environment>`_).
 
 .. tabs::
 
@@ -26,7 +26,7 @@ With the release of Isaac Gym (preview 4), NVIDIA developers provide an easy-to-
             :start-after: [start-isaac-gym-envs-preview-4-api]
             :end-before: [end-isaac-gym-envs-preview-4-api]
 
-Nevertheless, in order to maintain the loading style of previous versions, **skrl** provides its own implementation for loading such environments. The environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see IsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
+Nevertheless, in order to maintain the loading style of previous versions, **skrl** provides its own implementation for loading such environments. The environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see IsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/isaac-sim/IsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
 
 .. note::
 
@@ -107,9 +107,9 @@ API
 Environments (preview 3)
 ------------------------
 
-The repository https://github.com/NVIDIA-Omniverse/IsaacGymEnvs provides the example reinforcement learning environments for Isaac Gym (preview 3).
+The repository https://github.com/isaac-sim/IsaacGymEnvs provides the example reinforcement learning environments for Isaac Gym (preview 3).
 
-These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see IsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
+These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments (see IsaacGymEnvs's `configuration-and-command-line-arguments <https://github.com/isaac-sim/IsaacGymEnvs#configuration-and-command-line-arguments>`_) or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
 
 .. note::
 

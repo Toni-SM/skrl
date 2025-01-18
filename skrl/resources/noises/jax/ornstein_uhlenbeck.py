@@ -18,13 +18,15 @@ def _sample(theta, sigma, state, mean, std, key, iterator, shape):
 
 
 class OrnsteinUhlenbeckNoise(Noise):
-    def __init__(self,
-                 theta: float,
-                 sigma: float,
-                 base_scale: float,
-                 mean: float = 0,
-                 std: float = 1,
-                 device: Optional[Union[str, jax.Device]] = None) -> None:
+    def __init__(
+        self,
+        theta: float,
+        sigma: float,
+        base_scale: float,
+        mean: float = 0,
+        std: float = 1,
+        device: Optional[Union[str, jax.Device]] = None,
+    ) -> None:
         """Class representing an Ornstein-Uhlenbeck noise
 
         :param theta: Factor to apply to current internal state

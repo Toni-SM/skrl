@@ -68,7 +68,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
@@ -102,7 +102,7 @@ Learning algorithm
 | :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
-| :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
+| :math:`R, A \leftarrow f_{GAE}(r, d_{_{end}} \lor d_{_{timeout}}, V, V_{_{last}}')`
 | :green:`# sample mini-batches from memory`
 | [[:math:`s, a, logp, V, R, A`]] :math:`\leftarrow` states, actions, log_prob, values, returns, advantages
 | :green:`# learning epochs`
@@ -285,6 +285,10 @@ Support for advanced features is described in the next table
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+    * - Mixed precision
+      - Automatic mixed precision
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
@@ -305,15 +309,11 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.agents.torch.rpo.RPO_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -329,5 +329,3 @@ API (JAX)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

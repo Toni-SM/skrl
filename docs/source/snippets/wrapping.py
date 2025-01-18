@@ -48,6 +48,7 @@ env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, tim
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
 # [jax-end-omniverse-isaacgym-mt]
 
+# =============================================================================
 
 # [pytorch-start-isaaclab]
 # import the environment wrapper and loader
@@ -55,7 +56,7 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load the environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
@@ -68,12 +69,39 @@ from skrl.envs.wrappers.jax import wrap_env
 from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load the environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
 # [jax-end-isaaclab]
 
+
+# [pytorch-start-isaaclab-multi-agent]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.loaders.torch import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Cart-Double-Pendulum-Direct-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
+# [pytorch-end-isaaclab-multi-agent]
+
+
+# [jax-start-isaaclab-multi-agent]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.loaders.jax import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Cart-Double-Pendulum-Direct-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
+# [jax-end-isaaclab-multi-agent]
+
+# =============================================================================
 
 # [pytorch-start-isaacgym-preview4-make]
 import isaacgymenvs
@@ -140,6 +168,7 @@ env = load_isaacgym_env_preview4(task_name="Cartpole")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
 # [jax-end-isaacgym-preview4]
 
+# =============================================================================
 
 # [pytorch-start-isaacgym-preview3]
 # import the environment wrapper and loader
@@ -166,6 +195,7 @@ env = load_isaacgym_env_preview3(task_name="Cartpole")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
 # [jax-end-isaacgym-preview3]
 
+# =============================================================================
 
 # [pytorch-start-isaacgym-preview2]
 # import the environment wrapper and loader
@@ -192,6 +222,7 @@ env = load_isaacgym_env_preview2(task_name="Cartpole")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
 # [jax-end-isaacgym-preview2]
 
+# =============================================================================
 
 # [pytorch-start-gym]
 # import the environment wrapper and gym
@@ -244,6 +275,7 @@ env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
 # [jax-end-gym-vectorized]
 
+# =============================================================================
 
 # [pytorch-start-gymnasium]
 # import the environment wrapper and gymnasium
@@ -277,7 +309,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10, vectorization_mode="async")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
@@ -290,12 +322,13 @@ from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load a vectorized environment
-env = gym.vector.make("Pendulum-v1", num_envs=10, asynchronous=False)
+env = gym.make_vec("Pendulum-v1", num_envs=10, vectorization_mode="async")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-gymnasium-vectorized]
 
+# =============================================================================
 
 # [pytorch-start-shimmy]
 # import the environment wrapper and gymnasium
@@ -323,6 +356,64 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-shimmy]
 
 
+# [pytorch-start-shimmy-multi-agent]
+# import the environment wrapper
+from skrl.envs.wrappers.torch import wrap_env
+
+# import the shimmy module
+from shimmy import MeltingPotCompatibilityV0
+
+# load the environment (API conversion)
+env = MeltingPotCompatibilityV0(substrate_name="prisoners_dilemma_in_the_matrix__arena")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [pytorch-end-shimmy-multi-agent]
+
+
+# [jax-start-shimmy-multi-agent]
+# import the environment wrapper
+from skrl.envs.wrappers.jax import wrap_env
+
+# import the shimmy module
+from shimmy import MeltingPotCompatibilityV0
+
+# load the environment (API conversion)
+env = MeltingPotCompatibilityV0(substrate_name="prisoners_dilemma_in_the_matrix__arena")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
+# [jax-end-shimmy-multi-agent]
+
+# =============================================================================
+
+# [pytorch-start-brax]
+# import the environment wrapper
+from skrl.envs.wrappers.torch import wrap_env
+import brax.envs
+
+# load the environment
+env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
+# [pytorch-end-brax]
+
+
+# [jax-start-brax]
+# import the environment wrapper
+from skrl.envs.wrappers.jax import wrap_env
+import brax.envs
+
+# load the environment
+env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
+# [jax-end-brax]
+
+# =============================================================================
+
 # [pytorch-start-deepmind]
 # import the environment wrapper and the deepmind suite
 from skrl.envs.wrappers.torch import wrap_env
@@ -335,12 +426,13 @@ env = suite.load(domain_name="cartpole", task_name="swingup")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
 # [pytorch-end-deepmind]
 
+# =============================================================================
 
 # [pytorch-start-robosuite]
 # import the environment wrapper
 from skrl.envs.wrappers.torch import wrap_env
 
-# import the robosuite wrapper
+# import the robosuite modules
 import robosuite
 from robosuite.controllers import load_controller_config
 
@@ -364,6 +456,7 @@ env = robosuite.make("TwoArmLift",
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
 # [pytorch-end-robosuite]
 
+# =============================================================================
 
 # [start-bidexhands-torch]
 # import the environment wrapper and loader
@@ -390,6 +483,7 @@ env = load_bidexhands_env(task_name="ShadowHandOver")
 env = wrap_env(env, wrapper="bidexhands")
 # [end-bidexhands-jax]
 
+# =============================================================================
 
 # [start-pettingzoo-torch]
 # import the environment wrapper

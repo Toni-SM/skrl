@@ -9,13 +9,11 @@ Wrapping (single-agent)
 
 This library works with a common API to interact with the following RL environments:
 
-* OpenAI `Gym <https://www.gymlibrary.dev>`_ / Farama `Gymnasium <https://gymnasium.farama.org/>`_ (single and vectorized environments)
-* `Farama Shimmy <https://shimmy.farama.org/>`_
-* `DeepMind <https://github.com/deepmind/dm_env>`_
+* OpenAI `Gym <https://www.gymlibrary.dev>`_
+* Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
+* Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
+* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (as well as `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4) and `Omniverse Isaac Gym <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_)
 * `robosuite <https://robosuite.ai/>`_
-* `NVIDIA Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4)
-* `NVIDIA Omniverse Isaac Gym <https://docs.omniverse.nvidia.com/isaacsim/latest/tutorial_gym_isaac_gym.html>`_
-* `NVIDIA Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -178,57 +176,15 @@ Usage
                             :start-after: [jax-start-isaacgym-preview2]
                             :end-before: [jax-end-isaacgym-preview2]
 
-    .. tab:: Gym / Gymnasium
+    .. tab:: Gymnasium / Gym
 
         .. tabs::
-
-            .. tab:: Gym
-
-                .. tabs::
-
-                    .. tab:: Single environment
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-gym]
-                                    :end-before: [pytorch-end-gym]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-gym]
-                                    :end-before: [jax-end-gym]
-
-                    .. tab:: Vectorized environment
-
-                        Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-gym-vectorized]
-                                    :end-before: [pytorch-end-gym-vectorized]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-gym-vectorized]
-                                    :end-before: [jax-end-gym-vectorized]
 
             .. tab:: Gymnasium
 
                 .. tabs::
 
-                    .. tab:: Single environment
+                    .. group-tab:: Single environment
 
                         .. tabs::
 
@@ -246,7 +202,7 @@ Usage
                                     :start-after: [jax-start-gymnasium]
                                     :end-before: [jax-end-gymnasium]
 
-                    .. tab:: Vectorized environment
+                    .. group-tab:: Vectorized environment
 
                         Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
 
@@ -266,6 +222,48 @@ Usage
                                     :start-after: [jax-start-gymnasium-vectorized]
                                     :end-before: [jax-end-gymnasium-vectorized]
 
+            .. tab:: Gym
+
+                .. tabs::
+
+                    .. group-tab:: Single environment
+
+                        .. tabs::
+
+                            .. group-tab:: |_4| |pytorch| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gym]
+                                    :end-before: [pytorch-end-gym]
+
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gym]
+                                    :end-before: [jax-end-gym]
+
+                    .. group-tab:: Vectorized environment
+
+                        Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
+
+                        .. tabs::
+
+                            .. group-tab:: |_4| |pytorch| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [pytorch-start-gym-vectorized]
+                                    :end-before: [pytorch-end-gym-vectorized]
+
+                            .. group-tab:: |_4| |jax| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [jax-start-gym-vectorized]
+                                    :end-before: [jax-end-gym-vectorized]
+
     .. tab:: Shimmy
 
         .. tabs::
@@ -283,6 +281,24 @@ Usage
                     :language: python
                     :start-after: [jax-start-shimmy]
                     :end-before: [jax-end-shimmy]
+
+    .. tab:: Brax
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-brax]
+                    :end-before: [pytorch-end-brax]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-brax]
+                    :end-before: [jax-end-brax]
 
     .. tab:: DeepMind
 
@@ -350,55 +366,35 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
-    .. py:property:: device
-
-        The device used by the environment
-
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda:0"`` or ``"cpu"`` depending on the device availability
+.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
 
 .. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.DeepMindWrapper
     :undoc-members:
@@ -406,15 +402,16 @@ Internal API (PyTorch)
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
     :members:
 
-    .. automethod:: __init__
+.. autoclass:: skrl.envs.wrappers.torch.BraxWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
 
 .. autoclass:: skrl.envs.wrappers.torch.RobosuiteWrapper
     :undoc-members:
     :show-inheritance:
     :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -428,45 +425,32 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
-    .. py:property:: device
-
-        The device used by the environment
-
-        If the wrapped environment does not have the ``device`` property, the value of this property will be ``"cuda"`` or ``"cpu"`` depending on the device availability
+.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview3Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
+.. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:

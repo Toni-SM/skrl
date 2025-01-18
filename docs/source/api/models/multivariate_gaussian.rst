@@ -334,5 +334,3 @@ API (PyTorch)
 .. autoclass:: skrl.models.torch.multivariate_gaussian.MultivariateGaussianMixin
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__

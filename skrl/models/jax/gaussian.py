@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
 from functools import partial
-import gym
 import gymnasium
 
 import flax
@@ -14,15 +13,9 @@ from skrl import config
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @partial(jax.jit, static_argnames=("reduction"))
-def _gaussian(loc,
-              log_std,
-              log_std_min,
-              log_std_max,
-              clip_actions_min,
-              clip_actions_max,
-              taken_actions,
-              key,
-              reduction):
+def _gaussian(
+    loc, log_std, log_std_min, log_std_max, clip_actions_min, clip_actions_max, taken_actions, key, reduction
+):
     # clamp log standard deviations
     log_std = jnp.clip(log_std, a_min=log_std_min, a_max=log_std_max)
 
@@ -46,19 +39,22 @@ def _gaussian(loc,
 
     return actions, log_prob, log_std, scale
 
+
 @jax.jit
 def _entropy(scale):
     return 0.5 + 0.5 * jnp.log(2 * jnp.pi) + jnp.log(scale)
 
 
 class GaussianMixin:
-    def __init__(self,
-                 clip_actions: bool = False,
-                 clip_log_std: bool = True,
-                 min_log_std: float = -20,
-                 max_log_std: float = 2,
-                 reduction: str = "sum",
-                 role: str = "") -> None:
+    def __init__(
+        self,
+        clip_actions: bool = False,
+        clip_log_std: bool = True,
+        min_log_std: float = -20,
+        max_log_std: float = 2,
+        reduction: str = "sum",
+        role: str = "",
+    ) -> None:
         """Gaussian mixin model (stochastic model)
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
@@ -102,8 +98,8 @@ class GaussianMixin:
             ...         x = nn.elu(self.layer_2(x))
             ...         return self.layer_3(x), self.log_std_parameter, {}
             ...
-            >>> # given an observation_space: gym.spaces.Box with shape (60,)
-            >>> # and an action_space: gym.spaces.Box with shape (8,)
+            >>> # given an observation_space: gymnasium.spaces.Box with shape (60,)
+            >>> # and an action_space: gymnasium.spaces.Box with shape (8,)
             >>> model = Policy(observation_space, action_space)
             >>>
             >>> print(model)
@@ -114,8 +110,7 @@ class GaussianMixin:
                 device = StreamExecutorGpuDevice(id=0, process_index=0, slice_index=0)
             )
         """
-        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
-            issubclass(type(self.action_space), gymnasium.Space))
+        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
         if self._clip_actions:
             self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
@@ -134,8 +129,11 @@ class GaussianMixin:
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = jnp.mean if reduction == "mean" else jnp.sum if reduction == "sum" \
-            else jnp.prod if reduction == "prod" else None
+        self._reduction = (
+            jnp.mean
+            if reduction == "mean"
+            else jnp.sum if reduction == "sum" else jnp.prod if reduction == "prod" else None
+        )
 
         self._i = 0
         self._key = config.jax.key
@@ -143,10 +141,12 @@ class GaussianMixin:
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
 
-    def act(self,
-            inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
-            role: str = "",
-            params: Optional[jax.Array] = None) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
+    def act(
+        self,
+        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        role: str = "",
+        params: Optional[jax.Array] = None,
+    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
         """Act stochastically in response to the state of the environment
 
         :param inputs: Model inputs. The most common keys are:
@@ -181,15 +181,17 @@ class GaussianMixin:
         # map from states/observations to mean actions and log standard deviations
         mean_actions, log_std, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
-        actions, log_prob, log_std, stddev = _gaussian(mean_actions,
-                                                       log_std,
-                                                       self._log_std_min,
-                                                       self._log_std_max,
-                                                       self.clip_actions_min,
-                                                       self.clip_actions_max,
-                                                       inputs.get("taken_actions", None),
-                                                       subkey,
-                                                       self._reduction)
+        actions, log_prob, log_std, stddev = _gaussian(
+            mean_actions,
+            log_std,
+            self._log_std_min,
+            self._log_std_max,
+            self.clip_actions_min,
+            self.clip_actions_max,
+            inputs.get("taken_actions", None),
+            subkey,
+            self._reduction,
+        )
 
         outputs["mean_actions"] = mean_actions
         # avoid jax.errors.UnexpectedTracerError

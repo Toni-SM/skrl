@@ -13,8 +13,8 @@ Algorithm
 ---------
 
 | For each iteration do
-|     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
-|     :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d, V`]
+|     :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, terminated :math:`d_{_{end}}`, truncated :math:`d_{_{timeout}}`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
+|     :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d_{_{end}} \lor d_{_{timeout}}, V`]
 |     :math:`\bullet \;` Compute the surrogate objective (policy loss) gradient :math:`g` and the Hessian :math:`H` of :math:`KL` divergence with respect to the policy parameters :math:`\theta`
 |     :math:`\bullet \;` Compute the search direction :math:`\; x \approx H^{-1}g \;` using the conjugate gradient method
 |     :math:`\bullet \;` Compute the maximal (full) step length :math:`\; \beta = \sqrt{\dfrac{2 \delta}{x^T H x}} x \;` where :math:`\delta` is the desired (maximum) :math:`KL` divergence and :math:`\; \sqrt{\frac{2 \delta}{x^T H x}} \;` is the step size
@@ -27,6 +27,13 @@ Algorithm
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+| Main notation/symbols:
+|   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
+|   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
+|   - log probabilities (:math:`logp`)
+|   - loss (:math:`L`)
 
 .. raw:: html
 
@@ -98,7 +105,7 @@ Learning algorithm
 | :literal:`_update(...)`
 | :green:`# compute returns and advantages`
 | :math:`V_{_{last}}' \leftarrow V_\phi(s')`
-| :math:`R, A \leftarrow f_{GAE}(r, d, V, V_{_{last}}')`
+| :math:`R, A \leftarrow f_{GAE}(r, d_{_{end}} \lor d_{_{timeout}}, V, V_{_{last}}')`
 | :green:`# sample all from memory`
 | [[:math:`s, a, logp, A`]] :math:`\leftarrow` states, actions, log_prob, advantages
 | :green:`# compute policy loss gradient`
@@ -282,6 +289,10 @@ Support for advanced features is described in the next table
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+    * - Mixed precision
+      - \-
+      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
@@ -302,12 +313,8 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.agents.torch.trpo.TRPO_RNN
     :undoc-members:
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

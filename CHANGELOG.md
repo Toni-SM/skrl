@@ -2,14 +2,75 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.3.0] - Unreleased
+## [1.4.0] - 2025-01-16
+### Added
+- Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
+- `parse_device` static method in ML framework configuration (used in library components to set up the device)
+- Model instantiator support for different shared model structures in PyTorch
+- Support for automatic mixed precision training in PyTorch
+- `init_state_dict` method to initialize model's lazy modules in PyTorch
+- Model instantiators `fixed_log_std` parameter to define immutable log standard deviations
+- Define the `stochastic_evaluation` trainer config to allow the use of the actions returned by the agent's model
+  as-is instead of deterministic actions (mean-actions in Gaussian-based models) during evaluation.
+  Make the return of deterministic actions the default behavior.
+
+### Changed
+- Call agent's `pre_interaction` method during evaluation
+- Use spaces utilities to process states, observations and actions for all the library components
+- Update model instantiators definitions to process supported fundamental and composite Gymnasium spaces
+- Make flattened tensor storage in memory the default option (revert changed introduced in version 1.3.0)
+- Drop support for PyTorch versions prior to 1.10 (the previous supported version was 1.9)
+- Update KL Adaptive learning rate scheduler implementation to match Optax's behavior in JAX
+- Update AMP agent to use the environment's terminated and truncated data, and the KL Adaptive learning rate scheduler
+- Update runner implementations to support definition of arbitrary agents and their models
+- Speed up PyTorch implementation:
+  - Disable argument checking when instantiating distributions
+  - Replace PyTorch's `BatchSampler` by Python slice when sampling data from memory
+
+### Changed (breaking changes: style)
+- Format code using Black code formatter (it's ugly, yes, but it does its job)
+
+### Fixed
+- Move the batch sampling inside gradient step loop for DQN, DDQN, DDPG (RNN), TD3 (RNN), SAC and SAC (RNN)
+- Model state dictionary initialization for composite Gymnasium spaces in JAX
+- Add missing `reduction` parameter to Gaussian model instantiator
+- Optax's learning rate schedulers integration in JAX implementation
+- Isaac Lab wrapper's multi-agent state retrieval with gymnasium 1.0
+- Treat truncation signal when computing 'done' (environment reset)
+
+### Removed
+- Remove OpenAI Gym (`gym`) from dependencies and source code. **skrl** continues to support gym environments,
+  it is just not installed as part of the library. If it is needed, it needs to be installed manually.
+  Any gym-based environment wrapper must use the `convert_gym_space` space utility to operate
+
+## [1.3.0] - 2024-09-11
 ### Added
 - Distributed multi-GPU and multi-node learning (JAX implementation)
 - Utilities to start multiple processes from a single program invocation for distributed learning using JAX
+- Model instantiators `return_source` parameter to get the source class definition used to instantiate the models
+- `Runner` utility to run training/evaluation workflows in a few lines of code
+- Wrapper for Isaac Lab multi-agent environments
+- Wrapper for Google Brax environments
 
 ### Changed
-- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent using it in distributed runs
+- Move the KL reduction from the PyTorch `KLAdaptiveLR` class to each agent that uses it in distributed runs
 - Move the PyTorch distributed initialization from the agent base class to the ML framework configuration
+- Upgrade model instantiator implementations to support CNN layers and complex network definitions,
+  and implement them using dynamic execution of Python code
+- Update Isaac Lab environment loader argument parser options to match Isaac Lab version
+- Allow to store tensors/arrays with their original dimensions in memory and make it the default option
+
+### Changed (breaking changes)
+- Decouple the observation and state spaces in single and multi-agent environment wrappers and add the `state`
+  method to get the state of the environment
+- Simplify multi-agent environment wrapper API by removing shared space properties and methods
+
+### Fixed
+- Catch TensorBoard summary iterator exceptions in `TensorboardFileIterator` postprocessing utils
+- Fix automatic wrapper detection issue (introduced in previous version) for Isaac Gym (previews),
+  DeepMind and vectorized Gymnasium environments
+- Fix vectorized/parallel environments `reset` method return values when called more than once
+- Fix IPPO and MAPPO `act` method return values when JAX-NumPy backend is enabled
 
 ## [1.2.0] - 2024-06-23
 ### Added
@@ -39,7 +100,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Transition from pre-release versions (`1.0.0-rc.1` and`1.0.0-rc.2`) to a stable version.
 
-This release also announces the publication of the **skrl** paper in the Journal of Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
+This release also announces the publication of the **skrl** paper in the Journal of
+Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
 
 Summary of the most relevant features:
 - JAX support
@@ -49,11 +111,11 @@ Summary of the most relevant features:
 ## [1.0.0-rc.2] - 2023-08-11
 ### Added
 - Get truncation from `time_outs` info in Isaac Gym, Isaac Orbit and Omniverse Isaac Gym environments
-- Time-limit (truncation) boostrapping in on-policy actor-critic agents
+- Time-limit (truncation) bootstrapping in on-policy actor-critic agents
 - Model instantiators `initial_log_std` parameter to set the log standard deviation's initial value
 
 ### Changed (breaking changes)
-- Structure environment loaders and wrappers file hierarchy coherently
+- Structure environment loaders and wrappers file hierarchy coherently.
   Import statements now follow the next convention:
   - Wrappers (e.g.):
     - `from skrl.envs.wrappers.torch import wrap_env`
@@ -63,7 +125,7 @@ Summary of the most relevant features:
     - `from skrl.envs.loaders.jax import load_omniverse_isaacgym_env`
 
 ### Changed
-- Drop support for versions prior to PyTorch 1.9 (1.8.0 and 1.8.1)
+- Drop support for PyTorch versions prior to 1.9 (the previous supported version was 1.8)
 
 ## [1.0.0-rc.1] - 2023-07-25
 ### Added
@@ -72,9 +134,10 @@ Summary of the most relevant features:
 - IPPO and MAPPO multi-agent
 - Multi-agent base class
 - Bi-DexHands environment loader
-- Wrapper for PettingZoo and Bi-DexHands environments
+- Wrapper for Bi-DexHands environments
+- Wrapper for PettingZoo environments
 - Parameters `num_envs`, `headless` and `cli_args` for configuring Isaac Gym, Isaac Orbit
-and Omniverse Isaac Gym environments when they are loaded
+  and Omniverse Isaac Gym environments when they are loaded
 
 ### Changed
 - Migrate to `pyproject.toml` Python package development
@@ -89,7 +152,7 @@ and Omniverse Isaac Gym environments when they are loaded
 - Disable PyTorch gradient computation during the environment stepping
 - Get categorical models' entropy
 - Typo in `KLAdaptiveLR` learning rate scheduler
-  (keep the old name for compatibility with the examples of previous versions.
+  (Keep the old name for compatibility with the examples of previous versions.
   The old name will be removed in future releases)
 
 ## [0.10.2] - 2023-03-23
@@ -99,7 +162,7 @@ and Omniverse Isaac Gym environments when they are loaded
 
 ## [0.10.1] - 2023-01-26
 ### Fixed
-- Tensorboard writer instantiation when `write_interval` is zero
+- TensorBoard writer instantiation when `write_interval` is zero
 
 ## [0.10.0] - 2023-01-22
 ### Added
@@ -155,7 +218,7 @@ to allow storing samples in memories during evaluation
 - Parameter `role` to model methods
 - Wrapper compatibility with the new OpenAI Gym environment API
 - Internal library colored logger
-- Migrate checkpoints/models from other RL libraries to skrl models/agents
+- Migrate checkpoints/models from other RL libraries to **skrl** models/agents
 - Configuration parameter `store_separately` to agent configuration dict
 - Save/load agent modules (models, optimizers, preprocessors)
 - Set random seed and configure deterministic behavior for reproducibility
@@ -198,7 +261,7 @@ to allow storing samples in memories during evaluation
 ## [0.5.0] - 2022-05-18
 ### Added
 - TRPO agent
-- DeepMind environment wrapper
+- Wrapper for DeepMind environments
 - KL Adaptive learning rate scheduler
 - Handle `gym.spaces.Dict` observation spaces (OpenAI Gym and DeepMind environments)
 - Forward environment info to agent `record_transition` method
@@ -218,7 +281,7 @@ to allow storing samples in memories during evaluation
 ## [0.4.1] - 2022-03-22
 ### Added
 - Examples of all Isaac Gym environments (preview 3)
-- Tensorboard file iterator for data post-processing
+- TensorBoard file iterator for data post-processing
 
 ### Fixed
 - Init and evaluate agents in ParallelTrainer

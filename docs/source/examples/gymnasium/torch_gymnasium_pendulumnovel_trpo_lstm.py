@@ -167,10 +167,10 @@ class NoVelocityWrapper(gym.ObservationWrapper):
         # observation: x, y, angular velocity
         return observation * np.array([1, 1, 0])
 
-gym.envs.registration.register(id="PendulumNoVel-v1", entry_point=lambda: NoVelocityWrapper(gym.make("Pendulum-v1")))
+gym.register(id="PendulumNoVel-v1", entry_point=lambda: NoVelocityWrapper(gym.make("Pendulum-v1")))
 
 # load and wrap the gymnasium environment
-env = gym.vector.make("PendulumNoVel-v1", num_envs=4, asynchronous=False)
+env = gym.make_vec("PendulumNoVel-v1", num_envs=4, vectorization_mode="sync")
 env = wrap_env(env)
 
 device = env.device

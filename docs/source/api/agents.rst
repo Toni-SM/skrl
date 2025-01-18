@@ -119,7 +119,6 @@ API (PyTorch)
     :private-members: _update, _empty_preprocessor, _get_internal_value
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __str__
 
 .. raw:: html
@@ -136,5 +135,4 @@ API (JAX)
     :private-members: _update, _empty_preprocessor, _get_internal_value
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __str__

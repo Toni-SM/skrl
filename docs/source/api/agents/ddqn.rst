@@ -19,6 +19,11 @@ Algorithm
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+| Main notation/symbols:
+|   - epsilon (:math:`\epsilon`), Q-network (:math:`Q_\phi`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
+|   - loss (:math:`L`)
+
 .. raw:: html
 
     <br>
@@ -40,19 +45,19 @@ Learning algorithm
 
 |
 | :literal:`_update(...)`
-| :green:`# sample a batch from memory`
-| [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
+|     :green:`# sample a batch from memory`
+|     [:math:`s, a, r, s', d_{_{end}}, d_{_{timeout}}`] with size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`Q' \leftarrow Q_{\phi_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow Q'[\underset{a}{\arg\max} \; Q_\phi(s')] \qquad` :gray:`# the only difference with DQN`
-|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q_{_{target}}`
+|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q_{_{target}}`
 |     :green:`# compute Q-network loss`
 |     :math:`Q \leftarrow Q_\phi(s)[a]`
-|     :math:`{Loss}_{Q_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
+|     :math:`L_{Q_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`
 |     :green:`# optimize Q-network`
-|     :math:`\nabla_{\phi} {Loss}_{Q_\phi}`
+|     :math:`\nabla_{\phi} L_{Q_\phi}`
 |     :green:`# update target network`
 |     **IF** it's time to update target network **THEN**
 |         :math:`\phi_{target} \leftarrow` :guilabel:`polyak` :math:`\phi + (1 \;-` :guilabel:`polyak` :math:`) \phi_{target}`
@@ -184,6 +189,10 @@ Support for advanced features is described in the next table
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+    * - Mixed precision
+      - Automatic mixed precision
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
@@ -204,8 +213,6 @@ API (PyTorch)
     :private-members: _update
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -220,5 +227,3 @@ API (JAX)
     :show-inheritance:
     :private-members: _update
     :members:
-
-    .. automethod:: __init__

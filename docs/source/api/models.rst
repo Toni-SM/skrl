@@ -114,8 +114,6 @@ API (PyTorch)
     :private-members: _get_space_size
     :members:
 
-    .. automethod:: __init__
-
     .. py:property:: device
 
         Device to be used for the computations
@@ -148,8 +146,6 @@ API (JAX)
     :show-inheritance:
     :private-members: _get_space_size
     :members:
-
-    .. automethod:: __init__
 
     .. py:property:: device
 

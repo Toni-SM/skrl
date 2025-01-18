@@ -142,28 +142,20 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.IsaacLabMultiAgentWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.torch.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.torch.BiDexHandsWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. raw:: html
 
@@ -177,25 +169,17 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.IsaacLabMultiAgentWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__
 
 .. autoclass:: skrl.envs.wrappers.jax.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. autoclass:: skrl.envs.wrappers.jax.BiDexHandsWrapper
     :undoc-members:
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__

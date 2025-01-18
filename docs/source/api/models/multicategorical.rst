@@ -385,8 +385,6 @@ API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -397,5 +395,3 @@ API (JAX)
 .. autoclass:: skrl.models.jax.multicategorical.MultiCategoricalMixin
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__

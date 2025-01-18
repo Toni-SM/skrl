@@ -122,5 +122,3 @@ API
     :inherited-members:
     :private-members: _route_index, _route_stream, _route_input_event, _stream
     :members:
-
-    .. automethod:: __init__

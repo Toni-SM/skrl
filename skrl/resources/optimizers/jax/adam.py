@@ -24,7 +24,7 @@ def _step_with_scale(transformation, grad, state, state_dict, scale):
     # optax transform
     params, optimizer_state = transformation.update(grad, state, state_dict.params)
     # custom scale
-    # https://optax.readthedocs.io/en/latest/api.html?#optax.scale
+    # https://optax.readthedocs.io/en/latest/api/transformations.html#optax.scale
     params = jax.tree_util.tree_map(lambda params: scale * params, params)
     # apply transformation
     params = optax.apply_updates(state_dict.params, params)
@@ -35,7 +35,7 @@ class Adam:
     def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
         """Adam optimizer
 
-        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api.html?#adam>`_
+        Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api/optimizers.html#optax.adam>`_
         to support custom scale (learning rate)
 
         :param model: Model
@@ -63,6 +63,7 @@ class Adam:
             >>> # step the optimizer given a computed gradiend and an updated learning rate (lr)
             >>> optimizer = optimizer.step(grad, policy, lr)
         """
+
         class Optimizer(flax.struct.PyTreeNode):
             """Optimizer
 
@@ -71,6 +72,7 @@ class Adam:
 
             https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state
             """
+
             transformation: optax.GradientTransformation = flax.struct.field(pytree_node=False)
             state: optax.OptState = flax.struct.field(pytree_node=True)
 
@@ -95,7 +97,9 @@ class Adam:
                 if lr is None:
                     optimizer_state, model.state_dict = _step(self.transformation, grad, self.state, model.state_dict)
                 else:
-                    optimizer_state, model.state_dict = _step_with_scale(self.transformation, grad, self.state, model.state_dict, -lr)
+                    optimizer_state, model.state_dict = _step_with_scale(
+                        self.transformation, grad, self.state, model.state_dict, -lr
+                    )
                 return self.replace(state=optimizer_state)
 
         # default optax transformation

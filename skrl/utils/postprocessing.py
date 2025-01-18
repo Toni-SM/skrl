@@ -10,7 +10,7 @@ import numpy as np
 from skrl import logger
 
 
-class MemoryFileIterator():
+class MemoryFileIterator:
     def __init__(self, pathname: str) -> None:
         """Python iterator for loading data from exported memories
 
@@ -39,7 +39,7 @@ class MemoryFileIterator():
         self.n = 0
         self.file_paths = sorted(glob.glob(pathname))
 
-    def __iter__(self) -> 'MemoryFileIterator':
+    def __iter__(self) -> "MemoryFileIterator":
         """Return self to make iterable"""
         return self
 
@@ -80,6 +80,7 @@ class MemoryFileIterator():
         :rtype: tuple
         """
         import torch
+
         filename = os.path.basename(self.file_paths[self.n])
         data = torch.load(self.file_paths[self.n])
 
@@ -94,7 +95,7 @@ class MemoryFileIterator():
         """
         filename = os.path.basename(self.file_paths[self.n])
 
-        with open(self.file_paths[self.n], 'r') as f:
+        with open(self.file_paths[self.n], "r") as f:
             reader = csv.reader(f)
 
             # parse header
@@ -115,14 +116,18 @@ class MemoryFileIterator():
             data = {name: [] for name in names}
             for row in reader:
                 for name, index in zip(names, indexes):
-                    data[name].append([float(item) if item not in ["True", "False"] else bool(item) \
-                        for item in row[index[0]:index[1]]])
+                    data[name].append(
+                        [
+                            float(item) if item not in ["True", "False"] else bool(item)
+                            for item in row[index[0] : index[1]]
+                        ]
+                    )
 
         self.n += 1
         return filename, data
 
 
-class TensorboardFileIterator():
+class TensorboardFileIterator:
     def __init__(self, pathname: str, tags: Union[str, List[str]]) -> None:
         """Python iterator for loading data from Tensorboard files
 
@@ -141,7 +146,7 @@ class TensorboardFileIterator():
         self.file_paths = sorted(glob.glob(pathname))
         self.tags = [tags] if isinstance(tags, str) else tags
 
-    def __iter__(self) -> 'TensorboardFileIterator':
+    def __iter__(self) -> "TensorboardFileIterator":
         """Return self to make iterable"""
         return self
 

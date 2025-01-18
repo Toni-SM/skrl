@@ -7,20 +7,21 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 
 class KLAdaptiveLR(_LRScheduler):
-    def __init__(self,
-                 optimizer: torch.optim.Optimizer,
-                 kl_threshold: float = 0.008,
-                 min_lr: float = 1e-6,
-                 max_lr: float = 1e-2,
-                 kl_factor: float = 2,
-                 lr_factor: float = 1.5,
-                 last_epoch: int = -1,
-                 verbose: bool = False) -> None:
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        kl_threshold: float = 0.008,
+        min_lr: float = 1e-6,
+        max_lr: float = 1e-2,
+        kl_factor: float = 2,
+        lr_factor: float = 1.5,
+        last_epoch: int = -1,
+        verbose: bool = False,
+    ) -> None:
         """Adaptive KL scheduler
 
         Adjusts the learning rate according to the KL divergence.
-        The implementation is adapted from the rl_games library
-        (https://github.com/Denys88/rl_games/blob/master/rl_games/common/schedulers.py)
+        The implementation is adapted from the *rl_games* library.
 
         .. note::
 
@@ -62,7 +63,7 @@ class KLAdaptiveLR(_LRScheduler):
         self._kl_factor = kl_factor
         self._lr_factor = lr_factor
 
-        self._last_lr = [group['lr'] for group in self.optimizer.param_groups]
+        self._last_lr = [group["lr"] for group in self.optimizer.param_groups]
 
     def step(self, kl: Optional[Union[torch.Tensor, float]] = None, epoch: Optional[int] = None) -> None:
         """
@@ -88,8 +89,8 @@ class KLAdaptiveLR(_LRScheduler):
         if kl is not None:
             for group in self.optimizer.param_groups:
                 if kl > self.kl_threshold * self._kl_factor:
-                    group['lr'] = max(group['lr'] / self._lr_factor, self.min_lr)
+                    group["lr"] = max(group["lr"] / self._lr_factor, self.min_lr)
                 elif kl < self.kl_threshold / self._kl_factor:
-                    group['lr'] = min(group['lr'] * self._lr_factor, self.max_lr)
+                    group["lr"] = min(group["lr"] * self._lr_factor, self.max_lr)
 
-            self._last_lr = [group['lr'] for group in self.optimizer.param_groups]
+            self._last_lr = [group["lr"] for group in self.optimizer.param_groups]

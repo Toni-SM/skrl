@@ -68,8 +68,6 @@ API (PyTorch)
     :show-inheritance:
     :members:
 
-    .. automethod:: __init__
-
 .. raw:: html
 
     <br>
@@ -80,5 +78,3 @@ API (JAX)
 .. autoclass:: skrl.utils.runner.jax.Runner
     :show-inheritance:
     :members:
-
-    .. automethod:: __init__

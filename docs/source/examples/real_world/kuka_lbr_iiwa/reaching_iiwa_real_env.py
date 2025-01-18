@@ -84,7 +84,7 @@ class ReachingIiwa(gym.Env):
         return self.obs_buf, reward, done
 
     def reset(self):
-        print("Reseting...")
+        print("Resetting...")
 
         # go to 1) safe position, 2) random position
         self.robot.command_joint_position(self.robot_default_dof_pos)

@@ -141,7 +141,7 @@ class ReachingFranka(gym.Env):
         return self.obs_buf, reward, done
 
     def reset(self):
-        print("Reseting...")
+        print("Resetting...")
 
         # end current motion
         if self.motion is not None:

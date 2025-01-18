@@ -2,8 +2,8 @@ from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import itertools
-import gym
 import gymnasium
+from packaging import version
 
 import torch
 import torch.nn as nn
@@ -16,6 +16,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
 
+# fmt: off
 # [start-config-dict-torch]
 A2C_DEFAULT_CONFIG = {
     "rollouts": 16,                 # number of rollouts before updating
@@ -43,6 +44,8 @@ A2C_DEFAULT_CONFIG = {
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
     "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
 
+    "mixed_precision": False,       # enable automatic mixed precision for higher performance
+
     "experiment": {
         "directory": "",            # experiment's parent directory
         "experiment_name": "",      # experiment name
@@ -56,16 +59,19 @@ A2C_DEFAULT_CONFIG = {
     }
 }
 # [end-config-dict-torch]
+# fmt: on
 
 
 class A2C(Agent):
-    def __init__(self,
-                 models: Mapping[str, Model],
-                 memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-                 observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                 device: Optional[Union[str, torch.device]] = None,
-                 cfg: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model],
+        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[dict] = None,
+    ) -> None:
         """Advantage Actor Critic (A2C)
 
         https://arxiv.org/abs/1602.01783
@@ -77,9 +83,9 @@ class A2C(Agent):
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
         :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gym.Space, gymnasium.Space or None, optional
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -90,12 +96,14 @@ class A2C(Agent):
         """
         _cfg = copy.deepcopy(A2C_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        super().__init__(models=models,
-                         memory=memory,
-                         observation_space=observation_space,
-                         action_space=action_space,
-                         device=device,
-                         cfg=_cfg)
+        super().__init__(
+            models=models,
+            memory=memory,
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            cfg=_cfg,
+        )
 
         # models
         self.policy = self.models.get("policy", None)
@@ -137,15 +145,27 @@ class A2C(Agent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
         self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
 
+        self._mixed_precision = self.cfg["mixed_precision"]
+
+        # set up automatic mixed precision
+        self._device_type = torch.device(device).type
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
             if self.policy is self.value:
                 self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
             else:
-                self.optimizer = torch.optim.Adam(itertools.chain(self.policy.parameters(), self.value.parameters()),
-                                                  lr=self._learning_rate)
+                self.optimizer = torch.optim.Adam(
+                    itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._learning_rate
+                )
             if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"])
+                self.scheduler = self._learning_rate_scheduler(
+                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
+                )
 
             self.checkpoint_modules["optimizer"] = self.optimizer
 
@@ -163,8 +183,7 @@ class A2C(Agent):
             self._value_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
-        """
+        """Initialize the agent"""
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
@@ -174,6 +193,7 @@ class A2C(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -204,21 +224,24 @@ class A2C(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
-        self._current_log_prob = log_prob
+        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+            self._current_log_prob = log_prob
 
         return actions, log_prob, outputs
 
-    def record_transition(self,
-                          states: torch.Tensor,
-                          actions: torch.Tensor,
-                          rewards: torch.Tensor,
-                          next_states: torch.Tensor,
-                          terminated: torch.Tensor,
-                          truncated: torch.Tensor,
-                          infos: Any,
-                          timestep: int,
-                          timesteps: int) -> None:
+    def record_transition(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        terminated: torch.Tensor,
+        truncated: torch.Tensor,
+        infos: Any,
+        timestep: int,
+        timesteps: int,
+    ) -> None:
         """Record an environment transition in memory
 
         :param states: Observations/states of the environment used to make the decision
@@ -240,7 +263,9 @@ class A2C(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
+        super().record_transition(
+            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+        )
 
         if self.memory is not None:
             self._current_next_states = next_states
@@ -250,19 +275,36 @@ class A2C(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
-            values = self._value_preprocessor(values, inverse=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
+                values = self._value_preprocessor(values, inverse=True)
 
-            # time-limit (truncation) boostrapping
+            # time-limit (truncation) bootstrapping
             if self._time_limit_bootstrap:
                 rewards += self._discount_factor * values * truncated
 
             # storage transition in memory
-            self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
+            self.memory.add_samples(
+                states=states,
+                actions=actions,
+                rewards=rewards,
+                next_states=next_states,
+                terminated=terminated,
+                truncated=truncated,
+                log_prob=self._current_log_prob,
+                values=values,
+            )
             for memory in self.secondary_memories:
-                memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated, log_prob=self._current_log_prob, values=values)
+                memory.add_samples(
+                    states=states,
+                    actions=actions,
+                    rewards=rewards,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    log_prob=self._current_log_prob,
+                    values=values,
+                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -299,12 +341,15 @@ class A2C(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        def compute_gae(rewards: torch.Tensor,
-                        dones: torch.Tensor,
-                        values: torch.Tensor,
-                        next_values: torch.Tensor,
-                        discount_factor: float = 0.99,
-                        lambda_coefficient: float = 0.95) -> torch.Tensor:
+
+        def compute_gae(
+            rewards: torch.Tensor,
+            dones: torch.Tensor,
+            values: torch.Tensor,
+            next_values: torch.Tensor,
+            discount_factor: float = 0.99,
+            lambda_coefficient: float = 0.95,
+        ) -> torch.Tensor:
             """Compute the Generalized Advantage Estimator (GAE)
 
             :param rewards: Rewards obtained by the agent
@@ -331,7 +376,11 @@ class A2C(Agent):
             # advantages computation
             for i in reversed(range(memory_size)):
                 next_values = values[i + 1] if i < memory_size - 1 else last_values
-                advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                advantage = (
+                    rewards[i]
+                    - values[i]
+                    + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+                )
                 advantages[i] = advantage
             # returns computation
             returns = advantages + values
@@ -341,19 +390,23 @@ class A2C(Agent):
             return returns, advantages
 
         # compute returns and advantages
-        with torch.no_grad():
+        with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
             self.value.train(False)
-            last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
+            last_values, _, _ = self.value.act(
+                {"states": self._state_preprocessor(self._current_next_states.float())}, role="value"
+            )
             self.value.train(True)
-        last_values = self._value_preprocessor(last_values, inverse=True)
+            last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
-        returns, advantages = compute_gae(rewards=self.memory.get_tensor_by_name("rewards"),
-                                          dones=self.memory.get_tensor_by_name("terminated"),
-                                          values=values,
-                                          next_values=last_values,
-                                          discount_factor=self._discount_factor,
-                                          lambda_coefficient=self._lambda)
+        returns, advantages = compute_gae(
+            rewards=self.memory.get_tensor_by_name("rewards"),
+            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            values=values,
+            next_values=last_values,
+            discount_factor=self._discount_factor,
+            lambda_coefficient=self._lambda,
+        )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
@@ -371,45 +424,56 @@ class A2C(Agent):
         # mini-batches loop
         for sampled_states, sampled_actions, sampled_log_prob, sampled_returns, sampled_advantages in sampled_batches:
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
-            _, next_log_prob, _ = self.policy.act({"states": sampled_states, "taken_actions": sampled_actions}, role="policy")
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-            # compute approximate KL divergence for KLAdaptive learning rate scheduler
-            if self._learning_rate_scheduler:
-                if isinstance(self.scheduler, KLAdaptiveLR):
-                    with torch.no_grad():
-                        ratio = next_log_prob - sampled_log_prob
-                        kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
-                        kl_divergences.append(kl_divergence)
+                _, next_log_prob, _ = self.policy.act(
+                    {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
+                )
 
-            # compute entropy loss
-            if self._entropy_loss_scale:
-                entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
-            else:
-                entropy_loss = 0
+                # compute approximate KL divergence for KLAdaptive learning rate scheduler
+                if self._learning_rate_scheduler:
+                    if isinstance(self.scheduler, KLAdaptiveLR):
+                        with torch.no_grad():
+                            ratio = next_log_prob - sampled_log_prob
+                            kl_divergence = ((torch.exp(ratio) - 1) - ratio).mean()
+                            kl_divergences.append(kl_divergence)
 
-            # compute policy loss
-            policy_loss = -(sampled_advantages * next_log_prob).mean()
+                # compute entropy loss
+                if self._entropy_loss_scale:
+                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
+                else:
+                    entropy_loss = 0
 
-            # compute value loss
-            predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+                # compute policy loss
+                policy_loss = -(sampled_advantages * next_log_prob).mean()
 
-            value_loss = F.mse_loss(sampled_returns, predicted_values)
+                # compute value loss
+                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+
+                value_loss = F.mse_loss(sampled_returns, predicted_values)
 
             # optimization step
             self.optimizer.zero_grad()
-            (policy_loss + entropy_loss + value_loss).backward()
+            self.scaler.scale(policy_loss + entropy_loss + value_loss).backward()
+
             if config.torch.is_distributed:
                 self.policy.reduce_parameters()
                 if self.policy is not self.value:
                     self.value.reduce_parameters()
+
             if self._grad_norm_clip > 0:
+                self.scaler.unscale_(self.optimizer)
                 if self.policy is self.value:
                     nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
                 else:
-                    nn.utils.clip_grad_norm_(itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip)
-            self.optimizer.step()
+                    nn.utils.clip_grad_norm_(
+                        itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip
+                    )
+
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
             # update cumulative losses
             cumulative_policy_loss += policy_loss.item()

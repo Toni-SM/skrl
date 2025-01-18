@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import textwrap
-import gym
 import gymnasium
 
 import torch
@@ -10,29 +9,33 @@ import torch.nn as nn  # noqa
 from skrl.models.torch import MultivariateGaussianMixin  # noqa
 from skrl.models.torch import Model
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
-def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                                action_space: Optional[Union[int, Tuple[int], gym.Space, gymnasium.Space]] = None,
-                                device: Optional[Union[str, torch.device]] = None,
-                                clip_actions: bool = False,
-                                clip_log_std: bool = True,
-                                min_log_std: float = -20,
-                                max_log_std: float = 2,
-                                initial_log_std: float = 0,
-                                network: Sequence[Mapping[str, Any]] = [],
-                                output: Union[str, Sequence[str]] = "",
-                                return_source: bool = False,
-                                *args,
-                                **kwargs) -> Union[Model, str]:
+def multivariate_gaussian_model(
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    clip_actions: bool = False,
+    clip_log_std: bool = True,
+    min_log_std: float = -20,
+    max_log_std: float = 2,
+    initial_log_std: float = 0,
+    fixed_log_std: bool = False,
+    network: Sequence[Mapping[str, Any]] = [],
+    output: Union[str, Sequence[str]] = "",
+    return_source: bool = False,
+    *args,
+    **kwargs,
+) -> Union[Model, str]:
     """Instantiate a multivariate Gaussian model
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param action_space: Action space or shape (default: None).
                          If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gym.Space, gymnasium.Space or None, optional
+    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda"`` if available or ``"cpu"``
     :type device: str or torch.device, optional
@@ -46,6 +49,9 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     :type max_log_std: float, optional
     :param initial_log_std: Initial value for the log standard deviation (default: 0)
     :type initial_log_std: float, optional
+    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
+                          Fixed parameters have the gradient computation deactivated
+    :type fixed_log_std: bool, optional
     :param network: Network definition (default: [])
     :type network: list of dict, optional
     :param output: Output expression (default: "")
@@ -90,9 +96,11 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
         MultivariateGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std)
 
         {networks}
-        self.log_std_parameter = nn.Parameter({initial_log_std} * torch.ones({output["size"]}))
+        self.log_std_parameter = nn.Parameter(torch.full(size=({output["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})
 
     def compute(self, inputs, role=""):
+        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, self.log_std_parameter, {{}}
     """
@@ -103,10 +111,12 @@ def multivariate_gaussian_model(observation_space: Optional[Union[int, Tuple[int
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["MultivariateGaussianModel"](observation_space=observation_space,
-                                                action_space=action_space,
-                                                device=device,
-                                                clip_actions=clip_actions,
-                                                clip_log_std=clip_log_std,
-                                                min_log_std=min_log_std,
-                                                max_log_std=max_log_std)
+    return _locals["MultivariateGaussianModel"](
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        clip_actions=clip_actions,
+        clip_log_std=clip_log_std,
+        min_log_std=min_log_std,
+        max_log_std=max_log_std,
+    )

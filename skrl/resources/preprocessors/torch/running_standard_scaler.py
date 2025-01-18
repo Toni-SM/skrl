@@ -1,19 +1,22 @@
 from typing import Optional, Tuple, Union
 
-import gym
 import gymnasium
 
-import numpy as np
 import torch
 import torch.nn as nn
 
+from skrl import config
+from skrl.utils.spaces.torch import compute_space_size
+
 
 class RunningStandardScaler(nn.Module):
-    def __init__(self,
-                 size: Union[int, Tuple[int], gym.Space, gymnasium.Space],
-                 epsilon: float = 1e-8,
-                 clip_threshold: float = 5.0,
-                 device: Optional[Union[str, torch.device]] = None) -> None:
+    def __init__(
+        self,
+        size: Union[int, Tuple[int], gymnasium.Space],
+        epsilon: float = 1e-8,
+        clip_threshold: float = 5.0,
+        device: Optional[Union[str, torch.device]] = None,
+    ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation
 
         The implementation is adapted from the rl_games library
@@ -29,7 +32,7 @@ class RunningStandardScaler(nn.Module):
                     [0.8540, 0.1982]])
 
         :param size: Size of the input space
-        :type size: int, tuple or list of integers, gym.Space, or gymnasium.Space
+        :type size: int, tuple or list of integers, or gymnasium.Space
         :param epsilon: Small number to avoid division by zero (default: ``1e-8``)
         :type epsilon: float
         :param clip_threshold: Threshold to clip the data (default: ``5.0``)
@@ -42,47 +45,14 @@ class RunningStandardScaler(nn.Module):
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
-        if device is None:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        else:
-            self.device = torch.device(device)
 
-        size = self._get_space_size(size)
+        self.device = config.torch.parse_device(device)
+
+        size = compute_space_size(size, occupied_size=True)
 
         self.register_buffer("running_mean", torch.zeros(size, dtype=torch.float64, device=self.device))
         self.register_buffer("running_variance", torch.ones(size, dtype=torch.float64, device=self.device))
         self.register_buffer("current_count", torch.ones((), dtype=torch.float64, device=self.device))
-
-    def _get_space_size(self, space: Union[int, Tuple[int], gym.Space, gymnasium.Space]) -> int:
-        """Get the size (number of elements) of a space
-
-        :param space: Space or shape from which to obtain the number of elements
-        :type space: int, tuple or list of integers, gym.Space, or gymnasium.Space
-
-        :raises ValueError: If the space is not supported
-
-        :return: Size of the space data
-        :rtype: Space size (number of elements)
-        """
-        if type(space) in [int, float]:
-            return int(space)
-        elif type(space) in [tuple, list]:
-            return np.prod(space)
-        elif issubclass(type(space), gym.Space):
-            if issubclass(type(space), gym.spaces.Discrete):
-                return 1
-            elif issubclass(type(space), gym.spaces.Box):
-                return np.prod(space.shape)
-            elif issubclass(type(space), gym.spaces.Dict):
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        elif issubclass(type(space), gymnasium.Space):
-            if issubclass(type(space), gymnasium.spaces.Discrete):
-                return 1
-            elif issubclass(type(space), gymnasium.spaces.Box):
-                return np.prod(space.shape)
-            elif issubclass(type(space), gymnasium.spaces.Dict):
-                return sum([self._get_space_size(space.spaces[key]) for key in space.spaces])
-        raise ValueError(f"Space type {type(space)} not supported")
 
     def _parallel_variance(self, input_mean: torch.Tensor, input_var: torch.Tensor, input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance
@@ -98,8 +68,11 @@ class RunningStandardScaler(nn.Module):
         """
         delta = input_mean - self.running_mean
         total_count = self.current_count + input_count
-        M2 = (self.running_variance * self.current_count) + (input_var * input_count) \
-            + delta ** 2 * self.current_count * input_count / total_count
+        M2 = (
+            (self.running_variance * self.current_count)
+            + (input_var * input_count)
+            + delta**2 * self.current_count * input_count / total_count
+        )
 
         # update internal variables
         self.running_mean = self.running_mean + delta * input_count / total_count
@@ -127,18 +100,21 @@ class RunningStandardScaler(nn.Module):
 
         # scale back the data to the original representation
         if inverse:
-            return torch.sqrt(self.running_variance.float()) \
-                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold) + self.running_mean.float()
+            return (
+                torch.sqrt(self.running_variance.float())
+                * torch.clamp(x, min=-self.clip_threshold, max=self.clip_threshold)
+                + self.running_mean.float()
+            )
         # standardization by centering and scaling
-        return torch.clamp((x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
-                           min=-self.clip_threshold,
-                           max=self.clip_threshold)
+        return torch.clamp(
+            (x - self.running_mean.float()) / (torch.sqrt(self.running_variance.float()) + self.epsilon),
+            min=-self.clip_threshold,
+            max=self.clip_threshold,
+        )
 
-    def forward(self,
-                x: torch.Tensor,
-                train: bool = False,
-                inverse: bool = False,
-                no_grad: bool = True) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True
+    ) -> torch.Tensor:
         """Forward pass of the standardizer
 
         Example::

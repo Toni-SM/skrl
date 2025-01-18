@@ -80,7 +80,6 @@ API (PyTorch)
     :private-members: _setup_agents
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __str__
 
 .. raw:: html
@@ -97,5 +96,4 @@ API (JAX)
     :private-members: _setup_agents
     :members:
 
-    .. automethod:: __init__
     .. automethod:: __str__

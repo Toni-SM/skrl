@@ -1,7 +1,7 @@
 import os
 os.environ["HEADLESS"] = "1"
 
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 app_launcher = AppLauncher()
 simulation_app = app_launcher.app
@@ -15,8 +15,8 @@ import subprocess
 from jinja2 import Template
 from prettytable import PrettyTable
 
-from omni.isaac.lab.utils import class_to_dict
-from omni.isaac.lab_tasks.utils import load_cfg_from_registry
+from isaaclab.utils import class_to_dict
+from isaaclab_tasks.utils import load_cfg_from_registry
 
 from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model, shared_model
 

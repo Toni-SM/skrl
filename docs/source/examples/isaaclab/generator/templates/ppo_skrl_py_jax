@@ -113,7 +113,7 @@ cfg["rewards_shaper"] = None
 {% else %}
 cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * {{ agent.rewards_shaper_scale }}
 {% endif %}
-cfg["time_limit_bootstrap"] = True
+cfg["time_limit_bootstrap"] = False
 {% if agent.state_preprocessor == "RunningStandardScaler" %}
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}

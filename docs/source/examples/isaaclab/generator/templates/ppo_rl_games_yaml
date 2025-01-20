@@ -67,7 +67,7 @@ agent:
   value_loss_scale: {{ params.config.critic_coef / 2 }}
   kl_threshold: {{ params.config.kl_threshold if params.config.lr_schedule != "adaptive" else 0.0 }}
   rewards_shaper_scale: {{ params.config.reward_shaper.scale_value }}
-  time_limit_bootstrap: True
+  time_limit_bootstrap: False
   # logging and checkpoint
   experiment:
     directory: "{{ params.config.name }}"

@@ -67,7 +67,7 @@ agent:
   value_loss_scale: {{ algorithm.value_loss_coef }}
   kl_threshold: {{ algorithm.desired_kl if algorithm.schedule != "adaptive" else 0.0 }}
   rewards_shaper_scale: 1.0
-  time_limit_bootstrap: True
+  time_limit_bootstrap: False
   # logging and checkpoint
   experiment:
     directory: "{{ experiment_name }}"

@@ -203,6 +203,10 @@ class _Config(object):
 
                     This function supports the PyTorch-like ``"type:ordinal"`` string specification (e.g.: ``"cuda:0"``).
 
+                .. warning::
+
+                    This method returns (forces to use) the device local to process in a distributed environment.
+
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
                                the default available device will be returned instead.
 
@@ -233,8 +237,8 @@ class _Config(object):
             def device(self) -> "jax.Device":
                 """Default device.
 
-                The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise.
+                The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+                However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
                 """
                 self._device = self.parse_device(self._device)
                 return self._device

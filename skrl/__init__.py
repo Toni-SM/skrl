@@ -188,6 +188,12 @@ class _Config(object):
                         process_id=self._rank,
                         local_device_ids=self._local_rank,
                     )
+                    # get the device local to process
+                    try:
+                        self._device = jax.local_devices(process_index=self._rank)[0]
+                        logger.info(f"Using device local to process with index/rank {self._rank} ({self._device})")
+                    except Exception as e:
+                        logger.warning(f"Failed to get the device local to process with index/rank {self._rank}: {e}")
 
             @staticmethod
             def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
@@ -203,6 +209,15 @@ class _Config(object):
                 :return: JAX Device.
                 """
                 import jax
+
+                # force the use of the device local to process in distributed runs
+                if config.jax.is_distributed:
+                    try:
+                        return jax.local_devices(process_index=config.jax.rank)[0]
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to get the device local to process with index/rank {config.jax.rank}: {e}"
+                        )
 
                 if isinstance(device, jax.Device):
                     return device

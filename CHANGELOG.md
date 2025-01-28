@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.1] - 2025-01-27
+### Fixed
+- Force the use of the device local to process in distributed runs in JAX
+- Update runner implementation to parse noises definitions for off-policy agents
+
 ## [1.4.0] - 2025-01-16
 ### Added
 - Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)

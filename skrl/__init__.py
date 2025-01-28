@@ -188,6 +188,12 @@ class _Config(object):
                         process_id=self._rank,
                         local_device_ids=self._local_rank,
                     )
+                    # get the device local to process
+                    try:
+                        self._device = jax.local_devices(process_index=self._rank)[0]
+                        logger.info(f"Using device local to process with index/rank {self._rank} ({self._device})")
+                    except Exception as e:
+                        logger.warning(f"Failed to get the device local to process with index/rank {self._rank}: {e}")
 
             @staticmethod
             def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
@@ -197,12 +203,25 @@ class _Config(object):
 
                     This function supports the PyTorch-like ``"type:ordinal"`` string specification (e.g.: ``"cuda:0"``).
 
+                .. warning::
+
+                    This method returns (forces to use) the device local to process in a distributed environment.
+
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
                                the default available device will be returned instead.
 
                 :return: JAX Device.
                 """
                 import jax
+
+                # force the use of the device local to process in distributed runs
+                if config.jax.is_distributed:
+                    try:
+                        return jax.local_devices(process_index=config.jax.rank)[0]
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to get the device local to process with index/rank {config.jax.rank}: {e}"
+                        )
 
                 if isinstance(device, jax.Device):
                     return device
@@ -218,8 +237,8 @@ class _Config(object):
             def device(self) -> "jax.Device":
                 """Default device.
 
-                The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment)
-                if CUDA is available, ``cpu`` otherwise.
+                The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+                However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
                 """
                 self._device = self.parse_device(self._device)
                 return self._device

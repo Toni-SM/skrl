@@ -11,9 +11,9 @@ build:
     python: "3.10"
 
 # Build documentation in the docs/ directory with Sphinx
-# sphinx:
+sphinx:
+  configuration: docs/source/conf.py
 #   builder: html
-#   configuration: docs/conf.py
 #   fail_on_warning: false
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF

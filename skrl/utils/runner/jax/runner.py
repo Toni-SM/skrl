@@ -6,6 +6,7 @@ from skrl import logger
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
 from skrl.models.jax import Model
+from skrl.resources.noises.jax import GaussianNoise, OrnsteinUhlenbeckNoise  # noqa
 from skrl.resources.preprocessors.jax import RunningStandardScaler  # noqa
 from skrl.resources.schedulers.jax import KLAdaptiveLR  # noqa
 from skrl.trainers.jax import Trainer
@@ -148,6 +149,8 @@ class Runner:
             "state_preprocessor",
             "value_preprocessor",
             "amp_state_preprocessor",
+            "noise",
+            "smooth_regularization_noise",
         ]
 
         def reward_shaper_function(scale):
@@ -162,7 +165,7 @@ class Runner:
                     update_dict(value)
                 else:
                     if key in _direct_eval:
-                        if type(d[key]) is str:
+                        if isinstance(value, str):
                             d[key] = eval(value)
                     elif key.endswith("_kwargs"):
                         d[key] = value if value is not None else {}
@@ -311,8 +314,18 @@ class Runner:
             agent_id = possible_agents[0]
             agent_cfg = self._component(f"{agent_class}_DEFAULT_CONFIG").copy()
             agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update({"size": observation_spaces[agent_id], "device": device})
-            agent_cfg["value_preprocessor_kwargs"].update({"size": 1, "device": device})
+            agent_cfg.get("state_preprocessor_kwargs", {}).update(
+                {"size": observation_spaces[agent_id], "device": device}
+            )
+            agent_cfg.get("value_preprocessor_kwargs", {}).update({"size": 1, "device": device})
+            if agent_cfg.get("exploration", {}).get("noise", None):
+                agent_cfg["exploration"]["noise"] = agent_cfg["exploration"]["noise"](
+                    **agent_cfg["exploration"].get("noise_kwargs", {})
+                )
+            if agent_cfg.get("smooth_regularization_noise", None):
+                agent_cfg["smooth_regularization_noise"] = agent_cfg["smooth_regularization_noise"](
+                    **agent_cfg.get("smooth_regularization_noise_kwargs", {})
+                )
             agent_kwargs = {
                 "models": models[agent_id],
                 "memory": memories[agent_id],

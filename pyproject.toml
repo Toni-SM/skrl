@@ -1,6 +1,6 @@
 [project]
 name = "skrl"
-version = "1.4.0"
+version = "1.4.1"
 description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
 readme = "README.md"
 requires-python = ">=3.6"

@@ -92,11 +92,12 @@ API
 
 .. py:data:: skrl.config.jax.device
     :type: jax.Device
-    :value: "cuda:${LOCAL_RANK}" | "cpu"
+    :value: "cuda:${JAX_LOCAL_RANK}" | "cpu"
 
     Default device.
 
-    The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise.
+    The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+    However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
 
 .. py:data:: skrl.config.jax.backend
     :type: str

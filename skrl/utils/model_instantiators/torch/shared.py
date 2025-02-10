@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import Model  # noqa
-from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
+from skrl.models.torch import CategoricalMixin, MultiCategoricalMixin, DeterministicMixin, GaussianMixin, MultivariateGaussianMixin  # noqa
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
@@ -52,6 +52,8 @@ def shared_model(
     def get_init(class_name, parameter, role):
         if class_name.lower() == "categoricalmixin":
             return f'CategoricalMixin.__init__(self, unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)}, role="{role}")'
+        elif class_name.lower() == "multicategoricalmixin":
+            return f'MultiCategoricalMixin.__init__(self, unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)}, reduction="{parameter.get("reduction", "sum")}", role="{role}")'
         elif class_name.lower() == "deterministicmixin":
             return (
                 f'DeterministicMixin.__init__(self, clip_actions={parameter.get("clip_actions", False)}, role="{role}")'
@@ -80,6 +82,8 @@ def shared_model(
     def get_return(class_name):
         if class_name.lower() == "categoricalmixin":
             return r"output, {}"
+        elif class_name.lower() == "multicategoricalmixin":
+            return r"output, {}"
         elif class_name.lower() == "deterministicmixin":
             return r"output, {}"
         elif class_name.lower() == "gaussianmixin":
@@ -91,6 +95,8 @@ def shared_model(
     def get_extra(class_name, parameter, role, model):
         if class_name.lower() == "categoricalmixin":
             return ""
+        elif class_name.lower() == "multicategoricalmixin":
+            return ""  # No extra initialization required for MultiCategoricalMixin
         elif class_name.lower() == "deterministicmixin":
             return ""
         elif class_name.lower() == "gaussianmixin":

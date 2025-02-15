@@ -66,20 +66,20 @@ class SequentialTrainer(Trainer):
 
         .. note::
 
-            Non-simultaneous agents will be trained using the base class methods
+            Non-simultaneous agents will be trained using the base class method
             :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_train`.
 
         This method executes the following steps in loop (:guilabel:`timesteps` times).
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        * Agent's pre-interaction
-        * Compute actions
-        * Interact with the environment(s)
-        * Render scene (if :guilabel:`headless` is false)
-        * Record environment transition(s) and agent data
-        * Log environment info (if :guilabel:`environment_info` is in ``info``)
-        * Agent's post-interaction
-        * Reset environment(s)
+        - Agent's pre-interaction
+        - Compute actions
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s) and agent data
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction
+        - Reset environment(s)
         """
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
@@ -165,14 +165,24 @@ class SequentialTrainer(Trainer):
                     states = next_states
 
     def eval(self) -> None:
-        """Evaluate the agents sequentially
+        """Evaluate simultaneous agent (single-agent or multi-agent) sequentially.
 
-        This method executes the following steps in loop:
+        .. note::
 
-        - Compute actions (sequentially)
-        - Interact with the environments
-        - Render scene
-        - Reset environments
+            Non-simultaneous agents will be evaluated using the base class method
+            :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_eval`.
+
+        This method executes the following steps in loop (:guilabel:`timesteps` times).
+        If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
+
+        - Agent's pre-interaction
+        - Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s)
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction (TensorBoard data writing and checkpoint saving)
+        - Reset environment(s)
         """
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:

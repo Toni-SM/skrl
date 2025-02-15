@@ -36,6 +36,7 @@ def fn_processor(process_index, *args):
     trainer_cfg = args[4]
 
     agent = None
+    _observations = None
     _states = None
     _actions = None
 
@@ -64,10 +65,11 @@ def fn_processor(process_index, *args):
 
         # get agent's actions
         elif task == "act":
+            _observations = queue.get()[scope[0] : scope[1]]
             _states = queue.get()[scope[0] : scope[1]]
             with torch.no_grad():
                 stochastic_evaluation = msg["stochastic_evaluation"]
-                _outputs = agent.act(_states, timestep=msg["timestep"], timesteps=msg["timesteps"])
+                _outputs = agent.act(_observations, _states, timestep=msg["timestep"], timesteps=msg["timesteps"])
                 _actions = _outputs[0] if stochastic_evaluation else _outputs[-1].get("mean_actions", _outputs[0])
                 if not _actions.is_cuda:
                     _actions.share_memory_()
@@ -78,9 +80,11 @@ def fn_processor(process_index, *args):
         elif task == "record_transition":
             with torch.no_grad():
                 agent.record_transition(
+                    observations=_observations,
                     states=_states,
                     actions=_actions,
                     rewards=queue.get()[scope[0] : scope[1]],
+                    next_observations=queue.get()[scope[0] : scope[1]],
                     next_states=queue.get()[scope[0] : scope[1]],
                     terminated=queue.get()[scope[0] : scope[1]],
                     truncated=queue.get()[scope[0] : scope[1]],
@@ -99,9 +103,11 @@ def fn_processor(process_index, *args):
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
                 agent.record_transition(
+                    observations=_observations,
                     states=_states,
                     actions=_actions,
                     rewards=queue.get()[scope[0] : scope[1]],
+                    next_observations=queue.get()[scope[0] : scope[1]],
                     next_states=queue.get()[scope[0] : scope[1]],
                     terminated=queue.get()[scope[0] : scope[1]],
                     truncated=queue.get()[scope[0] : scope[1]],
@@ -121,19 +127,21 @@ class ParallelTrainer(Trainer):
         agents_scope: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Parallel trainer
+        """Parallel trainer for training simultaneous agents in parallel using multiple processes.
 
-        Train agents in parallel using multiple processes
+        .. note::
 
-        :param env: Environment to train on
-        :type env: skrl.envs.wrappers.torch.Wrapper
-        :param agents: Agents to train
-        :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
-        :param cfg: Configuration dictionary (default: ``None``).
-                    See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
-        :type cfg: dict, optional
+            Non-simultaneous agents will be trained/evaluated using the base class methods
+            :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_train` and
+            :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_eval` respectively.
+
+        Args:
+            env: Environment to train on.
+            agents: Agent or parallel agents to train.
+            agents_scope: Optional list specifying number of environments for each agent.
+                If not provided, environments will be divided equally among parallel agents.
+            cfg: Trainer configuration dictionary.
+                See :data:`~skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG` for default values.
         """
         _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -143,35 +151,34 @@ class ParallelTrainer(Trainer):
         mp.set_start_method(method="spawn", force=True)
 
     def train(self) -> None:
-        """Train the agents in parallel
+        """Train simultaneous agent (single-agent or multi-agent) in parallel.
 
-        This method executes the following steps in loop:
+        .. note::
 
-        - Pre-interaction (parallel)
-        - Compute actions (in parallel)
-        - Interact with the environments
-        - Render scene
-        - Record transitions (in parallel)
-        - Post-interaction (in parallel)
-        - Reset environments
+            Non-simultaneous agents will be trained using the base class method
+            :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_train`.
+
+        This method executes the following steps in loop (:guilabel:`timesteps` times).
+        If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
+
+        - Agent's pre-interaction
+        - Compute actions
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s) and agent data
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction
+        - Reset environment(s)
         """
-        # set running mode
-        if self.num_simultaneous_agents > 1:
-            for agent in self.agents:
-                agent.set_running_mode("train")
-        else:
-            self.agents.set_running_mode("train")
-
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_train()
-            # multi-agent
-            else:
-                self.multi_agent_train()
+            self.non_simultaneous_train()
             return
+
+        # set running mode
+        for agent in self.agents:
+            agent.set_running_mode("train")
 
         # initialize multiprocessing variables
         queues = []
@@ -211,9 +218,12 @@ class ParallelTrainer(Trainer):
             queue.put(agent)
         barrier.wait()
 
-        # reset env
-        states, infos = self.env.reset()
-        if not states.is_cuda:
+        # reset environments
+        observations, infos = self.env.reset()
+        states = self.env.state()
+        if not observations.is_cuda:
+            observations.share_memory_()
+        if states is not None and not states.is_cuda:
             states.share_memory_()
 
         for timestep in tqdm.tqdm(
@@ -225,17 +235,19 @@ class ParallelTrainer(Trainer):
                 pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.timesteps})
             barrier.wait()
 
-            # compute actions
             with torch.no_grad():
+                # compute actions
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "act", "timestep": timestep, "timesteps": self.timesteps})
+                    queue.put(observations)
                     queue.put(states)
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
 
                 # render scene
                 if not self.headless:
@@ -244,7 +256,9 @@ class ParallelTrainer(Trainer):
                 # record the environments' transitions
                 if not rewards.is_cuda:
                     rewards.share_memory_()
-                if not next_states.is_cuda:
+                if not next_observations.is_cuda:
+                    next_observations.share_memory_()
+                if next_states is not None and not next_states.is_cuda:
                     next_states.share_memory_()
                 if not terminated.is_cuda:
                     terminated.share_memory_()
@@ -254,6 +268,7 @@ class ParallelTrainer(Trainer):
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
                     queue.put(rewards)
+                    queue.put(next_observations)
                     queue.put(next_states)
                     queue.put(terminated)
                     queue.put(truncated)
@@ -266,13 +281,21 @@ class ParallelTrainer(Trainer):
             barrier.wait()
 
             # reset environments
-            with torch.no_grad():
-                if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
-                    if not states.is_cuda:
-                        states.share_memory_()
-                else:
-                    states.copy_(next_states)
+            if self.env.num_envs > 1:
+                observations = next_observations
+                states = next_states
+            else:
+                with torch.no_grad():
+                    if terminated.any() or truncated.any():
+                        observations, infos = self.env.reset()
+                        states = self.env.state()
+                        if not observations.is_cuda:
+                            observations.share_memory_()
+                        if states is not None and not states.is_cuda:
+                            states.share_memory_()
+                    else:
+                        observations = next_observations
+                        states = next_states
 
         # terminate processes
         for pipe in producer_pipes:
@@ -283,32 +306,34 @@ class ParallelTrainer(Trainer):
             process.join()
 
     def eval(self) -> None:
-        """Evaluate the agents sequentially
+        """Evaluate simultaneous agent (single-agent or multi-agent) in parallel.
 
-        This method executes the following steps in loop:
+        .. note::
 
-        - Compute actions (in parallel)
-        - Interact with the environments
-        - Render scene
-        - Reset environments
+            Non-simultaneous agents will be evaluated using the base class method
+            :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_eval`.
+
+        This method executes the following steps in loop (:guilabel:`timesteps` times).
+        If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
+
+        - Agent's pre-interaction
+        - Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s)
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction (TensorBoard data writing and checkpoint saving)
+        - Reset environment(s)
         """
-        # set running mode
-        if self.num_simultaneous_agents > 1:
-            for agent in self.agents:
-                agent.set_running_mode("eval")
-        else:
-            self.agents.set_running_mode("eval")
-
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_eval()
-            # multi-agent
-            else:
-                self.multi_agent_eval()
+            self.non_simultaneous_eval()
             return
+
+        # set running mode
+        for agent in self.agents:
+            agent.set_running_mode("eval")
 
         # initialize multiprocessing variables
         queues = []
@@ -349,9 +374,12 @@ class ParallelTrainer(Trainer):
             queue.put(agent)
         barrier.wait()
 
-        # reset env
-        states, infos = self.env.reset()
-        if not states.is_cuda:
+        # reset environments
+        observations, infos = self.env.reset()
+        states = self.env.state()
+        if not observations.is_cuda:
+            observations.share_memory_()
+        if states is not None and not states.is_cuda:
             states.share_memory_()
 
         for timestep in tqdm.tqdm(
@@ -374,13 +402,15 @@ class ParallelTrainer(Trainer):
                             "stochastic_evaluation": self.stochastic_evaluation,
                         }
                     )
+                    queue.put(observations)
                     queue.put(states)
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
 
                 # render scene
                 if not self.headless:
@@ -389,7 +419,9 @@ class ParallelTrainer(Trainer):
                 # write data to TensorBoard
                 if not rewards.is_cuda:
                     rewards.share_memory_()
-                if not next_states.is_cuda:
+                if not next_observations.is_cuda:
+                    next_observations.share_memory_()
+                if next_states is not None and not next_states.is_cuda:
                     next_states.share_memory_()
                 if not terminated.is_cuda:
                     terminated.share_memory_()
@@ -406,6 +438,7 @@ class ParallelTrainer(Trainer):
                     }
                 )
                 queue.put(rewards)
+                queue.put(next_observations)
                 queue.put(next_states)
                 queue.put(terminated)
                 queue.put(truncated)
@@ -413,13 +446,21 @@ class ParallelTrainer(Trainer):
             barrier.wait()
 
             # reset environments
-            with torch.no_grad():
-                if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
-                    if not states.is_cuda:
-                        states.share_memory_()
-                else:
-                    states.copy_(next_states)
+            if self.env.num_envs > 1:
+                observations = next_observations
+                states = next_states
+            else:
+                with torch.no_grad():
+                    if terminated.any() or truncated.any():
+                        observations, infos = self.env.reset()
+                        states = self.env.state()
+                        if not observations.is_cuda:
+                            observations.share_memory_()
+                        if states is not None and not states.is_cuda:
+                            states.share_memory_()
+                    else:
+                        observations = next_observations
+                        states = next_states
 
         # terminate processes
         for pipe in producer_pipes:

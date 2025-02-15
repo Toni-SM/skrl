@@ -193,14 +193,14 @@ class Trainer(ABC):
         This method executes the following steps in loop (:guilabel:`timesteps` times).
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        * Agent's pre-interaction
-        * Compute actions
-        * Interact with the environment(s)
-        * Render scene (if :guilabel:`headless` is false)
-        * Record environment transition(s) and agent data
-        * Log environment info (if :guilabel:`environment_info` is in ``info``)
-        * Agent's post-interaction
-        * Reset environment(s)
+        - Agent's pre-interaction
+        - Compute actions
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s) and agent data
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction
+        - Reset environment(s)
 
         Raises:
             AssertionError: If there are simultaneous agents.
@@ -276,14 +276,14 @@ class Trainer(ABC):
         This method executes the following steps in loop (:guilabel:`timesteps` times).
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        * Agent's pre-interaction
-        * Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
-        * Interact with the environments
-        * Render scene (if :guilabel:`headless` is false)
-        * Record environment transition(s)
-        * Log environment info (if :guilabel:`environment_info` is in ``info``)
-        * Agent's post-interaction (TensorBoard data writing and checkpoint saving)
-        * Reset environment(s)
+        - Agent's pre-interaction
+        - Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
+        - Interact with the environments
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s)
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction (TensorBoard data writing and checkpoint saving)
+        - Reset environment(s)
 
         Raises:
             AssertionError: If there are simultaneous agents.

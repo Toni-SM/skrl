@@ -13,17 +13,26 @@ from skrl.envs.wrappers.torch import Wrapper
 
 
 def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
-    """Generate a list of equally spaced scopes for multiple simultaneous agents.
+    """Generate equally spaced environment scopes for simultaneous agents.
 
-    This function divides the number of environments equally among the agents.
+    Divides the total number of environments equally among the simultaneous agents.
     If the division is not exact, the remaining environments are assigned to the last agent.
 
-    :param num_envs: Number of environments.
-    :param num_simultaneous_agents: Number of simultaneous agents to divide environments between.
+    Args:
+        num_envs: Number of environments.
+        num_simultaneous_agents: Number of simultaneous agents to divide environments between.
 
-    :raises ValueError: If the number of simultaneous agents is greater than the number of environments.
+    Returns:
+        List of environment counts per agent.
 
-    :return: List of environment counts per agent.
+    Raises:
+        ValueError: If ``num_simultaneous_agents`` is greater than ``num_envs``.
+
+    Example:
+
+        >>> scopes = generate_equally_spaced_scopes(10, 3)
+        >>> scopes
+        [3, 3, 4]
     """
     scopes = [int(num_envs / num_simultaneous_agents)] * num_simultaneous_agents
     if sum(scopes):
@@ -43,12 +52,14 @@ class Trainer(ABC):
         agents_scope: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Base class for trainers.
+        """Base trainer class for implementing training/evaluation logic.
 
-        :param env: Environment to train/evaluate on.
-        :param agents: Agent(s) to train/evaluate.
-        :param agents_scope: Number of environments for each agent to train/evaluate on.
-        :param cfg: Configuration dictionary.
+        Args:
+            env: Environment to train/evaluate on.
+            agents: Agent or simultaneous agents to train/evaluate.
+            agents_scope: Optional list specifying number of environments for simultaneous agents.
+                If not provided, environments will be divided equally among simultaneous agents.
+            cfg: Trainer configuration dictionary.
         """
         self.cfg = cfg if cfg is not None else {}
         self.env = env
@@ -86,7 +97,8 @@ class Trainer(ABC):
     def __str__(self) -> str:
         """Generate a string representation of the trainer.
 
-        :return: Representation of the trainer as string.
+        Returns:
+            String representation of the trainer.
         """
         string = f"Trainer: {self}"
         string += f"\n  |-- Number of parallelizable environments: {self.env.num_envs}"
@@ -104,7 +116,8 @@ class Trainer(ABC):
     def _setup_agents(self) -> None:
         """Setup agents for training/evaluation.
 
-        :raises ValueError: Invalid setup.
+        Raises:
+            ValueError: Invalid setup.
         """
         # validate agents and their scopes
         if type(self.agents) in [tuple, list]:
@@ -146,17 +159,23 @@ class Trainer(ABC):
 
     @abstractmethod
     def train(self) -> None:
-        """Train the agents.
+        """Train the agent(s).
 
-        :raises NotImplementedError: This method should be implemented by the subclass.
+        This is an abstract method that must be implemented by subclasses.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
         """
         raise NotImplementedError("This method should be implemented by the subclass")
 
     @abstractmethod
     def eval(self) -> None:
-        """Evaluate the agents.
+        """Evaluate the agent(s).
 
-        :raises NotImplementedError: This method should be implemented by the subclass.
+        This is an abstract method that must be implemented by subclasses.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
         """
         raise NotImplementedError("This method should be implemented by the subclass")
 
@@ -188,7 +207,8 @@ class Trainer(ABC):
             * - Reset environment(s)
               - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.reset`
 
-        :raises AssertionError: If there are simultaneous agents.
+        Raises:
+            AssertionError: If there are simultaneous agents.
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 
@@ -280,7 +300,8 @@ class Trainer(ABC):
             * - Reset environment(s)
               - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.reset`
 
-        :raises AssertionError: If there are simultaneous agents.
+        Raises:
+            AssertionError: If there are simultaneous agents.
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 

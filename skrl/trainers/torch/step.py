@@ -33,19 +33,14 @@ class StepTrainer(Trainer):
         agents_scope: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Step-by-step trainer
+        """Trainer for training simultaneous and non-simultaneous agents step by step.
 
-        Train agents by controlling the training/evaluation loop step by step
-
-        :param env: Environment to train on
-        :type env: skrl.envs.wrappers.torch.Wrapper
-        :param agents: Agents to train
-        :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
-        :param cfg: Configuration dictionary (default: ``None``).
-                    See STEP_TRAINER_DEFAULT_CONFIG for default values
-        :type cfg: dict, optional
+        Args:
+            env: Environment to train on
+            agents: Agents to train
+            agents_scope: Number of environments for each agent to train on (default: ``None``)
+            cfg: Configuration dictionary (default: ``None``).
+                See :data:`~skrl.trainers.torch.step.STEP_TRAINER_DEFAULT_CONFIG` for default values
         """
         _cfg = copy.deepcopy(STEP_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -62,32 +57,32 @@ class StepTrainer(Trainer):
         self._timestep = 0
         self._progress = None
 
+        self.observations = None
         self.states = None
 
     def train(
         self, timestep: Optional[int] = None, timesteps: Optional[int] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Execute a training iteration
+        """Execute one training loop iteration.
 
-        This method executes the following steps once:
+        This method executes the following steps once each call.
+        If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        - Pre-interaction (sequentially if num_simultaneous_agents > 1)
-        - Compute actions (sequentially if num_simultaneous_agents > 1)
-        - Interact with the environments
-        - Render scene
-        - Record transitions (sequentially if num_simultaneous_agents > 1)
-        - Post-interaction (sequentially if num_simultaneous_agents > 1)
-        - Reset environments
+        - Agent's pre-interaction
+        - Compute actions
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s) and agent data
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction
+        - Reset environment(s)
 
-        :param timestep: Current timestep (default: ``None``).
-                         If None, the current timestep will be carried by an internal variable
-        :type timestep: int, optional
-        :param timesteps: Total number of timesteps (default: ``None``).
-                          If None, the total number of timesteps is obtained from the trainer's config
-        :type timesteps: int, optional
+        Args:
+            timestep: Current timestep. If None, the current timestep will be carried by an internal variable.
+            timesteps: Total number of timesteps. If None, the number of timesteps is obtained from the trainer's config.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        Returns:
+            Observation, reward, terminated, truncated, info
         """
         if timestep is None:
             self._timestep += 1
@@ -98,7 +93,7 @@ class StepTrainer(Trainer):
             self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
-        # hack to simplify code
+        # hack to simplify non-simultaneous agents handling
         if self.num_simultaneous_agents == 1:
             self.agents = [self.agents]
 
@@ -106,9 +101,10 @@ class StepTrainer(Trainer):
         for agent in self.agents:
             agent.set_running_mode("train")
 
-        # reset env
-        if self.states is None:
-            self.states, infos = self.env.reset()
+        # reset environments
+        if self.observations is None:
+            self.observations, infos = self.env.reset()
+            self.states = self.env.state()
 
         # pre-interaction
         for agent in self.agents:
@@ -118,13 +114,19 @@ class StepTrainer(Trainer):
             # compute actions
             actions = torch.vstack(
                 [
-                    agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)[0]
+                    agent.act(
+                        self.observations[scope[0] : scope[1]],
+                        self.states[scope[0] : scope[1]],
+                        timestep=timestep,
+                        timesteps=timesteps,
+                    )[0]
                     for agent, scope in zip(self.agents, self.agents_scope)
                 ]
             )
 
             # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+            next_states = self.env.state()
 
             # render scene
             if not self.headless:
@@ -133,9 +135,11 @@ class StepTrainer(Trainer):
             # record the environments' transitions
             for agent, scope in zip(self.agents, self.agents_scope):
                 agent.record_transition(
+                    observations=self.observations[scope[0] : scope[1]],
                     states=self.states[scope[0] : scope[1]],
                     actions=actions[scope[0] : scope[1]],
                     rewards=rewards[scope[0] : scope[1]],
+                    next_observations=next_observations[scope[0] : scope[1]],
                     next_states=next_states[scope[0] : scope[1]],
                     terminated=terminated[scope[0] : scope[1]],
                     truncated=truncated[scope[0] : scope[1]],
@@ -156,35 +160,43 @@ class StepTrainer(Trainer):
             agent.post_interaction(timestep=timestep, timesteps=timesteps)
 
         # reset environments
-        if terminated.any() or truncated.any():
-            with torch.no_grad():
-                self.states, infos = self.env.reset()
-        else:
+        if self.env.num_envs > 1:
+            self.observations = next_observations
             self.states = next_states
+        else:
+            if terminated.any() or truncated.any():
+                with torch.no_grad():
+                    self.observations, infos = self.env.reset()
+                    self.states = self.env.state()
+            else:
+                self.observations = next_observations
+                self.states = next_states
 
-        return next_states, rewards, terminated, truncated, infos
+        return next_observations, rewards, terminated, truncated, infos
 
     def eval(
         self, timestep: Optional[int] = None, timesteps: Optional[int] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Evaluate the agents sequentially
+        """Execute one evaluation loop iteration.
 
-        This method executes the following steps in loop:
+        This method executes the following steps once each call.
+        If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        - Compute actions (sequentially if num_simultaneous_agents > 1)
-        - Interact with the environments
-        - Render scene
-        - Reset environments
+        - Agent's pre-interaction
+        - Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
+        - Interact with the environment(s)
+        - Render scene (if :guilabel:`headless` is false)
+        - Record environment transition(s)
+        - Log environment info (if :guilabel:`environment_info` is in ``info``)
+        - Agent's post-interaction (TensorBoard data writing and checkpoint saving)
+        - Reset environment(s)
 
-        :param timestep: Current timestep (default: ``None``).
-                         If None, the current timestep will be carried by an internal variable
-        :type timestep: int, optional
-        :param timesteps: Total number of timesteps (default: ``None``).
-                          If None, the total number of timesteps is obtained from the trainer's config
-        :type timesteps: int, optional
+        Args:
+            timestep: Current timestep. If None, the current timestep will be carried by an internal variable.
+            timesteps: Total number of timesteps. If None, the number of timesteps is obtained from the trainer's config.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        Returns:
+            Observation, reward, terminated, truncated, info
         """
         if timestep is None:
             self._timestep += 1
@@ -204,8 +216,9 @@ class StepTrainer(Trainer):
             agent.set_running_mode("eval")
 
         # reset env
-        if self.states is None:
-            self.states, infos = self.env.reset()
+        if self.observations is None:
+            self.observations, infos = self.env.reset()
+            self.states = self.env.state()
 
         # pre-interaction
         for agent in self.agents:
@@ -214,7 +227,12 @@ class StepTrainer(Trainer):
         with torch.no_grad():
             # compute actions
             outputs = [
-                agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)
+                agent.act(
+                    self.observations[scope[0] : scope[1]],
+                    self.states[scope[0] : scope[1]],
+                    timestep=timestep,
+                    timesteps=timesteps,
+                )
                 for agent, scope in zip(self.agents, self.agents_scope)
             ]
             actions = torch.vstack(
@@ -225,7 +243,8 @@ class StepTrainer(Trainer):
             )
 
             # step the environments
-            next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+            next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+            next_states = self.env.state()
 
             # render scene
             if not self.headless:
@@ -234,9 +253,11 @@ class StepTrainer(Trainer):
             # write data to TensorBoard
             for agent, scope in zip(self.agents, self.agents_scope):
                 agent.record_transition(
+                    observations=self.observations[scope[0] : scope[1]],
                     states=self.states[scope[0] : scope[1]],
                     actions=actions[scope[0] : scope[1]],
                     rewards=rewards[scope[0] : scope[1]],
+                    next_observations=next_observations[scope[0] : scope[1]],
                     next_states=next_states[scope[0] : scope[1]],
                     terminated=terminated[scope[0] : scope[1]],
                     truncated=truncated[scope[0] : scope[1]],
@@ -252,15 +273,21 @@ class StepTrainer(Trainer):
                         for agent in self.agents:
                             agent.track_data(f"Info / {k}", v.item())
 
-        # post-interaction
+        # post-interaction (base class, TensorBoard data writing and checkpoint saving)
         for agent in self.agents:
             super(type(agent), agent).post_interaction(timestep=timestep, timesteps=timesteps)
 
         # reset environments
-        if terminated.any() or truncated.any():
-            with torch.no_grad():
-                self.states, infos = self.env.reset()
-        else:
+        if self.env.num_envs > 1:
+            self.observations = next_observations
             self.states = next_states
+        else:
+            if terminated.any() or truncated.any():
+                with torch.no_grad():
+                    self.observations, infos = self.env.reset()
+                    self.states = self.env.state()
+            else:
+                self.observations = next_observations
+                self.states = next_states
 
-        return next_states, rewards, terminated, truncated, infos
+        return next_observations, rewards, terminated, truncated, infos

@@ -54,6 +54,10 @@ class Trainer(ABC):
     ) -> None:
         """Base trainer class for implementing training/evaluation logic.
 
+        .. warning::
+
+            This class is abstract and must be subclassed to implement training/evaluation logic.
+
         Args:
             env: Environment to train/evaluate on.
             agents: Agent or simultaneous agents to train/evaluate.
@@ -161,7 +165,9 @@ class Trainer(ABC):
     def train(self) -> None:
         """Train the agent(s).
 
-        This is an abstract method that must be implemented by subclasses.
+        .. warning::
+
+            This method is abstract and must be implemented by subclasses.
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
@@ -172,7 +178,9 @@ class Trainer(ABC):
     def eval(self) -> None:
         """Evaluate the agent(s).
 
-        This is an abstract method that must be implemented by subclasses.
+        .. warning::
+
+            This method is abstract and must be implemented by subclasses.
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
@@ -185,34 +193,24 @@ class Trainer(ABC):
         This method executes the following steps in loop (:guilabel:`timesteps` times).
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        .. list-table:: Steps
-            :header-rows: 1
-
-            * - Step
-              - Call
-            * - Pre-interaction
-              - Agent: :func:`~skrl.agents.torch.base.Agent.pre_interaction`
-            * - Compute actions
-              - Agent: :func:`~skrl.agents.torch.base.Agent.act`
-            * - Interact with the environment(s)
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.step`
-            * - Render scene (if :guilabel:`headless` is false)
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.render`
-            * - Record transitions
-              - Agent: :func:`~skrl.agents.torch.base.Agent.record_transition`
-            * - Log environment info (if :guilabel:`environment_info` is in ``info``)
-              - Agent: :func:`~skrl.agents.torch.base.Agent.track_data`
-            * - Post-interaction
-              - Agent: :func:`~skrl.agents.torch.base.Agent.post_interaction`
-            * - Reset environment(s)
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.reset`
+        * Agent's pre-interaction
+        * Compute actions
+        * Interact with the environment(s)
+        * Render scene (if :guilabel:`headless` is false)
+        * Record environment transition(s) and agent data
+        * Log environment info (if :guilabel:`environment_info` is in ``info``)
+        * Agent's post-interaction
+        * Reset environment(s)
 
         Raises:
             AssertionError: If there are simultaneous agents.
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 
-        # reset env
+        # set running mode
+        self.agents.set_running_mode("train")
+
+        # reset environments
         observations, infos = self.env.reset()
         states = self.env.state()
 
@@ -278,34 +276,24 @@ class Trainer(ABC):
         This method executes the following steps in loop (:guilabel:`timesteps` times).
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
-        .. list-table:: Steps
-            :header-rows: 1
-
-            * - Step
-              - Call
-            * - Pre-interaction
-              - Agent: :func:`~skrl.agents.torch.base.Agent.pre_interaction`
-            * - Compute (stochastic, if :guilabel:`stochastic_evaluation` is true) actions
-              - Agent: :func:`~skrl.agents.torch.base.Agent.act`
-            * - Interact with the environments
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.step`
-            * - Render scene (if :guilabel:`headless` is false)
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.render`
-            * - Record transitions
-              - Agent: :func:`~skrl.agents.torch.base.Agent.record_transition`
-            * - Log environment info (if :guilabel:`environment_info` is in ``info``)
-              - Agent: :func:`~skrl.agents.torch.base.Agent.track_data`
-            * - Post-interaction (TensorBoard data writing and checkpoint saving)
-              - Agent (base): :func:`~skrl.agents.torch.base.Agent.post_interaction`
-            * - Reset environment(s)
-              - Environment: :func:`~skrl.envs.wrappers.torch.Wrapper.reset`
+        * Agent's pre-interaction
+        * Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
+        * Interact with the environments
+        * Render scene (if :guilabel:`headless` is false)
+        * Record environment transition(s)
+        * Log environment info (if :guilabel:`environment_info` is in ``info``)
+        * Agent's post-interaction (TensorBoard data writing and checkpoint saving)
+        * Reset environment(s)
 
         Raises:
             AssertionError: If there are simultaneous agents.
         """
         assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
 
-        # reset env
+        # set running mode
+        self.agents.set_running_mode("eval")
+
+        # reset environments
         observations, infos = self.env.reset()
         states = self.env.state()
 
@@ -350,7 +338,7 @@ class Trainer(ABC):
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
                             self.agents.track_data(f"Info / {k}", v.item())
 
-            # post-interaction
+            # post-interaction (base class, TensorBoard data writing and checkpoint saving)
             super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments

@@ -7,7 +7,6 @@ Trainers
     Sequential <trainers/sequential>
     Parallel <trainers/parallel>
     Step <trainers/step>
-    Manual training <trainers/manual>
 
 Trainers are responsible for orchestrating and managing the training/evaluation of agents and their interactions with the environment.
 
@@ -28,9 +27,6 @@ Trainers are responsible for orchestrating and managing the training/evaluation 
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - :doc:`Step trainer <trainers/step>`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-    * - :doc:`Manual training <trainers/manual>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 

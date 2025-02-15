@@ -42,10 +42,10 @@ class SequentialTrainer(Trainer):
             :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_eval` respectively.
 
         Args:
-            env: Environment to train on.
-            agents: Agent or sequential agents to train.
-            agents_scope: Optional list specifying number of environments for each agent.
-                If not provided, environments will be divided equally among sequential agents.
+            env: Environment to train/evaluate on.
+            agents: Agent or simultaneous agents to train/evaluate.
+            agents_scope: Optional list specifying number of environments for simultaneous agents.
+                If not provided, environments will be divided equally among simultaneous agents.
             cfg: Trainer configuration dictionary.
                 See :data:`~skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG` for default values.
         """
@@ -226,6 +226,7 @@ class SequentialTrainer(Trainer):
                 # step the environments
                 next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                 next_states = self.env.state()
+
                 # render scene
                 if not self.headless:
                     self.env.render()

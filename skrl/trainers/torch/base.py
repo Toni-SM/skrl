@@ -278,7 +278,7 @@ class Trainer(ABC):
 
         - Agent's pre-interaction
         - Compute actions (stochastic actions if :guilabel:`stochastic_evaluation` is true)
-        - Interact with the environments
+        - Interact with the environment(s)
         - Render scene (if :guilabel:`headless` is false)
         - Record environment transition(s)
         - Log environment info (if :guilabel:`environment_info` is in ``info``)

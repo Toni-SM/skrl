@@ -136,10 +136,10 @@ class ParallelTrainer(Trainer):
             :func:`~skrl.trainers.torch.base.Trainer.non_simultaneous_eval` respectively.
 
         Args:
-            env: Environment to train on.
-            agents: Agent or parallel agents to train.
-            agents_scope: Optional list specifying number of environments for each agent.
-                If not provided, environments will be divided equally among parallel agents.
+            env: Environment to train/evaluate on.
+            agents: Agent or simultaneous agents to train/evaluate.
+            agents_scope: Optional list specifying number of environments for simultaneous agents.
+                If not provided, environments will be divided equally among simultaneous agents.
             cfg: Trainer configuration dictionary.
                 See :data:`~skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG` for default values.
         """
@@ -285,17 +285,17 @@ class ParallelTrainer(Trainer):
                 observations = next_observations
                 states = next_states
             else:
-                with torch.no_grad():
-                    if terminated.any() or truncated.any():
+                if terminated.any() or truncated.any():
+                    with torch.no_grad():
                         observations, infos = self.env.reset()
                         states = self.env.state()
                         if not observations.is_cuda:
                             observations.share_memory_()
                         if states is not None and not states.is_cuda:
                             states.share_memory_()
-                    else:
-                        observations = next_observations
-                        states = next_states
+                else:
+                    observations = next_observations
+                    states = next_states
 
         # terminate processes
         for pipe in producer_pipes:
@@ -450,17 +450,17 @@ class ParallelTrainer(Trainer):
                 observations = next_observations
                 states = next_states
             else:
-                with torch.no_grad():
-                    if terminated.any() or truncated.any():
+                if terminated.any() or truncated.any():
+                    with torch.no_grad():
                         observations, infos = self.env.reset()
                         states = self.env.state()
                         if not observations.is_cuda:
                             observations.share_memory_()
                         if states is not None and not states.is_cuda:
                             states.share_memory_()
-                    else:
-                        observations = next_observations
-                        states = next_states
+                else:
+                    observations = next_observations
+                    states = next_states
 
         # terminate processes
         for pipe in producer_pipes:

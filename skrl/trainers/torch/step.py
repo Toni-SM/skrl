@@ -36,11 +36,12 @@ class StepTrainer(Trainer):
         """Trainer for training simultaneous and non-simultaneous agents step by step.
 
         Args:
-            env: Environment to train on
-            agents: Agents to train
-            agents_scope: Number of environments for each agent to train on (default: ``None``)
-            cfg: Configuration dictionary (default: ``None``).
-                See :data:`~skrl.trainers.torch.step.STEP_TRAINER_DEFAULT_CONFIG` for default values
+            env: Environment to train/evaluate on.
+            agents: Agent or simultaneous agents to train/evaluate.
+            agents_scope: Optional list specifying number of environments for simultaneous agents.
+                If not provided, environments will be divided equally among simultaneous agents.
+            cfg: Trainer configuration dictionary.
+                See :data:`~skrl.trainers.torch.step.STEP_TRAINER_DEFAULT_CONFIG` for default values.
         """
         _cfg = copy.deepcopy(STEP_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -65,7 +66,7 @@ class StepTrainer(Trainer):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute one training loop iteration.
 
-        This method executes the following steps once each call.
+        This method executes the following steps on each call.
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
         - Agent's pre-interaction
@@ -179,7 +180,7 @@ class StepTrainer(Trainer):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute one evaluation loop iteration.
 
-        This method executes the following steps once each call.
+        This method executes the following steps on each call.
         If :guilabel:`disable_progressbar` is false, a progress bar will be shown.
 
         - Agent's pre-interaction

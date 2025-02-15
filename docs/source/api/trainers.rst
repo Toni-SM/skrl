@@ -73,14 +73,12 @@ Basic inheritance usage
 API (PyTorch)
 ^^^^^^^^^^^^^
 
+.. autofunction:: skrl.trainers.torch.base.generate_equally_spaced_scopes
+
 .. autoclass:: skrl.trainers.torch.base.Trainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _setup_agents
-    :members:
-
-    .. automethod:: __str__
 
 .. raw:: html
 
@@ -88,6 +86,8 @@ API (PyTorch)
 
 API (JAX)
 ^^^^^^^^^
+
+.. autofunction:: skrl.trainers.torch.base.generate_equally_spaced_scopes
 
 .. autoclass:: skrl.trainers.jax.base.Trainer
     :undoc-members:

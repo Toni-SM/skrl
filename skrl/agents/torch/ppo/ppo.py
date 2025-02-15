@@ -30,8 +30,10 @@ PPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
     "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
     "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
 
@@ -74,6 +76,7 @@ class PPO(Agent):
         self,
         models: Mapping[str, Model],
         memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -89,10 +92,12 @@ class PPO(Agent):
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: ``None``)
+        :param observation_space: Observation space or shape (default: ``None``)
         :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
         :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
+        :param state_space: State space or shape (default: ``None``)
+        :type state_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -108,6 +113,7 @@ class PPO(Agent):
             memory=memory,
             observation_space=observation_space,
             action_space=action_space,
+            state_space=state_space,
             device=device,
             cfg=_cfg,
         )
@@ -147,6 +153,7 @@ class PPO(Agent):
         self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
+        self._observation_preprocessor = self.cfg["observation_preprocessor"]
         self._state_preprocessor = self.cfg["state_preprocessor"]
         self._value_preprocessor = self.cfg["value_preprocessor"]
 
@@ -184,12 +191,21 @@ class PPO(Agent):
             self.checkpoint_modules["optimizer"] = self.optimizer
 
         # set up preprocessors
+        # - observation
+        if self._observation_preprocessor:
+            self._observation_preprocessor = self._observation_preprocessor(
+                **self.cfg["observation_preprocessor_kwargs"]
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - state
         if self._state_preprocessor:
             self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
-
+        # - value
         if self._value_preprocessor:
             self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
@@ -203,8 +219,9 @@ class PPO(Agent):
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
@@ -214,15 +231,18 @@ class PPO(Agent):
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
             # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+            self._tensors_names = ["observations", "actions", "states", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
-        self._current_log_prob = None
+        self._current_next_observations = None
         self._current_next_states = None
+        self._current_log_prob = None
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
+    def act(self, observations: torch.Tensor, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
 
+        :param observations: Environment's observations
+        :type observations: torch.Tensor
         :param states: Environment's states
         :type states: torch.Tensor
         :param timestep: Current timestep
@@ -233,22 +253,27 @@ class PPO(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
-        # sample random actions
-        # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
-
-        # sample stochastic actions
         with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-            actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+            # prepare inputs
+            inputs = {
+                "observations": self._observation_preprocessor(observations),
+                "states": self._state_preprocessor(states),
+            }
+            # sample random actions. # TODO, check for stochasticity
+            if timestep < self._random_timesteps:
+                actions, log_prob, outputs = self.policy.random_act(inputs, role="policy")
+            # sample stochastic actions
+            else:
+                actions, log_prob, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = log_prob
 
         return actions, log_prob, outputs
 
     def record_transition(
         self,
-        states: torch.Tensor,
+        observations: torch.Tensor,
         actions: torch.Tensor,
+        states: torch.Tensor,
         rewards: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,

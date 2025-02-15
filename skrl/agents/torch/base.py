@@ -21,6 +21,7 @@ class Agent:
         self,
         models: Mapping[str, Model],
         memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -34,10 +35,12 @@ class Agent:
                        If it is a tuple, the first element will be used for training and
                        for the rest only the environment transitions will be added
         :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: ``None``)
+        :param observation_space: Observation space or shape (default: ``None``)
         :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param action_space: Action space or shape (default: ``None``)
         :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
+        :param state_space: State space or shape (default: ``None``)
+        :type state_space: int, tuple or list of int, gymnasium.Space or None, optional
         :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                        If None, the device will be either ``"cuda"`` if available or ``"cpu"``
         :type device: str or torch.device, optional
@@ -47,6 +50,7 @@ class Agent:
         self.models = models
         self.observation_space = observation_space
         self.action_space = action_space
+        self.state_space = state_space
         self.cfg = cfg if cfg is not None else {}
 
         self.device = config.torch.parse_device(device)
@@ -252,9 +256,11 @@ class Agent:
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(self, observations: torch.Tensor, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
+        """Process the environment's observations/states to make a decision (actions) using the main policy
 
+        :param observations: Environment's observations
+        :type observations: torch.Tensor
         :param states: Environment's states
         :type states: torch.Tensor
         :param timestep: Current timestep

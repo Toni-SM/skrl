@@ -4,6 +4,7 @@ import collections
 import copy
 import datetime
 import os
+from abc import ABC, abstractmethod
 import gymnasium
 from packaging import version
 
@@ -16,51 +17,40 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 
 
-class Agent:
+class Agent(ABC):
     def __init__(
         self,
         models: Mapping[str, Model],
-        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        memory: Optional[Memory] = None,
         observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         device: Optional[Union[str, torch.device]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Base class that represent a RL agent
+        """Base agent class for implementing agents (algorithms).
 
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and
-                       for the rest only the environment transitions will be added
-        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param state_space: State space or shape (default: ``None``)
-        :type state_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        .. warning::
+
+            This class is abstract and must be subclassed to implement the agent's logic.
+
+        Args:
+            models: Models required/used by the agent.
+            memory: Memory to storage the environment transitions and agent data.
+            observation_space: Observation space.
+            action_space: Action space.
+            state_space: State space.
+            device: Device on which data is allocated and computation is performed.
+            cfg: Configuration dictionary.
         """
         self.models = models
+        self.memory = memory
         self.observation_space = observation_space
         self.action_space = action_space
         self.state_space = state_space
         self.cfg = cfg if cfg is not None else {}
 
         self.device = config.torch.parse_device(device)
-
-        if type(memory) is list:
-            self.memory = memory[0]
-            self.secondary_memories = memory[1:]
-        else:
-            self.memory = memory
-            self.secondary_memories = []
 
         # convert the models to their respective device
         for model in self.models.values():
@@ -95,10 +85,10 @@ class Agent:
         self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
-        """Generate a representation of the agent as string
+        """Generate a representation of the agent as string.
 
-        :return: Representation of the agent as string
-        :rtype: str
+        Returns:
+            Representation of the agent as string.
         """
         string = f"Agent: {repr(self)}"
         for k, v in self.cfg.items():
@@ -115,22 +105,22 @@ class Agent:
 
         This method is defined because PyTorch multiprocessing can't pickle lambdas
 
-        :param _input: Input to preprocess
-        :type _input: Any
+        Args:
+            _input: Input to preprocess.
 
-        :return: Preprocessed input
-        :rtype: Any
+        Returns:
+            Preprocessed input.
         """
         return _input
 
     def _get_internal_value(self, _module: Any) -> Any:
-        """Get internal module/variable state/value
+        """Get internal module/variable state/value.
 
-        :param _module: Module or variable
-        :type _module: Any
+        Args:
+            _module: Module or variable.
 
-        :return: Module/variable state/value
-        :rtype: Any
+        Returns:
+            Module/variable state/value.
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
@@ -138,10 +128,11 @@ class Agent:
         """Initialize the agent
 
         This method should be called before the agent is used.
-        It will initialize the TensorBoard writer (and optionally Weights & Biases) and create the checkpoints directory
+        It will initialize the TensorBoard writer (and optionally Weights & Biases)
+        and create the checkpoints directory.
 
-        :param trainer_cfg: Trainer configuration
-        :type trainer_cfg: dict, optional
+        Args:
+            trainer_cfg: Trainer configuration.
         """
         trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
 
@@ -182,24 +173,24 @@ class Agent:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
     def track_data(self, tag: str, value: float) -> None:
-        """Track data to TensorBoard
+        """Track data to TensorBoard.
 
-        Currently only scalar data are supported
+        .. warning::
 
-        :param tag: Data identifier (e.g. 'Loss / policy loss')
-        :type tag: str
-        :param value: Value to track
-        :type value: float
+            Currently only scalar data are supported.
+
+        Args:
+            tag: Data identifier (e.g. 'Loss / policy loss').
+            value: Value to track.
         """
         self.tracking_data[tag].append(value)
 
     def write_tracking_data(self, timestep: int, timesteps: int) -> None:
-        """Write tracking data to TensorBoard
+        """Write tracking data to TensorBoard.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         for k, v in self.tracking_data.items():
             if k.endswith("(min)"):
@@ -214,15 +205,14 @@ class Agent:
         self.tracking_data.clear()
 
     def write_checkpoint(self, timestep: int, timesteps: int) -> None:
-        """Write checkpoint (modules) to disk
+        """Write checkpoint (modules) to disk.
 
         The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
         The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         tag = str(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"))
         # separated modules
@@ -256,30 +246,35 @@ class Agent:
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
+    @abstractmethod
     def act(self, observations: torch.Tensor, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's observations/states to make a decision (actions) using the main policy
+        """Process the environment's observations and/or states to make a decision (actions) using the main policy.
 
-        :param observations: Environment's observations
-        :type observations: torch.Tensor
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        .. warning::
 
-        :raises NotImplementedError: The method is not implemented by the inheriting classes
+            This method is abstract and must be implemented by subclasses.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        Args:
+            observations: Environment's observations.
+            states: Environment's states.
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
+
+        Returns:
+            Actions.
+
+        Raises:
+            NotImplementedError: This method must be implemented by the subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("This method should be implemented by the subclass")
 
     def record_transition(
         self,
+        observations: torch.Tensor,
         states: torch.Tensor,
         actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -287,29 +282,25 @@ class Agent:
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory (to be implemented by the inheriting classes)
+        """Record an environment transition in memory and track episode information.
 
-        Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
-        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
+        .. warning::
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+            Inheriting classes must override this method to record environment transition (such as observations, etc.)
+            and specific agent information. The base class method must be called to track episode information.
+
+        Args:
+            observations: Environment's observations.
+            states: Environment's states.
+            actions: Actions taken by the agent.
+            rewards: Instant rewards achieved by the current actions.
+            next_observations: Next environment's observations.
+            next_states: Next environment's states.
+            terminated: Signals to indicate that episodes have terminated.
+            truncated: Signals to indicate that episodes have been truncated.
+            infos: Additional information about the environment.
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         if self.write_interval > 0:
             # compute the cumulative sum of the rewards and timesteps
@@ -350,31 +341,31 @@ class Agent:
                 self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
     def set_mode(self, mode: str) -> None:
-        """Set the model mode (training or evaluation)
+        """Set the model mode (training or evaluation).
 
-        :param mode: Mode: 'train' for training or 'eval' for evaluation
-        :type mode: str
+        Args:
+            mode: Mode: 'train' for training or 'eval' for evaluation.
         """
         for model in self.models.values():
             if model is not None:
                 model.set_mode(mode)
 
     def set_running_mode(self, mode: str) -> None:
-        """Set the current running mode (training or evaluation)
+        """Set the current running mode (training or evaluation).
 
         This method sets the value of the ``training`` property (boolean).
         This property can be used to know if the agent is running in training or evaluation mode.
 
-        :param mode: Mode: 'train' for training or 'eval' for evaluation
-        :type mode: str
+        Args:
+            mode: Mode: 'train' for training or 'eval' for evaluation.
         """
         self.training = mode == "train"
 
     def save(self, path: str) -> None:
-        """Save the agent to the specified path
+        """Save the agent to the specified path.
 
-        :param path: Path to save the model to
-        :type path: str
+        Args:
+            path: Path to save the model to.
         """
         modules = {}
         for name, module in self.checkpoint_modules.items():
@@ -382,12 +373,12 @@ class Agent:
         torch.save(modules, path)
 
     def load(self, path: str) -> None:
-        """Load the model from the specified path
+        """Load the model from the specified path.
 
         The final storage device is determined by the constructor of the model
 
-        :param path: Path to load the model from
-        :type path: str
+        Args:
+            path: Path to load the model from.
         """
         if version.parse(torch.__version__) >= version.parse("1.13"):
             modules = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
@@ -413,31 +404,29 @@ class Agent:
         auto_mapping: bool = True,
         verbose: bool = False,
     ) -> bool:
-        """Migrate the specified external checkpoint to the current agent
+        """Migrate the specified external checkpoint to the current agent.
 
         The final storage device is determined by the constructor of the agent.
-        Only files generated by the *rl_games* library are supported at the moment
+        Only files generated by the *rl_games* library are supported at the moment.
 
         For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
-        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully
+        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully.
 
-        :param path: Path to the external checkpoint to migrate from
-        :type path: str
-        :param name_map: Name map to use for the migration (default: ``{}``).
-                         Keys are the current parameter names and values are the external parameter names
-        :type name_map: Mapping[str, Mapping[str, str]], optional
-        :param auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``)
-        :type auto_mapping: bool, optional
-        :param verbose: Show model names and migration (default: ``False``)
-        :type verbose: bool, optional
+        Args:
+            path: Path to the external checkpoint to migrate from.
+            name_map: Name map to use for the migration (default: ``{}``).
+                Keys are the current parameter names and values are the external parameter names.
+            auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``).
+            verbose: Show model names and migration (default: ``False``).
 
-        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter
+        Returns:
+            True if the migration was successful, False otherwise.
+            Migration is successful if all parameters of the current model are found in the external model.
 
-        :return: True if the migration was successful, False otherwise.
-                 Migration is successful if all parameters of the current model are found in the external model
-        :rtype: bool
+        Raises:
+            ValueError: If the correct file type cannot be identified from the ``path`` parameter.
 
-        Example::
+        Example:
 
             # migrate a rl_games checkpoint with ambiguous state_dict
             >>> agent.migrate(path="./runs/Cartpole/nn/Cartpole.pth", verbose=False)
@@ -649,22 +638,20 @@ class Agent:
         return bool(status)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+        """Callback called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         pass
 
     def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+        """Callback called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         timestep += 1
 
@@ -686,14 +673,19 @@ class Agent:
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             self.write_tracking_data(timestep, timesteps)
 
+    @abstractmethod
     def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        .. warning::
 
-        :raises NotImplementedError: The method is not implemented by the inheriting classes
+            This method is abstract and must be implemented by subclasses.
+
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
+
+        Raises:
+            NotImplementedError: This method should be implemented by the subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("This method should be implemented by the subclass")

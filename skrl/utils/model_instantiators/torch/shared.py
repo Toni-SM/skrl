@@ -96,7 +96,7 @@ def shared_model(
         if class_name.lower() == "categoricalmixin":
             return ""
         elif class_name.lower() == "multicategoricalmixin":
-            return ""  # No extra initialization required for MultiCategoricalMixin
+            return ""
         elif class_name.lower() == "deterministicmixin":
             return ""
         elif class_name.lower() == "gaussianmixin":

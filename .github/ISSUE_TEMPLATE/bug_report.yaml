@@ -30,6 +30,7 @@ body:
     description: The skrl version can be obtained with the command `pip show skrl`.
     options:
       - ---
+      - 2.0.0
       - 1.4.1
       - 1.4.0
       - 1.3.0

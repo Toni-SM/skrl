@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.0.0] - Unreleased
+### Added
+- Allow ``None`` type spaces and samples/values in spaces utilities
+
 ## [1.4.1] - 2025-01-27
 ### Fixed
 - Force the use of the device local to process in distributed runs in JAX

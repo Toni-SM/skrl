@@ -1,11 +1,11 @@
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import gym
 import gymnasium
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 
 from skrl.utils.spaces.jax import (
@@ -22,7 +22,7 @@ from ..strategies import gym_space_stategy, gymnasium_space_stategy
 
 
 def _check_backend(x, backend):
-    if backend == "jax":
+    if backend == "native":
         assert isinstance(x, jax.Array)
     elif backend == "numpy":
         assert isinstance(x, np.ndarray)
@@ -61,6 +61,8 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
             return sum([occupied_size(_s) for _s in s])
         return gymnasium.spaces.flatdim(s)
 
+    assert compute_space_size(None) == 0
+
     space_size = compute_space_size(space, occupied_size=False)
     assert space_size == gymnasium.spaces.flatdim(space)
 
@@ -70,14 +72,15 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
 
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
+@pytest.mark.parametrize("_jax", [True, False])
+def test_tensorize_space(capsys, space: gymnasium.spaces.Space, _jax: bool):
     def check_tensorized_space(s, x, n):
         if isinstance(s, gymnasium.spaces.Box):
-            assert isinstance(x, jax.Array) and x.shape == (n, *s.shape)
+            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, *s.shape)
         elif isinstance(s, gymnasium.spaces.Discrete):
-            assert isinstance(x, jax.Array) and x.shape == (n, 1)
+            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, 1)
         elif isinstance(s, gymnasium.spaces.MultiDiscrete):
-            assert isinstance(x, jax.Array) and x.shape == (n, *s.nvec.shape)
+            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, *s.nvec.shape)
         elif isinstance(s, gymnasium.spaces.Dict):
             list(map(check_tensorized_space, s.values(), x.values(), [n] * len(s)))
         elif isinstance(s, gymnasium.spaces.Tuple):
@@ -85,18 +88,21 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
         else:
             raise ValueError(f"Invalid space type: {type(s)}")
 
-    tensorized_space = tensorize_space(space, space.sample())
+    assert tensorize_space(None, None, _jax=_jax) is None
+    assert tensorize_space(space, None, _jax=_jax) is None
+
+    tensorized_space = tensorize_space(space, space.sample(), _jax=_jax)
     check_tensorized_space(space, tensorized_space, 1)
 
-    tensorized_space = tensorize_space(space, tensorized_space)
+    tensorized_space = tensorize_space(space, tensorized_space, _jax=_jax)
     check_tensorized_space(space, tensorized_space, 1)
 
-    sampled_space = sample_space(space, 5, backend="numpy")
-    tensorized_space = tensorize_space(space, sampled_space)
+    sampled_space = sample_space(space, batch_size=5, backend="numpy")
+    tensorized_space = tensorize_space(space, sampled_space, _jax=_jax)
     check_tensorized_space(space, tensorized_space, 5)
 
-    sampled_space = sample_space(space, 5, backend="jax")
-    tensorized_space = tensorize_space(space, sampled_space)
+    sampled_space = sample_space(space, batch_size=5, backend="native")
+    tensorized_space = tensorize_space(space, sampled_space, _jax=_jax)
     check_tensorized_space(space, tensorized_space, 5)
 
 
@@ -123,6 +129,9 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
 
     tensorized_space = tensorize_space(space, space.sample())
 
+    assert untensorize_space(None, None) is None
+    assert untensorize_space(space, None) is None
+
     untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
     check_untensorized_space(space, untensorized_space, squeeze_batch_dimension=False)
 
@@ -134,39 +143,49 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
-    sampled_space = sample_space(space, batch_size, backend="numpy")
+    assert sample_space(None) is None
+
+    sampled_space = sample_space(space, batch_size=batch_size, backend="numpy")
     check_sampled_space(space, sampled_space, batch_size, backend="numpy")
 
-    sampled_space = sample_space(space, batch_size, backend="jax")
-    check_sampled_space(space, sampled_space, batch_size, backend="jax")
+    sampled_space = sample_space(space, batch_size=batch_size, backend="native")
+    check_sampled_space(space, sampled_space, batch_size, backend="native")
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
-def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
+@pytest.mark.parametrize("_jax", [True, False])
+def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space, _jax: bool):
     space_size = compute_space_size(space, occupied_size=True)
 
-    tensorized_space = tensorize_space(space, space.sample())
-    flattened_space = flatten_tensorized_space(tensorized_space)
-    assert flattened_space.shape == (1, space_size)
+    assert flatten_tensorized_space(None, _jax=_jax) is None
 
-    tensorized_space = sample_space(space, batch_size=5, backend="jax")
-    flattened_space = flatten_tensorized_space(tensorized_space)
+    tensorized_space = tensorize_space(space, space.sample(), _jax=_jax)
+    flattened_space = flatten_tensorized_space(tensorized_space, _jax=_jax)
+    assert flattened_space.shape == (1, space_size)
+    assert isinstance(flattened_space, jax.Array if _jax else np.ndarray)
+
+    tensorized_space = sample_space(space, batch_size=5, backend="native" if _jax else "numpy")
+    flattened_space = flatten_tensorized_space(tensorized_space, _jax=_jax)
     assert flattened_space.shape == (5, space_size)
+    assert isinstance(flattened_space, jax.Array if _jax else np.ndarray)
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
+    assert unflatten_tensorized_space(None, None) is None
+    assert unflatten_tensorized_space(space, None) is None
+
     tensorized_space = tensorize_space(space, space.sample())
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
-    check_sampled_space(space, unflattened_space, 1, backend="jax")
+    check_sampled_space(space, unflattened_space, 1, backend="native")
 
-    tensorized_space = sample_space(space, batch_size=5, backend="jax")
+    tensorized_space = sample_space(space, batch_size=5, backend="native")
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
-    check_sampled_space(space, unflattened_space, 5, backend="jax")
+    check_sampled_space(space, unflattened_space, 5, backend="native")
 
 
 @hypothesis.given(space=gym_space_stategy())
@@ -197,4 +216,5 @@ def test_convert_gym_space(capsys, space: gym.spaces.Space):
         else:
             raise ValueError(f"Invalid space type: {type(gym_space)}")
 
+    assert convert_gym_space(None) is None
     check_converted_space(space, convert_gym_space(space))

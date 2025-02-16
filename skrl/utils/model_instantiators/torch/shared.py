@@ -7,7 +7,13 @@ import torch
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import Model  # noqa
-from skrl.models.torch import CategoricalMixin, DeterministicMixin, GaussianMixin, MultiCategoricalMixin, MultivariateGaussianMixin  # noqa
+from skrl.models.torch import (  # noqa
+    CategoricalMixin,
+    DeterministicMixin,
+    GaussianMixin,
+    MultiCategoricalMixin,
+    MultivariateGaussianMixin,
+)
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 

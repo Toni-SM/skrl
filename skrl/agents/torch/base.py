@@ -125,11 +125,12 @@ class Agent(ABC):
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
+        """Initialize the agent.
 
-        This method should be called before the agent is used.
-        It will initialize the TensorBoard writer (and optionally Weights & Biases)
-        and create the checkpoints directory.
+        .. warning::
+
+            This method should be called before the agent is used. It will initialize the TensorBoard writer
+            (and optionally Weights & Biases) and create the checkpoints directory.
 
         Args:
             trainer_cfg: Trainer configuration.

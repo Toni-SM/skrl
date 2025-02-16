@@ -75,36 +75,28 @@ class PPO(Agent):
     def __init__(
         self,
         models: Mapping[str, Model],
-        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        memory: Optional[Memory] = None,
         observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+        state_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
         device: Optional[Union[str, torch.device]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Proximal Policy Optimization (PPO)
+        """Proximal Policy Optimization (PPO).
 
         https://arxiv.org/abs/1707.06347
 
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and
-                       for the rest only the environment transitions will be added
-        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param state_space: State space or shape (default: ``None``)
-        :type state_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        Args:
+            models: Models required/used by the agent.
+            memory: Memory to storage the environment transitions and agent data.
+            observation_space: Observation space.
+            action_space: Action space.
+            state_space: State space.
+            device: Device on which data is allocated and computation is performed.
+            cfg: Configuration dictionary.
 
-        :raises KeyError: If the models dictionary is missing a required key
+        Raises:
+            KeyError: If the models dictionary is missing a required key.
         """
         _cfg = copy.deepcopy(PPO_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -213,15 +205,26 @@ class PPO(Agent):
             self._value_preprocessor = self._empty_preprocessor
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+        """Initialize the agent.
+
+        .. warning::
+
+            This method should be called before the agent is used. It will initialize the TensorBoard writer
+            (and optionally Weights & Biases) and create the checkpoints directory.
+
+            Additionally, this method will create the tensors required by the algorithm in the memory.
+
+        Args:
+            trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
+            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
@@ -231,7 +234,7 @@ class PPO(Agent):
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
             # tensors sampled during training
-            self._tensors_names = ["observations", "actions", "states", "log_prob", "values", "returns", "advantages"]
+            self._tensors_names = ["observations", "states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_next_observations = None
@@ -239,19 +242,16 @@ class PPO(Agent):
         self._current_log_prob = None
 
     def act(self, observations: torch.Tensor, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+        """Process the environment's observations and/or states to make a decision (actions) using the main policy.
 
-        :param observations: Environment's observations
-        :type observations: torch.Tensor
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            observations: Environment's observations.
+            states: Environment's states.
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        Returns:
+            Actions.
         """
         with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
             # prepare inputs
@@ -272,9 +272,10 @@ class PPO(Agent):
     def record_transition(
         self,
         observations: torch.Tensor,
-        actions: torch.Tensor,
         states: torch.Tensor,
+        actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -282,32 +283,37 @@ class PPO(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory and track episode information.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            observations: Environment's observations.
+            states: Environment's states.
+            actions: Actions taken by the agent.
+            rewards: Instant rewards achieved by the current actions.
+            next_observations: Next environment's observations.
+            next_states: Next environment's states.
+            terminated: Signals to indicate that episodes have terminated.
+            truncated: Signals to indicate that episodes have been truncated.
+            infos: Additional information about the environment.
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memory is not None:
+            self._current_next_observations = next_observations
             self._current_next_states = next_states
 
             # reward shaping
@@ -316,7 +322,11 @@ class PPO(Agent):
 
             # compute values
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
+                inputs = {
+                    "observations": self._observation_preprocessor(observations),
+                    "states": self._state_preprocessor(states),
+                }
+                values, _, _ = self.value.act(inputs, role="value")
                 values = self._value_preprocessor(values, inverse=True)
 
             # time-limit (truncation) bootstrapping
@@ -325,44 +335,31 @@ class PPO(Agent):
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
-                next_states=next_states,
                 terminated=terminated,
                 truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
             )
-            for memory in self.secondary_memories:
-                memory.add_samples(
-                    states=states,
-                    actions=actions,
-                    rewards=rewards,
-                    next_states=next_states,
-                    terminated=terminated,
-                    truncated=truncated,
-                    log_prob=self._current_log_prob,
-                    values=values,
-                )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+        """Callback called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         pass
 
     def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+        """Callback called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
@@ -374,12 +371,11 @@ class PPO(Agent):
         super().post_interaction(timestep, timesteps)
 
     def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        Args:
+            timestep: Current timestep.
+            timesteps: Number of timesteps.
         """
 
         def compute_gae(
@@ -390,23 +386,18 @@ class PPO(Agent):
             discount_factor: float = 0.99,
             lambda_coefficient: float = 0.95,
         ) -> torch.Tensor:
-            """Compute the Generalized Advantage Estimator (GAE)
+            """Compute the Generalized Advantage Estimator (GAE).
 
-            :param rewards: Rewards obtained by the agent
-            :type rewards: torch.Tensor
-            :param dones: Signals to indicate that episodes have ended
-            :type dones: torch.Tensor
-            :param values: Values obtained by the agent
-            :type values: torch.Tensor
-            :param next_values: Next values obtained by the agent
-            :type next_values: torch.Tensor
-            :param discount_factor: Discount factor
-            :type discount_factor: float
-            :param lambda_coefficient: Lambda coefficient
-            :type lambda_coefficient: float
+            Args:
+                rewards: Rewards obtained by the agent.
+                dones: Signals to indicate that episodes have ended.
+                values: Values obtained by the agent.
+                next_values: Next values obtained by the agent.
+                discount_factor: Discount factor.
+                lambda_coefficient: Lambda coefficient.
 
-            :return: Generalized Advantage Estimator
-            :rtype: torch.Tensor
+            Returns:
+                Generalized Advantage Estimator.
             """
             advantage = 0
             advantages = torch.zeros_like(rewards)
@@ -432,9 +423,11 @@ class PPO(Agent):
         # compute returns and advantages
         with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
             self.value.train(False)
-            last_values, _, _ = self.value.act(
-                {"states": self._state_preprocessor(self._current_next_states.float())}, role="value"
-            )
+            inputs = {
+                "observations": self._observation_preprocessor(self._current_next_observations.float()),
+                "states": self._state_preprocessor(self._current_next_states.float()),
+            }
+            last_values, _, _ = self.value.act(inputs, role="value")
             self.value.train(True)
             last_values = self._value_preprocessor(last_values, inverse=True)
 
@@ -465,6 +458,7 @@ class PPO(Agent):
 
             # mini-batches loop
             for (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_log_prob,
@@ -474,12 +468,13 @@ class PPO(Agent):
             ) in sampled_batches:
 
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                    inputs = {
+                        "observations": self._observation_preprocessor(sampled_observations, train=not epoch),
+                        "states": self._state_preprocessor(sampled_states, train=not epoch),
+                        "taken_actions": sampled_actions,
+                    }
 
-                    sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
-
-                    _, next_log_prob, _ = self.policy.act(
-                        {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
-                    )
+                    _, next_log_prob, _ = self.policy.act(inputs, role="policy")
 
                     # compute approximate KL divergence
                     with torch.no_grad():
@@ -507,7 +502,7 @@ class PPO(Agent):
                     policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                     # compute value loss
-                    predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+                    predicted_values, _, _ = self.value.act(inputs, role="value")
 
                     if self._clip_predicted_values:
                         predicted_values = sampled_values + torch.clip(

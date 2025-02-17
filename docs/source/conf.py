@@ -148,3 +148,12 @@ notfound_context = {
 suppress_warnings = [
     "ref.python",  # more than one target found for cross-reference
 ]
+
+# hack to suppress 'WARNING: duplicate object description... use :no-index:'
+import logging
+
+class DuplicateObjectDescriptionFilter(logging.Filter):
+    def filter(self, record):
+        return "duplicate object description" not in record.getMessage()
+
+logging.getLogger("sphinx.sphinx.domains.python").addFilter(DuplicateObjectDescriptionFilter())

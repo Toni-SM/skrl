@@ -1,76 +1,44 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import collections
+from abc import ABC, abstractmethod
 import gymnasium
 from packaging import version
 
 import torch
 
 from skrl import config, logger
-from skrl.utils.spaces.torch import (
-    compute_space_size,
-    flatten_tensorized_space,
-    sample_space,
-    unflatten_tensorized_space,
-)
+from skrl.utils.spaces.torch import compute_space_size, flatten_tensorized_space, sample_space
 
 
-class Model(torch.nn.Module):
+class Model(torch.nn.Module, ABC):
     def __init__(
         self,
-        observation_space: Union[int, Sequence[int], gymnasium.Space],
-        action_space: Union[int, Sequence[int], gymnasium.Space],
+        *,
+        observation_space: Optional[gymnasium.Space] = None,
+        state_space: Optional[gymnasium.Space] = None,
+        action_space: Optional[gymnasium.Space] = None,
         device: Optional[Union[str, torch.device]] = None,
     ) -> None:
-        """Base class representing a function approximator
+        """Base model class for implementing custom models.
 
-        The following properties are defined:
-
-        - ``device`` (torch.device): Device to be used for the computations
-        - ``observation_space`` (int, sequence of int, gymnasium.Space): Observation/state space
-        - ``action_space`` (int, sequence of int, gymnasium.Space): Action space
-        - ``num_observations`` (int): Number of elements in the observation/state space
-        - ``num_actions`` (int): Number of elements in the action space
-
-        :param observation_space: Observation/state space or shape.
-                                  The ``num_observations`` property will contain the size of that space
-        :type observation_space: int, sequence of int, gymnasium.Space
-        :param action_space: Action space or shape.
-                             The ``num_actions`` property will contain the size of that space
-        :type action_space: int, sequence of int, gymnasium.Space
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-
-        Custom models should override the ``act`` method::
-
-            import torch
-            from skrl.models.torch import Model
-
-            class CustomModel(Model):
-                def __init__(self, observation_space, action_space, device="cuda:0"):
-                    Model.__init__(self, observation_space, action_space, device)
-
-                    self.layer_1 = nn.Linear(self.num_observations, 64)
-                    self.layer_2 = nn.Linear(64, self.num_actions)
-
-                def act(self, inputs, role=""):
-                    x = F.relu(self.layer_1(inputs["states"]))
-                    x = F.relu(self.layer_2(x))
-                    return x, None, {}
+        :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
+        :param state_space: State space. The ``num_states`` property will contain the size of the space.
+        :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
         super(Model, self).__init__()
 
         self.device = config.torch.parse_device(device)
 
         self.observation_space = observation_space
+        self.state_space = state_space
         self.action_space = action_space
-        self.num_observations = None if observation_space is None else compute_space_size(observation_space)
-        self.num_actions = None if action_space is None else compute_space_size(action_space)
+        self.num_observations = compute_space_size(observation_space)
+        self.num_states = compute_space_size(state_space)
+        self.num_actions = compute_space_size(action_space)
 
-        self._random_distribution = None
-
-    def init_state_dict(self, role: str, inputs: Mapping[str, torch.Tensor] = {}) -> None:
+    def init_state_dict(self, inputs: Mapping[str, Union[torch.Tensor, Any]] = {}, *, role: str = "") -> None:
         """Initialize lazy PyTorch modules' parameters.
 
         .. hint::
@@ -78,112 +46,67 @@ class Model(torch.nn.Module):
             Calling this method only makes sense when using models that contain lazy PyTorch modules
             (e.g. model instantiators), and always before performing any operation on model parameters.
 
-        :param role: Role play by the model
-        :type role: str
         :param inputs: Model inputs. The most common keys are:
 
-                        - ``"states"``: state of the environment used to make the decision
-                        - ``"taken_actions"``: actions taken by the policy for the given states
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
 
-                       If not specified, the keys will be populated with observation and action space samples
-        :type inputs: dict of torch.Tensor
+            If not specified, ``inputs`` will have random samples from the observation, state and action spaces.
+        :param role: Role played by the model.
         """
         if not inputs:
             inputs = {
+                "observations": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="native", device=self.device)
+                ),
                 "states": flatten_tensorized_space(
-                    sample_space(self.observation_space, backend="torch", device=self.device)
+                    sample_space(self.state_space, backend="native", device=self.device)
                 ),
                 "taken_actions": flatten_tensorized_space(
-                    sample_space(self.action_space, backend="torch", device=self.device)
+                    sample_space(self.action_space, backend="native", device=self.device)
                 ),
             }
         # init parameters
         self.to(device=self.device)
         self.compute(inputs=inputs, role=role)
 
-    def tensor_to_space(
-        self, tensor: torch.Tensor, space: gymnasium.Space, start: int = 0
-    ) -> Union[torch.Tensor, dict]:
-        """Map a flat tensor to a Gym/Gymnasium space
+    def random_act(
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Act randomly according to the action space.
 
         .. warning::
 
-            This method is deprecated in favor of the :py:func:`skrl.utils.spaces.torch.unflatten_tensorized_space`
-
-        :param tensor: Tensor to map from
-        :type tensor: torch.Tensor
-        :param space: Space to map the tensor to
-        :type space: gymnasium.Space
-        :param start: Index of the first element of the tensor to map (default: ``0``)
-        :type start: int, optional
-
-        :raises ValueError: If the space is not supported
-
-        :return: Mapped tensor or dictionary
-        :rtype: torch.Tensor or dict
-
-        Example::
-
-            >>> space = gymnasium.spaces.Dict({'a': gymnasium.spaces.Box(low=-1, high=1, shape=(2, 3)),
-            ...                                'b': gymnasium.spaces.Discrete(4)})
-            >>> tensor = torch.tensor([[-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 2]])
-            >>>
-            >>> model.tensor_to_space(tensor, space)
-            {'a': tensor([[[-0.3000, -0.2000, -0.1000],
-                           [ 0.1000,  0.2000,  0.3000]]]),
-             'b': tensor([[2.]])}
-        """
-        return unflatten_tensorized_space(space, tensor)
-
-    def random_act(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
-    ) -> Tuple[torch.Tensor, None, Mapping[str, Union[torch.Tensor, Any]]]:
-        """Act randomly according to the action space
+            Sampling from unbounded action spaces may lead to numerical instabilities.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
 
-        :raises NotImplementedError: Unsupported action space
+        :param role: Role played by the model.
 
-        :return: Model output. The first component is the action to be taken by the agent
-        :rtype: tuple of torch.Tensor, None, and dict
+        :return: Randomly sampled actions with the same batch size as the given observation (``"observations"``)
+            in the ``inputs`` as the first component. The second component is an empty dictionary.
+
+        :raises ValueError: Unsupported action space.
         """
-        # discrete action space (Discrete)
-        if isinstance(self.action_space, gymnasium.spaces.Discrete):
-            return torch.randint(self.action_space.n, (inputs["states"].shape[0], 1), device=self.device), None, {}
-        # continuous action space (Box)
-        elif isinstance(self.action_space, gymnasium.spaces.Box):
-            if self._random_distribution is None:
-                self._random_distribution = torch.distributions.uniform.Uniform(
-                    low=torch.tensor(self.action_space.low[0], device=self.device, dtype=torch.float32),
-                    high=torch.tensor(self.action_space.high[0], device=self.device, dtype=torch.float32),
-                )
-
-            return (
-                self._random_distribution.sample(sample_shape=(inputs["states"].shape[0], self.num_actions)),
-                None,
-                {},
-            )
-        else:
-            raise NotImplementedError(f"Action space type ({type(self.action_space)}) not supported")
+        sample = sample_space(
+            self.action_space, batch_size=inputs["observations"].shape[0], backend="native", device=self.device
+        )
+        return flatten_tensorized_space(sample), {}
 
     def init_parameters(self, method_name: str = "normal_", *args, **kwargs) -> None:
-        """Initialize the model parameters according to the specified method name
+        """Initialize the model parameters according to the specified method name.
 
         Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
-        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
+        Allowed method names are ``"uniform_"``, ``"normal_"``, ``"constant_"``, etc.
 
-        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"normal_"``)
-        :type method_name: str, optional
-        :param args: Positional arguments of the method to be called
-        :type args: tuple, optional
-        :param kwargs: Key-value arguments of the method to be called
-        :type kwargs: dict, optional
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name.
+        :param args: Positional arguments of the method to be called.
+        :param kwargs: Key-value arguments of the method to be called.
 
         Example::
 
@@ -197,20 +120,18 @@ class Model(torch.nn.Module):
             exec(f"torch.nn.init.{method_name}(parameters, *args, **kwargs)")
 
     def init_weights(self, method_name: str = "orthogonal_", *args, **kwargs) -> None:
-        """Initialize the model weights according to the specified method name
+        """Initialize the model weights according to the specified method name.
 
         Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
-        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
+        Allowed method names are ``"uniform_"``, ``"normal_"``, ``"constant_"``, etc.
 
         The following layers will be initialized:
+
         - torch.nn.Linear
 
-        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"orthogonal_"``)
-        :type method_name: str, optional
-        :param args: Positional arguments of the method to be called
-        :type args: tuple, optional
-        :param kwargs: Key-value arguments of the method to be called
-        :type kwargs: dict, optional
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name.
+        :param args: Positional arguments of the method to be called.
+        :param kwargs: Key-value arguments of the method to be called.
 
         Example::
 
@@ -231,20 +152,18 @@ class Model(torch.nn.Module):
         _update_weights(self.children(), method_name, args, kwargs)
 
     def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
-        """Initialize the model biases according to the specified method name
+        """Initialize the model biases according to the specified method name.
 
         Method names are from the `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ module.
-        Allowed method names are *uniform_*, *normal_*, *constant_*, etc.
+        Allowed method names are ``"uniform_"``, ``"normal_"``, ``"constant_"``, etc.
 
         The following layers will be initialized:
+
         - torch.nn.Linear
 
-        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name (default: ``"constant_"``)
-        :type method_name: str, optional
-        :param args: Positional arguments of the method to be called
-        :type args: tuple, optional
-        :param kwargs: Key-value arguments of the method to be called
-        :type kwargs: dict, optional
+        :param method_name: `torch.nn.init <https://pytorch.org/docs/stable/nn.init.html>`_ method name.
+        :param args: Positional arguments of the method to be called.
+        :param kwargs: Key-value arguments of the method to be called.
 
         Example::
 
@@ -265,21 +184,20 @@ class Model(torch.nn.Module):
         _update_biases(self.children(), method_name, args, kwargs)
 
     def get_specification(self) -> Mapping[str, Any]:
-        """Returns the specification of the model
+        """Returns the specification of the model.
 
         The following keys are used by the agents for initialization:
 
-        - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells
+        - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells.
+        - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
+          There must be as many tuples as there are states in the recurrent layer/cell.
+          E.g.: LSTM has 2 states (hidden and cell).
 
-          - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
-            There must be as many tuples as there are states in the recurrent layer/cell. E.g., LSTM has 2 states (hidden and cell).
-
-        :return: Dictionary containing advanced specification of the model
-        :rtype: dict
+        :return: Dictionary containing advanced specification of the model.
 
         Example::
 
-            # model with a LSTM layer.
+            # model with a LSTM layer
             # - number of layers: 1
             # - number of environments: 4
             # - number of features in the RNN state: 64
@@ -289,98 +207,91 @@ class Model(torch.nn.Module):
         return {}
 
     def forward(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
-    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
-        """Forward pass of the model
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Forward pass of the model.
 
-        This method calls the ``.act()`` method and returns its outputs
+        .. note::
+
+            This method calls the :py:meth:`act` method and returns its outputs.
+            It exists for compatibility with the :py:class:`torch.nn.Module` class.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+        :param role: Role played by the model.
 
-        :return: Model output. The first component is the action to be taken by the agent.
-                 The second component is the log of the probability density function for stochastic models
-                 or None for deterministic models. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
+        :return: Model output. The first component is the expected action/value returned by the model.
+            The second component is a dictionary containing extra output values according to the model.
         """
-        return self.act(inputs, role)
+        return self.act(inputs, role=role)
 
+    @abstractmethod
     def compute(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
-    ) -> Tuple[Union[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]]:
-        """Define the computation performed (to be implemented by the inheriting classes) by the models
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Define the computation performed by the model.
+
+        .. warning::
+
+            This method is abstract and must be implemented by subclasses.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+        :param role: Role played by the model.
 
-        :raises NotImplementedError: Child class must implement this method
+        :return: Computation performed by the model.
 
-        :return: Computation performed by the models
-        :rtype: tuple of torch.Tensor and dict
+        :raises NotImplementedError: This method must be implemented by subclasses.
         """
-        raise NotImplementedError("The computation performed by the models (.compute()) is not implemented")
+        raise NotImplementedError("The computation performed by the model (.compute()) is not implemented")
 
+    @abstractmethod
     def act(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
-    ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
-        """Act according to the specified behavior (to be implemented by the inheriting classes)
+        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Act according to the specified behavior.
 
-        Agents will call this method to obtain the decision to be taken given the state of the environment.
-        This method is currently implemented by the helper models (**GaussianModel**, etc.).
-        The classes that inherit from the latter must only implement the ``.compute()`` method
+        Agents will call this method to get the expected action/value based on the observations/states.
+
+        .. warning::
+
+            This method is currently implemented by the helper models (e.g.: :py:class:`~skrl.models.torch.gaussian.GaussianMixin`).
+            The classes that inherit from the latter must only implement the :py:meth:`compute` method.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+        :param role: Role played by the model.
 
-        :raises NotImplementedError: Child class must implement this method
+        :return: Model output. The first component is the expected action/value returned by the model.
+            The second component is a dictionary containing extra output values according to the model.
 
-        :return: Model output. The first component is the action to be taken by the agent.
-                 The second component is the log of the probability density function for stochastic models
-                 or None for deterministic models. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
+        :raises NotImplementedError: This method must be implemented by subclasses.
         """
-        logger.warning("Make sure to place Mixins before Model during model definition")
+        logger.warning("Make sure to place Mixins classes before the Model class during model definition")
         raise NotImplementedError("The action to be taken by the agent (.act()) is not implemented")
 
-    def set_mode(self, mode: str) -> None:
-        """Set the model mode (training or evaluation)
+    def enable_training_mode(self, enabled: bool = True) -> None:
+        """Set the training mode of the model: enabled (training) or disabled (evaluation).
 
-        :param mode: Mode: ``"train"`` for training or ``"eval"`` for evaluation.
-            See `torch.nn.Module.train <https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train>`_
-        :type mode: str
-
-        :raises ValueError: If the mode is not ``"train"`` or ``"eval"``
+        :param enabled: True to enable the training mode, False to enable the evaluation mode.
+            See :py:meth:`torch.nn.Module.train` for more details.
         """
-        if mode == "train":
-            self.train(True)
-        elif mode == "eval":
-            self.train(False)
-        else:
-            raise ValueError("Invalid mode. Use 'train' for training or 'eval' for evaluation")
+        self.train(enabled)
 
     def save(self, path: str, state_dict: Optional[dict] = None) -> None:
-        """Save the model to the specified path
+        """Save the model to the specified path.
 
-        :param path: Path to save the model to
-        :type path: str
-        :param state_dict: State dictionary to save (default: ``None``).
-                           If None, the model's state_dict will be saved
-        :type state_dict: dict, optional
+        :param path: Path to save the model to.
+        :param state_dict: State dictionary to save. If ``None``, the model's ``state_dict`` will be saved.
 
         Example::
 
@@ -395,21 +306,22 @@ class Model(torch.nn.Module):
         torch.save(self.state_dict() if state_dict is None else state_dict, path)
 
     def load(self, path: str) -> None:
-        """Load the model from the specified path
+        """Load the model from the specified path.
 
-        The final storage device is determined by the constructor of the model
+        .. note::
 
-        :param path: Path to load the model from
-        :type path: str
+            The final storage device is determined by the constructor of the model.
+
+        :param path: Path to load the model from.
 
         Example::
 
             # load the model onto the CPU
-            >>> model = Model(observation_space, action_space, device="cpu")
+            >>> model = Model(device="cpu")
             >>> model.load("model.pt")
 
             # load the model onto the GPU 1
-            >>> model = Model(observation_space, action_space, device="cuda:1")
+            >>> model = Model(device="cuda:1")
             >>> model.load("model.pt")
         """
         if version.parse(torch.__version__) >= version.parse("1.13"):
@@ -421,41 +333,38 @@ class Model(torch.nn.Module):
 
     def migrate(
         self,
+        *,
         state_dict: Optional[Mapping[str, torch.Tensor]] = None,
         path: Optional[str] = None,
         name_map: Mapping[str, str] = {},
         auto_mapping: bool = True,
         verbose: bool = False,
     ) -> bool:
-        """Migrate the specified extrernal model's state dict to the current model
+        """Migrate the specified external model's ``state_dict`` to the current model.
 
-        The final storage device is determined by the constructor of the model
+        .. note::
+
+            The final storage device is determined by the constructor of the model.
 
         Only one of ``state_dict`` or ``path`` can be specified.
         The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated
-        by the *rl_games* and *stable-baselines3* libraries at the moment
+        by the *rl_games* and *stable-baselines3* libraries at the moment.
 
         For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
-        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully
+        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully.
 
-        :param state_dict: External model's state dict to migrate from (default: ``None``)
-        :type state_dict: Mapping[str, torch.Tensor], optional
-        :param path: Path to the external checkpoint to migrate from (default: ``None``)
-        :type path: str, optional
-        :param name_map: Name map to use for the migration (default: ``{}``).
-                         Keys are the current parameter names and values are the external parameter names
-        :type name_map: Mapping[str, str], optional
-        :param auto_mapping: Automatically map the external state dict to the current state dict (default: ``True``)
-        :type auto_mapping: bool, optional
-        :param verbose: Show model names and migration (default: ``False``)
-        :type verbose: bool, optional
-
-        :raises ValueError: If neither or both of ``state_dict`` and ``path`` parameters have been set
-        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter
+        :param state_dict: External model's ``state_dict`` to migrate from.
+        :param path: Path to the external checkpoint to migrate from.
+        :param name_map: Name map to use for the migration.
+            Keys are the current parameter names and values are the external parameter names.
+        :param auto_mapping: Automatically map the external ``state_dict`` to the current ``state_dict``.
+        :param verbose: Show model names and migration.
 
         :return: True if the migration was successful, False otherwise.
-                 Migration is successful if all parameters of the current model are found in the external model
-        :rtype: bool
+            Migration is successful if all parameters of the current model are found in the external model.
+
+        :raises ValueError: If neither or both of ``state_dict`` and ``path`` parameters have been set.
+        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter.
 
         Example::
 
@@ -627,13 +536,12 @@ class Model(torch.nn.Module):
         return status
 
     def freeze_parameters(self, freeze: bool = True) -> None:
-        """Freeze or unfreeze internal parameters
+        """Freeze or unfreeze internal parameters.
 
-        - Freeze: disable gradient computation (``parameters.requires_grad = False``)
-        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``)
+        - Freeze: disable gradient computation (``parameters.requires_grad = False``).
+        - Unfreeze: enable gradient computation (``parameters.requires_grad = True``).
 
-        :param freeze: Freeze the internal parameters if True, otherwise unfreeze them (default: ``True``)
-        :type freeze: bool, optional
+        :param freeze: Whether to freeze or unfreeze the internal parameters.
 
         Example::
 
@@ -646,17 +554,14 @@ class Model(torch.nn.Module):
         for parameters in self.parameters():
             parameters.requires_grad = not freeze
 
-    def update_parameters(self, model: torch.nn.Module, polyak: float = 1) -> None:
-        """Update internal parameters by hard or soft (polyak averaging) update
+    def update_parameters(self, model: torch.nn.Module, *, polyak: float = 1.0) -> None:
+        """Update internal parameters by hard or soft (polyak averaging) update.
 
         - Hard update: :math:`\\theta = \\theta_{net}`
         - Soft (polyak averaging) update: :math:`\\theta = (1 - \\rho) \\theta + \\rho \\theta_{net}`
 
-        :param model: Model used to update the internal parameters
-        :type model: torch.nn.Module (skrl.models.torch.Model)
-        :param polyak: Polyak hyperparameter between 0 and 1 (default: ``1``).
-                       A hard update is performed when its value is 1
-        :type polyak: float, optional
+        :param model: Model used to update the internal parameters.
+        :param polyak: Polyak hyperparameter between 0 and 1. A hard update is performed when its value is 1.
 
         Example::
 
@@ -678,12 +583,11 @@ class Model(torch.nn.Module):
                     parameters.data.add_(polyak * model_parameters.data)
 
     def broadcast_parameters(self, rank: int = 0):
-        """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs
+        """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.
 
-        After calling this method, the distributed model will contain the broadcasted parameters from ``rank``
+        After calling this method, the distributed model will contain the broadcasted parameters from ``rank``.
 
-        :param rank: Worker/process rank from which to broadcast model parameters (default: ``0``)
-        :type rank: int
+        :param rank: Worker/process rank from which to broadcast model parameters.
 
         Example::
 
@@ -696,9 +600,9 @@ class Model(torch.nn.Module):
         self.load_state_dict(object_list[0])
 
     def reduce_parameters(self):
-        """Reduce model parameters across all workers/processes in the whole group (e.g.: across all nodes)
+        """Reduce model parameters across all workers/processes in the whole group (e.g.: across all nodes).
 
-        After calling this method, the distributed model parameters will be bitwise identical for all workers/processes
+        After calling this method, the distributed model parameters will be bitwise identical for all workers/processes.
 
         Example::
 

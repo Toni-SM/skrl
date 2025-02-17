@@ -6,49 +6,11 @@ import torch
 
 
 class DeterministicMixin:
-    def __init__(self, clip_actions: bool = False, role: str = "") -> None:
-        """Deterministic mixin model (deterministic model)
+    def __init__(self, *, clip_actions: bool = False, role: str = "") -> None:
+        """Deterministic mixin model (deterministic model).
 
-        :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
-        :type clip_actions: bool, optional
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        Example::
-
-            # define the model
-            >>> import torch
-            >>> import torch.nn as nn
-            >>> from skrl.models.torch import Model, DeterministicMixin
-            >>>
-            >>> class Value(DeterministicMixin, Model):
-            ...     def __init__(self, observation_space, action_space, device="cuda:0", clip_actions=False):
-            ...         Model.__init__(self, observation_space, action_space, device)
-            ...         DeterministicMixin.__init__(self, clip_actions)
-            ...
-            ...         self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-            ...                                  nn.ELU(),
-            ...                                  nn.Linear(32, 32),
-            ...                                  nn.ELU(),
-            ...                                  nn.Linear(32, 1))
-            ...
-            ...     def compute(self, inputs, role):
-            ...         return self.net(inputs["states"]), {}
-            ...
-            >>> # given an observation_space: gymnasium.spaces.Box with shape (60,)
-            >>> # and an action_space: gymnasium.spaces.Box with shape (8,)
-            >>> model = Value(observation_space, action_space)
-            >>>
-            >>> print(model)
-            Value(
-              (net): Sequential(
-                (0): Linear(in_features=60, out_features=32, bias=True)
-                (1): ELU(alpha=1.0)
-                (2): Linear(in_features=32, out_features=32, bias=True)
-                (3): ELU(alpha=1.0)
-                (4): Linear(in_features=32, out_features=1, bias=True)
-              )
-            )
+        :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+        :param role: Role played by the model.
         """
         self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
@@ -59,26 +21,17 @@ class DeterministicMixin:
     def act(
         self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
     ) -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
-        """Act deterministically in response to the state of the environment
+        """Act deterministically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+        :param role: Role played by the model.
 
-        :return: Model output. The first component is the action to be taken by the agent.
-                 The second component is ``None``. The third component is a dictionary containing extra output values
-        :rtype: tuple of torch.Tensor, torch.Tensor or None, and dict
-
-        Example::
-
-            >>> # given a batch of sample states with shape (4096, 60)
-            >>> actions, _, outputs = model.act({"states": states})
-            >>> print(actions.shape, outputs)
-            torch.Size([4096, 1]) {}
+        :return: Model output. The first component is the expected action/value returned by the model.
+            The second component is a dictionary containing extra output values according to the model.
         """
         # map from observations/states to actions
         actions, outputs = self.compute(inputs, role)
@@ -87,4 +40,4 @@ class DeterministicMixin:
         if self._clip_actions:
             actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
 
-        return actions, None, outputs
+        return actions, outputs

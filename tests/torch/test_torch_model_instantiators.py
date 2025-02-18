@@ -3,6 +3,7 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+from skrl import config
 from skrl.utils.model_instantiators.torch import (
     categorical_model,
     deterministic_model,
@@ -18,7 +19,7 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
@@ -27,14 +28,14 @@ NETWORK_SPEC_OBSERVATION = {
     spaces.Discrete: r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
     spaces.MultiDiscrete: r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
@@ -42,11 +43,11 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net_0
-        input: STATES[0]
+        input: OBSERVATIONS[0]
         layers: [32, 32, 32]
         activations: elu
       - name: net_1
-        input: STATES[1]
+        input: OBSERVATIONS[1]
         layers: [32, 32, 32]
         activations: elu
       - name: net
@@ -60,11 +61,11 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net_0
-        input: STATES["0"]
+        input: OBSERVATIONS["0"]
         layers: [32, 32, 32]
         activations: elu
       - name: net_1
-        input: STATES["1"]
+        input: OBSERVATIONS["1"]
         layers: [32, 32, 32]
         activations: elu
       - name: net
@@ -91,9 +92,15 @@ def test_categorical_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))})
+        output = model.act(
+            {
+                "observations": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 1)
 
 
@@ -111,9 +118,15 @@ def test_deterministic_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))})
+        output = model.act(
+            {
+                "observations": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 2)
 
 
@@ -135,9 +148,15 @@ def test_gaussian_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))})
+        output = model.act(
+            {
+                "observations": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 2)
 
 
@@ -159,9 +178,15 @@ def test_multivariate_gaussian_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))})
+        output = model.act(
+            {
+                "observations": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 2)
 
 
@@ -196,9 +221,13 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        inputs = {"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))}
+        inputs = {
+            "observations": flatten_tensorized_space(
+                sample_space(observation_space, batch_size=10, backend="native", device=device)
+            )
+        }
         output = model.act(inputs, role="role_0")
         assert output[0].shape == (10, 2)
         output = model.act(inputs, role="role_1")
@@ -236,9 +265,13 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        inputs = {"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))}
+        inputs = {
+            "observations": flatten_tensorized_space(
+                sample_space(observation_space, batch_size=10, backend="native", device=device)
+            )
+        }
         output = model.act(inputs, role="role_0")
         assert output[0].shape == (10, 2)
         output = model.act(inputs, role="role_1")
@@ -249,7 +282,7 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_shared_categorical_deterministic_model(capsys, device, single_forward_pass):
     # observation
-    action_space = spaces.Box(low=-1, high=1, shape=(2,))
+    action_space = spaces.Discrete(3)
     for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
         observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
         model = shared_model(
@@ -272,10 +305,54 @@ def test_shared_categorical_deterministic_model(capsys, device, single_forward_p
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=device)
+        model.to(device=config.torch.parse_device(device))
 
-        inputs = {"states": flatten_tensorized_space(sample_space(observation_space, 10, "torch", device))}
+        inputs = {
+            "observations": flatten_tensorized_space(
+                sample_space(observation_space, batch_size=10, backend="native", device=device)
+            )
+        }
         output = model.act(inputs, role="role_0")
         assert output[0].shape == (10, 1)
+        output = model.act(inputs, role="role_1")
+        assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("single_forward_pass", [True, False])
+@pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
+def test_shared_multicategorical_deterministic_model(capsys, device, single_forward_pass):
+    # observation
+    action_space = spaces.MultiDiscrete([3, 4])
+    for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
+        observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
+        model = shared_model(
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            structure=["MultiCategoricalMixin", "DeterministicMixin"],
+            roles=["role_0", "role_1"],
+            parameters=[
+                {
+                    "unnormalized_log_prob": True,
+                    "network": yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
+                    "output": "ACTIONS",
+                },
+                {
+                    "clip_actions": False,
+                    "network": yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
+                    "output": "ONE",
+                },
+            ],
+            single_forward_pass=single_forward_pass,
+        )
+        model.to(device=config.torch.parse_device(device))
+
+        inputs = {
+            "observations": flatten_tensorized_space(
+                sample_space(observation_space, batch_size=10, backend="native", device=device)
+            )
+        }
+        output = model.act(inputs, role="role_0")
+        assert output[0].shape == (10, 2)
         output = model.act(inputs, role="role_1")
         assert output[0].shape == (10, 1)

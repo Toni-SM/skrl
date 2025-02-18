@@ -8,52 +8,37 @@ import torch.nn as nn  # noqa
 
 from skrl.models.torch import CategoricalMixin  # noqa
 from skrl.models.torch import Model
-from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.model_instantiators.torch.common import generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
 def categorical_model(
-    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    *,
+    observation_space: Optional[gymnasium.Space] = None,
+    state_space: Optional[gymnasium.Space] = None,
+    action_space: Optional[gymnasium.Space] = None,
     device: Optional[Union[str, torch.device]] = None,
     unnormalized_log_prob: bool = True,
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
-    *args,
-    **kwargs,
 ) -> Union[Model, str]:
-    """Instantiate a categorical model
+    """Instantiate a :class:`~skrl.models.torch.categorical.CategoricalMixin`-based model.
 
-    :param observation_space: Observation/state space or shape (default: None).
-                              If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param action_space: Action space or shape (default: None).
-                         If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or torch.device, optional
-    :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).
-                                  If True, the model's output is interpreted as unnormalized log probabilities
-                                  (it can be any real number), otherwise as normalized probabilities
-                                  (the output must be non-negative, finite and have a non-zero sum)
-    :type unnormalized_log_prob: bool, optional
-    :param network: Network definition (default: [])
-    :type network: list of dict, optional
-    :param output: Output expression (default: "")
-    :type output: list or str, optional
+    :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
+    :param state_space: State space. The ``num_states`` property will contain the size of the space.
+    :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
+    :param device: Data allocation and computation device. If not specified, the default device will be used.
+    :param unnormalized_log_prob: Flag to indicate how to the model's output will be interpreted.
+        If True, the model's output is interpreted as unnormalized log probabilities (it can be any real number),
+        otherwise as normalized probabilities (the output must be non-negative, finite and have a non-zero sum).
+    :param network: Network definition.
+    :param output: Output expression.
     :param return_source: Whether to return the source string containing the model class used to
-                          instantiate the model rather than the model instance (default: False).
-    :type return_source: bool, optional
+        instantiate the model rather than the model instance.
 
-    :return: Categorical model instance or definition source
-    :rtype: Model
+    :return: Categorical model instance or definition source (if ``return_source`` is True).
     """
-    # compatibility with versions prior to 1.3.0
-    if not network and kwargs:
-        network, output = convert_deprecated_parameters(kwargs)
-
     # parse model definition
     containers, output = generate_containers(network, output, embed_output=True, indent=1)
 
@@ -77,14 +62,21 @@ def categorical_model(
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
 
     template = f"""class CategoricalModel(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device=None, unnormalized_log_prob=True, role=""):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob, role=role)
 
         {networks}
 
     def compute(self, inputs, role=""):
-        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+        observations = unflatten_tensorized_space(self.observation_space, inputs.get("observations"))
+        states = unflatten_tensorized_space(self.state_space, inputs.get("states"))
         taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, {{}}
@@ -98,6 +90,7 @@ def categorical_model(
     exec(template, globals(), _locals)
     return _locals["CategoricalModel"](
         observation_space=observation_space,
+        state_space=state_space,
         action_space=action_space,
         device=device,
         unnormalized_log_prob=unnormalized_log_prob,

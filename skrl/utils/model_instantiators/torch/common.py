@@ -2,11 +2,9 @@ from typing import Any, Mapping, Sequence, Tuple, Union
 
 import ast
 
-from skrl import logger
-
 
 def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
-    """Get the activation function
+    """Get the activation function.
 
     Supported activation functions:
 
@@ -20,10 +18,10 @@ def _get_activation_function(activation: Union[str, None], as_module: bool = Tru
     - "softsign"
     - "tanh"
 
-    :param activation: Activation function name
-    :param as_module: Whether to return a PyTorch module instance rather than a functional method
+    :param activation: Activation function name.
+    :param as_module: Whether to return a PyTorch module instance rather than a functional method.
 
-    :return: Activation function or None if the activation is not supported
+    :return: Activation function or ``None`` if the activation is not supported.
     """
     activations = {
         "elu": "nn.ELU()" if as_module else "functional.elu",
@@ -40,11 +38,11 @@ def _get_activation_function(activation: Union[str, None], as_module: bool = Tru
 
 
 def _parse_input(source: str) -> str:
-    """Parse a network input expression by replacing substitutions and applying operations
+    """Parse a network input expression by replacing substitutions and applying operations.
 
-    :param source: Input expression
+    :param source: Input expression.
 
-    :return: Parsed network input
+    :return: Parsed network input.
     """
 
     class NodeTransformer(ast.NodeTransformer):
@@ -64,24 +62,20 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
-    source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace(
-        "STATES_ACTIONS", "torch.cat([states, taken_actions], dim=1)"
-    )
-    source = source.replace("Shape.OBSERVATIONS_ACTIONS", "OBSERVATIONS_ACTIONS").replace(
-        "OBSERVATIONS_ACTIONS", "torch.cat([states, taken_actions], dim=1)"
-    )
-    source = source.replace("Shape.STATES", "STATES").replace("STATES", "states")
-    source = source.replace("Shape.OBSERVATIONS", "OBSERVATIONS").replace("OBSERVATIONS", "states")
-    source = source.replace("Shape.ACTIONS", "ACTIONS").replace("ACTIONS", "taken_actions")
+    source = source.replace("OBSERVATIONS_ACTIONS", "torch.cat([observations, taken_actions], dim=1)")
+    source = source.replace("STATES_ACTIONS", "torch.cat([states, taken_actions], dim=1)")
+    source = source.replace("OBSERVATIONS", "observations")
+    source = source.replace("STATES", "states")
+    source = source.replace("ACTIONS", "taken_actions")
     return source
 
 
 def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:
-    """Parse the network output expression by replacing substitutions and applying operations
+    """Parse the network output expression by replacing substitutions and applying operations.
 
-    :param source: Output expression
+    :param source: Output expression.
 
-    :return: Tuple with the parsed network output, generated modules and output size/shape
+    :return: Tuple with the parsed network output, generated modules and output size/shape.
     """
 
     class NodeTransformer(ast.NodeTransformer):
@@ -101,7 +95,6 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
     modules = []
     if type(source) is str:
         # enum substitutions
-        source = source.replace("Shape.ACTIONS", "ACTIONS").replace("Shape.ONE", "ONE")
         token = "ACTIONS" if "ACTIONS" in source else None
         token = "ONE" if "ONE" in source else token
         if token:
@@ -120,13 +113,13 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
 
 
 def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
-    """Generate network modules
+    """Generate network modules.
 
     :param layers: Layer definitions
     :param activations: Activation function definitions applied after each layer (except ``flatten`` layers).
-                        If a single activation function is specified (str or lis), it will be applied after each layer
+        If a single activation function is specified (str or list), it will be applied after each layer.
 
-    :return: A list of generated modules
+    :return: A list of generated modules.
     """
     # expand activations
     if type(activations) is str:
@@ -224,21 +217,24 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
 
 
 def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
-    """Get the number of units/features a token represent
+    """Get the number of units/features a token represents.
 
-    :param token: Token
+    :param token: Token.
 
-    :return: Number of units/features a token represent. If the token is unknown, its value will be returned as it
+    :return: Number of units/features a token represents. If the token is unknown, its value will be returned as it.
     """
     num_units = {
         "ONE": "1",
-        "STATES": "self.num_observations",
+        "NUM_OBSERVATIONS": "self.num_observations",
+        "NUM_STATES": "self.num_states",
+        "NUM_ACTIONS": "self.num_actions",
         "OBSERVATIONS": "self.num_observations",
+        "STATES": "self.num_states",
         "ACTIONS": "self.num_actions",
-        "STATES_ACTIONS": "self.num_observations + self.num_actions",
         "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
+        "STATES_ACTIONS": "self.num_states + self.num_actions",
     }
-    token_as_str = str(token).replace("Shape.", "")
+    token_as_str = str(token)
     if token_as_str in num_units:
         return num_units[token_as_str]
     return token
@@ -247,16 +243,16 @@ def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
 def generate_containers(
     network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]], embed_output: bool = True, indent: int = -1
 ) -> Tuple[Sequence[Mapping[str, Any]], Mapping[str, Any]]:
-    """Generate network containers
+    """Generate network containers.
 
-    :param network: Network definition
-    :param output: Network's output expression
+    :param network: Network definition.
+    :param output: Network's output expression.
     :param embed_output: Whether to embed the output modules (if any) in the container definition.
-                         If True, the output modules will be append to the last container module
+        If True, the output modules will be append to the last container module.
     :param indent: Indentation level used to generate the Sequential definition.
-                   If negative, no indentation will be applied
+        If negative, no indentation will be applied.
 
-    :return: Network containers and output
+    :return: Network containers and output.
     """
     # parse output
     output, output_modules, output_size = _parse_output(output)
@@ -290,37 +286,3 @@ def generate_containers(
             output = output.replace("PLACEHOLDER", container["name"] if embed_output else "output")
     output = {"output": output, "modules": output_modules, "size": output_size}
     return containers, output
-
-
-def convert_deprecated_parameters(parameters: Mapping[str, Any]) -> Tuple[Mapping[str, Any], str]:
-    """Function to convert deprecated parameters to network-output format
-
-    :param parameters: Deprecated parameters and their values.
-
-    :return: Network and output definitions
-    """
-    logger.warning(
-        f'The following parameters ({", ".join(list(parameters.keys()))}) are deprecated. '
-        "See https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html"
-    )
-    # network definition
-    activations = parameters.get("hidden_activation", [])
-    if type(activations) in [list, tuple] and len(set(activations)) == 1:
-        activations = activations[0]
-    network = [
-        {
-            "name": "net",
-            "input": str(parameters.get("input_shape", "STATES")),
-            "layers": parameters.get("hiddens", []),
-            "activations": activations,
-        }
-    ]
-    # output
-    output_scale = parameters.get("output_scale", 1.0)
-    scale_operation = f"{output_scale} * " if output_scale != 1.0 else ""
-    if parameters.get("output_activation", None):
-        output = f'{scale_operation}{parameters["output_activation"]}({str(parameters.get("output_shape", "ACTIONS"))})'
-    else:
-        output = f'{scale_operation}{str(parameters.get("output_shape", "ACTIONS"))}'
-
-    return network, output

@@ -33,7 +33,7 @@ CROSSQ_DEFAULT_CONFIG = {
     "optimizer_kwargs" : {
         "betas": [0.5, 0.999]
     },
-    
+
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
     "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
 
@@ -190,9 +190,7 @@ class CrossQ(Agent):
             self.log_entropy_coefficient = torch.log(
                 torch.ones(1, device=self.device) * self._entropy_coefficient
             ).requires_grad_(True)
-            self.entropy_optimizer = torch.optim.Adam(
-                [self.log_entropy_coefficient], lr=self._entropy_learning_rate
-            )
+            self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
@@ -377,7 +375,7 @@ class CrossQ(Agent):
                 sampled_terminated,
                 sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
-            
+
             if self._learn_entropy:
                 self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
@@ -388,13 +386,15 @@ class CrossQ(Agent):
 
                 with torch.no_grad():
                     self.policy.set_bn_training_mode(False)
-                    next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy", should_log_prob=True)
+                    next_actions, next_log_prob, _ = self.policy.act(
+                        {"states": sampled_next_states}, role="policy", should_log_prob=True
+                    )
                     # print(f"next_actions : {next_actions[0]}")
                     # print(f"next_log_prob : {next_log_prob[0]}")
 
                 all_states = torch.cat((sampled_states, sampled_next_states))
                 all_actions = torch.cat((sampled_actions, next_actions))
-                
+
                 # print(f"all_states : {all_states[0]}, {all_states[256]}")
                 # print(f"all_actions : {all_actions[0]}, {all_actions[256]}")
 
@@ -407,7 +407,7 @@ class CrossQ(Agent):
 
                 q1, next_q1 = torch.split(all_q1, split_size_or_sections=self._batch_size)
                 q2, next_q2 = torch.split(all_q2, split_size_or_sections=self._batch_size)
-                
+
                 # print(f"q1 : {q1[0]}")
                 # print(f"q2 : {q2[0]}")
 
@@ -447,7 +447,9 @@ class CrossQ(Agent):
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                     # compute policy (actor) loss
                     self.policy.set_bn_training_mode(True)
-                    actions, log_prob, _ = self.policy.act({"states": sampled_states}, role="policy", should_log_prob=True)
+                    actions, log_prob, _ = self.policy.act(
+                        {"states": sampled_states}, role="policy", should_log_prob=True
+                    )
                     log_prob = log_prob.reshape(-1, 1)
                     self.policy.set_bn_training_mode(False)
 

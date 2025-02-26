@@ -1,1 +1,1 @@
-from skrl.agents.torch.crossq.crossq import CrossQ, CROSSQ_DEFAULT_CONFIG
+from skrl.agents.torch.crossq.crossq import CROSSQ_DEFAULT_CONFIG, CrossQ

@@ -47,11 +47,11 @@ class MutableGaussianMixin(GaussianMixin):
             inputs["key"] = subkey
 
         # map from states/observations to mean actions and log standard deviations
-        params = {"params" : self.state_dict.params, "batch_stats" : self.state_dict.batch_stats} if params is None else params
-        mutable = inputs.get("mutable", [])
-        out = self.apply(
-            params, inputs, train=train, mutable=mutable, role=role
+        params = (
+            {"params": self.state_dict.params, "batch_stats": self.state_dict.batch_stats} if params is None else params
         )
+        mutable = inputs.get("mutable", [])
+        out = self.apply(params, inputs, train=train, mutable=mutable, role=role)
         mean_actions, log_std, outputs = out[0]
 
         actions, log_prob, log_std, stddev = _gaussian(

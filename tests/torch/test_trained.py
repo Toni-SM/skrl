@@ -1,22 +1,20 @@
+from typing import Optional
+
 import argparse
 import sys
-from typing import Optional
-import numpy as np
 import time
-
-import torch
 import gymnasium
 import tqdm.rich as tqdm
-import gym_envs
 
-from skrl.agents.torch.crossq import CrossQ as Agent
+import numpy as np
+import torch
+
 from skrl.agents.torch.crossq import CROSSQ_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.crossq import CrossQ as Agent
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.utils import set_seed
-
-
-from models import *
+from tests.torch.test_crossq_models import *
 
 
 def test_agent():
@@ -39,7 +37,10 @@ def test_agent():
     set_seed(args.seed)
     # env
     env = gymnasium.make(
-        args.env_id, goal_space_size=args.goal_space_size, max_episode_steps=args.steps_per_episode, render_mode="human" if args.gui else None
+        args.env_id,
+        goal_space_size=args.goal_space_size,
+        max_episode_steps=args.steps_per_episode,
+        render_mode="human" if args.gui else None,
     )
     env = wrap_env(env, wrapper="gymnasium")
 
@@ -80,9 +81,11 @@ def test_agent():
         action_space=env.action_space,
         device=env.device,
     )
-    
+
     # Change the path to the best_agent.pt file you want to load
-    agent.load("/home/sora/travail/rhoban/skrl/tests/torch/runs/25-02-24_13-12-11-279869_CrossQ/checkpoints/best_agent.pt")
+    agent.load(
+        "/home/sora/travail/rhoban/skrl/tests/torch/runs/25-02-24_13-12-11-279869_CrossQ/checkpoints/best_agent.pt"
+    )
 
     # reset env
     states, infos = env.reset()

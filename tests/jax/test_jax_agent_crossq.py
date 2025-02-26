@@ -1,19 +1,16 @@
+from typing import Sequence
+
 import sys
-from typing import Callable, Optional, Sequence
-
 import gymnasium
-
-import optax
 
 import flax.linen as nn
 import jax.numpy as jnp
-import gym_envs
 
-from skrl.agents.jax.crossq import CrossQ as Agent
 from skrl.agents.jax.crossq import CROSSQ_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.jax.crossq import CrossQ as Agent
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
-from skrl.models.jax.base import Model, BatchNormModel
+from skrl.models.jax.base import BatchNormModel, Model
 from skrl.models.jax.mutabledeterministic import MutableDeterministicMixin
 from skrl.models.jax.mutablegaussian import MutableGaussianMixin
 from skrl.resources.layers.jax.batch_renorm import BatchRenorm
@@ -26,7 +23,6 @@ class Critic(MutableDeterministicMixin, BatchNormModel):
 
     batch_norm_momentum: float = 0.99
     renorm_warmup_steps: int = 100_000
-
 
     def __init__(
         self,
@@ -44,12 +40,12 @@ class Critic(MutableDeterministicMixin, BatchNormModel):
         self.use_batch_norm = use_batch_norm
         self.batch_norm_momentum = batch_norm_momentum
         self.renorm_warmup_steps = renorm_warmup_steps
-        
+
         Model.__init__(self, observation_space, action_space, device, **kwargs)
         MutableDeterministicMixin.__init__(self, clip_actions)
 
     @nn.compact  # marks the given module method allowing inlined submodules
-    def __call__(self, inputs, role='', train=False):
+    def __call__(self, inputs, role="", train=False):
         x = jnp.concatenate([inputs["states"], inputs["taken_actions"]], axis=-1)
         if self.use_batch_norm:
             x = BatchRenorm(
@@ -89,7 +85,7 @@ class Actor(MutableGaussianMixin, BatchNormModel):
     use_batch_norm: bool = False
 
     renorm_warmup_steps: int = 100_000
-    
+
     def __init__(
         self,
         observation_space,
@@ -109,12 +105,14 @@ class Actor(MutableGaussianMixin, BatchNormModel):
         self.use_batch_norm = use_batch_norm
         self.batch_norm_momentum = batch_norm_momentum
         self.renorm_warmup_steps = renorm_warmup_steps
-                
+
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        MutableGaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std=log_std_min, max_log_std=log_std_max)
+        MutableGaussianMixin.__init__(
+            self, clip_actions, clip_log_std, min_log_std=log_std_min, max_log_std=log_std_max
+        )
 
     @nn.compact  # marks the given module method allowing inlined submodules
-    def __call__(self, inputs, train: bool = False, role=''):
+    def __call__(self, inputs, train: bool = False, role=""):
         x = jnp.concatenate([inputs["states"]], axis=-1)
         if self.use_batch_norm:
             x = BatchRenorm(
@@ -123,9 +121,7 @@ class Actor(MutableGaussianMixin, BatchNormModel):
                 warmup_steps=self.renorm_warmup_steps,
             )(x)
         else:
-            x_dummy = BatchRenorm(
-                use_running_average=not train
-            )(x)
+            x_dummy = BatchRenorm(use_running_average=not train)(x)
         for n_neurons in self.net_arch:
             x = nn.Dense(n_neurons)(x)
             x = nn.relu(x)
@@ -142,6 +138,7 @@ class Actor(MutableGaussianMixin, BatchNormModel):
         mean = nn.Dense(self.num_actions)(x)
         log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         return nn.tanh(mean), log_std, {}
+
 
 def _check_agent_config(config, default_config):
     for k in config.keys():
@@ -172,7 +169,7 @@ def test_agent():
     models["policy"] = Actor(
         observation_space=env.observation_space,
         action_space=env.action_space,
-        net_arch=[256,256],
+        net_arch=[256, 256],
         device=env.device,
         use_batch_norm=True,
     )
@@ -199,7 +196,7 @@ def test_agent():
 
     # agent
     cfg = DEFAULT_CONFIG
-    
+
     agent = Agent(
         models=models,
         memory=memory,

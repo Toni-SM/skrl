@@ -572,7 +572,7 @@ class BatchNormModel(Model):
                 "taken_actions": flatten_tensorized_space(
                     sample_space(self.action_space, backend="jax", device=self.device), self._jax
                 ),
-                "train" : False,
+                "train": False,
             }
         if key is None:
             key = config.jax.key
@@ -580,11 +580,11 @@ class BatchNormModel(Model):
             inputs["states"] = np.array(inputs["states"]).reshape(-1, 1)
 
         params_key, batch_stats_key = jax.random.split(key, 2)
-        state_dict_params = self.init({"params": params_key, "batch_stats": batch_stats_key}, inputs, train=False, role=role)
+        state_dict_params = self.init(
+            {"params": params_key, "batch_stats": batch_stats_key}, inputs, train=False, role=role
+        )
         # init internal state dict
         with jax.default_device(self.device):
             self.state_dict = BatchNormStateDict.create(
-                apply_fn=self.apply,
-                params=state_dict_params["params"],
-                batch_stats=state_dict_params["batch_stats"]
+                apply_fn=self.apply, params=state_dict_params["params"], batch_stats=state_dict_params["batch_stats"]
             )

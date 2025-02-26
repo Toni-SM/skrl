@@ -1,5 +1,6 @@
-from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
+
+from collections.abc import Sequence
 
 import flax.linen as nn
 import jax
@@ -7,6 +8,7 @@ import jax.numpy as jnp
 from flax.linen.module import compact, merge_param
 from flax.linen.normalization import _canonicalize_axes, _compute_stats, _normalize
 from jax.nn import initializers
+
 
 PRNGKey = Any
 Array = Any

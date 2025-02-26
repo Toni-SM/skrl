@@ -104,7 +104,6 @@ class SquashedGaussianMixin:
         self._log_std = None
         self._num_samples = None
         self._distribution = None
-        
 
     def act(
         self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = "", should_log_prob: bool = False
@@ -140,7 +139,7 @@ class SquashedGaussianMixin:
 
         self._log_std = log_std
         self._num_samples = mean_actions.shape[0]
-        
+
         # print("mean_actions : ", mean_actions[0])
         # print("log_std : ", log_std[0])
 

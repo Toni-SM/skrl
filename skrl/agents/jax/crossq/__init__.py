@@ -1,1 +1,1 @@
-from skrl.agents.jax.crossq.crossq import CrossQ, CROSSQ_DEFAULT_CONFIG
+from skrl.agents.jax.crossq.crossq import CROSSQ_DEFAULT_CONFIG, CrossQ

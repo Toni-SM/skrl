@@ -41,13 +41,14 @@ class MutableDeterministicMixin(DeterministicMixin):
             (4096, 1) {}
         """
         # map from observations/states to actions
-        params = {"params" : self.state_dict.params, "batch_stats" : self.state_dict.batch_stats} if params is None else params
+        params = (
+            {"params": self.state_dict.params, "batch_stats": self.state_dict.batch_stats} if params is None else params
+        )
         mutable = inputs.get("mutable", [])
         actions, outputs = self.apply(params, inputs, mutable=mutable, train=train, role=role)
-            
+
         # clip actions
         if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:
             actions = jnp.clip(actions, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
 
         return actions, None, outputs
-

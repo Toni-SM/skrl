@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import functools
 
@@ -32,7 +32,14 @@ def _step_with_scale(transformation, grad, state, state_dict, scale):
 
 
 class Adam:
-    def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True, betas: Tuple[float, float] = [0.9, 999]) -> "Optimizer":
+    def __new__(
+        cls,
+        model: Model,
+        lr: float = 1e-3,
+        grad_norm_clip: float = 0,
+        scale: bool = True,
+        betas: Tuple[float, float] = [0.9, 999],
+    ) -> "Optimizer":
         """Adam optimizer
 
         Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api/optimizers.html#optax.adam>`_

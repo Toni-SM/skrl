@@ -1,7 +1,5 @@
-import sys
 from typing import Any, Mapping, Optional, Tuple, Union
 
-import copy
 import functools
 import gymnasium
 
@@ -30,7 +28,7 @@ CROSSQ_DEFAULT_CONFIG = {
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-    
+
     "optimizer_kwargs" : {
         'betas' : [0.5, 0.99]
     },
@@ -105,11 +103,12 @@ def _update_critic(
         return loss, (current_q_values, next_q_values)
 
     df = jax.value_and_grad(_critic_loss, has_aux=True, allow_int=True)
-    (critic_1_loss, critic_1_values, next_q1_values), grad = df(critic_1_state_dict.params, critic_1_state_dict.batch_stats, critic_1_act, "critic_1"
+    (critic_1_loss, critic_1_values, next_q1_values), grad = df(
+        critic_1_state_dict.params, critic_1_state_dict.batch_stats, critic_1_act, "critic_1"
     )
-    (critic_2_loss, critic_2_values, next_q2_values), grad = jax.value_and_grad(_critic_loss, has_aux=True, allow_int=True)(
-            critic_2_state_dict.params, critic_2_state_dict.batch_stats, critic_2_act, "critic_2"
-    )
+    (critic_2_loss, critic_2_values, next_q2_values), grad = jax.value_and_grad(
+        _critic_loss, has_aux=True, allow_int=True
+    )(critic_2_state_dict.params, critic_2_state_dict.batch_stats, critic_2_act, "critic_2")
 
     target_q_values = jnp.minimum(next_q1_values, next_q2_values) - entropy_coefficient * next_log_prob
     target_values = (
@@ -134,10 +133,16 @@ def _update_policy(
     def _policy_loss(policy_params, critic_1_params, critic_2_params):
         actions, log_prob, _ = policy_act({"states": sampled_states}, "policy", train=True, params=policy_params)
         critic_1_values, _, _ = critic_1_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_1", train=False, params=critic_1_params, 
+            {"states": sampled_states, "taken_actions": actions},
+            "critic_1",
+            train=False,
+            params=critic_1_params,
         )
         critic_2_values, _, _ = critic_2_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_2", train=False, params=critic_2_params,
+            {"states": sampled_states, "taken_actions": actions},
+            "critic_2",
+            train=False,
+            params=critic_2_params,
         )
         return (entropy_coefficient * log_prob - jnp.minimum(critic_1_values, critic_2_values)).mean(), log_prob
 
@@ -340,10 +345,10 @@ class CrossQ(Agent):
             self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # set up models for just-in-time compilation with XLA
-        self.policy.apply = jax.jit(self.policy.apply, static_argnames=['role', 'train'])
+        self.policy.apply = jax.jit(self.policy.apply, static_argnames=["role", "train"])
         if self.critic_1 is not None and self.critic_2 is not None:
-            self.critic_1.apply = jax.jit(self.critic_1.apply, static_argnames=['role', 'train'])
-            self.critic_2.apply = jax.jit(self.critic_2.apply, static_argnames=['role', 'train'])
+            self.critic_1.apply = jax.jit(self.critic_1.apply, static_argnames=["role", "train"])
+            self.critic_2.apply = jax.jit(self.critic_2.apply, static_argnames=["role", "train"])
 
     def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -364,9 +369,7 @@ class CrossQ(Agent):
             return self.policy.random_act({"states": self._state_preprocessor(states)})
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act(
-            {"states": self._state_preprocessor(states)}
-        )
+        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)})
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
 

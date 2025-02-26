@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
@@ -12,23 +13,27 @@ import numpy as np
 from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
-from skrl.models.jax import Model
+from skrl.models.jax.base import Model, StateDict
 from skrl.resources.optimizers.jax import Adam
 
 
 # fmt: off
 # [start-config-dict-jax]
 CROSSQ_DEFAULT_CONFIG = {
+    "policy_delay" : 3,
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
 
     "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
 
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
+    
+    "optimizer_kwargs" : {
+        'betas' : [0.5, 0.99]
+    },
 
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
     "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
@@ -62,7 +67,7 @@ CROSSQ_DEFAULT_CONFIG = {
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
-@functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act"))
+@functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act", "discount_factor"))
 def _update_critic(
     critic_1_act,
     critic_1_state_dict,
@@ -77,23 +82,36 @@ def _update_critic(
     sampled_truncated: Union[np.ndarray, jax.Array],
     discount_factor: float,
 ):
-    # compute target values
-    # TODO FINISH JAX IMPLEMENTATION
-
     # compute critic loss
-    def _critic_loss(params, critic_act, role):
-        critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, role, params)
-        critic_loss = ((critic_values - target_values) ** 2).mean()
-        return critic_loss, critic_values
+    def _critic_loss(params, batch_stats, critic_act, role):
+        all_q_values, _, _ = critic_act(
+            {"states": all_states, "taken_actions": all_actions, "mutable": ["batch_stats"]},
+            role=role,
+            train=True,
+            params={"params": params, "batch_stats": batch_stats},
+        )
+        current_q_values, next_q_values = jnp.split(all_q_values, 2, axis=1)
 
-    (critic_1_loss, critic_1_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
-        critic_1_state_dict.params, critic_1_act, "critic_1"
+        next_q_values = jnp.min(next_q_values, axis=0)
+        next_q_values = next_q_values - entropy_coefficient * next_log_prob.reshape(-1, 1)
+
+        target_q_values = (
+            sampled_rewards.reshape(-1, 1)
+            + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * next_q_values
+        )
+
+        loss = 0.5 * ((jax.lax.stop_gradient(target_q_values) - current_q_values) ** 2).mean(axis=1).sum()
+
+        return loss, (current_q_values, next_q_values)
+
+    df = jax.value_and_grad(_critic_loss, has_aux=True, allow_int=True)
+    (critic_1_loss, critic_1_values, next_q1_values), grad = df(critic_1_state_dict.params, critic_1_state_dict.batch_stats, critic_1_act, "critic_1"
     )
-    (critic_2_loss, critic_2_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
-        critic_2_state_dict.params, critic_2_act, "critic_2"
+    (critic_2_loss, critic_2_values, next_q2_values), grad = jax.value_and_grad(_critic_loss, has_aux=True, allow_int=True)(
+            critic_2_state_dict.params, critic_2_state_dict.batch_stats, critic_2_act, "critic_2"
     )
-    
-    target_q_values = jnp.minimum(next_q1, next_q2) - entropy_coefficient * next_log_prob
+
+    target_q_values = jnp.minimum(next_q1_values, next_q2_values) - entropy_coefficient * next_log_prob
     target_values = (
         sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
     )
@@ -114,17 +132,19 @@ def _update_policy(
 ):
     # compute policy (actor) loss
     def _policy_loss(policy_params, critic_1_params, critic_2_params):
-        actions, log_prob, _ = policy_act({"states": sampled_states}, "policy", policy_params)
+        actions, log_prob, _ = policy_act({"states": sampled_states}, "policy", train=True, params=policy_params)
         critic_1_values, _, _ = critic_1_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_1", critic_1_params
+            {"states": sampled_states, "taken_actions": actions}, "critic_1", train=False, params=critic_1_params, 
         )
         critic_2_values, _, _ = critic_2_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_2", critic_2_params
+            {"states": sampled_states, "taken_actions": actions}, "critic_2", train=False, params=critic_2_params,
         )
         return (entropy_coefficient * log_prob - jnp.minimum(critic_1_values, critic_2_values)).mean(), log_prob
 
     (policy_loss, log_prob), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
-        policy_state_dict.params, critic_1_state_dict.params, critic_2_state_dict.params
+        {"params": policy_state_dict.params, "batch_stats": policy_state_dict.batch_stats},
+        {"params": critic_1_state_dict.params, "batch_stats": critic_1_state_dict.batch_stats},
+        {"params": critic_2_state_dict.params, "batch_stats": critic_2_state_dict.batch_stats},
     )
 
     return grad, policy_loss, log_prob
@@ -206,11 +226,11 @@ class CrossQ(Agent):
                 self.critic_2.broadcast_parameters()
 
         # configuration
+        self.policy_delay = self.cfg["policy_delay"]
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
 
         self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
 
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
@@ -228,6 +248,9 @@ class CrossQ(Agent):
         self._entropy_coefficient = self.cfg["initial_entropy_value"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+
+        self.optimizer_kwargs = self.cfg["optimizer_kwargs"]
+        self._n_updates: int = 0
 
         # entropy
         if self._learn_entropy:
@@ -272,18 +295,21 @@ class CrossQ(Agent):
                     lr=self._actor_learning_rate,
                     grad_norm_clip=self._grad_norm_clip,
                     scale=not self._learning_rate_scheduler,
+                    **self.optimizer_kwargs,
                 )
                 self.critic_1_optimizer = Adam(
                     model=self.critic_1,
                     lr=self._critic_learning_rate,
                     grad_norm_clip=self._grad_norm_clip,
                     scale=not self._learning_rate_scheduler,
+                    **self.optimizer_kwargs,
                 )
                 self.critic_2_optimizer = Adam(
                     model=self.critic_2,
                     lr=self._critic_learning_rate,
                     grad_norm_clip=self._grad_norm_clip,
                     scale=not self._learning_rate_scheduler,
+                    **self.optimizer_kwargs,
                 )
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
@@ -314,10 +340,10 @@ class CrossQ(Agent):
             self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
 
         # set up models for just-in-time compilation with XLA
-        self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
+        self.policy.apply = jax.jit(self.policy.apply, static_argnames=['role', 'train'])
         if self.critic_1 is not None and self.critic_2 is not None:
-            self.critic_1.apply = jax.jit(self.critic_1.apply, static_argnums=2)
-            self.critic_2.apply = jax.jit(self.critic_2.apply, static_argnums=2)
+            self.critic_1.apply = jax.jit(self.critic_1.apply, static_argnames=['role', 'train'])
+            self.critic_2.apply = jax.jit(self.critic_2.apply, static_argnames=['role', 'train'])
 
     def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -335,10 +361,12 @@ class CrossQ(Agent):
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+            return self.policy.random_act({"states": self._state_preprocessor(states)})
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, _, outputs = self.policy.act(
+            {"states": self._state_preprocessor(states)}
+        )
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
 
@@ -424,14 +452,27 @@ class CrossQ(Agent):
         :type timesteps: int
         """
         if timestep >= self._learning_starts:
+            policy_delay_indices = {
+                i: True for i in range(self._gradient_steps) if ((self._n_updates + i + 1) % self.policy_delay) == 0
+            }
+            policy_delay_indices = flax.core.FrozenDict(policy_delay_indices)
+
             self.set_mode("train")
-            self._update(timestep, timesteps)
+            self._update(timestep, timesteps, self._gradient_steps, policy_delay_indices)
             self.set_mode("eval")
+
+            self._n_updates += self._gradient_steps
 
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
+    def _update(
+        self,
+        timestep: int,
+        timesteps: int,
+        gradient_steps: int,
+        policy_delay_indices: flax.core.FrozenDict,
+    ) -> None:
         """Algorithm's main update step
 
         :param timestep: Current timestep
@@ -441,8 +482,8 @@ class CrossQ(Agent):
         """
 
         # gradient steps
-        for gradient_step in range(self._gradient_steps):
-
+        for gradient_step in range(gradient_steps):
+            self._n_updates += 1
             # sample a batch from memory
             (
                 sampled_states,
@@ -457,7 +498,7 @@ class CrossQ(Agent):
             sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
 
             next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
-            
+
             all_states = jnp.concatenate((sampled_states, sampled_next_states))
             all_actions = jnp.concatenate((sampled_actions, next_actions))
 
@@ -487,45 +528,44 @@ class CrossQ(Agent):
                 grad, self.critic_2, self._critic_learning_rate if self._learning_rate_scheduler else None
             )
 
-            # compute policy (actor) loss
-            grad, policy_loss, log_prob = _update_policy(
-                self.policy.act,
-                self.critic_1.act,
-                self.critic_2.act,
-                self.policy.state_dict,
-                self.critic_1.state_dict,
-                self.critic_2.state_dict,
-                self._entropy_coefficient,
-                sampled_states,
-            )
-
-            # optimization step (policy)
-            if config.jax.is_distributed:
-                grad = self.policy.reduce_parameters(grad)
-            self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
-            )
-
-            # entropy learning
-            if self._learn_entropy:
-                # compute entropy loss
-                grad, entropy_loss = _update_entropy(
-                    self.log_entropy_coefficient.state_dict, self._target_entropy, log_prob
+            update_actor = gradient_step in policy_delay_indices
+            if update_actor:
+                # compute policy (actor) loss
+                grad, policy_loss, log_prob = _update_policy(
+                    self.policy.act,
+                    self.critic_1.act,
+                    self.critic_2.act,
+                    self.policy.state_dict,
+                    self.critic_1.state_dict,
+                    self.critic_2.state_dict,
+                    self._entropy_coefficient,
+                    sampled_states,
                 )
 
-                # optimization step (entropy)
-                self.entropy_optimizer = self.entropy_optimizer.step(grad, self.log_entropy_coefficient)
+                # optimization step (policy)
+                if config.jax.is_distributed:
+                    grad = self.policy.reduce_parameters(grad)
+                self.policy_optimizer = self.policy_optimizer.step(
+                    grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                )
 
-                # compute entropy coefficient
-                self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)
+                # entropy learning
+                if self._learn_entropy:
+                    # compute entropy loss
+                    grad, entropy_loss = _update_entropy(
+                        self.log_entropy_coefficient.state_dict, self._target_entropy, log_prob
+                    )
 
-            # update target networks
-            self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
-            self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
+                    # optimization step (entropy)
+                    self.entropy_optimizer = self.entropy_optimizer.step(grad, self.log_entropy_coefficient)
+
+                    # compute entropy coefficient
+                    self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)
 
             # update learning rate
             if self._learning_rate_scheduler:
-                self._actor_learning_rate *= self.policy_scheduler(timestep)
+                if update_actor:
+                    self._actor_learning_rate *= self.policy_scheduler(timestep)
                 self._critic_learning_rate *= self.critic_scheduler(timestep)
 
             # record data

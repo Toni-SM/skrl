@@ -19,17 +19,21 @@ from skrl.models.torch import Model
 # fmt: off
 # [start-config-dict-torch]
 CROSSQ_DEFAULT_CONFIG = {
+    "policy_delay" : 3,
     "gradient_steps": 1,            # gradient steps
-    "batch_size": 64,               # training batch size
+    "batch_size": 256,               # training batch size
 
     "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
 
     "actor_learning_rate": 1e-3,    # actor learning rate
     "critic_learning_rate": 1e-3,   # critic learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "optimizer_kwargs" : {
+        "betas": [0.5, 0.999]
+    },
+    
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
     "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
 
@@ -40,7 +44,7 @@ CROSSQ_DEFAULT_CONFIG = {
 
     "learn_entropy": True,          # learn entropy
     "entropy_learning_rate": 1e-3,  # entropy learning rate
-    "initial_entropy_value": 0.2,   # initial entropy value
+    "initial_entropy_value": 1.0,   # initial entropy value
     "target_entropy": None,         # target entropy
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
@@ -73,9 +77,9 @@ class CrossQ(Agent):
         device: Optional[Union[str, torch.device]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Soft Actor-Critic (SAC)
+        """CrossQ
 
-        https://arxiv.org/abs/1801.01290
+        https://arxiv.org/abs/1902.05605
 
         :param models: Models used by the agent
         :type models: dictionary of skrl.models.torch.Model
@@ -111,6 +115,16 @@ class CrossQ(Agent):
         self.critic_1 = self.models.get("critic_1", None)
         self.critic_2 = self.models.get("critic_2", None)
 
+        assert (
+            getattr(self.policy, "set_bn_training_mode", None) is not None
+        ), "Policy has no required method 'set_bn_training_mode'"
+        assert (
+            getattr(self.critic_1, "set_bn_training_mode", None) is not None
+        ), "Critic 1 has no required method 'set_bn_training_mode'"
+        assert (
+            getattr(self.critic_2, "set_bn_training_mode", None) is not None
+        ), "Critic 2 has no required method 'set_bn_training_mode'"
+
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["critic_1"] = self.critic_1
@@ -127,11 +141,11 @@ class CrossQ(Agent):
                 self.critic_2.broadcast_parameters()
 
         # configuration
+        self.policy_delay = self.cfg["policy_delay"]
         self._gradient_steps = self.cfg["gradient_steps"]
         self._batch_size = self.cfg["batch_size"]
 
         self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
 
         self._actor_learning_rate = self.cfg["actor_learning_rate"]
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
@@ -151,6 +165,9 @@ class CrossQ(Agent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
         self._mixed_precision = self.cfg["mixed_precision"]
+        self.optimizer_kwargs = self.cfg["optimizer_kwargs"]
+
+        self.n_updates = 0
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
@@ -173,15 +190,21 @@ class CrossQ(Agent):
             self.log_entropy_coefficient = torch.log(
                 torch.ones(1, device=self.device) * self._entropy_coefficient
             ).requires_grad_(True)
-            self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
+            self.entropy_optimizer = torch.optim.Adam(
+                [self.log_entropy_coefficient], lr=self._entropy_learning_rate
+            )
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+            self.policy_optimizer = torch.optim.Adam(
+                self.policy.parameters(), lr=self._actor_learning_rate, **self.optimizer_kwargs
+            )
             self.critic_optimizer = torch.optim.Adam(
-                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate
+                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()),
+                lr=self._critic_learning_rate,
+                **self.optimizer_kwargs,
             )
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(
@@ -337,9 +360,14 @@ class CrossQ(Agent):
         :type timesteps: int
         """
 
+        # update learning rate
+        if self._learning_rate_scheduler:
+            self.policy_scheduler.step()
+            self.critic_scheduler.step()
+        # print("Time step: ", timestep)
         # gradient steps
         for gradient_step in range(self._gradient_steps):
-
+            self.n_updates += 1
             # sample a batch from memory
             (
                 sampled_states,
@@ -349,46 +377,53 @@ class CrossQ(Agent):
                 sampled_terminated,
                 sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
+            
+            if self._learn_entropy:
+                self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
 
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
                 sampled_states = self._state_preprocessor(sampled_states, train=True)
                 sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
-                
+
                 with torch.no_grad():
-                    next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
+                    self.policy.set_bn_training_mode(False)
+                    next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy", should_log_prob=True)
+                    # print(f"next_actions : {next_actions[0]}")
+                    # print(f"next_log_prob : {next_log_prob[0]}")
 
                 all_states = torch.cat((sampled_states, sampled_next_states))
                 all_actions = torch.cat((sampled_actions, next_actions))
                 
-                all_q1 = self.critic_1.act(
-                    states={'states': all_states, "taken_actions": all_actions},
-                    role="critic_1"
-                )
-                all_q2 = self.critic_2.act(
-                    states={'states': all_states, "taken_actions": all_actions},
-                    role="critic_2"
-                )
+                # print(f"all_states : {all_states[0]}, {all_states[256]}")
+                # print(f"all_actions : {all_actions[0]}, {all_actions[256]}")
+
+                self.critic_1.set_bn_training_mode(True)
+                self.critic_2.set_bn_training_mode(True)
+                all_q1, _, _ = self.critic_1.act({"states": all_states, "taken_actions": all_actions}, role="critic_1")
+                all_q2, _, _ = self.critic_2.act({"states": all_states, "taken_actions": all_actions}, role="critic_2")
+                self.critic_1.set_bn_training_mode(False)
+                self.critic_2.set_bn_training_mode(False)
+
+                q1, next_q1 = torch.split(all_q1, split_size_or_sections=self._batch_size)
+                q2, next_q2 = torch.split(all_q2, split_size_or_sections=self._batch_size)
                 
-                q1, next_q1 = torch.split(all_q1, 2)
-                q2, next_q2 = torch.split(all_q2, 2)
-                
+                # print(f"q1 : {q1[0]}")
+                # print(f"q2 : {q2[0]}")
+
                 # compute target values
                 with torch.no_grad():
-                    target_q_values = (
-                        torch.min(next_q1, next_q2) - self._entropy_coefficient * next_log_prob
-                    )
-                    target_values = (
+                    next_q = torch.minimum(next_q1.detach(), next_q2.detach())
+                    target_q_values = next_q - self._entropy_coefficient * next_log_prob.reshape(-1, 1)
+                    target_values: torch.Tensor = (
                         sampled_rewards
                         + self._discount_factor
                         * (sampled_terminated | sampled_truncated).logical_not()
                         * target_q_values
                     )
-
-                critic_loss = (
-                    F.mse_loss(q1, target_values) + F.mse_loss(q2, target_values)
-                ) / 2
-
+                # compute critic loss
+                critic_loss = 0.5 * (F.mse_loss(q1, target_values.detach()) + F.mse_loss(q2, target_values.detach()))
+            # print(f"critic_loss : {critic_loss}")
             # optimization step (critic)
             self.critic_optimizer.zero_grad()
             self.scaler.scale(critic_loss).backward()
@@ -403,75 +438,84 @@ class CrossQ(Agent):
                     itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip
                 )
 
+            # TODO : CHECK UPDATED WEIGHTS
             self.scaler.step(self.critic_optimizer)
+            # HERE
 
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                # compute policy (actor) loss
-                actions, log_prob, _ = self.policy.act({"states": sampled_states}, role="policy")
-                critic_1_values, _, _ = self.critic_1.act(
-                    {"states": sampled_states, "taken_actions": actions}, role="critic_1"
-                )
-                critic_2_values, _, _ = self.critic_2.act(
-                    {"states": sampled_states, "taken_actions": actions}, role="critic_2"
-                )
-
-                policy_loss = (
-                    self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)
-                ).mean()
-
-            # optimization step (policy)
-            self.policy_optimizer.zero_grad()
-            self.scaler.scale(policy_loss).backward()
-
-            if config.torch.is_distributed:
-                self.policy.reduce_parameters()
-
-            if self._grad_norm_clip > 0:
-                self.scaler.unscale_(self.policy_optimizer)
-                nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
-
-            self.scaler.step(self.policy_optimizer)
-
-            # entropy learning
-            if self._learn_entropy:
+            should_update_policy = self.n_updates % self.policy_delay == 0
+            if should_update_policy:
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                    # compute entropy loss
-                    entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
+                    # compute policy (actor) loss
+                    self.policy.set_bn_training_mode(True)
+                    actions, log_prob, _ = self.policy.act({"states": sampled_states}, role="policy", should_log_prob=True)
+                    log_prob = log_prob.reshape(-1, 1)
+                    self.policy.set_bn_training_mode(False)
 
-                # optimization step (entropy)
-                self.entropy_optimizer.zero_grad()
-                self.scaler.scale(entropy_loss).backward()
-                self.scaler.step(self.entropy_optimizer)
+                    # entropy learning
+                    if self._learn_entropy:
+                        # compute entropy loss
+                        entropy_loss = -(
+                            self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()
+                        ).mean()
 
-                # compute entropy coefficient
-                self._entropy_coefficient = torch.exp(self.log_entropy_coefficient.detach())
+                if self._learn_entropy:
+                    # optimization step (entropy)
+                    self.entropy_optimizer.zero_grad()
+                    self.scaler.scale(entropy_loss).backward()
+                    self.scaler.step(self.entropy_optimizer)
 
-            self.scaler.update()  # called once, after optimizers have been steppedfds-
+                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                    self.critic_1.set_bn_training_mode(False)
+                    self.critic_2.set_bn_training_mode(False)
+                    critic_1_values, _, _ = self.critic_1.act(
+                        {"states": sampled_states, "taken_actions": actions}, role="critic_1"
+                    )
+                    critic_2_values, _, _ = self.critic_2.act(
+                        {"states": sampled_states, "taken_actions": actions}, role="critic_2"
+                    )
+                    q_pi = torch.minimum(critic_1_values, critic_2_values)
+                    policy_loss = (self._entropy_coefficient * log_prob - q_pi).mean()
 
-            # update learning rate
-            if self._learning_rate_scheduler:
-                self.policy_scheduler.step()
-                self.critic_scheduler.step()
+                # print(f"policy_loss : {policy_loss}")
+                # print(f"entropy_loss : {entropy_loss}")
+                # optimization step (policy)
+                self.policy_optimizer.zero_grad()
+                self.scaler.scale(policy_loss).backward()
+
+                if config.torch.is_distributed:
+                    self.policy.reduce_parameters()
+
+                if self._grad_norm_clip > 0:
+                    self.scaler.unscale_(self.policy_optimizer)
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+
+                self.scaler.step(self.policy_optimizer)
+
+            self.scaler.update()  # called once, after optimizers have been stepped
 
             # record data
             if self.write_interval > 0:
-                self.track_data("Loss / Policy loss", policy_loss.item())
                 self.track_data("Loss / Critic loss", critic_loss.item())
-
-                self.track_data("Q-network / Q1 (max)", torch.max(critic_1_values).item())
-                self.track_data("Q-network / Q1 (min)", torch.min(critic_1_values).item())
-                self.track_data("Q-network / Q1 (mean)", torch.mean(critic_1_values).item())
-
-                self.track_data("Q-network / Q2 (max)", torch.max(critic_2_values).item())
-                self.track_data("Q-network / Q2 (min)", torch.min(critic_2_values).item())
-                self.track_data("Q-network / Q2 (mean)", torch.mean(critic_2_values).item())
 
                 self.track_data("Target / Target (max)", torch.max(target_values).item())
                 self.track_data("Target / Target (min)", torch.min(target_values).item())
                 self.track_data("Target / Target (mean)", torch.mean(target_values).item())
 
+                if should_update_policy:
+                    self.track_data("Loss / Policy loss", policy_loss.item())
+
+                    self.track_data("Q-network / Q1 (max)", torch.max(critic_1_values).item())
+                    self.track_data("Q-network / Q1 (min)", torch.min(critic_1_values).item())
+                    self.track_data("Q-network / Q1 (mean)", torch.mean(critic_1_values).item())
+
+                    self.track_data("Q-network / Q2 (max)", torch.max(critic_2_values).item())
+                    self.track_data("Q-network / Q2 (min)", torch.min(critic_2_values).item())
+                    self.track_data("Q-network / Q2 (mean)", torch.mean(critic_2_values).item())
+
+                    if self._learn_entropy:
+                        self.track_data("Loss / Entropy loss", entropy_loss.item())
+
                 if self._learn_entropy:
-                    self.track_data("Loss / Entropy loss", entropy_loss.item())
                     self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())
 
                 if self._learning_rate_scheduler:

@@ -189,9 +189,10 @@ class Model(torch.nn.Module, ABC):
         The following keys are used by the agents for initialization:
 
         - ``"rnn"``: Recurrent Neural Network (RNN) specification for RNN, LSTM and GRU layers/cells.
-        - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
-          There must be as many tuples as there are states in the recurrent layer/cell.
-          E.g.: LSTM has 2 states (hidden and cell).
+
+          - ``"sizes"``: List of RNN shapes (number of layers, number of environments, number of features in the RNN state).
+            There must be as many tuples as there are states in the recurrent layer/cell.
+            E.g.: LSTM has 2 states (hidden and cell).
 
         :return: Dictionary containing advanced specification of the model.
 

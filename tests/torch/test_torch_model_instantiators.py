@@ -8,6 +8,7 @@ from skrl.utils.model_instantiators.torch import (
     categorical_model,
     deterministic_model,
     gaussian_model,
+    multicategorical_model,
     multivariate_gaussian_model,
     shared_model,
 )
@@ -102,6 +103,32 @@ def test_categorical_model(capsys, device):
             }
         )
         assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
+def test_multicategorical_model(capsys, device):
+    # observation
+    action_space = spaces.MultiDiscrete([3, 4])
+    for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
+        observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
+        model = multicategorical_model(
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            unnormalized_log_prob=True,
+            network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
+            output="ACTIONS",
+        )
+        model.to(device=config.torch.parse_device(device))
+
+        output = model.act(
+            {
+                "observations": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
+        assert output[0].shape == (10, 2)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])

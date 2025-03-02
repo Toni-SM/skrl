@@ -21,6 +21,9 @@ Utilities for quickly creating model instances.
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+    * - :doc:`Multi-categorical model <../models/multicategorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -80,9 +83,9 @@ Certain operations could be specified on them, including indexing and slicing
 
 Available tokens:
 
-* ``STATES``: Token indicating the input states (``inputs["states"]``) forwarded to the model
-* ``ACTIONS``: Token indicating the input actions (``inputs["taken_actions"]``) forwarded to the model
-* ``STATES_ACTIONS``: Token indicating the concatenation of the forwarded input states and actions
+* ``OBSERVATIONS``: Unflattened tensorized input ``observations`` (tensorized observation space) forwarded to the model
+* ``STATES``: Unflattened tensorized input ``states`` (tensorized state space) forwarded to the model
+* ``ACTIONS``: Unflattened tensorized input ``taken_actions`` (tensorized action space) forwarded to the model
 
 Supported operations:
 
@@ -93,8 +96,8 @@ Supported operations:
       - Example
     * - Tensor/array indexing and slicing
         |br| E.g.: :py:class:`gymnasium.spaces.Box`
-      - ``STATES[:, 0]``
-        |br| ``STATES[:, 2:5]``
+      - ``OBSERVATIONS[:, 0]``
+        |br| ``OBSERVATIONS[:, 2:5]``
     * - Dictionary indexing by key
         |br| E.g.: :py:class:`gymnasium.spaces.Dict`
       - ``STATES["joint-pos"]``
@@ -115,7 +118,8 @@ Certain operations could be specified on it
 
 .. note::
 
-    If a token is used, a linear layer will be created with the last container in the list (as the number of input features) and the value represented by the token (as the number of output features)
+    If a token is used, a linear layer will be created with the last container in the list (as the number of input features)
+    and the value represented by the token (as the number of output features)
 
 .. hint::
 
@@ -213,7 +217,8 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 
 .. note::
 
-    The tokens ``STATES`` (number of elements in the observation/state space), ``ACTIONS`` (number of elements in the action space), ``STATES_ACTIONS`` (the sum of the number of elements of the observation/state space and of the action space) and ``ONE`` (1) can be used as the layer's number of input/output features
+    The tokens ``NUM_OBSERVATIONS`` (number of elements in the observation space), ``NUM_STATES`` (number of elements in the state space),
+    ``NUM_ACTIONS`` (number of elements in the action space), and ``ONE`` (1) can be used as the layer's number of input/output features
 
 .. note::
 
@@ -527,6 +532,8 @@ API (PyTorch)
 -------------
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
+
+.. autofunction:: skrl.utils.model_instantiators.torch.multicategorical_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.deterministic_model
 

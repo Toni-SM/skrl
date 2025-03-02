@@ -33,9 +33,9 @@ def test_get_activation_function(capsys):
 
 def test_parse_input(capsys):
     # check for tokens
-    for input in ["STATES", "OBSERVATIONS", "ACTIONS", "OBSERVATIONS_ACTIONS", "STATES_ACTIONS"]:
+    for input in ["STATES", "OBSERVATIONS", "ACTIONS"]:
         output = _parse_input(input)
-        for item in ["STATES", "OBSERVATIONS", "ACTIONS", "OBSERVATIONS_ACTIONS", "STATES_ACTIONS"]:
+        for item in ["STATES", "OBSERVATIONS", "ACTIONS"]:
             assert item not in output, f"'{item}' in '{output}'"
     # Mixed operation
     input = 'OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]]) - STATES["image"]'

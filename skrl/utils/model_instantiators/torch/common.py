@@ -62,8 +62,6 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
-    source = source.replace("OBSERVATIONS_ACTIONS", "torch.cat([observations, taken_actions], dim=1)")
-    source = source.replace("STATES_ACTIONS", "torch.cat([states, taken_actions], dim=1)")
     source = source.replace("OBSERVATIONS", "observations")
     source = source.replace("STATES", "states")
     source = source.replace("ACTIONS", "taken_actions")
@@ -231,8 +229,6 @@ def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
         "OBSERVATIONS": "self.num_observations",
         "STATES": "self.num_states",
         "ACTIONS": "self.num_actions",
-        "OBSERVATIONS_ACTIONS": "self.num_observations + self.num_actions",
-        "STATES_ACTIONS": "self.num_states + self.num_actions",
     }
     token_as_str = str(token)
     if token_as_str in num_units:

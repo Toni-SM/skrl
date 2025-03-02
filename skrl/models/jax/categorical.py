@@ -41,46 +41,13 @@ def _entropy(logits):
 
 
 class CategoricalMixin:
-    def __init__(self, unnormalized_log_prob: bool = True, role: str = "") -> None:
-        """Categorical mixin model (stochastic model)
+    def __init__(self, *, unnormalized_log_prob: bool = True, role: str = "") -> None:
+        """Categorical mixin model (stochastic model).
 
-        :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: ``True``).
-                                      If True, the model's output is interpreted as unnormalized log probabilities
-                                      (it can be any real number), otherwise as normalized probabilities
-                                      (the output must be non-negative, finite and have a non-zero sum)
-        :type unnormalized_log_prob: bool, optional
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        Example::
-
-            # define the model
-            >>> import flax.linen as nn
-            >>> from skrl.models.jax import Model, CategoricalMixin
-            >>>
-            >>> class Policy(CategoricalMixin, Model):
-            ...     def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-            ...         Model.__init__(self, observation_space, action_space, device, **kwargs)
-            ...         CategoricalMixin.__init__(self, unnormalized_log_prob)
-            ...
-            ...     @nn.compact  # marks the given module method allowing inlined submodules
-            ...     def __call__(self, inputs, role):
-            ...         x = nn.elu(nn.Dense(32)(inputs["states"]))
-            ...         x = nn.elu(nn.Dense(32)(x))
-            ...         x = nn.Dense(self.num_actions)(x)
-            ...         return x, {}
-            ...
-            >>> # given an observation_space: gymnasium.spaces.Box with shape (4,)
-            >>> # and an action_space: gymnasium.spaces.Discrete with n = 2
-            >>> model = Policy(observation_space, action_space)
-            >>>
-            >>> print(model)
-            Policy(
-                # attributes
-                observation_space = Box(-1.0, 1.0, (4,), float32)
-                action_space = Discrete(2)
-                device = StreamExecutorGpuDevice(id=0, process_index=0, slice_index=0)
-            )
+        :param unnormalized_log_prob: Flag to indicate how to the model's output will be interpreted.
+            If True, the model's output is interpreted as unnormalized log probabilities (it can be any real number),
+            otherwise as normalized probabilities (the output must be non-negative, finite and have a non-zero sum).
+        :param role: Role played by the model.
         """
         self._unnormalized_log_prob = unnormalized_log_prob
 
@@ -92,67 +59,51 @@ class CategoricalMixin:
 
     def act(
         self,
-        inputs: Mapping[str, Union[Union[np.ndarray, jax.Array], Any]],
+        inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]],
+        *,
         role: str = "",
         params: Optional[jax.Array] = None,
-    ) -> Tuple[jax.Array, Union[jax.Array, None], Mapping[str, Union[jax.Array, Any]]]:
-        """Act stochastically in response to the state of the environment
+    ) -> Tuple[jax.Array, Mapping[str, Union[jax.Array, Any]]]:
+        """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
 
-                       - ``"states"``: state of the environment used to make the decision
-                       - ``"taken_actions"``: actions taken by the policy for the given states
-        :type inputs: dict where the values are typically np.ndarray or jax.Array
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-        :param params: Parameters used to compute the output (default: ``None``).
-                       If ``None``, internal parameters will be used
-        :type params: jnp.array
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+        :param role: Role played by the model.
+        :param params: Parameters used to compute the output. If not provided, internal parameters will be used.
 
-        :return: Model output. The first component is the action to be taken by the agent.
-                 The second component is the log of the probability density function.
-                 The third component is a dictionary containing the network output ``"net_output"``
-                 and extra output values
-        :rtype: tuple of jax.Array, jax.Array or None, and dict
+        :return: Model output. The first component is the expected action/value returned by the model.
+            The second component is a dictionary containing the following extra output values:
 
-        Example::
-
-            >>> # given a batch of sample states with shape (4096, 4)
-            >>> actions, log_prob, outputs = model.act({"states": states})
-            >>> print(actions.shape, log_prob.shape, outputs["net_output"].shape)
-            (4096, 1) (4096, 1) (4096, 2)
+            - ``"log_prob"``: log of the probability density function.
+            - ``"net_output"``: network output.
         """
         with jax.default_device(self.device):
             self._i += 1
             subkey = jax.random.fold_in(self._key, self._i)
             inputs["key"] = subkey
 
-        # map from states/observations to normalized probabilities or unnormalized log probabilities
+        # map from observations/states to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         actions, log_prob = _categorical(
             net_output, self._unnormalized_log_prob, inputs.get("taken_actions", None), subkey
         )
 
+        outputs["log_prob"] = log_prob
         outputs["net_output"] = net_output
         # avoid jax.errors.UnexpectedTracerError
         outputs["stddev"] = jnp.full_like(log_prob, jnp.nan)
-        return actions, log_prob, outputs
+        return actions, outputs
 
-    def get_entropy(self, logits: jax.Array, role: str = "") -> jax.Array:
-        """Compute and return the entropy of the model
+    def get_entropy(self, stddev: jax.Array, *, role: str = "") -> jax.Array:
+        """Compute and return the entropy of the model.
 
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
+        :param stddev: Model standard deviation.
+        :param role: Role played by the model.
 
-        :return: Entropy of the model
-        :rtype: jax.Array
-
-        Example::
-
-            # given a standard deviation array: stddev
-            >>> entropy = model.get_entropy(stddev)
-            >>> print(entropy.shape)
-            (4096, 8)
+        :return: Entropy of the model.
         """
-        return _entropy(logits)
+        return _entropy(stddev)

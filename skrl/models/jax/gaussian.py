@@ -123,11 +123,11 @@ class GaussianMixin:
             inputs["key"] = subkey
 
         # map from observations/states to mean actions and log standard deviations
-        mean_actions, log_std, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
+        mean_actions, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         actions, log_prob, log_std, stddev = _gaussian(
             mean_actions,
-            log_std,
+            outputs["log_std"],
             self._log_std_min,
             self._log_std_max,
             self._clip_actions_min,

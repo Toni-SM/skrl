@@ -128,10 +128,10 @@ class Model(flax.linen.Module):
         if not inputs:
             inputs = {
                 "states": flatten_tensorized_space(
-                    sample_space(self.observation_space, backend="jax", device=self.device), self._jax
+                    sample_space(self.observation_space, backend="native", device=self.device), self._jax
                 ),
                 "taken_actions": flatten_tensorized_space(
-                    sample_space(self.action_space, backend="jax", device=self.device), self._jax
+                    sample_space(self.action_space, backend="native", device=self.device), self._jax
                 ),
             }
         if key is None:

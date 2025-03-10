@@ -91,10 +91,10 @@ class Model(torch.nn.Module):
         if not inputs:
             inputs = {
                 "states": flatten_tensorized_space(
-                    sample_space(self.observation_space, backend="torch", device=self.device)
+                    sample_space(self.observation_space, backend="native", device=self.device)
                 ),
                 "taken_actions": flatten_tensorized_space(
-                    sample_space(self.action_space, backend="torch", device=self.device)
+                    sample_space(self.action_space, backend="native", device=self.device)
                 ),
             }
         # init parameters

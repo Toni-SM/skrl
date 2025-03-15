@@ -1,8 +1,31 @@
 from typing import Any, Mapping, Sequence, Tuple, Union
 
 import ast
+from gymnasium import spaces
+
+import torch
+import torch.nn as nn
 
 from skrl import logger
+
+
+def one_hot_encoding(space: spaces.Space, x: torch.Tensor) -> torch.Tensor:
+    """One-hot encode a tensorized Discrete or MultiDiscrete space.
+
+    :param space: Gymnasium space
+    :param x: Tensorized sample/value of the given space
+
+    :return: One-hot encoded tensor
+    """
+    if isinstance(space, spaces.Discrete):
+        return nn.functional.one_hot(x[:, 0].long(), num_classes=space.n).float()
+    elif isinstance(space, spaces.MultiDiscrete):
+        return torch.cat(
+            [nn.functional.one_hot(x[:, i].long(), num_classes=space.nvec[i]) for i in range(space.nvec.shape[0])],
+            dim=1,
+        ).float()
+    else:
+        raise ValueError(f"Unsupported space ({space})")
 
 
 def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
@@ -64,6 +87,9 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
+    source = source.replace("OBSERVATION_SPACE", "self.observation_space")
+    source = source.replace("STATE_SPACE", "self.state_space")
+    source = source.replace("ACTION_SPACE", "self.action_space")
     source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace(
         "STATES_ACTIONS", "torch.cat([states, taken_actions], dim=1)"
     )

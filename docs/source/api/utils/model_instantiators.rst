@@ -21,6 +21,9 @@ Utilities for quickly creating model instances.
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+    * - :doc:`Multi-Categorical model <../models/multicategorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -535,6 +538,8 @@ API (PyTorch)
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
 
+.. autofunction:: skrl.utils.model_instantiators.torch.multicategorical_model
+
 .. autofunction:: skrl.utils.model_instantiators.torch.deterministic_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.gaussian_model
@@ -551,6 +556,8 @@ API (JAX)
 ---------
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
+
+.. autofunction:: skrl.utils.model_instantiators.jax.multicategorical_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.deterministic_model
 

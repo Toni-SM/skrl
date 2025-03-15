@@ -4,8 +4,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.4.2] - Unreleased
 ### Added
-- Allow `None` type spaces and samples/values in spaces utilities
+- Add Multi-Categorical model instantiator
 - Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces
+- Allow `None` type spaces and samples/values in spaces utilities
 
 ## [1.4.1] - 2025-01-27
 ### Fixed
@@ -98,7 +99,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.1.0] - 2024-02-12
 ### Added
-- MultiCategorical mixin to operate MultiDiscrete action spaces
+- `MultiCategoricalMixin` to operate `MultiDiscrete` action spaces
 
 ### Changed (breaking changes)
 - Rename the `ManualTrainer` to `StepTrainer`

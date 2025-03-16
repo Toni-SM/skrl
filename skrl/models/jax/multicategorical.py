@@ -8,6 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.spaces.jax import compute_space_size
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -102,7 +103,7 @@ class MultiCategoricalMixin:
         self._mc_key = config.jax.key
 
         self._mc_action_space_nvec = np.cumsum(self.action_space.nvec).tolist()
-        self._mc_action_space_shape = self._get_space_size(self.action_space, number_of_elements=False)
+        self._mc_action_space_shape = compute_space_size(self.action_space, occupied_size=True)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)

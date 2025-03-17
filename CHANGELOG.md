@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces
 - Allow `None` type spaces and samples/values in spaces utilities
 
+### Fixed
+- Fix common property overwriting (e.g. `clip_actions`) in shared models composed of different mixin types
+
 ## [1.4.1] - 2025-01-27
 ### Fixed
 - Force the use of the device local to process in distributed runs in JAX

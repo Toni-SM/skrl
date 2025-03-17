@@ -56,8 +56,8 @@ class CategoricalMixin:
               )
             )
         """
-        self._unnormalized_log_prob = unnormalized_log_prob
-        self._distribution = None
+        self._c_unnormalized_log_prob = unnormalized_log_prob
+        self._c_distribution = None
 
     def act(
         self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
@@ -89,15 +89,15 @@ class CategoricalMixin:
         net_output, outputs = self.compute(inputs, role)
 
         # unnormalized log probabilities
-        if self._unnormalized_log_prob:
-            self._distribution = Categorical(logits=net_output)
+        if self._c_unnormalized_log_prob:
+            self._c_distribution = Categorical(logits=net_output)
         # normalized probabilities
         else:
-            self._distribution = Categorical(probs=net_output)
+            self._c_distribution = Categorical(probs=net_output)
 
         # actions and log of the probability density function
-        actions = self._distribution.sample()
-        log_prob = self._distribution.log_prob(inputs.get("taken_actions", actions).view(-1))
+        actions = self._c_distribution.sample()
+        log_prob = self._c_distribution.log_prob(inputs.get("taken_actions", actions).view(-1))
 
         outputs["net_output"] = net_output
         return actions.unsqueeze(-1), log_prob.unsqueeze(-1), outputs
@@ -116,9 +116,9 @@ class CategoricalMixin:
             >>> print(entropy.shape)
             torch.Size([4096, 1])
         """
-        if self._distribution is None:
+        if self._c_distribution is None:
             return torch.tensor(0.0, device=self.device)
-        return self._distribution.entropy().to(self.device)
+        return self._c_distribution.entropy().to(self.device)
 
     def distribution(self, role: str = "") -> torch.distributions.Categorical:
         """Get the current distribution of the model
@@ -134,4 +134,4 @@ class CategoricalMixin:
             >>> print(distribution)
             Categorical(probs: torch.Size([4096, 2]), logits: torch.Size([4096, 2]))
         """
-        return self._distribution
+        return self._c_distribution

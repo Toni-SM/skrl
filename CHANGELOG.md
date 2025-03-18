@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.4.2] - Unreleased
+## [1.4.2] - 2025-03-18
 ### Added
 - Add Multi-Categorical model instantiator
 - Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces

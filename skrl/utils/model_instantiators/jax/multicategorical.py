@@ -86,7 +86,7 @@ def multicategorical_model(
     template = f"""class MultiCategoricalModel(MultiCategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum", **kwargs):
         Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
     def setup(self):
         {networks}

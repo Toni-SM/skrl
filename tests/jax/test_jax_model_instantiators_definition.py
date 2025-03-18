@@ -9,7 +9,13 @@ import flax
 import jax.numpy as jnp
 import numpy as np
 
-from skrl.utils.model_instantiators.jax import Shape, categorical_model, deterministic_model, gaussian_model
+from skrl.utils.model_instantiators.jax import (
+    Shape,
+    categorical_model,
+    deterministic_model,
+    gaussian_model,
+    multicategorical_model,
+)
 from skrl.utils.model_instantiators.jax.common import _generate_modules, _get_activation_function, _parse_input
 
 
@@ -255,3 +261,40 @@ def test_categorical_model(capsys):
     observations = jnp.ones((10, model.num_observations))
     output = model.act({"states": observations})
     assert output[0].shape == (10, 1)
+
+
+def test_multicategorical_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.MultiDiscrete([2, 3])
+
+    content = r"""
+    unnormalized_log_prob: True
+    network:
+      - name: net
+        input: OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+        activations: elu
+    output: ACTIONS
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = multicategorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = multicategorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
+    model.init_state_dict("model")
+    with capsys.disabled():
+        print(model)
+
+    observations = jnp.ones((10, model.num_observations))
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 2)

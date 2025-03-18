@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Allow `None` type spaces and samples/values in spaces utilities
 
 ### Fixed
+- Cast model instantiator's `initial_log_std` parameter to `float` in PyTorch
 - Fix common property overwriting (e.g. `clip_actions`) in shared models composed of different mixin types
 
 ## [1.4.1] - 2025-01-27

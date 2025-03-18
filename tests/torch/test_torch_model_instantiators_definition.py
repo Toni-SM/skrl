@@ -13,6 +13,7 @@ from skrl.utils.model_instantiators.torch import (
     categorical_model,
     deterministic_model,
     gaussian_model,
+    multicategorical_model,
     multivariate_gaussian_model,
     shared_model,
 )
@@ -305,6 +306,44 @@ def test_categorical_model(capsys):
     observations = torch.ones((10, model.num_observations), device=device)
     output = model.act({"states": observations})
     assert output[0].shape == (10, 1)
+
+
+def test_multicategorical_model(capsys):
+    device = "cpu"
+    observation_space = gym.spaces.Box(np.array([-1] * 5), np.array([1] * 5))
+    action_space = gym.spaces.MultiDiscrete([2, 3])
+
+    content = r"""
+    unnormalized_log_prob: True
+    reduction: prod
+    network:
+      - name: net
+        input: OBSERVATIONS
+        layers:
+          - linear: 32
+          - linear: [32]
+          - linear: {out_features: 32}
+        activations: elu
+    output: ACTIONS
+    """
+    content = yaml.safe_load(content)
+    # source
+    model = multicategorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=True, **content
+    )
+    with capsys.disabled():
+        print(model)
+    # instance
+    model = multicategorical_model(
+        observation_space=observation_space, action_space=action_space, device=device, return_source=False, **content
+    )
+    model.to(device=device)
+    with capsys.disabled():
+        print(model)
+
+    observations = torch.ones((10, model.num_observations), device=device)
+    output = model.act({"states": observations})
+    assert output[0].shape == (10, 2)
 
 
 def test_shared_model(capsys):

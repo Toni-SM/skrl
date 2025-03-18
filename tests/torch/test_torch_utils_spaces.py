@@ -21,7 +21,7 @@ from ..strategies import gym_space_stategy, gymnasium_space_stategy
 
 
 def _check_backend(x, backend):
-    if backend == "torch":
+    if backend == "native":
         assert isinstance(x, torch.Tensor)
     elif backend == "numpy":
         assert isinstance(x, np.ndarray)
@@ -60,6 +60,8 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
             return sum([occupied_size(_s) for _s in s])
         return gymnasium.spaces.flatdim(s)
 
+    assert compute_space_size(None) == 0
+
     space_size = compute_space_size(space, occupied_size=False)
     assert space_size == gymnasium.spaces.flatdim(space)
 
@@ -84,17 +86,20 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
         else:
             raise ValueError(f"Invalid space type: {type(s)}")
 
+    assert tensorize_space(None, None) is None
+    assert tensorize_space(space, None) is None
+
     tensorized_space = tensorize_space(space, space.sample())
     check_tensorized_space(space, tensorized_space, 1)
 
     tensorized_space = tensorize_space(space, tensorized_space)
     check_tensorized_space(space, tensorized_space, 1)
 
-    sampled_space = sample_space(space, 5, backend="numpy")
+    sampled_space = sample_space(space, batch_size=5, backend="numpy")
     tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
-    sampled_space = sample_space(space, 5, backend="torch")
+    sampled_space = sample_space(space, batch_size=5, backend="native")
     tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
@@ -122,6 +127,9 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
 
     tensorized_space = tensorize_space(space, space.sample())
 
+    assert untensorize_space(None, None) is None
+    assert untensorize_space(space, None) is None
+
     untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
     check_untensorized_space(space, untensorized_space, squeeze_batch_dimension=False)
 
@@ -133,11 +141,13 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
-    sampled_space = sample_space(space, batch_size, backend="numpy")
+    assert sample_space(None) is None
+
+    sampled_space = sample_space(space, batch_size=batch_size, backend="numpy")
     check_sampled_space(space, sampled_space, batch_size, backend="numpy")
 
-    sampled_space = sample_space(space, batch_size, backend="torch")
-    check_sampled_space(space, sampled_space, batch_size, backend="torch")
+    sampled_space = sample_space(space, batch_size=batch_size, backend="native")
+    check_sampled_space(space, sampled_space, batch_size, backend="native")
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
@@ -145,11 +155,13 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     space_size = compute_space_size(space, occupied_size=True)
 
+    assert flatten_tensorized_space(None) is None
+
     tensorized_space = tensorize_space(space, space.sample())
     flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (1, space_size)
 
-    tensorized_space = sample_space(space, batch_size=5, backend="torch")
+    tensorized_space = sample_space(space, batch_size=5, backend="native")
     flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (5, space_size)
 
@@ -157,15 +169,18 @@ def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
+    assert unflatten_tensorized_space(None, None) is None
+    assert unflatten_tensorized_space(space, None) is None
+
     tensorized_space = tensorize_space(space, space.sample())
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
-    check_sampled_space(space, unflattened_space, 1, backend="torch")
+    check_sampled_space(space, unflattened_space, 1, backend="native")
 
-    tensorized_space = sample_space(space, batch_size=5, backend="torch")
+    tensorized_space = sample_space(space, batch_size=5, backend="native")
     flattened_space = flatten_tensorized_space(tensorized_space)
     unflattened_space = unflatten_tensorized_space(space, flattened_space)
-    check_sampled_space(space, unflattened_space, 5, backend="torch")
+    check_sampled_space(space, unflattened_space, 5, backend="native")
 
 
 @hypothesis.given(space=gym_space_stategy())
@@ -196,4 +211,5 @@ def test_convert_gym_space(capsys, space: gym.spaces.Space):
         else:
             raise ValueError(f"Invalid space type: {type(gym_space)}")
 
+    assert convert_gym_space(None) is None
     check_converted_space(space, convert_gym_space(space))

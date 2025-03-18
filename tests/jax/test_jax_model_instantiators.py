@@ -3,7 +3,12 @@ import pytest
 import yaml
 from gymnasium import spaces
 
-from skrl.utils.model_instantiators.jax import categorical_model, deterministic_model, gaussian_model
+from skrl.utils.model_instantiators.jax import (
+    categorical_model,
+    deterministic_model,
+    gaussian_model,
+    multicategorical_model,
+)
 from skrl.utils.spaces.jax import flatten_tensorized_space, sample_space
 
 
@@ -87,8 +92,40 @@ def test_categorical_model(capsys, device):
         )
         model.init_state_dict("model")
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "jax", device))})
+        output = model.act(
+            {
+                "states": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
+def test_multicategorical_model(capsys, device):
+    # observation
+    action_space = spaces.MultiDiscrete([2, 3])
+    for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
+        observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
+        model = multicategorical_model(
+            observation_space=observation_space,
+            action_space=action_space,
+            device=device,
+            unnormalized_log_prob=True,
+            network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
+            output="ACTIONS",
+        )
+        model.init_state_dict("model")
+
+        output = model.act(
+            {
+                "states": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
+        assert output[0].shape == (10, 2)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -107,7 +144,13 @@ def test_deterministic_model(capsys, device):
         )
         model.init_state_dict("model")
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "jax", device))})
+        output = model.act(
+            {
+                "states": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 2)
 
 
@@ -131,5 +174,11 @@ def test_gaussian_model(capsys, device):
         )
         model.init_state_dict("model")
 
-        output = model.act({"states": flatten_tensorized_space(sample_space(observation_space, 10, "jax", device))})
+        output = model.act(
+            {
+                "states": flatten_tensorized_space(
+                    sample_space(observation_space, batch_size=10, backend="native", device=device)
+                )
+            }
+        )
         assert output[0].shape == (10, 2)

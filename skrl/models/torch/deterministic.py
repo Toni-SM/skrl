@@ -50,11 +50,11 @@ class DeterministicMixin:
               )
             )
         """
-        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
+        self._d_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
-        if self._clip_actions:
-            self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        if self._d_clip_actions:
+            self._d_clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
+            self._d_clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
 
     def act(
         self, inputs: Mapping[str, Union[torch.Tensor, Any]], role: str = ""
@@ -84,7 +84,7 @@ class DeterministicMixin:
         actions, outputs = self.compute(inputs, role)
 
         # clip actions
-        if self._clip_actions:
-            actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
+        if self._d_clip_actions:
+            actions = torch.clamp(actions, min=self._d_clip_actions_min, max=self._d_clip_actions_max)
 
         return actions, None, outputs

@@ -1,5 +1,6 @@
 from datetime import datetime
-import gymnasium
+import gymnasium as gym
+from test_crossq_models import *
 
 from skrl.agents.torch.crossq import CROSSQ_DEFAULT_CONFIG as DEFAULT_CONFIG
 from skrl.agents.torch.crossq import CrossQ as Agent
@@ -7,21 +8,20 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch.sequential import SequentialTrainer
 from skrl.utils import set_seed
-from tests.torch.test_crossq_models import *
 
 
 def test_agent():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default="Joint_PandaReach-v0")
+    parser.add_argument("--env", type=str, default="CarRacing-v3")
     parser.add_argument("--seed", type=int, default=9572)
     parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--n-steps", type=int, default=30_000)
 
     args = parser.parse_args()
-    # env
-    env = gymnasium.make(args.env, max_episode_steps=300, render_mode=None)
+    # env = gym.make(args.env, max_episode_steps=300, render_mode=None)
+    env = gym.make(args.env, render_mode="rgb_array")
     env.reset(seed=args.seed)
     set_seed(args.seed, deterministic=True)
     env = wrap_env(env, wrapper="gymnasium")
@@ -48,12 +48,12 @@ def test_agent():
         device=env.device,
         use_batch_norm=True,
     )
+    for model in models.values():
+        model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
     print(models)
-    # for model in models.values():
-    #     model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
 
     # memory
-    memory = RandomMemory(memory_size=1_000_000, num_envs=env.num_envs, device=env.device)
+    memory = RandomMemory(memory_size=10_000, num_envs=env.num_envs, device=env.device)
 
     # agent
     cfg = DEFAULT_CONFIG.copy()
@@ -88,6 +88,7 @@ def test_agent():
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     trainer.train()
+    agent.save(f"logs/{args.env}/model.")
 
 
 test_agent()

@@ -416,10 +416,7 @@ class CrossQ(Agent):
                     next_q = torch.minimum(next_q1.detach(), next_q2.detach())
                     target_q_values = next_q - self._entropy_coefficient * next_log_prob.reshape(-1, 1)
                     target_values: torch.Tensor = (
-                        sampled_rewards
-                        + self._discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self._discount_factor * (sampled_terminated).logical_not() * target_q_values
                     )
                 # compute critic loss
                 critic_loss = 0.5 * (F.mse_loss(q1, target_values.detach()) + F.mse_loss(q2, target_values.detach()))

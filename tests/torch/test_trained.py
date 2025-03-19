@@ -5,6 +5,7 @@ import sys
 import time
 import gymnasium
 import tqdm.rich as tqdm
+from test_crossq_models import *
 
 import numpy as np
 import torch
@@ -14,14 +15,13 @@ from skrl.agents.torch.crossq import CrossQ as Agent
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.utils import set_seed
-from tests.torch.test_crossq_models import *
 
 
 def test_agent():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env-id", default="Joint_PandaReach-v0")
+    parser.add_argument("--env", default="Pendulum-v1")
     parser.add_argument("--n-timesteps", default=1000)
-    parser.add_argument("--steps-per-episode", type=int, default=100)
+    parser.add_argument("--steps-per-episode", type=int, default=200)
     parser.add_argument("--log-interval", default=10)
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--seed", default=9572)
@@ -36,12 +36,7 @@ def test_agent():
     args = parser.parse_args()
     set_seed(args.seed)
     # env
-    env = gymnasium.make(
-        args.env_id,
-        goal_space_size=args.goal_space_size,
-        max_episode_steps=args.steps_per_episode,
-        render_mode="human" if args.gui else None,
-    )
+    env = gymnasium.make(args.env, render_mode="human")
     env = wrap_env(env, wrapper="gymnasium")
 
     models = {}
@@ -84,7 +79,7 @@ def test_agent():
 
     # Change the path to the best_agent.pt file you want to load
     agent.load(
-        "/home/sora/travail/rhoban/skrl/tests/torch/runs/25-02-24_13-12-11-279869_CrossQ/checkpoints/best_agent.pt"
+        "/home/sora/travail/rhoban/skrl/tests/torch/runs/25-03-19_11-45-34-816848_CrossQ/checkpoints/best_agent.pt"
     )
 
     # reset env

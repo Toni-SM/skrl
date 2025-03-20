@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.2] - 2025-03-18
+### Added
+- Add Multi-Categorical model instantiator
+- Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces
+- Allow `None` type spaces and samples/values in spaces utilities
+
+### Fixed
+- Cast model instantiator's `initial_log_std` parameter to `float` in PyTorch
+- Fix common property overwriting (e.g. `clip_actions`) in shared models composed of different mixin types
+
 ## [1.4.1] - 2025-01-27
 ### Fixed
 - Force the use of the device local to process in distributed runs in JAX
@@ -93,7 +103,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.1.0] - 2024-02-12
 ### Added
-- MultiCategorical mixin to operate MultiDiscrete action spaces
+- `MultiCategoricalMixin` to operate `MultiDiscrete` action spaces
 
 ### Changed (breaking changes)
 - Rename the `ManualTrainer` to `StepTrainer`

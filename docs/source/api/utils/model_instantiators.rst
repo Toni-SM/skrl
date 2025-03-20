@@ -21,6 +21,9 @@ Utilities for quickly creating model instances.
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+    * - :doc:`Multi-Categorical model <../models/multicategorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -80,9 +83,13 @@ Certain operations could be specified on them, including indexing and slicing
 
 Available tokens:
 
-* ``STATES``: Token indicating the input states (``inputs["states"]``) forwarded to the model
+* ``OBSERVATIONS``: Token indicating the input states (``inputs["states"]``) forwarded to the model
 * ``ACTIONS``: Token indicating the input actions (``inputs["taken_actions"]``) forwarded to the model
-* ``STATES_ACTIONS``: Token indicating the concatenation of the forwarded input states and actions
+* ``OBSERVATIONS_ACTIONS``: Token indicating the concatenation of the forwarded input states and actions
+* ``OBSERVATION_SPACE``: Token indicating the ``observation_space`` of the model
+* ``ACTION_SPACE``: Token indicating the ``action_space`` of the model
+* ``STATES``: Alias for ``OBSERVATIONS`` (this is to change in future versions to distinguish between observation and state spaces)
+* ``STATES_ACTIONS``: Alias for ``OBSERVATIONS_ACTIONS`` (this is to change in future versions to distinguish between observation and state spaces)
 
 Supported operations:
 
@@ -91,19 +98,22 @@ Supported operations:
 
     * - Operations
       - Example
-    * - Tensor/array indexing and slicing
-        |br| E.g.: :py:class:`gymnasium.spaces.Box`
-      - ``STATES[:, 0]``
-        |br| ``STATES[:, 2:5]``
-    * - Dictionary indexing by key
-        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
+    * - Tensor/array indexing and slicing.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Box` space
+      - ``OBSERVATIONS[:, 0]``
+        |br| ``OBSERVATIONS[:, 2:5]``
+    * - Dictionary indexing by key.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Dict` space
       - ``STATES["joint-pos"]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
     * - Permute dimensions
-      - ``permute(STATES, (0, 3, 1, 2))``
+      - ``permute(OBSERVATIONS, (0, 3, 1, 2))``
+    * - One-hot encoding :py:class:`~gymnasium.spaces.Discrete`
+        |br| and :py:class:`~gymnasium.spaces.MultiDiscrete` spaces
+      - ``one_hot_encoding(OBSERVATION_SPACE, OBSERVATIONS)``
 
 |
 
@@ -528,6 +538,8 @@ API (PyTorch)
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
 
+.. autofunction:: skrl.utils.model_instantiators.torch.multicategorical_model
+
 .. autofunction:: skrl.utils.model_instantiators.torch.deterministic_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.gaussian_model
@@ -544,6 +556,8 @@ API (JAX)
 ---------
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
+
+.. autofunction:: skrl.utils.model_instantiators.jax.multicategorical_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.deterministic_model
 

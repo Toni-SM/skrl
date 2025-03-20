@@ -3,34 +3,30 @@ from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 import textwrap
 import gymnasium
 
-import torch
-import torch.nn as nn  # noqa
+import flax.linen as nn  # noqa
+import jax
+import jax.numpy as jnp  # noqa
 
-from skrl.models.torch import GaussianMixin  # noqa
-from skrl.models.torch import Model
-from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
-from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
-from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
+from skrl.models.jax import MultiCategoricalMixin  # noqa
+from skrl.models.jax import Model
+from skrl.utils.model_instantiators.jax.common import one_hot_encoding  # noqa
+from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
+from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
-def gaussian_model(
+def multicategorical_model(
     observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
     action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-    device: Optional[Union[str, torch.device]] = None,
-    clip_actions: bool = False,
-    clip_log_std: bool = True,
-    min_log_std: float = -20,
-    max_log_std: float = 2,
+    device: Optional[Union[str, jax.Device]] = None,
+    unnormalized_log_prob: bool = True,
     reduction: str = "sum",
-    initial_log_std: float = 0,
-    fixed_log_std: bool = False,
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
     *args,
     **kwargs,
 ) -> Union[Model, str]:
-    """Instantiate a Gaussian model
+    """Instantiate a multi-categorical model
 
     :param observation_space: Observation/state space or shape (default: None).
                               If it is not None, the num_observations property will contain the size of that space
@@ -40,24 +36,16 @@ def gaussian_model(
     :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
     :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
                    If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or torch.device, optional
-    :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
-    :type clip_actions: bool, optional
-    :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: True)
-    :type clip_log_std: bool, optional
-    :param min_log_std: Minimum value of the log standard deviation (default: -20)
-    :type min_log_std: float, optional
-    :param max_log_std: Maximum value of the log standard deviation (default: 2)
-    :type max_log_std: float, optional
+    :type device: str or jax.Device, optional
+    :param unnormalized_log_prob: Flag to indicate how to be interpreted the model's output (default: True).
+                                  If True, the model's output is interpreted as unnormalized log probabilities
+                                  (it can be any real number), otherwise as normalized probabilities
+                                  (the output must be non-negative, finite and have a non-zero sum)
+    :type unnormalized_log_prob: bool, optional
     :param reduction: Reduction method for returning the log probability density function: (default: ``"sum"``).
-                      Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
-                      function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
+                        Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
+                        function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
     :type reduction: str, optional
-    :param initial_log_std: Initial value for the log standard deviation (default: 0)
-    :type initial_log_std: float, optional
-    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
-                          Fixed parameters have the gradient computation deactivated
-    :type fixed_log_std: bool, optional
     :param network: Network definition (default: [])
     :type network: list of dict, optional
     :param output: Output expression (default: "")
@@ -66,7 +54,7 @@ def gaussian_model(
                           instantiate the model rather than the model instance (default: False).
     :type return_source: bool, optional
 
-    :return: Gaussian model instance or definition source
+    :return: Multi-Categorical model instance or definition source
     :rtype: Model
     """
     # compatibility with versions prior to 1.3.0
@@ -95,20 +83,19 @@ def gaussian_model(
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
 
-    template = f"""class GaussianModel(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions,
-                    clip_log_std, min_log_std, max_log_std, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+    template = f"""class MultiCategoricalModel(MultiCategoricalMixin, Model):
+    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True, reduction="sum", **kwargs):
+        Model.__init__(self, observation_space, action_space, device, **kwargs)
+        MultiCategoricalMixin.__init__(self, unnormalized_log_prob, reduction)
 
+    def setup(self):
         {networks}
-        self.log_std_parameter = nn.Parameter(torch.full(size=({output["size"]},), fill_value={float(initial_log_std)}), requires_grad={not fixed_log_std})
 
-    def compute(self, inputs, role=""):
+    def __call__(self, inputs, role):
         states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
         taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
-        return output, self.log_std_parameter, {{}}
+        return output, {{}}
     """
     # return source
     if return_source:
@@ -117,13 +104,10 @@ def gaussian_model(
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["GaussianModel"](
+    return _locals["MultiCategoricalModel"](
         observation_space=observation_space,
         action_space=action_space,
         device=device,
-        clip_actions=clip_actions,
-        clip_log_std=clip_log_std,
-        min_log_std=min_log_std,
-        max_log_std=max_log_std,
+        unnormalized_log_prob=unnormalized_log_prob,
         reduction=reduction,
     )

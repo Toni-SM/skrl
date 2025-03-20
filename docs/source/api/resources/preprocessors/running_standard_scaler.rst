@@ -91,7 +91,7 @@ API (PyTorch)
 -------------
 
 .. autoclass:: skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler
-    :private-members: _parallel_variance, _get_space_size
+    :private-members: _parallel_variance
     :members:
 
 .. raw:: html
@@ -103,7 +103,7 @@ API (JAX)
 
 .. autoclass:: skrl.resources.preprocessors.jax.running_standard_scaler.RunningStandardScaler
     :undoc-members:
-    :private-members: _parallel_variance, _get_space_size
+    :private-members: _parallel_variance
     :members:
 
     .. automethod:: __call__

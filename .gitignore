@@ -16,6 +16,7 @@
 *.onnx
 events.out.tfevents.*
 runs
+wandb
 
 ### C ###
 # Prerequisites

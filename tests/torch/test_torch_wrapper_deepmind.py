@@ -17,8 +17,7 @@ def test_env(capsys: pytest.CaptureFixture):
     try:
         from dm_control import suite
     except ImportError as e:
-        warnings.warn(f"\n\nUnable to import DeepMind environment ({e}).\nThis test will be skipped.\n")
-        return
+        pytest.skip(f"Unable to import DeepMind environment: {e}")
 
     original_env = suite.load(domain_name="pendulum", task_name="swingup")
     env = wrap_env(original_env, "auto")

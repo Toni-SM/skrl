@@ -55,7 +55,11 @@ def test_device(capsys, device: Union[str, None]):
     rank=st.integers(),
     world_size=st.integers(min_value=-1, max_value=1),  # world_size > 1 initializes distributed run
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_distributed(capsys, local_rank: int, rank: int, world_size: int):
     os.environ["JAX_LOCAL_RANK"] = str(local_rank)
     os.environ["JAX_RANK"] = str(rank)
@@ -71,7 +75,11 @@ def test_distributed(capsys, local_rank: int, rank: int, world_size: int):
 
 
 @hypothesis.given(key0=st.integers(min_value=0, max_value=2**32), key1=st.integers(min_value=0, max_value=2**32))
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 @pytest.mark.parametrize("device", ["cpu", "cuda"])
 def test_key(capsys, device: str, key0: int, key1: int):
     config.jax.device = device

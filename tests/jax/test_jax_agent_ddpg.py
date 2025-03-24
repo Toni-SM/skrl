@@ -22,7 +22,7 @@ from ..utils import BaseEnv
 
 class Env(BaseEnv):
     def _sample_observation(self):
-        return sample_space(self.observation_space, self.num_envs, backend="numpy")
+        return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
 
 
 def _check_agent_config(config, default_config):
@@ -56,7 +56,11 @@ def _check_agent_config(config, default_config):
     exploration_timesteps=st.one_of(st.none(), st.integers(min_value=1, max_value=50)),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 def test_agent(
     capsys,

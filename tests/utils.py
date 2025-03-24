@@ -1,7 +1,19 @@
+import os
 import random
 import gymnasium
 
 import numpy as np
+
+
+def get_test_mixed_precision(default):
+    value = os.environ.get("SKRL_TEST_MIXED_PRECISION")
+    if value is None:
+        return False
+    if value.lower() in ["true", "1", "y", "yes"]:
+        return default
+    if value.lower() in ["false", "0", "n", "no"]:
+        return False
+    raise ValueError(f"Invalid value for environment variable SKRL_TEST_MIXED_PRECISION: {value}")
 
 
 class BaseEnv(gymnasium.Env):

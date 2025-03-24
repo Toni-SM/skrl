@@ -47,7 +47,11 @@ def check_sampled_space(space, x, n, backend):
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
     def occupied_size(s):
         if isinstance(s, gymnasium.spaces.Discrete):
@@ -70,7 +74,11 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
     def check_tensorized_space(s, x, n):
         if isinstance(s, gymnasium.spaces.Box):
@@ -105,7 +113,11 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
     def check_untensorized_space(s, x, squeeze_batch_dimension):
         if isinstance(s, gymnasium.spaces.Box):
@@ -138,7 +150,11 @@ def test_untensorize_space(capsys, space: gymnasium.spaces.Space):
 
 
 @hypothesis.given(space=gymnasium_space_stategy(), batch_size=st.integers(min_value=1, max_value=10))
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
     assert sample_space(None) is None
@@ -151,7 +167,11 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     space_size = compute_space_size(space, occupied_size=True)
 
@@ -167,7 +187,11 @@ def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
 
 
 @hypothesis.given(space=gymnasium_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     assert unflatten_tensorized_space(None, None) is None
     assert unflatten_tensorized_space(space, None) is None
@@ -184,7 +208,11 @@ def test_unflatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
 
 
 @hypothesis.given(space=gym_space_stategy())
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_convert_gym_space(capsys, space: gym.spaces.Space):
     def check_converted_space(gym_space, gymnasium_space):
         if isinstance(gym_space, gym.spaces.Box):

@@ -44,7 +44,11 @@ def test_device(capsys, device: Union[str, None]):
     rank=st.integers(),
     world_size=st.integers(),
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_distributed(capsys, local_rank: int, rank: int, world_size: int):
     os.environ["LOCAL_RANK"] = str(local_rank)
     os.environ["RANK"] = str(rank)

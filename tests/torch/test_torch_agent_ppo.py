@@ -22,12 +22,12 @@ from skrl.utils.model_instantiators.torch import (
 )
 from skrl.utils.spaces.torch import sample_space
 
-from ..utils import BaseEnv
+from ..utils import BaseEnv, get_test_mixed_precision
 
 
 class Env(BaseEnv):
     def _sample_observation(self):
-        return sample_space(self.observation_space, self.num_envs, backend="numpy")
+        return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
 
 
 def _check_agent_config(config, default_config):
@@ -66,7 +66,11 @@ def _check_agent_config(config, default_config):
     time_limit_bootstrap=st.booleans(),
     mixed_precision=st.booleans(),
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("separate", [True, False])
 @pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin", "CategoricalMixin"])
@@ -201,7 +205,7 @@ def test_agent(
         "kl_threshold": kl_threshold,
         "rewards_shaper": rewards_shaper,
         "time_limit_bootstrap": time_limit_bootstrap,
-        "mixed_precision": mixed_precision,
+        "mixed_precision": get_test_mixed_precision(mixed_precision),
         "experiment": {
             "directory": "",
             "experiment_name": "",

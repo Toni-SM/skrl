@@ -36,7 +36,11 @@ def test_share_memory(capsys):
         unique=True,
     )
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_get_tensor_names(capsys, tensor_names):
     memory = Memory(memory_size=5, num_envs=1)
     for name in tensor_names:
@@ -50,7 +54,11 @@ def test_get_tensor_names(capsys, tensor_names):
         st.characters(codec="ascii", categories=("Nd", "L")), min_size=1, max_size=5  # codespell:ignore
     )
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 @pytest.mark.parametrize("keepdim", [True, False])
 def test_get_tensor_by_name(capsys, tensor_name, keepdim):
     memory = Memory(memory_size=5, num_envs=2)
@@ -65,7 +73,11 @@ def test_get_tensor_by_name(capsys, tensor_name, keepdim):
         st.characters(codec="ascii", categories=("Nd", "L")), min_size=1, max_size=5  # codespell:ignore
     )
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
+@hypothesis.settings(
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
+    deadline=None,
+    phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
+)
 def test_set_tensor_by_name(capsys, tensor_name):
     memory = Memory(memory_size=5, num_envs=2)
     memory.create_tensor(tensor_name, size=1)

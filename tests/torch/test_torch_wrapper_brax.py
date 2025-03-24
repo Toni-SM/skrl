@@ -17,8 +17,7 @@ def test_env(capsys: pytest.CaptureFixture):
     try:
         import brax.envs
     except ImportError as e:
-        warnings.warn(f"\n\nUnable to import Brax environment ({e}).\nThis test will be skipped.\n")
-        return
+        pytest.skip(f"Unable to import Brax environment: {e}")
 
     original_env = brax.envs.create("inverted_pendulum", batch_size=num_envs, backend="spring")
     env = wrap_env(original_env, "auto")

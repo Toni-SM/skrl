@@ -1,12 +1,13 @@
 name: tests-torch
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [ push, pull_request ]
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 
 jobs:
 

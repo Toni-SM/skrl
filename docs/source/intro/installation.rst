@@ -10,7 +10,7 @@ In this section, you will find the steps to install the library, troubleshoot kn
 **Dependencies**
 ----------------
 
-**skrl** requires Python 3.7 or higher and the following libraries (they will be installed automatically):
+**skrl** requires Python 3.8 or higher and the following libraries (they will be installed automatically):
 
     * `gymnasium <https://gymnasium.farama.org/>`_
     * `packaging <https://packaging.pypa.io>`_

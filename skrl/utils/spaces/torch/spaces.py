@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import gymnasium
 from gymnasium import spaces
@@ -299,15 +299,14 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
     return gymnasium.spaces.flatdim(space)
 
 
-def sample_space(
-    space: Optional[spaces.Space], *, batch_size: int = 1, backend: str = Literal["numpy", "native"], device=None
-) -> Any:
+def sample_space(space: Optional[spaces.Space], *, batch_size: int = 1, backend: str, device=None) -> Any:
     """Generates a random sample from the specified space.
 
     Args:
         space: Gymnasium space.
         batch_size: Size of the sampled batch.
         backend: Whether backend will be used to construct the fundamental spaces.
+            Supported backends are ``"numpy"`` and ``"native"``.
         device: Device on which a tensor/array is or will be allocated.
             This parameter is used when the backend is ``"native"`` (PyTorch).
 

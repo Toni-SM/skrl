@@ -14,7 +14,7 @@ from skrl import config
 from skrl.envs.wrappers.jax import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
 
 
-VecEnvObs = Dict[str, torch.Tensor | Dict[str, torch.Tensor]]
+VecEnvObs = Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]
 VecEnvStepReturn = tuple[VecEnvObs, torch.Tensor, torch.Tensor, torch.Tensor, dict]
 AgentID = TypeVar("AgentID")
 ObsType = TypeVar("ObsType", torch.Tensor, Dict[str, torch.Tensor])

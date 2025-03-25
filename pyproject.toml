@@ -46,7 +46,7 @@ all = [
 ]
 tests = [
   "pytest",
-  "hypothesis",
+  "hypothesis>=6.83.0",
 ]
 # urls
 [project.urls]

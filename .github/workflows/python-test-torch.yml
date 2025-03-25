@@ -25,8 +25,8 @@ jobs:
         python -m pip install torch==1.10
         pwd
         ls
-        python -m pip install .[torch]
-        python -m pip install .[tests]
+        python -m pip install /home/runner/work/skrl/skrl[torch]
+        python -m pip install /home/runner/work/skrl/skrl[tests]
     - name: Run tests
       run: |
         pytest --ignore-glob "tests/torch/*"

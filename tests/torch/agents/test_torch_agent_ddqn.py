@@ -16,7 +16,7 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import deterministic_model
 from skrl.utils.spaces.torch import sample_space
 
-from ..utils import BaseEnv, get_test_mixed_precision
+from ...utils import BaseEnv, get_test_mixed_precision
 
 
 class Env(BaseEnv):

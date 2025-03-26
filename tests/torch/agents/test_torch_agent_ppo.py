@@ -22,7 +22,7 @@ from skrl.utils.model_instantiators.torch import (
 )
 from skrl.utils.spaces.torch import sample_space
 
-from ..utils import BaseEnv, get_test_mixed_precision
+from ...utils import BaseEnv, get_test_mixed_precision
 
 
 class Env(BaseEnv):

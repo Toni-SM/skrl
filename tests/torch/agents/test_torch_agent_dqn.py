@@ -6,22 +6,17 @@ import gymnasium
 
 import torch
 
-from skrl.agents.torch.rpo import RPO as Agent
-from skrl.agents.torch.rpo import RPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.dqn import DQN as Agent
+from skrl.agents.torch.dqn import DQN_DEFAULT_CONFIG as DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.trainers.torch import SequentialTrainer
-from skrl.utils.model_instantiators.torch import (
-    deterministic_model,
-    gaussian_model,
-    multivariate_gaussian_model,
-    shared_model,
-)
+from skrl.utils.model_instantiators.torch import deterministic_model
 from skrl.utils.spaces.torch import sample_space
 
-from ..utils import BaseEnv, get_test_mixed_precision
+from ...utils import BaseEnv, get_test_mixed_precision
 
 
 class Env(BaseEnv):
@@ -42,28 +37,22 @@ def _check_agent_config(config, default_config):
 
 @hypothesis.given(
     num_envs=st.integers(min_value=1, max_value=5),
-    rollouts=st.integers(min_value=1, max_value=5),
-    learning_epochs=st.integers(min_value=1, max_value=5),
-    mini_batches=st.integers(min_value=1, max_value=5),
-    alpha=st.floats(min_value=0, max_value=1),
+    gradient_steps=st.integers(min_value=1, max_value=2),
+    batch_size=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
-    lambda_=st.floats(min_value=0, max_value=1),
+    polyak=st.floats(min_value=0, max_value=1),
     learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
-    value_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
-    random_timesteps=st.just(0),
-    learning_starts=st.just(0),
-    grad_norm_clip=st.floats(min_value=0, max_value=1),
-    ratio_clip=st.floats(min_value=0, max_value=1),
-    value_clip=st.floats(min_value=0, max_value=1),
-    clip_predicted_values=st.booleans(),
-    entropy_loss_scale=st.floats(min_value=0, max_value=1),
-    value_loss_scale=st.floats(min_value=0, max_value=1),
-    kl_threshold=st.floats(min_value=0, max_value=1),
+    random_timesteps=st.integers(min_value=0, max_value=5),
+    learning_starts=st.integers(min_value=0, max_value=5),
+    update_interval=st.integers(min_value=1, max_value=3),
+    target_update_interval=st.integers(min_value=1, max_value=5),
+    exploration_initial_epsilon=st.floats(min_value=0, max_value=1),
+    exploration_final_epsilon=st.floats(min_value=0, max_value=1),
+    exploration_timesteps=st.one_of(st.none(), st.integers(min_value=1, max_value=50)),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
-    time_limit_bootstrap=st.booleans(),
     mixed_precision=st.booleans(),
 )
 @hypothesis.settings(
@@ -72,43 +61,32 @@ def _check_agent_config(config, default_config):
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
-@pytest.mark.parametrize("separate", [True, False])
-@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin"])
 def test_agent(
     capsys,
     device,
     num_envs,
-    # model config
-    separate,
-    policy_structure,
     # agent config
-    rollouts,
-    learning_epochs,
-    mini_batches,
-    alpha,
+    gradient_steps,
+    batch_size,
     discount_factor,
-    lambda_,
+    polyak,
     learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
     state_preprocessor,
-    value_preprocessor,
     random_timesteps,
     learning_starts,
-    grad_norm_clip,
-    ratio_clip,
-    value_clip,
-    clip_predicted_values,
-    entropy_loss_scale,
-    value_loss_scale,
-    kl_threshold,
+    update_interval,
+    target_update_interval,
+    exploration_initial_epsilon,
+    exploration_final_epsilon,
+    exploration_timesteps,
     rewards_shaper,
-    time_limit_bootstrap,
     mixed_precision,
 ):
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
-    action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
+    action_space = gymnasium.spaces.Discrete(3)
 
     # env
     env = wrap_env(Env(observation_space, action_space, num_envs, device), wrapper="gymnasium")
@@ -123,79 +101,45 @@ def test_agent(
         }
     ]
     models = {}
-    if separate:
-        if policy_structure == "GaussianMixin":
-            models["policy"] = gaussian_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        elif policy_structure == "MultivariateGaussianMixin":
-            models["policy"] = multivariate_gaussian_model(
-                observation_space=env.observation_space,
-                action_space=env.action_space,
-                device=env.device,
-                network=network,
-                output="ACTIONS",
-            )
-        models["value"] = deterministic_model(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            device=env.device,
-            network=network,
-            output="ONE",
-        )
-    else:
-        models["policy"] = shared_model(
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            device=env.device,
-            structure=[policy_structure, "DeterministicMixin"],
-            parameters=[
-                {
-                    "network": network,
-                    "output": "ACTIONS",
-                },
-                {
-                    "network": network,
-                    "output": "ONE",
-                },
-            ],
-            roles=["policy", "value"],
-        )
-        models["value"] = models["policy"]
+    models["q_network"] = deterministic_model(
+        observation_space=env.observation_space,
+        action_space=env.action_space,
+        device=env.device,
+        network=network,
+        output="ACTIONS",
+    )
+    models["target_q_network"] = deterministic_model(
+        observation_space=env.observation_space,
+        action_space=env.action_space,
+        device=env.device,
+        network=network,
+        output="ACTIONS",
+    )
 
     # memory
-    memory = RandomMemory(memory_size=rollouts, num_envs=env.num_envs, device=env.device)
+    memory = RandomMemory(memory_size=50, num_envs=env.num_envs, device=env.device)
 
     # agent
     cfg = {
-        "rollouts": rollouts,
-        "learning_epochs": learning_epochs,
-        "mini_batches": mini_batches,
-        "alpha": alpha,
+        "gradient_steps": gradient_steps,
+        "batch_size": batch_size,
         "discount_factor": discount_factor,
-        "lambda": lambda_,
+        "polyak": polyak,
         "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
         "state_preprocessor": state_preprocessor,
         "state_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
-        "value_preprocessor": value_preprocessor,
-        "value_preprocessor_kwargs": {"size": 1, "device": env.device},
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
-        "grad_norm_clip": grad_norm_clip,
-        "ratio_clip": ratio_clip,
-        "value_clip": value_clip,
-        "clip_predicted_values": clip_predicted_values,
-        "entropy_loss_scale": entropy_loss_scale,
-        "value_loss_scale": value_loss_scale,
-        "kl_threshold": kl_threshold,
+        "update_interval": update_interval,
+        "target_update_interval": target_update_interval,
+        "exploration": {
+            "initial_epsilon": exploration_initial_epsilon,
+            "final_epsilon": exploration_final_epsilon,
+            "timesteps": exploration_timesteps,
+        },
         "rewards_shaper": rewards_shaper,
-        "time_limit_bootstrap": time_limit_bootstrap,
         "mixed_precision": get_test_mixed_precision(mixed_precision),
         "experiment": {
             "directory": "",
@@ -212,6 +156,7 @@ def test_agent(
     ] = learning_rate_scheduler_kwargs_value
     _check_agent_config(cfg, DEFAULT_CONFIG)
     _check_agent_config(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    _check_agent_config(cfg["exploration"], DEFAULT_CONFIG["exploration"])
     agent = Agent(
         models=models,
         memory=memory,
@@ -223,7 +168,7 @@ def test_agent(
 
     # trainer
     cfg_trainer = {
-        "timesteps": int(5 * rollouts),
+        "timesteps": 50,
         "headless": True,
         "disable_progressbar": True,
         "close_environment_at_exit": False,

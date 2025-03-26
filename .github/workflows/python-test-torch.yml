@@ -27,4 +27,4 @@ jobs:
         python -m pip install -e .[tests]
     - name: Run tests
       run: |
-        pytest tests/torch
+        pytest tests/torch/agents

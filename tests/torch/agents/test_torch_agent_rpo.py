@@ -21,7 +21,7 @@ from skrl.utils.model_instantiators.torch import (
 )
 from skrl.utils.spaces.torch import sample_space
 
-from ...utils import BaseEnv, get_test_mixed_precision
+from ...utils import BaseEnv, get_test_mixed_precision, is_device_available
 
 
 class Env(BaseEnv):
@@ -106,6 +106,10 @@ def test_agent(
     time_limit_bootstrap,
     mixed_precision,
 ):
+    # check device availability
+    if not is_device_available(device, backend="torch"):
+        pytest.skip(f"Device {device} not available")
+
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
     action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))

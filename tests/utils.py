@@ -5,6 +5,19 @@ import gymnasium
 import numpy as np
 
 
+def is_device_available(device, *, backend) -> bool:
+    if backend == "torch":
+        import torch
+
+        try:
+            torch.zeros((1,), device=device)
+        except Exception as e:
+            return False
+    else:
+        raise ValueError(f"Invalid backend: {backend}")
+    return True
+
+
 def get_test_mixed_precision(default):
     value = os.environ.get("SKRL_TEST_MIXED_PRECISION")
     if value is None:

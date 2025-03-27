@@ -57,7 +57,7 @@ class BraxWrapper(Wrapper):
         :rtype: tuple of np.ndarray or jax.Array and any other info
         """
         observation, reward, terminated, info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         truncated = jnp.zeros_like(terminated)
         if not self._jax:
             observation = np.asarray(jax.device_get(observation))
@@ -73,7 +73,7 @@ class BraxWrapper(Wrapper):
         :rtype: np.ndarray or jax.Array and any other info
         """
         observation = self._env.reset()
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         if not self._jax:
             observation = np.asarray(jax.device_get(observation))
         return observation, {}

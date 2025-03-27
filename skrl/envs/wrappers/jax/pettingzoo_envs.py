@@ -49,7 +49,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         # convert response to numpy or jax
         observations = {
             uid: flatten_tensorized_space(
-                tensorize_space(self.observation_spaces[uid], value, self.device, False), False
+                tensorize_space(self.observation_spaces[uid], value, device=self.device, _jax=False), _jax=False
             )
             for uid, value in observations.items()
         }
@@ -72,7 +72,8 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :rtype: np.ndarray or jax.Array
         """
         state = flatten_tensorized_space(
-            tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), self.device, False), False
+            tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device, _jax=False),
+            _jax=False,
         )
         if self._jax:
             state = jax.device_put(state, device=self.device)
@@ -94,7 +95,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         # convert response to numpy or jax
         observations = {
             uid: flatten_tensorized_space(
-                tensorize_space(self.observation_spaces[uid], value, self.device, False), False
+                tensorize_space(self.observation_spaces[uid], value, device=self.device, _jax=False), _jax=False
             )
             for uid, value in observations.items()
         }

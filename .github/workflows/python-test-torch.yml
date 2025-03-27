@@ -50,14 +50,17 @@ jobs:
     - name: Run tests (gymnasium)
       run: |
         python -m pip install --quiet gymnasium
+        python -m pip show gymnasium
         pytest tests/torch/envs/test_torch_wrapper_gymnasium.py
     - name: Run tests (gym)
       run: |
         python -m pip install --quiet gym
+        python -m pip show gym
         pytest tests/torch/envs/test_torch_wrapper_gym.py
     - name: Run tests (PettingZoo)
       run: |
-        python -m pip install --quiet pettingzoo pygame
+        python -m pip install --quiet pettingzoo pygame pymunk
+        python -m pip show pettingzoo
         pytest tests/torch/envs/test_torch_wrapper_pettingzoo.py
     - name: Run tests (Isaac Lab)
       run: |

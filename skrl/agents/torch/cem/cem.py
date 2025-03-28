@@ -249,7 +249,10 @@ class CEM(Agent):
             indexes = torch.nonzero(terminated + truncated)
             if indexes.numel():
                 for i in indexes[:, 0]:
-                    self._episode_tracking[i.item()].append(self._rollout + 1)
+                    try:
+                        self._episode_tracking[i.item()].append(self._rollout + 1)
+                    except IndexError:
+                        logger.warning(f"IndexError: {i.item()}")
         else:
             self._episode_tracking = [[0] for _ in range(rewards.size(-1))]
 

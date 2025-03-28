@@ -18,6 +18,10 @@ def is_device_available(device, *, backend) -> bool:
     return True
 
 
+def is_running_on_github_actions() -> bool:
+    return os.environ.get("GITHUB_ACTIONS") is not None
+
+
 def get_test_mixed_precision(default):
     value = os.environ.get("SKRL_TEST_MIXED_PRECISION")
     if value is None:

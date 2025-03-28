@@ -8,6 +8,8 @@ import torch
 
 from skrl.envs.wrappers.torch import BraxWrapper, wrap_env
 
+from ...utils import is_running_on_github_actions
+
 
 def test_env(capsys: pytest.CaptureFixture):
     num_envs = 10
@@ -17,7 +19,10 @@ def test_env(capsys: pytest.CaptureFixture):
     try:
         import brax.envs
     except ImportError as e:
-        pytest.skip(f"Unable to import Brax environment: {e}")
+        if is_running_on_github_actions():
+            raise e
+        else:
+            pytest.skip(f"Unable to import Brax environment: {e}")
 
     original_env = brax.envs.create("inverted_pendulum", batch_size=num_envs, backend="spring")
     env = wrap_env(original_env, "auto")

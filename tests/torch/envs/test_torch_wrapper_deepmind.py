@@ -8,6 +8,8 @@ import torch
 
 from skrl.envs.wrappers.torch import DeepMindWrapper, wrap_env
 
+from ...utils import is_running_on_github_actions
+
 
 def test_env(capsys: pytest.CaptureFixture):
     num_envs = 1
@@ -17,7 +19,10 @@ def test_env(capsys: pytest.CaptureFixture):
     try:
         from dm_control import suite
     except ImportError as e:
-        pytest.skip(f"Unable to import DeepMind environment: {e}")
+        if is_running_on_github_actions():
+            raise e
+        else:
+            pytest.skip(f"Unable to import DeepMind environment: {e}")
 
     original_env = suite.load(domain_name="pendulum", task_name="swingup")
     env = wrap_env(original_env, "auto")
@@ -45,7 +50,8 @@ def test_env(capsys: pytest.CaptureFixture):
         assert isinstance(info, Mapping)
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
-            env.render()
+            if not is_running_on_github_actions():
+                env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])

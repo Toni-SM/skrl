@@ -46,6 +46,8 @@ all = [
 ]
 tests = [
   "pytest",
+  "pytest-html",
+  "pytest-cov",
   "hypothesis",
 ]
 # urls

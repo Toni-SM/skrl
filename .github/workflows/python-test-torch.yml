@@ -14,11 +14,13 @@ jobs:
   minimum-requirements-agents:
     runs-on: ubuntu-22.04
     steps:
+    # setup
     - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
+    # install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
@@ -27,18 +29,27 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+    # run tests
     - name: Run tests
       run: |
-        pytest tests/torch/agents
+        pytest --html=minimum-requirements-agents.html --cov=skrl/agents/torch tests/agents/torch
+    # report
+    - name: Save HTML Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: minimum-requirements-agents.html
+        path: minimum-requirements-agents.html
 
   minimum-requirements-envs:
     runs-on: ubuntu-22.04
     steps:
+    # setup
     - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.8
+    # install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
@@ -47,49 +58,52 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+    # run tests
     - name: Run tests (Gymnasium)
       run: |
         python -m pip install --quiet gymnasium==0.26.1 pygame
         python -m pip show gymnasium
-        pytest tests/torch/envs/test_torch_wrapper_gymnasium.py
+        pytest tests/envs/wrappers/torch/test_gymnasium_envs.py
     - name: Run tests (Gym)
       run: |
         python -m pip install --quiet gym==0.23.0
         python -m pip show gym
-        pytest tests/torch/envs/test_torch_wrapper_gym.py
+        pytest tests/envs/wrappers/torch/test_gym_envs.py
     - name: Run tests (PettingZoo)
       run: |
         python -m pip install --quiet pettingzoo==1.22.2 pymunk
         python -m pip show pettingzoo
-        pytest tests/torch/envs/test_torch_wrapper_pettingzoo.py
+        pytest tests/envs/wrappers/torch/test_pettingzoo_envs.py
     - name: Run tests (Isaac Lab)
       run: |
-        pytest tests/torch/envs/test_torch_wrapper_isaaclab.py
+        pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
     - name: Run tests (Omniverse Isaac Gym)
       run: |
-        pytest tests/torch/envs/test_torch_wrapper_omniisaacgym.py
+        pytest tests/envs/wrappers/torch/test_omniverse_isaacgym_envs.py
     - name: Run tests (Isaac Gym)
       run: |
-        pytest tests/torch/envs/test_torch_wrapper_isaacgym.py
+        pytest tests/envs/wrappers/torch/test_isaacgym_envs.py
     - name: Run tests (DeepMind Control Suite)
       run: |
         python -m pip install --quiet dm-control==1.0.15 mujoco==3.0.0
         python -m pip show dm-control
-        pytest tests/torch/envs/test_torch_wrapper_deepmind.py
+        pytest tests/envs/wrappers/torch/test_deepmind_envs.py
     - name: Run tests (Brax)
       run: |
         python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
         python -m pip show brax
-        pytest tests/torch/envs/test_torch_wrapper_brax.py
+        pytest tests/envs/wrappers/torch/test_brax_envs.py
 
   minimum-requirements-utils:
     runs-on: ubuntu-22.04
     steps:
+    # setup
     - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
+    # install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
@@ -98,7 +112,21 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+    # run tests
     - name: Run tests (model_instantiators)
       run: |
         python -m pip install --quiet gym
-        pytest tests/torch/utils
+        pytest \
+          --html=minimum-requirements-utils-model_instantiators.html \
+          --cov=skrl/utils/model_instantiators/torch \
+          tests/utils/model_instantiators/torch
+        pytest \
+          --html=minimum-requirements-utils-spaces.html \
+          --cov=skrl/utils/spaces/torch \
+          tests/utils/spaces/torch
+    # report
+    - name: Save HTML Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: minimum-requirements-utils.html
+        path: minimum-requirements-utils-*.html

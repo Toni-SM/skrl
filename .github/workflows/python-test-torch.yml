@@ -32,9 +32,12 @@ jobs:
     # run tests
     - name: Run tests
       run: |
-        pytest --html=minimum-requirements-agents.html --cov=skrl/agents/torch tests/agents/torch
+        pytest \
+          --self-contained-html --html=minimum-requirements-agents.html \
+          --cov=skrl/agents/torch \
+          tests/agents/torch
     # report
-    - name: Save HTML Report
+    - name: Save reports
       uses: actions/upload-artifact@v4
       with:
         name: minimum-requirements-agents.html
@@ -117,15 +120,15 @@ jobs:
       run: |
         python -m pip install --quiet gym
         pytest \
-          --html=minimum-requirements-utils-model_instantiators.html \
+          --self-contained-html --html=minimum-requirements-utils-model_instantiators.html \
           --cov=skrl/utils/model_instantiators/torch \
           tests/utils/model_instantiators/torch
         pytest \
-          --html=minimum-requirements-utils-spaces.html \
+          --self-contained-html --html=minimum-requirements-utils-spaces.html \
           --cov=skrl/utils/spaces/torch \
           tests/utils/spaces/torch
     # report
-    - name: Save HTML Report
+    - name: Save reports
       uses: actions/upload-artifact@v4
       with:
         name: minimum-requirements-utils.html

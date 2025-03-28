@@ -1,4 +1,4 @@
-name: tests-torch
+name: tests-jax
 
 on: [ push, pull_request ]
 # on:
@@ -15,7 +15,7 @@ jobs:
   # Minimum requirements
   ############################################################
 
-  torch-minimum-agents:
+  jax-minimum-agents:
     name: Minimum requirements (agents)
     runs-on: ubuntu-22.04
     steps:
@@ -30,29 +30,29 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.10
+        python -m pip install --quiet jax==1.10
         python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests
       run: |
         pytest \
           --self-contained-html \
-          --html=torch-minimum-agents-pytest.html \
-          --cov=skrl/agents/torch \
+          --html=jax-minimum-agents-pytest.html \
+          --cov=skrl/agents/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-minimum-agents-coverage.html \
-          tests/agents/torch
+          --cov-report html:jax-minimum-agents-coverage.html \
+          tests/agents/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-minimum-agents.html
-        path: torch-minimum-agents-*.html
+        name: jax-minimum-agents.html
+        path: jax-minimum-agents-*.html
         retention-days: 3
 
-  torch-minimum-envs:
+  jax-minimum-envs:
     name: Minimum requirements (envs)
     runs-on: ubuntu-22.04
     steps:
@@ -67,47 +67,47 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.10
+        python -m pip install --quiet jax==1.10
         python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests (Gymnasium)
       run: |
         python -m pip install --quiet gymnasium==0.26.1 pygame
         python -m pip show gymnasium
-        pytest tests/envs/wrappers/torch/test_gymnasium_envs.py
+        pytest tests/envs/wrappers/jax/test_gymnasium_envs.py
     - name: Run tests (Gym)
       run: |
         python -m pip install --quiet gym==0.23.0
         python -m pip show gym
-        pytest tests/envs/wrappers/torch/test_gym_envs.py
+        pytest tests/envs/wrappers/jax/test_gym_envs.py
     - name: Run tests (PettingZoo)
       run: |
         python -m pip install --quiet pettingzoo==1.22.2 pymunk
         python -m pip show pettingzoo
-        pytest tests/envs/wrappers/torch/test_pettingzoo_envs.py
+        pytest tests/envs/wrappers/jax/test_pettingzoo_envs.py
     - name: Run tests (Isaac Lab)
       run: |
-        pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
+        pytest tests/envs/wrappers/jax/test_isaaclab_envs.py
     - name: Run tests (Omniverse Isaac Gym)
       run: |
-        pytest tests/envs/wrappers/torch/test_omniverse_isaacgym_envs.py
+        pytest tests/envs/wrappers/jax/test_omniverse_isaacgym_envs.py
     - name: Run tests (Isaac Gym)
       run: |
-        pytest tests/envs/wrappers/torch/test_isaacgym_envs.py
+        pytest tests/envs/wrappers/jax/test_isaacgym_envs.py
     - name: Run tests (DeepMind Control Suite)
       run: |
         python -m pip install --quiet dm-control==1.0.15 mujoco==3.0.0
         python -m pip show dm-control
-        pytest tests/envs/wrappers/torch/test_deepmind_envs.py
+        pytest tests/envs/wrappers/jax/test_deepmind_envs.py
     - name: Run tests (Brax)
       run: |
         python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
         python -m pip show brax
-        pytest tests/envs/wrappers/torch/test_brax_envs.py
+        pytest tests/envs/wrappers/jax/test_brax_envs.py
 
-  torch-minimum-utils:
+  jax-minimum-utils:
     name: Minimum requirements (utils)
     runs-on: ubuntu-22.04
     steps:
@@ -122,9 +122,9 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.10
+        python -m pip install --quiet jax==1.10
         python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests (model_instantiators)
@@ -132,31 +132,31 @@ jobs:
         python -m pip install --quiet gym==0.23.0
         pytest \
           --self-contained-html \
-          --html=torch-minimum-utils-model_instantiators-pytest.html \
-          --cov=skrl/utils/model_instantiators/torch \
+          --html=jax-minimum-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-minimum-utils-model_instantiators-coverage.html \
-          tests/utils/model_instantiators/torch
+          --cov-report html:jax-minimum-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/jax
         pytest \
           --self-contained-html \
-          --html=torch-minimum-utils-spaces-pytest.html \
-          --cov=skrl/utils/spaces/torch \
+          --html=jax-minimum-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-minimum-utils-spaces-coverage.html \
-          tests/utils/spaces/torch
+          --cov-report html:jax-minimum-utils-spaces-coverage.html \
+          tests/utils/spaces/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-minimum-utils.html
-        path: torch-minimum-utils-*.html
+        name: jax-minimum-utils.html
+        path: jax-minimum-utils-*.html
         retention-days: 3
 
   ############################################################
   # Latest requirements
   ############################################################
 
-  torch-latest-agents:
+  jax-latest-agents:
     name: Latest requirements (agents)
     runs-on: ubuntu-latest
     steps:
@@ -171,29 +171,29 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet numpy
-        python -m pip install --quiet torch
+        python -m pip install --quiet jax
         python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests
       run: |
         pytest \
           --self-contained-html \
-          --html=torch-latest-agents-pytest.html \
-          --cov=skrl/agents/torch \
+          --html=jax-latest-agents-pytest.html \
+          --cov=skrl/agents/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-latest-agents-coverage.html \
-          tests/agents/torch
+          --cov-report html:jax-latest-agents-coverage.html \
+          tests/agents/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-latest-agents.html
-        path: torch-latest-agents-*.html
+        name: jax-latest-agents.html
+        path: jax-latest-agents-*.html
         retention-days: 3
 
-  torch-latest-envs:
+  jax-latest-envs:
     name: Latest requirements (envs)
     runs-on: ubuntu-latest
     steps:
@@ -207,48 +207,41 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet numpy
-        python -m pip install --quiet torch
-        python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet jax
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests (Gymnasium)
       run: |
         python -m pip install --quiet gymnasium
         python -m pip show gymnasium
-        pytest tests/envs/wrappers/torch/test_gymnasium_envs.py
+        pytest tests/envs/wrappers/jax/test_gymnasium_envs.py
     - name: Run tests (Gym)
       run: |
         python -m pip install --quiet gym
         python -m pip show gym
-        pytest tests/envs/wrappers/torch/test_gym_envs.py
+        pytest tests/envs/wrappers/jax/test_gym_envs.py
     - name: Run tests (PettingZoo)
       run: |
         python -m pip install --quiet pettingzoo pygame pymunk
         python -m pip show pettingzoo
-        pytest tests/envs/wrappers/torch/test_pettingzoo_envs.py
+        pytest tests/envs/wrappers/jax/test_pettingzoo_envs.py
     - name: Run tests (Isaac Lab)
       run: |
-        pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
+        pytest tests/envs/wrappers/jax/test_isaaclab_envs.py
     - name: Run tests (Omniverse Isaac Gym)
       run: |
-        pytest tests/envs/wrappers/torch/test_omniverse_isaacgym_envs.py
+        pytest tests/envs/wrappers/jax/test_omniverse_isaacgym_envs.py
     - name: Run tests (Isaac Gym)
       run: |
-        pytest tests/envs/wrappers/torch/test_isaacgym_envs.py
-    - name: Run tests (DeepMind Control Suite)
-      run: |
-        python -m pip install --quiet dm-control
-        python -m pip show dm-control
-        pytest tests/envs/wrappers/torch/test_deepmind_envs.py
+        pytest tests/envs/wrappers/jax/test_isaacgym_envs.py
     - name: Run tests (Brax)
       run: |
         python -m pip install --quiet brax
         python -m pip show brax
-        pytest tests/envs/wrappers/torch/test_brax_envs.py
+        pytest tests/envs/wrappers/jax/test_brax_envs.py
 
-  torch-latest-utils:
+  jax-latest-utils:
     name: Latest requirements (utils)
     runs-on: ubuntu-latest
     steps:
@@ -262,10 +255,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet numpy
-        python -m pip install --quiet torch
-        python -m pip install --quiet six PyYAML
-        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet jax
+        python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
     # run tests
     - name: Run tests (model_instantiators)
@@ -273,22 +264,22 @@ jobs:
         python -m pip install --quiet gym
         pytest \
           --self-contained-html \
-          --html=torch-latest-utils-model_instantiators-pytest.html \
-          --cov=skrl/utils/model_instantiators/torch \
+          --html=jax-latest-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-latest-utils-model_instantiators-coverage.html \
-          tests/utils/model_instantiators/torch
+          --cov-report html:jax-latest-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/jax
         pytest \
           --self-contained-html \
-          --html=torch-latest-utils-spaces-pytest.html \
-          --cov=skrl/utils/spaces/torch \
+          --html=jax-latest-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/jax \
           --cov-report term:skip-covered \
-          --cov-report html:torch-latest-utils-spaces-coverage.html \
-          tests/utils/spaces/torch
+          --cov-report html:jax-latest-utils-spaces-coverage.html \
+          tests/utils/spaces/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-latest-utils.html
-        path: torch-latest-utils-*.html
+        name: jax-latest-utils.html
+        path: jax-latest-utils-*.html
         retention-days: 3

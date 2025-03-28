@@ -1,5 +1,3 @@
-from typing import Any, Dict, TypeVar, Union
-
 import pytest
 
 from collections.abc import Mapping
@@ -14,21 +12,8 @@ from skrl import config
 from skrl.envs.wrappers.jax import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
 
 
-VecEnvObs = Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]
-VecEnvStepReturn = tuple[VecEnvObs, torch.Tensor, torch.Tensor, torch.Tensor, dict]
-AgentID = TypeVar("AgentID")
-ObsType = TypeVar("ObsType", torch.Tensor, Dict[str, torch.Tensor])
-EnvStepReturn = tuple[
-    Dict[AgentID, ObsType],
-    Dict[AgentID, torch.Tensor],
-    Dict[AgentID, torch.Tensor],
-    Dict[AgentID, torch.Tensor],
-    Dict[AgentID, dict],
-]
-
-
 class IsaacLabEnv(gym.Env):
-    def __init__(self, num_states) -> None:
+    def __init__(self, num_states):
         self.num_actions = 1
         self.num_observations = 4
         self.num_states = num_states
@@ -56,11 +41,11 @@ class IsaacLabEnv(gym.Env):
             self.single_observation_space["critic"] = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(self.num_states,))
             self.state_space = gym.vector.utils.batch_space(self.single_observation_space["critic"], self.num_envs)
 
-    def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[VecEnvObs, dict]:
+    def reset(self, seed=None, options=None):
         observations = {"policy": torch.ones((self.num_envs, self.num_observations), device=self.device)}
         return observations, self.extras
 
-    def step(self, action: torch.Tensor) -> VecEnvStepReturn:
+    def step(self, action):
         assert action.clone().shape == torch.Size([self.num_envs, 1])
         observations = {
             "policy": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)
@@ -70,15 +55,15 @@ class IsaacLabEnv(gym.Env):
         truncated = torch.zeros_like(terminated)
         return observations, rewards, terminated, truncated, self.extras
 
-    def render(self, recompute: bool = False) -> Union[np.ndarray, None]:
+    def render(self, recompute=False):
         return None
 
-    def close(self) -> None:
+    def close(self):
         pass
 
 
 class IsaacLabMultiAgentEnv:
-    def __init__(self, num_states) -> None:
+    def __init__(self, num_states):
         self.possible_agents = [f"agent_{i}" for i in range(3)]
         self.agents = self.possible_agents
         self.num_actions = {f"agent_{i}": i + 10 for i in range(len(self.possible_agents))}
@@ -113,16 +98,14 @@ class IsaacLabMultiAgentEnv:
     def unwrapped(self):
         return self
 
-    def reset(
-        self, seed: int | None = None, options: dict[str, Any] | None = None
-    ) -> tuple[Dict[AgentID, ObsType], dict]:
+    def reset(self, seed=None, options=None):
         observations = {
             agent: torch.ones((self.num_envs, self.num_observations[agent]), device=self.device)
             for agent in self.possible_agents
         }
         return observations, self.extras
 
-    def step(self, action: Dict[AgentID, torch.Tensor]) -> EnvStepReturn:
+    def step(self, action):
         for agent in self.possible_agents:
             assert action[agent].clone().shape == torch.Size([self.num_envs, self.num_actions[agent]])
         observations = {
@@ -138,15 +121,15 @@ class IsaacLabMultiAgentEnv:
         truncated = {agent: torch.zeros_like(terminated[agent]) for agent in self.possible_agents}
         return observations, rewards, terminated, truncated, self.extras
 
-    def state(self) -> Union[torch.Tensor, None]:
+    def state(self):
         if not self.num_states:
             return None
         return torch.ones((self.num_envs, self.num_states), device=self.device)
 
-    def render(self, recompute: bool = False) -> Union[np.ndarray, None]:
+    def render(self, recompute=False):
         return None
 
-    def close(self) -> None:
+    def close(self):
         pass
 
 

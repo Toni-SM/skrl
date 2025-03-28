@@ -270,6 +270,7 @@ def test_multicategorical_model(capsys):
 
     content = r"""
     unnormalized_log_prob: True
+    reduction: prod
     network:
       - name: net
         input: OBSERVATIONS

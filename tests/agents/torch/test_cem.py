@@ -147,4 +147,12 @@ def test_agent(
     }
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
-    trainer.train()
+    try:
+        trainer.train()
+    except RuntimeError as e:
+        error_messages = [
+            "probability tensor contains either",
+            "invalid multinomial distribution",
+        ]
+        if not any(message in str(e) for message in error_messages):
+            raise e

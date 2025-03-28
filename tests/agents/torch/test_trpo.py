@@ -141,6 +141,8 @@ def test_agent(
         network=network,
         output="ONE",
     )
+    for role, model in models.items():
+        model.init_state_dict(role=role)
 
     # memory
     memory = RandomMemory(memory_size=rollouts, num_envs=env.num_envs, device=env.device)

@@ -11,7 +11,8 @@ on: [ push, pull_request ]
 
 jobs:
 
-  minimum-requirements-agents:
+  minimum-agents:
+    name: Minimum requirements (agents)
     runs-on: ubuntu-22.04
     steps:
     # setup
@@ -33,17 +34,21 @@ jobs:
     - name: Run tests
       run: |
         pytest \
-          --self-contained-html --html=minimum-requirements-agents.html \
+          --self-contained-html \
+          --html=minimum-agents-pytest.html \
           --cov=skrl/agents/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:minimum-agents-coverage.html \
           tests/agents/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: minimum-requirements-agents.html
-        path: minimum-requirements-agents.html
+        name: minimum-agents.html
+        path: minimum-agents-*.html
 
-  minimum-requirements-envs:
+  minimum-envs:
+    name: Minimum requirements (envs)
     runs-on: ubuntu-22.04
     steps:
     # setup
@@ -97,7 +102,8 @@ jobs:
         python -m pip show brax
         pytest tests/envs/wrappers/torch/test_brax_envs.py
 
-  minimum-requirements-utils:
+  minimum-utils:
+    name: Minimum requirements (utils)
     runs-on: ubuntu-22.04
     steps:
     # setup
@@ -120,16 +126,22 @@ jobs:
       run: |
         python -m pip install --quiet gym
         pytest \
-          --self-contained-html --html=minimum-requirements-utils-model_instantiators.html \
+          --self-contained-html \
+          --html=minimum-utils-model_instantiators-pytest.html \
           --cov=skrl/utils/model_instantiators/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:minimum-utils-model_instantiators-coverage.html \
           tests/utils/model_instantiators/torch
         pytest \
-          --self-contained-html --html=minimum-requirements-utils-spaces.html \
+          --self-contained-html \
+          --html=minimum-utils-spaces-pytest.html \
           --cov=skrl/utils/spaces/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:minimum-utils-spaces-coverage.html \
           tests/utils/spaces/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: minimum-requirements-utils.html
-        path: minimum-requirements-utils-*.html
+        name: minimum-utils.html
+        path: minimum-utils-*.html

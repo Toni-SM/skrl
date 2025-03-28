@@ -153,7 +153,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
             state = self._unwrapped.state()
         if state is not None:
-            return flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
+            if isinstance(self.state_spaces, gymnasium.spaces.Dict):
+                return tensorize_space(self.state_spaces, state)
+            else:
+                return flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
         return state
 
     def render(self, *args, **kwargs) -> None:

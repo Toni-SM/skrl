@@ -119,6 +119,7 @@ class MAPPO(MultiAgent):
         )
 
         self.shared_observation_spaces = shared_observation_spaces
+        self.state_per_agent = isinstance(self.shared_observation_spaces, gymnasium.spaces.Dict)
 
         # models
         self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
@@ -343,7 +344,9 @@ class MAPPO(MultiAgent):
                 # compute values
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                     values, _, _ = self.values[uid].act(
-                        {"states": self._shared_state_preprocessor[uid](shared_states)}, role="value"
+                        {"states": self._shared_state_preprocessor[uid](shared_states[uid] 
+                                                                        if self.state_per_agent else shared_states)},
+                        role="value",
                     )
                     values = self._value_preprocessor[uid](values, inverse=True)
 
@@ -361,7 +364,7 @@ class MAPPO(MultiAgent):
                     truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
-                    shared_states=shared_states,
+                    shared_states=shared_states[uid] if self.state_per_agent else shared_states,
                 )
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
@@ -456,7 +459,9 @@ class MAPPO(MultiAgent):
             with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
                 value.train(False)
                 last_values, _, _ = value.act(
-                    {"states": self._shared_state_preprocessor[uid](self._current_shared_next_states.float())},
+                    {"states": self._shared_state_preprocessor[uid](self._current_shared_next_states[uid].float() 
+                                                                    if self.state_per_agent else 
+                                                                    self._current_shared_next_states.float())},
                     role="value",
                 )
                 value.train(True)

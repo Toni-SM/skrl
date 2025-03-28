@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.8
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.8
@@ -59,7 +59,7 @@ jobs:
         pytest tests/torch/envs/test_torch_wrapper_gym.py
     - name: Run tests (PettingZoo)
       run: |
-        python -m pip install --quiet pettingzoo==1.22.2
+        python -m pip install --quiet pettingzoo==1.22.2 pymunk
         python -m pip show pettingzoo
         pytest tests/torch/envs/test_torch_wrapper_pettingzoo.py
     - name: Run tests (Isaac Lab)
@@ -81,3 +81,24 @@ jobs:
         python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
         python -m pip show brax
         pytest tests/torch/envs/test_torch_wrapper_brax.py
+
+  minimum-requirements-utils:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet torch==1.10
+        python -m pip install --quiet six PyYAML
+        python -m pip install --quiet -e .[torch]
+        python -m pip install --quiet -e .[tests]
+    - name: Run tests (model_instantiators)
+      run: |
+        python -m pip install --quiet gym
+        pytest tests/torch/utils

@@ -5,6 +5,8 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  schedule:
+    - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
 
 defaults:
   run:

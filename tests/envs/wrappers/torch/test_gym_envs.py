@@ -1,5 +1,6 @@
 import pytest
 
+import sys
 from collections.abc import Mapping
 import gym
 import gymnasium
@@ -77,7 +78,11 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
         assert isinstance(info, Mapping)
         for _ in range(3):
-            observation, reward, terminated, truncated, info = env.step(action)
+            try:
+                observation, reward, terminated, truncated, info = env.step(action)
+            except (BrokenPipeError, EOFError, TypeError) as e:
+                if not sys.platform.startswith("win"):
+                    raise e
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])

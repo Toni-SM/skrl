@@ -81,8 +81,9 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
             try:
                 observation, reward, terminated, truncated, info = env.step(action)
             except (BrokenPipeError, EOFError, TypeError) as e:
-                if not sys.platform.startswith("win"):
-                    raise e
+                if sys.platform.startswith("win"):
+                    continue
+                raise e
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])

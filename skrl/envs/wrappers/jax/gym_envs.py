@@ -88,9 +88,10 @@ class GymWrapper(Wrapper):
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
-            if type(info) is list:
+            if isinstance(info, (tuple, list)):
                 truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
                 terminated *= np.logical_not(truncated)
+                info = {}
             else:
                 truncated = info.get("TimeLimit.truncated", False)
                 if truncated:

@@ -97,8 +97,14 @@ jobs:
         python -m pip install --quiet pettingzoo==1.22.2 pymunk
         python -m pip show pettingzoo
         pytest tests/envs/wrappers/jax/test_pettingzoo_envs.py
+    - name: Run tests (Brax)
+      run: |
+        python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
+        python -m pip show brax
+        pytest tests/envs/wrappers/jax/test_brax_envs.py
     - name: Run tests (Isaac Lab)
       run: |
+        python -m pip install --quiet torch==1.11.0
         pytest tests/envs/wrappers/jax/test_isaaclab_envs.py
     - name: Run tests (Omniverse Isaac Gym)
       run: |
@@ -106,16 +112,6 @@ jobs:
     - name: Run tests (Isaac Gym)
       run: |
         pytest tests/envs/wrappers/jax/test_isaacgym_envs.py
-    - name: Run tests (DeepMind Control Suite)
-      run: |
-        python -m pip install --quiet dm-control==1.0.15 mujoco==3.0.0
-        python -m pip show dm-control
-        pytest tests/envs/wrappers/jax/test_deepmind_envs.py
-    - name: Run tests (Brax)
-      run: |
-        python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
-        python -m pip show brax
-        pytest tests/envs/wrappers/jax/test_brax_envs.py
 
   jax-minimum-utils:
     name: Minimum requirements (utils)

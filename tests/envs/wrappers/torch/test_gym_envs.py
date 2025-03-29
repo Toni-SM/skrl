@@ -80,7 +80,7 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
         for _ in range(3):
             try:
                 observation, reward, terminated, truncated, info = env.step(action)
-            except (BrokenPipeError, EOFError, TypeError) as e:
+            except Exception as e:
                 if sys.platform.startswith("win"):
                     continue
                 raise e

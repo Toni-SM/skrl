@@ -174,7 +174,10 @@ jobs:
 
   torch-latest-agents:
     name: Latest requirements (agents)
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -210,13 +213,16 @@ jobs:
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-latest-agents.html
+        name: torch-latest-agents_${{ matrix.os }}
         path: torch-latest-agents-*.html
         retention-days: 3
 
   torch-latest-envs:
     name: Latest requirements (envs)
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -276,7 +282,10 @@ jobs:
 
   torch-latest-utils:
     name: Latest requirements (utils)
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -321,6 +330,6 @@ jobs:
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-latest-utils.html
+        name: torch-latest-utils_${{ matrix.os }}
         path: torch-latest-utils-*.html
         retention-days: 3

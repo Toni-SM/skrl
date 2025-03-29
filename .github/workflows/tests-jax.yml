@@ -38,7 +38,7 @@ jobs:
         python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests
       run: |
@@ -80,7 +80,7 @@ jobs:
         python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -136,7 +136,7 @@ jobs:
         python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests (model_instantiators)
       run: |
@@ -189,7 +189,7 @@ jobs:
         python -m pip install --quiet jax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests
       run: |
@@ -230,7 +230,7 @@ jobs:
         python -m pip install --quiet jax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -285,7 +285,7 @@ jobs:
         python -m pip install --quiet jax
         python -m pip install --quiet -e .[jax]
         python -m pip install --quiet -e .[tests]
-        python -m pip show jax jaxlib flax optax
+        python -m pip show jax jaxlib flax optax numpy
     # run tests
     - name: Run tests (model_instantiators)
       run: |

@@ -38,7 +38,7 @@ jobs:
         python -m pip install --quiet torch==1.10
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests
       run: |
@@ -80,7 +80,7 @@ jobs:
         python -m pip install --quiet torch==1.10
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -141,7 +141,7 @@ jobs:
         python -m pip install --quiet PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests (model_instantiators)
       run: |
@@ -195,7 +195,7 @@ jobs:
         python -m pip install --quiet torch
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests
       run: |
@@ -237,7 +237,7 @@ jobs:
         python -m pip install --quiet torch
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -298,7 +298,7 @@ jobs:
         python -m pip install --quiet PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
-        python -m pip show torch
+        python -m pip show torch numpy
     # run tests
     - name: Run tests (model_instantiators)
       run: |

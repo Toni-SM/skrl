@@ -2,11 +2,19 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.3] - Unreleased
+### Changed
+- Update the GitHub Actions workflows for testing and coverage
+- Update minimum supported Python version to 3.8 and minimum dependencies versions
+
+### Fixed
+- Fix environment wrapper issues with spaces utilities's keyword-only arguments (introduced in previous version)
+
 ## [1.4.2] - 2025-03-18
 ### Added
 - Add Multi-Categorical model instantiator
 - Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces
-- Allow `None` type spaces and samples/values in spaces utilities
+- Allow `None` type spaces and samples/values in spaces utilities and define keyword-only arguments
 
 ### Fixed
 - Cast model instantiator's `initial_log_std` parameter to `float` in PyTorch

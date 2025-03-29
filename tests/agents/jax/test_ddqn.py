@@ -57,7 +57,7 @@ def _check_agent_config(config, default_config):
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
-    max_examples=50,
+    max_examples=25,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])

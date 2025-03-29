@@ -9,6 +9,10 @@ on: [ push, pull_request ]
 #     branches:
 #       - main
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
 
   ############################################################

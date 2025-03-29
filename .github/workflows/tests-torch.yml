@@ -9,6 +9,10 @@ on: [ push, pull_request ]
 #     branches:
 #       - main
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
 
   ############################################################
@@ -175,6 +179,7 @@ jobs:
   torch-latest-agents:
     name: Latest requirements (agents)
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
@@ -220,6 +225,7 @@ jobs:
   torch-latest-envs:
     name: Latest requirements (envs)
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
@@ -283,6 +289,7 @@ jobs:
   torch-latest-utils:
     name: Latest requirements (utils)
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}

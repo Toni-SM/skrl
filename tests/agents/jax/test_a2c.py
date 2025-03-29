@@ -16,7 +16,7 @@ from skrl.trainers.jax import SequentialTrainer
 from skrl.utils.model_instantiators.jax import categorical_model, deterministic_model, gaussian_model
 from skrl.utils.spaces.jax import sample_space
 
-from ..utilities import BaseEnv
+from ...utilities import BaseEnv
 
 
 class Env(BaseEnv):
@@ -97,7 +97,7 @@ def test_agent(
             "name": "net",
             "input": "STATES",
             "layers": [64, 64],
-            "activations": "elu",
+            "activations": "relu",
         }
     ]
     models = {}

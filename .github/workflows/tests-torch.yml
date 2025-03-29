@@ -21,10 +21,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -34,6 +39,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests
       run: |
@@ -58,10 +64,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.8
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -71,6 +82,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -113,10 +125,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # ast.unparse is not available in 3.8 (skrl/utils/model_instantiators)
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -126,6 +143,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests (model_instantiators)
       run: |
@@ -162,10 +180,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.12
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -175,6 +198,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests
       run: |
@@ -199,10 +223,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.12
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -212,6 +241,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests (Gymnasium)
       run: |
@@ -254,10 +284,15 @@ jobs:
     steps:
     # setup
     - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.12
+        check-latest: true
     # install dependencies
     - name: Install dependencies
       run: |
@@ -267,6 +302,7 @@ jobs:
         python -m pip install --quiet six PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
+        python -m pip show torch
     # run tests
     - name: Run tests (model_instantiators)
       run: |

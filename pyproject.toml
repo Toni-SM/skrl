@@ -32,16 +32,16 @@ torch = [
   "torch>=1.10",
 ]
 jax = [
-  "jax>=0.4.3",
-  "jaxlib>=0.4.3",
-  "flax",
+  "jax>=0.4.31",
+  "jaxlib>=0.4.31",
+  "flax>=0.9.0",
   "optax",
 ]
 all = [
   "torch>=1.10",
-  "jax>=0.4.3",
-  "jaxlib>=0.4.3",
-  "flax",
+  "jax>=0.4.31",
+  "jaxlib>=0.4.31",
+  "flax>=0.9.0",
   "optax",
 ]
 tests = [

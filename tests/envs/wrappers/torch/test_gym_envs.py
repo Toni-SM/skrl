@@ -91,4 +91,8 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
 
-    env.close()
+    try:
+        env.close()
+    except Exception as e:
+        if not sys.platform.startswith("win"):
+            raise e

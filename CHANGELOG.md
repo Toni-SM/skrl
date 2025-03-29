@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Fix environment wrapper issues with spaces utilities's keyword-only arguments (introduced in previous version)
+- Fix noise device definition in runner implementations
 
 ## [1.4.2] - 2025-03-18
 ### Added

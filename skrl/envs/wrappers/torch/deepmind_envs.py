@@ -84,7 +84,7 @@ class DeepMindWrapper(Wrapper):
         timestep = self._env.step(actions)
 
         observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, timestep.observation, self.device)
+            tensorize_space(self.observation_space, timestep.observation, device=self.device)
         )
         reward = timestep.reward if timestep.reward is not None else 0
         terminated = timestep.last()
@@ -108,7 +108,7 @@ class DeepMindWrapper(Wrapper):
         """
         timestep = self._env.reset()
         observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, timestep.observation, self.device)
+            tensorize_space(self.observation_space, timestep.observation, device=self.device)
         )
         return observation, {}
 

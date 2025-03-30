@@ -2,7 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.4.3] - Unreleased
+## [1.4.3] - 2025-03-29
 ### Changed
 - Update the GitHub Actions workflows for testing and coverage
 - Update minimum supported Python version to 3.8 and minimum dependencies versions

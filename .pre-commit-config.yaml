@@ -14,7 +14,7 @@ repos:
     - id: end-of-file-fixer
     - id: name-tests-test
       args: ["--pytest-test-first"]
-      exclude: ^(tests/strategies.py|tests/utils.py)
+      exclude: ^(tests/strategies.py|tests/utilities.py)
     - id: trailing-whitespace
 - repo: https://github.com/codespell-project/codespell
   rev: v2.3.0

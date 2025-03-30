@@ -250,7 +250,10 @@ class CEM(Agent):
             indexes = (terminated + truncated).nonzero()[0]
             if indexes.size:
                 for i in indexes:
-                    self._episode_tracking[i.item()].append(self._rollout + 1)
+                    try:
+                        self._episode_tracking[i.item()].append(self._rollout + 1)
+                    except IndexError:
+                        logger.warning(f"IndexError: {i.item()}")
         else:
             self._episode_tracking = [[0] for _ in range(rewards.shape[-1])]
 

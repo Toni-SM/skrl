@@ -34,6 +34,10 @@ class StateDict(flax.struct.PyTreeNode):
         return cls(apply_fn=apply_fn, params=params, **kwargs)
 
 
+class BatchNormStateDict(StateDict):
+    batch_stats: flax.linen.FrozenDict
+
+
 class Model(flax.linen.Module):
     observation_space: Union[int, Sequence[int], gymnasium.Space]
     action_space: Union[int, Sequence[int], gymnasium.Space]
@@ -539,3 +543,48 @@ class Model(flax.linen.Module):
             jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(_vectorize_leaves(leaves)) / config.jax.world_size
         )
         return jax.tree.unflatten(treedef, _unvectorize_leaves(leaves, vector))
+
+
+class BatchNormModel(Model):
+    def init_state_dict(
+        self, role: str, inputs: Mapping[str, Union[np.ndarray, jax.Array]] = {}, key: Optional[jax.Array] = None
+    ) -> None:
+        """Initialize a batchnorm state dictionary
+
+        :param role: Role play by the model
+        :type role: str
+        :param inputs: Model inputs. The most common keys are:
+
+                        - ``"states"``: state of the environment used to make the decision
+                        - ``"taken_actions"``: actions taken by the policy for the given states
+
+                       If not specified, the keys will be populated with observation and action space samples
+        :type inputs: dict of np.ndarray or jax.Array, optional
+        :param key: Pseudo-random number generator (PRNG) key (default: ``None``).
+                    If not provided, the skrl's PRNG key (``config.jax.key``) will be used
+        :type key: jax.Array, optional
+        """
+        if not inputs:
+            inputs = {
+                "states": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="jax", device=self.device), self._jax
+                ),
+                "taken_actions": flatten_tensorized_space(
+                    sample_space(self.action_space, backend="jax", device=self.device), self._jax
+                ),
+                "train": False,
+            }
+        if key is None:
+            key = config.jax.key
+        if isinstance(inputs["states"], (int, np.int32, np.int64)):
+            inputs["states"] = np.array(inputs["states"]).reshape(-1, 1)
+
+        params_key, batch_stats_key = jax.random.split(key, 2)
+        state_dict_params = self.init(
+            {"params": params_key, "batch_stats": batch_stats_key}, inputs, train=False, role=role
+        )
+        # init internal state dict
+        with jax.default_device(self.device):
+            self.state_dict = BatchNormStateDict.create(
+                apply_fn=self.apply, params=state_dict_params["params"], batch_stats=state_dict_params["batch_stats"]
+            )

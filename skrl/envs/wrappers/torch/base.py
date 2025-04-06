@@ -290,14 +290,20 @@ class MultiAgentEnvWrapper(object):
 
     @property
     def state_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """State spaces
+        """Returns the state spaces of the environment.
 
-        Since the state space is a global view of the environment (and therefore the same for all the agents),
-        this property returns a dictionary (for consistency with the other space-related properties) with the same
-        space for all the agents
+        - The base environment can return either:
+        1. A single state space (shared by all agents).
+        2. A dictionary mapping each agent to its specific state space.
+
+        - When a dictionary is used, each key represents an agent's name, and the corresponding value is the agent's state space.
+        - This provides a global view of the environment **from each agent's perspective**.
         """
         space = self._unwrapped.state_space
-        return {agent: space for agent in self.possible_agents}
+        if isinstance(space, gymnasium.spaces.Dict):
+            return space
+        else:
+            return {agent: space for agent in self.possible_agents}
 
     @property
     def observation_spaces(self) -> Mapping[str, gymnasium.Space]:

@@ -77,6 +77,8 @@ class Runner:
             from skrl.utils.model_instantiators.jax import gaussian_model as component
         elif name == "categoricalmixin":
             from skrl.utils.model_instantiators.jax import categorical_model as component
+        elif name == "multicategoricalmixin":
+            from skrl.utils.model_instantiators.jax import multicategorical_model as component
         elif name == "deterministicmixin":
             from skrl.utils.model_instantiators.jax import deterministic_model as component
         # memory

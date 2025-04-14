@@ -86,6 +86,9 @@ Available tokens:
 * ``OBSERVATIONS``: Unflattened tensorized input ``observations`` (tensorized observation space) forwarded to the model
 * ``STATES``: Unflattened tensorized input ``states`` (tensorized state space) forwarded to the model
 * ``ACTIONS``: Unflattened tensorized input ``taken_actions`` (tensorized action space) forwarded to the model
+* ``OBSERVATION_SPACE``: Token indicating the ``observation_space`` of the model
+* ``STATE_SPACE``: Token indicating the ``state_space`` of the model
+* ``ACTION_SPACE``: Token indicating the ``action_space`` of the model
 
 Supported operations:
 
@@ -94,19 +97,22 @@ Supported operations:
 
     * - Operations
       - Example
-    * - Tensor/array indexing and slicing
-        |br| E.g.: :py:class:`gymnasium.spaces.Box`
+    * - Tensor/array indexing and slicing.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Box` space
       - ``OBSERVATIONS[:, 0]``
         |br| ``OBSERVATIONS[:, 2:5]``
-    * - Dictionary indexing by key
-        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
+    * - Dictionary indexing by key.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Dict` space
       - ``STATES["joint-pos"]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
     * - Permute dimensions
-      - ``permute(STATES, (0, 3, 1, 2))``
+      - ``permute(OBSERVATIONS, (0, 3, 1, 2))``
+    * - One-hot encoding :py:class:`~gymnasium.spaces.Discrete`
+        |br| and :py:class:`~gymnasium.spaces.MultiDiscrete` spaces
+      - ``one_hot_encoding(OBSERVATION_SPACE, OBSERVATIONS)``
 
 |
 
@@ -551,6 +557,8 @@ API (JAX)
 ---------
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
+
+.. autofunction:: skrl.utils.model_instantiators.jax.multicategorical_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.deterministic_model
 

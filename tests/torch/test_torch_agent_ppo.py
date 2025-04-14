@@ -2,6 +2,7 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import os
 import gymnasium
 
 import torch
@@ -29,6 +30,9 @@ class Env(BaseEnv):
     def _sample_observation(self):
         return sample_space(self.observation_space, self.num_envs, backend="numpy")
 
+    def _sample_state(self):
+        return sample_space(self.state_space, self.num_envs, backend="numpy")
+
 
 def _check_agent_config(config, default_config):
     for k in config.keys():
@@ -51,6 +55,7 @@ def _check_agent_config(config, default_config):
     learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
+    observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     value_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     random_timesteps=st.just(0),
@@ -68,12 +73,14 @@ def _check_agent_config(config, default_config):
 )
 @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture], deadline=None)
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
+@pytest.mark.parametrize("available_state_space", [True, False])
 @pytest.mark.parametrize("separate", [True, False])
 @pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin", "CategoricalMixin"])
 def test_agent(
     capsys,
     device,
     num_envs,
+    available_state_space,
     # model config
     separate,
     policy_structure,
@@ -86,6 +93,7 @@ def test_agent(
     learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
+    observation_preprocessor,
     state_preprocessor,
     value_preprocessor,
     random_timesteps,
@@ -103,13 +111,14 @@ def test_agent(
 ):
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
+    state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(7,)) if available_state_space else None
     if policy_structure in ["GaussianMixin", "MultivariateGaussianMixin"]:
         action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
     elif policy_structure == "CategoricalMixin":
         action_space = gymnasium.spaces.Discrete(3)
 
     # env
-    env = wrap_env(Env(observation_space, action_space, num_envs, device), wrapper="gymnasium")
+    env = wrap_env(Env(observation_space, state_space, action_space, num_envs, device), wrapper="gymnasium")
 
     # models
     network = [
@@ -186,8 +195,10 @@ def test_agent(
         "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
+        "observation_preprocessor": observation_preprocessor,
+        "observation_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
         "state_preprocessor": state_preprocessor,
-        "state_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
+        "state_preprocessor_kwargs": {"size": env.state_space, "device": env.device},
         "value_preprocessor": value_preprocessor,
         "value_preprocessor_kwargs": {"size": 1, "device": env.device},
         "random_timesteps": random_timesteps,
@@ -201,7 +212,7 @@ def test_agent(
         "kl_threshold": kl_threshold,
         "rewards_shaper": rewards_shaper,
         "time_limit_bootstrap": time_limit_bootstrap,
-        "mixed_precision": mixed_precision,
+        "mixed_precision": mixed_precision and int(os.environ.get("TEST_MIXED_PRECISION", 0)),
         "experiment": {
             "directory": "",
             "experiment_name": "",

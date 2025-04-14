@@ -70,25 +70,29 @@ class GaussianMixin:
 
         :raises ValueError: If the reduction method is not valid.
         """
-        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
+        self._g_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
-        self._clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32) if self._clip_actions else -jnp.inf
-        self._clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32) if self._clip_actions else jnp.inf
+        self._g_clip_actions_min = (
+            jnp.array(self.action_space.low, dtype=jnp.float32) if self._g_clip_actions else -jnp.inf
+        )
+        self._g_clip_actions_max = (
+            jnp.array(self.action_space.high, dtype=jnp.float32) if self._g_clip_actions else jnp.inf
+        )
 
-        self._clip_log_std = clip_log_std
-        self._log_std_min = min_log_std if self._clip_log_std else -jnp.inf
-        self._log_std_max = max_log_std if self._clip_log_std else jnp.inf
+        self._g_clip_log_std = clip_log_std
+        self._g_log_std_min = min_log_std if self._g_clip_log_std else -jnp.inf
+        self._g_log_std_max = max_log_std if self._g_clip_log_std else jnp.inf
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("Reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = (
+        self._g_reduction = (
             jnp.mean
             if reduction == "mean"
             else jnp.sum if reduction == "sum" else jnp.prod if reduction == "prod" else None
         )
 
-        self._i = 0
-        self._key = config.jax.key
+        self._g_i = 0
+        self._g_key = config.jax.key
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -118,8 +122,8 @@ class GaussianMixin:
             - ``"mean_actions"``: mean actions (network output).
         """
         with jax.default_device(self.device):
-            self._i += 1
-            subkey = jax.random.fold_in(self._key, self._i)
+            self._g_i += 1
+            subkey = jax.random.fold_in(self._g_key, self._g_i)
             inputs["key"] = subkey
 
         # map from observations/states to mean actions and log standard deviations
@@ -128,13 +132,13 @@ class GaussianMixin:
         actions, log_prob, log_std, stddev = _gaussian(
             mean_actions,
             outputs["log_std"],
-            self._log_std_min,
-            self._log_std_max,
-            self._clip_actions_min,
-            self._clip_actions_max,
+            self._g_log_std_min,
+            self._g_log_std_max,
+            self._g_clip_actions_min,
+            self._g_clip_actions_max,
             inputs.get("taken_actions", None),
             subkey,
-            self._reduction,
+            self._g_reduction,
         )
 
         outputs["log_prob"] = log_prob

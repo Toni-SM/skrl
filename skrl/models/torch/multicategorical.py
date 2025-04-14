@@ -21,14 +21,14 @@ class MultiCategoricalMixin:
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
         :param role: Role played by the model.
 
-        :raises ValueError: If the reduction method is not valid.
+        :raises ValueError: If the reduction method is not valid
         """
-        self._unnormalized_log_prob = unnormalized_log_prob
-        self._distributions = []
+        self._mc_unnormalized_log_prob = unnormalized_log_prob
+        self._mc_distributions = []
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("Reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = (
+        self._mc_reduction = (
             torch.mean
             if reduction == "mean"
             else torch.sum if reduction == "sum" else torch.prod if reduction == "prod" else None
@@ -56,32 +56,32 @@ class MultiCategoricalMixin:
         net_output, outputs = self.compute(inputs, role)
 
         # unnormalized log probabilities
-        if self._unnormalized_log_prob:
-            self._distributions = [
+        if self._mc_unnormalized_log_prob:
+            self._mc_distributions = [
                 Categorical(logits=logits)
                 for logits in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)
             ]
         # normalized probabilities
         else:
-            self._distributions = [
+            self._mc_distributions = [
                 Categorical(probs=probs) for probs in torch.split(net_output, self.action_space.nvec.tolist(), dim=-1)
             ]
 
         # actions
-        actions = torch.stack([distribution.sample() for distribution in self._distributions], dim=-1)
+        actions = torch.stack([distribution.sample() for distribution in self._mc_distributions], dim=-1)
 
         # log of the probability density function
         log_prob = torch.stack(
             [
                 distribution.log_prob(_actions.view(-1))
                 for _actions, distribution in zip(
-                    torch.unbind(inputs.get("taken_actions", actions), dim=-1), self._distributions
+                    torch.unbind(inputs.get("taken_actions", actions), dim=-1), self._mc_distributions
                 )
             ],
             dim=-1,
         )
-        if self._reduction is not None:
-            log_prob = self._reduction(log_prob, dim=-1)
+        if self._mc_reduction is not None:
+            log_prob = self._mc_reduction(log_prob, dim=-1)
         if log_prob.dim() != actions.dim():
             log_prob = log_prob.unsqueeze(-1)
 
@@ -96,12 +96,12 @@ class MultiCategoricalMixin:
 
         :return: Entropy of the model.
         """
-        if self._distributions:
+        if self._mc_distributions:
             entropy = torch.stack(
-                [distribution.entropy().to(self.device) for distribution in self._distributions], dim=-1
+                [distribution.entropy().to(self.device) for distribution in self._mc_distributions], dim=-1
             )
-            if self._reduction is not None:
-                return self._reduction(entropy, dim=-1).unsqueeze(-1)
+            if self._mc_reduction is not None:
+                return self._mc_reduction(entropy, dim=-1).unsqueeze(-1)
             return entropy
         return torch.tensor(0.0, device=self.device)
 
@@ -114,4 +114,4 @@ class MultiCategoricalMixin:
         """
         # TODO: find a way to return all distributions
         # TODO: find a way to integrate in the class the distribution functions (e.g.: stddev)
-        return self._distributions[0]
+        return self._mc_distributions[0]

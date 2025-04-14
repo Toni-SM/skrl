@@ -49,10 +49,10 @@ class CategoricalMixin:
             otherwise as normalized probabilities (the output must be non-negative, finite and have a non-zero sum).
         :param role: Role played by the model.
         """
-        self._unnormalized_log_prob = unnormalized_log_prob
+        self._c_unnormalized_log_prob = unnormalized_log_prob
 
-        self._i = 0
-        self._key = config.jax.key
+        self._c_i = 0
+        self._c_key = config.jax.key
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -81,15 +81,15 @@ class CategoricalMixin:
             - ``"net_output"``: network output.
         """
         with jax.default_device(self.device):
-            self._i += 1
-            subkey = jax.random.fold_in(self._key, self._i)
+            self._c_i += 1
+            subkey = jax.random.fold_in(self._c_key, self._c_i)
             inputs["key"] = subkey
 
         # map from observations/states to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         actions, log_prob = _categorical(
-            net_output, self._unnormalized_log_prob, inputs.get("taken_actions", None), subkey
+            net_output, self._c_unnormalized_log_prob, inputs.get("taken_actions", None), subkey
         )
 
         outputs["log_prob"] = log_prob

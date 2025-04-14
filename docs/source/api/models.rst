@@ -111,7 +111,6 @@ API (PyTorch)
 .. autoclass:: skrl.models.torch.base.Model
     :undoc-members:
     :show-inheritance:
-    :private-members: _get_space_size
     :members:
 
     .. py:property:: device
@@ -164,7 +163,6 @@ API (JAX)
 .. autoclass:: skrl.models.jax.base.Model
     :undoc-members:
     :show-inheritance:
-    :private-members: _get_space_size
     :members:
 
     .. py:property:: device

@@ -8,7 +8,8 @@ import torch.nn as nn  # noqa
 
 from skrl.models.torch import MultivariateGaussianMixin  # noqa
 from skrl.models.torch import Model
-from skrl.utils.model_instantiators.torch.common import generate_containers
+from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
+from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
@@ -101,7 +102,7 @@ def multivariate_gaussian_model(
 
         {networks}
         self.log_std_parameter = nn.Parameter(
-            torch.full(size=({output["size"]},), fill_value={initial_log_std}, dtype=torch.float32), requires_grad={not fixed_log_std}
+            torch.full(size=({output["size"]},), fill_value={float(initial_log_std)}, dtype=torch.float32), requires_grad={not fixed_log_std}
         )
 
     def compute(self, inputs, role=""):

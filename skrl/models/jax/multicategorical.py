@@ -56,21 +56,21 @@ class MultiCategoricalMixin:
 
         :raises ValueError: If the reduction method is not valid.
         """
-        self._unnormalized_log_prob = unnormalized_log_prob
+        self._mc_unnormalized_log_prob = unnormalized_log_prob
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("Reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        self._reduction = (
+        self._mc_reduction = (
             jnp.mean
             if reduction == "mean"
             else jnp.sum if reduction == "sum" else jnp.prod if reduction == "prod" else None
         )
 
-        self._i = 0
-        self._key = config.jax.key
+        self._mc_i = 0
+        self._mc_key = config.jax.key
 
-        self._action_space_nvec = np.cumsum(self.action_space.nvec).tolist()
-        self._action_space_shape = compute_space_size(self.action_space, occupied_size=True)
+        self._mc_action_space_nvec = np.cumsum(self.action_space.nvec).tolist()
+        self._mc_action_space_shape = compute_space_size(self.action_space, occupied_size=True)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -99,32 +99,32 @@ class MultiCategoricalMixin:
             - ``"net_output"``: network output.
         """
         with jax.default_device(self.device):
-            self._i += 1
-            subkey = jax.random.fold_in(self._key, self._i)
+            self._mc_i += 1
+            subkey = jax.random.fold_in(self._mc_key, self._mc_i)
             inputs["key"] = subkey
 
         # map from observations/states to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         # split inputs
-        net_outputs = jnp.split(net_output, self._action_space_nvec, axis=-1)
+        net_outputs = jnp.split(net_output, self._mc_action_space_nvec, axis=-1)
         if "taken_actions" in inputs:
-            taken_actions = jnp.split(inputs["taken_actions"], self._action_space_shape, axis=-1)
+            taken_actions = jnp.split(inputs["taken_actions"], self._mc_action_space_shape, axis=-1)
         else:
-            taken_actions = [None] * self._action_space_shape
+            taken_actions = [None] * self._mc_action_space_shape
 
         # compute actions and log_prob
         actions, log_prob = [], []
         for _net_output, _taken_actions in zip(net_outputs, taken_actions):
-            _actions, _log_prob = _categorical(_net_output, self._unnormalized_log_prob, _taken_actions, subkey)
+            _actions, _log_prob = _categorical(_net_output, self._mc_unnormalized_log_prob, _taken_actions, subkey)
             actions.append(_actions)
             log_prob.append(_log_prob)
 
         actions = jnp.concatenate(actions, axis=-1)
         log_prob = jnp.concatenate(log_prob, axis=-1)
 
-        if self._reduction is not None:
-            log_prob = self._reduction(log_prob, axis=-1)
+        if self._mc_reduction is not None:
+            log_prob = self._mc_reduction(log_prob, axis=-1)
         if log_prob.ndim != actions.ndim:
             log_prob = jnp.expand_dims(log_prob, -1)
 

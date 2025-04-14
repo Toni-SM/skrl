@@ -15,11 +15,11 @@ class DeterministicMixin:
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
         :param role: Role played by the model.
         """
-        self._clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
+        self._d_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
-        if self._clip_actions:
-            self._clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-            self._clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+        if self._d_clip_actions:
+            self._d_clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
+            self._d_clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -48,7 +48,7 @@ class DeterministicMixin:
         actions, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         # clip actions
-        if self._clip_actions:
-            actions = jnp.clip(actions, a_min=self._clip_actions_min, a_max=self._clip_actions_max)
+        if self._d_clip_actions:
+            actions = jnp.clip(actions, a_min=self._d_clip_actions_min, a_max=self._d_clip_actions_max)
 
         return actions, outputs

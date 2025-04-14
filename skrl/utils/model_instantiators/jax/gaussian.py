@@ -77,11 +77,9 @@ def gaussian_model(
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
     if fixed_log_std:
-        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={initial_log_std})'
+        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)})'
     else:
-        log_std_parameter = (
-            f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={initial_log_std}))'
-        )
+        log_std_parameter = f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)}))'
 
     template = f"""class GaussianModel(GaussianMixin, Model):
     def __init__(

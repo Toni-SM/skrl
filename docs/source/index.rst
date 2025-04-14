@@ -20,11 +20,14 @@ SKRL - Reinforcement Learning library (|version|)
     <a href="https://skrl.readthedocs.io">
         <img alt="docs" src="https://readthedocs.org/projects/skrl/badge/?version=latest">
     </a>
-    <a href="https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml">
-        <img alt="pytest" src="https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml/badge.svg">
-    </a>
     <a href="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml">
         <img alt="pre-commit" src="https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg">
+    </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-torch.yml">
+        <img alt="tests-torch" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-torch.yml/badge.svg">
+    </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml">
+        <img alt="tests-jax" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml/badge.svg">
     </a>
     <br><br>
 

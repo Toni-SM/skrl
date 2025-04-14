@@ -30,6 +30,7 @@ body:
     description: The skrl version can be obtained with the command `pip show skrl`.
     options:
       - ---
+      - 1.4.3
       - 1.4.2
       - 1.4.1
       - 1.4.0
@@ -47,9 +48,9 @@ body:
 - type: input
   attributes:
     label: What ML framework/library version are you using?
-    description: The version can be obtained with the command `pip show torch` or `pip show jax flax optax`.
-    placeholder: PyTorch version, JAX/Flax/Optax version, etc.
+    description: The version can be obtained with the command `pip show torch` or `pip show jax jaxlib flax optax`.
+    placeholder: PyTorch version, JAX/jaxlib/Flax/Optax version, etc.
 - type: input
   attributes:
     label: Additional system information
-    placeholder: Python version, OS (Linux/Windows/Mac/WSL), etc.
+    placeholder: Python version, OS (Linux/Windows/macOS/WSL), etc.

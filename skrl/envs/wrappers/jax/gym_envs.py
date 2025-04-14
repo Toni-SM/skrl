@@ -88,9 +88,10 @@ class GymWrapper(Wrapper):
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
-            if type(info) is list:
+            if isinstance(info, (tuple, list)):
                 truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
                 terminated *= np.logical_not(truncated)
+                info = {}
             else:
                 truncated = info.get("TimeLimit.truncated", False)
                 if truncated:
@@ -100,7 +101,7 @@ class GymWrapper(Wrapper):
 
         # convert response to numpy or jax
         observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, self.device, False), False
+            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
         )
         reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
         terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
@@ -133,7 +134,7 @@ class GymWrapper(Wrapper):
                 else:
                     observation, self._info = self._env.reset()
                 self._observation = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, observation, self.device, False), False
+                    tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
                 )
                 if self._jax:
                     self._observation = jax.device_put(self._observation, device=self.device)
@@ -148,7 +149,7 @@ class GymWrapper(Wrapper):
 
         # convert response to numpy or jax
         observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, self.device, False), False
+            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
         )
         if self._jax:
             observation = jax.device_put(observation, device=self.device)

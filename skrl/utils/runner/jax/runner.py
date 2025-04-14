@@ -321,10 +321,12 @@ class Runner:
             )
             agent_cfg.get("value_preprocessor_kwargs", {}).update({"size": 1, "device": device})
             if agent_cfg.get("exploration", {}).get("noise", None):
+                agent_cfg["exploration"].get("noise_kwargs", {}).update({"device": device})
                 agent_cfg["exploration"]["noise"] = agent_cfg["exploration"]["noise"](
                     **agent_cfg["exploration"].get("noise_kwargs", {})
                 )
             if agent_cfg.get("smooth_regularization_noise", None):
+                agent_cfg.get("smooth_regularization_noise_kwargs", {}).update({"device": device})
                 agent_cfg["smooth_regularization_noise"] = agent_cfg["smooth_regularization_noise"](
                     **agent_cfg.get("smooth_regularization_noise_kwargs", {})
                 )

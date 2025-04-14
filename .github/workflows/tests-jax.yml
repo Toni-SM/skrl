@@ -1,0 +1,316 @@
+name: tests-jax
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  ############################################################
+  # Minimum requirements
+  ############################################################
+
+  jax-minimum-agents:
+    name: Minimum requirements (agents)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-agents-pytest.html \
+          --cov=skrl/agents/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-agents-coverage.html \
+          tests/agents/jax
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: jax-minimum-agents.html
+        path: jax-minimum-agents-*.html
+        retention-days: 3
+
+  jax-minimum-envs:
+    name: Minimum requirements (envs)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests (Gymnasium)
+      run: |
+        python -m pip install --quiet gymnasium==0.26.1 pygame
+        python -m pip show gymnasium
+        pytest tests/envs/wrappers/jax/test_gymnasium_envs.py
+    - name: Run tests (Gym)
+      run: |
+        python -m pip install --quiet gym==0.23.0
+        python -m pip show gym
+        pytest tests/envs/wrappers/jax/test_gym_envs.py
+    - name: Run tests (PettingZoo)
+      run: |
+        python -m pip install --quiet pettingzoo==1.22.2 pymunk
+        python -m pip show pettingzoo
+        pytest tests/envs/wrappers/jax/test_pettingzoo_envs.py
+    - name: Run tests (Brax)
+      run: |
+        python -m pip install --quiet brax==0.9.3 mujoco==3.0.0
+        python -m pip show brax
+        pytest tests/envs/wrappers/jax/test_brax_envs.py
+    - name: Run tests (Isaac Lab)
+      run: |
+        python -m pip install --quiet torch==1.11.0
+        pytest tests/envs/wrappers/jax/test_isaaclab_envs.py
+    - name: Run tests (Omniverse Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/jax/test_omniverse_isaacgym_envs.py
+    - name: Run tests (Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/jax/test_isaacgym_envs.py
+
+  jax-minimum-utils:
+    name: Minimum requirements (utils)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet jax==0.4.31 jaxlib==0.4.31 flax==0.9.0 optax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests (model_instantiators)
+      run: |
+        python -m pip install --quiet gym==0.23.0
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/jax
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-utils-spaces-coverage.html \
+          tests/utils/spaces/jax
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: jax-minimum-utils.html
+        path: jax-minimum-utils-*.html
+        retention-days: 3
+
+  ############################################################
+  # Latest requirements
+  ############################################################
+
+  jax-latest-agents:
+    name: Latest requirements (agents)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet jax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-agents-pytest.html \
+          --cov=skrl/agents/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-agents-coverage.html \
+          tests/agents/jax
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: jax-latest-agents.html
+        path: jax-latest-agents-*.html
+        retention-days: 3
+
+  jax-latest-envs:
+    name: Latest requirements (envs)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet jax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests (Gymnasium)
+      run: |
+        python -m pip install --quiet gymnasium
+        python -m pip show gymnasium
+        pytest tests/envs/wrappers/jax/test_gymnasium_envs.py
+    - name: Run tests (Gym)
+      run: |
+        python -m pip install --quiet gym
+        python -m pip show gym
+        pytest tests/envs/wrappers/jax/test_gym_envs.py
+    - name: Run tests (PettingZoo)
+      run: |
+        python -m pip install --quiet pettingzoo pygame pymunk
+        python -m pip show pettingzoo
+        pytest tests/envs/wrappers/jax/test_pettingzoo_envs.py
+    - name: Run tests (Brax)
+      run: |
+        python -m pip install --quiet brax
+        python -m pip show brax
+        pytest tests/envs/wrappers/jax/test_brax_envs.py
+    - name: Run tests (Isaac Lab)
+      run: |
+        python -m pip install --quiet torch
+        pytest tests/envs/wrappers/jax/test_isaaclab_envs.py
+    - name: Run tests (Omniverse Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/jax/test_omniverse_isaacgym_envs.py
+    - name: Run tests (Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/jax/test_isaacgym_envs.py
+
+  jax-latest-utils:
+    name: Latest requirements (utils)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet jax
+        python -m pip install --quiet -e .[jax]
+        python -m pip install --quiet -e .[tests]
+        python -m pip show jax jaxlib flax optax numpy
+    # run tests
+    - name: Run tests (model_instantiators)
+      run: |
+        python -m pip install --quiet gym
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/jax
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-utils-spaces-coverage.html \
+          tests/utils/spaces/jax
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: jax-latest-utils.html
+        path: jax-latest-utils-*.html
+        retention-days: 3

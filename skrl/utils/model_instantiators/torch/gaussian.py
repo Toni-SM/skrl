@@ -8,6 +8,7 @@ import torch.nn as nn  # noqa
 
 from skrl.models.torch import GaussianMixin  # noqa
 from skrl.models.torch import Model
+from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.torch.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
@@ -101,7 +102,7 @@ def gaussian_model(
         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
 
         {networks}
-        self.log_std_parameter = nn.Parameter(torch.full(size=({output["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})
+        self.log_std_parameter = nn.Parameter(torch.full(size=({output["size"]},), fill_value={float(initial_log_std)}), requires_grad={not fixed_log_std})
 
     def compute(self, inputs, role=""):
         states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))

@@ -1,8 +1,32 @@
 from typing import Any, Mapping, Sequence, Tuple, Union
 
 import ast
+from gymnasium import spaces
+
+import jax
+import jax.nn as jnn
+import jax.numpy as jnp
 
 from skrl import logger
+
+
+def one_hot_encoding(space: spaces.Space, x: jax.Array) -> jax.Array:
+    """One-hot encode a tensorized Discrete or MultiDiscrete space.
+
+    :param space: Gymnasium space
+    :param x: Tensorized sample/value of the given space
+
+    :return: One-hot encoded tensor
+    """
+    if isinstance(space, spaces.Discrete):
+        return jnn.one_hot(x[:, 0], space.n, dtype=jnp.float32)
+    elif isinstance(space, spaces.MultiDiscrete):
+        return jnp.concatenate(
+            [jnn.one_hot(x[:, i], space.nvec[i], dtype=jnp.float32) for i in range(space.nvec.shape[0])],
+            axis=1,
+        )
+    else:
+        raise ValueError(f"Unsupported space ({space})")
 
 
 def _get_activation_function(activation: Union[str, None]) -> Union[str, None]:
@@ -63,6 +87,9 @@ def _parse_input(source: str) -> str:
     NodeTransformer().visit(tree)
     source = ast.unparse(tree)
     # enum substitutions
+    source = source.replace("OBSERVATION_SPACE", "self.observation_space")
+    source = source.replace("STATE_SPACE", "self.state_space")
+    source = source.replace("ACTION_SPACE", "self.action_space")
     source = source.replace("Shape.STATES_ACTIONS", "STATES_ACTIONS").replace(
         "STATES_ACTIONS", "jnp.concatenate([states, taken_actions], axis=-1)"
     )

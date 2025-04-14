@@ -9,6 +9,7 @@ import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import GaussianMixin  # noqa
 from skrl.models.jax import Model  # noqa
+from skrl.utils.model_instantiators.jax.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
@@ -95,11 +96,9 @@ def gaussian_model(
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
     if fixed_log_std:
-        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={initial_log_std})'
+        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)})'
     else:
-        log_std_parameter = (
-            f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={initial_log_std}))'
-        )
+        log_std_parameter = f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)}))'
 
     template = f"""class GaussianModel(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False,

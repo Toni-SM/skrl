@@ -5,8 +5,9 @@
 [![license](https://img.shields.io/github/license/Toni-SM/skrl)](https://github.com/Toni-SM/skrl)
 <span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
 [![docs](https://readthedocs.org/projects/skrl/badge/?version=latest)](https://skrl.readthedocs.io/en/latest/?badge=latest)
-[![pytest](https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/python-test.yml)
 [![pre-commit](https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/pre-commit.yml)
+[![pytest-torch](https://github.com/Toni-SM/skrl/actions/workflows/tests-torch.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/tests-torch.yml)
+[![pytest-jax](https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml/badge.svg)](https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml)
 
 <br>
 <p align="center">

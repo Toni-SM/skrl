@@ -47,13 +47,11 @@ class DeterministicMixin:
                 device = StreamExecutorGpuDevice(id=0, process_index=0, slice_index=0)
             )
         """
-        if not hasattr(self, "_d_clip_actions"):
-            self._d_clip_actions = {}
-        self._d_clip_actions[role] = clip_actions and isinstance(self.action_space, gymnasium.Space)
+        self._d_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
 
-        if self._d_clip_actions[role]:
-            self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-            self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+        if self._d_clip_actions:
+            self._d_clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
+            self._d_clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -92,7 +90,7 @@ class DeterministicMixin:
         actions, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
         # clip actions
-        if self._d_clip_actions[role] if role in self._d_clip_actions else self._d_clip_actions[""]:
-            actions = jnp.clip(actions, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
+        if self._d_clip_actions:
+            actions = jnp.clip(actions, a_min=self._d_clip_actions_min, a_max=self._d_clip_actions_max)
 
         return actions, None, outputs

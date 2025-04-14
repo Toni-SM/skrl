@@ -80,9 +80,10 @@ class GymWrapper(Wrapper):
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
-            if type(info) is list:
+            if isinstance(info, (tuple, list)):
                 truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
                 terminated *= np.logical_not(truncated)
+                info = {}
             else:
                 truncated = info.get("TimeLimit.truncated", False)
                 if truncated:
@@ -91,7 +92,7 @@ class GymWrapper(Wrapper):
             observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to torch
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
         terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
         truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
@@ -118,7 +119,7 @@ class GymWrapper(Wrapper):
                 else:
                     observation, self._info = self._env.reset()
                 self._observation = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, observation, self.device)
+                    tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
             return self._observation, self._info
@@ -128,7 +129,7 @@ class GymWrapper(Wrapper):
             info = {}
         else:
             observation, info = self._env.reset()
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

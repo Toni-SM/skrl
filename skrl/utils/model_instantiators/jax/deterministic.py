@@ -9,6 +9,7 @@ import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import DeterministicMixin  # noqa
 from skrl.models.jax import Model  # noqa
+from skrl.utils.model_instantiators.jax.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.jax.common import convert_deprecated_parameters, generate_containers
 from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 

@@ -1,9 +1,9 @@
 [project]
 name = "skrl"
-version = "2.0.0"
+version = "1.4.3"
 description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 license = {text = "MIT License"}
 authors = [
   {name = "Toni-SM"},
@@ -32,20 +32,22 @@ torch = [
   "torch>=1.10",
 ]
 jax = [
-  "jax>=0.4.3",
-  "jaxlib>=0.4.3",
-  "flax",
+  "jax>=0.4.31",
+  "jaxlib>=0.4.31",
+  "flax>=0.9.0",
   "optax",
 ]
 all = [
-  "torch>=1.9",
-  "jax>=0.4.3",
-  "jaxlib>=0.4.3",
-  "flax",
+  "torch>=1.10",
+  "jax>=0.4.31",
+  "jaxlib>=0.4.31",
+  "flax>=0.9.0",
   "optax",
 ]
 tests = [
   "pytest",
+  "pytest-html",
+  "pytest-cov",
   "hypothesis",
 ]
 # urls

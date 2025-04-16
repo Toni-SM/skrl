@@ -155,7 +155,8 @@ class Agent:
             try:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
             except AttributeError:
-                models_cfg = {k: v._modules for (k, v) in self.models.items()}
+                # Framework-agnostic summary for WandB config
+                models_cfg = {k: {"type": type(v).__name__} for k, v in self.models.items()}
             wandb_config = {**self.cfg, **trainer_cfg, **models_cfg}
             # set default values
             wandb_kwargs = copy.deepcopy(self.cfg.get("experiment", {}).get("wandb_kwargs", {}))

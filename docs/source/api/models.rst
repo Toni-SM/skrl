@@ -121,17 +121,17 @@ API (PyTorch)
     .. py:property:: observation_space
         :type: gymnasium.Space | None
 
-        Observation space. It is a replica of the class constructor parameter of the same name.
+        Observation space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: state_space
         :type: gymnasium.Space | None
 
-        State space. It is a replica of the class constructor parameter of the same name.
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
         :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name.
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
         :type: int
@@ -151,7 +151,7 @@ API (PyTorch)
     .. py:property:: training
         :type: bool
 
-        Whether this model is in training or evaluation mode.
+        Whether this model is in training (true) or evaluation (false) mode.
 
 .. raw:: html
 
@@ -173,17 +173,17 @@ API (JAX)
     .. py:property:: observation_space
         :type: gymnasium.Space | None
 
-        Observation space. It is a replica of the class constructor parameter of the same name.
+        Observation space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: state_space
         :type: gymnasium.Space | None
 
-        State space. It is a replica of the class constructor parameter of the same name.
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
         :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name.
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
         :type: int
@@ -203,4 +203,4 @@ API (JAX)
     .. py:property:: training
         :type: bool
 
-        Whether this model is in training or evaluation mode.
+        Whether this model is in training (true) or evaluation (false) mode.

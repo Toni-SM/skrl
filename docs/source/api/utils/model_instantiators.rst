@@ -21,7 +21,7 @@ Utilities for quickly creating model instances.
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - :doc:`Multi-categorical model <../models/multicategorical>` (discrete domain)
+    * - :doc:`Multi-Categorical model <../models/multicategorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
@@ -45,13 +45,15 @@ Network definitions
 -------------------
 
 The network is composed of one or more containers.
-For each container its input, hidden layers and activation functions are specified.
+For each container, the input, hidden layers and activation functions can be specified.
 
 Implementation details:
 
-- The network compute/forward is done by calling the containers in the order in which they are defined
-- Containers use :py:class:`torch.nn.Sequential` in PyTorch, and :py:class:`flax.linen.Sequential` in JAX
-- If a single activation function is specified (mapping or sequence), it will be applied after each layer (except ``flatten`` layers) in the container
+- Container names must be valid `Python identifiers <https://docs.python.org/3/reference/lexical_analysis.html#identifiers>`_ and unique.
+- The network compute/forward is done by calling the containers in the order in which they are defined.
+- Containers use :py:class:`torch.nn.Sequential` in PyTorch, and :py:class:`flax.linen.Sequential` in JAX.
+- If a single activation function is specified (mapping or sequence), it will be applied after each layer
+  (except ``flatten`` layers) in the container.
 
 .. tabs::
 
@@ -74,21 +76,21 @@ Implementation details:
 Inputs
 ^^^^^^
 
-Inputs can be specified using tokens or previously defined container outputs (by container name).
-Certain operations could be specified on them, including indexing and slicing
+Inputs can be specified using tokens or previously defined container outputs (by container names).
+Certain operations could be specified on them, including indexing and slicing.
 
 .. hint::
 
-    Operations can be mixed to create complex input statements
+    Operations can be mixed to create complex input statements.
 
 Available tokens:
 
-* ``OBSERVATIONS``: Unflattened tensorized input ``observations`` (tensorized observation space) forwarded to the model
-* ``STATES``: Unflattened tensorized input ``states`` (tensorized state space) forwarded to the model
-* ``ACTIONS``: Unflattened tensorized input ``taken_actions`` (tensorized action space) forwarded to the model
-* ``OBSERVATION_SPACE``: Token indicating the ``observation_space`` of the model
-* ``STATE_SPACE``: Token indicating the ``state_space`` of the model
-* ``ACTION_SPACE``: Token indicating the ``action_space`` of the model
+* ``OBSERVATIONS``: Unflattened tensorized input ``observations`` (tensorized observation space) forwarded to the model.
+* ``STATES``: Unflattened tensorized input ``states`` (tensorized state space) forwarded to the model.
+* ``ACTIONS``: Unflattened tensorized input ``taken_actions`` (tensorized action space) forwarded to the model.
+* ``OBSERVATION_SPACE``: Token indicating the ``observation_space`` of the model.
+* ``STATE_SPACE``: Token indicating the ``state_space`` of the model.
+* ``ACTION_SPACE``: Token indicating the ``action_space`` of the model.
 
 Supported operations:
 
@@ -116,25 +118,25 @@ Supported operations:
 
 |
 
-Output
-^^^^^^
+Outputs
+^^^^^^^
 
-The output can be specified using tokens or defined container outputs (by container name).
-Certain operations could be specified on it
+Outputs can be specified using tokens or previously defined container outputs (by container names).
+Certain operations could be specified on them.
 
 .. note::
 
     If a token is used, a linear layer will be created with the last container in the list (as the number of input features)
-    and the value represented by the token (as the number of output features)
+    and the value represented by the token (as the number of output features).
 
 .. hint::
 
-    Operations can be mixed to create complex output statement
+    Operations can be mixed to create complex output statements.
 
 Available tokens:
 
-* ``ACTIONS``: Token indicating that the output shape is the number of elements in the action space
-* ``ONE``: Token indicating that the output shape is 1
+* ``ACTIONS``: Token indicating that the output shape is the number of elements in the action space.
+* ``ONE``: Token indicating that the output shape is 1.
 
 Supported operations:
 

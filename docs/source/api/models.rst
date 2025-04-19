@@ -114,24 +114,44 @@ API (PyTorch)
     :members:
 
     .. py:property:: device
+        :type: torch.device
 
-        Device to be used for the computations
+        Data allocation and computation device.
 
     .. py:property:: observation_space
+        :type: gymnasium.Space | None
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+        Observation space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: state_space
+        :type: gymnasium.Space | None
+
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
+        :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
+        :type: int
 
-        Number of elements in the observation/state space
+        Number of elements in the observation space.
+
+    .. py:property:: num_states
+        :type: int
+
+        Number of elements in the state space.
 
     .. py:property:: num_actions
+        :type: int
 
-        Number of elements in the action space
+        Number of elements in the action space.
+
+    .. py:property:: training
+        :type: bool
+
+        Whether this model is in training (true) or evaluation (false) mode.
 
 .. raw:: html
 
@@ -146,21 +166,41 @@ API (JAX)
     :members:
 
     .. py:property:: device
+        :type: jax.Device
 
-        Device to be used for the computations
+        Data allocation and computation device.
 
     .. py:property:: observation_space
+        :type: gymnasium.Space | None
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+        Observation space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: state_space
+        :type: gymnasium.Space | None
+
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
+        :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
+        :type: int
 
-        Number of elements in the observation/state space
+        Number of elements in the observation space.
+
+    .. py:property:: num_states
+        :type: int
+
+        Number of elements in the state space.
 
     .. py:property:: num_actions
+        :type: int
 
-        Number of elements in the action space
+        Number of elements in the action space.
+
+    .. py:property:: training
+        :type: bool
+
+        Whether this model is in training (true) or evaluation (false) mode.

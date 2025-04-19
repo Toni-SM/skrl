@@ -34,13 +34,17 @@ def get_test_mixed_precision(default):
 
 
 class BaseEnv(gymnasium.Env):
-    def __init__(self, observation_space, action_space, num_envs, device):
+    def __init__(self, observation_space, action_space, state_space, num_envs, device):
         self.device = device
         self.num_envs = num_envs
         self.action_space = action_space
         self.observation_space = observation_space
+        self.state_space = state_space
 
     def _sample_observation(self):
+        raise NotImplementedError
+
+    def _sample_state(self):
         raise NotImplementedError
 
     def step(self, actions):
@@ -54,6 +58,9 @@ class BaseEnv(gymnasium.Env):
             truncated = np.random.random((self.num_envs,)) > 0.95
 
         return self._sample_observation(), rewards, terminated, truncated, {}
+
+    def state(self):
+        return None if self.state_space is None else self._sample_state()
 
     def reset(self):
         return self._sample_observation(), {}

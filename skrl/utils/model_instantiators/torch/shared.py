@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import textwrap
 import gymnasium
@@ -20,8 +20,9 @@ from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
 def shared_model(
-    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    observation_space: Optional[gymnasium.Space] = None,
+    state_space: Optional[gymnasium.Space] = None,
+    action_space: Optional[gymnasium.Space] = None,
     device: Optional[Union[str, torch.device]] = None,
     structure: Sequence[str] = ["GaussianMixin", "DeterministicMixin"],
     roles: Sequence[str] = [],
@@ -31,36 +32,30 @@ def shared_model(
 ) -> Union[Model, str]:
     """Instantiate a shared model
 
-    :param observation_space: Observation/state space or shape (default: None).
-                              If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param action_space: Action space or shape (default: None).
-                         If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or torch.device, optional
-    :param structure: Shared model structure (default: Gaussian-Deterministic).
-    :type structure: sequence of strings, optional
-    :param roles: Organized list of model roles (default: ``[]``)
-    :type roles: sequence of strings, optional
-    :param parameters: Organized list of model instantiator parameters (default: ``[]``)
-    :type parameters: sequence of dict, optional
-    :param single_forward_pass: Whether to perform a single forward-pass for the shared layers/network (default: ``True``)
-    :type single_forward_pass: bool
+    :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
+    :param state_space: State space. The ``num_states`` property will contain the size of the space.
+    :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
+    :param device: Data allocation and computation device. If not specified, the default device will be used.
+    :param structure: Shared model structure.
+    :param roles: Organized list of model roles.
+    :param parameters: Organized list of model instantiator parameters.
+    :param single_forward_pass: Whether to perform a single forward-pass for the shared layers/network.
     :param return_source: Whether to return the source string containing the model class used to
-                          instantiate the model rather than the model instance (default: False).
-    :type return_source: bool, optional
+        instantiate the model rather than the model instance.
 
-    :return: Shared model instance or definition source
-    :rtype: Model
+    :return: Shared model instance or definition source (if ``return_source`` is True).
     """
 
     def get_init(class_name, parameter, role):
         if class_name.lower() == "categoricalmixin":
             return f'CategoricalMixin.__init__(self, unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)}, role="{role}")'
         elif class_name.lower() == "multicategoricalmixin":
-            return f'MultiCategoricalMixin.__init__(self, unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)}, reduction="{parameter.get("reduction", "sum")}", role="{role}")'
+            return f"""MultiCategoricalMixin.__init__(
+            self,
+            unnormalized_log_prob={parameter.get("unnormalized_log_prob", True)},
+            reduction="{parameter.get("reduction", "sum")}",
+            role="{role}",
+            )"""
         elif class_name.lower() == "deterministicmixin":
             return (
                 f'DeterministicMixin.__init__(self, clip_actions={parameter.get("clip_actions", False)}, role="{role}")'
@@ -94,9 +89,9 @@ def shared_model(
         elif class_name.lower() == "deterministicmixin":
             return r"output, {}"
         elif class_name.lower() == "gaussianmixin":
-            return r"output, self.log_std_parameter, {}"
+            return r'output, {"log_std": self.log_std_parameter}'
         elif class_name.lower() == "multivariategaussianmixin":
-            return r"output, self.log_std_parameter, {}"
+            return r'output, {"log_std": self.log_std_parameter}'
         raise ValueError(f"Unknown class: {class_name}")
 
     def get_extra(class_name, parameter, role, model):
@@ -109,30 +104,12 @@ def shared_model(
         elif class_name.lower() == "gaussianmixin":
             initial_log_std = float(parameter.get("initial_log_std", 0))
             fixed_log_std = parameter.get("fixed_log_std", False)
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})'
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}, dtype=torch.float32), requires_grad={not fixed_log_std})'
         elif class_name.lower() == "multivariategaussianmixin":
             initial_log_std = float(parameter.get("initial_log_std", 0))
             fixed_log_std = parameter.get("fixed_log_std", False)
-            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}), requires_grad={not fixed_log_std})'
+            return f'self.log_std_parameter = nn.Parameter(torch.full(size=({model["output"]["size"]},), fill_value={initial_log_std}, dtype=torch.float32), requires_grad={not fixed_log_std})'
         raise ValueError(f"Unknown class: {class_name}")
-
-    # compatibility with versions prior to 1.3.0
-    if not "network" in parameters[0]:
-        parameters[0]["network"], parameters[0]["output"] = convert_deprecated_parameters(parameters[0])
-        parameters[1]["network"], parameters[1]["output"] = convert_deprecated_parameters(parameters[1])
-        # delete deprecated parameters
-        for parameter in [
-            "input_shape",
-            "hiddens",
-            "hidden_activation",
-            "output_shape",
-            "output_activation",
-            "output_scale",
-        ]:
-            if parameter in parameters[0]:
-                del parameters[0][parameter]
-            if parameter in parameters[1]:
-                del parameters[1][parameter]
 
     # checking
     assert (
@@ -158,7 +135,10 @@ def shared_model(
     forward_common.insert(
         0, 'taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))'
     )
-    forward_common.insert(0, 'states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))')
+    forward_common.insert(0, 'states = unflatten_tensorized_space(self.state_space, inputs.get("states"))')
+    forward_common.insert(
+        0, 'observations = unflatten_tensorized_space(self.observation_space, inputs.get("observations"))'
+    )
 
     # process output
     if models[0]["output"]["modules"]:
@@ -213,8 +193,14 @@ def shared_model(
     models[1]["forward"] = textwrap.indent("\n".join(models[1]["forward"]), prefix=" " * 12)[12:]
 
     template = f"""class SharedModel({",".join(structure)}, Model):
-    def __init__(self, observation_space, action_space, device):
-        Model.__init__(self, observation_space, action_space, device)
+    def __init__(self, observation_space, state_space, action_space, device=None):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
         {get_init(structure[0], parameters[0], roles[0])}
         {get_init(structure[1], parameters[1], roles[1])}
 
@@ -222,11 +208,11 @@ def shared_model(
         {models[0]["networks"]}
         {models[1]["networks"]}
 
-    def act(self, inputs, role):
+    def act(self, inputs, role=""):
         if role == "{roles[0]}":
-            return {structure[0]}.act(self, inputs, role)
+            return {structure[0]}.act(self, inputs, role=role)
         elif role == "{roles[1]}":
-            return {structure[1]}.act(self, inputs, role)
+            return {structure[1]}.act(self, inputs, role=role)
     """
     if single_forward_pass:
         template += f"""
@@ -257,4 +243,6 @@ def shared_model(
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["SharedModel"](observation_space=observation_space, action_space=action_space, device=device)
+    return _locals["SharedModel"](
+        observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
+    )

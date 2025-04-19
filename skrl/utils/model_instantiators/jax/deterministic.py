@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import textwrap
 import gymnasium
@@ -15,44 +15,30 @@ from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
 def deterministic_model(
-    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    *,
+    observation_space: Optional[gymnasium.Space] = None,
+    state_space: Optional[gymnasium.Space] = None,
+    action_space: Optional[gymnasium.Space] = None,
     device: Optional[Union[str, jax.Device]] = None,
     clip_actions: bool = False,
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
-    *args,
-    **kwargs,
 ) -> Union[Model, str]:
-    """Instantiate a deterministic model
+    """Instantiate a :class:`~skrl.models.jax.deterministic.DeterministicMixin`-based model.
 
-    :param observation_space: Observation/state space or shape (default: None).
-                              If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param action_space: Action space or shape (default: None).
-                         If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or jax.Device, optional
-    :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
-    :type clip_actions: bool, optional
-    :param network: Network definition (default: [])
-    :type network: list of dict, optional
-    :param output: Output expression (default: "")
-    :type output: list or str, optional
+    :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
+    :param state_space: State space. The ``num_states`` property will contain the size of the space.
+    :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
+    :param device: Data allocation and computation device. If not specified, the default device will be used.
+    :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+    :param network: Network definition.
+    :param output: Output expression.
     :param return_source: Whether to return the source string containing the model class used to
-                          instantiate the model rather than the model instance (default: False).
-    :type return_source: bool, optional
+        instantiate the model rather than the model instance.
 
-    :return: Deterministic model instance or definition source
-    :rtype: Model
+    :return: Deterministic model instance or definition source (if ``return_source`` is True).
     """
-    # compatibility with versions prior to 1.3.0
-    if not network and kwargs:
-        network, output = convert_deprecated_parameters(kwargs)
-
     # parse model definition
     containers, output = generate_containers(network, output, embed_output=True, indent=1)
 
@@ -76,15 +62,23 @@ def deterministic_model(
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
 
     template = f"""class DeterministicModel(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        DeterministicMixin.__init__(self, clip_actions)
+    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, role="", **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        DeterministicMixin.__init__(self, clip_actions=clip_actions, role=role)
 
     def setup(self):
         {networks}
 
-    def __call__(self, inputs, role):
-        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+    def __call__(self, inputs, role=""):
+        observations = unflatten_tensorized_space(self.observation_space, inputs.get("observations"))
+        states = unflatten_tensorized_space(self.state_space, inputs.get("states"))
         taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
         return output, {{}}
@@ -97,5 +91,9 @@ def deterministic_model(
     _locals = {}
     exec(template, globals(), _locals)
     return _locals["DeterministicModel"](
-        observation_space=observation_space, action_space=action_space, device=device, clip_actions=clip_actions
+        observation_space=observation_space,
+        state_space=state_space,
+        action_space=action_space,
+        device=device,
+        clip_actions=clip_actions,
     )

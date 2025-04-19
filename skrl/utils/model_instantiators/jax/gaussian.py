@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import textwrap
 import gymnasium
@@ -15,8 +15,10 @@ from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
 
 
 def gaussian_model(
-    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    *,
+    observation_space: Optional[gymnasium.Space] = None,
+    state_space: Optional[gymnasium.Space] = None,
+    action_space: Optional[gymnasium.Space] = None,
     device: Optional[Union[str, jax.Device]] = None,
     clip_actions: bool = False,
     clip_log_std: bool = True,
@@ -28,52 +30,31 @@ def gaussian_model(
     network: Sequence[Mapping[str, Any]] = [],
     output: Union[str, Sequence[str]] = "",
     return_source: bool = False,
-    *args,
-    **kwargs,
 ) -> Union[Model, str]:
-    """Instantiate a Gaussian model
+    """Instantiate a :class:`~skrl.models.jax.gaussian.GaussianMixin`-based model.
 
-    :param observation_space: Observation/state space or shape (default: None).
-                              If it is not None, the num_observations property will contain the size of that space
-    :type observation_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param action_space: Action space or shape (default: None).
-                         If it is not None, the num_actions property will contain the size of that space
-    :type action_space: int, tuple or list of integers, gymnasium.Space or None, optional
-    :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                   If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-    :type device: str or jax.Device, optional
-    :param clip_actions: Flag to indicate whether the actions should be clipped (default: False)
-    :type clip_actions: bool, optional
-    :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: True)
-    :type clip_log_std: bool, optional
-    :param min_log_std: Minimum value of the log standard deviation (default: -20)
-    :type min_log_std: float, optional
-    :param max_log_std: Maximum value of the log standard deviation (default: 2)
-    :type max_log_std: float, optional
-    :param reduction: Reduction method for returning the log probability density function: (default: ``"sum"``).
-                        Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
-                        function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
-    :type reduction: str, optional
-    :param initial_log_std: Initial value for the log standard deviation (default: 0)
-    :type initial_log_std: float, optional
-    :param fixed_log_std: Whether the log standard deviation parameter should be fixed (default: False).
-                          Fixed parameters will be excluded from model parameters.
-    :type fixed_log_std: bool, optional
-    :param network: Network definition (default: [])
-    :type network: list of dict, optional
-    :param output: Output expression (default: "")
-    :type output: list or str, optional
+    :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
+    :param state_space: State space. The ``num_states`` property will contain the size of the space.
+    :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
+    :param device: Data allocation and computation device. If not specified, the default device will be used.
+    :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+    :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
+    :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
+    :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
+    :param reduction: Reduction method for returning the log probability density function.
+        Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``.
+        If ``"none"``, the log probability density function is returned as a tensor of shape
+        ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
+    :param initial_log_std: Initial value for the log standard deviation.
+    :param fixed_log_std: Whether the log standard deviation parameter should be fixed.
+        Fixed parameters have the gradient computation deactivated.
+    :param network: Network definition.
+    :param output: Output expression.
     :param return_source: Whether to return the source string containing the model class used to
-                          instantiate the model rather than the model instance (default: False).
-    :type return_source: bool, optional
+        instantiate the model rather than the model instance.
 
-    :return: Gaussian model instance or definition source
-    :rtype: Model
+    :return: Gaussian model instance or definition source (if ``return_source`` is True).
     """
-    # compatibility with versions prior to 1.3.0
-    if not network and kwargs:
-        network, output = convert_deprecated_parameters(kwargs)
-
     # parse model definition
     containers, output = generate_containers(network, output, embed_output=True, indent=1)
 
@@ -101,20 +82,48 @@ def gaussian_model(
         log_std_parameter = f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)}))'
 
     template = f"""class GaussianModel(GaussianMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False,
-                    clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum", **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device=None,
+        clip_actions=False,
+        clip_log_std=True,
+        min_log_std=-20,
+        max_log_std=2,
+        reduction="sum",
+        role="",
+        **kwargs,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        GaussianMixin.__init__(
+            self,
+            clip_actions=clip_actions,
+            clip_log_std=clip_log_std,
+            min_log_std=min_log_std,
+            max_log_std=max_log_std,
+            reduction=reduction,
+            role=role,
+        )
 
     def setup(self):
         {networks}
         self.log_std_parameter = {log_std_parameter}
 
-    def __call__(self, inputs, role):
-        states = unflatten_tensorized_space(self.observation_space, inputs.get("states"))
+    def __call__(self, inputs, role=""):
+        observations = unflatten_tensorized_space(self.observation_space, inputs.get("observations"))
+        states = unflatten_tensorized_space(self.state_space, inputs.get("states"))
         taken_actions = unflatten_tensorized_space(self.action_space, inputs.get("taken_actions"))
         {forward}
-        return output, self.log_std_parameter, {{}}
+        return output, {{"log_std": self.log_std_parameter}}
     """
     # return source
     if return_source:
@@ -125,6 +134,7 @@ def gaussian_model(
     exec(template, globals(), _locals)
     return _locals["GaussianModel"](
         observation_space=observation_space,
+        state_space=state_space,
         action_space=action_space,
         device=device,
         clip_actions=clip_actions,

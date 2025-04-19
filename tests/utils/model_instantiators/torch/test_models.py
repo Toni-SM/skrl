@@ -3,6 +3,7 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+from skrl import config
 from skrl.utils.model_instantiators.torch import (
     categorical_model,
     deterministic_model,
@@ -19,7 +20,7 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
@@ -28,14 +29,14 @@ NETWORK_SPEC_OBSERVATION = {
     spaces.Discrete: r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
     spaces.MultiDiscrete: r"""
     network:
       - name: net
-        input: STATES
+        input: OBSERVATIONS
         layers: [32, 32, 32]
         activations: elu
     """,
@@ -43,11 +44,11 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net_0
-        input: STATES[0]
+        input: OBSERVATIONS[0]
         layers: [32, 32, 32]
         activations: elu
       - name: net_1
-        input: STATES[1]
+        input: OBSERVATIONS[1]
         layers: [32, 32, 32]
         activations: elu
       - name: net
@@ -61,11 +62,11 @@ NETWORK_SPEC_OBSERVATION = {
         r"""
     network:
       - name: net_0
-        input: STATES["0"]
+        input: OBSERVATIONS["0"]
         layers: [32, 32, 32]
         activations: elu
       - name: net_1
-        input: STATES["1"]
+        input: OBSERVATIONS["1"]
         layers: [32, 32, 32]
         activations: elu
       - name: net
@@ -92,11 +93,11 @@ def test_categorical_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         output = model.act(
             {
-                "states": flatten_tensorized_space(
+                "observations": flatten_tensorized_space(
                     sample_space(observation_space, batch_size=10, backend="native", device=device)
                 )
             }
@@ -107,7 +108,7 @@ def test_categorical_model(capsys, device):
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_multicategorical_model(capsys, device):
     # observation
-    action_space = spaces.MultiDiscrete([2, 3])
+    action_space = spaces.MultiDiscrete([3, 4])
     for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
         observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
         model = multicategorical_model(
@@ -118,11 +119,11 @@ def test_multicategorical_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         output = model.act(
             {
-                "states": flatten_tensorized_space(
+                "observations": flatten_tensorized_space(
                     sample_space(observation_space, batch_size=10, backend="native", device=device)
                 )
             }
@@ -144,11 +145,11 @@ def test_deterministic_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         output = model.act(
             {
-                "states": flatten_tensorized_space(
+                "observations": flatten_tensorized_space(
                     sample_space(observation_space, batch_size=10, backend="native", device=device)
                 )
             }
@@ -174,11 +175,11 @@ def test_gaussian_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         output = model.act(
             {
-                "states": flatten_tensorized_space(
+                "observations": flatten_tensorized_space(
                     sample_space(observation_space, batch_size=10, backend="native", device=device)
                 )
             }
@@ -204,11 +205,11 @@ def test_multivariate_gaussian_model(capsys, device):
             network=yaml.safe_load(NETWORK_SPEC_OBSERVATION[observation_space_type][0])["network"],
             output="ACTIONS",
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         output = model.act(
             {
-                "states": flatten_tensorized_space(
+                "observations": flatten_tensorized_space(
                     sample_space(observation_space, batch_size=10, backend="native", device=device)
                 )
             }
@@ -247,10 +248,10 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         inputs = {
-            "states": flatten_tensorized_space(
+            "observations": flatten_tensorized_space(
                 sample_space(observation_space, batch_size=10, backend="native", device=device)
             )
         }
@@ -291,10 +292,10 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         inputs = {
-            "states": flatten_tensorized_space(
+            "observations": flatten_tensorized_space(
                 sample_space(observation_space, batch_size=10, backend="native", device=device)
             )
         }
@@ -308,7 +309,7 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_shared_categorical_deterministic_model(capsys, device, single_forward_pass):
     # observation
-    action_space = spaces.Discrete(2)
+    action_space = spaces.Discrete(3)
     for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
         observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
         model = shared_model(
@@ -331,10 +332,10 @@ def test_shared_categorical_deterministic_model(capsys, device, single_forward_p
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         inputs = {
-            "states": flatten_tensorized_space(
+            "observations": flatten_tensorized_space(
                 sample_space(observation_space, batch_size=10, backend="native", device=device)
             )
         }
@@ -348,7 +349,7 @@ def test_shared_categorical_deterministic_model(capsys, device, single_forward_p
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_shared_multicategorical_deterministic_model(capsys, device, single_forward_pass):
     # observation
-    action_space = spaces.MultiDiscrete([2, 3])
+    action_space = spaces.MultiDiscrete([3, 4])
     for observation_space_type in [spaces.Box, spaces.Tuple, spaces.Dict]:
         observation_space = NETWORK_SPEC_OBSERVATION[observation_space_type][1]
         model = shared_model(
@@ -371,10 +372,10 @@ def test_shared_multicategorical_deterministic_model(capsys, device, single_forw
             ],
             single_forward_pass=single_forward_pass,
         )
-        model.to(device=model.device)
+        model.to(device=config.torch.parse_device(device))
 
         inputs = {
-            "states": flatten_tensorized_space(
+            "observations": flatten_tensorized_space(
                 sample_space(observation_space, batch_size=10, backend="native", device=device)
             )
         }

@@ -1,6 +1,5 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
-import collections
 from abc import ABC, abstractmethod
 import gymnasium
 from packaging import version
@@ -332,210 +331,6 @@ class Model(torch.nn.Module, ABC):
         self.load_state_dict(state_dict)
         self.eval()
 
-    def migrate(
-        self,
-        *,
-        state_dict: Optional[Mapping[str, torch.Tensor]] = None,
-        path: Optional[str] = None,
-        name_map: Mapping[str, str] = {},
-        auto_mapping: bool = True,
-        verbose: bool = False,
-    ) -> bool:
-        """Migrate the specified external model's ``state_dict`` to the current model.
-
-        .. note::
-
-            The final storage device is determined by the constructor of the model.
-
-        Only one of ``state_dict`` or ``path`` can be specified.
-        The ``path`` parameter allows automatic loading the ``state_dict`` only from files generated
-        by the *rl_games* and *stable-baselines3* libraries at the moment.
-
-        For ambiguous models (where 2 or more parameters, for source or current model, have equal shape)
-        it is necessary to define the ``name_map``, at least for those parameters, to perform the migration successfully.
-
-        :param state_dict: External model's ``state_dict`` to migrate from.
-        :param path: Path to the external checkpoint to migrate from.
-        :param name_map: Name map to use for the migration.
-            Keys are the current parameter names and values are the external parameter names.
-        :param auto_mapping: Automatically map the external ``state_dict`` to the current ``state_dict``.
-        :param verbose: Show model names and migration.
-
-        :return: True if the migration was successful, False otherwise.
-            Migration is successful if all parameters of the current model are found in the external model.
-
-        :raises ValueError: If neither or both of ``state_dict`` and ``path`` parameters have been set.
-        :raises ValueError: If the correct file type cannot be identified from the ``path`` parameter.
-
-        Example::
-
-            # migrate a rl_games checkpoint with unambiguous state_dict
-            >>> model.migrate(path="./runs/Ant/nn/Ant.pth")
-            True
-
-            # migrate a rl_games checkpoint with ambiguous state_dict
-            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", verbose=False)
-            [skrl:WARNING] Ambiguous match for log_std_parameter <- [value_mean_std.running_mean, value_mean_std.running_var, a2c_network.sigma]
-            [skrl:WARNING] Ambiguous match for net.0.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
-            [skrl:WARNING] Ambiguous match for net.2.bias <- [a2c_network.actor_mlp.0.bias, a2c_network.actor_mlp.2.bias]
-            [skrl:WARNING] Ambiguous match for net.4.weight <- [a2c_network.value.weight, a2c_network.mu.weight]
-            [skrl:WARNING] Ambiguous match for net.4.bias <- [a2c_network.value.bias, a2c_network.mu.bias]
-            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.0.bias -> [net.0.bias, net.2.bias]
-            [skrl:WARNING] Multiple use of a2c_network.actor_mlp.2.bias -> [net.0.bias, net.2.bias]
-            False
-            >>> name_map = {"log_std_parameter": "a2c_network.sigma",
-            ...             "net.0.bias": "a2c_network.actor_mlp.0.bias",
-            ...             "net.2.bias": "a2c_network.actor_mlp.2.bias",
-            ...             "net.4.weight": "a2c_network.mu.weight",
-            ...             "net.4.bias": "a2c_network.mu.bias"}
-            >>> model.migrate(path="./runs/Cartpole/nn/Cartpole.pth", name_map=name_map, verbose=True)
-            [skrl:INFO] Models
-            [skrl:INFO]   |-- current: 7 items
-            [skrl:INFO]   |    |-- log_std_parameter : torch.Size([1])
-            [skrl:INFO]   |    |-- net.0.weight : torch.Size([32, 4])
-            [skrl:INFO]   |    |-- net.0.bias : torch.Size([32])
-            [skrl:INFO]   |    |-- net.2.weight : torch.Size([32, 32])
-            [skrl:INFO]   |    |-- net.2.bias : torch.Size([32])
-            [skrl:INFO]   |    |-- net.4.weight : torch.Size([1, 32])
-            [skrl:INFO]   |    |-- net.4.bias : torch.Size([1])
-            [skrl:INFO]   |-- source: 15 items
-            [skrl:INFO]   |    |-- value_mean_std.running_mean : torch.Size([1])
-            [skrl:INFO]   |    |-- value_mean_std.running_var : torch.Size([1])
-            [skrl:INFO]   |    |-- value_mean_std.count : torch.Size([])
-            [skrl:INFO]   |    |-- running_mean_std.running_mean : torch.Size([4])
-            [skrl:INFO]   |    |-- running_mean_std.running_var : torch.Size([4])
-            [skrl:INFO]   |    |-- running_mean_std.count : torch.Size([])
-            [skrl:INFO]   |    |-- a2c_network.sigma : torch.Size([1])
-            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.weight : torch.Size([32, 4])
-            [skrl:INFO]   |    |-- a2c_network.actor_mlp.0.bias : torch.Size([32])
-            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.weight : torch.Size([32, 32])
-            [skrl:INFO]   |    |-- a2c_network.actor_mlp.2.bias : torch.Size([32])
-            [skrl:INFO]   |    |-- a2c_network.value.weight : torch.Size([1, 32])
-            [skrl:INFO]   |    |-- a2c_network.value.bias : torch.Size([1])
-            [skrl:INFO]   |    |-- a2c_network.mu.weight : torch.Size([1, 32])
-            [skrl:INFO]   |    |-- a2c_network.mu.bias : torch.Size([1])
-            [skrl:INFO] Migration
-            [skrl:INFO]   |-- map:  log_std_parameter <- a2c_network.sigma
-            [skrl:INFO]   |-- auto: net.0.weight <- a2c_network.actor_mlp.0.weight
-            [skrl:INFO]   |-- map:  net.0.bias <- a2c_network.actor_mlp.0.bias
-            [skrl:INFO]   |-- auto: net.2.weight <- a2c_network.actor_mlp.2.weight
-            [skrl:INFO]   |-- map:  net.2.bias <- a2c_network.actor_mlp.2.bias
-            [skrl:INFO]   |-- map:  net.4.weight <- a2c_network.mu.weight
-            [skrl:INFO]   |-- map:  net.4.bias <- a2c_network.mu.bias
-            False
-
-            # migrate a stable-baselines3 checkpoint with unambiguous state_dict
-            >>> model.migrate(path="./ddpg_pendulum.zip")
-            True
-
-            # migrate from any exported model by loading its state_dict (unambiguous state_dict)
-            >>> state_dict = torch.load("./external_model.pt")
-            >>> model.migrate(state_dict=state_dict)
-            True
-        """
-        if (state_dict is not None) + (path is not None) != 1:
-            raise ValueError("Exactly one of state_dict or path may be specified")
-
-        # load state_dict from path
-        if path is not None:
-            state_dict = {}
-            # rl_games checkpoint
-            if path.endswith(".pt") or path.endswith(".pth"):
-                checkpoint = torch.load(path, map_location=self.device)
-                if type(checkpoint) is dict:
-                    state_dict = checkpoint.get("model", {})
-            # stable-baselines3
-            elif path.endswith(".zip"):
-                import zipfile
-
-                try:
-                    archive = zipfile.ZipFile(path, "r")
-                    with archive.open("policy.pth", mode="r") as file:
-                        state_dict = torch.load(file, map_location=self.device)
-                except KeyError as e:
-                    logger.warning(str(e))
-                    state_dict = {}
-            else:
-                raise ValueError("Cannot identify file type")
-
-        # show state_dict
-        if verbose:
-            logger.info("Models")
-            logger.info(f"  |-- current: {len(self.state_dict().keys())} items")
-            for name, tensor in self.state_dict().items():
-                logger.info(f"  |    |-- {name} : {list(tensor.shape)}")
-            logger.info(f"  |-- source: {len(state_dict.keys())} items")
-            for name, tensor in state_dict.items():
-                logger.info(f"  |    |-- {name} : {list(tensor.shape)}")
-            logger.info("Migration")
-
-        # migrate the state_dict to current model
-        new_state_dict = collections.OrderedDict()
-        match_counter = collections.defaultdict(list)
-        used_counter = collections.defaultdict(list)
-        for name, tensor in self.state_dict().items():
-            for external_name, external_tensor in state_dict.items():
-                # mapped names
-                if name_map.get(name, "") == external_name:
-                    if tensor.shape == external_tensor.shape:
-                        new_state_dict[name] = external_tensor
-                        match_counter[name].append(external_name)
-                        used_counter[external_name].append(name)
-                        if verbose:
-                            logger.info(f"  |-- map:  {name} <- {external_name}")
-                        break
-                    else:
-                        logger.warning(
-                            f"Shape mismatch for {name} <- {external_name} : {tensor.shape} != {external_tensor.shape}"
-                        )
-                # auto-mapped names
-                if auto_mapping and name not in name_map:
-                    if tensor.shape == external_tensor.shape:
-                        if name.endswith(".weight"):
-                            if external_name.endswith(".weight"):
-                                new_state_dict[name] = external_tensor
-                                match_counter[name].append(external_name)
-                                used_counter[external_name].append(name)
-                                if verbose:
-                                    logger.info(f"  |-- auto: {name} <- {external_name}")
-                        elif name.endswith(".bias"):
-                            if external_name.endswith(".bias"):
-                                new_state_dict[name] = external_tensor
-                                match_counter[name].append(external_name)
-                                used_counter[external_name].append(name)
-                                if verbose:
-                                    logger.info(f"  |-- auto: {name} <- {external_name}")
-                        else:
-                            if not external_name.endswith(".weight") and not external_name.endswith(".bias"):
-                                new_state_dict[name] = external_tensor
-                                match_counter[name].append(external_name)
-                                used_counter[external_name].append(name)
-                                if verbose:
-                                    logger.info(f"  |-- auto: {name} <- {external_name}")
-
-        # show ambiguous matches
-        status = True
-        for name, tensor in self.state_dict().items():
-            if len(match_counter.get(name, [])) > 1:
-                logger.warning("Ambiguous match for {} <- [{}]".format(name, ", ".join(match_counter.get(name, []))))
-                status = False
-        # show missing matches
-        for name, tensor in self.state_dict().items():
-            if not match_counter.get(name, []):
-                logger.warning(f"Missing match for {name}")
-                status = False
-        # show multiple uses
-        for name, tensor in state_dict.items():
-            if len(used_counter.get(name, [])) > 1:
-                logger.warning("Multiple use of {} -> [{}]".format(name, ", ".join(used_counter.get(name, []))))
-                status = False
-
-        # load new state dict
-        self.load_state_dict(new_state_dict, strict=False)
-        self.eval()
-
-        return status
-
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters.
 
@@ -583,7 +378,7 @@ class Model(torch.nn.Module, ABC):
                     parameters.data.mul_(1 - polyak)
                     parameters.data.add_(polyak * model_parameters.data)
 
-    def broadcast_parameters(self, rank: int = 0):
+    def broadcast_parameters(self, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.
 
         After calling this method, the distributed model will contain the broadcasted parameters from ``rank``.
@@ -600,7 +395,7 @@ class Model(torch.nn.Module, ABC):
         torch.distributed.broadcast_object_list(object_list, rank)
         self.load_state_dict(object_list[0])
 
-    def reduce_parameters(self):
+    def reduce_parameters(self) -> None:
         """Reduce model parameters across all workers/processes in the whole group (e.g.: across all nodes).
 
         After calling this method, the distributed model parameters will be bitwise identical for all workers/processes.

@@ -1,5 +1,6 @@
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
 
+from abc import ABC, abstractmethod
 import gymnasium
 
 import flax
@@ -34,7 +35,7 @@ class StateDict(flax.struct.PyTreeNode):
         return cls(apply_fn=apply_fn, params=params, **kwargs)
 
 
-class Model(flax.linen.Module):
+class Model(flax.linen.Module, ABC):
     observation_space: Optional[gymnasium.Space] = None
     state_space: Optional[gymnasium.Space] = None
     action_space: Optional[gymnasium.Space] = None
@@ -251,6 +252,7 @@ class Model(flax.linen.Module):
         """
         return {}
 
+    @abstractmethod
     def act(
         self,
         inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]],
@@ -292,7 +294,7 @@ class Model(flax.linen.Module):
         """
         self.training = enabled
 
-    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
+    def save(self, path: str, *, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path.
 
         :param path: Path to save the model to.
@@ -324,25 +326,6 @@ class Model(flax.linen.Module):
             params = flax.serialization.from_bytes(self.state_dict.params, file.read())
         self.state_dict = self.state_dict.replace(params=params)
         self.enable_training_mode(False)
-
-    def migrate(
-        self,
-        *,
-        state_dict: Optional[Mapping[str, Any]] = None,
-        path: Optional[str] = None,
-        name_map: Mapping[str, str] = {},
-        auto_mapping: bool = True,
-        verbose: bool = False,
-    ) -> bool:
-        """Migrate the specified external model's ``state dict`` to the current model.
-
-        .. warning::
-
-            This method is not implemented yet, just maintains compatibility with other ML frameworks.
-
-        :raises NotImplementedError: Not implemented.
-        """
-        raise NotImplementedError
 
     def freeze_parameters(self, freeze: bool = True) -> None:
         """Freeze or unfreeze internal parameters.
@@ -393,7 +376,7 @@ class Model(flax.linen.Module):
             )
             self.state_dict = self.state_dict.replace(params=params)
 
-    def broadcast_parameters(self, rank: int = 0):
+    def broadcast_parameters(self, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.
 
         After calling this method, the distributed model will contain the broadcasted parameters from ``rank``.

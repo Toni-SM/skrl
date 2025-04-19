@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any, Literal, Mapping, Optional, Tuple, Union
 
 from functools import partial
 import gymnasium
@@ -53,7 +53,7 @@ class GaussianMixin:
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
-        reduction: str = "sum",
+        reduction: Literal["mean", "sum", "prod", "none"] = "sum",
         role: str = "",
     ) -> None:
         """Gaussian mixin model (stochastic model).
@@ -63,7 +63,6 @@ class GaussianMixin:
         :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
         :param reduction: Reduction method for returning the log probability density function.
-            Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``.
             If ``"none"``, the log probability density function is returned as a tensor of shape
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
         :param role: Role played by the model.

@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any, Literal, Mapping, Tuple, Union
 
 import torch
 from torch.distributions import Categorical
@@ -9,14 +9,19 @@ Categorical.set_default_validate_args(False)
 
 
 class MultiCategoricalMixin:
-    def __init__(self, *, unnormalized_log_prob: bool = True, reduction: str = "sum", role: str = "") -> None:
+    def __init__(
+        self,
+        *,
+        unnormalized_log_prob: bool = True,
+        reduction: Literal["mean", "sum", "prod", "none"] = "sum",
+        role: str = "",
+    ) -> None:
         """MultiCategorical mixin model (stochastic model).
 
         :param unnormalized_log_prob: Flag to indicate how to the model's output will be interpreted.
             If True, the model's output is interpreted as unnormalized log probabilities (it can be any real number),
             otherwise as normalized probabilities (the output must be non-negative, finite and have a non-zero sum).
         :param reduction: Reduction method for returning the log probability density function.
-            Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``.
             If ``"none"``, the log probability density function is returned as a tensor of shape
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
         :param role: Role played by the model.

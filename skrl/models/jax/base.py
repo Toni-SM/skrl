@@ -376,7 +376,7 @@ class Model(flax.linen.Module, ABC):
             )
             self.state_dict = self.state_dict.replace(params=params)
 
-    def broadcast_parameters(self, rank: int = 0) -> None:
+    def broadcast_parameters(self, *, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.
 
         After calling this method, the distributed model will contain the broadcasted parameters from ``rank``.

@@ -287,7 +287,7 @@ class Model(torch.nn.Module, ABC):
         """
         self.train(enabled)
 
-    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
+    def save(self, path: str, *, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path.
 
         :param path: Path to save the model to.
@@ -378,7 +378,7 @@ class Model(torch.nn.Module, ABC):
                     parameters.data.mul_(1 - polyak)
                     parameters.data.add_(polyak * model_parameters.data)
 
-    def broadcast_parameters(self, rank: int = 0) -> None:
+    def broadcast_parameters(self, *, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.
 
         After calling this method, the distributed model will contain the broadcasted parameters from ``rank``.

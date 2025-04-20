@@ -94,14 +94,14 @@ class TabularMixin:
         Model.state_dict(self, destination=_state_dict)
         return _state_dict
 
-    def load_state_dict(self, state_dict: Mapping, strict: bool = True) -> None:
+    def load_state_dict(self, state_dict: Mapping, *, strict: bool = False) -> None:
         """Copies parameters and buffers from state_dict into this module and its descendants.
 
         :param state_dict: A dict containing parameters and persistent buffers.
         :param strict: Whether to strictly enforce that the keys in state_dict match the keys
             returned by this module's state_dict() function.
         """
-        Model.load_state_dict(self, state_dict, strict=False)
+        Model.load_state_dict(self, state_dict, strict=strict)
 
         for name, tensor in state_dict.items():
             if hasattr(self, name) and isinstance(getattr(self, name), torch.Tensor):
@@ -116,7 +116,7 @@ class TabularMixin:
             else:
                 raise ValueError(f"{name} is not a tensor of {self.__class__.__name__}")
 
-    def save(self, path: str, state_dict: Optional[dict] = None) -> None:
+    def save(self, path: str, *, state_dict: Optional[dict] = None) -> None:
         """Save the model to the specified path.
 
         :param path: Path to save the model to.

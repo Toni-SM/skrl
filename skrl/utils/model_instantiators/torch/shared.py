@@ -20,6 +20,7 @@ from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 
 def shared_model(
+    *,
     observation_space: Optional[gymnasium.Space] = None,
     state_space: Optional[gymnasium.Space] = None,
     action_space: Optional[gymnasium.Space] = None,

@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Literal, Mapping, Optional, Sequence, Union
 
 import textwrap
 import gymnasium
@@ -23,7 +23,7 @@ def gaussian_model(
     clip_log_std: bool = True,
     min_log_std: float = -20,
     max_log_std: float = 2,
-    reduction: str = "sum",
+    reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     initial_log_std: float = 0,
     fixed_log_std: bool = False,
     network: Sequence[Mapping[str, Any]] = [],
@@ -41,7 +41,6 @@ def gaussian_model(
     :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
     :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
     :param reduction: Reduction method for returning the log probability density function.
-        Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``.
         If ``"none"``, the log probability density function is returned as a tensor of shape
         ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
     :param initial_log_std: Initial value for the log standard deviation.

@@ -86,7 +86,7 @@ class MultivariateGaussianMixin:
 
         outputs["log_prob"] = log_prob
         outputs["mean_actions"] = mean_actions
-        return actions, log_prob, outputs
+        return actions, outputs
 
     def get_entropy(self, *, role: str = "") -> torch.Tensor:
         """Compute and return the entropy of the model.

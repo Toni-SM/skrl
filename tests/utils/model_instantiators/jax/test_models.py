@@ -113,6 +113,7 @@ def test_categorical_model(capsys, device):
             model.init_state_dict()
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
 
 
@@ -137,6 +138,7 @@ def test_multicategorical_model(capsys, device):
             model.init_state_dict()
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -161,6 +163,7 @@ def test_deterministic_model(capsys, device):
             model.init_state_dict()
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -189,4 +192,5 @@ def test_gaussian_model(capsys, device):
             model.init_state_dict()
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)

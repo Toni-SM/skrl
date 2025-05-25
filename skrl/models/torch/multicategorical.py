@@ -26,7 +26,7 @@ class MultiCategoricalMixin:
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
         :param role: Role played by the model.
 
-        :raises ValueError: If the reduction method is not valid
+        :raises ValueError: If the reduction method is not valid.
         """
         self._mc_unnormalized_log_prob = unnormalized_log_prob
         self._mc_distributions = []

@@ -116,6 +116,7 @@ def test_categorical_model(capsys, device):
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
 
 
@@ -140,6 +141,7 @@ def test_multicategorical_model(capsys, device):
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -164,6 +166,7 @@ def test_deterministic_model(capsys, device):
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -192,6 +195,7 @@ def test_gaussian_model(capsys, device):
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -220,6 +224,7 @@ def test_multivariate_gaussian_model(capsys, device):
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
 
 
@@ -261,8 +266,10 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
 
 
@@ -304,8 +311,10 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
 
 
@@ -343,8 +352,10 @@ def test_shared_categorical_deterministic_model(capsys, device, single_forward_p
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
+            assert len(output) == 2
             assert output[0].shape == (10, 1)
 
 
@@ -382,6 +393,8 @@ def test_shared_multicategorical_deterministic_model(capsys, device, single_forw
             model.to(device=config.torch.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
+            assert len(output) == 2
             assert output[0].shape == (10, 2)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
+            assert len(output) == 2
             assert output[0].shape == (10, 1)

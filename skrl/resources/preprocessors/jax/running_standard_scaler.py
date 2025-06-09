@@ -164,8 +164,8 @@ class RunningStandardScaler:
         self.current_count = total_count
 
     def __call__(
-        self, x: Union[np.ndarray, jax.Array], train: bool = False, inverse: bool = False
-    ) -> Union[np.ndarray, jax.Array]:
+        self, x: Union[np.ndarray, jax.Array, None], train: bool = False, inverse: bool = False
+    ) -> Union[np.ndarray, jax.Array, None]:
         """Forward pass of the standardizer
 
         Example::
@@ -196,6 +196,8 @@ class RunningStandardScaler:
         :return: Standardized tensor
         :rtype: np.ndarray or jax.Array
         """
+        if x is None:
+            return None
         if train:
             if self._jax:
                 self.running_mean, self.running_variance, self.current_count = _parallel_variance(

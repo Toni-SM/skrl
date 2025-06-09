@@ -113,8 +113,8 @@ class RunningStandardScaler(nn.Module):
         )
 
     def forward(
-        self, x: torch.Tensor, train: bool = False, inverse: bool = False, no_grad: bool = True
-    ) -> torch.Tensor:
+        self, x: Union[torch.Tensor, None], train: bool = False, inverse: bool = False, no_grad: bool = True
+    ) -> Union[torch.Tensor, None]:
         """Forward pass of the standardizer
 
         Example::
@@ -147,6 +147,8 @@ class RunningStandardScaler(nn.Module):
         :return: Standardized tensor
         :rtype: torch.Tensor
         """
+        if x is None:
+            return None
         if no_grad:
             with torch.no_grad():
                 return self._compute(x, train, inverse)

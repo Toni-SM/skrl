@@ -68,15 +68,13 @@ class Wrapper(object):
         """
         raise NotImplementedError
 
-    def state(self) -> torch.Tensor:
+    def state(self) -> Union[torch.Tensor, None]:
         """Get the environment state
-
-        :raises NotImplementedError: Not implemented
 
         :return: State
         :rtype: torch.Tensor
         """
-        raise NotImplementedError
+        return self._unwrapped.state() if hasattr(self._unwrapped, "state") else None
 
     def render(self, *args, **kwargs) -> Any:
         """Render the environment

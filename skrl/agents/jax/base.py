@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import collections
 import copy
@@ -40,7 +40,7 @@ class Agent(ABC):
         :param cfg: Agent's configuration.
         """
         self._jax = config.jax.backend == "jax"
-        self.training = True
+        self.training = False
 
         self.models = models
         self.memory = memory
@@ -83,10 +83,9 @@ class Agent(ABC):
         self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
-        """Generate a representation of the agent as string
+        """Generate a string representation of the agent.
 
-        :return: Representation of the agent as string
-        :rtype: str
+        :return: String representation.
         """
         string = f"Agent: {repr(self)}"
         for k, v in self.cfg.items():
@@ -99,39 +98,34 @@ class Agent(ABC):
         return string
 
     def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
-        """Empty preprocess method
+        """Empty preprocess method.
 
-        This method is defined because PyTorch multiprocessing can't pickle lambdas
+        :param _input: Input to preprocess.
 
-        :param _input: Input to preprocess
-        :type _input: Any
-
-        :return: Preprocessed input
-        :rtype: Any
+        :return: Preprocessed input.
         """
         return _input
 
     def _get_internal_value(self, _module: Any) -> Any:
-        """Get internal module/variable state/value
+        """Get internal module/variable state/value.
 
-        :param _module: Module or variable
-        :type _module: Any
+        :param _module: Module or variable.
 
-        :return: Module/variable state/value
-        :rtype: Any
+        :return: Module/variable state/value.
         """
         return _module.state_dict.params if hasattr(_module, "state_dict") else _module
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
 
-        This method should be called before the agent is used.
-        It will initialize the TensorBoard writer (and optionally Weights & Biases) and create the checkpoints directory
+        .. warning::
 
-        :param trainer_cfg: Trainer configuration
-        :type trainer_cfg: dict, optional
+            This method must be called before the agent is used.
+            It will initialize the TensorBoard writer (and optionally Weights & Biases) and create the checkpoints directory.
+
+        :param trainer_cfg: Trainer configuration.
         """
-        trainer_cfg = trainer_cfg if trainer_cfg is not None else {}
+        trainer_cfg = {} if trainer_cfg is None else trainer_cfg
 
         # update agent configuration to avoid duplicated logging/checking in distributed runs
         if config.jax.is_distributed and config.jax.rank:
@@ -205,30 +199,29 @@ class Agent(ABC):
                 logger.warning("The current running process will be terminated.")
                 exit()
 
+        # checkpoint directory creation
         if self.checkpoint_interval == "auto":
             self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
     def track_data(self, tag: str, value: float) -> None:
-        """Track data to TensorBoard
+        """Track data to TensorBoard.
 
-        Currently only scalar data are supported
+        .. note::
 
-        :param tag: Data identifier (e.g. 'Loss / policy loss')
-        :type tag: str
-        :param value: Value to track
-        :type value: float
+            Currently only scalar data is supported.
+
+        :param tag: Data identifier (e.g. 'Loss/Policy loss').
+        :param value: Value to track.
         """
         self.tracking_data[tag].append(value)
 
-    def write_tracking_data(self, timestep: int, timesteps: int) -> None:
-        """Write tracking data to TensorBoard
+    def write_tracking_data(self, *, timestep: int, timesteps: int) -> None:
+        """Write tracking data to TensorBoard.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         for k, v in self.tracking_data.items():
             if k.endswith("(min)"):
@@ -237,21 +230,22 @@ class Agent(ABC):
                 self.writer.add_scalar(k, np.max(v), timestep)
             else:
                 self.writer.add_scalar(k, np.mean(v), timestep)
-        # reset data containers for next iteration
+        # reset data containers
         self._track_rewards.clear()
         self._track_timesteps.clear()
         self.tracking_data.clear()
 
-    def write_checkpoint(self, timestep: int, timesteps: int) -> None:
-        """Write checkpoint (modules) to disk
+    def write_checkpoint(self, *, timestep: int, timesteps: int) -> None:
+        """Write checkpoint (modules) to persistent storage.
 
-        The checkpoints are saved in the directory 'checkpoints' in the experiment directory.
-        The name of the checkpoint is the current timestep if timestep is not None, otherwise it is the current time.
+        .. note::
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+            The checkpoints are stored in the subdirectory ``checkpoints`` within the experiment directory.
+            The checkpoint name is the ``timestep`` argument value (if it is not ``None``),
+            or the current system date-time otherwise.
+
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         tag = str(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"))
         # separated modules
@@ -286,28 +280,35 @@ class Agent(ABC):
                     pickle.dump(modules, file, protocol=4)
             self.checkpoint_best_modules["saved"] = True
 
-    def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
-        """Process the environment's states to make a decision (actions) using the main policy
+    @abstractmethod
+    def act(
+        self,
+        observations: Union[np.ndarray, jax.Array],
+        states: Union[np.ndarray, jax.Array, None],
+        *,
+        timestep: int,
+        timesteps: int,
+    ) -> Tuple[Union[np.ndarray, jax.Array], Mapping[str, Union[np.ndarray, jax.Array, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: np.ndarray or jax.Array
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :raises NotImplementedError: The method is not implemented by the inheriting classes
-
-        :return: Actions
-        :rtype: np.ndarray or jax.Array
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
-        raise NotImplementedError
+        pass
 
     def record_transition(
         self,
+        *,
+        observations: Union[np.ndarray, jax.Array],
         states: Union[np.ndarray, jax.Array],
         actions: Union[np.ndarray, jax.Array],
         rewards: Union[np.ndarray, jax.Array],
+        next_observations: Union[np.ndarray, jax.Array],
         next_states: Union[np.ndarray, jax.Array],
         terminated: Union[np.ndarray, jax.Array],
         truncated: Union[np.ndarray, jax.Array],
@@ -315,29 +316,25 @@ class Agent(ABC):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory (to be implemented by the inheriting classes)
+        """Record an environment transition in memory.
 
-        Inheriting classes must call this method to record episode information (rewards, timesteps, etc.).
-        In addition to recording environment transition (such as states, rewards, etc.), agent information can be recorded.
+        .. note::
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: np.ndarray or jax.Array
-        :param actions: Actions taken by the agent
-        :type actions: np.ndarray or jax.Array
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: np.ndarray or jax.Array
-        :param next_states: Next observations/states of the environment
-        :type next_states: np.ndarray or jax.Array
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: np.ndarray or jax.Array
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: np.ndarray or jax.Array
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+            This method keeps track of the episode rewards (instantaneous and cumulative) and timesteps
+            when ``experiment.write_interval`` configuration is resolved to a positive value.
+            Inheriting classes must call this method to record such information.
+
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         if self.write_interval > 0:
             # compute the cumulative sum of the rewards and timesteps
@@ -383,32 +380,28 @@ class Agent(ABC):
                 self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
                 self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
-    def set_mode(self, mode: str) -> None:
-        """Set the model mode (training or evaluation)
+    def enable_training_mode(self, enabled: bool = True) -> None:
+        """Set the training mode of the agent: enabled (training) or disabled (evaluation).
 
-        :param mode: Mode: 'train' for training or 'eval' for evaluation
-        :type mode: str
+        The training mode can be queried by the ``training`` property.
+
+        :param enabled: True to enable the training mode, False to enable the evaluation mode.
+        """
+        self.training = enabled
+
+    def enable_models_training_mode(self, enabled: bool = True) -> None:
+        """Set the training mode of all the agent's models: enabled (training) or disabled (evaluation).
+
+        :param enabled: True to enable the training mode, False to enable the evaluation mode.
         """
         for model in self.models.values():
             if model is not None:
-                model.set_mode(mode)
-
-    def set_running_mode(self, mode: str) -> None:
-        """Set the current running mode (training or evaluation)
-
-        This method sets the value of the ``training`` property (boolean).
-        This property can be used to know if the agent is running in training or evaluation mode.
-
-        :param mode: Mode: 'train' for training or 'eval' for evaluation
-        :type mode: str
-        """
-        self.training = mode == "train"
+                model.enable_training_mode(enabled)
 
     def save(self, path: str) -> None:
-        """Save the agent to the specified path
+        """Save the agent to the specified path.
 
-        :param path: Path to save the model to
-        :type path: str
+        :param path: Path to save the agent to.
         """
         modules = {}
         for name, module in self.checkpoint_modules.items():
@@ -420,10 +413,9 @@ class Agent(ABC):
             pickle.dump(modules, file, protocol=4)
 
     def load(self, path: str) -> None:
-        """Load the model from the specified path
+        """Load the agent from the specified path.
 
-        :param path: Path to load the model from
-        :type path: str
+        :param path: Path to load the agent from.
         """
         with open(path, "rb") as file:
             modules = pickle.load(file)
@@ -437,38 +429,23 @@ class Agent(ABC):
                     else:
                         pass  # TODO: raise NotImplementedError
                 else:
-                    logger.warning(f"Cannot load the {name} module. The agent doesn't have such an instance")
+                    logger.warning(f"Skipping module '{name}'. The agent doesn't have such an instance")
 
-    def migrate(
-        self,
-        path: str,
-        name_map: Mapping[str, Mapping[str, str]] = {},
-        auto_mapping: bool = True,
-        verbose: bool = False,
-    ) -> bool:
-        """Migrate the specified external checkpoint to the current agent
+    @abstractmethod
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :raises NotImplementedError: Not yet implemented
-        """
-        raise NotImplementedError
-
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
-
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    @abstractmethod
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         timestep += 1
 
@@ -491,14 +468,16 @@ class Agent(ABC):
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
             self.write_tracking_data(timestep, timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    @abstractmethod
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        .. warning::
 
-        :raises NotImplementedError: The method is not implemented by the inheriting classes
+            This method should not be called directly, but rather by the agent itself
+            when the algorithm is needed for learning.
+
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
-        raise NotImplementedError
+        pass

@@ -33,13 +33,24 @@ def get_test_mixed_precision(default):
     raise ValueError(f"Invalid value for environment variable SKRL_TEST_MIXED_PRECISION: {value}")
 
 
+def check_config_keys(config, default_config):
+    for k, v in config.items():
+        assert k in default_config, f"Key '{k}' not in default config"
+        if isinstance(v, dict) and k == "experiment":
+            check_config_keys(config[k], default_config[k])
+    for k, v in default_config.items():
+        assert k in config, f"Key '{k}' not in config"
+        if isinstance(v, dict) and k == "experiment":
+            check_config_keys(config[k], default_config[k])
+
+
 class BaseEnv(gymnasium.Env):
-    def __init__(self, observation_space, action_space, state_space, num_envs, device):
+    def __init__(self, *, observation_space, state_space, action_space, num_envs, device):
         self.device = device
         self.num_envs = num_envs
-        self.action_space = action_space
         self.observation_space = observation_space
         self.state_space = state_space
+        self.action_space = action_space
 
     def _sample_observation(self):
         raise NotImplementedError

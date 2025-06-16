@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import gymnasium
@@ -28,8 +28,10 @@ TRPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
     "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
     "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
 
@@ -97,6 +99,7 @@ class TRPO(Agent):
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
             cfg=_cfg,
@@ -139,6 +142,7 @@ class TRPO(Agent):
         self._value_learning_rate = self.cfg["value_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
+        self._observation_preprocessor = self.cfg["observation_preprocessor"]
         self._state_preprocessor = self.cfg["state_preprocessor"]
         self._value_preprocessor = self.cfg["value_preprocessor"]
 
@@ -162,26 +166,38 @@ class TRPO(Agent):
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
 
         # set up preprocessors
+        # - observations
+        if self._observation_preprocessor:
+            self._observation_preprocessor = self._observation_preprocessor(
+                **self.cfg["observation_preprocessor_kwargs"]
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
         if self._state_preprocessor:
             self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
-
+        # - values
         if self._value_preprocessor:
             self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
         else:
             self._value_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
@@ -191,42 +207,50 @@ class TRPO(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-            self._tensors_names_policy = ["states", "actions", "log_prob", "advantages"]
-            self._tensors_names_value = ["states", "returns"]
+            self._tensors_names_policy = ["observations", "states", "actions", "log_prob", "advantages"]
+            self._tensors_names_value = ["observations", "states", "returns"]
 
         # create temporary variables needed for storage and computation
-        self._current_log_prob = None
+        self._current_next_observations = None
         self._current_next_states = None
+        self._current_log_prob = None
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
         # sample random actions
-        # TODO: fix for stochasticity
+        # TODO: check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+            return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
-        self._current_log_prob = log_prob
+        actions, outputs = self.policy.act(inputs, role="policy")
+        self._current_log_prob = outputs["log_prob"]
 
-        return actions, log_prob, outputs
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: torch.Tensor,
         states: torch.Tensor,
         actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -234,32 +258,36 @@ class TRPO(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memory is not None:
+            self._current_next_observations = next_observations
             self._current_next_states = next_states
 
             # reward shaping
@@ -267,7 +295,11 @@ class TRPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
+            inputs = {
+                "observations": self._observation_preprocessor(observations),
+                "states": self._state_preprocessor(states),
+            }
+            values, _ = self.value.act(inputs, role="value")
             values = self._value_preprocessor(values, inverse=True)
 
             # time-limit (truncation) bootstrapping
@@ -276,50 +308,44 @@ class TRPO(Agent):
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
-                next_states=next_states,
                 terminated=terminated,
                 truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
             )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         def compute_gae(
@@ -330,23 +356,16 @@ class TRPO(Agent):
             discount_factor: float = 0.99,
             lambda_coefficient: float = 0.95,
         ) -> torch.Tensor:
-            """Compute the Generalized Advantage Estimator (GAE)
+            """Compute the Generalized Advantage Estimator (GAE).
 
-            :param rewards: Rewards obtained by the agent
-            :type rewards: torch.Tensor
-            :param dones: Signals to indicate that episodes have ended
-            :type dones: torch.Tensor
-            :param values: Values obtained by the agent
-            :type values: torch.Tensor
-            :param next_values: Next values obtained by the agent
-            :type next_values: torch.Tensor
-            :param discount_factor: Discount factor
-            :type discount_factor: float
-            :param lambda_coefficient: Lambda coefficient
-            :type lambda_coefficient: float
+            :param rewards: Rewards obtained by the agent.
+            :param dones: Signals to indicate that episodes have ended.
+            :param values: Values obtained by the agent.
+            :param next_values: Next values obtained by the agent.
+            :param discount_factor: Discount factor.
+            :param lambda_coefficient: Lambda coefficient.
 
-            :return: Generalized Advantage Estimator
-            :rtype: torch.Tensor
+            :return: Generalized Advantage Estimator.
             """
             advantage = 0
             advantages = torch.zeros_like(rewards)
@@ -370,58 +389,57 @@ class TRPO(Agent):
             return returns, advantages
 
         def surrogate_loss(
-            policy: Model, states: torch.Tensor, actions: torch.Tensor, log_prob: torch.Tensor, advantages: torch.Tensor
+            policy: Model,
+            observations: torch.Tensor,
+            states: torch.Tensor,
+            actions: torch.Tensor,
+            log_prob: torch.Tensor,
+            advantages: torch.Tensor,
         ) -> torch.Tensor:
-            """Compute the surrogate objective (policy loss)
+            """Compute the surrogate objective (policy loss).
 
-            :param policy: Policy
-            :type policy: Model
-            :param states: States
-            :type states: torch.Tensor
-            :param actions: Actions
-            :type actions: torch.Tensor
-            :param log_prob: Log probability
-            :type log_prob: torch.Tensor
-            :param advantages: Advantages
-            :type advantages: torch.Tensor
+            :param policy: Policy.
+            :param observations: Observations.
+            :param states: States.
+            :param actions: Actions.
+            :param log_prob: Log probability.
+            :param advantages: Advantages.
 
-            :return: Surrogate loss
-            :rtype: torch.Tensor
+            :return: Surrogate loss.
             """
-            _, new_log_prob, _ = policy.act({"states": states, "taken_actions": actions}, role="policy")
+            _, outputs = policy.act(
+                {"observations": observations, "states": states, "taken_actions": actions}, role="policy"
+            )
+            new_log_prob = outputs["log_prob"]
             return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
         def conjugate_gradient(
             policy: Model,
+            observations: torch.Tensor,
             states: torch.Tensor,
             b: torch.Tensor,
             num_iterations: float = 10,
             residual_tolerance: float = 1e-10,
         ) -> torch.Tensor:
-            """Conjugate gradient algorithm to solve Ax = b using the iterative method
+            """Conjugate gradient algorithm to solve Ax = b using the iterative method.
 
             https://en.wikipedia.org/wiki/Conjugate_gradient_method#As_an_iterative_method
 
-            :param policy: Policy
-            :type policy: Model
-            :param states: States
-            :type states: torch.Tensor
-            :param b: Vector b
-            :type b: torch.Tensor
-            :param num_iterations: Number of iterations (default: ``10``)
-            :type num_iterations: float, optional
-            :param residual_tolerance: Residual tolerance (default: ``1e-10``)
-            :type residual_tolerance: float, optional
+            :param policy: Policy.
+            :param observations: Observations.
+            :param states: States.
+            :param b: Vector b.
+            :param num_iterations: Number of iterations (default: ``10``).
+            :param residual_tolerance: Residual tolerance (default: ``1e-10``).
 
-            :return: Conjugate vector
-            :rtype: torch.Tensor
+            :return: Conjugate vector.
             """
             x = torch.zeros_like(b)
             r = b.clone()
             p = b.clone()
             rr_old = torch.dot(r, r)
             for _ in range(num_iterations):
-                hv = fisher_vector_product(policy, states, p, damping=self._damping)
+                hv = fisher_vector_product(policy, observations, states, p, damping=self._damping)
                 alpha = rr_old / torch.dot(p, hv)
                 x += alpha * p
                 r -= alpha * hv
@@ -433,25 +451,21 @@ class TRPO(Agent):
             return x
 
         def fisher_vector_product(
-            policy: Model, states: torch.Tensor, vector: torch.Tensor, damping: float = 0.1
+            policy: Model, observations: torch.Tensor, states: torch.Tensor, vector: torch.Tensor, damping: float = 0.1
         ) -> torch.Tensor:
-            """Compute the Fisher vector product (direct method)
+            """Compute the Fisher vector product (direct method).
 
             https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/
 
-            :param policy: Policy
-            :type policy: Model
-            :param states: States
-            :type states: torch.Tensor
-            :param vector: Vector
-            :type vector: torch.Tensor
-            :param damping: Damping (default: ``0.1``)
-            :type damping: float, optional
+            :param policy: Policy.
+            :param observations: Observations.
+            :param states: States.
+            :param vector: Vector.
+            :param damping: Damping (default: ``0.1``).
 
-            :return: Hessian vector product
-            :rtype: torch.Tensor
+            :return: Hessian vector product.
             """
-            kl = kl_divergence(policy, policy, states)
+            kl = kl_divergence(policy, policy, observations, states)
             kl_gradient = torch.autograd.grad(kl, policy.parameters(), create_graph=True)
             flat_kl_gradient = torch.cat([gradient.view(-1) for gradient in kl_gradient])
             hessian_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
@@ -460,27 +474,27 @@ class TRPO(Agent):
             )
             return flat_hessian_vector_gradient + damping * vector
 
-        def kl_divergence(policy_1: Model, policy_2: Model, states: torch.Tensor) -> torch.Tensor:
-            """Compute the KL divergence between two distributions
+        def kl_divergence(
+            policy_1: Model, policy_2: Model, observations: torch.Tensor, states: torch.Tensor
+        ) -> torch.Tensor:
+            """Compute the KL divergence between two distributions.
 
             https://en.wikipedia.org/wiki/Normal_distribution#Other_properties
 
-            :param policy_1: First policy
-            :type policy_1: Model
-            :param policy_2: Second policy
-            :type policy_2: Model
-            :param states: States
-            :type states: torch.Tensor
+            :param policy_1: First policy.
+            :param policy_2: Second policy.
+            :param observations: Observations.
+            :param states: States.
 
-            :return: KL divergence
-            :rtype: torch.Tensor
+            :return: KL divergence.
             """
-            mu_1 = policy_1.act({"states": states}, role="policy")[2]["mean_actions"]
-            logstd_1 = policy_1.get_log_std(role="policy")
-            mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
+            _, outputs = policy_1.act({"observations": observations, "states": states}, role="policy")
+            mu_1 = outputs["mean_actions"].detach()
+            logstd_1 = outputs["log_std"].detach()
 
-            mu_2 = policy_2.act({"states": states}, role="policy")[2]["mean_actions"]
-            logstd_2 = policy_2.get_log_std(role="policy")
+            _, outputs = policy_2.act({"observations": observations, "states": states}, role="policy")
+            mu_2 = outputs["mean_actions"]
+            logstd_2 = outputs["log_std"]
 
             kl = (
                 logstd_1
@@ -492,12 +506,14 @@ class TRPO(Agent):
 
         # compute returns and advantages
         with torch.no_grad():
-            self.value.train(False)
-            last_values, _, _ = self.value.act(
-                {"states": self._state_preprocessor(self._current_next_states.float())}, role="value"
-            )
-            self.value.train(True)
-        last_values = self._value_preprocessor(last_values, inverse=True)
+            inputs = {
+                "observations": self._observation_preprocessor(self._current_next_observations),
+                "states": self._state_preprocessor(self._current_next_states),
+            }
+            self.value.enable_training_mode(False)
+            last_values, _ = self.value.act(inputs, role="value")
+            self.value.enable_training_mode(True)
+            last_values = self._value_preprocessor(last_values, inverse=True)
 
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
@@ -514,25 +530,33 @@ class TRPO(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample all from memory
-        sampled_states, sampled_actions, sampled_log_prob, sampled_advantages = self.memory.sample_all(
-            names=self._tensors_names_policy, mini_batches=1
-        )[0]
+        sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages = (
+            self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1)[0]
+        )
 
+        sampled_observations = self._observation_preprocessor(sampled_observations, train=True)
         sampled_states = self._state_preprocessor(sampled_states, train=True)
 
         # compute policy loss gradient
-        policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+        policy_loss = surrogate_loss(
+            self.policy, sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages
+        )
         policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
         flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
         # compute the search direction using the conjugate gradient algorithm
         search_direction = conjugate_gradient(
-            self.policy, sampled_states, flat_policy_loss_gradient.data, num_iterations=self._conjugate_gradient_steps
+            self.policy,
+            sampled_observations,
+            sampled_states,
+            flat_policy_loss_gradient.data,
+            num_iterations=self._conjugate_gradient_steps,
         )
 
         # compute step size and full step
         xHx = (
-            search_direction * fisher_vector_product(self.policy, sampled_states, search_direction, self._damping)
+            search_direction
+            * fisher_vector_product(self.policy, sampled_observations, sampled_states, search_direction, self._damping)
         ).sum(0, keepdim=True)
         step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
         full_step = step_size * search_direction
@@ -549,8 +573,10 @@ class TRPO(Agent):
             vector_to_parameters(new_params, self.policy.parameters())
 
             expected_improvement *= alpha
-            kl = kl_divergence(self.backup_policy, self.policy, sampled_states)
-            loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+            kl = kl_divergence(self.backup_policy, self.policy, sampled_observations, sampled_states)
+            loss = surrogate_loss(
+                self.policy, sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages
+            )
 
             if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:
                 restore_policy_flag = False
@@ -571,12 +597,15 @@ class TRPO(Agent):
         for epoch in range(self._learning_epochs):
 
             # mini-batches loop
-            for sampled_states, sampled_returns in sampled_batches:
+            for sampled_observations, sampled_states, sampled_returns in sampled_batches:
 
-                sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
+                inputs = {
+                    "observations": self._observation_preprocessor(sampled_observations, train=not epoch),
+                    "states": self._state_preprocessor(sampled_states, train=not epoch),
+                }
 
                 # compute value loss
-                predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+                predicted_values, _ = self.value.act(inputs, role="value")
 
                 value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 

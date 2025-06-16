@@ -17,28 +17,21 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import deterministic_model
 from skrl.utils.spaces.torch import sample_space
 
-from ...utilities import BaseEnv, get_test_mixed_precision, is_device_available
+from ...utilities import BaseEnv, check_config_keys, get_test_mixed_precision, is_device_available
 
 
 class Env(BaseEnv):
     def _sample_observation(self):
         return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
 
-
-def _check_agent_config(config, default_config):
-    for k in config.keys():
-        assert k in default_config
-        if k == "experiment":
-            _check_agent_config(config["experiment"], default_config["experiment"])
-    for k in default_config.keys():
-        assert k in config
-        if k == "experiment":
-            _check_agent_config(config["experiment"], default_config["experiment"])
+    def _sample_state(self):
+        return sample_space(self.state_space, batch_size=self.num_envs, backend="numpy")
 
 
 @hypothesis.given(
     num_envs=st.integers(min_value=1, max_value=5),
     gradient_steps=st.integers(min_value=1, max_value=2),
+    # agent config
     batch_size=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     polyak=st.floats(min_value=0, max_value=1),
@@ -46,6 +39,7 @@ def _check_agent_config(config, default_config):
     critic_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
+    observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     random_timesteps=st.integers(min_value=0, max_value=5),
     learning_starts=st.integers(min_value=0, max_value=5),
@@ -66,10 +60,12 @@ def _check_agent_config(config, default_config):
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
+@pytest.mark.parametrize("asymmetric", [True, False])
 def test_agent(
     capsys,
     device,
     num_envs,
+    asymmetric,
     # agent config
     gradient_steps,
     batch_size,
@@ -79,6 +75,7 @@ def test_agent(
     critic_learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
+    observation_preprocessor,
     state_preprocessor,
     random_timesteps,
     learning_starts,
@@ -98,62 +95,88 @@ def test_agent(
         pytest.skip(f"Device {device} not available")
 
     # spaces
-    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(4,))
+    state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,)) if asymmetric else None
     action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
 
     # env
-    env = wrap_env(Env(observation_space, action_space, num_envs, device), wrapper="gymnasium")
+    env = wrap_env(
+        Env(
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            num_envs=num_envs,
+            device=device,
+        ),
+        wrapper="gymnasium",
+    )
 
     # models
-    network = [
-        {
-            "name": "net",
-            "input": "STATES",
-            "layers": [64, 64],
-            "activations": "elu",
-        }
-    ]
+    network = {
+        "policy": [
+            {
+                "name": "net",
+                "input": "OBSERVATIONS",
+                "layers": [5],
+                "activations": "relu",
+            }
+        ],
+        "critic": [
+            {
+                "name": "net",
+                "input": "concatenate([STATES, ACTIONS])" if asymmetric else "concatenate([OBSERVATIONS, ACTIONS])",
+                "layers": [5],
+                "activations": "relu",
+            }
+        ],
+    }
     models = {}
     models["policy"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["policy"],
         output="ACTIONS",
     )
     models["target_policy"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["policy"],
         output="ACTIONS",
     )
     models["critic_1"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["critic"],
         output="ONE",
     )
     models["target_critic_1"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["critic"],
         output="ONE",
     )
     models["critic_2"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["critic"],
         output="ONE",
     )
     models["target_critic_2"] = deterministic_model(
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
-        network=network,
+        network=network["critic"],
         output="ONE",
     )
 
@@ -170,8 +193,10 @@ def test_agent(
         "critic_learning_rate": critic_learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
+        "observation_preprocessor": observation_preprocessor,
+        "observation_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
         "state_preprocessor": state_preprocessor,
-        "state_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
+        "state_preprocessor_kwargs": {"size": env.state_space, "device": env.device},
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
@@ -214,14 +239,15 @@ def test_agent(
         )
     elif smooth_regularization_noise is GaussianNoise:
         cfg["smooth_regularization_noise"] = GaussianNoise(mean=0, std=0.1, device=env.device)
-    _check_agent_config(cfg, DEFAULT_CONFIG)
-    _check_agent_config(cfg["experiment"], DEFAULT_CONFIG["experiment"])
-    _check_agent_config(cfg["exploration"], DEFAULT_CONFIG["exploration"])
+    check_config_keys(cfg, DEFAULT_CONFIG)
+    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg["exploration"], DEFAULT_CONFIG["exploration"])
     agent = Agent(
         models=models,
         memory=memory,
         cfg=cfg,
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
     )

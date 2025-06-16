@@ -16,16 +16,25 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model
 from skrl.utils.spaces.torch import sample_space
 
-from ...utilities import BaseEnv, get_test_mixed_precision, is_device_available
+from ...utilities import BaseEnv, check_config_keys, get_test_mixed_precision, is_device_available
 
 
 class Env(BaseEnv):
-    def __init__(self, observation_space, action_space, num_envs, device, amp_observation_space):
-        super().__init__(observation_space, action_space, num_envs, device)
+    def __init__(self, *, observation_space, state_space, action_space, num_envs, device, amp_observation_space):
+        super().__init__(
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            num_envs=num_envs,
+            device=device,
+        )
         self.amp_observation_space = amp_observation_space
 
     def _sample_observation(self):
         return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
+
+    def _sample_state(self):
+        return sample_space(self.state_space, batch_size=self.num_envs, backend="numpy")
 
     def step(self, actions):
         observations, rewards, terminated, truncated, info = super().step(actions)
@@ -48,15 +57,9 @@ class Env(BaseEnv):
         )
 
 
-def _check_agent_config(config, default_config):
-    for k in config.keys():
-        assert k in default_config
-    for k in default_config.keys():
-        assert k in config
-
-
 @hypothesis.given(
     num_envs=st.integers(min_value=1, max_value=5),
+    # agent config
     rollouts=st.integers(min_value=1, max_value=5),
     learning_epochs=st.integers(min_value=1, max_value=5),
     mini_batches=st.integers(min_value=1, max_value=5),
@@ -65,9 +68,10 @@ def _check_agent_config(config, default_config):
     learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
+    observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     value_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
-    amp_state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
+    amp_observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     random_timesteps=st.just(0),
     learning_starts=st.just(0),
     grad_norm_clip=st.floats(min_value=0, max_value=1),
@@ -96,11 +100,13 @@ def _check_agent_config(config, default_config):
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("separate", [True])
+@pytest.mark.parametrize("asymmetric", [True, False])
 @pytest.mark.parametrize("policy_structure", ["GaussianMixin"])
 def test_agent(
     capsys,
     device,
     num_envs,
+    asymmetric,
     # model config
     separate,
     policy_structure,
@@ -113,9 +119,10 @@ def test_agent(
     learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
+    observation_preprocessor,
     state_preprocessor,
     value_preprocessor,
-    amp_state_preprocessor,
+    amp_observation_preprocessor,
     random_timesteps,
     learning_starts,
     grad_norm_clip,
@@ -142,47 +149,79 @@ def test_agent(
         pytest.skip(f"Device {device} not available")
 
     # spaces
-    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,))
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(4,))
+    state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,)) if asymmetric else None
     action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
     amp_observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(10,))
 
     # env
-    env = wrap_env(Env(observation_space, action_space, num_envs, device, amp_observation_space), wrapper="gymnasium")
+    env = wrap_env(
+        Env(
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            num_envs=num_envs,
+            device=device,
+            amp_observation_space=amp_observation_space,
+        ),
+        wrapper="gymnasium",
+    )
 
     # models
-    network = [
-        {
-            "name": "net",
-            "input": "STATES",
-            "layers": [64, 64],
-            "activations": "elu",
-        }
-    ]
+    network = {
+        "policy": [
+            {
+                "name": "net",
+                "input": "OBSERVATIONS",
+                "layers": [5],
+                "activations": "relu",
+            }
+        ],
+        "value": [
+            {
+                "name": "net",
+                "input": "STATES" if asymmetric else "OBSERVATIONS",
+                "layers": [5],
+                "activations": "relu",
+            }
+        ],
+        "discriminator": [
+            {
+                "name": "net",
+                "input": "OBSERVATIONS",
+                "layers": [5],
+                "activations": "relu",
+            }
+        ],
+    }
     models = {}
     if separate:
         models["policy"] = gaussian_model(
             observation_space=env.observation_space,
+            state_space=env.state_space,
             action_space=env.action_space,
             device=env.device,
-            network=network,
+            network=network["policy"],
             output="ACTIONS",
         )
         models["value"] = deterministic_model(
             observation_space=env.observation_space,
+            state_space=env.state_space,
             action_space=env.action_space,
             device=env.device,
-            network=network,
+            network=network["value"],
             output="ONE",
         )
         models["discriminator"] = deterministic_model(
             observation_space=env.amp_observation_space,
+            state_space=env.state_space,
             action_space=env.action_space,
             device=env.device,
-            network=network,
+            network=network["discriminator"],
             output="ONE",
         )
     else:
-        raise NotADirectoryError
+        raise ValueError
 
     # memory
     memory = RandomMemory(memory_size=rollouts, num_envs=env.num_envs, device=env.device)
@@ -197,12 +236,14 @@ def test_agent(
         "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
+        "observation_preprocessor": observation_preprocessor,
+        "observation_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
         "state_preprocessor": state_preprocessor,
-        "state_preprocessor_kwargs": {"size": env.observation_space, "device": env.device},
+        "state_preprocessor_kwargs": {"size": env.state_space, "device": env.device},
         "value_preprocessor": value_preprocessor,
         "value_preprocessor_kwargs": {"size": 1, "device": env.device},
-        "amp_state_preprocessor": amp_state_preprocessor,
-        "amp_state_preprocessor_kwargs": {"size": env.amp_observation_space, "device": env.device},
+        "amp_observation_preprocessor": amp_observation_preprocessor,
+        "amp_observation_preprocessor_kwargs": {"size": env.amp_observation_space, "device": env.device},
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
@@ -236,13 +277,14 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
     ] = learning_rate_scheduler_kwargs_value
-    _check_agent_config(cfg, DEFAULT_CONFIG)
-    _check_agent_config(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg, DEFAULT_CONFIG)
+    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
     agent = Agent(
         models=models,
         memory=memory,
         cfg=cfg,
         observation_space=env.observation_space,
+        state_space=env.state_space,
         action_space=env.action_space,
         device=env.device,
         amp_observation_space=env.amp_observation_space,

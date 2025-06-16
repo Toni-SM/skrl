@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
 import math
@@ -23,12 +23,14 @@ DQN_DEFAULT_CONFIG = {
     "discount_factor": 0.99,        # discount factor (gamma)
     "polyak": 0.005,                # soft update hyperparameter (tau)
 
-    "learning_rate": 1e-3,          # learning rate
+    "learning_rate": 1e-3,                  # learning rate
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -94,6 +96,7 @@ class DQN(Agent):
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
             cfg=_cfg,
@@ -130,6 +133,7 @@ class DQN(Agent):
         self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
+        self._observation_preprocessor = self.cfg["observation_preprocessor"]
         self._state_preprocessor = self.cfg["state_preprocessor"]
 
         self._random_timesteps = self.cfg["random_timesteps"]
@@ -164,76 +168,101 @@ class DQN(Agent):
             self.checkpoint_modules["optimizer"] = self.optimizer
 
         # set up preprocessors
+        # - observations
+        if self._observation_preprocessor:
+            self._observation_preprocessor = self._observation_preprocessor(
+                **self.cfg["observation_preprocessor_kwargs"]
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
         if self._state_preprocessor:
             self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_observations", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_states", size=self.state_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
+        self.tensors_names = [
+            "observations",
+            "states",
+            "actions",
+            "rewards",
+            "next_observations",
+            "next_states",
+            "terminated",
+            "truncated",
+        ]
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
+    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
-        states = self._state_preprocessor(states)
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
 
         if not self._exploration_timesteps:
-            return (
-                torch.argmax(self.q_network.act({"states": states}, role="q_network")[0], dim=1, keepdim=True),
-                None,
-                None,
-            )
+            actions, outputs = self.q_network.act(inputs, role="q_network")
+            return torch.argmax(actions, dim=1, keepdim=True), outputs
 
         # sample random actions
-        actions = self.q_network.random_act({"states": states}, role="q_network")[0]
+        actions, outputs = self.q_network.random_act(inputs, role="q_network")
         if timestep < self._random_timesteps:
-            return actions, None, None
+            return actions, outputs
 
         # sample actions with epsilon-greedy policy
         epsilon = self._exploration_final_epsilon + (
             self._exploration_initial_epsilon - self._exploration_final_epsilon
         ) * math.exp(-1.0 * timestep / self._exploration_timesteps)
 
-        indexes = (torch.rand(states.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
+        indexes = (torch.rand(actions.shape[0], device=self.device) >= epsilon).nonzero().view(-1)
         if indexes.numel():
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                actions[indexes] = torch.argmax(
-                    self.q_network.act({"states": states[indexes]}, role="q_network")[0], dim=1, keepdim=True
-                )
+                inputs = {k: None if v is None else v[indexes] for k, v in inputs.items()}
+                actions[indexes] = torch.argmax(self.q_network.act(inputs, role="q_network")[0], dim=1, keepdim=True)
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
 
-        return actions, None, None
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: torch.Tensor,
         states: torch.Tensor,
         actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -241,29 +270,32 @@ class DQN(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memory is not None:
@@ -272,45 +304,43 @@ class DQN(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
+                next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
                 truncated=truncated,
             )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         if timestep >= self._learning_starts and not timestep % self._update_interval:
-            self._update(timestep, timesteps)
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         # gradient steps
@@ -318,24 +348,29 @@ class DQN(Agent):
 
             # sample a batch from memory
             (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
+                sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
                 sampled_truncated,
             ) = self.memory.sample(names=self.tensors_names, batch_size=self._batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-
-                sampled_states = self._state_preprocessor(sampled_states, train=True)
-                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+                inputs = {
+                    "observations": self._observation_preprocessor(sampled_observations, train=True),
+                    "states": self._state_preprocessor(sampled_states, train=True),
+                }
+                next_inputs = {
+                    "observations": self._observation_preprocessor(sampled_next_observations, train=True),
+                    "states": self._state_preprocessor(sampled_next_states, train=True),
+                }
 
                 # compute target values
                 with torch.no_grad():
-                    next_q_values, _, _ = self.target_q_network.act(
-                        {"states": sampled_next_states}, role="target_q_network"
-                    )
+                    next_q_values, _ = self.target_q_network.act(next_inputs, role="target_q_network")
 
                     target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
                     target_values = (
@@ -347,9 +382,7 @@ class DQN(Agent):
 
                 # compute Q-network loss
                 q_values = torch.gather(
-                    self.q_network.act({"states": sampled_states}, role="q_network")[0],
-                    dim=1,
-                    index=sampled_actions.long(),
+                    self.q_network.act(inputs, role="q_network")[0], dim=1, index=sampled_actions.long()
                 )
 
                 q_network_loss = F.mse_loss(q_values, target_values)

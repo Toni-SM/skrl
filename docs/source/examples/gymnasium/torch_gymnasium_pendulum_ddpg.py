@@ -20,9 +20,9 @@ set_seed()  # e.g. `set_seed(42)` for fixed seed
 
 # define models (deterministic models) using mixin
 class Actor(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
-        DeterministicMixin.__init__(self, clip_actions)
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False):
+        Model.__init__(self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device)
+        DeterministicMixin.__init__(self, clip_actions=clip_actions)
 
         self.linear_layer_1 = nn.Linear(self.num_observations, 400)
         self.linear_layer_2 = nn.Linear(400, 300)
@@ -35,9 +35,9 @@ class Actor(DeterministicMixin, Model):
         return 2 * torch.tanh(self.action_layer(x)), {}
 
 class Critic(DeterministicMixin, Model):
-    def __init__(self, observation_space, action_space, device, clip_actions=False):
-        Model.__init__(self, observation_space, action_space, device)
-        DeterministicMixin.__init__(self, clip_actions)
+    def __init__(self, observation_space, state_space, action_space, device):
+        Model.__init__(self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device)
+        DeterministicMixin.__init__(self)
 
         self.linear_layer_1 = nn.Linear(self.num_observations + self.num_actions, 400)
         self.linear_layer_2 = nn.Linear(400, 300)
@@ -70,10 +70,10 @@ memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device, r
 # DDPG requires 4 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#models
 models = {}
-models["policy"] = Actor(env.observation_space, env.action_space, device)
-models["target_policy"] = Actor(env.observation_space, env.action_space, device)
-models["critic"] = Critic(env.observation_space, env.action_space, device)
-models["target_critic"] = Critic(env.observation_space, env.action_space, device)
+models["policy"] = Actor(env.observation_space, env.state_space, env.action_space, device)
+models["target_policy"] = Actor(env.observation_space, env.state_space, env.action_space, device)
+models["critic"] = Critic(env.observation_space, env.state_space, env.action_space, device)
+models["target_critic"] = Critic(env.observation_space, env.state_space, env.action_space, device)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():

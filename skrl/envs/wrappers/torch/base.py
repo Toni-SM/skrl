@@ -74,7 +74,7 @@ class Wrapper(object):
         :return: State
         :rtype: torch.Tensor
         """
-        return self._unwrapped.state() if hasattr(self._unwrapped, "state") else None
+        raise NotImplementedError
 
     def render(self, *args, **kwargs) -> Any:
         """Render the environment

@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 import gymnasium
 
@@ -80,6 +80,18 @@ class GymnasiumWrapper(Wrapper):
             self._info = info
 
         return observation, reward, terminated, truncated, info
+
+    def state(self) -> Union[torch.Tensor, None]:
+        """Get the environment state
+
+        :return: State
+        :rtype: torch.Tensor
+        """
+        if hasattr(self._unwrapped, "state"):
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        return None
 
     def reset(self) -> Tuple[torch.Tensor, Any]:
         """Reset the environment

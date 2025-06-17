@@ -15,16 +15,13 @@ def convert_gym_space(
 ) -> Optional[gymnasium.Space]:
     """Converts a gym space to a gymnasium space.
 
-    Args:
-        space: Gym space to convert to.
-        squeeze_batch_dimension: Whether to remove fundamental spaces' first dimension.
-            It currently affects ``Box`` space only.
+    :param space: Gym space to convert to.
+    :param squeeze_batch_dimension: Whether to remove fundamental spaces' first dimension.
+        It currently affects ``Box`` space only.
 
-    Returns:
-        Converted space, or ``None`` if the given space is ``None``.
+    :return: Converted space, or ``None`` if the given space is ``None``.
 
-    Raises:
-        ValueError: The given space is not supported.
+    :raises ValueError: The given space is not supported.
     """
     import gym
 
@@ -64,18 +61,16 @@ def tensorize_space(
 ) -> Any:
     """Convert the sample/value items of a given gymnasium space to JAX or NumPy array.
 
-    Args:
-        space: Gymnasium space.
-        x: Sample/value of the given space to tensorize to.
-        device: Device on which a tensor/array is or will be allocated.
-            This parameter is used when the space value is not a JAX array (e.g.: NumPy array, number).
-        _jax: Whether the converted value should be a JAX array.
+    :param space: Gymnasium space.
+    :param x: Sample/value of the given space to tensorize to.
+    :param device: Device on which a tensor/array is or will be allocated.
+        This parameter is used when the space value is not a JAX array (e.g.: NumPy array, number).
+    :param _jax: Whether the converted value should be a JAX array.
 
-    Returns:
-        Sample/value space with items converted to tensors, or ``None`` if the given space or the sample/value is ``None``.
+    :return: Sample/value space with items converted to tensors,
+        or ``None`` if the given space or the sample/value is ``None``.
 
-    Raises:
-        ValueError: The given space or the sample/value type is not supported.
+    :raises ValueError: The given space or the sample/value type is not supported.
     """
     if space is None or x is None:
         return None
@@ -138,18 +133,15 @@ def tensorize_space(
 def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
 
-    Args:
-        space: Gymnasium space.
-        x: Tensorized space (sample/value space where items are tensors).
-        squeeze_batch_dimension: Whether to remove the batch dimension.
-            If True, only the sample/value with a batch dimension of size 1 will be affected.
+    :param space: Gymnasium space.
+    :param x: Tensorized space (sample/value space where items are tensors).
+    :param squeeze_batch_dimension: Whether to remove the batch dimension.
+        If True, only the sample/value with a batch dimension of size 1 will be affected.
 
-    Returns:
-        Sample/value space with expected item types,
-            or ``None`` if the given space or the tensorized sample/value is ``None``.
+    :return: Sample/value space with expected item types,
+        or ``None`` if the given space or the tensorized sample/value is ``None``.
 
-    Raises:
-        ValueError: The given space or the sample/value type is not supported.
+    :raises ValueError: The given space or the sample/value type is not supported.
     """
     if space is None or x is None:
         return None
@@ -207,16 +199,13 @@ def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_di
 def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> Optional[Union[jax.Array, np.ndarray]]:
     """Flatten a tensorized space.
 
-    Args:
-        x: Tensorized space sample/value.
-        _jax: Whether the space should be handled using JAX operations. It only affects composite spaces.
+    :param x: Tensorized space sample/value.
+    :param _jax: Whether the space should be handled using JAX operations. It only affects composite spaces.
 
-    Returns:
-        A tensor. The returned tensor will have shape (batch, space size),
-            or ``None`` if the given tensorized sample/value is ``None``.
+    :return: A tensor. The returned tensor will have shape (batch, space size),
+        or ``None`` if the given tensorized sample/value is ``None``.
 
-    Raises:
-        ValueError: The given sample/value type is not supported.
+    :raises ValueError: The given sample/value type is not supported.
     """
     if x is None:
         return None
@@ -242,15 +231,12 @@ def unflatten_tensorized_space(
 ) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
-    Args:
-        space: Gymnasium space.
-        x: A tensor with shape (batch, space size).
+    :param space: Gymnasium space.
+    :param x: A tensor with shape (batch, space size).
 
-    Returns:
-        Tensorized space value, or ``None`` if the given space or the tensor is ``None``.
+    :return: Tensorized space value, or ``None`` if the given space or the tensor is ``None``.
 
-    Raises:
-        ValueError: The given space is not supported.
+    :raises ValueError: The given space is not supported.
     """
     if space is None or x is None:
         return None
@@ -289,14 +275,12 @@ def unflatten_tensorized_space(
 def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]], *, occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
 
-    Args:
-        space: Gymnasium space.
-        occupied_size: Whether the number of elements occupied by the space is returned.
-            It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
-            and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
+    :param space: Gymnasium space.
+    :param occupied_size: Whether the number of elements occupied by the space is returned.
+        It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
+        and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
 
-    Returns:
-        Size of the space (number of elements), or ``0`` if the given space is ``None``.
+    :return: Size of the space (number of elements), or ``0`` if the given space is ``None``.
     """
     if space is None:
         return 0
@@ -329,18 +313,15 @@ def sample_space(
 ) -> Any:
     """Generates a random sample from the specified space.
 
-    Args:
-        space: Gymnasium space.
-        batch_size: Size of the sampled batch.
-        backend: Whether backend will be used to construct the fundamental spaces.
-        device: Device on which a tensor/array is or will be allocated.
-            This parameter is used when the backend is ``"native"`` (JAX).
+    :param space: Gymnasium space.
+    :param batch_size: Size of the sampled batch.
+    :param backend: Whether backend will be used to construct the fundamental spaces.
+    :param device: Device on which a tensor/array is or will be allocated.
+        This parameter is used when the backend is ``"native"`` (JAX).
 
-    Returns:
-        Sample of the space, or ``None`` if the given space is ``None``.
+    :return: Sample of the space, or ``None`` if the given space is ``None``.
 
-    Raises:
-        ValueError: The given space or backend is not supported.
+    :raises ValueError: The given space or backend is not supported.
     """
     if space is None:
         return None

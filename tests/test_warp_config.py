@@ -47,6 +47,7 @@ def test_device(capsys, device: Union[str, None]):
     config.warp.device = device
     assert config.warp.device == target_device
 
+
 @hypothesis.given(key0=st.integers(min_value=0, max_value=2**32), key1=st.integers(min_value=0, max_value=2**32))
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],

@@ -284,7 +284,11 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
 
 
 def sample_space(
-    space: Optional[spaces.Space], *, batch_size: int = 1, backend: str = Literal["numpy", "native"], device=None
+    space: Optional[spaces.Space],
+    *,
+    batch_size: int = 1,
+    backend: Literal["numpy", "native"] = "numpy",
+    device: Optional[Union[str, torch.device]] = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 

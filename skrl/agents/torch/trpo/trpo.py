@@ -429,8 +429,8 @@ class TRPO(Agent):
             :param observations: Observations.
             :param states: States.
             :param b: Vector b.
-            :param num_iterations: Number of iterations (default: ``10``).
-            :param residual_tolerance: Residual tolerance (default: ``1e-10``).
+            :param num_iterations: Number of iterations.
+            :param residual_tolerance: Residual tolerance.
 
             :return: Conjugate vector.
             """
@@ -461,7 +461,7 @@ class TRPO(Agent):
             :param observations: Observations.
             :param states: States.
             :param vector: Vector.
-            :param damping: Damping (default: ``0.1``).
+            :param damping: Damping.
 
             :return: Hessian vector product.
             """

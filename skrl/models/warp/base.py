@@ -299,7 +299,8 @@ class Model(nn.Module, ABC):
             # unfreeze model parameters
             >>> model.freeze_parameters(False)
         """
-        raise NotImplementedError
+        for parameters in self.parameters():
+            parameters.requires_grad = not freeze
 
     def update_parameters(self, model: nn.Module, *, polyak: float = 1.0) -> None:
         """Update internal parameters by hard or soft (polyak averaging) update.
@@ -318,7 +319,16 @@ class Model(nn.Module, ABC):
             # soft update (from source model)
             >>> model.update_parameters(source_model, polyak=0.005)
         """
-        raise NotImplementedError
+        # hard update
+        if polyak == 1:
+            for parameters, model_parameters in zip(self.parameters(), model.parameters()):
+                wp.copy(parameters, model_parameters)
+        # soft update (use in-place operations to avoid creating new parameters)
+        else:
+            for parameters, model_parameters in zip(self.parameters(), model.parameters()):
+                raise NotImplementedError
+                parameters.data.mul_(1 - polyak)
+                parameters.data.add_(polyak * model_parameters.data)
 
     def broadcast_parameters(self, *, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.

@@ -247,19 +247,18 @@ class Memory:
             self.env_index += tensor.shape[0]
         # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
         elif dim > 1 and self.num_envs == 1:
+            num_samples = min(shape[0], self.memory_size - self.memory_index)
+            remaining_samples = shape[0] - num_samples
             for name, tensor in tensors.items():
                 if name in self.tensors:
-                    num_samples = min(shape[0], self.memory_size - self.memory_index)
-                    remaining_samples = shape[0] - num_samples
                     # copy the first n samples
                     self.tensors[name][self.memory_index : self.memory_index + num_samples].copy_(
                         tensor[:num_samples].unsqueeze(dim=1)
                     )
-                    self.memory_index += num_samples
                     # storage remaining samples
                     if remaining_samples > 0:
                         self.tensors[name][:remaining_samples].copy_(tensor[num_samples:].unsqueeze(dim=1))
-                        self.memory_index = remaining_samples
+            self.memory_index = remaining_samples if remaining_samples > 0 else self.memory_index + num_samples
         # single environment
         elif dim == 1:
             for name, tensor in tensors.items():

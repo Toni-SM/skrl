@@ -178,7 +178,8 @@ class Trainer:
         assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
         # reset env
-        states, infos = self.env.reset()
+        observations, infos = self.env.reset()
+        states = self.env.state()
 
         for timestep in tqdm.tqdm(
             range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
@@ -189,10 +190,11 @@ class Trainer:
 
             with contextlib.nullcontext():
                 # compute actions
-                actions = self.agents.act(states, timestep=timestep, timesteps=self.timesteps)[0]
+                actions = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)[0]
 
                 # step the environments
-                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
 
                 # render scene
                 if not self.headless:
@@ -200,9 +202,11 @@ class Trainer:
 
                 # record the environments' transitions
                 self.agents.record_transition(
+                    observations=observations,
                     states=states,
                     actions=actions,
                     rewards=rewards,
+                    next_observations=next_observations,
                     next_states=next_states,
                     terminated=terminated,
                     truncated=truncated,
@@ -216,12 +220,15 @@ class Trainer:
 
             # reset environments
             if self.env.num_envs > 1:
+                observations = next_observations
                 states = next_states
             else:
                 if terminated.any() or truncated.any():
                     with contextlib.nullcontext():
-                        states, infos = self.env.reset()
+                        observations, infos = self.env.reset()
+                        states = self.env.state()
                 else:
+                    observations = next_observations
                     states = next_states
 
     def single_agent_eval(self) -> None:

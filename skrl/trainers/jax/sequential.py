@@ -76,9 +76,9 @@ class SequentialTrainer(Trainer):
         # set running mode
         if self.num_simultaneous_agents > 1:
             for agent in self.agents:
-                agent.set_running_mode("train")
+                agent.enable_training_mode(True)
         else:
-            self.agents.set_running_mode("train")
+            self.agents.enable_training_mode(True)
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:

@@ -80,10 +80,12 @@ class Wrapper(object):
     def state(self) -> Union[np.ndarray, jax.Array, None]:
         """Get the environment state
 
+        :raises NotImplementedError: Not implemented
+
         :return: State
         :rtype: np.ndarray or jax.Array
         """
-        return self._unwrapped.state() if hasattr(self._unwrapped, "state") else None
+        raise NotImplementedError
 
     def render(self, *args, **kwargs) -> Any:
         """Render the environment

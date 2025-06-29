@@ -13,7 +13,7 @@ from skrl.utils.spaces.jax import compute_space_size
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _copyto(dst, src):
-    """NumPy function copyto not yet implemented"""
+    """NumPy function copyto not yet implemented."""
     return dst.at[:].set(src)
 
 
@@ -64,10 +64,12 @@ class RunningStandardScaler:
         clip_threshold: float = 5.0,
         device: Optional[Union[str, jax.Device]] = None,
     ) -> None:
-        """Standardize the input data by removing the mean and scaling by the standard deviation
+        """Standardize the input data by removing the mean and scaling by the standard deviation.
 
-        The implementation is adapted from the rl_games library
-        (https://github.com/Denys88/rl_games/blob/master/rl_games/algos_torch/running_mean_std.py)
+        :param size: Size of the input space.
+        :param epsilon: Small number to avoid division by zero.
+        :param clip_threshold: Threshold to clip the data.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
 
         Example::
 
@@ -77,21 +79,12 @@ class RunningStandardScaler:
             Array([[0.57450044, 0.09968603],
                    [0.7419659 , 0.8941783 ],
                    [0.59656656, 0.45325184]], dtype=float32)
-
-        :param size: Size of the input space
-        :type size: int, tuple or list of integers, or gymnasium.Space
-        :param epsilon: Small number to avoid division by zero (default: ``1e-8``)
-        :type epsilon: float
-        :param clip_threshold: Threshold to clip the data (default: ``5.0``)
-        :type clip_threshold: float
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or jax.Device, optional
         """
         self._jax = config.jax.backend == "jax"
 
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
+
         self.device = config.jax.parse_device(device)
 
         size = compute_space_size(size, occupied_size=True)
@@ -108,7 +101,7 @@ class RunningStandardScaler:
 
     @property
     def state_dict(self) -> Mapping[str, Union[np.ndarray, jax.Array]]:
-        """Dictionary containing references to the whole state of the module"""
+        """Dictionary containing references to the whole state of the module."""
 
         class _StateDict:
             def __init__(self, params):
@@ -139,16 +132,13 @@ class RunningStandardScaler:
     def _parallel_variance(
         self, input_mean: Union[np.ndarray, jax.Array], input_var: Union[np.ndarray, jax.Array], input_count: int
     ) -> None:
-        """Update internal variables using the parallel algorithm for computing variance
+        """Update internal variables using the parallel algorithm for computing variance.
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
 
-        :param input_mean: Mean of the input data
-        :type input_mean: np.ndarray or jax.Array
-        :param input_var: Variance of the input data
-        :type input_var: np.ndarray or jax.Array
-        :param input_count: Batch size of the input data
-        :type input_count: int
+        :param input_mean: Mean of the input data.
+        :param input_var: Variance of the input data.
+        :param input_count: Batch size of the input data.
         """
         delta = input_mean - self.running_mean
         total_count = self.current_count + input_count
@@ -166,7 +156,13 @@ class RunningStandardScaler:
     def __call__(
         self, x: Union[np.ndarray, jax.Array, None], train: bool = False, inverse: bool = False
     ) -> Union[np.ndarray, jax.Array, None]:
-        """Forward pass of the standardizer
+        """Forward pass of the standardizer.
+
+        :param x: Input tensor.
+        :param train: Whether to train the standardizer.
+        :param inverse: Whether to inverse the standardizer to scale back the data.
+
+        :return: Standardized tensor.
 
         Example::
 
@@ -185,16 +181,6 @@ class RunningStandardScaler:
             Array([[0.80847514, 0.4226486 ],
                    [0.9047325 , 0.90777594],
                    [0.8211585 , 0.6385405 ]], dtype=float32)
-
-        :param x: Input tensor
-        :type x: np.ndarray or jax.Array
-        :param train: Whether to train the standardizer (default: ``False``)
-        :type train: bool, optional
-        :param inverse: Whether to inverse the standardizer to scale back the data (default: ``False``)
-        :type inverse: bool, optional
-
-        :return: Standardized tensor
-        :rtype: np.ndarray or jax.Array
         """
         if x is None:
             return None

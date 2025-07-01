@@ -33,7 +33,7 @@ class StepTrainer(Trainer):
         self,
         env: Wrapper,
         agents: Union[Agent, List[Agent]],
-        agents_scope: Optional[List[int]] = None,
+        scopes: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
         """Step-by-step trainer
@@ -44,16 +44,16 @@ class StepTrainer(Trainer):
         :type env: skrl.envs.wrappers.jax.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
+        :param scopes: Number of environments for each agent to train on (default: ``None``)
+        :type scopes: tuple or list of int, optional
         :param cfg: Configuration dictionary (default: ``None``).
                     See STEP_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(STEP_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        agents_scope = agents_scope if agents_scope is not None else []
-        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
+        scopes = scopes if scopes is not None else []
+        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
 
         # init agents
         if self.num_simultaneous_agents > 1:
@@ -99,7 +99,7 @@ class StepTrainer(Trainer):
         if timestep is None:
             self._timestep += 1
             timestep = self._timestep
-        timesteps = self.timesteps if timesteps is None else timesteps
+        timesteps = timesteps if timesteps is not None else self.timesteps
 
         if self._progress is None:
             self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
@@ -126,7 +126,7 @@ class StepTrainer(Trainer):
             actions = jnp.vstack(
                 [
                     agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)[0]
-                    for agent, scope in zip(self.agents, self.agents_scope)
+                    for agent, scope in zip(self.agents, self.scopes)
                 ]
             )
 
@@ -138,7 +138,7 @@ class StepTrainer(Trainer):
                 self.env.render()
 
             # record the environments' transitions
-            for agent, scope in zip(self.agents, self.agents_scope):
+            for agent, scope in zip(self.agents, self.scopes):
                 agent.record_transition(
                     states=self.states[scope[0] : scope[1]],
                     actions=actions[scope[0] : scope[1]],
@@ -193,7 +193,7 @@ class StepTrainer(Trainer):
         if timestep is None:
             self._timestep += 1
             timestep = self._timestep
-        timesteps = self.timesteps if timesteps is None else timesteps
+        timesteps = timesteps if timesteps is not None else self.timesteps
 
         if self._progress is None:
             self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
@@ -219,7 +219,7 @@ class StepTrainer(Trainer):
             # compute actions
             outputs = [
                 agent.act(self.states[scope[0] : scope[1]], timestep=timestep, timesteps=timesteps)
-                for agent, scope in zip(self.agents, self.agents_scope)
+                for agent, scope in zip(self.agents, self.scopes)
             ]
             actions = jnp.vstack(
                 [
@@ -236,7 +236,7 @@ class StepTrainer(Trainer):
                 self.env.render()
 
             # write data to TensorBoard
-            for agent, scope in zip(self.agents, self.agents_scope):
+            for agent, scope in zip(self.agents, self.scopes):
                 agent.record_transition(
                     states=self.states[scope[0] : scope[1]],
                     actions=actions[scope[0] : scope[1]],

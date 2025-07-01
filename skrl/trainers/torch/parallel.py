@@ -118,7 +118,7 @@ class ParallelTrainer(Trainer):
         self,
         env: Wrapper,
         agents: Union[Agent, List[Agent]],
-        agents_scope: Optional[List[int]] = None,
+        scopes: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
         """Parallel trainer
@@ -129,16 +129,16 @@ class ParallelTrainer(Trainer):
         :type env: skrl.envs.wrappers.torch.Wrapper
         :param agents: Agents to train
         :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
+        :param scopes: Number of environments for each agent to train on (default: ``None``)
+        :type scopes: tuple or list of int, optional
         :param cfg: Configuration dictionary (default: ``None``).
                     See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
         :type cfg: dict, optional
         """
         _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        agents_scope = agents_scope if agents_scope is not None else []
-        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
+        scopes = scopes if scopes is not None else []
+        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
 
         mp.set_start_method(method="spawn", force=True)
 
@@ -199,7 +199,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_simultaneous_agents):
             process = mp.Process(
-                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg), daemon=True
+                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
             )
             processes.append(process)
             process.start()
@@ -337,7 +337,7 @@ class ParallelTrainer(Trainer):
         # spawn and wait for all processes to start
         for i in range(self.num_simultaneous_agents):
             process = mp.Process(
-                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.agents_scope, self.cfg), daemon=True
+                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
             )
             processes.append(process)
             process.start()

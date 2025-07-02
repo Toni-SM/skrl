@@ -8,23 +8,13 @@ import optax
 
 from skrl.agents.jax.rpo import RPO as Agent
 from skrl.agents.jax.rpo import RPO_DEFAULT_CONFIG as DEFAULT_CONFIG
-from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils.model_instantiators.jax import deterministic_model, gaussian_model
-from skrl.utils.spaces.jax import sample_space
 
-from ...utilities import BaseEnv, check_config_keys
-
-
-class Env(BaseEnv):
-    def _sample_observation(self):
-        return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
-
-    def _sample_state(self):
-        return sample_space(self.state_space, batch_size=self.num_envs, backend="numpy")
+from ...utilities import SingleAgentEnv, check_config_keys
 
 
 @hypothesis.given(
@@ -103,15 +93,13 @@ def test_agent(
     action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(3,))
 
     # env
-    env = wrap_env(
-        Env(
-            observation_space=observation_space,
-            state_space=state_space,
-            action_space=action_space,
-            num_envs=num_envs,
-            device=device,
-        ),
-        wrapper="gymnasium",
+    env = SingleAgentEnv(
+        observation_space=observation_space,
+        state_space=state_space,
+        action_space=action_space,
+        num_envs=num_envs,
+        device=device,
+        ml_framework="jax",
     )
 
     # models

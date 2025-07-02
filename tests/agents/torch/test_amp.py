@@ -8,7 +8,6 @@ import torch
 
 from skrl.agents.torch.amp import AMP as Agent
 from skrl.agents.torch.amp import AMP_DEFAULT_CONFIG as DEFAULT_CONFIG
-from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
@@ -16,25 +15,22 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import deterministic_model, gaussian_model
 from skrl.utils.spaces.torch import sample_space
 
-from ...utilities import BaseEnv, check_config_keys, get_test_mixed_precision, is_device_available
+from ...utilities import SingleAgentEnv, check_config_keys, get_test_mixed_precision, is_device_available
 
 
-class Env(BaseEnv):
-    def __init__(self, *, observation_space, state_space, action_space, num_envs, device, amp_observation_space):
+class CustomSingleAgentEnv(SingleAgentEnv):
+    def __init__(
+        self, *, observation_space, state_space, action_space, num_envs, device, ml_framework, amp_observation_space
+    ):
         super().__init__(
             observation_space=observation_space,
             state_space=state_space,
             action_space=action_space,
             num_envs=num_envs,
             device=device,
+            ml_framework=ml_framework,
         )
         self.amp_observation_space = amp_observation_space
-
-    def _sample_observation(self):
-        return sample_space(self.observation_space, batch_size=self.num_envs, backend="numpy")
-
-    def _sample_state(self):
-        return sample_space(self.state_space, batch_size=self.num_envs, backend="numpy")
 
     def step(self, actions):
         observations, rewards, terminated, truncated, info = super().step(actions)
@@ -155,16 +151,14 @@ def test_agent(
     amp_observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(10,))
 
     # env
-    env = wrap_env(
-        Env(
-            observation_space=observation_space,
-            state_space=state_space,
-            action_space=action_space,
-            num_envs=num_envs,
-            device=device,
-            amp_observation_space=amp_observation_space,
-        ),
-        wrapper="gymnasium",
+    env = CustomSingleAgentEnv(
+        observation_space=observation_space,
+        state_space=state_space,
+        action_space=action_space,
+        num_envs=num_envs,
+        device=device,
+        ml_framework="torch",
+        amp_observation_space=amp_observation_space,
     )
 
     # models

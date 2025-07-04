@@ -10,6 +10,7 @@ class KLAdaptiveLR(_LRScheduler):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
+        *,
         kl_threshold: float = 0.008,
         min_lr: float = 1e-6,
         max_lr: float = 1e-2,
@@ -59,7 +60,7 @@ class KLAdaptiveLR(_LRScheduler):
 
         self._last_lr = [group["lr"] for group in self.optimizer.param_groups]
 
-    def step(self, kl: Optional[Union[torch.Tensor, float]] = None, epoch: Optional[int] = None) -> None:
+    def step(self, kl: Optional[Union[torch.Tensor, float]] = None, *, epoch: Optional[int] = None) -> None:
         """
         Step scheduler.
 

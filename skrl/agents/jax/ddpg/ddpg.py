@@ -500,7 +500,7 @@ class DDPG(Agent):
             if config.jax.is_distributed:
                 grad = self.critic.reduce_parameters(grad)
             self.critic_optimizer = self.critic_optimizer.step(
-                grad, self.critic, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
 
             # compute policy (actor) loss
@@ -512,7 +512,7 @@ class DDPG(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self._actor_learning_rate if self._learning_rate_scheduler else None
             )
 
             # update target networks

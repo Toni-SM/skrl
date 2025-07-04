@@ -13,6 +13,7 @@ Normal.set_default_validate_args(False)
 class OrnsteinUhlenbeckNoise(Noise):
     def __init__(
         self,
+        *,
         theta: float,
         sigma: float,
         base_scale: float,
@@ -33,7 +34,7 @@ class OrnsteinUhlenbeckNoise(Noise):
 
             >>> noise = OrnsteinUhlenbeckNoise(theta=0.1, sigma=0.2, base_scale=0.5)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         self.state = 0
         self.theta = theta

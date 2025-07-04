@@ -60,6 +60,7 @@ class RunningStandardScaler:
     def __init__(
         self,
         size: Union[int, Tuple[int], gymnasium.Space],
+        *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
         device: Optional[Union[str, jax.Device]] = None,
@@ -154,7 +155,7 @@ class RunningStandardScaler:
         self.current_count = total_count
 
     def __call__(
-        self, x: Union[np.ndarray, jax.Array, None], train: bool = False, inverse: bool = False
+        self, x: Union[np.ndarray, jax.Array, None], *, train: bool = False, inverse: bool = False
     ) -> Union[np.ndarray, jax.Array, None]:
         """Forward pass of the standardizer.
 

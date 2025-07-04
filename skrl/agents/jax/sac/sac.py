@@ -531,10 +531,10 @@ class SAC(Agent):
             if config.jax.is_distributed:
                 grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad, self.critic_1, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_1, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad, self.critic_2, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_2, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
 
             # compute policy (actor) loss
@@ -553,7 +553,7 @@ class SAC(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self._actor_learning_rate if self._learning_rate_scheduler else None
             )
 
             # entropy learning
@@ -564,7 +564,7 @@ class SAC(Agent):
                 )
 
                 # optimization step (entropy)
-                self.entropy_optimizer = self.entropy_optimizer.step(grad, self.log_entropy_coefficient)
+                self.entropy_optimizer = self.entropy_optimizer.step(grad=grad, model=self.log_entropy_coefficient)
 
                 # compute entropy coefficient
                 self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)

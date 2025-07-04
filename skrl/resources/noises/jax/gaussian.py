@@ -18,7 +18,7 @@ def _sample(mean, std, key, iterator, shape):
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: Optional[Union[str, jax.Device]] = None) -> None:
+    def __init__(self, *, mean: float, std: float, device: Optional[Union[str, jax.Device]] = None) -> None:
         """Gaussian noise.
 
         :param mean: Mean of the normal distribution.
@@ -29,7 +29,7 @@ class GaussianNoise(Noise):
 
             >>> noise = GaussianNoise(mean=0, std=1)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         if self._jax:
             self._i = 0

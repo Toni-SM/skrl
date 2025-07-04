@@ -369,7 +369,7 @@ class CEM(Agent):
 
         # optimization step (policy)
         self.optimizer = self.optimizer.step(
-            grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
+            grad=grad, model=self.policy, lr=self._learning_rate if self._learning_rate_scheduler else None
         )
 
         # update learning rate

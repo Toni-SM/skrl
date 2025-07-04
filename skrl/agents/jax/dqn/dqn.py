@@ -434,7 +434,7 @@ class DQN(Agent):
             if config.jax.is_distributed:
                 grad = self.q_network.reduce_parameters(grad)
             self.optimizer = self.optimizer.step(
-                grad, self.q_network, self._learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.q_network, lr=self._learning_rate if self._learning_rate_scheduler else None
             )
 
             # update target network

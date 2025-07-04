@@ -13,6 +13,7 @@ class RunningStandardScaler(nn.Module):
     def __init__(
         self,
         size: Union[int, Tuple[int], gymnasium.Space],
+        *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
         device: Optional[Union[str, torch.device]] = None,
@@ -68,7 +69,7 @@ class RunningStandardScaler(nn.Module):
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def _compute(self, x: torch.Tensor, train: bool = False, inverse: bool = False) -> torch.Tensor:
+    def _compute(self, x: torch.Tensor, *, train: bool = False, inverse: bool = False) -> torch.Tensor:
         """Compute the standardization of the input data.
 
         :param x: Input tensor.
@@ -98,7 +99,7 @@ class RunningStandardScaler(nn.Module):
         )
 
     def forward(
-        self, x: Union[torch.Tensor, None], train: bool = False, inverse: bool = False, no_grad: bool = True
+        self, x: Union[torch.Tensor, None], *, train: bool = False, inverse: bool = False, no_grad: bool = True
     ) -> Union[torch.Tensor, None]:
         """Forward pass of the standardizer.
 
@@ -131,5 +132,5 @@ class RunningStandardScaler(nn.Module):
             return None
         if no_grad:
             with torch.no_grad():
-                return self._compute(x, train, inverse)
-        return self._compute(x, train, inverse)
+                return self._compute(x, train=train, inverse=inverse)
+        return self._compute(x, train=train, inverse=inverse)

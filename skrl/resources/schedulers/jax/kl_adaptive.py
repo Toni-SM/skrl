@@ -5,6 +5,7 @@ import optax
 
 
 def KLAdaptiveLR(
+    *,
     kl_threshold: float = 0.008,
     min_lr: float = 1e-6,
     max_lr: float = 1e-2,
@@ -39,7 +40,7 @@ def KLAdaptiveLR(
         >>>     new_lr = scheduler(timestep, lr, kl_divergence)
     """
 
-    def schedule(count: int, lr: Optional[float] = None, kl: Optional[Union[np.ndarray, float]] = None) -> float:
+    def schedule(count: int, *, lr: Optional[float] = None, kl: Optional[Union[np.ndarray, float]] = None) -> float:
         if lr is None:
             return 1.0
         if kl is not None:

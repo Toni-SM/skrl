@@ -575,10 +575,10 @@ class TD3(Agent):
             if config.jax.is_distributed:
                 grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad, self.critic_1, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_1, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad, self.critic_2, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_2, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
 
             # delayed update
@@ -594,7 +594,9 @@ class TD3(Agent):
                 if config.jax.is_distributed:
                     grad = self.policy.reduce_parameters(grad)
                 self.policy_optimizer = self.policy_optimizer.step(
-                    grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                    grad=grad,
+                    model=self.policy,
+                    lr=self._actor_learning_rate if self._learning_rate_scheduler else None,
                 )
 
                 # update target networks

@@ -9,7 +9,7 @@ from skrl import config
 
 
 class Noise(ABC):
-    def __init__(self, device: Optional[Union[str, jax.Device]] = None) -> None:
+    def __init__(self, *, device: Optional[Union[str, jax.Device]] = None) -> None:
         """Base noise class for implementing custom noises.
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.

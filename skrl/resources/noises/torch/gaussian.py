@@ -11,7 +11,7 @@ Normal.set_default_validate_args(False)
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
+    def __init__(self, *, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
         """Gaussian noise.
 
         :param mean: Mean of the normal distribution.
@@ -22,7 +22,7 @@ class GaussianNoise(Noise):
 
             >>> noise = GaussianNoise(mean=0, std=1)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         self.distribution = Normal(
             loc=torch.tensor(mean, device=self.device, dtype=torch.float32),

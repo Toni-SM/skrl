@@ -542,7 +542,7 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self._learning_rate if self._learning_rate_scheduler else None
             )
 
             # compute value loss
@@ -552,7 +552,7 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.value.reduce_parameters(grad)
             self.value_optimizer = self.value_optimizer.step(
-                grad, self.value, self._learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.value, lr=self._learning_rate if self._learning_rate_scheduler else None
             )
 
             # update cumulative losses
@@ -569,7 +569,7 @@ class A2C(Agent):
                 if config.jax.is_distributed:
                     kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                     kl /= config.jax.world_size
-                self._learning_rate = self.scheduler(timestep, self._learning_rate, kl)
+                self._learning_rate = self.scheduler(timestep, lr=self._learning_rate, kl=kl)
             else:
                 self._learning_rate *= self.scheduler(timestep)
 

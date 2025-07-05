@@ -178,7 +178,7 @@ class _AgentMock:
         actions = _sample_flattened_space(
             space=self.action_space, num_envs=self.num_envs, device=self.device, ml_framework=self._ml_framework
         )
-        return actions, {}
+        return actions, {"mean_actions": actions}
 
     def record_transition(
         self,

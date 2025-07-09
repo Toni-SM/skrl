@@ -4,8 +4,8 @@ import pytest
 
 import gymnasium
 
-from skrl.trainers.torch import SequentialTrainer, generate_equally_spaced_scopes
-from skrl.trainers.torch.sequential import SEQUENTIAL_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.trainers.torch import StepTrainer, generate_equally_spaced_scopes
+from skrl.trainers.torch.step import STEP_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
 
 from ...utilities import AgentMock, SingleAgentEnv, check_config_keys, is_device_available
 
@@ -78,11 +78,14 @@ def test_non_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = SequentialTrainer(cfg=cfg, env=env, agents=agent)
+    trainer = StepTrainer(cfg=cfg, env=env, agents=agent)
     # - training
-    trainer.train()
+    for _ in range(timesteps):
+        trainer.train()
     # - evaluation
-    trainer.eval()
+    trainer.reset()
+    for _ in range(timesteps):
+        trainer.eval()
 
 
 @hypothesis.given(
@@ -165,8 +168,11 @@ def test_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = SequentialTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
+    trainer = StepTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
-    trainer.train()
+    for _ in range(timesteps):
+        trainer.train()
     # - evaluation
-    trainer.eval()
+    trainer.reset()
+    for _ in range(timesteps):
+        trainer.eval()

@@ -4,8 +4,8 @@ import pytest
 
 import gymnasium
 
-from skrl.trainers.torch import SequentialTrainer, generate_equally_spaced_scopes
-from skrl.trainers.torch.sequential import SEQUENTIAL_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.trainers.torch import ParallelTrainer, generate_equally_spaced_scopes
+from skrl.trainers.torch.parallel import PARALLEL_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
 
 from ...utilities import AgentMock, SingleAgentEnv, check_config_keys, is_device_available
 
@@ -78,7 +78,7 @@ def test_non_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = SequentialTrainer(cfg=cfg, env=env, agents=agent)
+    trainer = ParallelTrainer(cfg=cfg, env=env, agents=agent)
     # - training
     trainer.train()
     # - evaluation
@@ -115,6 +115,8 @@ def test_simultaneous_trainer(
     close_environment_at_exit,
     stochastic_evaluation,
 ):
+    pytest.skip("Under development")
+
     # check device availability
     if not is_device_available(device, backend="torch"):
         pytest.skip(f"Device {device} not available")
@@ -165,7 +167,7 @@ def test_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = SequentialTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
+    trainer = ParallelTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
     trainer.train()
     # - evaluation

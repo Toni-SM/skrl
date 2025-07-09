@@ -8,7 +8,8 @@ import torch
 import torch.multiprocessing as mp
 
 from skrl.agents.torch import Agent
-from skrl.envs.wrappers.torch import Wrapper
+from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
+from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer
 
 
@@ -116,24 +117,20 @@ def fn_processor(process_index, *args):
 class ParallelTrainer(Trainer):
     def __init__(
         self,
-        env: Wrapper,
-        agents: Union[Agent, List[Agent]],
+        *,
+        env: Union[Wrapper, MultiAgentEnvWrapper],
+        agents: Union[Agent, MultiAgent, List[Agent], List[MultiAgent]],
         scopes: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Parallel trainer
+        """Parallel trainer.
 
-        Train agents in parallel using multiple processes
+        Train agents in parallel using multiple processes.
 
-        :param env: Environment to train on
-        :type env: skrl.envs.wrappers.torch.Wrapper
-        :param agents: Agents to train
-        :type agents: Union[Agent, List[Agent]]
-        :param scopes: Number of environments for each agent to train on (default: ``None``)
-        :type scopes: tuple or list of int, optional
-        :param cfg: Configuration dictionary (default: ``None``).
-                    See PARALLEL_TRAINER_DEFAULT_CONFIG for default values
-        :type cfg: dict, optional
+        :param env: Environment to train/evaluate on.
+        :param agents: Agent(s) to train/evaluate.
+        :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
+        :param cfg: Configuration dictionary.
         """
         _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -143,34 +140,29 @@ class ParallelTrainer(Trainer):
         mp.set_start_method(method="spawn", force=True)
 
     def train(self) -> None:
-        """Train the agents in parallel
+        """Train agents in parallel.
 
         This method executes the following steps in loop:
 
         - Pre-interaction (parallel)
         - Compute actions (in parallel)
         - Interact with the environments
-        - Render scene
+        - Render environments
         - Record transitions (in parallel)
         - Post-interaction (in parallel)
         - Reset environments
         """
-        # set running mode
+        # set mode
         if self.num_simultaneous_agents > 1:
             for agent in self.agents:
-                agent.set_running_mode("train")
+                agent.enable_training_mode(True)
         else:
-            self.agents.set_running_mode("train")
+            self.agents.enable_training_mode(True)
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_train()
-            # multi-agent
-            else:
-                self.multi_agent_train()
+            super().train()
             return
 
         # initialize multiprocessing variables
@@ -283,31 +275,28 @@ class ParallelTrainer(Trainer):
             process.join()
 
     def eval(self) -> None:
-        """Evaluate the agents sequentially
+        """Evaluate agents sequentially.
 
         This method executes the following steps in loop:
 
+        - Pre-interaction (in parallel)
         - Compute actions (in parallel)
         - Interact with the environments
-        - Render scene
+        - Render environments
+        - Record transitions (in parallel)
         - Reset environments
         """
         # set running mode
         if self.num_simultaneous_agents > 1:
             for agent in self.agents:
-                agent.set_running_mode("eval")
+                agent.enable_training_mode(False)
         else:
-            self.agents.set_running_mode("eval")
+            self.agents.enable_training_mode(False)
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
             self.agents.init(trainer_cfg=self.cfg)
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_eval()
-            # multi-agent
-            else:
-                self.multi_agent_eval()
+            super().eval()
             return
 
         # initialize multiprocessing variables

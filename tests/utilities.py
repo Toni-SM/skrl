@@ -158,6 +158,9 @@ class _AgentMock:
         elif self._ml_framework == "jax":
             self.device = config.jax.parse_device(device)
 
+        self.memory = None
+        self.models = {}
+
     def init(self, *, trainer_cfg):
         pass
 

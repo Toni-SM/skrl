@@ -18,8 +18,8 @@ jobs:
   # Minimum requirements
   ############################################################
 
-  jax-minimum-agents:
-    name: Minimum requirements (agents)
+  jax-minimum-components:
+    name: Minimum requirements (components)
     runs-on: ubuntu-22.04
     steps:
     # setup
@@ -43,21 +43,30 @@ jobs:
         python -m pip install --quiet -e .[tests]
         python -m pip show jax jaxlib flax optax numpy
     # run tests
-    - name: Run tests
+    - name: Run tests (agents)
       run: |
         pytest \
           --self-contained-html \
-          --html=jax-minimum-agents-pytest.html \
+          --html=jax-minimum-components-agents-pytest.html \
           --cov=skrl/agents/jax \
           --cov-report term:skip-covered \
-          --cov-report html:jax-minimum-agents-coverage.html \
+          --cov-report html:jax-minimum-components-agents-coverage.html \
           tests/agents/jax
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-components-trainers-pytest.html \
+          --cov=skrl/trainers/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-components-trainers-coverage.html \
+          tests/trainers/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: jax-minimum-agents.html
-        path: jax-minimum-agents-*.html
+        name: jax-minimum-components.html
+        path: jax-minimum-components-*.html
         retention-days: 3
 
   jax-minimum-envs:
@@ -151,6 +160,8 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-minimum-utils-model_instantiators-coverage.html \
           tests/utils/model_instantiators/jax
+    - name: Run tests (spaces)
+      run: |
         pytest \
           --self-contained-html \
           --html=jax-minimum-utils-spaces-pytest.html \
@@ -170,8 +181,8 @@ jobs:
   # Latest requirements
   ############################################################
 
-  jax-latest-agents:
-    name: Latest requirements (agents)
+  jax-latest-components:
+    name: Latest requirements (components)
     runs-on: ubuntu-latest
     steps:
     # setup
@@ -194,21 +205,30 @@ jobs:
         python -m pip install --quiet -e .[tests]
         python -m pip show jax jaxlib flax optax numpy
     # run tests
-    - name: Run tests
+    - name: Run tests (agents)
       run: |
         pytest \
           --self-contained-html \
-          --html=jax-latest-agents-pytest.html \
+          --html=jax-latest-components-agents-pytest.html \
           --cov=skrl/agents/jax \
           --cov-report term:skip-covered \
-          --cov-report html:jax-latest-agents-coverage.html \
+          --cov-report html:jax-latest-components-agents-coverage.html \
           tests/agents/jax
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-components-trainers-pytest.html \
+          --cov=skrl/trainers/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-components-trainers-coverage.html \
+          tests/trainers/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: jax-latest-agents.html
-        path: jax-latest-agents-*.html
+        name: jax-latest-components.html
+        path: jax-latest-components-*.html
         retention-days: 3
 
   jax-latest-envs:
@@ -300,6 +320,8 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-latest-utils-model_instantiators-coverage.html \
           tests/utils/model_instantiators/jax
+    - name: Run tests (spaces)
+      run: |
         pytest \
           --self-contained-html \
           --html=jax-latest-utils-spaces-pytest.html \

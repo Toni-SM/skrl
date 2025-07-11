@@ -157,28 +157,28 @@ class StepTrainer(Trainer):
         for agent in self.agents:
             agent.post_interaction(timestep=timestep, timesteps=timesteps)
 
-            # reset environments
-            # - parallel/vectorized environments (single or multi-agent)
-            if self.env.num_envs > 1:
+        # reset environments
+        # - parallel/vectorized environments (single or multi-agent)
+        if self.env.num_envs > 1:
+            self.observations = next_observations
+            self.states = next_states
+        # - single environment
+        else:
+            # check condition to reset
+            # - multi-agent
+            if self.env.num_agents > 1:
+                should_reset = not self.env.agents
+            # - single-agent
+            else:
+                should_reset = terminated.any() or truncated.any()
+            # explicit reset
+            if should_reset:
+                with torch.no_grad():
+                    self.observations, infos = self.env.reset()
+                    self.states = self.env.state()
+            else:
                 self.observations = next_observations
                 self.states = next_states
-            # - single environment
-            else:
-                # check condition to reset
-                # - multi-agent
-                if self.env.num_agents > 1:
-                    should_reset = not self.env.agents
-                # - single-agent
-                else:
-                    should_reset = terminated.any() or truncated.any()
-                # explicit reset
-                if should_reset:
-                    with torch.no_grad():
-                        self.observations, infos = self.env.reset()
-                        self.states = self.env.state()
-                else:
-                    self.observations = next_observations
-                    self.states = next_states
 
         return next_observations, rewards, terminated, truncated, infos
 

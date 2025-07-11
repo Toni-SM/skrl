@@ -82,10 +82,9 @@ class Trainer(ABC):
                 self.disable_progressbar = True
 
     def __str__(self) -> str:
-        """Generate a string representation of the trainer
+        """Generate a string representation of the trainer.
 
-        :return: Representation of the trainer as string
-        :rtype: str
+        :return: Representation of the trainer as string.
         """
         string = f"Trainer: {self}"
         string += f"\n  |-- Number of parallelizable environments: {self.env.num_envs}"
@@ -111,7 +110,7 @@ class Trainer(ABC):
             if len(self.agents) == 1:
                 self.num_simultaneous_agents = 1
                 self.agents = self.agents[0]
-                self.scopes = [1]
+                self.scopes = [(0, self.env.num_envs)]
             # simultaneous agents
             elif len(self.agents) > 1:
                 self.num_simultaneous_agents = len(self.agents)
@@ -141,6 +140,10 @@ class Trainer(ABC):
                     self.scopes[i] = (index - self.scopes[i], index)
             else:
                 raise ValueError("A list of agents is expected")
+        # non-simultaneous agent
+        else:
+            self.num_simultaneous_agents = 1
+            self.scopes = [(0, self.env.num_envs)]
 
     def train(self) -> None:
         """Train a single/multi-agent.

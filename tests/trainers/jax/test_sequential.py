@@ -26,7 +26,7 @@ from ...utilities import AgentMock, SingleAgentEnv, check_config_keys
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("asymmetric", [True, False])
-def test_base_trainer(
+def test_non_simultaneous_trainer(
     capsys,
     device,
     num_envs,
@@ -98,7 +98,7 @@ def test_base_trainer(
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("asymmetric", [True, False])
-def test_sequential_trainer(
+def test_simultaneous_trainer(
     capsys,
     device,
     num_envs,

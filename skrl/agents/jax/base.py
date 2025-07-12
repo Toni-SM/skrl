@@ -462,11 +462,11 @@ class Agent(ABC):
                         k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()
                     }
             # write checkpoints
-            self.write_checkpoint(timestep, timesteps)
+            self.write_checkpoint(timestep=timestep, timesteps=timesteps)
 
         # write to tensorboard
         if timestep > 1 and self.write_interval > 0 and not timestep % self.write_interval:
-            self.write_tracking_data(timestep, timesteps)
+            self.write_tracking_data(timestep=timestep, timesteps=timesteps)
 
     @abstractmethod
     def update(self, *, timestep: int, timesteps: int) -> None:

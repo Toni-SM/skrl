@@ -37,6 +37,7 @@ def fn_processor(process_index, *args):
     trainer_cfg = args[4]
 
     agent = None
+    _observations = None
     _states = None
     _actions = None
 
@@ -65,11 +66,16 @@ def fn_processor(process_index, *args):
 
         # get agent's actions
         elif task == "act":
-            _states = queue.get()[scope[0] : scope[1]]
+            _observations = queue.get()[scope[0] : scope[1]]
+            _states = queue.get()
+            if _states is not None:
+                _states = _states[scope[0] : scope[1]]
             with torch.no_grad():
-                stochastic_evaluation = msg["stochastic_evaluation"]
-                _outputs = agent.act(_states, timestep=msg["timestep"], timesteps=msg["timesteps"])
-                _actions = _outputs[0] if stochastic_evaluation else _outputs[-1].get("mean_actions", _outputs[0])
+                _actions, _outputs = agent.act(
+                    _observations, _states, timestep=msg["timestep"], timesteps=msg["timesteps"]
+                )
+                if not msg.get("stochastic_evaluation", True):
+                    _actions = _outputs.get("mean_actions", _actions)
                 if not _actions.is_cuda:
                     _actions.share_memory_()
                 queue.put(_actions)
@@ -78,14 +84,24 @@ def fn_processor(process_index, *args):
         # record agent's experience
         elif task == "record_transition":
             with torch.no_grad():
+                rewards = queue.get()[scope[0] : scope[1]]
+                next_observations = queue.get()[scope[0] : scope[1]]
+                next_states = queue.get()
+                if next_states is not None:
+                    next_states = next_states[scope[0] : scope[1]]
+                terminated = queue.get()[scope[0] : scope[1]]
+                truncated = queue.get()[scope[0] : scope[1]]
+                infos = queue.get()
                 agent.record_transition(
+                    observations=_observations,
                     states=_states,
                     actions=_actions,
-                    rewards=queue.get()[scope[0] : scope[1]],
-                    next_states=queue.get()[scope[0] : scope[1]],
-                    terminated=queue.get()[scope[0] : scope[1]],
-                    truncated=queue.get()[scope[0] : scope[1]],
-                    infos=queue.get(),
+                    rewards=rewards,
+                    next_observations=next_observations,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
                     timestep=msg["timestep"],
                     timesteps=msg["timesteps"],
                 )
@@ -99,18 +115,28 @@ def fn_processor(process_index, *args):
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
             with torch.no_grad():
+                rewards = queue.get()[scope[0] : scope[1]]
+                next_observations = queue.get()[scope[0] : scope[1]]
+                next_states = queue.get()
+                if next_states is not None:
+                    next_states = next_states[scope[0] : scope[1]]
+                terminated = queue.get()[scope[0] : scope[1]]
+                truncated = queue.get()[scope[0] : scope[1]]
+                infos = queue.get()
                 agent.record_transition(
+                    observations=_observations,
                     states=_states,
                     actions=_actions,
-                    rewards=queue.get()[scope[0] : scope[1]],
-                    next_states=queue.get()[scope[0] : scope[1]],
-                    terminated=queue.get()[scope[0] : scope[1]],
-                    truncated=queue.get()[scope[0] : scope[1]],
-                    infos=queue.get(),
+                    rewards=rewards,
+                    next_observations=next_observations,
+                    next_states=next_states,
+                    terminated=terminated,
+                    truncated=truncated,
+                    infos=infos,
                     timestep=msg["timestep"],
                     timesteps=msg["timesteps"],
                 )
-                super(type(agent), agent).post_interaction(timestep=msg["timestep"], timesteps=msg["timesteps"])
+                super(agent.__class__, agent).post_interaction(timestep=msg["timestep"], timesteps=msg["timesteps"])
                 barrier.wait()
 
 
@@ -203,9 +229,12 @@ class ParallelTrainer(Trainer):
             queue.put(agent)
         barrier.wait()
 
-        # reset env
-        states, infos = self.env.reset()
-        if not states.is_cuda:
+        # reset the environments
+        observations, infos = self.env.reset()
+        states = self.env.state()
+        if not observations.is_cuda:
+            observations.share_memory_()
+        if states is not None and not states.is_cuda:
             states.share_memory_()
 
         for timestep in tqdm.tqdm(
@@ -220,23 +249,33 @@ class ParallelTrainer(Trainer):
             # compute actions
             with torch.no_grad():
                 for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "act", "timestep": timestep, "timesteps": self.timesteps})
+                    pipe.send(
+                        {
+                            "task": "act",
+                            "timestep": timestep,
+                            "timesteps": self.timesteps,
+                        }
+                    )
+                    queue.put(observations)
                     queue.put(states)
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
 
-                # render scene
+                # render the environments
                 if not self.headless:
                     self.env.render()
 
                 # record the environments' transitions
                 if not rewards.is_cuda:
                     rewards.share_memory_()
-                if not next_states.is_cuda:
+                if not next_observations.is_cuda:
+                    next_observations.share_memory_()
+                if next_states is not None and not next_states.is_cuda:
                     next_states.share_memory_()
                 if not terminated.is_cuda:
                     terminated.share_memory_()
@@ -246,6 +285,7 @@ class ParallelTrainer(Trainer):
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
                     queue.put(rewards)
+                    queue.put(next_observations)
                     queue.put(next_states)
                     queue.put(terminated)
                     queue.put(truncated)
@@ -258,13 +298,14 @@ class ParallelTrainer(Trainer):
             barrier.wait()
 
             # reset environments
-            with torch.no_grad():
-                if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
-                    if not states.is_cuda:
-                        states.share_memory_()
-                else:
+            # - parallel/vectorized environments (single or multi-agent)
+            if self.env.num_envs > 1:
+                observations.copy_(next_observations)
+                if states is not None:
                     states.copy_(next_states)
+            # - single environment
+            else:
+                raise RuntimeError("Parallel trainer is not supported for single environment")
 
         # terminate processes
         for pipe in producer_pipes:
@@ -338,9 +379,12 @@ class ParallelTrainer(Trainer):
             queue.put(agent)
         barrier.wait()
 
-        # reset env
-        states, infos = self.env.reset()
-        if not states.is_cuda:
+        # reset the environments
+        observations, infos = self.env.reset()
+        states = self.env.state()
+        if not observations.is_cuda:
+            observations.share_memory_()
+        if states is not None and not states.is_cuda:
             states.share_memory_()
 
         for timestep in tqdm.tqdm(
@@ -363,22 +407,26 @@ class ParallelTrainer(Trainer):
                             "stochastic_evaluation": self.stochastic_evaluation,
                         }
                     )
+                    queue.put(observations)
                     queue.put(states)
 
                 barrier.wait()
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_states, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
 
-                # render scene
+                # render the environments
                 if not self.headless:
                     self.env.render()
 
                 # write data to TensorBoard
                 if not rewards.is_cuda:
                     rewards.share_memory_()
-                if not next_states.is_cuda:
+                if not next_observations.is_cuda:
+                    next_observations.share_memory_()
+                if next_states is not None and not next_states.is_cuda:
                     next_states.share_memory_()
                 if not terminated.is_cuda:
                     terminated.share_memory_()
@@ -395,6 +443,7 @@ class ParallelTrainer(Trainer):
                     }
                 )
                 queue.put(rewards)
+                queue.put(next_observations)
                 queue.put(next_states)
                 queue.put(terminated)
                 queue.put(truncated)
@@ -402,13 +451,14 @@ class ParallelTrainer(Trainer):
             barrier.wait()
 
             # reset environments
-            with torch.no_grad():
-                if terminated.any() or truncated.any():
-                    states, infos = self.env.reset()
-                    if not states.is_cuda:
-                        states.share_memory_()
-                else:
+            # - parallel/vectorized environments (single or multi-agent)
+            if self.env.num_envs > 1:
+                observations.copy_(next_observations)
+                if states is not None:
                     states.copy_(next_states)
+            # - single environment
+            else:
+                raise RuntimeError("Parallel trainer is not supported for single environment")
 
         # terminate processes
         for pipe in producer_pipes:

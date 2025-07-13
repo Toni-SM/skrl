@@ -76,9 +76,7 @@ class Agent(ABC):
         if not directory:
             directory = os.path.join(os.getcwd(), "runs")
         if not experiment_name:
-            experiment_name = "{}_{}".format(
-                datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), self.__class__.__name__
-            )
+            experiment_name = f"{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S-%f')}_{self.__class__.__name__}"
         self.experiment_dir = os.path.join(directory, experiment_name)
 
     def __str__(self) -> str:
@@ -219,25 +217,21 @@ class Agent(ABC):
                 )
         # whole agent
         else:
-            modules = {}
-            for name, module in self.checkpoint_modules.items():
-                modules[name] = self._get_internal_value(module)
+            modules = {name: self._get_internal_value(module) for name, module in self.checkpoint_modules.items()}
             torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
         if self.checkpoint_best_modules["modules"] and not self.checkpoint_best_modules["saved"]:
             # separated modules
             if self.checkpoint_store_separately:
-                for name, module in self.checkpoint_modules.items():
+                for name in self.checkpoint_modules:
                     torch.save(
                         self.checkpoint_best_modules["modules"][name],
                         os.path.join(self.experiment_dir, "checkpoints", f"best_{name}.pt"),
                     )
             # whole agent
             else:
-                modules = {}
-                for name, module in self.checkpoint_modules.items():
-                    modules[name] = self.checkpoint_best_modules["modules"][name]
+                modules = {name: self.checkpoint_best_modules["modules"][name] for name in self.checkpoint_modules}
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 

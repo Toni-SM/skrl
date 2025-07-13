@@ -4,10 +4,10 @@ import pytest
 
 import gymnasium
 
-from skrl.trainers.torch import ParallelTrainer, generate_equally_spaced_scopes
-from skrl.trainers.torch.parallel import PARALLEL_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.trainers.jax import StepTrainer, generate_equally_spaced_scopes
+from skrl.trainers.jax.step import STEP_TRAINER_DEFAULT_CONFIG as DEFAULT_CONFIG
 
-from ...utilities import AgentMock, SingleAgentEnv, check_config_keys, is_device_available, is_running_on_github_actions
+from ...utilities import AgentMock, SingleAgentEnv, check_config_keys
 
 
 @hypothesis.given(
@@ -38,10 +38,6 @@ def test_non_simultaneous_trainer(
     close_environment_at_exit,
     stochastic_evaluation,
 ):
-    # check device availability
-    if not is_device_available(device, backend="torch"):
-        pytest.skip(f"Device {device} not available")
-
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(4,))
     state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,)) if asymmetric else None
@@ -54,7 +50,7 @@ def test_non_simultaneous_trainer(
         action_space=action_space,
         num_envs=num_envs,
         device=device,
-        ml_framework="torch",
+        ml_framework="jax",
         probability=0.25,
     )
 
@@ -65,7 +61,7 @@ def test_non_simultaneous_trainer(
         action_space=env.action_space,
         num_envs=num_envs,
         device=device,
-        ml_framework="torch",
+        ml_framework="jax",
     )
 
     # trainer
@@ -78,11 +74,14 @@ def test_non_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = ParallelTrainer(cfg=cfg, env=env, agents=agent)
+    trainer = StepTrainer(cfg=cfg, env=env, agents=agent)
     # - training
-    trainer.train()
+    for _ in range(timesteps):
+        trainer.train()
     # - evaluation
-    trainer.eval()
+    trainer.reset()
+    for _ in range(timesteps):
+        trainer.eval()
 
 
 @hypothesis.given(
@@ -96,7 +95,6 @@ def test_non_simultaneous_trainer(
     stochastic_evaluation=st.booleans(),
 )
 @hypothesis.settings(
-    max_examples=3,  # limit the number of tests to run since it launches multiple processes
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
@@ -116,13 +114,6 @@ def test_simultaneous_trainer(
     close_environment_at_exit,
     stochastic_evaluation,
 ):
-    if is_running_on_github_actions():
-        pytest.skip("Parallel trainer test for simultaneous agents is disabled on GitHub Actions")
-
-    # check device availability
-    if not is_device_available(device, backend="torch"):
-        pytest.skip(f"Device {device} not available")
-
     num_simultaneous_agents = min(num_envs, num_simultaneous_agents)
     scopes = generate_equally_spaced_scopes(
         num_envs=num_envs,
@@ -141,7 +132,7 @@ def test_simultaneous_trainer(
         action_space=action_space,
         num_envs=num_envs,
         device=device,
-        ml_framework="torch",
+        ml_framework="jax",
         probability=0.25,
     )
 
@@ -153,7 +144,7 @@ def test_simultaneous_trainer(
             action_space=env.action_space,
             num_envs=scope,
             device=device,
-            ml_framework="torch",
+            ml_framework="jax",
         )
         for _, scope in zip(range(num_simultaneous_agents), scopes)
     ]
@@ -169,8 +160,11 @@ def test_simultaneous_trainer(
         "stochastic_evaluation": stochastic_evaluation,
     }
     check_config_keys(cfg, DEFAULT_CONFIG)
-    trainer = ParallelTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
+    trainer = StepTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
-    trainer.train()
+    for _ in range(timesteps):
+        trainer.train()
     # - evaluation
-    trainer.eval()
+    trainer.reset()
+    for _ in range(timesteps):
+        trainer.eval()

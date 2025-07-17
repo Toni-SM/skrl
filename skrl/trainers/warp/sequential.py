@@ -27,29 +27,25 @@ SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
 class SequentialTrainer(Trainer):
     def __init__(
         self,
+        *,
         env: Wrapper,
         agents: Union[Agent, List[Agent]],
-        agents_scope: Optional[List[int]] = None,
+        scopes: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Sequential trainer
+        """Sequential trainer.
 
-        Train agents sequentially (i.e., one after the other in each interaction with the environment)
+        Train agents sequentially, i.e., one after the other, in each interaction with the environment.
 
-        :param env: Environment to train on
-        :type env: skrl.envs.wrappers.warp.Wrapper
-        :param agents: Agents to train
-        :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
-        :param cfg: Configuration dictionary (default: ``None``).
-                    See SEQUENTIAL_TRAINER_DEFAULT_CONFIG for default values
-        :type cfg: dict, optional
+        :param env: Environment to train/evaluate on.
+        :param agents: Agent(s) to train/evaluate.
+        :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
+        :param cfg: Configuration dictionary.
         """
         _cfg = copy.deepcopy(SEQUENTIAL_TRAINER_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
-        agents_scope = agents_scope if agents_scope is not None else []
-        super().__init__(env=env, agents=agents, agents_scope=agents_scope, cfg=_cfg)
+        scopes = scopes if scopes is not None else []
+        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
 
         # init agents
         if self.num_simultaneous_agents > 1:
@@ -59,19 +55,19 @@ class SequentialTrainer(Trainer):
             self.agents.init(trainer_cfg=self.cfg)
 
     def train(self) -> None:
-        """Train the agents sequentially
+        """Train agents sequentially.
 
         This method executes the following steps in loop:
 
         - Pre-interaction (sequentially)
         - Compute actions (sequentially)
         - Interact with the environments
-        - Render scene
+        - Render environments
         - Record transitions (sequentially)
         - Post-interaction (sequentially)
         - Reset environments
         """
-        # set running mode
+        # set mode
         if self.num_simultaneous_agents > 1:
             for agent in self.agents:
                 agent.enable_training_mode(True)
@@ -80,24 +76,21 @@ class SequentialTrainer(Trainer):
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_train()
-            # multi-agent
-            else:
-                self.multi_agent_train()
+            super().train()
             return
 
         raise NotImplementedError
 
     def eval(self) -> None:
-        """Evaluate the agents sequentially
+        """Evaluate agents sequentially.
 
         This method executes the following steps in loop:
 
+        - Pre-interaction
         - Compute actions (sequentially)
         - Interact with the environments
-        - Render scene
+        - Render environments
+        - Record transitions
         - Reset environments
         """
         # set running mode
@@ -109,12 +102,7 @@ class SequentialTrainer(Trainer):
 
         # non-simultaneous agents
         if self.num_simultaneous_agents == 1:
-            # single-agent
-            if self.env.num_agents == 1:
-                self.single_agent_eval()
-            # multi-agent
-            else:
-                self.multi_agent_eval()
+            super().eval()
             return
 
         raise NotImplementedError

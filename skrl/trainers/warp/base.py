@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 import atexit
 import contextlib
 import sys
+from abc import ABC
 import tqdm
 
 from skrl import logger
@@ -10,18 +11,15 @@ from skrl.agents.warp import Agent
 from skrl.envs.wrappers.warp import Wrapper
 
 
-def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) -> List[int]:
-    """Generate a list of equally spaced scopes for the agents
+def generate_equally_spaced_scopes(*, num_envs: int, num_simultaneous_agents: int) -> List[int]:
+    """Generate a list of equally spaced scopes for simultaneous agents.
 
-    :param num_envs: Number of environments
-    :type num_envs: int
-    :param num_simultaneous_agents: Number of simultaneous agents
-    :type num_simultaneous_agents: int
+    :param num_envs: Number of environments.
+    :param num_simultaneous_agents: Number of simultaneous agents.
 
-    :raises ValueError: If the number of simultaneous agents is greater than the number of environments
+    :return: List of equally spaced scopes.
 
-    :return: List of equally spaced scopes
-    :rtype: List[int]
+    :raises ValueError: If the number of simultaneous agents is greater than the number of environments.
     """
     scopes = [int(num_envs / num_simultaneous_agents)] * num_simultaneous_agents
     if sum(scopes):
@@ -33,29 +31,26 @@ def generate_equally_spaced_scopes(num_envs: int, num_simultaneous_agents: int) 
     return scopes
 
 
-class Trainer:
+class Trainer(ABC):
     def __init__(
         self,
+        *,
         env: Wrapper,
         agents: Union[Agent, List[Agent]],
-        agents_scope: Optional[List[int]] = None,
+        scopes: Optional[List[int]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Base class for trainers
+        """Base trainer class for implementing custom trainers.
 
-        :param env: Environment to train on
-        :type env: skrl.envs.wrappers.warp.Wrapper
-        :param agents: Agents to train
-        :type agents: Union[Agent, List[Agent]]
-        :param agents_scope: Number of environments for each agent to train on (default: ``None``)
-        :type agents_scope: tuple or list of int, optional
-        :param cfg: Configuration dictionary (default: ``None``)
-        :type cfg: dict, optional
+        :param env: Environment to train/evaluate on.
+        :param agents: Agent(s) to train/evaluate.
+        :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
+        :param cfg: Configuration dictionary.
         """
         self.cfg = cfg if cfg is not None else {}
         self.env = env
         self.agents = agents
-        self.agents_scope = agents_scope if agents_scope is not None else []
+        self.scopes = scopes if scopes is not None else []
 
         # get configuration
         self.timesteps = self.cfg.get("timesteps", 0)
@@ -68,7 +63,7 @@ class Trainer:
         self.initial_timestep = 0
 
         # setup agents
-        self.num_simultaneous_agents = 0
+        self.num_simultaneous_agents = 1
         self._setup_agents()
 
         # register environment closing if configured
@@ -81,17 +76,16 @@ class Trainer:
                 logger.info("Environment closed")
 
     def __str__(self) -> str:
-        """Generate a string representation of the trainer
+        """Generate a string representation of the trainer.
 
-        :return: Representation of the trainer as string
-        :rtype: str
+        :return: Representation of the trainer as string.
         """
         string = f"Trainer: {self}"
         string += f"\n  |-- Number of parallelizable environments: {self.env.num_envs}"
         string += f"\n  |-- Number of simultaneous agents: {self.num_simultaneous_agents}"
         string += "\n  |-- Agents and scopes:"
         if self.num_simultaneous_agents > 1:
-            for agent, scope in zip(self.agents, self.agents_scope):
+            for agent, scope in zip(self.agents, self.scopes):
                 string += f"\n  |     |-- agent: {type(agent)}"
                 string += f"\n  |     |     |-- scope: {scope[1] - scope[0]} environments ({scope[0]}:{scope[1]})"
         else:
@@ -100,79 +94,72 @@ class Trainer:
         return string
 
     def _setup_agents(self) -> None:
-        """Setup agents for training
+        """Setup simultaneous agents.
 
-        :raises ValueError: Invalid setup
+        :raises ValueError: Invalid setup.
         """
         # validate agents and their scopes
-        if type(self.agents) in [tuple, list]:
+        if isinstance(self.agents, (tuple, list)):
             # single agent
             if len(self.agents) == 1:
                 self.num_simultaneous_agents = 1
                 self.agents = self.agents[0]
-                self.agents_scope = [1]
-            # parallel agents
+                self.scopes = [(0, self.env.num_envs)]
+            # simultaneous agents
             elif len(self.agents) > 1:
                 self.num_simultaneous_agents = len(self.agents)
                 # check scopes
-                if not len(self.agents_scope):
-                    logger.warning("The agents' scopes are empty, they will be generated as equal as possible")
-                    self.agents_scope = [int(self.env.num_envs / len(self.agents))] * len(self.agents)
-                    if sum(self.agents_scope):
-                        self.agents_scope[-1] += self.env.num_envs - sum(self.agents_scope)
+                if not len(self.scopes):
+                    logger.warning("The agents' scopes are empty. They will be generated to be as equal as possible")
+                    self.scopes = [int(self.env.num_envs / len(self.agents))] * len(self.agents)
+                    if sum(self.scopes):
+                        self.scopes[-1] += self.env.num_envs - sum(self.scopes)
                     else:
                         raise ValueError(
-                            f"The number of agents ({len(self.agents)}) is greater than the number of parallelizable environments ({self.env.num_envs})"
+                            f"The number of simultaneous agents ({len(self.agents)}) is greater than "
+                            f"the number of parallelizable environments ({self.env.num_envs})"
                         )
-                elif len(self.agents_scope) != len(self.agents):
+                elif len(self.scopes) != len(self.agents):
                     raise ValueError(
-                        f"The number of agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.agents_scope)})"
+                        f"The number of simultaneous agents ({len(self.agents)}) doesn't match the number of scopes ({len(self.scopes)})"
                     )
-                elif sum(self.agents_scope) != self.env.num_envs:
+                elif sum(self.scopes) != self.env.num_envs:
                     raise ValueError(
-                        f"The scopes ({sum(self.agents_scope)}) don't cover the number of parallelizable environments ({self.env.num_envs})"
+                        f"The scopes ({sum(self.scopes)}) don't cover the number of parallelizable environments ({self.env.num_envs})"
                     )
                 # generate agents' scopes
                 index = 0
-                for i in range(len(self.agents_scope)):
-                    index += self.agents_scope[i]
-                    self.agents_scope[i] = (index - self.agents_scope[i], index)
+                for i in range(len(self.scopes)):
+                    index += self.scopes[i]
+                    self.scopes[i] = (index - self.scopes[i], index)
             else:
                 raise ValueError("A list of agents is expected")
+        # non-simultaneous agent
         else:
             self.num_simultaneous_agents = 1
+            self.scopes = [(0, self.env.num_envs)]
 
     def train(self) -> None:
-        """Train the agents
-
-        :raises NotImplementedError: Not implemented
-        """
-        raise NotImplementedError
-
-    def eval(self) -> None:
-        """Evaluate the agents
-
-        :raises NotImplementedError: Not implemented
-        """
-        raise NotImplementedError
-
-    def single_agent_train(self) -> None:
-        """Train agent
+        """Train a single/multi-agent.
 
         This method executes the following steps in loop:
 
         - Pre-interaction
         - Compute actions
         - Interact with the environments
-        - Render scene
+        - Render environments
         - Record transitions
         - Post-interaction
         - Reset environments
-        """
-        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
-        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
-        # reset env
+        :raises AssertionError: If the method is called in a simultaneous agents setup.
+        """
+        assert self.num_simultaneous_agents == 1, (
+            "This method is not allowed for simultaneous agents. "
+            "Inherit from `Trainer` and reimplement the `.train()` method instead."
+        )
+
+        # reset the environments
         observations, infos = self.env.reset()
         states = self.env.state()
 
@@ -185,13 +172,13 @@ class Trainer:
 
             with contextlib.nullcontext():
                 # compute actions
-                actions = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)[0]
+                actions, outputs = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)
 
                 # step the environments
                 next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                 next_states = self.env.state()
 
-                # render scene
+                # render the environments
                 if not self.headless:
                     self.env.render()
 
@@ -217,11 +204,21 @@ class Trainer:
             self.agents.post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
+            # - parallel/vectorized environments (single or multi-agent)
             if self.env.num_envs > 1:
                 observations = next_observations
                 states = next_states
+            # - single environment
             else:
-                if terminated.numpy().any() or truncated.numpy().any():
+                # check condition to reset
+                # - multi-agent
+                if self.env.num_agents > 1:
+                    should_reset = not self.env.agents
+                # - single-agent
+                else:
+                    should_reset = terminated.numpy().any() or truncated.numpy().any()
+                # explicit reset
+                if should_reset:
                     with contextlib.nullcontext():
                         observations, infos = self.env.reset()
                         states = self.env.state()
@@ -229,20 +226,26 @@ class Trainer:
                     observations = next_observations
                     states = next_states
 
-    def single_agent_eval(self) -> None:
-        """Evaluate agent
+    def eval(self) -> None:
+        """Evaluate a single/multi-agent.
 
         This method executes the following steps in loop:
 
-        - Compute actions (sequentially)
+        - Pre-interaction
+        - Compute actions
         - Interact with the environments
-        - Render scene
+        - Render environments
+        - Record transitions
         - Reset environments
-        """
-        assert self.num_simultaneous_agents == 1, "This method is not allowed for simultaneous agents"
-        assert self.env.num_agents == 1, "This method is not allowed for multi-agents"
 
-        # reset env
+        :raises AssertionError: If the method is called in a simultaneous agents setup.
+        """
+        assert self.num_simultaneous_agents == 1, (
+            "This method is not allowed for simultaneous agents. "
+            "Inherit from `Trainer` and reimplement the `.eval()` method instead."
+        )
+
+        # reset the environments
         observations, infos = self.env.reset()
         states = self.env.state()
 
@@ -255,18 +258,18 @@ class Trainer:
 
             with contextlib.nullcontext():
                 # compute actions
-                outputs = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)
-                actions = outputs[0] if self.stochastic_evaluation else outputs[-1].get("mean_actions", outputs[0])
+                actions, outputs = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)
+                actions = actions if self.stochastic_evaluation else outputs.get("mean_actions", actions)
 
                 # step the environments
                 next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                 next_states = self.env.state()
 
-                # render scene
+                # render the environments
                 if not self.headless:
                     self.env.render()
 
-                # write data to TensorBoard
+                # record the environments' transitions
                 self.agents.record_transition(
                     observations=observations,
                     states=states,
@@ -285,44 +288,27 @@ class Trainer:
                 # TODO:
 
             # post-interaction
-            super(type(self.agents), self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
+            super(self.agents.__class__, self.agents).post_interaction(timestep=timestep, timesteps=self.timesteps)
 
             # reset environments
+            # - parallel/vectorized environments (single or multi-agent)
             if self.env.num_envs > 1:
                 observations = next_observations
                 states = next_states
+            # - single environment
             else:
-                if terminated.numpy().any() or truncated.numpy().any():
+                # check condition to reset
+                # - multi-agent
+                if self.env.num_agents > 1:
+                    should_reset = not self.env.agents
+                # - single-agent
+                else:
+                    should_reset = terminated.numpy().any() or truncated.numpy().any()
+                # explicit reset
+                if should_reset:
                     with contextlib.nullcontext():
                         observations, infos = self.env.reset()
                         states = self.env.state()
                 else:
                     observations = next_observations
                     states = next_states
-
-    def multi_agent_train(self) -> None:
-        """Train multi-agents
-
-        This method executes the following steps in loop:
-
-        - Pre-interaction
-        - Compute actions
-        - Interact with the environments
-        - Render scene
-        - Record transitions
-        - Post-interaction
-        - Reset environments
-        """
-        raise NotImplementedError
-
-    def multi_agent_eval(self) -> None:
-        """Evaluate multi-agents
-
-        This method executes the following steps in loop:
-
-        - Compute actions (sequentially)
-        - Interact with the environments
-        - Render scene
-        - Reset environments
-        """
-        raise NotImplementedError

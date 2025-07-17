@@ -30,8 +30,10 @@ SAC_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
 
     "random_timesteps": 0,          # random exploration steps
     "learning_starts": 0,           # learning starts after this many steps
@@ -72,8 +74,7 @@ def _update_critic(
     target_q2_values: jax.Array,
     entropy_coefficient,
     next_log_prob,
-    sampled_states: Union[np.ndarray, jax.Array],
-    sampled_actions: Union[np.ndarray, jax.Array],
+    inputs: Mapping[str, Union[np.ndarray, jax.Array]],
     sampled_rewards: Union[np.ndarray, jax.Array],
     sampled_terminated: Union[np.ndarray, jax.Array],
     sampled_truncated: Union[np.ndarray, jax.Array],
@@ -87,7 +88,7 @@ def _update_critic(
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
-        critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, role, params)
+        critic_values, _ = critic_act(inputs, role=role, params=params)
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
@@ -110,17 +111,14 @@ def _update_policy(
     critic_1_state_dict,
     critic_2_state_dict,
     entropy_coefficient,
-    sampled_states,
+    inputs,
 ):
     # compute policy (actor) loss
     def _policy_loss(policy_params, critic_1_params, critic_2_params):
-        actions, log_prob, _ = policy_act({"states": sampled_states}, "policy", policy_params)
-        critic_1_values, _, _ = critic_1_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_1", critic_1_params
-        )
-        critic_2_values, _, _ = critic_2_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_2", critic_2_params
-        )
+        actions, outputs = policy_act(inputs, role="policy", params=policy_params)
+        log_prob = outputs["log_prob"]
+        critic_1_values, _ = critic_1_act({**inputs, "taken_actions": actions}, role="critic_1", params=critic_1_params)
+        critic_2_values, _ = critic_2_act({**inputs, "taken_actions": actions}, role="critic_2", params=critic_2_params)
         return (entropy_coefficient * log_prob - jnp.minimum(critic_1_values, critic_2_values)).mean(), log_prob
 
     (policy_loss, log_prob), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
@@ -174,6 +172,7 @@ class SAC(Agent):
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
             cfg=_cfg,
@@ -214,6 +213,7 @@ class SAC(Agent):
         self._critic_learning_rate = self.cfg["critic_learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
+        self._observation_preprocessor = self.cfg["observation_preprocessor"]
         self._state_preprocessor = self.cfg["state_preprocessor"]
 
         self._random_timesteps = self.cfg["random_timesteps"]
@@ -299,27 +299,49 @@ class SAC(Agent):
             self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # set up preprocessors
+        # - observations
+        if self._observation_preprocessor:
+            self._observation_preprocessor = self._observation_preprocessor(
+                **self.cfg["observation_preprocessor_kwargs"]
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
         if self._state_preprocessor:
             self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=jnp.float32)
-            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="next_observations", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="next_states", size=self.state_space, dtype=jnp.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
             self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
+            self._tensors_names = [
+                "observations",
+                "states",
+                "actions",
+                "rewards",
+                "next_observations",
+                "next_states",
+                "terminated",
+                "truncated",
+            ]
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -330,36 +352,48 @@ class SAC(Agent):
             self.target_critic_1.apply = jax.jit(self.target_critic_1.apply, static_argnums=2)
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
-    def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self,
+        observations: Union[np.ndarray, jax.Array],
+        states: Union[np.ndarray, jax.Array, None],
+        *,
+        timestep: int,
+        timesteps: int,
+    ) -> Tuple[Union[np.ndarray, jax.Array], Mapping[str, Union[np.ndarray, jax.Array, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: np.ndarray or jax.Array
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: np.ndarray or jax.Array
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+            return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, outputs = self.policy.act(inputs, role="policy")
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
 
-        return actions, None, outputs
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: Union[np.ndarray, jax.Array],
         states: Union[np.ndarray, jax.Array],
         actions: Union[np.ndarray, jax.Array],
         rewards: Union[np.ndarray, jax.Array],
+        next_observations: Union[np.ndarray, jax.Array],
         next_states: Union[np.ndarray, jax.Array],
         terminated: Union[np.ndarray, jax.Array],
         truncated: Union[np.ndarray, jax.Array],
@@ -367,29 +401,32 @@ class SAC(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: np.ndarray or jax.Array
-        :param actions: Actions taken by the agent
-        :type actions: np.ndarray or jax.Array
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: np.ndarray or jax.Array
-        :param next_states: Next observations/states of the environment
-        :type next_states: np.ndarray or jax.Array
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: np.ndarray or jax.Array
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: np.ndarray or jax.Array
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memory is not None:
@@ -399,47 +436,43 @@ class SAC(Agent):
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
+                next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
                 truncated=truncated,
             )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         if timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         # gradient steps
@@ -447,25 +480,34 @@ class SAC(Agent):
 
             # sample a batch from memory
             (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
+                sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
                 sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            inputs = {
+                "observations": self._observation_preprocessor(sampled_observations, train=True),
+                "states": self._state_preprocessor(sampled_states, train=True),
+            }
+            next_inputs = {
+                "observations": self._observation_preprocessor(sampled_next_observations, train=True),
+                "states": self._state_preprocessor(sampled_next_states, train=True),
+            }
 
-            next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
+            next_actions, outputs = self.policy.act(next_inputs, role="policy")
+            next_log_prob = outputs["log_prob"]
 
             # compute target values
-            target_q1_values, _, _ = self.target_critic_1.act(
-                {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1"
+            target_q1_values, _ = self.target_critic_1.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_1"
             )
-            target_q2_values, _, _ = self.target_critic_2.act(
-                {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2"
+            target_q2_values, _ = self.target_critic_2.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_2"
             )
 
             # compute critic loss
@@ -478,8 +520,7 @@ class SAC(Agent):
                 target_q2_values,
                 self._entropy_coefficient,
                 next_log_prob,
-                sampled_states,
-                sampled_actions,
+                {**inputs, "taken_actions": sampled_actions},
                 sampled_rewards,
                 sampled_terminated,
                 sampled_truncated,
@@ -490,10 +531,10 @@ class SAC(Agent):
             if config.jax.is_distributed:
                 grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad, self.critic_1, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_1, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad, self.critic_2, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_2, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
             )
 
             # compute policy (actor) loss
@@ -505,14 +546,14 @@ class SAC(Agent):
                 self.critic_1.state_dict,
                 self.critic_2.state_dict,
                 self._entropy_coefficient,
-                sampled_states,
+                inputs,
             )
 
             # optimization step (policy)
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self._actor_learning_rate if self._learning_rate_scheduler else None
             )
 
             # entropy learning
@@ -523,7 +564,7 @@ class SAC(Agent):
                 )
 
                 # optimization step (entropy)
-                self.entropy_optimizer = self.entropy_optimizer.step(grad, self.log_entropy_coefficient)
+                self.entropy_optimizer = self.entropy_optimizer.step(grad=grad, model=self.log_entropy_coefficient)
 
                 # compute entropy coefficient
                 self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)

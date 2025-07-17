@@ -32,25 +32,20 @@ def _step_with_scale(transformation, grad, state, state_dict, scale):
 
 
 class Adam:
-    def __new__(cls, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
-        """Adam optimizer
+    def __new__(cls, *, model: Model, lr: float = 1e-3, grad_norm_clip: float = 0, scale: bool = True) -> "Optimizer":
+        """Adam optimizer.
 
         Adapted from `Optax's Adam <https://optax.readthedocs.io/en/latest/api/optimizers.html#optax.adam>`_
-        to support custom scale (learning rate)
+        to support custom scale (learning rate).
 
-        :param model: Model
-        :type model: skrl.models.jax.Model
-        :param lr: Learning rate (default: ``1e-3``)
-        :type lr: float, optional
-        :param grad_norm_clip: Clipping coefficient for the norm of the gradients (default: ``0``).
-                               Disabled if less than or equal to zero
-        :type grad_norm_clip: float, optional
-        :param scale: Whether to instantiate the optimizer as-is or remove the scaling step (default: ``True``).
-                      Remove the scaling step if a custom learning rate is to be applied during optimization steps
-        :type scale: bool, optional
+        :param model: Model.
+        :param lr: Learning rate.
+        :param grad_norm_clip: Clipping coefficient for the norm of the gradients.
+            Disabled if less than or equal to zero.
+        :param scale: Whether to instantiate the optimizer as-is or remove the scaling step.
+            Remove the scaling step if a custom learning rate is to be applied during optimization steps.
 
-        :return: Adam optimizer
-        :rtype: flax.struct.PyTreeNode
+        :return: Adam optimizer.
 
         Example::
 
@@ -65,10 +60,10 @@ class Adam:
         """
 
         class Optimizer(flax.struct.PyTreeNode):
-            """Optimizer
+            """Optimizer.
 
             This class is the result of isolating the Optax optimizer,
-            which is mixed with the model parameters, from Flax's TrainState class
+            which is mixed with the model parameters, from Flax's TrainState class.
 
             https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state
             """
@@ -80,19 +75,14 @@ class Adam:
             def _create(cls, *, transformation, state, **kwargs):
                 return cls(transformation=transformation, state=state, **kwargs)
 
-            def step(self, grad: jax.Array, model: Model, lr: Optional[float] = None) -> "Optimizer":
-                """Performs a single optimization step
+            def step(self, *, grad: jax.Array, model: Model, lr: Optional[float] = None) -> "Optimizer":
+                """Performs a single optimization step.
 
-                :param grad: Gradients
-                :type grad: jax.Array
-                :param model: Model
-                :type model: skrl.models.jax.Model
-                :param lr: Learning rate.
-                           If given, a scale optimization step will be performed
-                :type lr: float, optional
+                :param grad: Gradients.
+                :param model: Model.
+                :param lr: Learning rate. If given, a scale optimization step will be performed.
 
-                :return: Optimizer
-                :rtype: flax.struct.PyTreeNode
+                :return: Optimizer.
                 """
                 if lr is None:
                     optimizer_state, model.state_dict = _step(self.transformation, grad, self.state, model.state_dict)

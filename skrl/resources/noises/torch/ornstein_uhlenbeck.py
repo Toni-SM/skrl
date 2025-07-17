@@ -13,6 +13,7 @@ Normal.set_default_validate_args(False)
 class OrnsteinUhlenbeckNoise(Noise):
     def __init__(
         self,
+        *,
         theta: float,
         sigma: float,
         base_scale: float,
@@ -20,27 +21,20 @@ class OrnsteinUhlenbeckNoise(Noise):
         std: float = 1,
         device: Optional[Union[str, torch.device]] = None,
     ) -> None:
-        """Class representing an Ornstein-Uhlenbeck noise
+        """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state
-        :type theta: float
-        :param sigma: Factor to apply to the normal distribution
-        :type sigma: float
-        :param base_scale: Factor to apply to returned noise
-        :type base_scale: float
-        :param mean: Mean of the normal distribution (default: ``0.0``)
-        :type mean: float, optional
-        :param std: Standard deviation of the normal distribution (default: ``1.0``)
-        :type std: float, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
+        :param theta: Factor to apply to current internal state.
+        :param sigma: Factor to apply to the normal distribution.
+        :param base_scale: Factor to apply to returned noise.
+        :param mean: Mean of the normal distribution.
+        :param std: Standard deviation of the normal distribution.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
 
         Example::
 
             >>> noise = OrnsteinUhlenbeckNoise(theta=0.1, sigma=0.2, base_scale=0.5)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         self.state = 0
         self.theta = theta
@@ -53,13 +47,11 @@ class OrnsteinUhlenbeckNoise(Noise):
         )
 
     def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
-        """Sample an Ornstein-Uhlenbeck noise
+        """Sample an Ornstein-Uhlenbeck noise.
 
-        :param size: Shape of the sampled tensor
-        :type size: tuple or list of int, or torch.Size
+        :param size: Noise shape.
 
-        :return: Sampled noise
-        :rtype: torch.Tensor
+        :return: Sampled noise.
 
         Example::
 
@@ -77,5 +69,4 @@ class OrnsteinUhlenbeckNoise(Noise):
         if hasattr(self.state, "shape") and self.state.shape != torch.Size(size):
             self.state = 0
         self.state += -self.state * self.theta + self.sigma * self.distribution.sample(size)
-
         return self.base_scale * self.state

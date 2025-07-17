@@ -18,8 +18,8 @@ jobs:
   # Minimum requirements
   ############################################################
 
-  torch-minimum-agents:
-    name: Minimum requirements (agents)
+  torch-minimum-components:
+    name: Minimum requirements (components)
     runs-on: ubuntu-22.04
     steps:
     # setup
@@ -43,21 +43,30 @@ jobs:
         python -m pip install --quiet -e .[tests]
         python -m pip show torch numpy
     # run tests
-    - name: Run tests
+    - name: Run tests (agents)
       run: |
         pytest \
           --self-contained-html \
-          --html=torch-minimum-agents-pytest.html \
+          --html=torch-minimum-components-agents-pytest.html \
           --cov=skrl/agents/torch \
           --cov-report term:skip-covered \
-          --cov-report html:torch-minimum-agents-coverage.html \
+          --cov-report html:torch-minimum-components-agents-coverage.html \
           tests/agents/torch
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-minimum-components-trainers-pytest.html \
+          --cov=skrl/trainers/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-minimum-components-trainers-coverage.html \
+          tests/trainers/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-minimum-agents.html
-        path: torch-minimum-agents-*.html
+        name: torch-minimum-components.html
+        path: torch-minimum-components-*.html
         retention-days: 3
 
   torch-minimum-envs:
@@ -156,6 +165,8 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-minimum-utils-model_instantiators-coverage.html \
           tests/utils/model_instantiators/torch
+    - name: Run tests (spaces)
+      run: |
         pytest \
           --self-contained-html \
           --html=torch-minimum-utils-spaces-pytest.html \
@@ -175,8 +186,8 @@ jobs:
   # Latest requirements
   ############################################################
 
-  torch-latest-agents:
-    name: Latest requirements (agents)
+  torch-latest-components:
+    name: Latest requirements (components)
     strategy:
       fail-fast: false
       matrix:
@@ -204,21 +215,30 @@ jobs:
         python -m pip install --quiet -e .[tests]
         python -m pip show torch numpy
     # run tests
-    - name: Run tests
+    - name: Run tests (agents)
       run: |
         pytest \
           --self-contained-html \
-          --html=torch-latest-agents-pytest.html \
+          --html=torch-latest-components-agents-pytest.html \
           --cov=skrl/agents/torch \
           --cov-report term:skip-covered \
-          --cov-report html:torch-latest-agents-coverage.html \
+          --cov-report html:torch-latest-components-agents-coverage.html \
           tests/agents/torch
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-latest-components-trainers-pytest.html \
+          --cov=skrl/trainers/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-latest-components-trainers-coverage.html \
+          tests/trainers/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
       with:
-        name: torch-latest-agents_${{ matrix.os }}
-        path: torch-latest-agents-*.html
+        name: torch-latest-components_${{ matrix.os }}
+        path: torch-latest-components-*.html
         retention-days: 3
 
   torch-latest-envs:
@@ -325,6 +345,8 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-latest-utils-model_instantiators-coverage.html \
           tests/utils/model_instantiators/torch
+    - name: Run tests (spaces)
+      run: |
         pytest \
           --self-contained-html \
           --html=torch-latest-utils-spaces-pytest.html \

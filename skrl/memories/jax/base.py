@@ -187,6 +187,9 @@ class Memory:
         :return: True if the tensor was created, otherwise False
         :rtype: bool
         """
+        # don't create a tensor for None
+        if size is None:
+            return False
         # compute data size
         if not keep_dimensions:
             size = compute_space_size(size, occupied_size=True)
@@ -384,9 +387,9 @@ class Memory:
         """
         if mini_batches > 1:
             batches = np.array_split(indexes, mini_batches)
-            views = [self._get_tensors_view(name) for name in names]
-            return [[view[batch] for view in views] for batch in batches]
-        return [[self._get_tensors_view(name)[indexes] for name in names]]
+            views = [self._get_tensors_view(name) if name in self.tensors else None for name in names]
+            return [[None if view is None else view[batch] for view in views] for batch in batches]
+        return [[self._get_tensors_view(name)[indexes] if name in self.tensors else None for name in names]]
 
     def sample_all(
         self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1
@@ -408,16 +411,24 @@ class Memory:
         if sequence_length > 1:
             if mini_batches > 1:
                 batches = np.array_split(self.all_sequence_indexes, mini_batches)
-                return [[self._get_tensors_view(name)[batch] for name in names] for batch in batches]
-            return [[self._get_tensors_view(name)[self.all_sequence_indexes] for name in names]]
+                return [
+                    [self._get_tensors_view(name)[batch] if name in self.tensors else None for name in names]
+                    for batch in batches
+                ]
+            return [
+                [
+                    self._get_tensors_view(name)[self.all_sequence_indexes] if name in self.tensors else None
+                    for name in names
+                ]
+            ]
 
         # default order
         if mini_batches > 1:
             indexes = np.arange(self.memory_size * self.num_envs)
             batches = np.array_split(indexes, mini_batches)
-            views = [self._get_tensors_view(name) for name in names]
-            return [[view[batch] for view in views] for batch in batches]
-        return [[self._get_tensors_view(name) for name in names]]
+            views = [self._get_tensors_view(name) if name in self.tensors else None for name in names]
+            return [[None if view is None else view[batch] for view in views] for batch in batches]
+        return [[self._get_tensors_view(name) if name in self.tensors else None for name in names]]
 
     def get_sampling_indexes(self) -> Union[tuple, np.ndarray, jax.Array]:
         """Get the last indexes used for sampling

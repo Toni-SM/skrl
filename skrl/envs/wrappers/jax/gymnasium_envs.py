@@ -97,6 +97,21 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
+    def state(self) -> Union[np.ndarray, jax.Array, None]:
+        """Get the environment state
+
+        :return: State
+        :rtype: np.ndarray or jax.Array
+        """
+        if hasattr(self._unwrapped, "state"):
+            state = flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+            if self._jax:
+                state = jax.device_put(state, device=self.device)
+            return state
+        return None
+
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
         """Reset the environment
 

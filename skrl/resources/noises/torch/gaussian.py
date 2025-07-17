@@ -11,22 +11,18 @@ Normal.set_default_validate_args(False)
 
 
 class GaussianNoise(Noise):
-    def __init__(self, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
-        """Class representing a Gaussian noise
+    def __init__(self, *, mean: float, std: float, device: Optional[Union[str, torch.device]] = None) -> None:
+        """Gaussian noise.
 
-        :param mean: Mean of the normal distribution
-        :type mean: float
-        :param std: Standard deviation of the normal distribution
-        :type std: float
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
+        :param mean: Mean of the normal distribution.
+        :param std: Standard deviation of the normal distribution.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
 
         Example::
 
             >>> noise = GaussianNoise(mean=0, std=1)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         self.distribution = Normal(
             loc=torch.tensor(mean, device=self.device, dtype=torch.float32),
@@ -34,13 +30,11 @@ class GaussianNoise(Noise):
         )
 
     def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
-        """Sample a Gaussian noise
+        """Sample a Gaussian noise.
 
-        :param size: Shape of the sampled tensor
-        :type size: tuple or list of int, or torch.Size
+        :param size: Noise shape.
 
-        :return: Sampled noise
-        :rtype: torch.Tensor
+        :return: Sampled noise.
 
         Example::
 

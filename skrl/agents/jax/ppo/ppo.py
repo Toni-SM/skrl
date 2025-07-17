@@ -30,8 +30,10 @@ PPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
     "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
     "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
 
@@ -75,23 +77,16 @@ def compute_gae(
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
 ) -> np.ndarray:
-    """Compute the Generalized Advantage Estimator (GAE)
+    """Compute the Generalized Advantage Estimator (GAE).
 
-    :param rewards: Rewards obtained by the agent
-    :type rewards: np.ndarray
-    :param dones: Signals to indicate that episodes have ended
-    :type dones: np.ndarray
-    :param values: Values obtained by the agent
-    :type values: np.ndarray
-    :param next_values: Next values obtained by the agent
-    :type next_values: np.ndarray
-    :param discount_factor: Discount factor
-    :type discount_factor: float
-    :param lambda_coefficient: Lambda coefficient
-    :type lambda_coefficient: float
+    :param rewards: Rewards obtained by the agent.
+    :param dones: Signals to indicate that episodes have ended.
+    :param values: Values obtained by the agent.
+    :param next_values: Next values obtained by the agent.
+    :param discount_factor: Discount factor.
+    :param lambda_coefficient: Lambda coefficient.
 
-    :return: Generalized Advantage Estimator
-    :rtype: np.ndarray
+    :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = np.zeros_like(rewards)
@@ -147,8 +142,7 @@ def _compute_gae(
 def _update_policy(
     policy_act,
     policy_state_dict,
-    sampled_states,
-    sampled_actions,
+    inputs,
     sampled_log_prob,
     sampled_advantages,
     ratio_clip,
@@ -157,9 +151,8 @@ def _update_policy(
 ):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, outputs = policy_act(
-            {"states": sampled_states, "taken_actions": sampled_actions}, "policy", params
-        )
+        _, outputs = policy_act(inputs, role="policy", params=params)
+        next_log_prob = outputs["log_prob"]
 
         # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -188,7 +181,7 @@ def _update_policy(
 def _update_value(
     value_act,
     value_state_dict,
-    sampled_states,
+    inputs,
     sampled_values,
     sampled_returns,
     value_loss_scale,
@@ -197,7 +190,7 @@ def _update_value(
 ):
     # compute value loss
     def _value_loss(params):
-        predicted_values, _, _ = value_act({"states": sampled_states}, "value", params)
+        predicted_values, _ = value_act(inputs, role="value", params=params)
         if clip_predicted_values:
             predicted_values = sampled_values + jnp.clip(predicted_values - sampled_values, -value_clip, value_clip)
         return value_loss_scale * ((sampled_returns - predicted_values) ** 2).mean()
@@ -240,6 +233,7 @@ class PPO(Agent):
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
             cfg=_cfg,
@@ -280,6 +274,7 @@ class PPO(Agent):
         self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
+        self._observation_preprocessor = self.cfg["observation_preprocessor"]
         self._state_preprocessor = self.cfg["state_preprocessor"]
         self._value_preprocessor = self.cfg["value_preprocessor"]
 
@@ -316,26 +311,38 @@ class PPO(Agent):
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
 
         # set up preprocessors
+        # - observations
+        if self._observation_preprocessor:
+            self._observation_preprocessor = self._observation_preprocessor(
+                **self.cfg["observation_preprocessor_kwargs"]
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
         if self._state_preprocessor:
             self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
-
+        # - values
         if self._value_preprocessor:
             self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
         else:
             self._value_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=jnp.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
@@ -345,51 +352,62 @@ class PPO(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
-            # tensors sampled during training
-            self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+            self._tensors_names = ["observations", "states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
-        self._current_log_prob = None
+        self._current_next_observations = None
         self._current_next_states = None
+        self._current_log_prob = None
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
         if self.value is not None:
             self.value.apply = jax.jit(self.value.apply, static_argnums=2)
 
-    def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self,
+        observations: Union[np.ndarray, jax.Array],
+        states: Union[np.ndarray, jax.Array, None],
+        *,
+        timestep: int,
+        timesteps: int,
+    ) -> Tuple[Union[np.ndarray, jax.Array], Mapping[str, Union[np.ndarray, jax.Array, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: np.ndarray or jax.Array
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: np.ndarray or jax.Array
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+            return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        actions, log_prob, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, outputs = self.policy.act(inputs, role="policy")
+        self._current_log_prob = outputs["log_prob"]
         if not self._jax:  # numpy backend
             actions = jax.device_get(actions)
-            log_prob = jax.device_get(log_prob)
+            self._current_log_prob = jax.device_get(self._current_log_prob)
 
-        self._current_log_prob = log_prob
-
-        return actions, log_prob, outputs
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: Union[np.ndarray, jax.Array],
         states: Union[np.ndarray, jax.Array],
         actions: Union[np.ndarray, jax.Array],
         rewards: Union[np.ndarray, jax.Array],
+        next_observations: Union[np.ndarray, jax.Array],
         next_states: Union[np.ndarray, jax.Array],
         terminated: Union[np.ndarray, jax.Array],
         truncated: Union[np.ndarray, jax.Array],
@@ -397,32 +415,36 @@ class PPO(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: np.ndarray or jax.Array
-        :param actions: Actions taken by the agent
-        :type actions: np.ndarray or jax.Array
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: np.ndarray or jax.Array
-        :param next_states: Next observations/states of the environment
-        :type next_states: np.ndarray or jax.Array
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: np.ndarray or jax.Array
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: np.ndarray or jax.Array
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memory is not None:
+            self._current_next_observations = next_observations
             self._current_next_states = next_states
 
             # reward shaping
@@ -430,7 +452,11 @@ class PPO(Agent):
                 rewards = self._rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            values, _, _ = self.value.act({"states": self._state_preprocessor(states)}, role="value")
+            inputs = {
+                "observations": self._observation_preprocessor(observations),
+                "states": self._state_preprocessor(states),
+            }
+            values, _ = self.value.act(inputs, role="value")
             if not self._jax:  # numpy backend
                 values = jax.device_get(values)
             values = self._value_preprocessor(values, inverse=True)
@@ -441,57 +467,53 @@ class PPO(Agent):
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
-                next_states=next_states,
                 terminated=terminated,
                 truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
             )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         # compute returns and advantages
-        self.value.training = False
-        last_values, _, _ = self.value.act(
-            {"states": self._state_preprocessor(self._current_next_states)}, role="value"
-        )  # TODO: .float()
-        self.value.training = True
+        inputs = {
+            "observations": self._observation_preprocessor(self._current_next_observations),
+            "states": self._state_preprocessor(self._current_next_states),
+        }
+        self.value.enable_training_mode(False)
+        last_values, _ = self.value.act(inputs, role="value")
+        self.value.enable_training_mode(True)
         if not self._jax:  # numpy backend
             last_values = jax.device_get(last_values)
         last_values = self._value_preprocessor(last_values, inverse=True)
@@ -523,6 +545,7 @@ class PPO(Agent):
 
             # mini-batches loop
             for (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_log_prob,
@@ -531,14 +554,16 @@ class PPO(Agent):
                 sampled_advantages,
             ) in sampled_batches:
 
-                sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
+                inputs = {
+                    "observations": self._observation_preprocessor(sampled_observations, train=not epoch),
+                    "states": self._state_preprocessor(sampled_states, train=not epoch),
+                }
 
                 # compute policy loss
                 grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
                     self.policy.act,
                     self.policy.state_dict,
-                    sampled_states,
-                    sampled_actions,
+                    {**inputs, "taken_actions": sampled_actions},
                     sampled_log_prob,
                     sampled_advantages,
                     self._ratio_clip,
@@ -556,14 +581,14 @@ class PPO(Agent):
                 if config.jax.is_distributed:
                     grad = self.policy.reduce_parameters(grad)
                 self.policy_optimizer = self.policy_optimizer.step(
-                    grad, self.policy, self._learning_rate if self._learning_rate_scheduler else None
+                    grad=grad, model=self.policy, lr=self._learning_rate if self._learning_rate_scheduler else None
                 )
 
                 # compute value loss
                 grad, value_loss = _update_value(
                     self.value.act,
                     self.value.state_dict,
-                    sampled_states,
+                    inputs,
                     sampled_values,
                     sampled_returns,
                     self._value_loss_scale,
@@ -575,7 +600,7 @@ class PPO(Agent):
                 if config.jax.is_distributed:
                     grad = self.value.reduce_parameters(grad)
                 self.value_optimizer = self.value_optimizer.step(
-                    grad, self.value, self._learning_rate if self._learning_rate_scheduler else None
+                    grad=grad, model=self.value, lr=self._learning_rate if self._learning_rate_scheduler else None
                 )
 
                 # update cumulative losses
@@ -592,7 +617,7 @@ class PPO(Agent):
                     if config.jax.is_distributed:
                         kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                         kl /= config.jax.world_size
-                    self._learning_rate = self.scheduler(timestep, self._learning_rate, kl)
+                    self._learning_rate = self.scheduler(timestep, lr=self._learning_rate, kl=kl)
                 else:
                     self._learning_rate *= self.scheduler(timestep)
 

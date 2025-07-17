@@ -312,7 +312,7 @@ class TD3(Agent):
                 self.track_data("Exploration / Exploration noise (min)", 0)
                 self.track_data("Exploration / Exploration noise (mean)", 0)
 
-        return actions, None, outputs
+        return actions, outputs
 
     def record_transition(
         self,

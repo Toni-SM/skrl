@@ -1,0 +1,405 @@
+from typing import List, Mapping, Optional, Tuple, Union
+
+import csv
+import datetime
+import functools
+import operator
+import os
+import gymnasium
+
+import numpy as np
+import warp as wp
+
+from skrl import config
+from skrl.utils.spaces.warp import compute_space_size
+
+
+class Memory:
+    def __init__(
+        self,
+        memory_size: int,
+        num_envs: int = 1,
+        device: Optional[Union[str, wp.context.Device]] = None,
+        export: bool = False,
+        export_format: str = "pt",  # TODO: set default format for warp
+        export_directory: str = "",
+    ) -> None:
+        """Base class representing a memory with circular buffers
+
+        Buffers are warp arrays with shape (memory size, number of environments, data size).
+        Circular buffers are implemented with two integers: a memory index and an environment index
+
+        :param memory_size: Maximum number of elements in the first dimension of each internal storage
+        :type memory_size: int
+        :param num_envs: Number of parallel environments (default: ``1``)
+        :type num_envs: int, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
+                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
+        :type device: str or warp.context.Device, optional
+        :param export: Export the memory to a file (default: ``False``).
+                       If True, the memory will be exported when the memory is filled
+        :type export: bool, optional
+        :param export_format: Export format (default: ``"pt"``).
+                              Supported formats: torch (pt), numpy (np), comma separated values (csv)
+        :type export_format: str, optional
+        :param export_directory: Directory where the memory will be exported (default: ``""``).
+                                 If empty, the agent's experiment directory will be used
+        :type export_directory: str, optional
+
+        :raises ValueError: The export format is not supported
+        """
+        self.memory_size = memory_size
+        self.num_envs = num_envs
+        self.device = config.warp.parse_device(device)
+
+        # internal variables
+        self.filled = False
+        self.env_index = 0
+        self.memory_index = 0
+
+        self.tensors = {}
+        self.tensors_view = {}
+        self.tensors_keep_dimensions = {}
+
+        self.sampling_indexes = None
+        self.all_sequence_indexes = np.concatenate(
+            [np.arange(i, memory_size * num_envs + i, num_envs) for i in range(num_envs)]
+        )
+
+        # exporting data
+        self.export = export
+        self.export_format = export_format
+        self.export_directory = export_directory
+
+        if not self.export_format in ["pt", "np", "csv"]:
+            raise ValueError(f"Export format not supported ({self.export_format})")
+
+    def __len__(self) -> int:
+        """Compute and return the current (valid) size of the memory
+
+        The valid size is calculated as the ``memory_size * num_envs`` if the memory is full (filled).
+        Otherwise, the ``memory_index * num_envs + env_index`` is returned
+
+        :return: Valid size
+        :rtype: int
+        """
+        return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
+
+    def share_memory(self) -> None:
+        """Share the tensors between processes"""
+        for tensor in self.tensors.values():
+            pass
+
+    def get_tensor_names(self) -> Tuple[str]:
+        """Get the name of the internal tensors in alphabetical order
+
+        :return: Tensor names without internal prefix (_tensor_)
+        :rtype: tuple of strings
+        """
+        return sorted(self.tensors.keys())
+
+    def get_tensor_by_name(self, name: str, keepdim: bool = True) -> wp.array:
+        """Get a tensor by its name
+
+        :param name: Name of the tensor to retrieve
+        :type name: str
+        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: ``True``)
+                        If False, the returned tensor will have a shape of (memory size * number of environments, size)
+        :type keepdim: bool, optional
+
+        :raises KeyError: The tensor does not exist
+
+        :return: Tensor
+        :rtype: wp.array
+        """
+        return self.tensors[name] if keepdim else self.tensors_view[name]
+
+    def set_tensor_by_name(self, name: str, tensor: wp.array) -> None:
+        """Set a tensor by its name
+
+        :param name: Name of the tensor to set
+        :type name: str
+        :param tensor: Tensor to set
+        :type tensor: wp.array
+
+        :raises KeyError: The tensor does not exist
+        """
+        wp.copy(self.tensors[name], tensor)
+
+    def create_tensor(
+        self,
+        name: str,
+        size: Union[int, Tuple[int], gymnasium.Space, None],
+        dtype: Optional[type] = None,
+        keep_dimensions: bool = False,
+    ) -> bool:
+        """Create a new internal tensor in memory
+
+        The tensor will have a 3-components shape (memory size, number of environments, size).
+        The internal representation will use _tensor_<name> as the name of the class property
+
+        :param name: Tensor name (the name has to follow the python PEP 8 style)
+        :type name: str
+        :param size: Number of elements in the last dimension (effective data size).
+                     The product of the elements will be computed for sequences or gymnasium spaces
+        :type size: int, tuple or list of integers or gymnasium space
+        :param dtype: Data type (wp.Dtype) (default: ``None``).
+                      If None, float32 data type will be used
+        :type dtype: wp.Dtype or None, optional
+        :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: ``False``)
+        :type keep_dimensions: bool, optional
+
+        :raises ValueError: The tensor name exists already but the size or dtype are different
+
+        :return: True if the tensor was created, otherwise False
+        :rtype: bool
+        """
+        # don't create a tensor for None
+        if size is None:
+            return False
+        # compute data size
+        if not keep_dimensions:
+            size = compute_space_size(size, occupied_size=True)
+        # check dtype and size if the tensor exists
+        if name in self.tensors:
+            tensor = self.tensors[name]
+            if tensor.shape[-1] != size:
+                raise ValueError(f"Size of tensor {name} ({size}) doesn't match the existing one ({tensor.shape[-1]})")
+            if dtype is not None and tensor.dtype != dtype:
+                raise ValueError(f"Dtype of tensor {name} ({dtype}) doesn't match the existing one ({tensor.dtype})")
+            return False
+        # define tensor shape
+        tensor_shape = (
+            (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
+        )
+        view_shape = (-1, *size) if keep_dimensions else (-1, size)
+        # create tensor (_tensor_<name>) and add it to the internal storage
+        if not dtype:
+            dtype = wp.float32
+        setattr(self, f"_tensor_{name}", wp.zeros(tensor_shape, device=self.device, dtype=dtype).contiguous())
+        # update internal variables
+        self.tensors[name] = getattr(self, f"_tensor_{name}")
+        self.tensors_view[name] = self.tensors[name].reshape(view_shape)
+        self.tensors_keep_dimensions[name] = keep_dimensions
+        # fill the tensors (float tensors) with NaN
+        for tensor in self.tensors.values():
+            if tensor.dtype == wp.float32 or tensor.dtype == wp.float64:
+                tensor.fill_(float("nan"))
+        return True
+
+    def reset(self) -> None:
+        """Reset the memory by cleaning internal indexes and flags
+
+        Old data will be retained until overwritten, but access through the available methods will not be guaranteed
+
+        Default values of the internal indexes and flags
+
+        - filled: False
+        - env_index: 0
+        - memory_index: 0
+        """
+        self.filled = False
+        self.env_index = 0
+        self.memory_index = 0
+
+    def add_samples(self, **tensors: Mapping[str, wp.array]) -> None:
+        """Record samples in memory
+
+        Samples should be a tensor with 2-components shape (number of environments, data size).
+        All tensors must be of the same shape
+
+        According to the number of environments, the following classification is made:
+
+        - one environment:
+          Store a single sample (tensors with one dimension) and increment the environment index (second index) by one
+
+        - number of environments less than num_envs:
+          Store the samples and increment the environment index (second index) by the number of the environments
+
+        - number of environments equals num_envs:
+          Store the samples and increment the memory index (first index) by one
+
+        :param tensors: Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
+                        Non-existing tensors will be skipped
+        :type tensors: dict
+
+        :raises ValueError: No tensors were provided or the tensors have incompatible shapes
+        """
+        if not tensors:
+            raise ValueError(
+                "No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)"
+            )
+
+        # dimensions and shapes of the tensors (assume all tensors have the dimensions of the first tensor)
+        tmp = tensors.get("observations", tensors[next(iter(tensors))])  # ask for observations first
+        dim, shape = tmp.ndim, tmp.shape
+
+        # multi environment (number of environments equals num_envs)
+        if dim > 1 and shape[0] == self.num_envs:
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    wp.copy(self.tensors[name][self.memory_index], tensor)
+            self.memory_index += 1
+        # multi environment (number of environments less than num_envs)
+        elif dim > 1 and shape[0] < self.num_envs:
+            raise NotImplementedError  # TODO:
+        # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
+        elif dim > 1 and self.num_envs == 1:
+            raise NotImplementedError  # TODO:
+        # single environment
+        elif dim == 1:
+            raise NotImplementedError  # TODO:
+        else:
+            raise ValueError(f"Expected shape (number of environments = {self.num_envs}, data size), got {shape}")
+
+        # update indexes and flags
+        if self.env_index >= self.num_envs:
+            self.env_index = 0
+            self.memory_index += 1
+        if self.memory_index >= self.memory_size:
+            self.memory_index = 0
+            self.filled = True
+
+            # export tensors to file
+            if self.export:
+                self.save(directory=self.export_directory, format=self.export_format)
+
+    def sample(
+        self, names: Tuple[str], batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> List[List[wp.array]]:
+        """Data sampling method to be implemented by the inheriting classes
+
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
+        :param batch_size: Number of element to sample
+        :type batch_size: int
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
+        :type mini_batches: int, optional
+        :param sequence_length: Length of each sequence (default: ``1``)
+        :type sequence_length: int, optional
+
+        :raises NotImplementedError: The method has not been implemented
+
+        :return: Sampled data from tensors sorted according to their position in the list of names.
+                 The sampled tensors will have the following shape: (batch size, data size)
+        :rtype: list of wp.array list
+        """
+        raise NotImplementedError("The sampling method (.sample()) is not implemented")
+
+    def sample_by_index(
+        self, names: Tuple[str], indexes: Union[tuple, wp.array], mini_batches: int = 1
+    ) -> List[List[wp.array]]:
+        """Sample data from memory according to their indexes
+
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
+        :param indexes: Indexes used for sampling
+        :type indexes: tuple or list, wp.array
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
+        :type mini_batches: int, optional
+
+        :return: Sampled data from tensors sorted according to their position in the list of names.
+                 The sampled tensors will have the following shape: (number of indexes, data size)
+        :rtype: list of wp.array list
+        """
+        if mini_batches > 1:
+            batches = np.array_split(indexes, mini_batches)
+            return [
+                [
+                    (
+                        self.tensors_view[name][wp.array(batch, dtype=wp.int32, device=self.device)].contiguous()
+                        if name in self.tensors
+                        else None
+                    )
+                    for name in names
+                ]
+                for batch in batches
+            ]
+        return [
+            [
+                (
+                    self.tensors_view[name][wp.array(indexes, dtype=wp.int32, device=self.device)].contiguous()
+                    if name in self.tensors
+                    else None
+                )
+                for name in names
+            ]
+        ]
+
+    def sample_all(self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1) -> List[List[wp.array]]:
+        """Sample all data from memory
+
+        :param names: Tensors names from which to obtain the samples
+        :type names: tuple or list of strings
+        :param mini_batches: Number of mini-batches to sample (default: ``1``)
+        :type mini_batches: int, optional
+        :param sequence_length: Length of each sequence (default: ``1``)
+        :type sequence_length: int, optional
+
+        :return: Sampled data from memory.
+                 The sampled tensors will have the following shape: (memory size * number of environments, data size)
+        :rtype: list of wp.array list
+        """
+        # sequential order
+        if sequence_length > 1:
+            if mini_batches > 1:
+                batches = np.array_split(self.all_sequence_indexes, mini_batches)
+                return [
+                    [self.tensors_view[name][batch] if name in self.tensors else None for name in names]
+                    for batch in batches
+                ]
+            return [
+                [self.tensors_view[name][self.all_sequence_indexes] if name in self.tensors else None for name in names]
+            ]
+
+        # default order
+        if mini_batches > 1:
+            batch_size = (self.memory_size * self.num_envs) // mini_batches
+            batches = [(batch_size * i, batch_size * (i + 1)) for i in range(mini_batches)]
+            return [
+                [self.tensors_view[name][batch[0] : batch[1]] if name in self.tensors else None for name in names]
+                for batch in batches
+            ]
+        return [[self.tensors_view[name] if name in self.tensors else None for name in names]]
+
+    def get_sampling_indexes(self) -> Union[tuple, wp.array]:
+        """Get the last indexes used for sampling
+
+        :return: Last sampling indexes
+        :rtype: tuple or list, wp.array
+        """
+        return self.sampling_indexes
+
+    def save(self, directory: str = "", format: str = "pt") -> None:
+        """Save the memory to a file
+
+        Supported formats:
+
+        - PyTorch (pt)
+        - NumPy (npz)
+        - Comma-separated values (csv)
+
+        :param directory: Path to the folder where the memory will be saved.
+                          If not provided, the directory defined in the constructor will be used
+        :type directory: str
+        :param format: Format of the file where the memory will be saved (default: ``"pt"``)
+        :type format: str, optional
+
+        :raises ValueError: If the format is not supported
+        """
+        raise NotImplementedError
+
+    def load(self, path: str) -> None:
+        """Load the memory from a file
+
+        Supported formats:
+        - PyTorch (pt)
+        - NumPy (npz)
+        - Comma-separated values (csv)
+
+        :param path: Path to the file where the memory will be loaded
+        :type path: str
+
+        :raises ValueError: If the format is not supported
+        """
+        raise NotImplementedError

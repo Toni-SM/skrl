@@ -66,13 +66,16 @@ DDPG_DEFAULT_CONFIG = {
 # fmt: on
 
 
-# # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
-# @jax.jit
-# def _apply_exploration_noise(
-#     actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
-# ) -> jax.Array:
-#     noises = noises.at[:].multiply(scale)
-#     return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+@wp.kernel
+def _apply_exploration_noise(
+    actions: wp.array2d(dtype=float),
+    noises: wp.array2d(dtype=float),
+    clip_actions_min: wp.array1d(dtype=float),
+    clip_actions_max: wp.array1d(dtype=float),
+    scale: float,
+):
+    i, j = wp.tid()
+    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j] * scale, clip_actions_min[j], clip_actions_max[j])
 
 
 # @functools.partial(jax.jit, static_argnames=("critic_act"))
@@ -267,8 +270,8 @@ class DDPG(Agent):
 
         # clip noise bounds
         if self.action_space is not None:
-            self.clip_actions_min = wp.array(self.action_space.low, dtype=wp.float32)
-            self.clip_actions_max = wp.array(self.action_space.high, dtype=wp.float32)
+            self.clip_actions_min = wp.array(self.action_space.low.flatten(), dtype=wp.float32, device=self.device)
+            self.clip_actions_max = wp.array(self.action_space.high.flatten(), dtype=wp.float32, device=self.device)
 
     def act(
         self, observations: wp.array, states: Union[wp.array, None], *, timestep: int, timesteps: int
@@ -309,11 +312,14 @@ class DDPG(Agent):
                 scale = (1 - timestep / self._exploration_timesteps) * (
                     self._exploration_initial_scale - self._exploration_final_scale
                 ) + self._exploration_final_scale
-                noises.mul_(scale)
 
                 # modify actions
-                actions.add_(noises)
-                actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                wp.launch(
+                    _apply_exploration_noise,
+                    dim=actions.shape,
+                    inputs=[actions, noises, self.clip_actions_min, self.clip_actions_max, scale],
+                    device=self.device,
+                )
 
                 # record noises
                 self.track_data("Exploration / Exploration noise (max)", np.max(noises.numpy()).item())

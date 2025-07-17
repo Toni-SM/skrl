@@ -26,6 +26,7 @@ def _sample(
 class OrnsteinUhlenbeckNoise(Noise):
     def __init__(
         self,
+        *,
         theta: float,
         sigma: float,
         base_scale: float,
@@ -33,27 +34,20 @@ class OrnsteinUhlenbeckNoise(Noise):
         std: float = 1,
         device: Optional[Union[str, wp.context.Device]] = None,
     ) -> None:
-        """Class representing an Ornstein-Uhlenbeck noise
+        """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state
-        :type theta: float
-        :param sigma: Factor to apply to the normal distribution
-        :type sigma: float
-        :param base_scale: Factor to apply to returned noise
-        :type base_scale: float
-        :param mean: Mean of the normal distribution (default: ``0.0``)
-        :type mean: float, optional
-        :param std: Standard deviation of the normal distribution (default: ``1.0``)
-        :type std: float, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or wp.context.Device, optional
+        :param theta: Factor to apply to current internal state.
+        :param sigma: Factor to apply to the normal distribution.
+        :param base_scale: Factor to apply to returned noise.
+        :param mean: Mean of the normal distribution.
+        :param std: Standard deviation of the normal distribution.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
 
         Example::
 
             >>> noise = OrnsteinUhlenbeckNoise(theta=0.1, sigma=0.2, base_scale=0.5)
         """
-        super().__init__(device)
+        super().__init__(device=device)
 
         self.state = None
         self.theta = theta
@@ -65,13 +59,11 @@ class OrnsteinUhlenbeckNoise(Noise):
         self.std = std
 
     def sample(self, size: Tuple[int]) -> wp.array:
-        """Sample an Ornstein-Uhlenbeck noise
+        """Sample an Ornstein-Uhlenbeck noise.
 
-        :param size: Shape of the sampled tensor
-        :type size: tuple or list of int
+        :param size: Noise shape.
 
-        :return: Sampled noise
-        :rtype: wp.array
+        :return: Sampled noise.
 
         Example::
 

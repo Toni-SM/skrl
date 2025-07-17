@@ -75,7 +75,8 @@ def _apply_exploration_noise(
     scale: float,
 ):
     i, j = wp.tid()
-    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j] * scale, clip_actions_min[j], clip_actions_max[j])
+    noises[i, j] = noises[i, j] * scale  # update in-place for logging
+    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], clip_actions_min[j], clip_actions_max[j])
 
 
 # @functools.partial(jax.jit, static_argnames=("critic_act"))

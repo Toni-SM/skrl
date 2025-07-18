@@ -94,11 +94,17 @@ class GymnasiumWrapper(Wrapper):
         :return: State
         :rtype: wp.array
         """
-        if hasattr(self._unwrapped, "state"):
+        try:
             return flatten_tensorized_space(
                 tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
             )
-        return None
+        except:
+            return None
+        # if hasattr(self._unwrapped, "state"):
+        #     return flatten_tensorized_space(
+        #         tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+        #     )
+        # return None
 
     def reset(self) -> Tuple[wp.array, Any]:
         """Reset the environment

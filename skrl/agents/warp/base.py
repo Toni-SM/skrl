@@ -243,7 +243,7 @@ class Agent(ABC):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        raise NotImplementedError
+        pass  # raise NotImplementedError
 
     @abstractmethod
     def act(
@@ -398,7 +398,7 @@ class Agent(ABC):
             # update best models
             reward = np.mean(self.tracking_data.get("Reward / Total reward (mean)", -(2**31)))
             if reward > self.checkpoint_best_modules["reward"]:
-                raise NotImplementedError
+                pass  # raise NotImplementedError
             # write checkpoints
             self.write_checkpoint(timestep=timestep, timesteps=timesteps)
 

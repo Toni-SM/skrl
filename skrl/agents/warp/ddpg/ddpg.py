@@ -1,20 +1,14 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
-import copy
-import functools
 import gymnasium
 
 import numpy as np
 import warp as wp
 import warp.optim as optim
 
-from skrl import config, logger
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-
-
-# # from skrl.resources.optimizers.warp import Adam
 
 
 # fmt: off
@@ -66,6 +60,18 @@ DDPG_DEFAULT_CONFIG = {
 # fmt: on
 
 
+def enable_grad(obj, *, enabled: bool):
+    if obj is None:
+        return
+    if isinstance(obj, wp.array):
+        obj.requires_grad = enabled
+    elif isinstance(obj, dict):
+        for item in obj.values():
+            enable_grad(item, enabled=enabled)
+    else:
+        raise ValueError(f"Unsupported type: {type(obj)}")
+
+
 @wp.kernel
 def _apply_exploration_noise(
     actions: wp.array2d(dtype=float),
@@ -79,44 +85,37 @@ def _apply_exploration_noise(
     actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], clip_actions_min[j], clip_actions_max[j])
 
 
-# @functools.partial(jax.jit, static_argnames=("critic_act"))
-# def _update_critic(
-#     critic_act,
-#     critic_state_dict,
-#     target_q_values: jax.Array,
-#     sampled_states: wp.array,
-#     sampled_actions: wp.array,
-#     sampled_rewards: wp.array,
-#     sampled_dones: wp.array,
-#     discount_factor: float,
-# ):
-#     # compute target values
-#     target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
-
-#     # compute critic loss
-#     def _critic_loss(params):
-#         critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, "critic", params)
-#         critic_loss = ((critic_values - target_values) ** 2).mean()
-#         return critic_loss, critic_values
-
-#     (critic_loss, critic_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(critic_state_dict.params)
-
-#     return grad, critic_loss, critic_values, target_values
+@wp.kernel
+def _critic_loss(
+    values: wp.array2d(dtype=float),
+    target_values: wp.array2d(dtype=float),
+    sampled_rewards: wp.array2d(dtype=float),
+    sampled_terminated: wp.array2d(dtype=wp.int8),
+    sampled_truncated: wp.array2d(dtype=wp.int8),
+    discount_factor: float,
+    n: float,
+    loss: wp.array(dtype=float),
+):
+    i, j = wp.tid()
+    # compute target values
+    target_values[i, j] = (
+        sampled_rewards[i, j]
+        + discount_factor
+        * wp.float(wp.unot(wp.add(sampled_terminated[i, j], sampled_truncated[i, j])))
+        * target_values[i, j]
+    )
+    # MSE loss
+    wp.atomic_add(loss, 0, wp.pow(values[i, j] - target_values[i, j], 2.0) / n)
 
 
-# @functools.partial(jax.jit, static_argnames=("policy_act", "critic_act"))
-# def _update_policy(policy_act, critic_act, policy_state_dict, critic_state_dict, sampled_states):
-#     # compute policy (actor) loss
-#     def _policy_loss(policy_params, critic_params):
-#         actions, _, _ = policy_act({"states": sampled_states}, "policy", policy_params)
-#         critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": actions}, "critic", critic_params)
-#         return -critic_values.mean()
-
-#     policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(
-#         policy_state_dict.params, critic_state_dict.params
-#     )
-
-#     return grad, policy_loss
+@wp.kernel
+def _policy_loss(
+    values: wp.array2d(dtype=float),
+    n: float,
+    loss: wp.array(dtype=float),
+):
+    i, j = wp.tid()
+    wp.atomic_add(loss, 0, -values[i, j] / n)
 
 
 class DDPG(Agent):
@@ -207,9 +206,11 @@ class DDPG(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
+            self.policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
             self.policy_optimizer = optim.Adam(
                 params=[param.flatten() for param in self.policy.parameters()], lr=self._actor_learning_rate
             )
+            self.critic_optimizer_grads = [param.grad.flatten() for param in self.critic.parameters()]
             self.critic_optimizer = optim.Adam(
                 params=[param.flatten() for param in self.critic.parameters()], lr=self._critic_learning_rate
             )
@@ -455,27 +456,55 @@ class DDPG(Agent):
             )
 
             # compute critic loss
-            grad, critic_loss, critic_values, target_values = _update_critic(
-                self.critic.act,
-                self.critic.state_dict,
-                target_q_values,
-                sampled_states,
-                sampled_actions,
-                sampled_rewards,
-                sampled_dones,
-                self._discount_factor,
-            )
+            tape = wp.Tape()
+            critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
+            critic_inputs = {**inputs, "taken_actions": sampled_actions}
+            enable_grad(critic_inputs, enabled=True)
+            with tape:
+                critic_values, _ = self.critic.act(critic_inputs, role="critic")
+                wp.launch(
+                    _critic_loss,
+                    dim=critic_values.shape,
+                    inputs=[
+                        critic_values,
+                        target_q_values,
+                        sampled_rewards,
+                        sampled_terminated,
+                        sampled_truncated,
+                        self._discount_factor,
+                        np.prod(critic_values.shape),
+                        critic_loss,
+                    ],
+                    device=self.device,
+                )
 
             # optimization step (critic)
-            self.critic_optimizer = self.critic_optimizer.step(grad, self.critic)
+            tape.backward(critic_loss)
+            self.critic_optimizer.step(self.critic_optimizer_grads)
+            tape.zero()
 
             # compute policy (actor) loss
-            grad, policy_loss = _update_policy(
-                self.policy.act, self.critic.act, self.policy.state_dict, self.critic.state_dict, sampled_states
-            )
+            tape = wp.Tape()
+            policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
+            enable_grad(inputs, enabled=True)
+            with tape:
+                actions, _ = self.policy.act(inputs, role="policy")
+                critic_values, _ = self.critic.act({**inputs, "taken_actions": actions}, role="critic")
+                wp.launch(
+                    _policy_loss,
+                    dim=critic_values.shape,
+                    inputs=[
+                        critic_values,
+                        np.prod(critic_values.shape),
+                        policy_loss,
+                    ],
+                    device=self.device,
+                )
 
             # optimization step (policy)
-            self.policy_optimizer = self.policy_optimizer.step(grad, self.policy)
+            tape.backward(policy_loss)
+            self.policy_optimizer.step(self.policy_optimizer_grads)
+            tape.zero()
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)
@@ -487,16 +516,16 @@ class DDPG(Agent):
                 self.critic_scheduler.step()
 
             # record data
-            self.track_data("Loss / Policy loss", policy_loss.item())
-            self.track_data("Loss / Critic loss", critic_loss.item())
+            self.track_data("Loss / Policy loss", policy_loss.numpy().item())
+            self.track_data("Loss / Critic loss", critic_loss.numpy().item())
 
-            self.track_data("Q-network / Q1 (max)", critic_values.max().item())
-            self.track_data("Q-network / Q1 (min)", critic_values.min().item())
-            self.track_data("Q-network / Q1 (mean)", critic_values.mean().item())
+            self.track_data("Q-network / Q1 (max)", critic_values.numpy().max().item())
+            self.track_data("Q-network / Q1 (min)", critic_values.numpy().min().item())
+            self.track_data("Q-network / Q1 (mean)", critic_values.numpy().mean().item())
 
-            self.track_data("Target / Target (max)", target_values.max().item())
-            self.track_data("Target / Target (min)", target_values.min().item())
-            self.track_data("Target / Target (mean)", target_values.mean().item())
+            # # self.track_data("Target / Target (max)", target_values.max().item())
+            # # self.track_data("Target / Target (min)", target_values.min().item())
+            # # self.track_data("Target / Target (mean)", target_values.mean().item())
 
             if self._learning_rate_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])

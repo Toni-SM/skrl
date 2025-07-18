@@ -11,6 +11,16 @@ from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space,
 from . import nn
 
 
+@wp.kernel
+def _polyak_averaging(
+    parameters: wp.array2d(dtype=float),
+    model_parameters: wp.array2d(dtype=float),
+    polyak: float,
+):
+    i, j = wp.tid()
+    parameters[i, j] = (1.0 - polyak) * parameters[i, j] + polyak * model_parameters[i, j]
+
+
 class Model(nn.Module, ABC):
     def __init__(
         self,
@@ -326,9 +336,12 @@ class Model(nn.Module, ABC):
         # soft update (use in-place operations to avoid creating new parameters)
         else:
             for parameters, model_parameters in zip(self.parameters(), model.parameters()):
-                raise NotImplementedError
-                parameters.data.mul_(1 - polyak)
-                parameters.data.add_(polyak * model_parameters.data)
+                wp.launch(
+                    _polyak_averaging,
+                    dim=parameters.shape,
+                    inputs=[parameters, model_parameters, polyak],
+                    device=self.device,
+                )
 
     def broadcast_parameters(self, *, rank: int = 0) -> None:
         """Broadcast model parameters to the whole group (e.g.: across all nodes) in distributed runs.

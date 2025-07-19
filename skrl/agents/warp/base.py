@@ -14,6 +14,7 @@ import warp as wp
 from skrl import config, logger
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
+from skrl.utils.tensorboard import SummaryWriter
 
 
 class Agent(ABC):
@@ -152,48 +153,7 @@ class Agent(ABC):
         if self.write_interval == "auto":
             self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
-            self.writer = None
-            # tensorboard via torch SummaryWriter
-            try:
-                from torch.utils.tensorboard import SummaryWriter
-
-                self.writer = SummaryWriter(log_dir=self.experiment_dir)
-            except ImportError as e:
-                pass
-            # tensorboard via tensorflow
-            if self.writer is None:
-                try:
-                    import tensorflow
-
-                    class _SummaryWriter:
-                        def __init__(self, log_dir):
-                            self.writer = tensorflow.summary.create_file_writer(logdir=log_dir)
-
-                        def add_scalar(self, tag, value, step):
-                            with self.writer.as_default():
-                                tensorflow.summary.scalar(tag, value, step=step)
-
-                    self.writer = _SummaryWriter(log_dir=self.experiment_dir)
-                except ImportError as e:
-                    pass
-            # tensorboard via tensorboardX
-            if self.writer is None:
-                try:
-                    import tensorboardX
-
-                    self.writer = tensorboardX.SummaryWriter(log_dir=self.experiment_dir)
-                except ImportError as e:
-                    pass
-            # show warnings and exit
-            if self.writer is None:
-                logger.warning("No package found to write events to Tensorboard.")
-                logger.warning("Set agent's `write_interval` setting to 0 to disable writing")
-                logger.warning("or install one of the following packages:")
-                logger.warning("  - PyTorch: https://pytorch.org/get-started/locally")
-                logger.warning("  - TensorFlow: https://www.tensorflow.org/install")
-                logger.warning("  - TensorboardX: https://github.com/lanpa/tensorboardX#install")
-                logger.warning("The current running process will be terminated.")
-                exit()
+            self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
         # checkpoint directory creation
         if self.checkpoint_interval == "auto":

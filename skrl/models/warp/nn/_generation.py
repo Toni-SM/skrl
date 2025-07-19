@@ -1,9 +1,8 @@
-from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import Iterator, Sequence, Tuple
 
+import hashlib
 import importlib.util
 import os
-import sys
-import tempfile
 import textwrap
 import jinja2
 
@@ -48,7 +47,7 @@ def create_kernel(input_size: int, output_size: int):
 def parse_modules(
     named_modules: Iterator[Tuple[str, "Module"]], uid: str, input: str, output: str
 ) -> Tuple[str, Sequence[str], Sequence[str], Sequence[str], Sequence[str]]:
-    from .activations import ReLU
+    from .activations import ReLU, Tanh
     from .linear import Linear
     from .sequential import Sequential
 
@@ -59,7 +58,7 @@ def parse_modules(
 
     for i, (name, module) in enumerate(named_modules):
         # activation functions
-        if isinstance(module, (ReLU,)):
+        if isinstance(module, (ReLU, Tanh)):
             _uid = f"{uid}_fun{i}"
             _, _functions, _kernel_parameters, _kernel_arguments, _kernel_definitions = module.parse(_uid)
             functions.extend(_functions)
@@ -100,7 +99,7 @@ def sequential_kernel_factory(module: "Sequential", tile_threads: int):
     _, functions, kernel_parameters, kernel_arguments, kernel_definitions = parse_modules(
         module.named_modules(), "", None, None
     )
-    functions = set(functions)
+    functions = sorted(set(functions))
     kernel_definitions = [textwrap.indent(item, prefix=" " * 8)[8:] for item in kernel_definitions]
 
     # render source code
@@ -117,8 +116,9 @@ def sequential_kernel_factory(module: "Sequential", tile_threads: int):
     )
 
     # write source code to file
+    hash = hashlib.sha256(source.encode()).hexdigest()[:8]
     cache_dir = os.path.join(wp.config.kernel_cache_dir, "nn")
-    file_path = os.path.join(cache_dir, "sequential_kernel.py")
+    file_path = os.path.join(cache_dir, f"sequential_kernel_{hash}.py")
     os.makedirs(cache_dir, exist_ok=True)
     with open(file_path, "w") as file:
         file.write(source)

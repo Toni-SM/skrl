@@ -72,7 +72,7 @@ def enable_grad(obj, *, enabled: bool):
         raise ValueError(f"Unsupported type: {type(obj)}")
 
 
-@wp.kernel
+@wp.kernel(enable_backward=False)
 def _apply_exploration_noise(
     actions: wp.array2d(dtype=float),
     noises: wp.array2d(dtype=float),
@@ -206,11 +206,9 @@ class DDPG(Agent):
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic is not None:
-            self.policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
             self.policy_optimizer = optim.Adam(
                 params=[param.flatten() for param in self.policy.parameters()], lr=self._actor_learning_rate
             )
-            self.critic_optimizer_grads = [param.grad.flatten() for param in self.critic.parameters()]
             self.critic_optimizer = optim.Adam(
                 params=[param.flatten() for param in self.critic.parameters()], lr=self._critic_learning_rate
             )
@@ -224,6 +222,12 @@ class DDPG(Agent):
 
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+
+            # training variables
+            self._policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
+            self._policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
+            self._critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
+            self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic.parameters()]
 
         # set up preprocessors
         # - observations
@@ -456,11 +460,10 @@ class DDPG(Agent):
             )
 
             # compute critic loss
-            tape = wp.Tape()
-            critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
             critic_inputs = {**inputs, "taken_actions": sampled_actions}
             enable_grad(critic_inputs, enabled=True)
-            with tape:
+            self._critic_loss.zero_()
+            with wp.Tape() as tape:
                 critic_values, _ = self.critic.act(critic_inputs, role="critic")
                 wp.launch(
                     _critic_loss,
@@ -473,21 +476,20 @@ class DDPG(Agent):
                         sampled_truncated,
                         self._discount_factor,
                         np.prod(critic_values.shape),
-                        critic_loss,
+                        self._critic_loss,
                     ],
                     device=self.device,
                 )
 
             # optimization step (critic)
-            tape.backward(critic_loss)
-            self.critic_optimizer.step(self.critic_optimizer_grads)
+            tape.backward(self._critic_loss)
+            self.critic_optimizer.step(self._critic_optimizer_grads)
             tape.zero()
 
             # compute policy (actor) loss
-            tape = wp.Tape()
-            policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
             enable_grad(inputs, enabled=True)
-            with tape:
+            self._policy_loss.zero_()
+            with wp.Tape() as tape:
                 actions, _ = self.policy.act(inputs, role="policy")
                 critic_values, _ = self.critic.act({**inputs, "taken_actions": actions}, role="critic")
                 wp.launch(
@@ -496,14 +498,14 @@ class DDPG(Agent):
                     inputs=[
                         critic_values,
                         np.prod(critic_values.shape),
-                        policy_loss,
+                        self._policy_loss,
                     ],
                     device=self.device,
                 )
 
             # optimization step (policy)
-            tape.backward(policy_loss)
-            self.policy_optimizer.step(self.policy_optimizer_grads)
+            tape.backward(self._policy_loss)
+            self.policy_optimizer.step(self._policy_optimizer_grads)
             tape.zero()
 
             # update target networks
@@ -516,8 +518,8 @@ class DDPG(Agent):
                 self.critic_scheduler.step()
 
             # record data
-            self.track_data("Loss / Policy loss", policy_loss.numpy().item())
-            self.track_data("Loss / Critic loss", critic_loss.numpy().item())
+            self.track_data("Loss / Policy loss", self._policy_loss.numpy().item())
+            self.track_data("Loss / Critic loss", self._critic_loss.numpy().item())
 
             self.track_data("Q-network / Q1 (max)", critic_values.numpy().max().item())
             self.track_data("Q-network / Q1 (min)", critic_values.numpy().min().item())

@@ -14,6 +14,7 @@ import warp as wp
 from skrl import config, logger
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
+from skrl.utils.framework.warp import convert_to_numpy_in_place
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -116,7 +117,7 @@ class Agent(ABC):
 
         :return: Module/variable state/value.
         """
-        raise NotImplementedError
+        return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
     def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent.
@@ -203,7 +204,19 @@ class Agent(ABC):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        pass  # raise NotImplementedError
+        tag = str(timestep if timestep is not None else datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"))
+        # separated modules
+        if self.checkpoint_store_separately:
+            for name, module in self.checkpoint_modules.items():
+                raise NotImplementedError
+        # whole agent
+        else:
+            modules = {}
+            for name, module in self.checkpoint_modules.items():
+                modules[name] = self._get_internal_value(module)
+            modules = convert_to_numpy_in_place(modules)
+            with open(os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pickle"), "wb") as file:
+                pickle.dump(modules, file, protocol=4)
 
     @abstractmethod
     def act(
@@ -322,7 +335,12 @@ class Agent(ABC):
 
         :param path: Path to save the agent to.
         """
-        raise NotImplementedError
+        modules = {}
+        for name, module in self.checkpoint_modules.items():
+            modules[name] = self._get_internal_value(module)
+        modules = convert_to_numpy_in_place(modules)
+        with open(path, "wb") as file:
+            pickle.dump(modules, file, protocol=4)
 
     def load(self, path: str) -> None:
         """Load the agent from the specified path.
@@ -333,7 +351,18 @@ class Agent(ABC):
 
         :param path: Path to load the agent from.
         """
-        raise NotImplementedError
+        with open(path, "rb") as file:
+            modules = pickle.load(file)
+        if type(modules) is dict:
+            for name, data in modules.items():
+                module = self.checkpoint_modules.get(name, None)
+                if module is not None:
+                    if hasattr(module, "load_state_dict"):
+                        module.load_state_dict(data)
+                    else:
+                        pass  # TODO: raise NotImplementedError
+                else:
+                    logger.warning(f"Skipping module '{name}'. The agent doesn't have such an instance")
 
     @abstractmethod
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:

@@ -7,7 +7,7 @@ import numpy as np
 import warp as wp
 
 from skrl import config
-from skrl.utils import warp_utils
+from skrl.utils.framework.warp import concatenate
 
 
 def convert_gym_space(
@@ -185,10 +185,10 @@ def flatten_tensorized_space(x: Any) -> Optional[wp.array]:
     # composite spaces
     # - Tuple
     elif type(x) in [list, tuple]:
-        return warp_utils.concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
+        return concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
     # - Dict
     elif isinstance(x, dict):
-        return warp_utils.concatenate([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], axis=-1)
+        return concatenate([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], axis=-1)
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 

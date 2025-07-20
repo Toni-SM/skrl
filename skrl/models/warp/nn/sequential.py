@@ -26,8 +26,7 @@ class Sequential(Module):
 
     def forward(self, input):
         shape = (input.shape[0], self._output_size)
-        if self.output is None:
-            self.output = wp.empty(shape, dtype=wp.float32, device=self.device, requires_grad=True)
+        self.output = wp.empty(shape, dtype=wp.float32, device=self.device, requires_grad=True)
         wp.launch_tiled(
             self._kernel,
             dim=[math.ceil(input.shape[0] / tile_threads)],

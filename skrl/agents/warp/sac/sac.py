@@ -13,7 +13,7 @@ from skrl.models.warp import Model
 
 # fmt: off
 # [start-config-dict-warp]
-DDPG_DEFAULT_CONFIG = {
+SAC_DEFAULT_CONFIG = {
     "gradient_steps": 1,            # gradient steps
     "batch_size": 64,               # training batch size
 
@@ -35,12 +35,10 @@ DDPG_DEFAULT_CONFIG = {
 
     "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
 
-    "exploration": {
-        "noise": None,              # exploration noise
-        "initial_scale": 1.0,       # initial scale for the noise
-        "final_scale": 1e-3,        # final scale for the noise
-        "timesteps": None,          # timesteps for the noise decay
-    },
+    "learn_entropy": True,          # learn entropy
+    "entropy_learning_rate": 1e-3,  # entropy learning rate
+    "initial_entropy_value": 0.2,   # initial entropy value
+    "target_entropy": None,         # target entropy
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
@@ -87,8 +85,12 @@ def _apply_exploration_noise(
 
 @wp.kernel
 def _critic_loss(
-    values: wp.array2d(dtype=float),
-    target_values: wp.array2d(dtype=float),
+    values_1: wp.array2d(dtype=float),
+    values_2: wp.array2d(dtype=float),
+    target_values_1: wp.array2d(dtype=float),
+    target_values_2: wp.array2d(dtype=float),
+    next_log_prob: wp.array2d(dtype=float),
+    entropy_coefficient: float,
     sampled_rewards: wp.array2d(dtype=float),
     sampled_terminated: wp.array2d(dtype=wp.int8),
     sampled_truncated: wp.array2d(dtype=wp.int8),
@@ -98,27 +100,38 @@ def _critic_loss(
 ):
     i, j = wp.tid()
     # compute target values
-    target_values[i, j] = (
+    target_values_1[i, j] = (
+        wp.min(target_values_1[i, j], target_values_2[i, j]) - entropy_coefficient * next_log_prob[i, 1]
+    )
+    target_values_1[i, j] = (
         sampled_rewards[i, j]
         + discount_factor
         * wp.float(wp.unot(wp.add(sampled_terminated[i, j], sampled_truncated[i, j])))
-        * target_values[i, j]
+        * target_values_1[i, j]
     )
     # MSE loss
-    wp.atomic_add(loss, 0, wp.pow(values[i, j] - target_values[i, j], 2.0) / n)
+    wp.atomic_add(
+        loss,
+        0,
+        (wp.pow(values_1[i, j] - target_values_1[i, j], 2.0) + wp.pow(values_2[i, j] - target_values_1[i, j], 2.0))
+        / (2.0 * n),
+    )
 
 
 @wp.kernel
 def _policy_loss(
-    values: wp.array2d(dtype=float),
+    values_1: wp.array2d(dtype=float),
+    values_2: wp.array2d(dtype=float),
+    log_prob: wp.array2d(dtype=float),
+    entropy_coefficient: float,
     n: float,
     loss: wp.array(dtype=float),
 ):
     i, j = wp.tid()
-    wp.atomic_add(loss, 0, -values[i, j] / n)
+    wp.atomic_add(loss, 0, (entropy_coefficient * log_prob[i, 1] - wp.min(values_1[i, j], values_2[i, j])) / n)
 
 
-class DDPG(Agent):
+class SAC(Agent):
     def __init__(
         self,
         *,
@@ -130,9 +143,9 @@ class DDPG(Agent):
         device: Optional[Union[str, wp.context.Device]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Deep Deterministic Policy Gradient (DDPG).
+        """Soft Actor-Critic (SAC).
 
-        https://arxiv.org/abs/1509.02971
+        https://arxiv.org/abs/1801.01290
 
         :param models: Agent's models.
         :param memory: Memory to storage agent's data and environment transitions.
@@ -144,8 +157,8 @@ class DDPG(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(DDPG_DEFAULT_CONFIG)  # TODO: ValueError: ctypes objects containing pointers cannot be pickled
-        _cfg = DDPG_DEFAULT_CONFIG
+        # _cfg = copy.deepcopy(SAC_DEFAULT_CONFIG)  # TODO: ValueError: ctypes objects containing pointers cannot be pickled
+        _cfg = SAC_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
         super().__init__(
             models=models,
@@ -159,24 +172,26 @@ class DDPG(Agent):
 
         # models
         self.policy = self.models.get("policy", None)
-        self.target_policy = self.models.get("target_policy", None)
-        self.critic = self.models.get("critic", None)
-        self.target_critic = self.models.get("target_critic", None)
+        self.critic_1 = self.models.get("critic_1", None)
+        self.critic_2 = self.models.get("critic_2", None)
+        self.target_critic_1 = self.models.get("target_critic_1", None)
+        self.target_critic_2 = self.models.get("target_critic_2", None)
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
-        self.checkpoint_modules["target_policy"] = self.target_policy
-        self.checkpoint_modules["critic"] = self.critic
-        self.checkpoint_modules["target_critic"] = self.target_critic
+        self.checkpoint_modules["critic_1"] = self.critic_1
+        self.checkpoint_modules["critic_2"] = self.critic_2
+        self.checkpoint_modules["target_critic_1"] = self.target_critic_1
+        self.checkpoint_modules["target_critic_2"] = self.target_critic_2
 
-        if self.target_policy is not None and self.target_critic is not None:
+        if self.target_critic_1 is not None and self.target_critic_2 is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
-            self.target_policy.freeze_parameters(True)
-            self.target_critic.freeze_parameters(True)
+            self.target_critic_1.freeze_parameters(True)
+            self.target_critic_2.freeze_parameters(True)
 
             # update target networks (hard update)
-            self.target_policy.update_parameters(self.policy, polyak=1)
-            self.target_critic.update_parameters(self.critic, polyak=1)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=1)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # configuration
         self._gradient_steps = self.cfg["gradient_steps"]
@@ -197,20 +212,23 @@ class DDPG(Agent):
 
         self._grad_norm_clip = self.cfg["grad_norm_clip"]
 
-        self._exploration_noise = self.cfg["exploration"]["noise"]
-        self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
-        self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
-        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
+        self._entropy_learning_rate = self.cfg["entropy_learning_rate"]
+        self._learn_entropy = self.cfg["learn_entropy"]
+        self._entropy_coefficient = self.cfg["initial_entropy_value"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # set up optimizers and learning rate schedulers
-        if self.policy is not None and self.critic is not None:
+        if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = optim.Adam(
                 params=[param.flatten() for param in self.policy.parameters()], lr=self._actor_learning_rate
             )
             self.critic_optimizer = optim.Adam(
-                params=[param.flatten() for param in self.critic.parameters()], lr=self._critic_learning_rate
+                params=(
+                    [param.flatten() for param in self.critic_1.parameters()]
+                    + [param.flatten() for param in self.critic_2.parameters()]
+                ),
+                lr=self._critic_learning_rate,
             )
             if self._learning_rate_scheduler is not None:
                 self.policy_scheduler = self._learning_rate_scheduler(
@@ -227,7 +245,9 @@ class DDPG(Agent):
             self._policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
             self._policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
             self._critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-            self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic.parameters()]
+            self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic_1.parameters()] + [
+                param.grad.flatten() for param in self.critic_2.parameters()
+            ]
 
         # set up preprocessors
         # - observations
@@ -274,11 +294,6 @@ class DDPG(Agent):
                 "truncated",
             ]
 
-        # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = wp.array(self.action_space.low.flatten(), dtype=wp.float32, device=self.device)
-            self.clip_actions_max = wp.array(self.action_space.high.flatten(), dtype=wp.float32, device=self.device)
-
     def act(
         self, observations: wp.array, states: Union[wp.array, None], *, timestep: int, timesteps: int
     ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
@@ -300,43 +315,8 @@ class DDPG(Agent):
         if timestep < self._random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
-        # sample deterministic actions
+        # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-
-        # add exploration noise
-        if self._exploration_noise is not None:
-            # sample noises
-            noises = self._exploration_noise.sample(actions.shape)
-
-            # define exploration timesteps
-            scale = self._exploration_final_scale
-            if self._exploration_timesteps is None:
-                self._exploration_timesteps = timesteps
-
-            # apply exploration noise
-            if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) * (
-                    self._exploration_initial_scale - self._exploration_final_scale
-                ) + self._exploration_final_scale
-
-                # modify actions
-                wp.launch(
-                    _apply_exploration_noise,
-                    dim=actions.shape,
-                    inputs=[actions, noises, self.clip_actions_min, self.clip_actions_max, scale],
-                    device=self.device,
-                )
-
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", np.max(noises.numpy()).item())
-                self.track_data("Exploration / Exploration noise (min)", np.min(noises.numpy()).item())
-                self.track_data("Exploration / Exploration noise (mean)", np.mean(noises.numpy()).item())
-
-            else:
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", 0)
-                self.track_data("Exploration / Exploration noise (min)", 0)
-                self.track_data("Exploration / Exploration noise (mean)", 0)
 
         return actions, outputs
 
@@ -454,9 +434,12 @@ class DDPG(Agent):
             }
 
             # compute target values
-            next_actions, _ = self.target_policy.act(next_inputs, role="target_policy")
-            target_q_values, _ = self.target_critic.act(
-                {**next_inputs, "taken_actions": next_actions}, role="target_critic"
+            next_actions, outputs = self.policy.act(next_inputs, role="policy")
+            target_q1_values, _ = self.target_critic_1.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_1"
+            )
+            target_q2_values, _ = self.target_critic_2.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_2"
             )
 
             # compute critic loss
@@ -464,18 +447,23 @@ class DDPG(Agent):
             enable_grad(critic_inputs, enabled=True)
             self._critic_loss.zero_()
             with wp.Tape() as tape:
-                critic_values, _ = self.critic.act(critic_inputs, role="critic")
+                critic_1_values, _ = self.critic_1.act(critic_inputs, role="critic_1")
+                critic_2_values, _ = self.critic_2.act(critic_inputs, role="critic_2")
                 wp.launch(
                     _critic_loss,
-                    dim=critic_values.shape,
+                    dim=critic_1_values.shape,
                     inputs=[
-                        critic_values,
-                        target_q_values,
+                        critic_1_values,
+                        critic_2_values,
+                        target_q1_values,
+                        target_q2_values,
+                        outputs["log_prob"],
+                        self._entropy_coefficient,
                         sampled_rewards,
                         sampled_terminated,
                         sampled_truncated,
                         self._discount_factor,
-                        np.prod(critic_values.shape),
+                        np.prod(critic_1_values.shape),
                         self._critic_loss,
                     ],
                     device=self.device,
@@ -490,14 +478,18 @@ class DDPG(Agent):
             enable_grad(inputs, enabled=True)
             self._policy_loss.zero_()
             with wp.Tape() as tape:
-                actions, _ = self.policy.act(inputs, role="policy")
-                critic_values, _ = self.critic.act({**inputs, "taken_actions": actions}, role="critic")
+                actions, outputs = self.policy.act(inputs, role="policy")
+                critic_1_values, _ = self.critic_1.act({**inputs, "taken_actions": actions}, role="critic_1")
+                critic_2_values, _ = self.critic_2.act({**inputs, "taken_actions": actions}, role="critic_2")
                 wp.launch(
                     _policy_loss,
-                    dim=critic_values.shape,
+                    dim=critic_1_values.shape,
                     inputs=[
-                        critic_values,
-                        np.prod(critic_values.shape),
+                        critic_1_values,
+                        critic_2_values,
+                        outputs["log_prob"],
+                        self._entropy_coefficient,
+                        np.prod(critic_1_values.shape),
                         self._policy_loss,
                     ],
                     device=self.device,
@@ -509,8 +501,8 @@ class DDPG(Agent):
             tape.zero()
 
             # update target networks
-            self.target_policy.update_parameters(self.policy, polyak=self._polyak)
-            self.target_critic.update_parameters(self.critic, polyak=self._polyak)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
 
             # update learning rate
             if self._learning_rate_scheduler:
@@ -521,9 +513,13 @@ class DDPG(Agent):
             self.track_data("Loss / Policy loss", self._policy_loss.numpy().item())
             self.track_data("Loss / Critic loss", self._critic_loss.numpy().item())
 
-            self.track_data("Q-network / Q1 (max)", critic_values.numpy().max().item())
-            self.track_data("Q-network / Q1 (min)", critic_values.numpy().min().item())
-            self.track_data("Q-network / Q1 (mean)", critic_values.numpy().mean().item())
+            self.track_data("Q-network / Q1 (max)", critic_1_values.numpy().max().item())
+            self.track_data("Q-network / Q1 (min)", critic_1_values.numpy().min().item())
+            self.track_data("Q-network / Q1 (mean)", critic_1_values.numpy().mean().item())
+
+            self.track_data("Q-network / Q2 (max)", critic_2_values.numpy().max().item())
+            self.track_data("Q-network / Q2 (min)", critic_2_values.numpy().min().item())
+            self.track_data("Q-network / Q2 (mean)", critic_2_values.numpy().mean().item())
 
             # # self.track_data("Target / Target (max)", target_values.max().item())
             # # self.track_data("Target / Target (min)", target_values.min().item())

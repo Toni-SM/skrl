@@ -70,19 +70,6 @@ def enable_grad(obj, *, enabled: bool):
         raise ValueError(f"Unsupported type: {type(obj)}")
 
 
-@wp.kernel(enable_backward=False)
-def _apply_exploration_noise(
-    actions: wp.array2d(dtype=float),
-    noises: wp.array2d(dtype=float),
-    clip_actions_min: wp.array1d(dtype=float),
-    clip_actions_max: wp.array1d(dtype=float),
-    scale: float,
-):
-    i, j = wp.tid()
-    noises[i, j] = noises[i, j] * scale  # update in-place for logging
-    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], clip_actions_min[j], clip_actions_max[j])
-
-
 @wp.kernel
 def _critic_loss(
     values_1: wp.array2d(dtype=float),
@@ -101,7 +88,7 @@ def _critic_loss(
     i, j = wp.tid()
     # compute target values
     target_values_1[i, j] = (
-        wp.min(target_values_1[i, j], target_values_2[i, j]) - entropy_coefficient * next_log_prob[i, 1]
+        wp.min(target_values_1[i, j], target_values_2[i, j]) - entropy_coefficient * next_log_prob[i, 0]
     )
     target_values_1[i, j] = (
         sampled_rewards[i, j]
@@ -128,7 +115,18 @@ def _policy_loss(
     loss: wp.array(dtype=float),
 ):
     i, j = wp.tid()
-    wp.atomic_add(loss, 0, (entropy_coefficient * log_prob[i, 1] - wp.min(values_1[i, j], values_2[i, j])) / n)
+    wp.atomic_add(loss, 0, (entropy_coefficient * log_prob[i, 0] - wp.min(values_1[i, j], values_2[i, j])) / n)
+
+
+@wp.kernel
+def _entropy_loss(
+    log_entropy_coefficient: wp.array1d(dtype=float),
+    log_prob: wp.array2d(dtype=float),
+    target_entropy: float,
+    n: float,
+    loss: wp.array(dtype=float),
+):
+    wp.atomic_add(loss, 0, -log_entropy_coefficient[0] * (log_prob[wp.tid(), 0] + target_entropy) / n)
 
 
 class SAC(Agent):
@@ -218,6 +216,23 @@ class SAC(Agent):
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
+        # entropy
+        if self._learn_entropy:
+            self._target_entropy = self.cfg["target_entropy"]
+            if self._target_entropy is None:
+                if issubclass(type(self.action_space), gymnasium.spaces.Box):
+                    self._target_entropy = float(-np.prod(self.action_space.shape).item())
+                elif issubclass(type(self.action_space), gymnasium.spaces.Discrete):
+                    self._target_entropy = float(-self.action_space.n)
+                else:
+                    self._target_entropy = 0.0
+
+            self.log_entropy_coefficient = wp.array(
+                np.log([self._entropy_coefficient]), dtype=wp.float32, device=self.device, requires_grad=True
+            )
+            self.entropy_optimizer = optim.Adam(params=[self.log_entropy_coefficient], lr=self._entropy_learning_rate)
+            # self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
+
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
             self.policy_optimizer = optim.Adam(
@@ -248,6 +263,9 @@ class SAC(Agent):
             self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic_1.parameters()] + [
                 param.grad.flatten() for param in self.critic_2.parameters()
             ]
+            if self._learn_entropy:
+                self._entropy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
+                self._entropy_optimizer_grads = [self.log_entropy_coefficient.grad.flatten()]
 
         # set up preprocessors
         # - observations
@@ -479,6 +497,7 @@ class SAC(Agent):
             self._policy_loss.zero_()
             with wp.Tape() as tape:
                 actions, outputs = self.policy.act(inputs, role="policy")
+                log_prob = outputs["log_prob"]
                 critic_1_values, _ = self.critic_1.act({**inputs, "taken_actions": actions}, role="critic_1")
                 critic_2_values, _ = self.critic_2.act({**inputs, "taken_actions": actions}, role="critic_2")
                 wp.launch(
@@ -487,7 +506,7 @@ class SAC(Agent):
                     inputs=[
                         critic_1_values,
                         critic_2_values,
-                        outputs["log_prob"],
+                        log_prob,
                         self._entropy_coefficient,
                         np.prod(critic_1_values.shape),
                         self._policy_loss,
@@ -499,6 +518,33 @@ class SAC(Agent):
             tape.backward(self._policy_loss)
             self.policy_optimizer.step(self._policy_optimizer_grads)
             tape.zero()
+
+            # entropy learning
+            if self._learn_entropy:
+                # compute entropy loss
+                log_prob.requires_grad = False
+                self._entropy_loss.zero_()
+                with wp.Tape() as tape:
+                    wp.launch(
+                        _entropy_loss,
+                        dim=log_prob.shape[0],
+                        inputs=[
+                            self.log_entropy_coefficient,
+                            log_prob,
+                            self._target_entropy,
+                            log_prob.shape[0],
+                            self._entropy_loss,
+                        ],
+                        device=self.device,
+                    )
+
+                # optimization step (entropy)
+                tape.backward(self._entropy_loss)
+                self.entropy_optimizer.step(self._entropy_optimizer_grads)
+                tape.zero()
+
+                # compute entropy coefficient
+                self._entropy_coefficient = np.exp(self.log_entropy_coefficient.numpy())
 
             # update target networks
             self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
@@ -524,6 +570,10 @@ class SAC(Agent):
             # # self.track_data("Target / Target (max)", target_values.max().item())
             # # self.track_data("Target / Target (min)", target_values.min().item())
             # # self.track_data("Target / Target (mean)", target_values.mean().item())
+
+            if self._learn_entropy:
+                self.track_data("Loss / Entropy loss", self._entropy_loss.numpy().item())
+                self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())
 
             if self._learning_rate_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])

@@ -1,10 +1,23 @@
 from typing import Any, Literal, Mapping, Tuple, Union
 
+import math
 import gymnasium
 
 import warp as wp
 
 from skrl import config
+
+
+HALF_LOG_2_PI = wp.constant(0.5 * math.log(2.0 * math.pi))
+
+
+@wp.func
+def _log_prob(
+    action: float,
+    loc: float,
+    scale: float,
+):
+    return -wp.pow(action - loc, 2.0) / (2.0 * wp.pow(scale, 2.0)) - wp.log(scale) - HALF_LOG_2_PI
 
 
 @wp.kernel
@@ -17,6 +30,8 @@ def _gaussian(
     clip_actions_min: wp.array1d(dtype=float),
     clip_actions_max: wp.array1d(dtype=float),
     taken_actions: wp.array2d(dtype=float),
+    reduction: int,
+    m: float,
     key: int,
     # outputs
     actions: wp.array2d(dtype=float),
@@ -34,17 +49,31 @@ def _gaussian(
         actions[i, j] = wp.randn(subkey) * scale[j] + loc[i, j]
     # log of the probability density function
     if taken_actions:
-        log_prob[i, j] = (
-            -wp.pow(taken_actions[i, j] - loc[i, j], 2.0) / (2.0 * wp.pow(scale[j], 2.0))
-            - wp.log(scale[j])
-            - 0.5 * wp.log(2.0 * wp.pi)
-        )
+        # mean
+        if reduction == 0:
+            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc[i, j], scale[j]) / m)
+        # sum
+        elif reduction == 1:
+            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc[i, j], scale[j]))
+        # prod
+        elif reduction == 2:
+            pass  # TODO: implement prod
+        # none
+        else:
+            log_prob[i, j] = _log_prob(actions[i, j], loc[i, j], scale[j])
     else:
-        log_prob[i, j] = (
-            -wp.pow(actions[i, j] - loc[i, j], 2.0) / (2.0 * wp.pow(scale[j], 2.0))
-            - wp.log(scale[j])
-            - 0.5 * wp.log(2.0 * wp.pi)
-        )
+        # mean
+        if reduction == 0:
+            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc[i, j], scale[j]) / m)
+        # sum
+        elif reduction == 1:
+            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc[i, j], scale[j]))
+        # prod
+        elif reduction == 2:
+            pass  # TODO: implement prod
+        # none
+        else:
+            log_prob[i, j] = _log_prob(actions[i, j], loc[i, j], scale[j])
 
 
 @wp.kernel
@@ -94,11 +123,7 @@ class GaussianMixin:
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("Reduction must be one of 'mean', 'sum', 'prod' or 'none'")
-        # self._g_reduction = (
-        #     torch.mean
-        #     if reduction == "mean"
-        #     else torch.sum if reduction == "sum" else torch.prod if reduction == "prod" else None
-        # )
+        self._g_reduction = ["mean", "sum", "prod", "none"].index(reduction)
 
         self._g_key = config.warp.key
 
@@ -126,13 +151,17 @@ class GaussianMixin:
         log_std = outputs["log_std"]
 
         self._g_key += 1
-        actions = wp.empty(shape=mean_actions.shape, dtype=wp.float32, device=self.device, requires_grad=True)
-        log_prob = wp.empty(shape=(mean_actions.shape[0], 1), dtype=wp.float32, device=self.device, requires_grad=True)
+        shape = mean_actions.shape
+        actions = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
+        if self._g_reduction == "none":
+            log_prob = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
+        else:
+            log_prob = wp.empty(shape=(shape[0], 1), dtype=wp.float32, device=self.device, requires_grad=True)
         scale = wp.empty(shape=log_std.shape, dtype=wp.float32, device=self.device, requires_grad=True)
 
         wp.launch(
             _gaussian,
-            dim=mean_actions.shape,
+            dim=shape,
             inputs=[
                 mean_actions,
                 log_std,
@@ -141,6 +170,8 @@ class GaussianMixin:
                 self._g_clip_actions_min,
                 self._g_clip_actions_max,
                 inputs.get("taken_actions"),
+                self._g_reduction,
+                shape[1],
                 self._g_key,
             ],
             outputs=[actions, log_prob, scale],

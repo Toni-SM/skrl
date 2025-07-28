@@ -350,9 +350,7 @@ class _Config(object):
                 if "warp" in sys.modules:
                     import warp as wp
 
-                    # wp.clear_kernel_cache()
-                    # wp.config.verbose = True
-                    wp.config.quiet = True
+                    wp.config.verbose = True
                     wp.init()
 
             @staticmethod

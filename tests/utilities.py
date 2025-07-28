@@ -50,6 +50,8 @@ def _sample_flattened_space(*, space, num_envs, device, ml_framework):
         from skrl.utils.spaces.torch import flatten_tensorized_space, sample_space
     elif ml_framework == "jax":
         from skrl.utils.spaces.jax import flatten_tensorized_space, sample_space
+    elif ml_framework == "warp":
+        from skrl.utils.spaces.warp import flatten_tensorized_space, sample_space
 
     return flatten_tensorized_space(sample_space(space, batch_size=num_envs, backend="native", device=device))
 
@@ -59,6 +61,8 @@ def _check_flattened_space(*, sample, space, num_envs, ml_framework):
         from skrl.utils.spaces.torch import compute_space_size
     elif ml_framework == "jax":
         from skrl.utils.spaces.jax import compute_space_size
+    elif ml_framework == "warp":
+        from skrl.utils.spaces.warp import compute_space_size
 
     space_size = compute_space_size(space, occupied_size=True)
     assert sample.shape[0] == num_envs, f"Space dim 0 mismatch: expected {num_envs}, got {sample.shape[0]}"
@@ -69,7 +73,7 @@ class SingleAgentEnv:
     def __init__(
         self, *, observation_space, state_space, action_space, num_envs, device, ml_framework, probability=0.05
     ):
-        assert ml_framework in ["torch", "jax"]
+        assert ml_framework in ["torch", "jax", "warp"]
         self._ml_framework = ml_framework
         self._probability = probability
 
@@ -83,6 +87,8 @@ class SingleAgentEnv:
             self.device = config.torch.parse_device(device)
         elif self._ml_framework == "jax":
             self.device = config.jax.parse_device(device)
+        elif self._ml_framework == "warp":
+            self.device = config.warp.parse_device(device)
 
     def _tensorize(self, x, dtype):
         if self._ml_framework == "torch":
@@ -95,6 +101,11 @@ class SingleAgentEnv:
 
             dtype = {bool: np.int8, int: np.int32, float: np.float32}[dtype]
             return jax.device_put(np.array(x, dtype=dtype).reshape(self.num_envs, -1), device=self.device)
+        elif self._ml_framework == "warp":
+            import warp as wp
+
+            dtype = {bool: np.int8, int: np.int32, float: np.float32}[dtype]
+            return wp.array(np.array(x, dtype=dtype).reshape(self.num_envs, -1), device=self.device)
 
     # Wrapper methods
 

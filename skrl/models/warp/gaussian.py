@@ -8,7 +8,8 @@ import warp as wp
 from skrl import config
 
 
-HALF_LOG_2_PI = wp.constant(0.5 * math.log(2.0 * math.pi))
+HALF_LOG_2_PI = wp.constant(0.5 * math.log(2 * math.pi))
+HALF_LOG_2_PI_PLUS = wp.constant(0.5 + 0.5 * math.log(2 * math.pi))
 
 
 @wp.func
@@ -77,9 +78,9 @@ def _gaussian(
 
 
 @wp.kernel
-def _entropy(dst: wp.array2d(dtype=float), scale: wp.array2d(dtype=float)):
-    i, j = wp.tid()
-    # dst[i, j] = 0.5 + 0.5 * wp.log(2 * wp.pi) + wp.log(scale[i, j])
+def _entropy(stddev: wp.array1d(dtype=float), entropy: wp.array1d(dtype=float)):
+    i = wp.tid()
+    entropy[i] = HALF_LOG_2_PI_PLUS + wp.log(stddev[i])
 
 
 class GaussianMixin:
@@ -183,13 +184,20 @@ class GaussianMixin:
         outputs["stddev"] = scale
         return actions, outputs
 
-    def get_entropy(self, *, role: str = "") -> wp.array:
+    def get_entropy(self, stddev: wp.array, *, role: str = "") -> wp.array:
         """Compute and return the entropy of the model.
 
+        :param stddev: Model standard deviation.
         :param role: Role played by the model.
 
         :return: Entropy of the model.
         """
-        if self._g_distribution is None:
-            return torch.tensor(0.0, device=self.device)
-        return self._g_distribution.entropy().to(self.device)
+        entropy = wp.empty(shape=stddev.shape, dtype=wp.float32, device=self.device, requires_grad=True)
+        wp.launch(
+            _entropy,
+            dim=stddev.shape,
+            inputs=[stddev],
+            outputs=[entropy],
+            device=self.device,
+        )
+        return entropy

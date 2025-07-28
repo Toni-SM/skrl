@@ -347,9 +347,7 @@ class Agent(ABC):
 
         :param path: Path to save the agent to.
         """
-        modules = {}
-        for name, module in self.checkpoint_modules.items():
-            modules[name] = self._get_internal_value(module)
+        modules = {name: self._get_internal_value(module) for name, module in self.checkpoint_modules.items()}
         torch.save(modules, path)
 
     def load(self, path: str) -> None:

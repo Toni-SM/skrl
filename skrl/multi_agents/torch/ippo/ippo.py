@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import copy
 import itertools
@@ -30,8 +30,10 @@ IPPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
     "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
     "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
 
@@ -72,34 +74,30 @@ IPPO_DEFAULT_CONFIG = {
 class IPPO(MultiAgent):
     def __init__(
         self,
+        *,
         possible_agents: Sequence[str],
-        models: Mapping[str, Model],
+        models: Mapping[str, Mapping[str, Model]],
         memories: Optional[Mapping[str, Memory]] = None,
-        observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
-        action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        observation_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
+        state_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
+        action_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
         device: Optional[Union[str, torch.device]] = None,
         cfg: Optional[dict] = None,
     ) -> None:
-        """Independent Proximal Policy Optimization (IPPO)
+        """Independent Proximal Policy Optimization (IPPO).
 
         https://arxiv.org/abs/2011.09533
 
-        :param possible_agents: Name of all possible agents the environment could generate
-        :type possible_agents: list of str
-        :param models: Models used by the agents.
-                       External keys are environment agents' names. Internal keys are the models required by the algorithm
-        :type models: nested dictionary of skrl.models.torch.Model
-        :param memories: Memories to storage the transitions.
-        :type memories: dictionary of skrl.memory.torch.Memory, optional
-        :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
-        :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        :param possible_agents: Name of all possible agents the environment could generate.
+        :param models: Agents' models.
+        :param memories: Memories to storage agents' data and environment transitions.
+        :param observation_spaces: Observation spaces.
+        :param state_spaces: State spaces.
+        :param action_spaces: Action spaces.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param cfg: Multi-agent's configuration.
+
+        :raises KeyError: If a configuration key is missing.
         """
         _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)
         _cfg.update(cfg if cfg is not None else {})
@@ -108,6 +106,7 @@ class IPPO(MultiAgent):
             models=models,
             memories=memories,
             observation_spaces=observation_spaces,
+            state_spaces=state_spaces,
             action_spaces=action_spaces,
             device=device,
             cfg=_cfg,
@@ -117,12 +116,13 @@ class IPPO(MultiAgent):
         self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
         self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
 
+        # checkpoint models
         for uid in self.possible_agents:
-            # checkpoint models
             self.checkpoint_modules[uid]["policy"] = self.policies[uid]
             self.checkpoint_modules[uid]["value"] = self.values[uid]
 
-            # broadcast models' parameters in distributed runs
+        # broadcast models' parameters in distributed runs
+        for uid in self.possible_agents:
             if config.torch.is_distributed:
                 logger.info(f"Broadcasting models' parameters")
                 if self.policies[uid] is not None:
@@ -150,6 +150,8 @@ class IPPO(MultiAgent):
         self._learning_rate_scheduler = self._as_dict(self.cfg["learning_rate_scheduler"])
         self._learning_rate_scheduler_kwargs = self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])
 
+        self._observation_preprocessor = self._as_dict(self.cfg["observation_preprocessor"])
+        self._observation_preprocessor_kwargs = self._as_dict(self.cfg["observation_preprocessor_kwargs"])
         self._state_preprocessor = self._as_dict(self.cfg["state_preprocessor"])
         self._state_preprocessor_kwargs = self._as_dict(self.cfg["state_preprocessor_kwargs"])
         self._value_preprocessor = self._as_dict(self.cfg["value_preprocessor"])
@@ -195,28 +197,43 @@ class IPPO(MultiAgent):
 
             self.checkpoint_modules[uid]["optimizer"] = self.optimizers[uid]
 
-            # set up preprocessors
-            if self._state_preprocessor[uid] is not None:
+        # set up preprocessors
+        for uid in self.possible_agents:
+            # - observations
+            if self._observation_preprocessor[uid]:
+                self._observation_preprocessor[uid] = self._observation_preprocessor[uid](
+                    **self._observation_preprocessor_kwargs[uid]
+                )
+                self.checkpoint_modules[uid]["observation_preprocessor"] = self._observation_preprocessor[uid]
+            else:
+                self._observation_preprocessor[uid] = self._empty_preprocessor
+            # - states
+            if self._state_preprocessor[uid]:
                 self._state_preprocessor[uid] = self._state_preprocessor[uid](**self._state_preprocessor_kwargs[uid])
                 self.checkpoint_modules[uid]["state_preprocessor"] = self._state_preprocessor[uid]
             else:
                 self._state_preprocessor[uid] = self._empty_preprocessor
-
-            if self._value_preprocessor[uid] is not None:
+            # - values
+            if self._value_preprocessor[uid]:
                 self._value_preprocessor[uid] = self._value_preprocessor[uid](**self._value_preprocessor_kwargs[uid])
                 self.checkpoint_modules[uid]["value_preprocessor"] = self._value_preprocessor[uid]
             else:
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
 
         # create tensors in memories
         if self.memories:
             for uid in self.possible_agents:
-                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=torch.float32)
+                self.memories[uid].create_tensor(
+                    name="observations", size=self.observation_spaces[uid], dtype=torch.float32
+                )
+                self.memories[uid].create_tensor(name="states", size=self.state_spaces[uid], dtype=torch.float32)
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
@@ -226,51 +243,69 @@ class IPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-                # tensors sampled during training
-                self._tensors_names = ["states", "actions", "log_prob", "values", "returns", "advantages"]
+                self._tensors_names = [
+                    "observations",
+                    "states",
+                    "actions",
+                    "log_prob",
+                    "values",
+                    "returns",
+                    "advantages",
+                ]
 
         # create temporary variables needed for storage and computation
-        self._current_log_prob = []
-        self._current_next_states = []
+        self._current_next_observations = {}
+        self._current_next_states = {}
+        self._current_log_prob = {}
 
-    def act(self, states: Mapping[str, torch.Tensor], timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policies
+    def act(
+        self,
+        observations: Mapping[str, torch.Tensor],
+        states: Mapping[str, Union[torch.Tensor, None]],
+        *,
+        timestep: int,
+        timesteps: int,
+    ) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Union[torch.Tensor, Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: dictionary of torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
-        # # sample random actions
-        # # TODO: fix for stochasticity, rnn and log_prob
-        # if timestep < self._random_timesteps:
-        #     return self.policy.random_act({"states": states}, role="policy")
+        actions = {}
+        log_prob = {}
+        outputs = {}
 
-        # sample stochastic actions
-        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-            data = [
-                self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
-                for uid in self.possible_agents
-            ]
+        for uid in self.possible_agents:
+            inputs = {
+                "observations": self._observation_preprocessor[uid](observations[uid]),
+                "states": self._state_preprocessor[uid](states[uid]),
+            }
+            # sample random actions
+            # TODO, check for stochasticity
+            if timestep < self._random_timesteps:
+                actions[uid], outputs[uid] = self.policies[uid].random_act(inputs, role="policy")
 
-            actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
-            log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
-            outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
+            # sample stochastic actions
+            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
+                log_prob[uid] = outputs[uid]["log_prob"]
 
-            self._current_log_prob = log_prob
-
-        return actions, log_prob, outputs
+        self._current_log_prob = log_prob
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: Mapping[str, torch.Tensor],
         states: Mapping[str, torch.Tensor],
         actions: Mapping[str, torch.Tensor],
         rewards: Mapping[str, torch.Tensor],
+        next_observations: Mapping[str, torch.Tensor],
         next_states: Mapping[str, torch.Tensor],
         terminated: Mapping[str, torch.Tensor],
         truncated: Mapping[str, torch.Tensor],
@@ -278,32 +313,36 @@ class IPPO(MultiAgent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: dictionary of torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: dictionary of torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: dictionary of torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: dictionary of torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: dictionary of torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: dictionary of torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: dictionary of any supported type
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memories:
+            self._current_next_observations = next_observations
             self._current_next_states = next_states
 
             for uid in self.possible_agents:
@@ -313,9 +352,11 @@ class IPPO(MultiAgent):
 
                 # compute values
                 with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                    values, _, _ = self.values[uid].act(
-                        {"states": self._state_preprocessor[uid](states[uid])}, role="value"
-                    )
+                    inputs = {
+                        "observations": self._observation_preprocessor[uid](observations[uid]),
+                        "states": self._state_preprocessor[uid](states[uid]),
+                    }
+                    values, _ = self.values[uid].act(inputs, role="value")
                     values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) bootstrapping
@@ -324,50 +365,44 @@ class IPPO(MultiAgent):
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
+                    observations=observations[uid],
                     states=states[uid],
                     actions=actions[uid],
                     rewards=rewards[uid],
-                    next_states=next_states[uid],
                     terminated=terminated[uid],
                     truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
                 )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         def compute_gae(
@@ -378,23 +413,16 @@ class IPPO(MultiAgent):
             discount_factor: float = 0.99,
             lambda_coefficient: float = 0.95,
         ) -> torch.Tensor:
-            """Compute the Generalized Advantage Estimator (GAE)
+            """Compute the Generalized Advantage Estimator (GAE).
 
-            :param rewards: Rewards obtained by the agent
-            :type rewards: torch.Tensor
-            :param dones: Signals to indicate that episodes have ended
-            :type dones: torch.Tensor
-            :param values: Values obtained by the agent
-            :type values: torch.Tensor
-            :param next_values: Next values obtained by the agent
-            :type next_values: torch.Tensor
-            :param discount_factor: Discount factor
-            :type discount_factor: float
-            :param lambda_coefficient: Lambda coefficient
-            :type lambda_coefficient: float
+            :param rewards: Rewards obtained by the agent.
+            :param dones: Signals to indicate that episodes have ended.
+            :param values: Values obtained by the agent.
+            :param next_values: Next values obtained by the agent.
+            :param discount_factor: Discount factor.
+            :param lambda_coefficient: Lambda coefficient.
 
-            :return: Generalized Advantage Estimator
-            :rtype: torch.Tensor
+            :return: Generalized Advantage Estimator.
             """
             advantage = 0
             advantages = torch.zeros_like(rewards)
@@ -424,12 +452,14 @@ class IPPO(MultiAgent):
 
             # compute returns and advantages
             with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-                value.train(False)
-                last_values, _, _ = value.act(
-                    {"states": self._state_preprocessor[uid](self._current_next_states[uid].float())}, role="value"
-                )
-                value.train(True)
-            last_values = self._value_preprocessor[uid](last_values, inverse=True)
+                inputs = {
+                    "observations": self._observation_preprocessor[uid](self._current_next_observations[uid]),
+                    "states": self._state_preprocessor[uid](self._current_next_states[uid]),
+                }
+                value.enable_training_mode(False)
+                last_values, _ = value.act(inputs, role="value")
+                value.enable_training_mode(True)
+                last_values = self._value_preprocessor[uid](last_values, inverse=True)
 
             values = memory.get_tensor_by_name("values")
             returns, advantages = compute_gae(
@@ -458,6 +488,7 @@ class IPPO(MultiAgent):
 
                 # mini-batches loop
                 for (
+                    sampled_observations,
                     sampled_states,
                     sampled_actions,
                     sampled_log_prob,
@@ -467,12 +498,13 @@ class IPPO(MultiAgent):
                 ) in sampled_batches:
 
                     with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                        inputs = {
+                            "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),
+                            "states": self._state_preprocessor[uid](sampled_states, train=not epoch),
+                        }
 
-                        sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
-
-                        _, next_log_prob, _ = policy.act(
-                            {"states": sampled_states, "taken_actions": sampled_actions}, role="policy"
-                        )
+                        _, outputs = policy.act({**inputs, "taken_actions": sampled_actions}, role="policy")
+                        next_log_prob = outputs["log_prob"]
 
                         # compute approximate KL divergence
                         with torch.no_grad():
@@ -500,7 +532,7 @@ class IPPO(MultiAgent):
                         policy_loss = -torch.min(surrogate, surrogate_clipped).mean()
 
                         # compute value loss
-                        predicted_values, _, _ = value.act({"states": sampled_states}, role="value")
+                        predicted_values, _ = value.act(inputs, role="value")
 
                         if self._clip_predicted_values:
                             predicted_values = sampled_values + torch.clip(

@@ -52,35 +52,35 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`torch_gymnasium_cartpole_cem.py <../examples/gymnasium/torch_gymnasium_cartpole_cem.py>`
-                        |br| :download:`torch_gymnasium_cartpole_dqn.py <../examples/gymnasium/torch_gymnasium_cartpole_dqn.py>`
+                      - :download:`torch_gymnasium_cartpole_cem.py <../../../examples/gymnasium/torch_gymnasium_cartpole_cem.py>`
+                        |br| :download:`torch_gymnasium_cartpole_dqn.py <../../../examples/gymnasium/torch_gymnasium_cartpole_dqn.py>`
                       -
                     * - FrozenLake
-                      - :download:`torch_gymnasium_frozen_lake_q_learning.py <../examples/gymnasium/torch_gymnasium_frozen_lake_q_learning.py>`
+                      - :download:`torch_gymnasium_frozen_lake_q_learning.py <../../../examples/gymnasium/torch_gymnasium_frozen_lake_q_learning.py>`
                       -
                     * - Pendulum
-                      - :download:`torch_gymnasium_pendulum_ddpg.py <../examples/gymnasium/torch_gymnasium_pendulum_ddpg.py>`
-                        |br| :download:`torch_gymnasium_pendulum_ppo.py <../examples/gymnasium/torch_gymnasium_pendulum_ppo.py>`
-                        |br| :download:`torch_gymnasium_pendulum_sac.py <../examples/gymnasium/torch_gymnasium_pendulum_sac.py>`
-                        |br| :download:`torch_gymnasium_pendulum_td3.py <../examples/gymnasium/torch_gymnasium_pendulum_td3.py>`
+                      - :download:`torch_gymnasium_pendulum_ddpg.py <../../../examples/gymnasium/torch_gymnasium_pendulum_ddpg.py>`
+                        |br| :download:`torch_gymnasium_pendulum_ppo.py <../../../examples/gymnasium/torch_gymnasium_pendulum_ppo.py>`
+                        |br| :download:`torch_gymnasium_pendulum_sac.py <../../../examples/gymnasium/torch_gymnasium_pendulum_sac.py>`
+                        |br| :download:`torch_gymnasium_pendulum_td3.py <../../../examples/gymnasium/torch_gymnasium_pendulum_td3.py>`
                       -
                     * - PendulumNoVel*
                         |br| (RNN / GRU / LSTM)
-                      - :download:`torch_gymnasium_pendulumnovel_ddpg_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_rnn.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_gru.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_lstm.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_rnn.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_gru.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_lstm.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_sac_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_rnn.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_sac_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_gru.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_sac_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_lstm.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_td3_rnn.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_rnn.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_td3_gru.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_gru.py>`
-                        |br| :download:`torch_gymnasium_pendulumnovel_td3_lstm.py <../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_lstm.py>`
+                      - :download:`torch_gymnasium_pendulumnovel_ddpg_rnn.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_gru.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ddpg_lstm.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ddpg_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_rnn.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_gru.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_ppo_lstm.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_ppo_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_rnn.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_gru.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_sac_lstm.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_sac_lstm.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_rnn.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_rnn.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_gru.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_gru.py>`
+                        |br| :download:`torch_gymnasium_pendulumnovel_td3_lstm.py <../../../examples/gymnasium/torch_gymnasium_pendulumnovel_td3_lstm.py>`
                       -
                     * - Taxi
-                      - :download:`torch_gymnasium_taxi_sarsa.py <../examples/gymnasium/torch_gymnasium_taxi_sarsa.py>`
+                      - :download:`torch_gymnasium_taxi_sarsa.py <../../../examples/gymnasium/torch_gymnasium_taxi_sarsa.py>`
                       -
 
             .. group-tab:: |_4| |jax| |_4|
@@ -95,17 +95,17 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`jax_gymnasium_cartpole_cem.py <../examples/gymnasium/jax_gymnasium_cartpole_cem.py>`
-                        |br| :download:`jax_gymnasium_cartpole_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_dqn.py>`
+                      - :download:`jax_gymnasium_cartpole_cem.py <../../../examples/gymnasium/jax_gymnasium_cartpole_cem.py>`
+                        |br| :download:`jax_gymnasium_cartpole_dqn.py <../../../examples/gymnasium/jax_gymnasium_cartpole_dqn.py>`
                       -
                     * - FrozenLake
                       -
                       -
                     * - Pendulum
-                      - :download:`jax_gymnasium_pendulum_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_ddpg.py>`
-                        |br| :download:`jax_gymnasium_pendulum_ppo.py <../examples/gymnasium/jax_gymnasium_pendulum_ppo.py>`
-                        |br| :download:`jax_gymnasium_pendulum_sac.py <../examples/gymnasium/jax_gymnasium_pendulum_sac.py>`
-                        |br| :download:`jax_gymnasium_pendulum_td3.py <../examples/gymnasium/jax_gymnasium_pendulum_td3.py>`
+                      - :download:`jax_gymnasium_pendulum_ddpg.py <../../../examples/gymnasium/jax_gymnasium_pendulum_ddpg.py>`
+                        |br| :download:`jax_gymnasium_pendulum_ppo.py <../../../examples/gymnasium/jax_gymnasium_pendulum_ppo.py>`
+                        |br| :download:`jax_gymnasium_pendulum_sac.py <../../../examples/gymnasium/jax_gymnasium_pendulum_sac.py>`
+                        |br| :download:`jax_gymnasium_pendulum_td3.py <../../../examples/gymnasium/jax_gymnasium_pendulum_td3.py>`
                       -
                     * - PendulumNoVel*
                         |br| (RNN / GRU / LSTM)
@@ -146,35 +146,35 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`torch_gym_cartpole_cem.py <../examples/gym/torch_gym_cartpole_cem.py>`
-                        |br| :download:`torch_gym_cartpole_dqn.py <../examples/gym/torch_gym_cartpole_dqn.py>`
+                      - :download:`torch_gym_cartpole_cem.py <../../../examples/gym/torch_gym_cartpole_cem.py>`
+                        |br| :download:`torch_gym_cartpole_dqn.py <../../../examples/gym/torch_gym_cartpole_dqn.py>`
                       -
                     * - FrozenLake
-                      - :download:`torch_gym_frozen_lake_q_learning.py <../examples/gym/torch_gym_frozen_lake_q_learning.py>`
+                      - :download:`torch_gym_frozen_lake_q_learning.py <../../../examples/gym/torch_gym_frozen_lake_q_learning.py>`
                       -
                     * - Pendulum
-                      - :download:`torch_gym_pendulum_ddpg.py <../examples/gym/torch_gym_pendulum_ddpg.py>`
-                        |br| :download:`torch_gym_pendulum_ppo.py <../examples/gym/torch_gym_pendulum_ppo.py>`
-                        |br| :download:`torch_gym_pendulum_sac.py <../examples/gym/torch_gym_pendulum_sac.py>`
-                        |br| :download:`torch_gym_pendulum_td3.py <../examples/gym/torch_gym_pendulum_td3.py>`
+                      - :download:`torch_gym_pendulum_ddpg.py <../../../examples/gym/torch_gym_pendulum_ddpg.py>`
+                        |br| :download:`torch_gym_pendulum_ppo.py <../../../examples/gym/torch_gym_pendulum_ppo.py>`
+                        |br| :download:`torch_gym_pendulum_sac.py <../../../examples/gym/torch_gym_pendulum_sac.py>`
+                        |br| :download:`torch_gym_pendulum_td3.py <../../../examples/gym/torch_gym_pendulum_td3.py>`
                       -
                     * - PendulumNoVel*
                         |br| (RNN / GRU / LSTM)
-                      - :download:`torch_gym_pendulumnovel_ddpg_rnn.py <../examples/gym/torch_gym_pendulumnovel_ddpg_rnn.py>`
-                        |br| :download:`torch_gym_pendulumnovel_ddpg_gru.py <../examples/gym/torch_gym_pendulumnovel_ddpg_gru.py>`
-                        |br| :download:`torch_gym_pendulumnovel_ddpg_lstm.py <../examples/gym/torch_gym_pendulumnovel_ddpg_lstm.py>`
-                        |br| :download:`torch_gym_pendulumnovel_ppo_rnn.py <../examples/gym/torch_gym_pendulumnovel_ppo_rnn.py>`
-                        |br| :download:`torch_gym_pendulumnovel_ppo_gru.py <../examples/gym/torch_gym_pendulumnovel_ppo_gru.py>`
-                        |br| :download:`torch_gym_pendulumnovel_ppo_lstm.py <../examples/gym/torch_gym_pendulumnovel_ppo_lstm.py>`
-                        |br| :download:`torch_gym_pendulumnovel_sac_rnn.py <../examples/gym/torch_gym_pendulumnovel_sac_rnn.py>`
-                        |br| :download:`torch_gym_pendulumnovel_sac_gru.py <../examples/gym/torch_gym_pendulumnovel_sac_gru.py>`
-                        |br| :download:`torch_gym_pendulumnovel_sac_lstm.py <../examples/gym/torch_gym_pendulumnovel_sac_lstm.py>`
-                        |br| :download:`torch_gym_pendulumnovel_td3_rnn.py <../examples/gym/torch_gym_pendulumnovel_td3_rnn.py>`
-                        |br| :download:`torch_gym_pendulumnovel_td3_gru.py <../examples/gym/torch_gym_pendulumnovel_td3_gru.py>`
-                        |br| :download:`torch_gym_pendulumnovel_td3_lstm.py <../examples/gym/torch_gym_pendulumnovel_td3_lstm.py>`
+                      - :download:`torch_gym_pendulumnovel_ddpg_rnn.py <../../../examples/gym/torch_gym_pendulumnovel_ddpg_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ddpg_gru.py <../../../examples/gym/torch_gym_pendulumnovel_ddpg_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ddpg_lstm.py <../../../examples/gym/torch_gym_pendulumnovel_ddpg_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_rnn.py <../../../examples/gym/torch_gym_pendulumnovel_ppo_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_gru.py <../../../examples/gym/torch_gym_pendulumnovel_ppo_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_ppo_lstm.py <../../../examples/gym/torch_gym_pendulumnovel_ppo_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_rnn.py <../../../examples/gym/torch_gym_pendulumnovel_sac_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_gru.py <../../../examples/gym/torch_gym_pendulumnovel_sac_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_sac_lstm.py <../../../examples/gym/torch_gym_pendulumnovel_sac_lstm.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_rnn.py <../../../examples/gym/torch_gym_pendulumnovel_td3_rnn.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_gru.py <../../../examples/gym/torch_gym_pendulumnovel_td3_gru.py>`
+                        |br| :download:`torch_gym_pendulumnovel_td3_lstm.py <../../../examples/gym/torch_gym_pendulumnovel_td3_lstm.py>`
                       -
                     * - Taxi
-                      - :download:`torch_gym_taxi_sarsa.py <../examples/gym/torch_gym_taxi_sarsa.py>`
+                      - :download:`torch_gym_taxi_sarsa.py <../../../examples/gym/torch_gym_taxi_sarsa.py>`
                       -
 
             .. group-tab:: |_4| |jax| |_4|
@@ -189,17 +189,17 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`jax_gym_cartpole_cem.py <../examples/gym/jax_gym_cartpole_cem.py>`
-                        |br| :download:`jax_gym_cartpole_dqn.py <../examples/gym/jax_gym_cartpole_dqn.py>`
+                      - :download:`jax_gym_cartpole_cem.py <../../../examples/gym/jax_gym_cartpole_cem.py>`
+                        |br| :download:`jax_gym_cartpole_dqn.py <../../../examples/gym/jax_gym_cartpole_dqn.py>`
                       -
                     * - FrozenLake
                       -
                       -
                     * - Pendulum
-                      - :download:`jax_gym_pendulum_ddpg.py <../examples/gym/jax_gym_pendulum_ddpg.py>`
-                        |br| :download:`jax_gym_pendulum_ppo.py <../examples/gym/jax_gym_pendulum_ppo.py>`
-                        |br| :download:`jax_gym_pendulum_sac.py <../examples/gym/jax_gym_pendulum_sac.py>`
-                        |br| :download:`jax_gym_pendulum_td3.py <../examples/gym/jax_gym_pendulum_td3.py>`
+                      - :download:`jax_gym_pendulum_ddpg.py <../../../examples/gym/jax_gym_pendulum_ddpg.py>`
+                        |br| :download:`jax_gym_pendulum_ppo.py <../../../examples/gym/jax_gym_pendulum_ppo.py>`
+                        |br| :download:`jax_gym_pendulum_sac.py <../../../examples/gym/jax_gym_pendulum_sac.py>`
+                        |br| :download:`jax_gym_pendulum_td3.py <../../../examples/gym/jax_gym_pendulum_td3.py>`
                       -
                     * - PendulumNoVel*
                         |br| (RNN / GRU / LSTM)
@@ -251,16 +251,16 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`torch_gymnasium_cartpole_vector_dqn.py <../examples/gymnasium/torch_gymnasium_cartpole_vector_dqn.py>`
+                      - :download:`torch_gymnasium_cartpole_vector_dqn.py <../../../examples/gymnasium/torch_gymnasium_cartpole_vector_dqn.py>`
                       -
                     * - FrozenLake
-                      - :download:`torch_gymnasium_frozen_lake_vector_q_learning.py <../examples/gymnasium/torch_gymnasium_frozen_lake_vector_q_learning.py>`
+                      - :download:`torch_gymnasium_frozen_lake_vector_q_learning.py <../../../examples/gymnasium/torch_gymnasium_frozen_lake_vector_q_learning.py>`
                       -
                     * - Pendulum
-                      - :download:`torch_gymnasium_pendulum_vector_ddpg.py <../examples/gymnasium/torch_gymnasium_pendulum_vector_ddpg.py>`
+                      - :download:`torch_gymnasium_pendulum_vector_ddpg.py <../../../examples/gymnasium/torch_gymnasium_pendulum_vector_ddpg.py>`
                       -
                     * - Taxi
-                      - :download:`torch_gymnasium_taxi_vector_sarsa.py <../examples/gymnasium/torch_gymnasium_taxi_vector_sarsa.py>`
+                      - :download:`torch_gymnasium_taxi_vector_sarsa.py <../../../examples/gymnasium/torch_gymnasium_taxi_vector_sarsa.py>`
                       -
 
             .. group-tab:: |_4| |jax| |_4|
@@ -275,13 +275,13 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`jax_gymnasium_cartpole_vector_dqn.py <../examples/gymnasium/jax_gymnasium_cartpole_vector_dqn.py>`
+                      - :download:`jax_gymnasium_cartpole_vector_dqn.py <../../../examples/gymnasium/jax_gymnasium_cartpole_vector_dqn.py>`
                       -
                     * - FrozenLake
                       -
                       -
                     * - Pendulum
-                      - :download:`jax_gymnasium_pendulum_vector_ddpg.py <../examples/gymnasium/jax_gymnasium_pendulum_vector_ddpg.py>`
+                      - :download:`jax_gymnasium_pendulum_vector_ddpg.py <../../../examples/gymnasium/jax_gymnasium_pendulum_vector_ddpg.py>`
                       -
                     * - Taxi
                       -
@@ -303,16 +303,16 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`torch_gym_cartpole_vector_dqn.py <../examples/gym/torch_gym_cartpole_vector_dqn.py>`
+                      - :download:`torch_gym_cartpole_vector_dqn.py <../../../examples/gym/torch_gym_cartpole_vector_dqn.py>`
                       -
                     * - FrozenLake
-                      - :download:`torch_gym_frozen_lake_vector_q_learning.py <../examples/gym/torch_gym_frozen_lake_vector_q_learning.py>`
+                      - :download:`torch_gym_frozen_lake_vector_q_learning.py <../../../examples/gym/torch_gym_frozen_lake_vector_q_learning.py>`
                       -
                     * - Pendulum
-                      - :download:`torch_gym_pendulum_vector_ddpg.py <../examples/gym/torch_gym_pendulum_vector_ddpg.py>`
+                      - :download:`torch_gym_pendulum_vector_ddpg.py <../../../examples/gym/torch_gym_pendulum_vector_ddpg.py>`
                       -
                     * - Taxi
-                      - :download:`torch_gym_taxi_vector_sarsa.py <../examples/gym/torch_gym_taxi_vector_sarsa.py>`
+                      - :download:`torch_gym_taxi_vector_sarsa.py <../../../examples/gym/torch_gym_taxi_vector_sarsa.py>`
                       -
 
             .. group-tab:: |_4| |jax| |_4|
@@ -327,13 +327,13 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       - Script
                       - Checkpoint (Hugging Face)
                     * - CartPole
-                      - :download:`jax_gym_cartpole_vector_dqn.py <../examples/gym/jax_gym_cartpole_vector_dqn.py>`
+                      - :download:`jax_gym_cartpole_vector_dqn.py <../../../examples/gym/jax_gym_cartpole_vector_dqn.py>`
                       -
                     * - FrozenLake
                       -
                       -
                     * - Pendulum
-                      - :download:`jax_gym_pendulum_vector_ddpg.py <../examples/gym/jax_gym_pendulum_vector_ddpg.py>`
+                      - :download:`jax_gym_pendulum_vector_ddpg.py <../../../examples/gym/jax_gym_pendulum_vector_ddpg.py>`
                       -
                     * - Taxi
                       -
@@ -375,13 +375,13 @@ The following examples show the training in several popular environments (Atari,
               - Script
               - Checkpoint (Hugging Face)
             * - Atari: Pong
-              - :download:`torch_shimmy_atari_pong_dqn.py <../examples/shimmy/torch_shimmy_atari_pong_dqn.py>`
+              - :download:`torch_shimmy_atari_pong_dqn.py <../../../examples/shimmy/torch_shimmy_atari_pong_dqn.py>`
               -
             * - DeepMind: Acrobot
-              - :download:`torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../examples/shimmy/torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
+              - :download:`torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../../../examples/shimmy/torch_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
               -
             * - Gym-v21 compatibility
-              - :download:`torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../examples/shimmy/torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
+              - :download:`torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../../../examples/shimmy/torch_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -396,13 +396,13 @@ The following examples show the training in several popular environments (Atari,
               - Script
               - Checkpoint (Hugging Face)
             * - Atari: Pong
-              - :download:`jax_shimmy_atari_pong_dqn.py <../examples/shimmy/jax_shimmy_atari_pong_dqn.py>`
+              - :download:`jax_shimmy_atari_pong_dqn.py <../../../examples/shimmy/jax_shimmy_atari_pong_dqn.py>`
               -
             * - DeepMind: Acrobot
-              - :download:`jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../examples/shimmy/jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
+              - :download:`jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py <../../../examples/shimmy/jax_shimmy_dm_control_acrobot_swingup_sparse_sac.py>`
               -
             * - Gym-v21 compatibility
-              - :download:`jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../examples/shimmy/jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
+              - :download:`jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py <../../../examples/shimmy/jax_shimmy_openai_gym_compatibility_pendulum_ddpg.py>`
               -
 
 .. raw:: html
@@ -444,10 +444,10 @@ These examples perform the training of one agent in a DeepMind environment (**on
               - Script
               - Checkpoint (Hugging Face)
             * - Control: Cartpole SwingUp
-              - :download:`dm_suite_cartpole_swingup_ddpg.py <../examples/deepmind/dm_suite_cartpole_swingup_ddpg.py>`
+              - :download:`dm_suite_cartpole_swingup_ddpg.py <../../../examples/deepmind/dm_suite_cartpole_swingup_ddpg.py>`
               -
             * - Manipulation: Reach Site Vision
-              - :download:`dm_manipulation_stack_sac.py <../examples/deepmind/dm_manipulation_stack_sac.py>`
+              - :download:`dm_manipulation_stack_sac.py <../../../examples/deepmind/dm_manipulation_stack_sac.py>`
               -
 
 .. raw:: html
@@ -482,7 +482,7 @@ These examples perform the training of one agent in a robosuite environment (**o
               - Script
               - Checkpoint (Hugging Face)
             * - TwoArmLift
-              - :download:`td3_robosuite_two_arm_lift.py <../examples/robosuite/td3_robosuite_two_arm_lift.py>`
+              - :download:`td3_robosuite_two_arm_lift.py <../../../examples/robosuite/td3_robosuite_two_arm_lift.py>`
               -
 
 .. raw:: html
@@ -517,8 +517,8 @@ Multi-agent training/evaluation in a `Bi-DexHands <https://github.com/PKU-MARL/D
               - Script
               - Checkpoint (Hugging Face)
             * - ShadowHandOver
-              - :download:`torch_bidexhands_shadow_hand_over_ippo.py <../examples/bidexhands/torch_bidexhands_shadow_hand_over_ippo.py>`
-                |br| :download:`torch_bidexhands_shadow_hand_over_mappo.py <../examples/bidexhands/torch_bidexhands_shadow_hand_over_mappo.py>`
+              - :download:`torch_bidexhands_shadow_hand_over_ippo.py <../../../examples/bidexhands/torch_bidexhands_shadow_hand_over_ippo.py>`
+                |br| :download:`torch_bidexhands_shadow_hand_over_mappo.py <../../../examples/bidexhands/torch_bidexhands_shadow_hand_over_mappo.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -533,8 +533,8 @@ Multi-agent training/evaluation in a `Bi-DexHands <https://github.com/PKU-MARL/D
               - Script
               - Checkpoint (Hugging Face)
             * - ShadowHandOver
-              - :download:`jax_bidexhands_shadow_hand_over_ippo.py <../examples/bidexhands/jax_bidexhands_shadow_hand_over_ippo.py>`
-                |br| :download:`jax_bidexhands_shadow_hand_over_mappo.py <../examples/bidexhands/jax_bidexhands_shadow_hand_over_mappo.py>`
+              - :download:`jax_bidexhands_shadow_hand_over_ippo.py <../../../examples/bidexhands/jax_bidexhands_shadow_hand_over_ippo.py>`
+                |br| :download:`jax_bidexhands_shadow_hand_over_mappo.py <../../../examples/bidexhands/jax_bidexhands_shadow_hand_over_mappo.py>`
               -
 
 .. raw:: html
@@ -642,61 +642,61 @@ The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs co
               - Script
               - Checkpoint (Hugging Face)
             * - AllegroHand
-              - :download:`torch_allegro_hand_ppo.py <../examples/isaacgym/torch_allegro_hand_ppo.py>`
+              - :download:`torch_allegro_hand_ppo.py <../../../examples/isaacgym/torch_allegro_hand_ppo.py>`
               -
             * - Ant
-              - :download:`torch_ant_ppo.py <../examples/isaacgym/torch_ant_ppo.py>`
-                |br| :download:`torch_ant_ddpg.py <../examples/isaacgym/torch_ant_ddpg.py>`
-                |br| :download:`torch_ant_td3.py <../examples/isaacgym/torch_ant_td3.py>`
-                |br| :download:`torch_ant_sac.py <../examples/isaacgym/torch_ant_sac.py>`
+              - :download:`torch_ant_ppo.py <../../../examples/isaacgym/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../../../examples/isaacgym/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../../../examples/isaacgym/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../../../examples/isaacgym/torch_ant_sac.py>`
               - `IsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ant-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Anymal
-              - :download:`torch_anymal_ppo.py <../examples/isaacgym/torch_anymal_ppo.py>`
+              - :download:`torch_anymal_ppo.py <../../../examples/isaacgym/torch_anymal_ppo.py>`
               - `IsaacGymEnvs-Anymal-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Anymal-PPO>`_
             * - AnymalTerrain
-              - :download:`torch_anymal_terrain_ppo.py <../examples/isaacgym/torch_anymal_terrain_ppo.py>`
+              - :download:`torch_anymal_terrain_ppo.py <../../../examples/isaacgym/torch_anymal_terrain_ppo.py>`
               - `IsaacGymEnvs-AnymalTerrain-PPO <https://huggingface.co/skrl/IsaacGymEnvs-AnymalTerrain-PPO>`_
             * - BallBalance
-              - :download:`torch_ball_balance_ppo.py <../examples/isaacgym/torch_ball_balance_ppo.py>`
+              - :download:`torch_ball_balance_ppo.py <../../../examples/isaacgym/torch_ball_balance_ppo.py>`
               - `IsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/IsaacGymEnvs-BallBalance-PPO>`_
             * - Cartpole
-              - :download:`torch_cartpole_ppo.py <../examples/isaacgym/torch_cartpole_ppo.py>`
+              - :download:`torch_cartpole_ppo.py <../../../examples/isaacgym/torch_cartpole_ppo.py>`
               - `IsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Cartpole-PPO>`_
             * - FactoryTaskNutBoltPick
-              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
+              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../../../examples/isaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltPick-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPick-PPO>`_
             * - FactoryTaskNutBoltPlace
-              - :download:`torch_factory_task_nut_bolt_place_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_place_ppo.py>`
+              - :download:`torch_factory_task_nut_bolt_place_ppo.py <../../../examples/isaacgym/torch_factory_task_nut_bolt_place_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO>`_
             * - FactoryTaskNutBoltScrew
-              - :download:`torch_factory_task_nut_bolt_screw_ppo.py <../examples/isaacgym/torch_factory_task_nut_bolt_screw_ppo.py>`
+              - :download:`torch_factory_task_nut_bolt_screw_ppo.py <../../../examples/isaacgym/torch_factory_task_nut_bolt_screw_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO>`_
             * - FrankaCabinet
-              - :download:`torch_franka_cabinet_ppo.py <../examples/isaacgym/torch_franka_cabinet_ppo.py>`
+              - :download:`torch_franka_cabinet_ppo.py <../../../examples/isaacgym/torch_franka_cabinet_ppo.py>`
               - `IsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FrankaCabinet-PPO>`_
             * - FrankaCubeStack
-              - :download:`torch_franka_cube_stack_ppo.py <../examples/isaacgym/torch_franka_cube_stack_ppo.py>`
+              - :download:`torch_franka_cube_stack_ppo.py <../../../examples/isaacgym/torch_franka_cube_stack_ppo.py>`
               -
             * - Humanoid
-              - :download:`torch_humanoid_ppo.py <../examples/isaacgym/torch_humanoid_ppo.py>`
+              - :download:`torch_humanoid_ppo.py <../../../examples/isaacgym/torch_humanoid_ppo.py>`
               - `IsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Humanoid-PPO>`_
             * - Humanoid-AMP
-              - :download:`torch_humanoid_amp.py <../examples/isaacgym/torch_humanoid_amp.py>`
+              - :download:`torch_humanoid_amp.py <../../../examples/isaacgym/torch_humanoid_amp.py>`
               -
             * - Ingenuity
-              - :download:`torch_ingenuity_ppo.py <../examples/isaacgym/torch_ingenuity_ppo.py>`
+              - :download:`torch_ingenuity_ppo.py <../../../examples/isaacgym/torch_ingenuity_ppo.py>`
               - `IsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ingenuity-PPO>`_
             * - Quadcopter
-              - :download:`torch_quadcopter_ppo.py <../examples/isaacgym/torch_quadcopter_ppo.py>`
+              - :download:`torch_quadcopter_ppo.py <../../../examples/isaacgym/torch_quadcopter_ppo.py>`
               - `IsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Quadcopter-PPO>`_
             * - ShadowHand
-              - :download:`torch_shadow_hand_ppo.py <../examples/isaacgym/torch_shadow_hand_ppo.py>`
+              - :download:`torch_shadow_hand_ppo.py <../../../examples/isaacgym/torch_shadow_hand_ppo.py>`
               -
             * - Trifinger
-              - :download:`torch_trifinger_ppo.py <../examples/isaacgym/torch_trifinger_ppo.py>`
+              - :download:`torch_trifinger_ppo.py <../../../examples/isaacgym/torch_trifinger_ppo.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -711,61 +711,61 @@ The agent configuration is mapped, as far as possible, from the `IsaacGymEnvs co
               - Script
               - Checkpoint (Hugging Face)
             * - AllegroHand
-              - :download:`jax_allegro_hand_ppo.py <../examples/isaacgym/jax_allegro_hand_ppo.py>`
+              - :download:`jax_allegro_hand_ppo.py <../../../examples/isaacgym/jax_allegro_hand_ppo.py>`
               -
             * - Ant
-              - :download:`jax_ant_ppo.py <../examples/isaacgym/jax_ant_ppo.py>`
-                |br| :download:`jax_ant_ddpg.py <../examples/isaacgym/jax_ant_ddpg.py>`
-                |br| :download:`jax_ant_td3.py <../examples/isaacgym/jax_ant_sac.py>`
-                |br| :download:`jax_ant_sac.py <../examples/isaacgym/jax_ant_td3.py>`
+              - :download:`jax_ant_ppo.py <../../../examples/isaacgym/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../../../examples/isaacgym/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../../../examples/isaacgym/jax_ant_sac.py>`
+                |br| :download:`jax_ant_sac.py <../../../examples/isaacgym/jax_ant_td3.py>`
               - `IsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ant-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Anymal
-              - :download:`jax_anymal_ppo.py <../examples/isaacgym/jax_anymal_ppo.py>`
+              - :download:`jax_anymal_ppo.py <../../../examples/isaacgym/jax_anymal_ppo.py>`
               - `IsaacGymEnvs-Anymal-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Anymal-PPO>`_
             * - AnymalTerrain
-              - :download:`jax_anymal_terrain_ppo.py <../examples/isaacgym/jax_anymal_terrain_ppo.py>`
+              - :download:`jax_anymal_terrain_ppo.py <../../../examples/isaacgym/jax_anymal_terrain_ppo.py>`
               - `IsaacGymEnvs-AnymalTerrain-PPO <https://huggingface.co/skrl/IsaacGymEnvs-AnymalTerrain-PPO>`_
             * - BallBalance
-              - :download:`jax_ball_balance_ppo.py <../examples/isaacgym/jax_ball_balance_ppo.py>`
+              - :download:`jax_ball_balance_ppo.py <../../../examples/isaacgym/jax_ball_balance_ppo.py>`
               - `IsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/IsaacGymEnvs-BallBalance-PPO>`_
             * - Cartpole
-              - :download:`jax_cartpole_ppo.py <../examples/isaacgym/jax_cartpole_ppo.py>`
+              - :download:`jax_cartpole_ppo.py <../../../examples/isaacgym/jax_cartpole_ppo.py>`
               - `IsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Cartpole-PPO>`_
             * - FactoryTaskNutBoltPick
-              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
+              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../../../examples/isaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltPick-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPick-PPO>`_
             * - FactoryTaskNutBoltPlace
-              - :download:`jax_factory_task_nut_bolt_place_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_place_ppo.py>`
+              - :download:`jax_factory_task_nut_bolt_place_ppo.py <../../../examples/isaacgym/jax_factory_task_nut_bolt_place_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltPlace-PPO>`_
             * - FactoryTaskNutBoltScrew
-              - :download:`jax_factory_task_nut_bolt_screw_ppo.py <../examples/isaacgym/jax_factory_task_nut_bolt_screw_ppo.py>`
+              - :download:`jax_factory_task_nut_bolt_screw_ppo.py <../../../examples/isaacgym/jax_factory_task_nut_bolt_screw_ppo.py>`
               - `IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FactoryTaskNutBoltScrew-PPO>`_
             * - FrankaCabinet
-              - :download:`jax_franka_cabinet_ppo.py <../examples/isaacgym/jax_franka_cabinet_ppo.py>`
+              - :download:`jax_franka_cabinet_ppo.py <../../../examples/isaacgym/jax_franka_cabinet_ppo.py>`
               - `IsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/IsaacGymEnvs-FrankaCabinet-PPO>`_
             * - FrankaCubeStack
-              - :download:`jax_franka_cube_stack_ppo.py <../examples/isaacgym/jax_franka_cube_stack_ppo.py>`
+              - :download:`jax_franka_cube_stack_ppo.py <../../../examples/isaacgym/jax_franka_cube_stack_ppo.py>`
               -
             * - Humanoid
-              - :download:`jax_humanoid_ppo.py <../examples/isaacgym/jax_humanoid_ppo.py>`
+              - :download:`jax_humanoid_ppo.py <../../../examples/isaacgym/jax_humanoid_ppo.py>`
               - `IsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Humanoid-PPO>`_
             * - Humanoid-AMP
               -
               -
             * - Ingenuity
-              - :download:`jax_ingenuity_ppo.py <../examples/isaacgym/jax_ingenuity_ppo.py>`
+              - :download:`jax_ingenuity_ppo.py <../../../examples/isaacgym/jax_ingenuity_ppo.py>`
               - `IsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Ingenuity-PPO>`_
             * - Quadcopter
-              - :download:`jax_quadcopter_ppo.py <../examples/isaacgym/jax_quadcopter_ppo.py>`
+              - :download:`jax_quadcopter_ppo.py <../../../examples/isaacgym/jax_quadcopter_ppo.py>`
               - `IsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/IsaacGymEnvs-Quadcopter-PPO>`_
             * - ShadowHand
-              - :download:`jax_shadow_hand_ppo.py <../examples/isaacgym/jax_shadow_hand_ppo.py>`
+              - :download:`jax_shadow_hand_ppo.py <../../../examples/isaacgym/jax_shadow_hand_ppo.py>`
               -
             * - Trifinger
-              - :download:`jax_trifinger_ppo.py <../examples/isaacgym/jax_trifinger_ppo.py>`
+              - :download:`jax_trifinger_ppo.py <../../../examples/isaacgym/jax_trifinger_ppo.py>`
               -
 
 .. raw:: html
@@ -873,28 +873,28 @@ The agent configuration is mapped, as far as possible, from the Isaac Lab config
               - Script
               - Checkpoint (Hugging Face)
             * - Isaac-Ant-v0
-              - :download:`torch_ant_ppo.py <../examples/isaaclab/torch_ant_ppo.py>`
-                |br| :download:`torch_ant_ddpg.py <../examples/isaaclab/torch_ant_ddpg.py>`
-                |br| :download:`torch_ant_td3.py <../examples/isaaclab/torch_ant_td3.py>`
-                |br| :download:`torch_ant_sac.py <../examples/isaaclab/torch_ant_sac.py>`
+              - :download:`torch_ant_ppo.py <../../../examples/isaaclab/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../../../examples/isaaclab/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../../../examples/isaaclab/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../../../examples/isaaclab/torch_ant_sac.py>`
               - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Isaac-Cartpole-v0
-              - :download:`torch_cartpole_ppo.py <../examples/isaaclab/torch_cartpole_ppo.py>`
+              - :download:`torch_cartpole_ppo.py <../../../examples/isaaclab/torch_cartpole_ppo.py>`
               - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
             * - Isaac-Humanoid-v0
-              - :download:`torch_humanoid_ppo.py <../examples/isaaclab/torch_humanoid_ppo.py>`
+              - :download:`torch_humanoid_ppo.py <../../../examples/isaaclab/torch_humanoid_ppo.py>`
               - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
-              - :download:`torch_lift_franka_ppo.py <../examples/isaaclab/torch_lift_franka_ppo.py>`
+              - :download:`torch_lift_franka_ppo.py <../../../examples/isaaclab/torch_lift_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
-              - :download:`torch_reach_franka_ppo.py <../examples/isaaclab/torch_reach_franka_ppo.py>`
+              - :download:`torch_reach_franka_ppo.py <../../../examples/isaaclab/torch_reach_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
             * - Isaac-Velocity-Anymal-C-v0
-              - :download:`torch_velocity_anymal_c_ppo.py <../examples/isaaclab/torch_velocity_anymal_c_ppo.py>`
+              - :download:`torch_velocity_anymal_c_ppo.py <../../../examples/isaaclab/torch_velocity_anymal_c_ppo.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -909,28 +909,28 @@ The agent configuration is mapped, as far as possible, from the Isaac Lab config
               - Script
               - Checkpoint (Hugging Face)
             * - Isaac-Ant-v0
-              - :download:`jax_ant_ppo.py <../examples/isaaclab/jax_ant_ppo.py>`
-                |br| :download:`jax_ant_ddpg.py <../examples/isaaclab/jax_ant_ddpg.py>`
-                |br| :download:`jax_ant_td3.py <../examples/isaaclab/jax_ant_td3.py>`
-                |br| :download:`jax_ant_sac.py <../examples/isaaclab/jax_ant_sac.py>`
+              - :download:`jax_ant_ppo.py <../../../examples/isaaclab/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../../../examples/isaaclab/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../../../examples/isaaclab/jax_ant_td3.py>`
+                |br| :download:`jax_ant_sac.py <../../../examples/isaaclab/jax_ant_sac.py>`
               - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Isaac-Cartpole-v0
-              - :download:`jax_cartpole_ppo.py <../examples/isaaclab/jax_cartpole_ppo.py>`
+              - :download:`jax_cartpole_ppo.py <../../../examples/isaaclab/jax_cartpole_ppo.py>`
               - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
             * - Isaac-Humanoid-v0
-              - :download:`jax_humanoid_ppo.py <../examples/isaaclab/jax_humanoid_ppo.py>`
+              - :download:`jax_humanoid_ppo.py <../../../examples/isaaclab/jax_humanoid_ppo.py>`
               - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
             * - Isaac-Lift-Franka-v0
-              - :download:`jax_lift_franka_ppo.py <../examples/isaaclab/jax_lift_franka_ppo.py>`
+              - :download:`jax_lift_franka_ppo.py <../../../examples/isaaclab/jax_lift_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
             * - Isaac-Reach-Franka-v0
-              - :download:`jax_reach_franka_ppo.py <../examples/isaaclab/jax_reach_franka_ppo.py>`
+              - :download:`jax_reach_franka_ppo.py <../../../examples/isaaclab/jax_reach_franka_ppo.py>`
               - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
             * - Isaac-Velocity-Anymal-C-v0
-              - :download:`jax_velocity_anymal_c_ppo.py <../examples/isaaclab/jax_velocity_anymal_c_ppo.py>`
+              - :download:`jax_velocity_anymal_c_ppo.py <../../../examples/isaaclab/jax_velocity_anymal_c_ppo.py>`
               -
 
 .. raw:: html
@@ -1038,55 +1038,55 @@ The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnv
               - Script
               - Checkpoint (Hugging Face)
             * - AllegroHand
-              - :download:`torch_allegro_hand_ppo.py <../examples/omniisaacgym/torch_allegro_hand_ppo.py>`
+              - :download:`torch_allegro_hand_ppo.py <../../../examples/omniisaacgym/torch_allegro_hand_ppo.py>`
               - `OmniIsaacGymEnvs-AllegroHand-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-AllegroHand-PPO>`_
             * - Ant
-              - :download:`torch_ant_ppo.py <../examples/omniisaacgym/torch_ant_ppo.py>`
-                |br| :download:`torch_ant_ddpg.py <../examples/omniisaacgym/torch_ant_ddpg.py>`
-                |br| :download:`torch_ant_td3.py <../examples/omniisaacgym/torch_ant_td3.py>`
-                |br| :download:`torch_ant_sac.py <../examples/omniisaacgym/torch_ant_sac.py>`
+              - :download:`torch_ant_ppo.py <../../../examples/omniisaacgym/torch_ant_ppo.py>`
+                |br| :download:`torch_ant_ddpg.py <../../../examples/omniisaacgym/torch_ant_ddpg.py>`
+                |br| :download:`torch_ant_td3.py <../../../examples/omniisaacgym/torch_ant_td3.py>`
+                |br| :download:`torch_ant_sac.py <../../../examples/omniisaacgym/torch_ant_sac.py>`
               - `OmniIsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ant-PPO>`_
                 |br|
                 |br|
                 |br|
             * - Ant (multi-threaded)
-              - :download:`torch_ant_mt_ppo.py <../examples/omniisaacgym/torch_ant_mt_ppo.py>`
+              - :download:`torch_ant_mt_ppo.py <../../../examples/omniisaacgym/torch_ant_mt_ppo.py>`
               - `OmniIsaacGymEnvs-Ant-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ant-PPO>`_
             * - Anymal
-              - :download:`torch_anymal_ppo.py <../examples/omniisaacgym/torch_anymal_ppo.py>`
+              - :download:`torch_anymal_ppo.py <../../../examples/omniisaacgym/torch_anymal_ppo.py>`
               -
             * - AnymalTerrain
-              - :download:`torch_anymal_terrain_ppo.py <../examples/omniisaacgym/torch_anymal_terrain_ppo.py>`
+              - :download:`torch_anymal_terrain_ppo.py <../../../examples/omniisaacgym/torch_anymal_terrain_ppo.py>`
               -
             * - BallBalance
-              - :download:`torch_ball_balance_ppo.py <../examples/omniisaacgym/torch_ball_balance_ppo.py>`
+              - :download:`torch_ball_balance_ppo.py <../../../examples/omniisaacgym/torch_ball_balance_ppo.py>`
               - `OmniIsaacGymEnvs-BallBalance-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-BallBalance-PPO>`_
             * - Cartpole
-              - :download:`torch_cartpole_ppo.py <../examples/omniisaacgym/torch_cartpole_ppo.py>`
+              - :download:`torch_cartpole_ppo.py <../../../examples/omniisaacgym/torch_cartpole_ppo.py>`
               - `OmniIsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Cartpole-PPO>`_
             * - Cartpole (multi-threaded)
-              - :download:`torch_cartpole_mt_ppo.py <../examples/omniisaacgym/torch_cartpole_mt_ppo.py>`
+              - :download:`torch_cartpole_mt_ppo.py <../../../examples/omniisaacgym/torch_cartpole_mt_ppo.py>`
               - `OmniIsaacGymEnvs-Cartpole-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Cartpole-PPO>`_
             * - Crazyflie
-              - :download:`torch_crazyflie_ppo.py <../examples/omniisaacgym/torch_crazyflie_ppo.py>`
+              - :download:`torch_crazyflie_ppo.py <../../../examples/omniisaacgym/torch_crazyflie_ppo.py>`
               - `OmniIsaacGymEnvs-Crazyflie-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Crazyflie-PPO>`_
             * - FactoryTaskNutBoltPick
-              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../examples/omniisaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
+              - :download:`torch_factory_task_nut_bolt_pick_ppo.py <../../../examples/omniisaacgym/torch_factory_task_nut_bolt_pick_ppo.py>`
               -
             * - FrankaCabinet
-              - :download:`torch_franka_cabinet_ppo.py <../examples/omniisaacgym/torch_franka_cabinet_ppo.py>`
+              - :download:`torch_franka_cabinet_ppo.py <../../../examples/omniisaacgym/torch_franka_cabinet_ppo.py>`
               - `OmniIsaacGymEnvs-FrankaCabinet-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-FrankaCabinet-PPO>`_
             * - Humanoid
-              - :download:`torch_humanoid_ppo.py <../examples/omniisaacgym/torch_humanoid_ppo.py>`
+              - :download:`torch_humanoid_ppo.py <../../../examples/omniisaacgym/torch_humanoid_ppo.py>`
               - `OmniIsaacGymEnvs-Humanoid-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Humanoid-PPO>`_
             * - Ingenuity
-              - :download:`torch_ingenuity_ppo.py <../examples/omniisaacgym/torch_ingenuity_ppo.py>`
+              - :download:`torch_ingenuity_ppo.py <../../../examples/omniisaacgym/torch_ingenuity_ppo.py>`
               - `OmniIsaacGymEnvs-Ingenuity-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Ingenuity-PPO>`_
             * - Quadcopter
-              - :download:`torch_quadcopter_ppo.py <../examples/omniisaacgym/torch_quadcopter_ppo.py>`
+              - :download:`torch_quadcopter_ppo.py <../../../examples/omniisaacgym/torch_quadcopter_ppo.py>`
               - `OmniIsaacGymEnvs-Quadcopter-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-Quadcopter-PPO>`_
             * - ShadowHand
-              - :download:`torch_shadow_hand_ppo.py <../examples/omniisaacgym/torch_shadow_hand_ppo.py>`
+              - :download:`torch_shadow_hand_ppo.py <../../../examples/omniisaacgym/torch_shadow_hand_ppo.py>`
               - `OmniIsaacGymEnvs-ShadowHand-PPO <https://huggingface.co/skrl/OmniIsaacGymEnvs-ShadowHand-PPO>`_
 
     .. group-tab:: |_4| |jax| |_4|
@@ -1101,55 +1101,55 @@ The agent configuration is mapped, as far as possible, from the `OmniIsaacGymEnv
               - Script
               - Checkpoint (Hugging Face)
             * - AllegroHand
-              - :download:`jax_allegro_hand_ppo.py <../examples/omniisaacgym/jax_allegro_hand_ppo.py>`
+              - :download:`jax_allegro_hand_ppo.py <../../../examples/omniisaacgym/jax_allegro_hand_ppo.py>`
               -
             * - Ant
-              - :download:`jax_ant_ppo.py <../examples/omniisaacgym/jax_ant_ppo.py>`
-                |br| :download:`jax_ant_ddpg.py <../examples/omniisaacgym/jax_ant_ddpg.py>`
-                |br| :download:`jax_ant_td3.py <../examples/omniisaacgym/jax_ant_sac.py>`
-                |br| :download:`jax_ant_sac.py <../examples/omniisaacgym/jax_ant_td3.py>`
+              - :download:`jax_ant_ppo.py <../../../examples/omniisaacgym/jax_ant_ppo.py>`
+                |br| :download:`jax_ant_ddpg.py <../../../examples/omniisaacgym/jax_ant_ddpg.py>`
+                |br| :download:`jax_ant_td3.py <../../../examples/omniisaacgym/jax_ant_sac.py>`
+                |br| :download:`jax_ant_sac.py <../../../examples/omniisaacgym/jax_ant_td3.py>`
               - |br|
                 |br|
                 |br|
                 |br|
             * - Ant (multi-threaded)
-              - :download:`jax_ant_mt_ppo.py <../examples/omniisaacgym/jax_ant_mt_ppo.py>`
+              - :download:`jax_ant_mt_ppo.py <../../../examples/omniisaacgym/jax_ant_mt_ppo.py>`
               -
             * - Anymal
-              - :download:`jax_anymal_ppo.py <../examples/omniisaacgym/jax_anymal_ppo.py>`
+              - :download:`jax_anymal_ppo.py <../../../examples/omniisaacgym/jax_anymal_ppo.py>`
               -
             * - AnymalTerrain
-              - :download:`jax_anymal_terrain_ppo.py <../examples/omniisaacgym/jax_anymal_terrain_ppo.py>`
+              - :download:`jax_anymal_terrain_ppo.py <../../../examples/omniisaacgym/jax_anymal_terrain_ppo.py>`
               -
             * - BallBalance
-              - :download:`jax_ball_balance_ppo.py <../examples/omniisaacgym/jax_ball_balance_ppo.py>`
+              - :download:`jax_ball_balance_ppo.py <../../../examples/omniisaacgym/jax_ball_balance_ppo.py>`
               -
             * - Cartpole
-              - :download:`jax_cartpole_ppo.py <../examples/omniisaacgym/jax_cartpole_ppo.py>`
+              - :download:`jax_cartpole_ppo.py <../../../examples/omniisaacgym/jax_cartpole_ppo.py>`
               -
             * - Cartpole (multi-threaded)
-              - :download:`jax_cartpole_mt_ppo.py <../examples/omniisaacgym/jax_cartpole_mt_ppo.py>`
+              - :download:`jax_cartpole_mt_ppo.py <../../../examples/omniisaacgym/jax_cartpole_mt_ppo.py>`
               -
             * - Crazyflie
-              - :download:`jax_crazyflie_ppo.py <../examples/omniisaacgym/jax_crazyflie_ppo.py>`
+              - :download:`jax_crazyflie_ppo.py <../../../examples/omniisaacgym/jax_crazyflie_ppo.py>`
               -
             * - FactoryTaskNutBoltPick
-              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../examples/omniisaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
+              - :download:`jax_factory_task_nut_bolt_pick_ppo.py <../../../examples/omniisaacgym/jax_factory_task_nut_bolt_pick_ppo.py>`
               -
             * - FrankaCabinet
-              - :download:`jax_franka_cabinet_ppo.py <../examples/omniisaacgym/jax_franka_cabinet_ppo.py>`
+              - :download:`jax_franka_cabinet_ppo.py <../../../examples/omniisaacgym/jax_franka_cabinet_ppo.py>`
               -
             * - Humanoid
-              - :download:`jax_humanoid_ppo.py <../examples/omniisaacgym/jax_humanoid_ppo.py>`
+              - :download:`jax_humanoid_ppo.py <../../../examples/omniisaacgym/jax_humanoid_ppo.py>`
               -
             * - Ingenuity
-              - :download:`jax_ingenuity_ppo.py <../examples/omniisaacgym/jax_ingenuity_ppo.py>`
+              - :download:`jax_ingenuity_ppo.py <../../../examples/omniisaacgym/jax_ingenuity_ppo.py>`
               -
             * - Quadcopter
-              - :download:`jax_quadcopter_ppo.py <../examples/omniisaacgym/jax_quadcopter_ppo.py>`
+              - :download:`jax_quadcopter_ppo.py <../../../examples/omniisaacgym/jax_quadcopter_ppo.py>`
               -
             * - ShadowHand
-              - :download:`jax_shadow_hand_ppo.py <../examples/omniisaacgym/jax_shadow_hand_ppo.py>`
+              - :download:`jax_shadow_hand_ppo.py <../../../examples/omniisaacgym/jax_shadow_hand_ppo.py>`
               -
 
 .. raw:: html
@@ -1193,11 +1193,11 @@ Three cases are presented:
             * - Type
               - Script
             * - Sequential training (shared memory)
-              - :download:`torch_ant_ddpg_td3_sac_sequential_shared_memory.py <../examples/omniisaacgym/torch_ant_ddpg_td3_sac_sequential_shared_memory.py>`
+              - :download:`torch_ant_ddpg_td3_sac_sequential_shared_memory.py <../../../examples/omniisaacgym/torch_ant_ddpg_td3_sac_sequential_shared_memory.py>`
             * - Sequential training (unshared memory)
-              - :download:`torch_ant_ddpg_td3_sac_sequential_unshared_memory.py <../examples/omniisaacgym/torch_ant_ddpg_td3_sac_sequential_unshared_memory.py>`
+              - :download:`torch_ant_ddpg_td3_sac_sequential_unshared_memory.py <../../../examples/omniisaacgym/torch_ant_ddpg_td3_sac_sequential_unshared_memory.py>`
             * - Parallel training (unshared memory)
-              - :download:`torch_ant_ddpg_td3_sac_parallel_unshared_memory.py <../examples/omniisaacgym/torch_ant_ddpg_td3_sac_parallel_unshared_memory.py>`
+              - :download:`torch_ant_ddpg_td3_sac_parallel_unshared_memory.py <../../../examples/omniisaacgym/torch_ant_ddpg_td3_sac_parallel_unshared_memory.py>`
 
 .. raw:: html
 
@@ -1242,7 +1242,7 @@ Training/evaluation of an agent in Omniverse Isaac Sim environment implemented u
                       - Script
                       - Checkpoint (Hugging Face)
                     * - Cartpole
-                      - :download:`torch_isaacsim_cartpole_ppo.py <../examples/isaacsim/torch_isaacsim_cartpole_ppo.py>`
+                      - :download:`torch_isaacsim_cartpole_ppo.py <../../../examples/isaacsim/torch_isaacsim_cartpole_ppo.py>`
                       -
 
     .. tab:: Isaac Sim 2021.2.1 (JetBot)
@@ -1313,7 +1313,7 @@ Training/evaluation of an agent in Omniverse Isaac Sim environment implemented u
                       - Script
                       - Checkpoint (Hugging Face)
                     * - JetBot
-                      - :download:`torch_isaacsim_jetbot_ppo.py <../examples/isaacsim/torch_isaacsim_jetbot_ppo.py>`
+                      - :download:`torch_isaacsim_jetbot_ppo.py <../../../examples/isaacsim/torch_isaacsim_jetbot_ppo.py>`
                       -
 
 .. raw:: html
@@ -1408,8 +1408,8 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files**
 
-                * Environment: :download:`reaching_franka_real_env.py <../examples/real_world/franka_emika_panda/reaching_franka_real_env.py>`
-                * Evaluation script: :download:`reaching_franka_real_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_real_skrl_eval.py>`
+                * Environment: :download:`reaching_franka_real_env.py <../../../examples/real_world/franka_emika_panda/reaching_franka_real_env.py>`
+                * Evaluation script: :download:`reaching_franka_real_skrl_eval.py <../../../examples/real_world/franka_emika_panda/reaching_franka_real_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
 
                 **Evaluation:**
@@ -1452,9 +1452,9 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
-                * Environment: :download:`reaching_franka_omniverse_isaacgym_env.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_env.py>`
-                * Training script: :download:`reaching_franka_omniverse_isaacgym_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_train.py>`
-                * Evaluation script: :download:`reaching_franka_omniverse_isaacgym_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_eval.py>`
+                * Environment: :download:`reaching_franka_omniverse_isaacgym_env.py <../../../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_env.py>`
+                * Training script: :download:`reaching_franka_omniverse_isaacgym_skrl_train.py <../../../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_franka_omniverse_isaacgym_skrl_eval.py <../../../examples/real_world/franka_emika_panda/reaching_franka_omniverse_isaacgym_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/9595293/trained_checkpoints.zip>`
 
                 **Training and evaluation:**
@@ -1503,9 +1503,9 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
-                * Environment: :download:`reaching_franka_isaacgym_env.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_env.py>`
-                * Training script: :download:`reaching_franka_isaacgym_skrl_train.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_train.py>`
-                * Evaluation script: :download:`reaching_franka_isaacgym_skrl_eval.py <../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_eval.py>`
+                * Environment: :download:`reaching_franka_isaacgym_env.py <../../../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_env.py>`
+                * Training script: :download:`reaching_franka_isaacgym_skrl_train.py <../../../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_franka_isaacgym_skrl_eval.py <../../../examples/real_world/franka_emika_panda/reaching_franka_isaacgym_skrl_eval.py>`
 
                 **Training and evaluation:**
 
@@ -1600,8 +1600,8 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files**
 
-                * Environment: :download:`reaching_iiwa_real_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_env.py>`
-                * Evaluation script: :download:`reaching_iiwa_real_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_skrl_eval.py>`
+                * Environment: :download:`reaching_iiwa_real_env.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_env.py>`
+                * Evaluation script: :download:`reaching_iiwa_real_skrl_eval.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
 
                 **Evaluation:**
@@ -1636,9 +1636,9 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files**
 
-                * Environment (ROS): :download:`reaching_iiwa_real_ros_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_env.py>`
-                * Environment (ROS2): :download:`reaching_iiwa_real_ros2_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros2_env.py>`
-                * Evaluation script: :download:`reaching_iiwa_real_ros_ros2_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_ros2_skrl_eval.py>`
+                * Environment (ROS): :download:`reaching_iiwa_real_ros_env.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_env.py>`
+                * Environment (ROS2): :download:`reaching_iiwa_real_ros2_env.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros2_env.py>`
+                * Evaluation script: :download:`reaching_iiwa_real_ros_ros2_skrl_eval.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_real_ros_ros2_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
 
                 .. note::
@@ -1683,9 +1683,9 @@ These examples show basic real-world and sim2real use cases to guide and support
 
                 **Files** (the implementation is self-contained so no specific location is required):
 
-                * Environment: :download:`reaching_iiwa_omniverse_isaacgym_env.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_env.py>`
-                * Training script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_train.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_train.py>`
-                * Evaluation script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_eval.py <../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_eval.py>`
+                * Environment: :download:`reaching_iiwa_omniverse_isaacgym_env.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_env.py>`
+                * Training script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_train.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_train.py>`
+                * Evaluation script: :download:`reaching_iiwa_omniverse_isaacgym_skrl_eval.py <../../../examples/real_world/kuka_lbr_iiwa/reaching_iiwa_omniverse_isaacgym_skrl_eval.py>`
                 * Checkpoints (:literal:`agent_joint.pt`, :literal:`agent_cartesian.pt`): :download:`trained_checkpoints.zip <https://github.com/Toni-SM/skrl/files/10406561/trained_checkpoints.zip>`
                 * Simulation files: (.usd assets and robot class): :download:`simulation_files.zip <https://github.com/Toni-SM/skrl/files/10409551/simulation_files.zip>`
 
@@ -1762,10 +1762,10 @@ This example shows how to use the library utilities to carry out the post-proces
 
         Example of a figure, generated by the code, showing the total reward (left) and the mean and standard deviation (right) of all experiments located in the runs folder
 
-        :download:`tensorboard_file_iterator.py <../examples/utils/tensorboard_file_iterator.py>`
+        :download:`tensorboard_file_iterator.py <../../../examples/utils/tensorboard_file_iterator.py>`
 
         **Note:** The code will load all the Tensorboard files of the experiments located in the :literal:`runs` folder. It is necessary to adjust the iterator's parameters for other paths
 
-        .. literalinclude:: ../examples/utils/tensorboard_file_iterator.py
+        .. literalinclude:: ../../../examples/utils/tensorboard_file_iterator.py
             :language: python
-            :emphasize-lines: 4, 11-13
+            :emphasize-lines: 5, 12-14

@@ -1,7 +1,6 @@
 from typing import Any, Literal, Mapping, Optional, Tuple, Union
 
 from functools import partial
-import gymnasium
 
 import flax
 import jax
@@ -9,6 +8,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.spaces.jax import compute_space_limits
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -69,14 +69,11 @@ class GaussianMixin:
 
         :raises ValueError: If the reduction method is not valid.
         """
-        self._g_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
-
-        self._g_clip_actions_min = (
-            jnp.array(self.action_space.low, dtype=jnp.float32) if self._g_clip_actions else -jnp.inf
-        )
-        self._g_clip_actions_max = (
-            jnp.array(self.action_space.high, dtype=jnp.float32) if self._g_clip_actions else jnp.inf
-        )
+        self._g_clip_actions = clip_actions
+        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
+        if not self._g_clip_actions:
+            self._g_clip_actions_min = jnp.full_like(self._g_clip_actions_min, -jnp.inf)
+            self._g_clip_actions_max = jnp.full_like(self._g_clip_actions_max, jnp.inf)
 
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std if self._g_clip_log_std else -jnp.inf

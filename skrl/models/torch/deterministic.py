@@ -1,8 +1,8 @@
 from typing import Any, Mapping, Tuple, Union
 
-import gymnasium
-
 import torch
+
+from skrl.utils.spaces.torch import compute_space_limits
 
 
 class DeterministicMixin:
@@ -12,11 +12,8 @@ class DeterministicMixin:
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
         :param role: Role played by the model.
         """
-        self._d_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
-
-        if self._d_clip_actions:
-            self._d_clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self._d_clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        self._d_clip_actions = clip_actions
+        self._d_clip_actions_min, self._d_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
 
     def act(
         self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""

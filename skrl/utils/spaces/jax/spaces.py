@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Sequence, Tuple, Union
 
 import gymnasium
 from gymnasium import spaces
@@ -306,6 +306,86 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
         return int(np.prod(space))
     # gymnasium computation
     return gymnasium.spaces.flatdim(space)
+
+
+def compute_space_limits(
+    space: Optional[spaces.Space],
+    *,
+    occupied_size: bool = False,
+    device: Optional[Union[str, jax.Device]] = None,
+    none_if_unbounded: Optional[Literal["both", "below", "above", "any"]] = None,
+) -> Tuple[Union[jax.Array, None], Union[jax.Array, None]]:
+    """Get the low and high limits of a space.
+
+    .. note::
+
+        Only the :py:class:`~gymnasium.spaces.Box` space has low and high limits.
+        Other spaces are not bounded (low is ``-inf`` and high is ``inf``).
+
+    :param space: Gymnasium space.
+    :param occupied_size: Whether the limits are returned for the number of elements occupied by the space.
+        It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
+        and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
+    :param device: Device on which a tensor/array is or will be allocated.
+    :param none_if_unbounded: Whether to return ``None`` if the space is unbounded.
+        If ``"both"``, low and high limits will be ``None`` if the space is unbounded in both directions.
+        If ``"below"``, low limit will be ``None`` if the space is unbounded below.
+        If ``"above"``, high limit will be ``None`` if the space is unbounded above.
+        If ``"any"``, low or high limit will be ``None`` if the space is unbounded below or above, respectively.
+        If not specified, low and high limits will be defined using ``-inf`` and ``inf``,
+        respectively, when the space is unbounded.
+
+    :return: Low and high limits of the space, or ``None`` if the given space is ``None``
+        or unbounded (and ``none_if_unbounded`` is specified).
+    """
+
+    def _compute_limits(space: spaces.Space, *, low: np.ndarray, high: np.ndarray, index: int, occupied_size: bool):
+        # fundamental spaces
+        # - Box
+        if isinstance(space, spaces.Box):
+            size = compute_space_size(space, occupied_size=occupied_size)
+            low[index : index + size] = space.low.flatten()
+            high[index : index + size] = space.high.flatten()
+        # composite spaces
+        # - Tuple
+        elif isinstance(space, spaces.Tuple):
+            for s in space:
+                _compute_limits(s, low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(s, occupied_size=occupied_size)
+        # - Dict
+        elif isinstance(space, spaces.Dict):
+            for k in sorted(space.keys()):
+                _compute_limits(space[k], low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(space[k], occupied_size=occupied_size)
+
+    if space is None:
+        return None, None
+    size = compute_space_size(space, occupied_size=occupied_size)
+    low = np.full((size,), -float("inf"))
+    high = np.full((size,), float("inf"))
+    _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
+    # check for unbounded spaces
+    if none_if_unbounded == "both":
+        if (np.isinf(low) & np.isinf(high)).all():
+            low, high = None, None
+    elif none_if_unbounded == "below":
+        if np.isinf(low).all():
+            low = None
+    elif none_if_unbounded == "above":
+        if np.isinf(high).all():
+            high = None
+    elif none_if_unbounded == "any":
+        if np.isinf(low).all():
+            low = None
+        if np.isinf(high).all():
+            high = None
+    # convert to tensors
+    device = config.jax.parse_device(device)
+    if low is not None:
+        low = jnp.array(low, device=device)
+    if high is not None:
+        high = jnp.array(high, device=device)
+    return low, high
 
 
 def sample_space(

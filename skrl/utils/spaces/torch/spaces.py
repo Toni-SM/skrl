@@ -314,13 +314,13 @@ def compute_space_limits(
         or unbounded (and ``none_if_unbounded`` is specified).
     """
 
-    def _compute_limits(space: spaces.Space, *, low: torch.Tensor, high: torch.Tensor, index: int, occupied_size: bool):
+    def _compute_limits(space: spaces.Space, *, low: np.ndarray, high: np.ndarray, index: int, occupied_size: bool):
         # fundamental spaces
         # - Box
         if isinstance(space, spaces.Box):
             size = compute_space_size(space, occupied_size=occupied_size)
-            low[index : index + size] = torch.tensor(space.low.flatten(), device=device)
-            high[index : index + size] = torch.tensor(space.high.flatten(), device=device)
+            low[index : index + size] = space.low.flatten()
+            high[index : index + size] = space.high.flatten()
         # composite spaces
         # - Tuple
         elif isinstance(space, spaces.Tuple):
@@ -335,26 +335,31 @@ def compute_space_limits(
 
     if space is None:
         return None, None
-    device = config.torch.parse_device(device)
     size = compute_space_size(space, occupied_size=occupied_size)
-    low = torch.full((size,), -float("inf"), device=device)
-    high = torch.full((size,), float("inf"), device=device)
+    low = np.full((size,), -float("inf"))
+    high = np.full((size,), float("inf"))
     _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
     # check for unbounded spaces
     if none_if_unbounded == "both":
-        if (torch.isinf(low) & torch.isinf(high)).all():
+        if (np.isinf(low) & np.isinf(high)).all():
             low, high = None, None
     elif none_if_unbounded == "below":
-        if torch.isinf(low).all():
+        if np.isinf(low).all():
             low = None
     elif none_if_unbounded == "above":
-        if torch.isinf(high).all():
+        if np.isinf(high).all():
             high = None
     elif none_if_unbounded == "any":
-        if torch.isinf(low).all():
+        if np.isinf(low).all():
             low = None
-        if torch.isinf(high).all():
+        if np.isinf(high).all():
             high = None
+    # convert to tensors
+    device = config.torch.parse_device(device)
+    if low is not None:
+        low = torch.tensor(low, device=device)
+    if high is not None:
+        high = torch.tensor(high, device=device)
     return low, high
 
 

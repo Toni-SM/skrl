@@ -284,7 +284,11 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
 
 
 def compute_space_limits(
-    space: Optional[spaces.Space], *, occupied_size: bool = False, device: Optional[Union[str, torch.device]] = None
+    space: Optional[spaces.Space],
+    *,
+    occupied_size: bool = False,
+    device: Optional[Union[str, torch.device]] = None,
+    none_if_unbounded: Optional[Literal["both", "below", "above", "any"]] = None,
 ) -> Tuple[Union[torch.Tensor, None], Union[torch.Tensor, None]]:
     """Get the low and high limits of a space.
 
@@ -298,8 +302,16 @@ def compute_space_limits(
         It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
         and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
     :param device: Device on which a tensor/array is or will be allocated.
+    :param none_if_unbounded: Whether to return ``None`` if the space is unbounded.
+        If ``"both"``, low and high limits will be ``None`` if the space is unbounded in both directions.
+        If ``"below"``, low limit will be ``None`` if the space is unbounded below.
+        If ``"above"``, high limit will be ``None`` if the space is unbounded above.
+        If ``"any"``, low or high limit will be ``None`` if the space is unbounded below or above, respectively.
+        If not specified, low and high limits will be defined using ``-inf`` and ``inf``,
+        respectively, when the space is unbounded.
 
-    :return: Low and high limits of the space.
+    :return: Low and high limits of the space, or ``None`` if the given space is ``None``
+        or unbounded (and ``none_if_unbounded`` is specified).
     """
 
     def _compute_limits(space: spaces.Space, *, low: torch.Tensor, high: torch.Tensor, index: int, occupied_size: bool):
@@ -328,6 +340,21 @@ def compute_space_limits(
     low = torch.full((size,), -float("inf"), device=device)
     high = torch.full((size,), float("inf"), device=device)
     _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
+    # check for unbounded spaces
+    if none_if_unbounded == "both":
+        if (torch.isinf(low) & torch.isinf(high)).all():
+            low, high = None, None
+    elif none_if_unbounded == "below":
+        if torch.isinf(low).all():
+            low = None
+    elif none_if_unbounded == "above":
+        if torch.isinf(high).all():
+            high = None
+    elif none_if_unbounded == "any":
+        if torch.isinf(low).all():
+            low = None
+        if torch.isinf(high).all():
+            high = None
     return low, high
 
 

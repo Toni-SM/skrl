@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from skrl.utils.spaces.torch import (
+    compute_space_limits,
     compute_space_size,
     convert_gym_space,
     flatten_tensorized_space,
@@ -71,6 +72,72 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
 
     space_size = compute_space_size(space, occupied_size=True)
     assert space_size == occupied_size(space)
+
+
+def test_compute_space_limits(capsys):
+    space = gymnasium.spaces.Dict(
+        {
+            "a": gymnasium.spaces.Box(low=0, high=1, shape=(2,)),
+            "b": gymnasium.spaces.Discrete(n=2),
+            "c": gymnasium.spaces.MultiDiscrete(nvec=[2, 3]),
+            "d": gymnasium.spaces.Tuple(
+                (
+                    gymnasium.spaces.Box(low=-2, high=-1, shape=(3,)),
+                    gymnasium.spaces.Discrete(n=2),
+                    gymnasium.spaces.MultiDiscrete(nvec=[2, 3]),
+                )
+            ),
+            "e": gymnasium.spaces.Dict({"a": gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=(2,))}),
+        }
+    )
+
+    # fmt: off
+    expected_low = np.array([ 0, 0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -2, -2, -2, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf])
+    expected_high = np.array([1, 1,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf, -1, -1, -1,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf])
+    # fmt: on
+    low, high = compute_space_limits(space, occupied_size=False)
+    assert (
+        low.cpu().numpy() == expected_low
+    ).all(), f"Expected {expected_low.tolist()}, got {low.cpu().numpy().tolist()}"
+    assert (
+        high.cpu().numpy() == expected_high
+    ).all(), f"Expected {expected_high.tolist()}, got {high.cpu().numpy().tolist()}"
+
+    for none_if_unbounded in ["both", "below", "above", "any"]:
+        low, high = compute_space_limits(space, occupied_size=False, none_if_unbounded=none_if_unbounded)
+        assert low is not None and high is not None
+
+    # fmt: off
+    expected_low = np.array([ 0, 0, -np.inf, -np.inf, -np.inf, -2, -2, -2, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf])
+    expected_high = np.array([1, 1,  np.inf,  np.inf,  np.inf, -1, -1, -1,  np.inf,  np.inf,  np.inf,  np.inf,  np.inf])
+    # fmt: on
+    low, high = compute_space_limits(space, occupied_size=True)
+    assert (
+        low.cpu().numpy() == expected_low
+    ).all(), f"Expected {expected_low.tolist()}, got {low.cpu().numpy().tolist()}"
+    assert (
+        high.cpu().numpy() == expected_high
+    ).all(), f"Expected {expected_high.tolist()}, got {high.cpu().numpy().tolist()}"
+
+    for none_if_unbounded in ["both", "below", "above", "any"]:
+        low, high = compute_space_limits(space, occupied_size=True, none_if_unbounded=none_if_unbounded)
+        assert low is not None and high is not None
+
+    space = gymnasium.spaces.Tuple(
+        (
+            gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=(3,)),
+            gymnasium.spaces.Discrete(n=2),
+            gymnasium.spaces.MultiDiscrete(nvec=[2, 3]),
+        )
+    )
+    low, high = compute_space_limits(space, none_if_unbounded="both")
+    assert low is None and high is None
+    low, high = compute_space_limits(space, none_if_unbounded="below")
+    assert low is None and np.isinf(high.cpu().numpy()).all()
+    low, high = compute_space_limits(space, none_if_unbounded="above")
+    assert np.isinf(low.cpu().numpy()).all() and high is None
+    low, high = compute_space_limits(space, none_if_unbounded="any")
+    assert low is None and high is None
 
 
 @hypothesis.given(space=gymnasium_space_stategy())

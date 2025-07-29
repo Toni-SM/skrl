@@ -49,6 +49,7 @@ tests = [
   "pytest-html",
   "pytest-cov",
   "hypothesis",
+  "pyyaml",
 ]
 # urls
 [project.urls]

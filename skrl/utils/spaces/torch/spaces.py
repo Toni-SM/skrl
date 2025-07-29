@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Sequence, Tuple, Union
 
 import gymnasium
 from gymnasium import spaces
@@ -281,6 +281,54 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
         return int(np.prod(space))
     # gymnasium computation
     return gymnasium.spaces.flatdim(space)
+
+
+def compute_space_limits(
+    space: Optional[spaces.Space], *, occupied_size: bool = False, device: Optional[Union[str, torch.device]] = None
+) -> Tuple[Union[torch.Tensor, None], Union[torch.Tensor, None]]:
+    """Get the low and high limits of a space.
+
+    .. note::
+
+        Only the :py:class:`~gymnasium.spaces.Box` space has low and high limits.
+        Other spaces are not bounded (low is ``-inf`` and high is ``inf``).
+
+    :param space: Gymnasium space.
+    :param occupied_size: Whether the limits are returned for the number of elements occupied by the space.
+        It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
+        and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
+    :param device: Device on which a tensor/array is or will be allocated.
+
+    :return: Low and high limits of the space.
+    """
+
+    def _compute_limits(space: spaces.Space, *, low: torch.Tensor, high: torch.Tensor, index: int, occupied_size: bool):
+        # fundamental spaces
+        # - Box
+        if isinstance(space, spaces.Box):
+            size = compute_space_size(space, occupied_size=occupied_size)
+            low[index : index + size] = torch.tensor(space.low.flatten(), device=device)
+            high[index : index + size] = torch.tensor(space.high.flatten(), device=device)
+        # composite spaces
+        # - Tuple
+        elif isinstance(space, spaces.Tuple):
+            for s in space:
+                _compute_limits(s, low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(s, occupied_size=occupied_size)
+        # - Dict
+        elif isinstance(space, spaces.Dict):
+            for k in sorted(space.keys()):
+                _compute_limits(space[k], low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(space[k], occupied_size=occupied_size)
+
+    if space is None:
+        return None, None
+    device = config.torch.parse_device(device)
+    size = compute_space_size(space, occupied_size=occupied_size)
+    low = torch.full((size,), -float("inf"), device=device)
+    high = torch.full((size,), float("inf"), device=device)
+    _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
+    return low, high
 
 
 def sample_space(

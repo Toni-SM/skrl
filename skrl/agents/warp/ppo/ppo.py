@@ -9,7 +9,7 @@ import skrl.utils.framework.warp as warp_utils
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.optimizers.warp import Adam, clip_by_total_norm
+from skrl.resources.optimizers.warp import Adam
 from skrl.resources.schedulers.warp import KLAdaptiveLR
 
 
@@ -296,11 +296,12 @@ class PPO(Agent):
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
             if self.policy is self.value:
-                self.optimizer = Adam(self.policy.parameters(), lr=self._learning_rate)
+                self.optimizer = Adam(self.policy.parameters(), lr=self._learning_rate, device=self.device)
             else:
                 self.optimizer = Adam(
                     self.policy.parameters() + self.value.parameters(),
                     lr=self._learning_rate,
+                    device=self.device,
                 )
             if self._learning_rate_scheduler is not None:
                 self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
@@ -636,7 +637,7 @@ class PPO(Agent):
                 # optimization step
                 tape.backward(self._loss)
                 if self._grad_norm_clip > 0:
-                    clip_by_total_norm(self._optimizer_grads, self._grad_norm_clip)
+                    self.optimizer.clip_by_total_norm(self._optimizer_grads, self._grad_norm_clip)
                 self.optimizer.step(
                     self._optimizer_grads, lr=self._learning_rate if self._learning_rate_scheduler else None
                 )

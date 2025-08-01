@@ -383,8 +383,8 @@ class PPO(Agent):
             The second component is a dictionary containing extra output values according to the model.
         """
         inputs = {
-            "observations": self._observation_preprocessor(observations, inplace=True),
-            "states": self._state_preprocessor(states, inplace=True),
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
         }
         # sample random actions
         # TODO, check for stochasticity
@@ -450,8 +450,8 @@ class PPO(Agent):
 
             # compute values
             inputs = {
-                "observations": self._observation_preprocessor(observations, inplace=True),
-                "states": self._state_preprocessor(states, inplace=True),
+                "observations": self._observation_preprocessor(observations),
+                "states": self._state_preprocessor(states),
             }
             values, _ = self.value.act(inputs, role="value")
             values = self._value_preprocessor(values, inverse=True, inplace=True)
@@ -508,8 +508,8 @@ class PPO(Agent):
         """
         # compute returns and advantages
         inputs = {
-            "observations": self._observation_preprocessor(self._current_next_observations, inplace=True),
-            "states": self._state_preprocessor(self._current_next_states, inplace=True),
+            "observations": self._observation_preprocessor(self._current_next_observations),
+            "states": self._state_preprocessor(self._current_next_states),
         }
         enable_grad(inputs, enabled=False)
         self.value.enable_training_mode(False)
@@ -572,8 +572,8 @@ class PPO(Agent):
             ) in sampled_batches:
 
                 inputs = {
-                    "observations": self._observation_preprocessor(sampled_observations, train=not epoch, inplace=True),
-                    "states": self._state_preprocessor(sampled_states, train=not epoch, inplace=True),
+                    "observations": self._observation_preprocessor(sampled_observations, train=not epoch),
+                    "states": self._state_preprocessor(sampled_states, train=not epoch),
                 }
 
                 # compute loss

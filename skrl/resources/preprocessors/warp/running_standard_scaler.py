@@ -144,9 +144,11 @@ class RunningStandardScaler:
 
         size = compute_space_size(size, occupied_size=True)
 
+        self.current_count = 1.0
         self.running_mean = wp.zeros(size, dtype=wp.float32, device=self.device)
         self.running_variance = wp.ones(size, dtype=wp.float32, device=self.device)
-        self.current_count = 1.0
+        self._cached_mean = wp.empty(size, dtype=wp.float32, device=self.device)
+        self._cached_variance = wp.empty(size, dtype=wp.float32, device=self.device)
 
     def state_dict(self) -> Mapping[str, wp.array]:
         """Dictionary containing references to the whole state of the module."""
@@ -162,7 +164,7 @@ class RunningStandardScaler:
         self.current_count = float(state_dict["current_count"])
 
     def __call__(
-        self, x: Union[wp.array, None], *, train: bool = False, inverse: bool = False
+        self, x: Union[wp.array, None], *, train: bool = False, inverse: bool = False, inplace: bool = False
     ) -> Union[wp.array, None]:
         """Forward pass of the standardizer.
 
@@ -170,6 +172,7 @@ class RunningStandardScaler:
         :param train: Whether to train the standardizer.
         :param inverse: Whether to inverse the standardizer to scale back the data.
         :param no_grad: Whether to disable the gradient computation.
+        :param inplace: Whether to perform the operation in place.
 
         :return: Standardized tensor.
 
@@ -196,33 +199,40 @@ class RunningStandardScaler:
         ndim = x.ndim
         if train:
             n = np.prod(x.shape[:-1]).item()
-            mean = wp.zeros(self.running_mean.shape, dtype=wp.float32, device=self.device)
-            var = wp.zeros(self.running_variance.shape, dtype=wp.float32, device=self.device)
+            self._cached_mean.zero_()
+            self._cached_variance.zero_()
             wp.launch(
                 _mean_2d_axis_0 if ndim == 2 else _mean_3d_axis_0_1,
                 dim=x.shape,
                 inputs=[x, n],
-                outputs=[mean],
+                outputs=[self._cached_mean],
                 device=self.device,
             )
             wp.launch(
                 _var_2d_axis_0 if ndim == 2 else _var_3d_axis_0_1,
                 dim=x.shape,
-                inputs=[x, mean, n - 1],  # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
-                outputs=[var],
+                inputs=[x, self._cached_mean, n - 1],  # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
+                outputs=[self._cached_variance],
                 device=self.device,
             )
             wp.launch(
                 _parallel_variance,
                 dim=self.running_mean.shape,
-                inputs=[self.running_mean, self.running_variance, self.current_count, mean, var, float(n)],
+                inputs=[
+                    self.running_mean,
+                    self.running_variance,
+                    self.current_count,
+                    self._cached_mean,
+                    self._cached_variance,
+                    float(n),
+                ],
                 device=self.device,
             )
             self.current_count += n
 
         # scale back the data to the original representation
         if inverse:
-            output = wp.empty_like(x)
+            output = x if inplace else wp.empty_like(x)
             wp.launch(
                 _inverse_2d if ndim == 2 else _inverse_3d,
                 dim=x.shape,
@@ -232,7 +242,7 @@ class RunningStandardScaler:
             )
             return output
         # standardization by centering and scaling
-        output = wp.empty_like(x)
+        output = x if inplace else wp.empty_like(x)
         wp.launch(
             _standardization_2d if ndim == 2 else _standardization_3d,
             dim=x.shape,

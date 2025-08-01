@@ -493,10 +493,9 @@ class PPO(Agent):
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            with wp.ScopedTimer("PPO.update", use_nvtx=True, color="yellow", synchronize=False):
-                self.enable_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_training_mode(False)
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -546,9 +545,7 @@ class PPO(Agent):
             device=self.device,
         )
 
-        with wp.ScopedTimer("preprocessor-train", use_nvtx=True, color="green", synchronize=False):
-            new_values = self._value_preprocessor(values, train=True, inplace=True)
-        self.memory.set_tensor_by_name("values", new_values)
+        self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True, inplace=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True, inplace=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 

@@ -33,8 +33,8 @@ def _adam_step(
     i = wp.tid()
     m1[i] = beta1 * m1[i] + (1.0 - beta1) * grad[i]
     m2[i] = beta2 * m2[i] + (1.0 - beta2) * grad[i] * grad[i]
-    m1_hat = m1[i] / (1.0 - wp.pow(beta1, (wp.float32(t[0]) + 1.0)))
-    m2_hat = m2[i] / (1.0 - wp.pow(beta2, (wp.float32(t[0]) + 1.0)))
+    m1_hat = m1[i] / (1.0 - wp.pow(beta1, wp.float32(t[0])))
+    m2_hat = m2[i] / (1.0 - wp.pow(beta2, wp.float32(t[0])))
     param[i] = param[i] - lr[0] * m1_hat / (wp.sqrt(m2_hat) + eps)
 
 
@@ -87,13 +87,13 @@ def adam_step(
     :param betas: Beta coefficients.
     :param eps: Term added to the denominator to improve numerical stability.
     """
+    wp.launch(_increase_timestep, dim=1, inputs=[t])
     for i in range(len(params)):
         wp.launch(
             _adam_step,
             dim=params[i].shape[0],
             inputs=[params[i], gradients[i], m1[i], m2[i], t, lr, betas[0], betas[1], eps],
         )
-    wp.launch(_increase_timestep, dim=1, inputs=[t])
 
 
 class Adam:
@@ -127,12 +127,6 @@ class Adam:
 
         self._graph_adam_step = None
         self._graph_clip_by_total_norm = None
-        self._use_graph = self.device.is_cuda
-        self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
-
-        self.device = config.warp.parse_device(device)
-
-        self._graph = None
         self._use_graph = self.device.is_cuda
         self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
 

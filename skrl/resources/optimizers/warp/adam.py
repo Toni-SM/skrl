@@ -1,7 +1,6 @@
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import warp as wp
-import warp.optim as optim
 
 from skrl import config
 
@@ -19,6 +18,31 @@ def _clip_by_total_norm(src: wp.array(ndim=1), sum_squares: wp.array(ndim=1), ma
         src[i] = src[i] / norm * max_norm
 
 
+@wp.kernel(enable_backward=False)
+def _adam_step(
+    param: wp.array(ndim=1),
+    grad: wp.array(ndim=1),
+    m1: wp.array(ndim=1),
+    m2: wp.array(ndim=1),
+    t: wp.array(ndim=1),
+    lr: wp.array(ndim=1),
+    beta1: float,
+    beta2: float,
+    eps: float,
+):
+    i = wp.tid()
+    m1[i] = beta1 * m1[i] + (1.0 - beta1) * grad[i]
+    m2[i] = beta2 * m2[i] + (1.0 - beta2) * grad[i] * grad[i]
+    m1_hat = m1[i] / (1.0 - wp.pow(beta1, (wp.float32(t[0]) + 1.0)))
+    m2_hat = m2[i] / (1.0 - wp.pow(beta2, (wp.float32(t[0]) + 1.0)))
+    param[i] = param[i] - lr[0] * m1_hat / (wp.sqrt(m2_hat) + eps)
+
+
+@wp.kernel(enable_backward=False)
+def _increase_timestep(t: wp.array(ndim=1)):
+    t[0] += 1
+
+
 def clip_by_total_norm(
     gradients: Sequence[wp.array], max_norm: float, sum_squares: Optional[wp.array] = None
 ) -> Sequence[wp.array]:
@@ -26,7 +50,7 @@ def clip_by_total_norm(
 
     https://arxiv.org/abs/1211.5063
 
-    :param gradients: List of flattened gradients to clip.
+    :param gradients: Gradients to clip.
     :param max_norm: Maximum global norm.
     :param sum_squares: Pre-allocated array to store the sum of squares of the gradients for intermediate computation.
         If not provided, a new array will be allocated for computation purposes.
@@ -42,7 +66,37 @@ def clip_by_total_norm(
     return gradients
 
 
-class Adam(optim.Adam):
+def adam_step(
+    params: Sequence[wp.array],
+    gradients: Sequence[wp.array],
+    m1: Sequence[wp.array],
+    m2: Sequence[wp.array],
+    t: wp.array,
+    lr: wp.array,
+    betas: Tuple[float, float],
+    eps: float,
+) -> None:
+    """Perform an optimization step to update parameters.
+
+    :param params: Parameters.
+    :param gradients: Gradients.
+    :param m1: First moment of the parameters.
+    :param m2: Second moment of the parameters.
+    :param t: Timestep.
+    :param lr: Learning rate.
+    :param betas: Beta coefficients.
+    :param eps: Term added to the denominator to improve numerical stability.
+    """
+    for i in range(len(params)):
+        wp.launch(
+            _adam_step,
+            dim=params[i].shape[0],
+            inputs=[params[i], gradients[i], m1[i], m2[i], t, lr, betas[0], betas[1], eps],
+        )
+    wp.launch(_increase_timestep, dim=1, inputs=[t])
+
+
+class Adam:
     def __init__(
         self,
         params: Sequence[wp.array],
@@ -53,18 +107,26 @@ class Adam(optim.Adam):
     ) -> None:
         """Adam optimizer.
 
-        Adapted from `Warp's Adam <https://nvidia.github.io/warp>`_ to support state dict.
+        Adapted from Warp implementation of `warp.optim.Adam <https://nvidia.github.io/warp>`_
+        to support CUDA graphs, gradient clipping and state dict.
 
         :param params: Model parameters.
         :param lr: Learning rate.
         :param betas: Coefficients for the running averages of the gradient and its square.
         :param eps: Term added to the denominator to improve numerical stability.
         """
-        super().__init__([param.flatten() for param in params], lr=lr, betas=betas, eps=eps)
-
         self.device = config.warp.parse_device(device)
+        self.params = [param.flatten() for param in params]
 
-        self._graph = None
+        self._betas = betas
+        self._eps = eps
+        self._t = wp.zeros((1,), dtype=wp.int32, device=self.device)
+        self._lr = wp.array([lr], dtype=wp.float32, device=self.device)
+        self._m1 = [wp.zeros_like(param) for param in self.params]
+        self._m2 = [wp.zeros_like(param) for param in self.params]
+
+        self._graph_adam_step = None
+        self._graph_clip_by_total_norm = None
         self._use_graph = self.device.is_cuda
         self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
 
@@ -75,8 +137,16 @@ class Adam(optim.Adam):
         :param lr: Learning rate.
         """
         if lr is not None:
-            self.lr = lr
-        super().step(gradients)
+            self._lr.fill_(lr)
+        if self._use_graph:
+            if self._graph_adam_step is None:
+                with wp.ScopedCapture() as capture:
+                    adam_step(self.params, gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps)
+                self._graph_adam_step = capture.graph
+            else:
+                wp.capture_launch(self._graph_adam_step)
+        else:
+            adam_step(self.params, gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps)
 
     def state_dict(self) -> Mapping[str, Any]:
         raise NotImplementedError
@@ -101,12 +171,12 @@ class Adam(optim.Adam):
         """
         self._cached_sum_squares.zero_()
         if self._use_graph:
-            if self._graph is None:
+            if self._graph_clip_by_total_norm is None:
                 with wp.ScopedCapture() as capture:
                     clip_by_total_norm(gradients, max_norm, self._cached_sum_squares)
-                self._graph = capture.graph
+                self._graph_clip_by_total_norm = capture.graph
             else:
-                wp.capture_launch(self._graph)
+                wp.capture_launch(self._graph_clip_by_total_norm)
         else:
             clip_by_total_norm(gradients, max_norm, self._cached_sum_squares)
         return gradients

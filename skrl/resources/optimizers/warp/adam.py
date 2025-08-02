@@ -130,6 +130,12 @@ class Adam:
         self._use_graph = self.device.is_cuda
         self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
 
+        self.device = config.warp.parse_device(device)
+
+        self._graph = None
+        self._use_graph = self.device.is_cuda
+        self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
+
     def step(self, gradients: Sequence[wp.array], *, lr: Optional[float] = None) -> None:
         """Perform an optimization step to update parameters.
 

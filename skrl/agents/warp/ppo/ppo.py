@@ -122,7 +122,7 @@ def _compute_gae(
                 * (last_values[j, 0] + lambda_coefficient * advantage)
             )
         advantages[i, j, 0] = advantage
-        returns[i, j, 0] = advantages[i, j, 0] + values[i, j, 0]
+        returns[i, j, 0] = values[i, j, 0] + advantage
 
 
 @wp.kernel(enable_backward=False)
@@ -519,8 +519,8 @@ class PPO(Agent):
         last_values = self._value_preprocessor(last_values, inverse=True, inplace=True)
 
         values = self.memory.get_tensor_by_name("values")
-        returns = wp.empty(shape=values.shape, dtype=wp.float32, device=self.device)
-        advantages = wp.empty(shape=values.shape, dtype=wp.float32, device=self.device)
+        returns = self.memory.get_tensor_by_name("returns")
+        advantages = self.memory.get_tensor_by_name("advantages")
 
         wp.launch(
             _compute_gae,
@@ -546,9 +546,12 @@ class PPO(Agent):
             device=self.device,
         )
 
-        self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True, inplace=True))
-        self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True, inplace=True))
-        self.memory.set_tensor_by_name("advantages", advantages)
+        # - since update is done in-place, there is no need to set the tensors back
+        # -- self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True, inplace=True))
+        # -- self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True, inplace=True))
+        # -- self.memory.set_tensor_by_name("advantages", advantages)
+        self._value_preprocessor(values, train=True, inplace=True)
+        self._value_preprocessor(returns, train=True, inplace=True)
 
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)

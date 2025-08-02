@@ -221,9 +221,7 @@ class DDPG(Agent):
 
             # training variables
             self._policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-            self._policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
             self._critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-            self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic.parameters()]
 
         # set up preprocessors
         # - observations
@@ -479,7 +477,7 @@ class DDPG(Agent):
 
             # optimization step (critic)
             tape.backward(self._critic_loss)
-            self.critic_optimizer.step(self._critic_optimizer_grads)
+            self.critic_optimizer.step()
             tape.zero()
 
             # compute policy (actor) loss
@@ -501,7 +499,7 @@ class DDPG(Agent):
 
             # optimization step (policy)
             tape.backward(self._policy_loss)
-            self.policy_optimizer.step(self._policy_optimizer_grads)
+            self.policy_optimizer.step()
             tape.zero()
 
             # update target networks

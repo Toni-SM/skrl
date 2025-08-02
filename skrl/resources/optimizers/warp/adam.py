@@ -46,7 +46,7 @@ def _increase_timestep(t: wp.array(ndim=1)):
 def clip_by_total_norm(
     gradients: Sequence[wp.array], max_norm: float, sum_squares: Optional[wp.array] = None
 ) -> Sequence[wp.array]:
-    """Clip (scaling down) gradients' values in place by their total norm.
+    """Clip (scaling down) gradients' values in-place by their total norm.
 
     https://arxiv.org/abs/1211.5063
 
@@ -117,6 +117,7 @@ class Adam:
         """
         self.device = config.warp.parse_device(device)
         self.params = [param.flatten() for param in params]
+        self.gradients = [param.grad.flatten() for param in self.params]
 
         self._betas = betas
         self._eps = eps
@@ -130,10 +131,9 @@ class Adam:
         self._use_graph = self.device.is_cuda
         self._cached_sum_squares = wp.zeros((1,), dtype=wp.float32, device=self.device)
 
-    def step(self, gradients: Sequence[wp.array], *, lr: Optional[float] = None) -> None:
+    def step(self, *, lr: Optional[float] = None) -> None:
         """Perform an optimization step to update parameters.
 
-        :param gradients: Gradients of the parameters.
         :param lr: Learning rate.
         """
         if lr is not None:
@@ -141,12 +141,14 @@ class Adam:
         if self._use_graph:
             if self._graph_adam_step is None:
                 with wp.ScopedCapture() as capture:
-                    adam_step(self.params, gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps)
+                    adam_step(
+                        self.params, self.gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps
+                    )
                 self._graph_adam_step = capture.graph
             else:
                 wp.capture_launch(self._graph_adam_step)
         else:
-            adam_step(self.params, gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps)
+            adam_step(self.params, self.gradients, self._m1, self._m2, self._t, self._lr, self._betas, self._eps)
 
     def state_dict(self) -> Mapping[str, Any]:
         raise NotImplementedError
@@ -154,8 +156,8 @@ class Adam:
     def load_state_dict(self, state_dict: Mapping[str, Any]) -> None:
         raise NotImplementedError
 
-    def clip_by_total_norm(self, gradients: Sequence[wp.array], max_norm: float) -> Sequence[wp.array]:
-        """Clip (scaling down) arrays' values in place by their total norm.
+    def clip_by_total_norm(self, max_norm: float):
+        """Clip (scaling down) parameters' gradients in-place by their total norm.
 
         .. note::
 
@@ -164,19 +166,15 @@ class Adam:
 
         https://arxiv.org/abs/1211.5063
 
-        :param arrays: List of flattened arrays to clip.
         :param max_norm: Maximum global norm.
-
-        :return: Clipped arrays.
         """
         self._cached_sum_squares.zero_()
         if self._use_graph:
             if self._graph_clip_by_total_norm is None:
                 with wp.ScopedCapture() as capture:
-                    clip_by_total_norm(gradients, max_norm, self._cached_sum_squares)
+                    clip_by_total_norm(self.gradients, max_norm, self._cached_sum_squares)
                 self._graph_clip_by_total_norm = capture.graph
             else:
                 wp.capture_launch(self._graph_clip_by_total_norm)
         else:
-            clip_by_total_norm(gradients, max_norm, self._cached_sum_squares)
-        return gradients
+            clip_by_total_norm(self.gradients, max_norm, self._cached_sum_squares)

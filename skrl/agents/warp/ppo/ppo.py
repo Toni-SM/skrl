@@ -314,12 +314,6 @@ class PPO(Agent):
             self._value_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
             self._entropy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
             self._kl_divergence = wp.zeros((1,), dtype=wp.float32)
-            if self.policy is self.value:
-                self._optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
-            else:
-                self._optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()] + [
-                    param.grad.flatten() for param in self.value.parameters()
-                ]
 
         # set up preprocessors
         # - observations
@@ -640,10 +634,8 @@ class PPO(Agent):
                 # optimization step
                 tape.backward(self._loss)
                 if self._grad_norm_clip > 0:
-                    self.optimizer.clip_by_total_norm(self._optimizer_grads, self._grad_norm_clip)
-                self.optimizer.step(
-                    self._optimizer_grads, lr=self._learning_rate if self._learning_rate_scheduler else None
-                )
+                    self.optimizer.clip_by_total_norm(self._grad_norm_clip)
+                self.optimizer.step(lr=self._learning_rate if self._learning_rate_scheduler else None)
                 tape.zero()
 
                 # update cumulative losses

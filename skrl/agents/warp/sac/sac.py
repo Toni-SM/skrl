@@ -253,14 +253,9 @@ class SAC(Agent):
 
             # training variables
             self._policy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-            self._policy_optimizer_grads = [param.grad.flatten() for param in self.policy.parameters()]
             self._critic_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-            self._critic_optimizer_grads = [param.grad.flatten() for param in self.critic_1.parameters()] + [
-                param.grad.flatten() for param in self.critic_2.parameters()
-            ]
             if self._learn_entropy:
                 self._entropy_loss = wp.zeros((1,), dtype=wp.float32, requires_grad=True)
-                self._entropy_optimizer_grads = [self.log_entropy_coefficient.grad.flatten()]
 
         # set up preprocessors
         # - observations
@@ -484,7 +479,7 @@ class SAC(Agent):
 
             # optimization step (critic)
             tape.backward(self._critic_loss)
-            self.critic_optimizer.step(self._critic_optimizer_grads)
+            self.critic_optimizer.step()
             tape.zero()
 
             # compute policy (actor) loss
@@ -511,7 +506,7 @@ class SAC(Agent):
 
             # optimization step (policy)
             tape.backward(self._policy_loss)
-            self.policy_optimizer.step(self._policy_optimizer_grads)
+            self.policy_optimizer.step()
             tape.zero()
 
             # entropy learning
@@ -535,7 +530,7 @@ class SAC(Agent):
 
                 # optimization step (entropy)
                 tape.backward(self._entropy_loss)
-                self.entropy_optimizer.step(self._entropy_optimizer_grads)
+                self.entropy_optimizer.step()
                 tape.zero()
 
                 # compute entropy coefficient

@@ -172,7 +172,7 @@ class RunningStandardScaler:
         :param train: Whether to train the standardizer.
         :param inverse: Whether to inverse the standardizer to scale back the data.
         :param no_grad: Whether to disable the gradient computation.
-        :param inplace: Whether to perform the operation in place.
+        :param inplace: Whether to perform the operation in-place.
 
         :return: Standardized tensor.
 

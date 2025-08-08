@@ -184,15 +184,14 @@ class IPPO(MultiAgent):
             value = self.values[uid]
             if policy is not None and value is not None:
                 if policy is value:
-                    optimizer = torch.optim.Adam(policy.parameters(), lr=self._learning_rate[uid])
+                    self.optimizers[uid] = torch.optim.Adam(policy.parameters(), lr=self._learning_rate[uid])
                 else:
-                    optimizer = torch.optim.Adam(
+                    self.optimizers[uid] = torch.optim.Adam(
                         itertools.chain(policy.parameters(), value.parameters()), lr=self._learning_rate[uid]
                     )
-                self.optimizers[uid] = optimizer
                 if self._learning_rate_scheduler[uid] is not None:
                     self.schedulers[uid] = self._learning_rate_scheduler[uid](
-                        optimizer, **self._learning_rate_scheduler_kwargs[uid]
+                        self.optimizers[uid], **self._learning_rate_scheduler_kwargs[uid]
                     )
 
             self.checkpoint_modules[uid]["optimizer"] = self.optimizers[uid]

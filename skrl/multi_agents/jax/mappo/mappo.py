@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import functools
 import gymnasium
@@ -29,10 +29,10 @@ MAPPO_DEFAULT_CONFIG = {
     "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
     "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
+    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
+    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
     "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "shared_state_preprocessor": None,      # shared state preprocessor class (see skrl.resources.preprocessors)
-    "shared_state_preprocessor_kwargs": {}, # shared state preprocessor's kwargs (e.g. {"size": env.shared_observation_space})
+    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
     "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
     "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
 
@@ -76,23 +76,16 @@ def compute_gae(
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
 ) -> np.ndarray:
-    """Compute the Generalized Advantage Estimator (GAE)
+    """Compute the Generalized Advantage Estimator (GAE).
 
-    :param rewards: Rewards obtained by the agent
-    :type rewards: np.ndarray
-    :param dones: Signals to indicate that episodes have ended
-    :type dones: np.ndarray
-    :param values: Values obtained by the agent
-    :type values: np.ndarray
-    :param next_values: Next values obtained by the agent
-    :type next_values: np.ndarray
-    :param discount_factor: Discount factor
-    :type discount_factor: float
-    :param lambda_coefficient: Lambda coefficient
-    :type lambda_coefficient: float
+    :param rewards: Rewards obtained by the agent.
+    :param dones: Signals to indicate that episodes have ended.
+    :param values: Values obtained by the agent.
+    :param next_values: Next values obtained by the agent.
+    :param discount_factor: Discount factor.
+    :param lambda_coefficient: Lambda coefficient.
 
-    :return: Generalized Advantage Estimator
-    :rtype: np.ndarray
+    :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = np.zeros_like(rewards)
@@ -148,8 +141,7 @@ def _compute_gae(
 def _update_policy(
     policy_act,
     policy_state_dict,
-    sampled_states,
-    sampled_actions,
+    inputs,
     sampled_log_prob,
     sampled_advantages,
     ratio_clip,
@@ -158,9 +150,8 @@ def _update_policy(
 ):
     # compute policy loss
     def _policy_loss(params):
-        _, next_log_prob, outputs = policy_act(
-            {"states": sampled_states, "taken_actions": sampled_actions}, "policy", params
-        )
+        _, outputs = policy_act(inputs, role="policy", params=params)
+        next_log_prob = outputs["log_prob"]
 
         # compute approximate KL divergence
         ratio = next_log_prob - sampled_log_prob
@@ -189,7 +180,7 @@ def _update_policy(
 def _update_value(
     value_act,
     value_state_dict,
-    sampled_states,
+    inputs,
     sampled_values,
     sampled_returns,
     value_loss_scale,
@@ -198,7 +189,7 @@ def _update_value(
 ):
     # compute value loss
     def _value_loss(params):
-        predicted_values, _, _ = value_act({"states": sampled_states}, "value", params)
+        predicted_values, _ = value_act(inputs, role="value", params=params)
         if clip_predicted_values:
             predicted_values = sampled_values + jnp.clip(predicted_values - sampled_values, -value_clip, value_clip)
         return value_loss_scale * ((sampled_returns - predicted_values) ** 2).mean()
@@ -211,39 +202,33 @@ def _update_value(
 class MAPPO(MultiAgent):
     def __init__(
         self,
+        *,
         possible_agents: Sequence[str],
-        models: Mapping[str, Model],
+        models: Mapping[str, Mapping[str, Model]],
         memories: Optional[Mapping[str, Memory]] = None,
-        observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
-        action_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
+        observation_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
+        state_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
+        action_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
         device: Optional[Union[str, jax.Device]] = None,
         cfg: Optional[dict] = None,
-        shared_observation_spaces: Optional[Union[Mapping[str, int], Mapping[str, gymnasium.Space]]] = None,
     ) -> None:
-        """Multi-Agent Proximal Policy Optimization (MAPPO)
+        """Multi-Agent Proximal Policy Optimization (MAPPO).
 
         https://arxiv.org/abs/2103.01955
 
-        :param possible_agents: Name of all possible agents the environment could generate
-        :type possible_agents: list of str
-        :param models: Models used by the agents.
-                       External keys are environment agents' names. Internal keys are the models required by the algorithm
-        :type models: nested dictionary of skrl.models.jax.Model
-        :param memories: Memories to storage the transitions.
-        :type memories: dictionary of skrl.memory.jax.Memory, optional
-        :param observation_spaces: Observation/state spaces or shapes (default: ``None``)
-        :type observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
-        :param action_spaces: Action spaces or shapes (default: ``None``)
-        :type action_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or jax.Device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
-        :param shared_observation_spaces: Shared observation/state space or shape (default: ``None``)
-        :type shared_observation_spaces: dictionary of int, sequence of int or gymnasium.Space, optional
+
+        :param possible_agents: Name of all possible agents the environment could generate.
+        :param models: Agents' models.
+        :param memories: Memories to storage agents' data and environment transitions.
+        :param observation_spaces: Observation spaces.
+        :param state_spaces: State spaces.
+        :param action_spaces: Action spaces.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param cfg: Multi-agent's configuration.
+
+        :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(IPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
+        # _cfg = copy.deepcopy(MAPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
         _cfg = MAPPO_DEFAULT_CONFIG
         _cfg.update(cfg if cfg is not None else {})
         super().__init__(
@@ -251,23 +236,23 @@ class MAPPO(MultiAgent):
             models=models,
             memories=memories,
             observation_spaces=observation_spaces,
+            state_spaces=state_spaces,
             action_spaces=action_spaces,
             device=device,
             cfg=_cfg,
         )
 
-        self.shared_observation_spaces = shared_observation_spaces
-
         # models
         self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
         self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
 
+        # checkpoint models
         for uid in self.possible_agents:
-            # checkpoint models
             self.checkpoint_modules[uid]["policy"] = self.policies[uid]
             self.checkpoint_modules[uid]["value"] = self.values[uid]
 
-            # broadcast models' parameters in distributed runs
+        # broadcast models' parameters in distributed runs
+        for uid in self.possible_agents:
             if config.jax.is_distributed:
                 logger.info(f"Broadcasting models' parameters")
                 if self.policies[uid] is not None:
@@ -293,11 +278,12 @@ class MAPPO(MultiAgent):
 
         self._learning_rate = self._as_dict(self.cfg["learning_rate"])
         self._learning_rate_scheduler = self._as_dict(self.cfg["learning_rate_scheduler"])
+        self._learning_rate_scheduler_kwargs = self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])
 
+        self._observation_preprocessor = self._as_dict(self.cfg["observation_preprocessor"])
+        self._observation_preprocessor_kwargs = self._as_dict(self.cfg["observation_preprocessor_kwargs"])
         self._state_preprocessor = self._as_dict(self.cfg["state_preprocessor"])
         self._state_preprocessor_kwargs = self._as_dict(self.cfg["state_preprocessor_kwargs"])
-        self._shared_state_preprocessor = self._as_dict(self.cfg["shared_state_preprocessor"])
-        self._shared_state_preprocessor_kwargs = self._as_dict(self.cfg["shared_state_preprocessor_kwargs"])
         self._value_preprocessor = self._as_dict(self.cfg["value_preprocessor"])
         self._value_preprocessor_kwargs = self._as_dict(self.cfg["value_preprocessor_kwargs"])
 
@@ -318,13 +304,12 @@ class MAPPO(MultiAgent):
         for uid in self.possible_agents:
             policy = self.policies[uid]
             value = self.values[uid]
-
             if policy is not None and value is not None:
                 # scheduler
                 self.schedulers[uid] = None
                 if self._learning_rate_scheduler[uid]:
                     self.schedulers[uid] = self._learning_rate_scheduler[uid](
-                        **self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])[uid]
+                        **self._learning_rate_scheduler_kwargs[uid]
                     )
                 # optimizer
                 self.policy_optimizer[uid] = Adam(
@@ -343,39 +328,43 @@ class MAPPO(MultiAgent):
                 self.checkpoint_modules[uid]["policy_optimizer"] = self.policy_optimizer[uid]
                 self.checkpoint_modules[uid]["value_optimizer"] = self.value_optimizer[uid]
 
-            # set up preprocessors
-            if self._state_preprocessor[uid] is not None:
+        # set up preprocessors
+        for uid in self.possible_agents:
+            # - observations
+            if self._observation_preprocessor[uid]:
+                self._observation_preprocessor[uid] = self._observation_preprocessor[uid](
+                    **self._observation_preprocessor_kwargs[uid]
+                )
+                self.checkpoint_modules[uid]["observation_preprocessor"] = self._observation_preprocessor[uid]
+            else:
+                self._observation_preprocessor[uid] = self._empty_preprocessor
+            # - states
+            if self._state_preprocessor[uid]:
                 self._state_preprocessor[uid] = self._state_preprocessor[uid](**self._state_preprocessor_kwargs[uid])
                 self.checkpoint_modules[uid]["state_preprocessor"] = self._state_preprocessor[uid]
             else:
                 self._state_preprocessor[uid] = self._empty_preprocessor
-
-            if self._shared_state_preprocessor[uid] is not None:
-                self._shared_state_preprocessor[uid] = self._shared_state_preprocessor[uid](
-                    **self._shared_state_preprocessor_kwargs[uid]
-                )
-                self.checkpoint_modules[uid]["shared_state_preprocessor"] = self._shared_state_preprocessor[uid]
-            else:
-                self._shared_state_preprocessor[uid] = self._empty_preprocessor
-
-            if self._value_preprocessor[uid] is not None:
+            # - values
+            if self._value_preprocessor[uid]:
                 self._value_preprocessor[uid] = self._value_preprocessor[uid](**self._value_preprocessor_kwargs[uid])
                 self.checkpoint_modules[uid]["value_preprocessor"] = self._value_preprocessor[uid]
             else:
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
 
         # create tensors in memories
         if self.memories:
             for uid in self.possible_agents:
-                self.memories[uid].create_tensor(name="states", size=self.observation_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(
-                    name="shared_states", size=self.shared_observation_spaces[uid], dtype=jnp.float32
+                    name="observations", size=self.observation_spaces[uid], dtype=jnp.float32
                 )
+                self.memories[uid].create_tensor(name="states", size=self.state_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
@@ -385,20 +374,12 @@ class MAPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="advantages", size=1, dtype=jnp.float32)
 
-                # tensors sampled during training
-                self._tensors_names = [
-                    "states",
-                    "shared_states",
-                    "actions",
-                    "log_prob",
-                    "values",
-                    "returns",
-                    "advantages",
-                ]
+            self._tensors_names = ["observations", "states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
-        self._current_log_prob = []
-        self._current_shared_next_states = []
+        self._current_next_observations = {}
+        self._current_next_states = {}
+        self._current_log_prob = {}
 
         # set up models for just-in-time compilation with XLA
         for uid in self.possible_agents:
@@ -407,48 +388,56 @@ class MAPPO(MultiAgent):
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
     def act(
-        self, states: Mapping[str, Union[np.ndarray, jax.Array]], timestep: int, timesteps: int
-    ) -> Union[np.ndarray, jax.Array]:
-        """Process the environment's states to make a decision (actions) using the main policies
+        self,
+        observations: Mapping[str, Union[np.ndarray, jax.Array]],
+        states: Mapping[str, Union[np.ndarray, jax.Array, None]],
+        *,
+        timestep: int,
+        timesteps: int,
+    ) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[Union[np.ndarray, jax.Array], Any]]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: dictionary of np.ndarray or jax.Array
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: np.ndarray or jax.Array
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
-        # # sample random actions
-        # # TODO: fix for stochasticity, rnn and log_prob
-        # if timestep < self._random_timesteps:
-        #     return self.policy.random_act({"states": states}, role="policy")
+        actions = {}
+        log_prob = {}
+        outputs = {}
 
-        # sample stochastic actions
-        data = [
-            self.policies[uid].act({"states": self._state_preprocessor[uid](states[uid])}, role="policy")
-            for uid in self.possible_agents
-        ]
+        for uid in self.possible_agents:
+            inputs = {
+                "observations": self._observation_preprocessor[uid](observations[uid]),
+                "states": self._state_preprocessor[uid](states[uid]),
+            }
+            # sample random actions
+            # TODO, check for stochasticity
+            if timestep < self._random_timesteps:
+                actions[uid], outputs[uid] = self.policies[uid].random_act(inputs, role="policy")
 
-        actions = {uid: d[0] for uid, d in zip(self.possible_agents, data)}
-        log_prob = {uid: d[1] for uid, d in zip(self.possible_agents, data)}
-        outputs = {uid: d[2] for uid, d in zip(self.possible_agents, data)}
+            # sample stochastic actions
+            actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
+            log_prob[uid] = outputs[uid]["log_prob"]
 
-        if not self._jax:  # numpy backend
-            actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
-            log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
+            if not self._jax:  # numpy backend
+                actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
+                log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
 
         self._current_log_prob = log_prob
-
-        return actions, log_prob, outputs
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: Mapping[str, Union[np.ndarray, jax.Array]],
         states: Mapping[str, Union[np.ndarray, jax.Array]],
         actions: Mapping[str, Union[np.ndarray, jax.Array]],
         rewards: Mapping[str, Union[np.ndarray, jax.Array]],
+        next_observations: Mapping[str, Union[np.ndarray, jax.Array]],
         next_states: Mapping[str, Union[np.ndarray, jax.Array]],
         terminated: Mapping[str, Union[np.ndarray, jax.Array]],
         truncated: Mapping[str, Union[np.ndarray, jax.Array]],
@@ -456,34 +445,37 @@ class MAPPO(MultiAgent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: dictionary of np.ndarray or jax.Array
-        :param actions: Actions taken by the agent
-        :type actions: dictionary of np.ndarray or jax.Array
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: dictionary of np.ndarray or jax.Array
-        :param next_states: Next observations/states of the environment
-        :type next_states: dictionary of np.ndarray or jax.Array
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: dictionary of np.ndarray or jax.Array
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: dictionary of np.ndarray or jax.Array
-        :param infos: Additional information about the environment
-        :type infos: dictionary of any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
         if self.memories:
-            shared_states = infos["shared_states"]
-            self._current_shared_next_states = infos["shared_next_states"]
+            self._current_next_observations = next_observations
+            self._current_next_states = next_states
 
             for uid in self.possible_agents:
                 # reward shaping
@@ -491,9 +483,11 @@ class MAPPO(MultiAgent):
                     rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
-                values, _, _ = self.values[uid].act(
-                    {"states": self._shared_state_preprocessor[uid](shared_states)}, role="value"
-                )
+                inputs = {
+                    "observations": self._observation_preprocessor[uid](observations[uid]),
+                    "states": self._state_preprocessor[uid](states[uid]),
+                }
+                values, _ = self.values[uid].act(inputs, role="value")
                 if not self._jax:  # numpy backend
                     values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
@@ -504,51 +498,44 @@ class MAPPO(MultiAgent):
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
+                    observations=observations[uid],
                     states=states[uid],
                     actions=actions[uid],
                     rewards=rewards[uid],
-                    next_states=next_states[uid],
                     terminated=terminated[uid],
                     truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
-                    shared_states=shared_states,
                 )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+            self.enable_training_mode(True)
+            self.update(timestep=timestep, timesteps=timesteps)
+            self.enable_training_mode(False)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         for uid in self.possible_agents:
             policy = self.policies[uid]
@@ -556,11 +543,13 @@ class MAPPO(MultiAgent):
             memory = self.memories[uid]
 
             # compute returns and advantages
-            value.training = False
-            last_values, _, _ = value.act(
-                {"states": self._shared_state_preprocessor[uid](self._current_shared_next_states)}, role="value"
-            )  # TODO: .float()
-            value.training = True
+            inputs = {
+                "observations": self._observation_preprocessor[uid](self._current_next_observations[uid]),
+                "states": self._state_preprocessor[uid](self._current_next_states[uid]),
+            }
+            value.enable_training_mode(False)
+            last_values, _ = value.act(inputs, role="value")
+            value.enable_training_mode(True)
             if not self._jax:  # numpy backend
                 last_values = jax.device_get(last_values)
             last_values = self._value_preprocessor[uid](last_values, inverse=True)
@@ -592,8 +581,8 @@ class MAPPO(MultiAgent):
 
                 # mini-batches loop
                 for (
+                    sampled_observations,
                     sampled_states,
-                    sampled_shared_states,
                     sampled_actions,
                     sampled_log_prob,
                     sampled_values,
@@ -601,15 +590,16 @@ class MAPPO(MultiAgent):
                     sampled_advantages,
                 ) in sampled_batches:
 
-                    sampled_states = self._state_preprocessor[uid](sampled_states, train=not epoch)
-                    sampled_shared_states = self._shared_state_preprocessor[uid](sampled_shared_states, train=not epoch)
+                    inputs = {
+                        "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),
+                        "states": self._state_preprocessor[uid](sampled_states, train=not epoch),
+                    }
 
                     # compute policy loss
                     grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
                         policy.act,
                         policy.state_dict,
-                        sampled_states,
-                        sampled_actions,
+                        {**inputs, "taken_actions": sampled_actions},
                         sampled_log_prob,
                         sampled_advantages,
                         self._ratio_clip[uid],
@@ -627,14 +617,16 @@ class MAPPO(MultiAgent):
                     if config.jax.is_distributed:
                         grad = policy.reduce_parameters(grad)
                     self.policy_optimizer[uid] = self.policy_optimizer[uid].step(
-                        grad, policy, self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None
+                        grad=grad,
+                        model=policy,
+                        lr=self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None,
                     )
 
                     # compute value loss
                     grad, value_loss = _update_value(
                         value.act,
                         value.state_dict,
-                        sampled_shared_states,
+                        inputs,
                         sampled_values,
                         sampled_returns,
                         self._value_loss_scale[uid],
@@ -646,7 +638,9 @@ class MAPPO(MultiAgent):
                     if config.jax.is_distributed:
                         grad = value.reduce_parameters(grad)
                     self.value_optimizer[uid] = self.value_optimizer[uid].step(
-                        grad, value, self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None
+                        grad=grad,
+                        model=value,
+                        lr=self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None,
                     )
 
                     # update cumulative losses
@@ -663,7 +657,7 @@ class MAPPO(MultiAgent):
                         if config.jax.is_distributed:
                             kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
                             kl /= config.jax.world_size
-                        self._learning_rate[uid] = self.schedulers[uid](timestep, self._learning_rate[uid], kl)
+                        self._learning_rate[uid] = self.schedulers[uid](timestep, lr=self._learning_rate[uid], kl=kl)
                     else:
                         self._learning_rate[uid] *= self.schedulers[uid](timestep)
 

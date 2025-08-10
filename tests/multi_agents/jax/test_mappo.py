@@ -4,22 +4,17 @@ import pytest
 
 import gymnasium
 
-import torch
+import optax
 
-from skrl.memories.torch import RandomMemory
-from skrl.multi_agents.torch.mappo import MAPPO as MultiAgent
-from skrl.multi_agents.torch.mappo import MAPPO_DEFAULT_CONFIG as DEFAULT_CONFIG
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveLR
-from skrl.trainers.torch import SequentialTrainer
-from skrl.utils.model_instantiators.torch import (
-    categorical_model,
-    deterministic_model,
-    gaussian_model,
-    multivariate_gaussian_model,
-)
+from skrl.memories.jax import RandomMemory
+from skrl.multi_agents.jax.mappo import MAPPO as MultiAgent
+from skrl.multi_agents.jax.mappo import MAPPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.trainers.jax import SequentialTrainer
+from skrl.utils.model_instantiators.jax import categorical_model, deterministic_model, gaussian_model
 
-from ...utilities import MultiAgentEnv, check_config_keys, get_test_mixed_precision, is_device_available
+from ...utilities import MultiAgentEnv, check_config_keys
 
 
 @hypothesis.given(
@@ -32,7 +27,7 @@ from ...utilities import MultiAgentEnv, check_config_keys, get_test_mixed_precis
     discount_factor=st.floats(min_value=0, max_value=1),
     lambda_=st.floats(min_value=0, max_value=1),
     learning_rate=st.floats(min_value=1.0e-10, max_value=1),
-    learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
+    learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(optax.schedules.constant_schedule)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
     state_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
@@ -48,17 +43,17 @@ from ...utilities import MultiAgentEnv, check_config_keys, get_test_mixed_precis
     kl_threshold=st.floats(min_value=0, max_value=1),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
     time_limit_bootstrap=st.booleans(),
-    mixed_precision=st.booleans(),
 )
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
+    max_examples=25,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])
 @pytest.mark.parametrize("separate", [True])
 @pytest.mark.parametrize("asymmetric", [True])
-@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "MultivariateGaussianMixin", "CategoricalMixin"])
+@pytest.mark.parametrize("policy_structure", ["GaussianMixin", "CategoricalMixin"])
 def test_agent(
     capsys,
     device,
@@ -91,12 +86,7 @@ def test_agent(
     kl_threshold,
     rewards_shaper,
     time_limit_bootstrap,
-    mixed_precision,
 ):
-    # check device availability
-    if not is_device_available(device, backend="torch"):
-        pytest.skip(f"Device {device} not available")
-
     # spaces
     observation_spaces = {}
     state_spaces = {}
@@ -105,7 +95,7 @@ def test_agent(
         uid = f"agent_{i}"
         observation_spaces[uid] = gymnasium.spaces.Box(low=-1, high=1, shape=(max_num_agents,))
         state_spaces[uid] = gymnasium.spaces.Box(low=-1, high=1, shape=(6,)) if asymmetric else None  # common
-        if policy_structure in ["GaussianMixin", "MultivariateGaussianMixin"]:
+        if policy_structure in ["GaussianMixin"]:
             action_spaces[uid] = gymnasium.spaces.Box(low=-1, high=1, shape=(max_num_agents - 1,))
         elif policy_structure == "CategoricalMixin":
             action_spaces[uid] = gymnasium.spaces.Discrete(max_num_agents - 1)
@@ -117,7 +107,7 @@ def test_agent(
         action_spaces=action_spaces,
         num_envs=num_envs,
         device=device,
-        ml_framework="torch",
+        ml_framework="jax",
     )
 
     # models
@@ -152,15 +142,6 @@ def test_agent(
                     network=network["policy"],
                     output="ACTIONS",
                 )
-            elif policy_structure == "MultivariateGaussianMixin":
-                models[uid]["policy"] = multivariate_gaussian_model(
-                    observation_space=env.observation_space(uid),
-                    state_space=env.state_space(uid),
-                    action_space=env.action_space(uid),
-                    device=env.device,
-                    network=network["policy"],
-                    output="ACTIONS",
-                )
             elif policy_structure == "CategoricalMixin":
                 models[uid]["policy"] = categorical_model(
                     observation_space=env.observation_space(uid),
@@ -180,6 +161,9 @@ def test_agent(
             )
         else:
             raise ValueError("Separate is not supported for MAPPO, since it uses a centralized value function")
+        # instantiate models' state dict
+        for role, model in models[uid].items():
+            model.init_state_dict(role=role)
 
     # memory
     memories = {}
@@ -213,7 +197,6 @@ def test_agent(
         "kl_threshold": kl_threshold,
         "rewards_shaper": rewards_shaper,
         "time_limit_bootstrap": time_limit_bootstrap,
-        "mixed_precision": get_test_mixed_precision(mixed_precision),
         "experiment": {
             "directory": "",
             "experiment_name": "",
@@ -225,7 +208,7 @@ def test_agent(
         },
     }
     cfg["learning_rate_scheduler_kwargs"][
-        "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
+        "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "value"
     ] = learning_rate_scheduler_kwargs_value
     check_config_keys(cfg, DEFAULT_CONFIG)
     check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
@@ -249,15 +232,4 @@ def test_agent(
     }
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
-    if policy_structure == "CategoricalMixin":
-        try:
-            trainer.train()
-        except RuntimeError as e:
-            error_messages = [
-                "probability tensor contains either",
-                "invalid multinomial distribution",
-            ]
-            if not any(message in str(e) for message in error_messages):
-                raise e
-    else:
-        trainer.train()
+    trainer.train()

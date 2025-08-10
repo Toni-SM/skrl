@@ -118,7 +118,10 @@ class MultiAgent(ABC):
                 )
             elif set(_input) >= set(self.possible_agents):
                 return _input
-        return {name: copy.deepcopy(_input) for name in self.possible_agents}
+        try:
+            return {name: copy.deepcopy(_input) for name in self.possible_agents}
+        except TypeError:
+            return {name: _input for name in self.possible_agents}
 
     def _empty_preprocessor(self, _input: Any, *args, **kwargs) -> Any:
         """Empty preprocess method.

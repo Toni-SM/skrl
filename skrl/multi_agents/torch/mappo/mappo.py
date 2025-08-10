@@ -242,15 +242,7 @@ class MAPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="advantages", size=1, dtype=torch.float32)
 
-                self._tensors_names = [
-                    "observations",
-                    "states",
-                    "actions",
-                    "log_prob",
-                    "values",
-                    "returns",
-                    "advantages",
-                ]
+            self._tensors_names = ["observations", "states", "actions", "log_prob", "values", "returns", "advantages"]
 
         # create temporary variables needed for storage and computation
         self._current_next_observations = {}

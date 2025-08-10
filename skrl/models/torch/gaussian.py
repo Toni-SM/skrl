@@ -1,9 +1,9 @@
 from typing import Any, Literal, Mapping, Tuple, Union
 
-import gymnasium
-
 import torch
 from torch.distributions import Normal
+
+from skrl.utils.spaces.torch import compute_space_limits
 
 
 # speed up distribution construction by disabling checking
@@ -34,11 +34,8 @@ class GaussianMixin:
 
         :raises ValueError: If the reduction method is not valid.
         """
-        self._g_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
-
-        if self._g_clip_actions:
-            self._g_clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self._g_clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
+        self._g_clip_actions = clip_actions
+        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
 
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std

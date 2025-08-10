@@ -50,6 +50,8 @@ The following table provides a snapshot of the space sample conversion functions
 API (PyTorch)
 -------------
 
+.. autofunction:: skrl.utils.spaces.torch.compute_space_limits
+
 .. autofunction:: skrl.utils.spaces.torch.compute_space_size
 
 .. autofunction:: skrl.utils.spaces.torch.convert_gym_space
@@ -70,6 +72,8 @@ API (PyTorch)
 
 API (JAX)
 ---------
+
+.. autofunction:: skrl.utils.spaces.jax.compute_space_limits
 
 .. autofunction:: skrl.utils.spaces.jax.compute_space_size
 

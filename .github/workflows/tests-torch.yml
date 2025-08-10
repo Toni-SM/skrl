@@ -150,7 +150,6 @@ jobs:
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
         python -m pip install --quiet torch==1.10
-        python -m pip install --quiet PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip show torch numpy
@@ -330,7 +329,6 @@ jobs:
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet numpy
         python -m pip install --quiet torch
-        python -m pip install --quiet PyYAML
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip show torch numpy

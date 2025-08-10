@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.0.0] - unreleased
+### Added
+- Add `compute_space_limits` space utility to get Gymnasium spaces' limits
+
+### Changed (breaking changes)
+- Refactor the library to differentiate between environment observations and states (also known as privileged observation)
+
+### Removed
+- Remove checkpoints/models migration support from other RL libraries
+
 ## [1.4.3] - 2025-03-29
 ### Changed
 - Update the GitHub Actions workflows for testing and coverage

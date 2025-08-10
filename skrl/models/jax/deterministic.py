@@ -1,11 +1,11 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
-import gymnasium
-
 import flax
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+from skrl.utils.spaces.jax import compute_space_limits
 
 
 class DeterministicMixin:
@@ -15,11 +15,8 @@ class DeterministicMixin:
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
         :param role: Role played by the model.
         """
-        self._d_clip_actions = clip_actions and isinstance(self.action_space, gymnasium.Space)
-
-        if self._d_clip_actions:
-            self._d_clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-            self._d_clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+        self._d_clip_actions = clip_actions
+        self._d_clip_actions_min, self._d_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)

@@ -84,6 +84,8 @@ def _check_flattened_spaces(*, sample, spaces, num_envs, ml_framework):
         from skrl.utils.spaces.jax import compute_space_size
 
     for uid, space in spaces.items():
+        if space is None:
+            continue
         space_size = compute_space_size(space, occupied_size=True)
         assert (
             sample[uid].shape[0] == num_envs
@@ -351,4 +353,102 @@ class _AgentMock:
 
 
 class AgentMock(_AgentMock):
+    pass
+
+
+class _MultiAgentMock:
+    def __init__(
+        self,
+        *,
+        possible_agents,
+        observation_spaces,
+        state_spaces,
+        action_spaces,
+        num_envs,
+        device,
+        ml_framework,
+        **kwargs,
+    ):
+        assert ml_framework in ["torch", "jax"]
+        self._ml_framework = ml_framework
+
+        # Multi-agent properties
+        self.possible_agents = possible_agents
+        self.observation_spaces = observation_spaces
+        self.state_spaces = state_spaces
+        self.action_spaces = action_spaces
+        self.num_envs = num_envs
+        self.num_agents = len(self.possible_agents)
+        if self._ml_framework == "torch":
+            self.device = config.torch.parse_device(device)
+        elif self._ml_framework == "jax":
+            self.device = config.jax.parse_device(device)
+
+        self.memories = {}
+        self.models = {}
+
+    def init(self, *, trainer_cfg):
+        pass
+
+    def enable_training_mode(self, enabled):
+        pass
+
+    def enable_models_training_mode(self, enabled):
+        pass
+
+    def act(self, observations, states, *, timestep, timesteps):
+        _check_flattened_spaces(
+            sample=observations, spaces=self.observation_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+        _check_flattened_spaces(
+            sample=states, spaces=self.state_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+        actions = _sample_flattened_spaces(
+            spaces=self.action_spaces, num_envs=self.num_envs, device=self.device, ml_framework=self._ml_framework
+        )
+        outputs = {uid: {"mean_actions": actions[uid]} for uid in actions}
+        return actions, outputs
+
+    def record_transition(
+        self,
+        *,
+        observations,
+        states,
+        actions,
+        rewards,
+        next_observations,
+        next_states,
+        terminated,
+        truncated,
+        infos,
+        timestep,
+        timesteps,
+    ):
+        _check_flattened_spaces(
+            sample=observations, spaces=self.observation_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+        _check_flattened_spaces(
+            sample=next_observations,
+            spaces=self.observation_spaces,
+            num_envs=self.num_envs,
+            ml_framework=self._ml_framework,
+        )
+        _check_flattened_spaces(
+            sample=states, spaces=self.state_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+        _check_flattened_spaces(
+            sample=next_states, spaces=self.state_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+        _check_flattened_spaces(
+            sample=actions, spaces=self.action_spaces, num_envs=self.num_envs, ml_framework=self._ml_framework
+        )
+
+    def pre_interaction(self, *, timestep, timesteps):
+        pass
+
+    def post_interaction(self, *, timestep, timesteps):
+        pass
+
+
+class MultiAgentMock(_MultiAgentMock):
     pass

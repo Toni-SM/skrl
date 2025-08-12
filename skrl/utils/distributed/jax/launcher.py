@@ -8,10 +8,9 @@ import sys
 
 
 def _get_args_parser() -> argparse.ArgumentParser:
-    """Instantiate and configure the argument parser object
+    """Instantiate and configure the argument parser object.
 
-    :return: Argument parser object
-    :rtype: argparse.ArgumentParser
+    :return: Argument parser object.
     """
     parser = argparse.ArgumentParser(description="JAX Distributed Training Launcher")
 
@@ -45,20 +44,13 @@ def _start_processes(
     daemon: bool = False,
     start_method: str = "spawn",
 ) -> None:
-    """Start child processes according the specified configuration and wait for them to join
+    """Start child processes according the specified configuration and wait for them to join.
 
-    :param cmd: Command to run on each child process
-    :type cmd: list of str
-    :param envs: List of environment variables for each child process
-    :type envs: list of dictionaries
-    :param nprocs: Number of child processes to start
-    :type nprocs: int
-    :param daemon: Whether the child processes are daemonic (default: ``False``).
-                   See Python multiprocessing module for more details
-    :type daemon: bool
-    :param start_method: Method which should be used to start child processes (default: ``"spawn"``).
-                         See Python multiprocessing module for more details
-    :type start_method: str
+    :param cmd: Command to run on each child process.
+    :param envs: List of environment variables for each child process.
+    :param nprocs: Number of child processes to start.
+    :param daemon: Whether the child processes are daemonic. See Python multiprocessing module for more details.
+    :param start_method: Method used to start child processes. See Python multiprocessing module for more details.
     """
     mp.set_start_method(method=start_method, force=True)
 
@@ -73,18 +65,16 @@ def _start_processes(
 
 
 def _process(cmd: Sequence[str], env: Mapping[str, str]) -> None:
-    """Run a command in the current process
+    """Run a command in the current process.
 
-    :param cmd: Command to run
-    :type cmd: list of str
-    :param envs: Environment variables for the current process
-    :type envs: dict
+    :param cmd: Command to run.
+    :param env: Environment variables for the current process.
     """
     subprocess.run(cmd, env=env)
 
 
 def launch():
-    """Main entry point for launching distributed runs"""
+    """Main entry point for launching distributed runs."""
     args = _get_args_parser().parse_args()
 
     # validate distributed config

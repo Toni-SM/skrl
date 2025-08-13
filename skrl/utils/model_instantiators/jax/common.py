@@ -11,10 +11,10 @@ import jax.numpy as jnp
 def one_hot_encoding(space: spaces.Space, x: jax.Array) -> jax.Array:
     """One-hot encode a tensorized Discrete or MultiDiscrete space.
 
-    :param space: Gymnasium space
-    :param x: Tensorized sample/value of the given space
+    :param space: Gymnasium space.
+    :param x: Tensorized sample/value of the given space.
 
-    :return: One-hot encoded tensor
+    :return: One-hot encoded tensor.
     """
     if isinstance(space, spaces.Discrete):
         return jnn.one_hot(x[:, 0], space.n, dtype=jnp.float32)
@@ -139,7 +139,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
 def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
     """Generate network modules.
 
-    :param layers: Layer definitions
+    :param layers: Layer definitions.
     :param activations: Activation function definitions applied after each layer (except ``flatten`` layers).
         If a single activation function is specified (str or list), it will be applied after each layer.
 

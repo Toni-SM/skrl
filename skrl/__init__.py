@@ -74,9 +74,9 @@ class _Config(object):
                 """Parse the input device and return a :py:class:`~torch.device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
-                               the default available device will be returned instead.
+                    the default available device will be returned instead.
                 :param validate: Whether to check that the specified device is valid. Since PyTorch does not check if
-                                 the specified device index is valid, a tensor is created for the verification.
+                    the specified device index is valid, a tensor is created for the verification.
 
                 :return: PyTorch device.
                 """
@@ -208,7 +208,7 @@ class _Config(object):
                     This method returns (forces to use) the device local to process in a distributed environment.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
-                               the default available device will be returned instead.
+                    the default available device will be returned instead.
 
                 :return: JAX Device.
                 """

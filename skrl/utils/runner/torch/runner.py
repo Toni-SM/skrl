@@ -15,12 +15,12 @@ from skrl.utils import set_seed
 
 class Runner:
     def __init__(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]) -> None:
-        """Experiment runner
+        """Experiment runner.
 
-        Class that configures and instantiates skrl components to execute training/evaluation workflows in a few lines of code
+        Configure and instantiate skrl components to execute training/evaluation workflows in a few lines of code.
 
-        :param env: Environment to train on
-        :param cfg: Runner configuration
+        :param env: Environment to train on.
+        :param cfg: Runner configuration.
         """
         self._env = env
         self._cfg = cfg
@@ -36,21 +36,21 @@ class Runner:
 
     @property
     def trainer(self) -> Trainer:
-        """Trainer instance"""
+        """Trainer instance."""
         return self._trainer
 
     @property
     def agent(self) -> Agent:
-        """Agent instance"""
+        """Agent instance."""
         return self._agent
 
     @staticmethod
     def load_cfg_from_yaml(path: str) -> dict:
-        """Load a runner configuration from a yaml file
+        """Load a runner configuration from a yaml file.
 
-        :param path: File path
+        :param path: File path.
 
-        :return: Loaded configuration, or an empty dict if an error has occurred
+        :return: Loaded configuration, or an empty dict if an error has occurred.
         """
         try:
             import yaml
@@ -66,9 +66,9 @@ class Runner:
             return {}
 
     def _component(self, name: str) -> Type:
-        """Get skrl component (e.g.: agent, trainer, etc..) from string identifier
+        """Get skrl component (e.g.: agent, trainer, etc..) from string identifier.
 
-        :return: skrl component
+        :return: skrl component.
         """
         component = None
         name = name.lower()
@@ -151,11 +151,11 @@ class Runner:
         return component
 
     def _process_cfg(self, cfg: dict) -> dict:
-        """Convert simple types to skrl classes/components
+        """Convert simple types to skrl classes/components.
 
-        :param cfg: A configuration dictionary
+        :param cfg: A configuration dictionary.
 
-        :return: Updated dictionary
+        :return: Updated dictionary.
         """
         _direct_eval = [
             "learning_rate_scheduler",
@@ -192,12 +192,12 @@ class Runner:
     def _generate_models(
         self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]
     ) -> Mapping[str, Mapping[str, Model]]:
-        """Generate model instances according to the environment specification and the given config
+        """Generate model instances according to the environment specification and the given config.
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
 
-        :return: Model instances
+        :return: Model instances.
         """
         multi_agent = isinstance(env, MultiAgentEnvWrapper)
         device = env.device
@@ -322,13 +322,13 @@ class Runner:
         cfg: Mapping[str, Any],
         models: Mapping[str, Mapping[str, Model]],
     ) -> Agent:
-        """Generate agent instance according to the environment specification and the given config and models
+        """Generate agent instance according to the environment specification and the given config and models.
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
-        :param models: Agent's model instances
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
+        :param models: Agent's model instances.
 
-        :return: Agent instances
+        :return: Agent instances.
         """
         multi_agent = isinstance(env, MultiAgentEnvWrapper)
         device = env.device
@@ -469,13 +469,13 @@ class Runner:
     def _generate_trainer(
         self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], agent: Agent
     ) -> Trainer:
-        """Generate trainer instance according to the environment specification and the given config and agent
+        """Generate trainer instance according to the environment specification and the given config and agent.
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
-        :param agent: Agent's model instances
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
+        :param agent: Agent's model instances.
 
-        :return: Trainer instances
+        :return: Trainer instances.
         """
         # get trainer class and remove 'class' field
         try:
@@ -488,11 +488,11 @@ class Runner:
         return trainer_class(env=env, agents=agent, cfg=cfg["trainer"])
 
     def run(self, mode: str = "train") -> None:
-        """Run the training/evaluation
+        """Run the training/evaluation.
 
-        :param mode: Running mode: ``"train"`` for training or ``"eval"`` for evaluation (default: ``"train"``)
+        :param mode: Running mode: ``"train"`` for training or ``"eval"`` for evaluation.
 
-        :raises ValueError: The specified running mode is not valid
+        :raises ValueError: The specified running mode is not valid.
         """
         if mode == "train":
             self._trainer.train()

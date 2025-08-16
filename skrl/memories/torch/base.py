@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Sequence, Union
+from typing import List, Literal, Mapping, Optional, Sequence, Union
 
 import csv
 import datetime
@@ -178,7 +178,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: torch.Tensor) -> None:
+    def add_samples(self, **tensors: Mapping[str, torch.Tensor]) -> None:
         """Add/store samples in memory.
 
         .. important::

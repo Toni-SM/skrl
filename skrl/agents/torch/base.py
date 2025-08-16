@@ -375,13 +375,15 @@ class Agent:
             modules[name] = self._get_internal_value(module)
         torch.save(modules, path)
 
-    def load(self, path: str) -> None:
+    def load(self, path: str, skip_modules: list[str] | None=None) -> None:
         """Load the model from the specified path
 
         The final storage device is determined by the constructor of the model
 
         :param path: Path to load the model from
         :type path: str
+        :param skip_modules: List of module names to skip loading (default: ``None``)
+        :type skip_modules: list[str] or None, optional
         """
         if version.parse(torch.__version__) >= version.parse("1.13"):
             modules = torch.load(path, map_location=self.device, weights_only=False)  # prevent torch:FutureWarning
@@ -389,6 +391,9 @@ class Agent:
             modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
             for name, data in modules.items():
+                if skip_modules is not None and name in skip_modules:
+                    logger.warning(f"Skipping loading of module {name}.")
+                    continue
                 module = self.checkpoint_modules.get(name, None)
                 if module is not None:
                     if hasattr(module, "load_state_dict"):

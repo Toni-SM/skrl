@@ -59,6 +59,9 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
     action = torch.ones((num_envs, 1))
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "isaacgym-preview4"), IsaacGymPreview3Wrapper)
+
     # load wrap the environment
     original_env = IsaacGymEnv(num_states)
     # TODO: env = wrap_env(original_env, "auto")
@@ -82,16 +85,27 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
+        state = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
         assert isinstance(info, Mapping)
+        if num_states:
+            assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
+        else:
+            assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
+            if num_states:
+                assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
+            else:
+                assert state is None
 
     env.close()

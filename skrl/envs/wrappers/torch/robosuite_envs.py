@@ -12,45 +12,41 @@ from skrl.utils.spaces.torch import convert_gym_space
 
 class RobosuiteWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Robosuite environment wrapper
+        """Robosuite environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported robosuite environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        if env is None:
+            return
 
         # observation and action spaces
         self._observation_space = self._spec_to_space(self._env.observation_spec())
         self._action_space = self._spec_to_space(self._env.action_spec)
 
     @property
-    def state_space(self) -> gymnasium.Space:
-        """State space
-
-        An alias for the ``observation_space`` property
-        """
-        return convert_gym_space(self._observation_space)
+    def state_space(self) -> None:
+        """State space."""
+        pass
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         return convert_gym_space(self._observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         return convert_gym_space(self._action_space)
 
     def _spec_to_space(self, spec: Any) -> gymnasium.Space:
-        """Convert the robosuite spec to a Gym space
+        """Convert the robosuite spec to a Gym space.
 
-        :param spec: The robosuite spec to convert
-        :type spec: Any supported robosuite spec
+        :param spec: The robosuite spec to convert to.
 
-        :raises: ValueError if the spec type is not supported
+        :return: Gym space.
 
-        :return: The Gym space
-        :rtype: gymnasium.Space
+        :raises: ValueError if the spec type is not supported.
         """
         if type(spec) is tuple:
             return gymnasium.spaces.Box(shape=spec[0].shape, dtype=np.float32, low=spec[0], high=spec[1])
@@ -67,15 +63,13 @@ class RobosuiteWrapper(Wrapper):
             raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
 
     def _observation_to_tensor(self, observation: Any, spec: Optional[Any] = None) -> torch.Tensor:
-        """Convert the observation to a flat tensor
+        """Convert the observation to a flat tensor.
 
-        :param observation: The observation to convert to a tensor
-        :type observation: Any supported observation
+        :param observation: The observation to convert to a tensor.
 
-        :raises: ValueError if the observation spec type is not supported
+        :return: The observation as a flat tensor.
 
-        :return: The observation as a flat tensor
-        :rtype: torch.Tensor
+        :raises: ValueError if the observation spec type is not supported.
         """
         spec = spec if spec is not None else self._env.observation_spec()
 
@@ -89,15 +83,13 @@ class RobosuiteWrapper(Wrapper):
             raise ValueError(f"Observation spec type {type(spec)} not supported. Please report this issue")
 
     def _tensor_to_action(self, actions: torch.Tensor) -> Any:
-        """Convert the action to the robosuite expected format
+        """Convert the action to the robosuite expected format.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :raise ValueError: If the action space type is not supported
+        :return: The action in the robosuite expected format.
 
-        :return: The action in the robosuite expected format
-        :rtype: Any supported robosuite action
+        :raise ValueError: If the action space type is not supported.
         """
         spec = self._env.action_spec
 
@@ -107,13 +99,11 @@ class RobosuiteWrapper(Wrapper):
             raise ValueError(f"Action spec type {type(spec)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         observation, reward, terminated, info = self._env.step(self._tensor_to_action(actions))
         truncated = False
@@ -128,19 +118,22 @@ class RobosuiteWrapper(Wrapper):
             info,
         )
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> None:
+        """Get the environment state."""
+        pass
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment.
+
+        :return: The state of the environment.
         """
         observation = self._env.reset()
         return self._observation_to_tensor(observation), {}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

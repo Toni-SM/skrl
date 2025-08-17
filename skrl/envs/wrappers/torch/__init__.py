@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import re
 
@@ -19,8 +19,28 @@ from skrl.envs.wrappers.torch.robosuite_envs import RobosuiteWrapper
 __all__ = ["wrap_env", "Wrapper", "MultiAgentEnvWrapper"]
 
 
-def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wrapper, MultiAgentEnvWrapper]:
-    """Wrap an environment to use a common interface
+def wrap_env(
+    env: Any,
+    wrapper: Literal[
+        "auto",
+        "gym",
+        "gymnasium",
+        "dm",
+        "brax",
+        "isaaclab",
+        "isaaclab-single-agent",
+        "isaacgym-preview2",
+        "isaacgym-preview3",
+        "isaacgym-preview4",
+        "omniverse-isaacgym",
+        "robosuite",
+        "pettingzoo",
+        "isaaclab-multi-agent",
+        "bidexhands",
+    ] = "auto",
+    verbose: bool = True,
+) -> Union[Wrapper, MultiAgentEnvWrapper]:
+    """Wrap an environment to use a common interface.
 
     Example::
 
@@ -29,57 +49,53 @@ def wrap_env(env: Any, wrapper: str = "auto", verbose: bool = True) -> Union[Wra
         >>> # assuming that there is an environment called "env"
         >>> env = wrap_env(env)
 
-    :param env: The environment to be wrapped
-    :type env: Any
-    :param wrapper: The type of wrapper to use (default: ``"auto"``).
-                    If ``"auto"``, the wrapper will be automatically selected based on the environment class.
-                    The supported wrappers are described in the following table:
+    :param env: The environment instance to be wrapped.
+    :param wrapper: The type of wrapper to use.
+        If ``"auto"``, the wrapper will be automatically selected based on the environment class.
+        The supported wrappers are described in the following table:
 
-                    .. list-table:: Single-agent environments |br|
-                        :header-rows: 1
+        .. list-table:: Single-agent environments |br|
+            :header-rows: 1
 
-                        * - Environment
-                          - Wrapper tag
-                        * - OpenAI Gym
-                          - ``"gym"``
-                        * - Gymnasium
-                          - ``"gymnasium"``
-                        * - DeepMind
-                          - ``"dm"``
-                        * - Brax
-                          - ``"brax"``
-                        * - Isaac Lab
-                          - ``"isaaclab"`` (``"isaaclab-single-agent"``)
-                        * - Isaac Gym preview 2
-                          - ``"isaacgym-preview2"``
-                        * - Isaac Gym preview 3
-                          - ``"isaacgym-preview3"``
-                        * - Isaac Gym preview 4
-                          - ``"isaacgym-preview4"``
-                        * - Omniverse Isaac Gym
-                          - ``"omniverse-isaacgym"``
-                        * - Robosuite
-                          - ``"robosuite"``
+            * - Environment
+                - Wrapper tag
+            * - OpenAI Gym
+                - ``"gym"``
+            * - Gymnasium
+                - ``"gymnasium"``
+            * - DeepMind
+                - ``"dm"``
+            * - Brax
+                - ``"brax"``
+            * - Isaac Lab
+                - ``"isaaclab"`` (``"isaaclab-single-agent"``)
+            * - Isaac Gym preview 2
+                - ``"isaacgym-preview2"``
+            * - Isaac Gym preview 3
+                - ``"isaacgym-preview3"``
+            * - Isaac Gym preview 4
+                - ``"isaacgym-preview4"``
+            * - Omniverse Isaac Gym
+                - ``"omniverse-isaacgym"``
+            * - Robosuite
+                - ``"robosuite"``
 
-                    .. list-table:: Multi-agent environments |br|
-                        :header-rows: 1
+        .. list-table:: Multi-agent environments |br|
+            :header-rows: 1
 
-                        * - Environment
-                          - Wrapper tag
-                        * - Petting Zoo
-                          - ``"pettingzoo"``
-                        * - Isaac Lab
-                          - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
-                        * - Bi-DexHands
-                          - ``"bidexhands"``
-    :type wrapper: str, optional
-    :param verbose: Whether to print the wrapper type (default: ``True``)
-    :type verbose: bool, optional
+            * - Environment
+                - Wrapper tag
+            * - Petting Zoo
+                - ``"pettingzoo"``
+            * - Isaac Lab
+                - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
+            * - Bi-DexHands
+                - ``"bidexhands"``
+    :param verbose: Whether to print verbose information about the environment and the wrapper.
 
-    :raises ValueError: Unknown wrapper type
+    :return: Wrapped environment instance.
 
-    :return: Wrapped environment
-    :rtype: Wrapper or MultiAgentEnvWrapper
+    :raises ValueError: Unknown wrapper type.
     """
 
     def _get_wrapper_name(env, verbose):

@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 import gymnasium
 
@@ -16,12 +16,13 @@ from skrl.utils.spaces.torch import (
 
 class BraxWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Brax environment wrapper
+        """Brax environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Brax environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        if env is None:
+            return
 
         import brax.envs.wrappers.gym
         import brax.envs.wrappers.torch
@@ -33,40 +34,49 @@ class BraxWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         return convert_gym_space(self._unwrapped.observation_space, squeeze_batch_dimension=True)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         return convert_gym_space(self._unwrapped.action_space, squeeze_batch_dimension=True)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         observation, reward, terminated, info = self._env.step(unflatten_tensorized_space(self.action_space, actions))
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         truncated = torch.zeros_like(terminated)
         return observation, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), info
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> Union[torch.Tensor, None]:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: torch.Tensor and any other info
+        :return: State.
+        """
+        try:
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        except:
+            return None
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         observation = self._env.reset()
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation))
         return observation, {}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         frame = self._env.render(mode="rgb_array")
 
         # render the frame using OpenCV
@@ -80,6 +90,6 @@ class BraxWrapper(Wrapper):
         return frame
 
     def close(self) -> None:
-        """Close the environment"""
-        # self._env.close() raises AttributeError: 'VectorGymWrapper' object has no attribute 'closed'
+        """Close the environment."""
+        # TODO: check self._env.close() raises AttributeError: 'VectorGymWrapper' object has no attribute 'closed'
         pass

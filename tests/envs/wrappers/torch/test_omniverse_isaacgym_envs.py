@@ -36,14 +36,24 @@ class OmniverseIsaacGymEnv(gym.Env):
             np.ones(self.num_states, dtype=np.float32) * -np.Inf, np.ones(self.num_states, dtype=np.float32) * np.Inf
         )
 
+    def _get_states(self):
+        if self.num_states > 0:
+            return torch.ones((self.num_envs, self.num_states), device=self.device, dtype=torch.float32)
+        else:
+            return torch.zeros((self.num_envs, self.num_states), device=self.device, dtype=torch.float32)
+
     def reset(self):
-        observations = {"obs": torch.ones((self.num_envs, self.num_observations), device=self.device)}
+        observations = {
+            "obs": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32),
+            "states": self._get_states(),
+        }
         return observations
 
     def step(self, actions):
         assert actions.clone().shape == torch.Size([self.num_envs, 1])
         observations = {
-            "obs": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32)
+            "obs": torch.ones((self.num_envs, self.num_observations), device=self.device, dtype=torch.float32),
+            "states": self._get_states(),
         }
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         dones = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
@@ -60,6 +70,9 @@ class OmniverseIsaacGymEnv(gym.Env):
 def test_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
     action = torch.ones((num_envs, 1))
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "omniverse-isaacgym"), OmniverseIsaacGymWrapper)
 
     # load wrap the environment
     original_env = OmniverseIsaacGymEnv(num_states)
@@ -84,16 +97,27 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
+        state = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
         assert isinstance(info, Mapping)
+        if num_states:
+            assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
+        else:
+            assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
+            if num_states:
+                assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
+            else:
+                assert state is None
 
     env.close()

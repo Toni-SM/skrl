@@ -12,6 +12,9 @@ def test_env(capsys: pytest.CaptureFixture):
     num_envs = 1
     action = torch.ones((num_envs, 1))
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "gymnasium"), GymnasiumWrapper)
+
     # load wrap the environment
     original_env = gym.make("Pendulum-v1")
     env = wrap_env(original_env, "auto")
@@ -32,16 +35,20 @@ def test_env(capsys: pytest.CaptureFixture):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
         assert isinstance(info, Mapping)
+        assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
+            assert state is None
 
     env.close()
 
@@ -50,6 +57,9 @@ def test_env(capsys: pytest.CaptureFixture):
 def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     num_envs = 10
     action = torch.ones((num_envs, 1))
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "gymnasium"), GymnasiumWrapper)
 
     # load wrap the environment
     try:
@@ -75,16 +85,21 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        states = env.state()
         observation, info = env.reset()  # edge case: vectorized environments are autoreset
+        states = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
         assert isinstance(info, Mapping)
+        assert states is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            states = env.state()
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
+            assert states is None
 
     env.close()

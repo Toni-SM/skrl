@@ -16,6 +16,9 @@ def test_env(capsys: pytest.CaptureFixture):
     possible_agents = [f"piston_{i}" for i in range(num_agents)]
     action = {f"piston_{i}": torch.ones((num_envs, 1)) for i in range(num_agents)}
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "pettingzoo"), PettingZooWrapper)
+
     # load wrap the environment
     original_env = pistonball_v6.parallel_env(n_pistons=num_agents, continuous=True, max_cycles=125)
     env = wrap_env(original_env, "auto")

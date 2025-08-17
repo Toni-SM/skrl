@@ -10,20 +10,20 @@ from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, u
 
 class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper
+        """Isaac Lab environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
         self._reset_once = True
         self._observations = None
+        self._states = None
         self._info = {}
 
     @property
     def state_space(self) -> Union[gymnasium.Space, None]:
-        """State space"""
+        """State space."""
         try:
             return self._unwrapped.single_observation_space["critic"]
         except KeyError:
@@ -35,63 +35,72 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         try:
             return self._unwrapped.single_observation_space["policy"]
         except:
-            return self._unwrapped.observation_space["policy"]
+            return self._unwrapped.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         try:
             return self._unwrapped.single_action_space
         except:
             return self._unwrapped.action_space
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = unflatten_tensorized_space(self.action_space, actions)
         observations, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+        states = observations.get("critic", None)
+        if states is not None:
+            self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> Union[torch.Tensor, None]:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: torch.Tensor and any other info
+        :return: State.
+        """
+        return self._states
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
             self._observations = flatten_tensorized_space(
                 tensorize_space(self.observation_space, observations["policy"])
             )
+            states = observations.get("critic", None)
+            if states is not None:
+                self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()
 
 
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper for multi-agent implementation
+        """Isaac Lab environment wrapper for multi-agent implementation.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -106,13 +115,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         Mapping[str, torch.Tensor],
         Mapping[str, Any],
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dictionary of torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
         observations, rewards, terminated, truncated, self._info = self._env.step(actions)
@@ -128,10 +135,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: torch.Tensor and any other info
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
@@ -143,10 +149,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         return self._observations, self._info
 
     def state(self) -> torch.Tensor:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: torch.Tensor
+        :return: State.
         """
         try:
             state = self._env.state()
@@ -157,9 +162,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         return state
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

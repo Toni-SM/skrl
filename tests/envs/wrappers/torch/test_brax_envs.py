@@ -15,6 +15,9 @@ def test_env(capsys: pytest.CaptureFixture):
     num_envs = 10
     action = torch.ones((num_envs, 1))
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "brax"), BraxWrapper)
+
     # load wrap the environment
     try:
         import brax.envs
@@ -43,11 +46,15 @@ def test_env(capsys: pytest.CaptureFixture):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
+        state = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 4])
         assert isinstance(info, Mapping)
+        assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             try:
                 env.render()
             except AttributeError as e:
@@ -57,5 +64,6 @@ def test_env(capsys: pytest.CaptureFixture):
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
+            assert state is None
 
     env.close()

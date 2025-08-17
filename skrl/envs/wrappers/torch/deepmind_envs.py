@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 import collections
 import gymnasium
@@ -18,10 +18,9 @@ from skrl.utils.spaces.torch import (
 
 class DeepMindWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """DeepMind environment wrapper
+        """DeepMind environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported DeepMind environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -31,24 +30,22 @@ class DeepMindWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         return self._spec_to_space(self._env.observation_spec())
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         return self._spec_to_space(self._env.action_spec())
 
     def _spec_to_space(self, spec: Any) -> gymnasium.Space:
-        """Convert the DeepMind spec to a gymnasium space
+        """Convert the DeepMind spec to a gymnasium space.
 
-        :param spec: The DeepMind spec to convert
-        :type spec: Any supported DeepMind spec
+        :param spec: The DeepMind spec to convert.
 
-        :raises: ValueError if the spec type is not supported
+        :return: The gymnasium space.
 
-        :return: The gymnasium space
-        :rtype: gymnasium.Space
+        :raises: ValueError if the spec type is not supported.
         """
         if isinstance(spec, self._specs.DiscreteArray):
             return gymnasium.spaces.Discrete(spec.num_values)
@@ -72,13 +69,11 @@ class DeepMindWrapper(Wrapper):
             raise ValueError(f"Spec type {type(spec)} not supported. Please report this issue")
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = untensorize_space(self.action_space, unflatten_tensorized_space(self.action_space, actions))
         timestep = self._env.step(actions)
@@ -100,11 +95,22 @@ class DeepMindWrapper(Wrapper):
             info,
         )
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> Union[torch.Tensor, None]:
+        """Get the environment state.
 
-        :return: The state of the environment
-        :rtype: torch.Tensor
+        :return: State.
+        """
+        try:
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        except:
+            return None
+
+    def reset(self) -> Tuple[torch.Tensor, Any]:
+        """Reset the environment.
+
+        :return: The state of the environment.
         """
         timestep = self._env.reset()
         observation = flatten_tensorized_space(
@@ -113,10 +119,9 @@ class DeepMindWrapper(Wrapper):
         return observation, {}
 
     def render(self, *args, **kwargs) -> np.ndarray:
-        """Render the environment
+        """Render the environment.
 
-        OpenCV is used to render the environment.
-        Install OpenCV with ``pip install opencv-python``
+        OpenCV is used to render the environment (install OpenCV with ``pip install opencv-python``).
         """
         frame = self._env.physics.render(480, 640, camera_id=0)
 
@@ -131,5 +136,5 @@ class DeepMindWrapper(Wrapper):
         return frame
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

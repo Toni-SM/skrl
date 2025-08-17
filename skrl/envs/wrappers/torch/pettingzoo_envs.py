@@ -15,10 +15,9 @@ from skrl.utils.spaces.torch import (
 
 class PettingZooWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """PettingZoo (parallel) environment wrapper
+        """PettingZoo (Parallel API) environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported PettingZoo (parallel) environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -29,13 +28,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         Mapping[str, torch.Tensor],
         Mapping[str, Any],
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dictionary of torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = {
             uid: untensorize_space(self.action_spaces[uid], unflatten_tensorized_space(self.action_spaces[uid], action))
@@ -63,20 +60,18 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         return observations, rewards, terminated, truncated, infos
 
     def state(self) -> torch.Tensor:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: torch.Tensor
+        :return: State.
         """
         return flatten_tensorized_space(
             tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device)
         )
 
     def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: tuple of dictionaries of torch.Tensor and any other info
+        :return: Observation, info.
         """
         outputs = self._env.reset()
         if isinstance(outputs, collections.abc.Mapping):
@@ -93,9 +88,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         return observations, infos
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

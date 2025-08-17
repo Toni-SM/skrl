@@ -230,6 +230,9 @@ class Memory(ABC):
         * ``current_num_envs = num_envs``: store samples and increment the memory index (1st index) by one.
         * ``current_num_envs < num_envs``: store samples and increment the environment index (2nd index)
           by the current number of environments.
+        * ``current_num_envs > num_envs`` and ``num_envs = 1``: store multiple samples and increment the memory index
+          (1st index) by the number of samples. If the number of samples is greater than the remaining memory size,
+          the memory will be filled and circular buffer will overwrite the oldest data with the remaining samples.
 
         :param tensors: Sample data, as key-value arguments (keys: tensor names). Non-existing tensors will be skipped.
 
@@ -257,6 +260,9 @@ class Memory(ABC):
             self.memory_index += 1
         # multi environment (current_num_envs < num_envs)
         elif dim == 2 and shape[0] < self.num_envs:
+            raise NotImplementedError  # TODO: implement
+        # single environment - multi sample (num_envs = 1, current_num_envs > 1)
+        elif dim == 2 and self.num_envs == 1:
             raise NotImplementedError  # TODO: implement
         # single environment (current_num_envs = 1, implicit)
         elif dim == 1:

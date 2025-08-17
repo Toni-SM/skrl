@@ -193,6 +193,9 @@ class Memory(ABC):
         * ``current_num_envs = num_envs``: store samples and increment the memory index (1st index) by one.
         * ``current_num_envs < num_envs``: store samples and increment the environment index (2nd index)
           by the current number of environments.
+        * ``current_num_envs > num_envs`` and ``num_envs = 1``: store multiple samples and increment the memory index
+          (1st index) by the number of samples. If the number of samples is greater than the remaining memory size,
+          the memory will be filled and circular buffer will overwrite the oldest data with the remaining samples.
 
         :param tensors: Sample data, as key-value arguments (keys: tensor names). Non-existing tensors will be skipped.
 
@@ -219,6 +222,22 @@ class Memory(ABC):
                 if name in self.tensors and tensor is not None:
                     self.tensors[name][self.memory_index, self.env_index : self.env_index + shape[0]].copy_(tensor)
             self.env_index += shape[0]
+        # single environment - multi sample (num_envs = 1, current_num_envs > 1)
+        elif dim == 2 and self.num_envs == 1:
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    num_samples = min(shape[0], self.memory_size - self.memory_index)
+                    # store the first n samples
+                    self.tensors[name][self.memory_index : self.memory_index + num_samples].copy_(
+                        tensor[:num_samples].unsqueeze(dim=1)
+                    )
+                    # store remaining samples
+                    remaining_samples = shape[0] - num_samples
+                    if remaining_samples > 0:
+                        self.tensors[name][:remaining_samples].copy_(tensor[num_samples:].unsqueeze(dim=1))
+                        self.memory_index = remaining_samples
+                    else:
+                        self.memory_index += num_samples
         # single environment (current_num_envs = 1, implicit)
         elif dim == 1:
             for name, tensor in tensors.items():

@@ -85,21 +85,21 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
-        states = env.state()
+        state = env.state()
         observation, info = env.reset()  # edge case: vectorized environments are autoreset
-        states = env.state()
+        state = env.state()
         assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
         assert isinstance(info, Mapping)
-        assert states is None
+        assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
-            states = env.state()
+            state = env.state()
             env.render()
             assert isinstance(observation, torch.Tensor) and observation.shape == torch.Size([num_envs, 3])
             assert isinstance(reward, torch.Tensor) and reward.shape == torch.Size([num_envs, 1])
             assert isinstance(terminated, torch.Tensor) and terminated.shape == torch.Size([num_envs, 1])
             assert isinstance(truncated, torch.Tensor) and truncated.shape == torch.Size([num_envs, 1])
             assert isinstance(info, Mapping)
-            assert states is None
+            assert state is None
 
     env.close()

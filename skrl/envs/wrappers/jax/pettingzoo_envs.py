@@ -16,10 +16,9 @@ from skrl.utils.spaces.jax import (
 
 class PettingZooWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """PettingZoo (parallel) environment wrapper
+        """PettingZoo (Parallel API) environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported PettingZoo (parallel) environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -30,13 +29,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         Mapping[str, Union[np.ndarray, jax.Array]],
         Mapping[str, Any],
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dict of np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         if self._jax:
             actions = jax.device_get(actions)
@@ -66,10 +63,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         return observations, rewards, terminated, truncated, infos
 
     def state(self) -> Union[np.ndarray, jax.Array]:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: np.ndarray or jax.Array
+        :return: State.
         """
         state = flatten_tensorized_space(
             tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device, _jax=False),
@@ -80,10 +76,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         return state
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
+        :return: Observation, info.
         """
         outputs = self._env.reset()
         if isinstance(outputs, collections.abc.Mapping):
@@ -104,9 +99,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         return observations, infos
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

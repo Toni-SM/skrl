@@ -19,10 +19,9 @@ from skrl.utils.spaces.jax import (
 
 class GymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """OpenAI Gym environment wrapper
+        """OpenAI Gym environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported OpenAI Gym environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -50,14 +49,14 @@ class GymWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_observation_space)
         return convert_gym_space(self._env.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
@@ -69,13 +68,11 @@ class GymWrapper(Wrapper):
         Union[np.ndarray, jax.Array],
         Any,
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         if self._jax or isinstance(actions, jax.Array):
             actions = np.asarray(jax.device_get(actions))
@@ -119,11 +116,25 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+    def state(self) -> Union[Union[np.ndarray, jax.Array], None]:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: State.
+        """
+        try:
+            state = flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device, _jax=False), _jax=False
+            )
+        except:
+            return None
+        if self._jax:
+            state = jax.device_put(state, device=self.device)
+        return state
+
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
@@ -156,11 +167,11 @@ class GymWrapper(Wrapper):
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         if self._vectorized:
             return None
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

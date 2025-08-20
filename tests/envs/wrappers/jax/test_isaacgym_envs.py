@@ -66,6 +66,9 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: str):
     num_envs = 10
     action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "isaacgym-preview4"), IsaacGymPreview3Wrapper)
+
     # load wrap the environment
     original_env = IsaacGymEnv(num_states)
     # TODO: env = wrap_env(original_env, "auto")
@@ -89,16 +92,27 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
+        state = env.state()
         assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
         assert isinstance(info, Mapping)
+        if num_states:
+            assert isinstance(state, Array) and state.shape == (num_envs, num_states)
+        else:
+            assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
             assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
             assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
             assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
             assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
+            if num_states:
+                assert isinstance(state, Array) and state.shape == (num_envs, num_states)
+            else:
+                assert state is None
 
     env.close()

@@ -20,6 +20,9 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     num_envs = 1
     action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
 
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "gym"), GymWrapper)
+
     # load wrap the environment
     original_env = gym.make("Pendulum-v1")
     env = wrap_env(original_env, "auto")
@@ -40,16 +43,20 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
         assert isinstance(info, Mapping)
+        assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
             assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
             assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
             assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
             assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
+            assert state is None
 
     env.close()
 
@@ -61,7 +68,10 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorizati
     Array = jax.Array if backend == "jax" else np.ndarray
 
     num_envs = 10
-    action = jnp.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "gym"), GymWrapper)
 
     # load wrap the environment
     original_env = gym.vector.make("Pendulum-v1", num_envs=num_envs, asynchronous=(vectorization_mode == "async"))
@@ -84,16 +94,21 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorizati
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        states = env.state()
         observation, info = env.reset()  # edge case: vectorized environments are autoreset
+        states = env.state()
         assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
         assert isinstance(info, Mapping)
+        assert states is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            states = env.state()
             env.render()
             assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
             assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
             assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
             assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
+            assert states is None
 
     env.close()

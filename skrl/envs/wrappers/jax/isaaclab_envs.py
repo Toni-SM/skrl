@@ -42,21 +42,23 @@ def _torch2jax(tensor, to_jax=True):
 
 class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper
+        """Isaac Lab environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        if env is None:
+            return
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
+        self._states = None
         self._info = {}
 
     @property
     def state_space(self) -> Union[gymnasium.Space, None]:
-        """State space"""
+        """State space."""
         try:
             return self._unwrapped.single_observation_space["critic"]
         except KeyError:
@@ -68,15 +70,15 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         try:
             return self._unwrapped.single_observation_space["policy"]
         except:
-            return self._unwrapped.observation_space["policy"]
+            return self._unwrapped.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         try:
             return self._unwrapped.single_action_space
         except:
@@ -89,25 +91,27 @@ class IsaacLabWrapper(Wrapper):
         Union[np.ndarray, jax.Array],
         Any,
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = _jax2torch(actions, self._env_device, self._jax)
         actions = unflatten_tensorized_space(self.action_space, actions)
 
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
-        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
 
+        self._observations = _torch2jax(
+            flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"])), self._jax
+        )
         terminated = terminated.to(dtype=torch.int8)
         truncated = truncated.to(dtype=torch.int8)
+        states = observations.get("critic", None)
+        if states is not None:
+            self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)), self._jax)
 
-        self._observations = _torch2jax(observations, self._jax)
         return (
             self._observations,
             _torch2jax(reward.view(-1, 1), self._jax),
@@ -116,36 +120,49 @@ class IsaacLabWrapper(Wrapper):
             self._info,
         )
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+    def state(self) -> Union[np.ndarray, jax.Array, None]:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: State.
+        """
+        return self._states
+
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
-            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
-            self._observations = _torch2jax(observations, self._jax)
+            self._observations = _torch2jax(
+                flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"])), self._jax
+            )
+            states = observations.get("critic", None)
+            if states is not None:
+                self._states = _torch2jax(
+                    flatten_tensorized_space(tensorize_space(self.state_space, states)), self._jax
+                )
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()
 
 
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper for multi-agent implementation
+        """Isaac Lab environment wrapper for multi-agent implementation.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        if env is None:
+            return
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
@@ -159,13 +176,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         Mapping[str, Union[np.ndarray, jax.Array]],
         Mapping[str, Any],
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dictionary of np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = {uid: _jax2torch(value, self._env_device, self._jax) for uid, value in actions.items()}
         actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
@@ -186,10 +201,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
@@ -202,10 +216,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         return self._observations, self._info
 
     def state(self) -> Union[np.ndarray, jax.Array, None]:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: np.ndarray, jax.Array or None
+        :return: State.
         """
         try:
             state = self._env.state()
@@ -217,9 +230,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         return state
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

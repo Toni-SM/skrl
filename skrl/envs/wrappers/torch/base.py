@@ -71,7 +71,7 @@ class Wrapper(ABC):
 
     @abstractmethod
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment
+        """Render the environment.
 
         :return: Any value from the wrapped environment.
         """
@@ -130,7 +130,7 @@ class MultiAgentEnvWrapper(ABC):
     def __init__(self, env: Any) -> None:
         """Base wrapper class for multi-agent environments.
 
-        :param env: The multi-agent environment to wrap.
+        :param env: The multi-agent environment instance to wrap.
         """
         self._env = env
         try:

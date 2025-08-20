@@ -40,25 +40,26 @@ def _torch2jax(tensor, to_jax=True):
 
 class OmniverseIsaacGymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Omniverse Isaac Gym environment wrapper
+        """Omniverse Isaac Gym environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Omniverse Isaac Gym environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        if env is None:
+            return
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
+        self._states = None
         self._info = {}
 
     def run(self, trainer: Optional["omni.isaac.gym.vec_env.vec_env_mt.TrainerMT"] = None) -> None:
-        """Run the simulation in the main thread
+        """Run the simulation in the main thread.
 
-        This method is valid only for the Omniverse Isaac Gym multi-threaded environments
+        This method is valid only for the Omniverse Isaac Gym multi-threaded environments.
 
-        :param trainer: Trainer which should implement a ``run`` method that initiates the RL loop on a new thread
-        :type trainer: omni.isaac.gym.vec_env.vec_env_mt.TrainerMT, optional
+        :param trainer: Trainer which should implement a ``run`` method that initiates the RL loop on a new thread.
         """
         self._env.run(trainer)
 
@@ -69,13 +70,11 @@ class OmniverseIsaacGymWrapper(Wrapper):
         Union[np.ndarray, jax.Array],
         Any,
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = _jax2torch(actions, self._env_device, self._jax)
 
@@ -84,13 +83,17 @@ class OmniverseIsaacGymWrapper(Wrapper):
                 unflatten_tensorized_space(self.action_space, actions)
             )
 
-        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
+        self._observations = _torch2jax(
+            flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"])), self._jax
+        )
         terminated = terminated.to(dtype=torch.int8)
         truncated = (
             self._info["time_outs"].to(dtype=torch.int8) if "time_outs" in self._info else torch.zeros_like(terminated)
         )
+        states = observations.get("states", None)
+        if states is not None and states.shape[-1]:
+            self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)), self._jax)
 
-        self._observations = _torch2jax(observations, self._jax)
         return (
             self._observations,
             _torch2jax(reward.view(-1, 1), self._jax),
@@ -99,23 +102,35 @@ class OmniverseIsaacGymWrapper(Wrapper):
             self._info,
         )
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+    def state(self) -> Union[np.ndarray, jax.Array, None]:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: State.
+        """
+        return self._states
+
+    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         if self._reset_once:
             observations = self._env.reset()
-            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"]))
-            self._observations = _torch2jax(observations, self._jax)
+            self._observations = _torch2jax(
+                flatten_tensorized_space(tensorize_space(self.observation_space, observations["obs"])), self._jax
+            )
+            states = observations.get("states", None)
+            if states is not None and states.shape[-1]:
+                self._states = _torch2jax(
+                    flatten_tensorized_space(tensorize_space(self.state_space, states)), self._jax
+                )
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

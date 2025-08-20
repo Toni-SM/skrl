@@ -38,10 +38,9 @@ def _torch2jax(tensor, to_jax=True):
 
 class BiDexHandsWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """Bi-DexHands wrapper
+        """Bi-DexHands wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Bi-DexHands environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -52,27 +51,27 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
 
     @property
     def agents(self) -> Sequence[str]:
-        """Names of all current agents
+        """Names of all current agents.
 
-        These may be changed as an environment progresses (i.e. agents can be added or removed)
+        These may be changed as an environment progresses (i.e. agents can be added or removed).
         """
         return self.possible_agents
 
     @property
     def possible_agents(self) -> Sequence[str]:
-        """Names of all possible agents the environment could generate
+        """Names of all possible agents the environment could generate.
 
-        These can not be changed as an environment progresses
+        These can not be changed as an environment progresses.
         """
         return [f"agent_{i}" for i in range(self.num_agents)]
 
     @property
     def state_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """State spaces
+        """State spaces.
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
         this property returns a dictionary (for consistency with the other space-related properties) with the same
-        space for all the agents
+        space for all the agents.
         """
         return {
             uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.share_observation_space)
@@ -80,12 +79,12 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
 
     @property
     def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Observation spaces"""
+        """Observation spaces."""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.observation_space)}
 
     @property
     def action_spaces(self) -> Mapping[str, gymnasium.Space]:
-        """Action spaces"""
+        """Action spaces."""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.action_space)}
 
     def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> Tuple[
@@ -95,13 +94,11 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         Mapping[str, Union[np.ndarray, jax.Array]],
         Mapping[str, Any],
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dict of np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dict of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = [_jax2torch(actions[uid], self._env.rl_device, self._jax) for uid in self.possible_agents]
 
@@ -122,18 +119,16 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return self._observations, rewards, terminated, truncated, self._info
 
     def state(self) -> Union[np.ndarray, jax.Array]:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: np.ndarray of jax.Array
+        :return: State.
         """
         return self._states
 
     def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: tuple of dict of np.ndarray of jax.Array and any other info
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, states, _ = self._env.reset()
@@ -147,9 +142,9 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         pass

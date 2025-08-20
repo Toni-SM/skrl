@@ -17,10 +17,9 @@ from skrl.utils.spaces.jax import (
 
 class GymnasiumWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Gymnasium environment wrapper
+        """Gymnasium environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Gymnasium environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -40,14 +39,14 @@ class GymnasiumWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         if self._vectorized:
             return self._env.single_observation_space
         return self._env.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         if self._vectorized:
             return self._env.single_action_space
         return self._env.action_space
@@ -59,13 +58,11 @@ class GymnasiumWrapper(Wrapper):
         Union[np.ndarray, jax.Array],
         Any,
     ]:
-        """Perform a step in the environment
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         if self._jax or isinstance(actions, jax.Array):
             actions = np.asarray(jax.device_get(actions))
@@ -98,25 +95,24 @@ class GymnasiumWrapper(Wrapper):
         return observation, reward, terminated, truncated, info
 
     def state(self) -> Union[np.ndarray, jax.Array, None]:
-        """Get the environment state
+        """Get the environment state.
 
-        :return: State
-        :rtype: np.ndarray or jax.Array
+        :return: State.
         """
-        if hasattr(self._unwrapped, "state"):
+        try:
             state = flatten_tensorized_space(
-                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device, _jax=False), _jax=False
             )
-            if self._jax:
-                state = jax.device_put(state, device=self.device)
-            return state
-        return None
+        except:
+            return None
+        if self._jax:
+            state = jax.device_put(state, device=self.device)
+        return state
 
     def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: Observation, info.
         """
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
@@ -141,11 +137,11 @@ class GymnasiumWrapper(Wrapper):
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         if self._vectorized:
             return self._env.call("render", *args, **kwargs)
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

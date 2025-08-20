@@ -32,7 +32,7 @@ class IsaacGymPreview2Wrapper(Wrapper):
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         return convert_gym_space(self._unwrapped.action_space)
 
     def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:

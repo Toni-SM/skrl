@@ -23,7 +23,8 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
 
     # check wrapper definition
-    assert isinstance(wrap_env(None, "brax"), BraxWrapper)
+    with pytest.raises(AttributeError):
+        assert isinstance(wrap_env(None, "brax"), BraxWrapper)
 
     # load wrap the environment
     try:

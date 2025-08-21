@@ -21,8 +21,6 @@ class BraxWrapper(Wrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
-        if env is None:
-            return
 
         import brax.envs.wrappers.gym
         import brax.envs.wrappers.torch

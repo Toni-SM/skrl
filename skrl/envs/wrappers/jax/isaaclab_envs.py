@@ -47,8 +47,6 @@ class IsaacLabWrapper(Wrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
-        if env is None:
-            return
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
@@ -161,8 +159,6 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
-        if env is None:
-            return
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True

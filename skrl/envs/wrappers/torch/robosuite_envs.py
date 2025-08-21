@@ -17,8 +17,6 @@ class RobosuiteWrapper(Wrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
-        if env is None:
-            return
 
         # observation and action spaces
         self._observation_space = self._spec_to_space(self._env.observation_spec())

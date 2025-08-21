@@ -79,7 +79,8 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
     action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
 
     # check wrapper definition
-    assert isinstance(wrap_env(None, "omniverse-isaacgym"), OmniverseIsaacGymWrapper)
+    with pytest.raises(AttributeError):
+        assert isinstance(wrap_env(None, "omniverse-isaacgym"), OmniverseIsaacGymWrapper)
 
     # load wrap the environment
     original_env = OmniverseIsaacGymEnv(num_states)

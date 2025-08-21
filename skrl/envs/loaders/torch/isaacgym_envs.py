@@ -12,12 +12,11 @@ __all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3", "load_isa
 
 @contextmanager
 def cwd(new_path: str) -> None:
-    """Context manager to change the current working directory
+    """Context manager to change the current working directory.
 
-    This function restores the current working directory after the context manager exits
+    This function restores the current working directory after the context manager exits.
 
-    :param new_path: The new path to change to
-    :type new_path: str
+    :param new_path: The new path to change to.
     """
     current_path = os.getcwd()
     os.chdir(new_path)
@@ -28,13 +27,11 @@ def cwd(new_path: str) -> None:
 
 
 def _omegaconf_to_dict(config) -> dict:
-    """Convert OmegaConf config to dict
+    """Convert OmegaConf config to dict.
 
-    :param config: The OmegaConf config
-    :type config: OmegaConf.Config
+    :param config: The OmegaConf config.
 
-    :return: The config as dict
-    :rtype: dict
+    :return: The config as dict.
     """
     # return config.to_container(dict)
     from omegaconf import DictConfig
@@ -46,12 +43,10 @@ def _omegaconf_to_dict(config) -> dict:
 
 
 def _print_cfg(d, indent=0) -> None:
-    """Print the environment configuration
+    """Print the environment configuration.
 
-    :param d: The dictionary to print
-    :type d: dict
-    :param indent: The indentation level (default: ``0``)
-    :type indent: int, optional
+    :param d: The dictionary to print.
+    :param indent: The indentation level.
     """
     for key, value in d.items():
         if isinstance(value, dict):
@@ -68,34 +63,26 @@ def load_isaacgym_env_preview2(
     isaacgymenvs_path: str = "",
     show_cfg: bool = True,
 ):
-    """Load an Isaac Gym environment (preview 2)
+    """Load an Isaac Gym environment (preview 2).
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: Isaac Gym environment configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param isaacgymenvs_path: The path to the ``rlgpu`` directory (default: ``""``).
-                              If empty, the path will obtained from isaacgym package metadata
-    :type isaacgymenvs_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified.
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param cli_args: Isaac Gym environment configuration and command line arguments.
+    :param isaacgymenvs_path: The path to the ``rlgpu`` directory.
+        If empty, the path will obtained from isaacgym package metadata.
+    :param show_cfg: Whether to print the configuration.
 
-    :raises ValueError: The task name has not been defined,
-                        neither by the function parameter nor by the command line arguments
-    :raises RuntimeError: The isaacgym package is not installed or the path is wrong
+    :return: Isaac Gym environment (preview 2).
 
-    :return: Isaac Gym environment (preview 2)
-    :rtype: tasks.base.vec_task.VecTask
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises RuntimeError: The isaacgym package is not installed or the path is wrong.
     """
     import isaacgym
 
@@ -210,35 +197,28 @@ def load_isaacgym_env_preview3(
     isaacgymenvs_path: str = "",
     show_cfg: bool = True,
 ):
-    """Load an Isaac Gym environment (preview 3)
+    """Load an Isaac Gym environment (preview 3).
 
     Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: IsaacGymEnvs configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory (default: ``""``).
-                              If empty, the path will obtained from isaacgymenvs package metadata
-    :type isaacgymenvs_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified.
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param cli_args: IsaacGymEnvs configuration and command line arguments.
+    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory.
+        If empty, the path will obtained from ``isaacgymenvs`` package metadata.
+    :param show_cfg: Whether to print the configuration.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
-    :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
+    :return: Isaac Gym environment (preview 3).
 
-    :return: Isaac Gym environment (preview 3)
-    :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises RuntimeError: The ``isaacgymenvs`` package is not installed or the path is wrong.
     """
     import isaacgym
     import isaacgymenvs
@@ -381,34 +361,27 @@ def load_isaacgym_env_preview4(
     isaacgymenvs_path: str = "",
     show_cfg: bool = True,
 ):
-    """Load an Isaac Gym environment (preview 4)
+    """Load an Isaac Gym environment (preview 4).
 
     Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: IsaacGymEnvs configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory (default: ``""``).
-                              If empty, the path will obtained from isaacgymenvs package metadata
-    :type isaacgymenvs_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified.
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param cli_args: IsaacGymEnvs configuration and command line arguments.
+    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory.
+        If empty, the path will obtained from ``isaacgymenvs`` package metadata.
+    :param show_cfg: Whether to print the configuration.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
-    :raises RuntimeError: The isaacgymenvs package is not installed or the path is wrong
+    :return: Isaac Gym environment (preview 4).
 
-    :return: Isaac Gym environment (preview 4)
-    :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises RuntimeError: The ``isaacgymenvs`` package is not installed or the path is wrong.
     """
     return load_isaacgym_env_preview3(task_name, num_envs, headless, cli_args, isaacgymenvs_path, show_cfg)

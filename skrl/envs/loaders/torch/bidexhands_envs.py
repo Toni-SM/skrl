@@ -12,12 +12,11 @@ __all__ = ["load_bidexhands_env"]
 
 @contextmanager
 def cwd(new_path: str) -> None:
-    """Context manager to change the current working directory
+    """Context manager to change the current working directory.
 
-    This function restores the current working directory after the context manager exits
+    This function restores the current working directory after the context manager exits.
 
-    :param new_path: The new path to change to
-    :type new_path: str
+    :param new_path: The new path to change to.
     """
     current_path = os.getcwd()
     os.chdir(new_path)
@@ -28,12 +27,10 @@ def cwd(new_path: str) -> None:
 
 
 def _print_cfg(d, indent=0) -> None:
-    """Print the environment configuration
+    """Print the environment configuration.
 
-    :param d: The dictionary to print
-    :type d: dict
-    :param indent: The indentation level (default: ``0``)
-    :type indent: int, optional
+    :param d: The dictionary to print.
+    :param indent: The indentation level.
     """
     for key, value in d.items():
         if isinstance(value, dict):
@@ -50,33 +47,26 @@ def load_bidexhands_env(
     bidexhands_path: str = "",
     show_cfg: bool = True,
 ):
-    """Load a Bi-DexHands environment
+    """Load a Bi-DexHands environment.
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: Isaac Gym environment configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param bidexhands_path: The path to the ``bidexhands`` directory (default: ``""``).
-                            If empty, the path will obtained from bidexhands package metadata
-    :type bidexhands_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified.
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param cli_args: Isaac Gym environment configuration and command line arguments.
+    :param bidexhands_path: The path to the ``bidexhands`` directory.
+        If empty, the path will obtained from ``bidexhands`` package metadata.
+    :param show_cfg: Whether to print the configuration.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
-    :raises RuntimeError: The bidexhands package is not installed or the path is wrong
+    :return: Bi-DexHands environment (preview 4).
 
-    :return: Bi-DexHands environment (preview 4)
-    :rtype: isaacgymenvs.tasks.base.vec_task.VecTask
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises RuntimeError: The ``bidexhands`` package is not installed or the path is wrong.
     """
     import isaacgym  # isort:skip
     import bidexhands

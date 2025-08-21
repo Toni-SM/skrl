@@ -11,13 +11,11 @@ __all__ = ["load_omniverse_isaacgym_env"]
 
 
 def _omegaconf_to_dict(config) -> dict:
-    """Convert OmegaConf config to dict
+    """Convert OmegaConf config to dict.
 
-    :param config: The OmegaConf config
-    :type config: OmegaConf.Config
+    :param config: The OmegaConf config.
 
-    :return: The config as dict
-    :rtype: dict
+    :return: The config as dict.
     """
     # return config.to_container(dict)
     from omegaconf import DictConfig
@@ -29,12 +27,10 @@ def _omegaconf_to_dict(config) -> dict:
 
 
 def _print_cfg(d, indent=0) -> None:
-    """Print the environment configuration
+    """Print the environment configuration.
 
-    :param d: The dictionary to print
-    :type d: dict
-    :param indent: The indentation level (default: ``0``)
-    :type indent: int, optional
+    :param d: The dictionary to print.
+    :param indent: The indentation level.
     """
     for key, value in d.items():
         if isinstance(value, dict):
@@ -53,39 +49,30 @@ def load_omniverse_isaacgym_env(
     multi_threaded: bool = False,
     timeout: int = 30,
 ) -> Union["VecEnvBase", "VecEnvMT"]:
-    """Load an Omniverse Isaac Gym environment (OIGE)
+    """Load an Omniverse Isaac Gym environment (OIGE).
 
     Omniverse Isaac Gym benchmark environments: https://github.com/isaac-sim/OmniIsaacGymEnvs
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: OIGE configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory (default: ``""``).
-                              If empty, the path will obtained from omniisaacgymenvs package metadata
-    :type omniisaacgymenvs_path: str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
-    :param multi_threaded: Whether to use multi-threaded environment (default: ``False``)
-    :type multi_threaded: bool, optional
-    :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment (default: ``30``)
-    :type timeout: int, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified.
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified.
+    :param cli_args: OIGE configuration and command line arguments.
+    :param omniisaacgymenvs_path: The path to the ``omniisaacgymenvs`` directory.
+        If empty, the path will obtained from ``omniisaacgymenvs`` package metadata.
+    :param show_cfg: Whether to print the configuration.
+    :param multi_threaded: Whether to use multi-threaded environment.
+    :param timeout: Seconds to wait for data when queue is empty in multi-threaded environment.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
-    :raises RuntimeError: The omniisaacgymenvs package is not installed or the path is wrong
+    :return: Omniverse Isaac Gym environment.
 
-    :return: Omniverse Isaac Gym environment
-    :rtype: omni.isaac.gym.vec_env.vec_env_base.VecEnvBase or omni.isaac.gym.vec_env.vec_env_mt.VecEnvMT
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises RuntimeError: The ``omniisaacgymenvs`` package is not installed or the path is wrong.
     """
     import omegaconf
     import omniisaacgymenvs  # type: ignore

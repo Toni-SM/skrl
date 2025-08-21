@@ -9,12 +9,10 @@ __all__ = ["load_isaaclab_env"]
 
 
 def _print_cfg(d, indent=0) -> None:
-    """Print the environment configuration
+    """Print the environment configuration.
 
-    :param d: The dictionary to print
-    :type d: dict
-    :param indent: The indentation level (default: ``0``)
-    :type indent: int, optional
+    :param d: The dictionary to print.
+    :param indent: The indentation level.
     """
     for key, value in d.items():
         if isinstance(value, dict):
@@ -30,7 +28,7 @@ def load_isaaclab_env(
     cli_args: Sequence[str] = [],
     show_cfg: bool = True,
 ):
-    """Load an Isaac Lab environment
+    """Load an Isaac Lab environment.
 
     Isaac Lab: https://isaac-sim.github.io/IsaacLab
 
@@ -42,27 +40,21 @@ def load_isaaclab_env(
     - ``--task``: Name of the task
     - ``--num_envs``: Seed used for the environment
 
-    :param task_name: The name of the task (default: ``""``).
-                      If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
-                      Command line argument has priority over function parameter if both are specified
-    :type task_name: str, optional
-    :param num_envs: Number of parallel environments to create (default: ``None``).
-                     If not specified, the default number of environments defined in the task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type num_envs: int, optional
-    :param headless: Whether to use headless mode (no rendering) (default: ``None``).
-                     If not specified, the default task configuration is used.
-                     Command line argument has priority over function parameter if both are specified
-    :type headless: bool, optional
-    :param cli_args: Isaac Lab configuration and command line arguments (default: ``[]``)
-    :type cli_args: list of str, optional
-    :param show_cfg: Whether to print the configuration (default: ``True``)
-    :type show_cfg: bool, optional
+    :param task_name: The name of the task.
+        If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
+        Command line argument has priority over function parameter if both are specified
+    :param num_envs: Number of parallel environments to create.
+        If not specified, the default number of environments defined in the task configuration is used.
+        Command line argument has priority over function parameter if both are specified
+    :param headless: Whether to use headless mode (no rendering).
+        If not specified, the default task configuration is used.
+        Command line argument has priority over function parameter if both are specified
+    :param cli_args: Isaac Lab configuration and command line arguments.
+    :param show_cfg: Whether to print the configuration.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments
+    :return: Isaac Lab environment.
 
-    :return: Isaac Lab environment
-    :rtype: gymnasium.Env
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
     """
     import argparse
     import atexit

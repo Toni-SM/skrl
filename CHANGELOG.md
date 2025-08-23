@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [2.0.0] - unreleased
 ### Added
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits
+- Add `ScopedTimer` utils to measure code execution time
+- Log agent inference and algorithm update, and environment steeping time to TensorBoard
 
 ### Changed (breaking changes)
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)

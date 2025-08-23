@@ -109,3 +109,25 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     config.jax.key = seed
 
     return seed
+
+
+class Timer:
+    def __enter__(self):
+        self._elapsed_time = None
+        self._start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._elapsed_time = time.time() - self._start_time
+
+    @property
+    def elapsed_time(self) -> float:
+        if self._elapsed_time is None:
+            return time.time() - self._start_time
+        return self._elapsed_time
+
+    @property
+    def elapsed_time_ms(self) -> float:
+        if self._elapsed_time is None:
+            return (time.time() - self._start_time) * 1000
+        return self._elapsed_time * 1000

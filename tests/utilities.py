@@ -296,6 +296,9 @@ class _AgentMock:
     def enable_models_training_mode(self, enabled):
         pass
 
+    def track_data(self, key, value):
+        pass
+
     def act(self, observations, states, *, timestep, timesteps):
         _check_flattened_space(
             sample=observations, space=self.observation_space, num_envs=self.num_envs, ml_framework=self._ml_framework
@@ -394,6 +397,9 @@ class _MultiAgentMock:
         pass
 
     def enable_models_training_mode(self, enabled):
+        pass
+
+    def track_data(self, key, value):
         pass
 
     def act(self, observations, states, *, timestep, timesteps):

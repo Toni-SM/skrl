@@ -111,7 +111,9 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     return seed
 
 
-class Timer:
+class ScopedTimer:
+    """Scoped timer that can be used to time the execution of a block of code."""
+
     def __enter__(self):
         self._elapsed_time = None
         self._start_time = time.time()
@@ -122,12 +124,32 @@ class Timer:
 
     @property
     def elapsed_time(self) -> float:
+        """Elapsed time (in seconds).
+
+        .. note::
+
+            If called within the scope of the context manager, the elapsed time is updated to reflect the time
+            spent within the scope. If called outside the context manager scope, the elapsed time is fixed to
+            the time at which the context manager was exited.
+
+        :return: Elapsed time in seconds.
+        """
         if self._elapsed_time is None:
             return time.time() - self._start_time
         return self._elapsed_time
 
     @property
     def elapsed_time_ms(self) -> float:
+        """Elapsed time (in milliseconds).
+
+        .. note::
+
+            If called within the scope of the context manager, the elapsed time is updated to reflect the time
+            spent within the scope. If called outside the context manager scope, the elapsed time is fixed to
+            the time at which the context manager was exited.
+
+        :return: Elapsed time in milliseconds.
+        """
         if self._elapsed_time is None:
             return (time.time() - self._start_time) * 1000
         return self._elapsed_time * 1000

@@ -12,7 +12,7 @@ from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.utils import Timer
+from skrl.utils import ScopedTimer
 
 
 # fmt: off
@@ -335,7 +335,7 @@ class TRPO(Agent):
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            with Timer() as timer:
+            with ScopedTimer() as timer:
                 self.enable_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
                 self.enable_training_mode(False)

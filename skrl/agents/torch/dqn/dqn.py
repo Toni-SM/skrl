@@ -12,7 +12,7 @@ from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.utils import Timer
+from skrl.utils import ScopedTimer
 
 
 # fmt: off
@@ -330,7 +330,7 @@ class DQN(Agent):
         :param timesteps: Number of timesteps.
         """
         if timestep >= self._learning_starts and not timestep % self._update_interval:
-            with Timer() as timer:
+            with ScopedTimer() as timer:
                 self.enable_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
                 self.enable_training_mode(False)

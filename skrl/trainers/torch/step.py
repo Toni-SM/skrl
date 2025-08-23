@@ -10,7 +10,7 @@ from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer
-from skrl.utils import Timer
+from skrl.utils import ScopedTimer
 
 
 # fmt: off
@@ -113,7 +113,7 @@ class StepTrainer(Trainer):
             # compute actions
             _actions, _outputs = [], []
             for agent, scope in zip(self.agents, self.scopes):
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     actions, outputs = agent.act(
                         self.observations[scope[0] : scope[1]],
                         self.states[scope[0] : scope[1]] if self.states is not None else None,
@@ -126,7 +126,7 @@ class StepTrainer(Trainer):
             actions = torch.vstack(_actions)
 
             # step the environments
-            with Timer() as timer:
+            with ScopedTimer() as timer:
                 next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                 next_states = self.env.state()
                 elapsed_time_ms = timer.elapsed_time_ms
@@ -238,7 +238,7 @@ class StepTrainer(Trainer):
             # compute actions
             _actions, _outputs = [], []
             for agent, scope in zip(self.agents, self.scopes):
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     actions, outputs = agent.act(
                         self.observations[scope[0] : scope[1]],
                         self.states[scope[0] : scope[1]] if self.states is not None else None,
@@ -251,7 +251,7 @@ class StepTrainer(Trainer):
             actions = torch.vstack(_actions)
 
             # step the environments
-            with Timer() as timer:
+            with ScopedTimer() as timer:
                 next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                 next_states = self.env.state()
                 elapsed_time_ms = timer.elapsed_time_ms

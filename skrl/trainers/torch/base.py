@@ -11,7 +11,7 @@ from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
-from skrl.utils import Timer
+from skrl.utils import ScopedTimer
 
 
 def generate_equally_spaced_scopes(*, num_envs: int, num_simultaneous_agents: int) -> List[int]:
@@ -180,14 +180,14 @@ class Trainer(ABC):
 
             with torch.no_grad():
                 # compute actions
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     actions, outputs = self.agents.act(
                         observations, states, timestep=timestep, timesteps=self.timesteps
                     )
                     self.agents.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
 
                 # step the environments
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                     next_states = self.env.state()
                     self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)
@@ -275,7 +275,7 @@ class Trainer(ABC):
 
             with torch.no_grad():
                 # compute actions
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     actions, outputs = self.agents.act(
                         observations, states, timestep=timestep, timesteps=self.timesteps
                     )
@@ -283,7 +283,7 @@ class Trainer(ABC):
                 actions = actions if self.stochastic_evaluation else outputs.get("mean_actions", actions)
 
                 # step the environments
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                     next_states = self.env.state()
                     self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)

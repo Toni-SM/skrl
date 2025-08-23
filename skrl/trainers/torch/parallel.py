@@ -11,7 +11,7 @@ from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer
-from skrl.utils import Timer
+from skrl.utils import ScopedTimer
 
 
 # fmt: off
@@ -72,7 +72,7 @@ def fn_processor(process_index, *args):
             if _states is not None:
                 _states = _states[scope[0] : scope[1]]
             with torch.no_grad():
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     _actions, _outputs = agent.act(
                         _observations, _states, timestep=msg["timestep"], timesteps=msg["timesteps"]
                     )
@@ -268,7 +268,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                     next_states = self.env.state()
 
@@ -427,7 +427,7 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                with Timer() as timer:
+                with ScopedTimer() as timer:
                     next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
                     next_states = self.env.state()
 

@@ -10,6 +10,7 @@ from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer
+from skrl.utils import Timer
 
 
 # fmt: off
@@ -112,19 +113,25 @@ class StepTrainer(Trainer):
             # compute actions
             _actions, _outputs = [], []
             for agent, scope in zip(self.agents, self.scopes):
-                actions, outputs = agent.act(
-                    self.observations[scope[0] : scope[1]],
-                    self.states[scope[0] : scope[1]] if self.states is not None else None,
-                    timestep=timestep,
-                    timesteps=self.timesteps,
-                )
+                with Timer() as timer:
+                    actions, outputs = agent.act(
+                        self.observations[scope[0] : scope[1]],
+                        self.states[scope[0] : scope[1]] if self.states is not None else None,
+                        timestep=timestep,
+                        timesteps=self.timesteps,
+                    )
+                    agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                 _actions.append(actions)
                 _outputs.append(outputs)
             actions = torch.vstack(_actions)
 
             # step the environments
-            next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-            next_states = self.env.state()
+            with Timer() as timer:
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
+                elapsed_time_ms = timer.elapsed_time_ms
+                for agent in self.agents:
+                    agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
             # render the environments
             if not self.headless:
@@ -231,19 +238,25 @@ class StepTrainer(Trainer):
             # compute actions
             _actions, _outputs = [], []
             for agent, scope in zip(self.agents, self.scopes):
-                actions, outputs = agent.act(
-                    self.observations[scope[0] : scope[1]],
-                    self.states[scope[0] : scope[1]] if self.states is not None else None,
-                    timestep=timestep,
-                    timesteps=self.timesteps,
-                )
+                with Timer() as timer:
+                    actions, outputs = agent.act(
+                        self.observations[scope[0] : scope[1]],
+                        self.states[scope[0] : scope[1]] if self.states is not None else None,
+                        timestep=timestep,
+                        timesteps=self.timesteps,
+                    )
+                    agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                 _actions.append(actions if self.stochastic_evaluation else outputs.get("mean_actions", actions))
                 _outputs.append(outputs)
             actions = torch.vstack(_actions)
 
             # step the environments
-            next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-            next_states = self.env.state()
+            with Timer() as timer:
+                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                next_states = self.env.state()
+                elapsed_time_ms = timer.elapsed_time_ms
+                for agent in self.agents:
+                    agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
             # render the environments
             if not self.headless:

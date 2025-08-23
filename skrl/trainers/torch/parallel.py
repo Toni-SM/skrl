@@ -11,6 +11,7 @@ from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer
+from skrl.utils import Timer
 
 
 # fmt: off
@@ -71,9 +72,11 @@ def fn_processor(process_index, *args):
             if _states is not None:
                 _states = _states[scope[0] : scope[1]]
             with torch.no_grad():
-                _actions, _outputs = agent.act(
-                    _observations, _states, timestep=msg["timestep"], timesteps=msg["timesteps"]
-                )
+                with Timer() as timer:
+                    _actions, _outputs = agent.act(
+                        _observations, _states, timestep=msg["timestep"], timesteps=msg["timesteps"]
+                    )
+                    agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                 if not msg.get("stochastic_evaluation", True):
                     _actions = _outputs.get("mean_actions", _actions)
                 if not _actions.is_cuda:
@@ -83,6 +86,7 @@ def fn_processor(process_index, *args):
 
         # record agent's experience
         elif task == "record_transition":
+            agent.track_data("Stats / Env stepping time (ms)", msg["env_stepping_time_ms"])
             with torch.no_grad():
                 rewards = queue.get()[scope[0] : scope[1]]
                 next_observations = queue.get()[scope[0] : scope[1]]
@@ -114,6 +118,7 @@ def fn_processor(process_index, *args):
 
         # write data to TensorBoard (evaluation)
         elif task == "eval-record_transition-post_interaction":
+            agent.track_data("Stats / Env stepping time (ms)", msg["env_stepping_time_ms"])
             with torch.no_grad():
                 rewards = queue.get()[scope[0] : scope[1]]
                 next_observations = queue.get()[scope[0] : scope[1]]
@@ -263,8 +268,9 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                next_states = self.env.state()
+                with Timer() as timer:
+                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                    next_states = self.env.state()
 
                 # render the environments
                 if not self.headless:
@@ -283,7 +289,14 @@ class ParallelTrainer(Trainer):
                     truncated.share_memory_()
 
                 for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send({"task": "record_transition", "timestep": timestep, "timesteps": self.timesteps})
+                    pipe.send(
+                        {
+                            "task": "record_transition",
+                            "timestep": timestep,
+                            "timesteps": self.timesteps,
+                            "env_stepping_time_ms": timer.elapsed_time_ms,
+                        }
+                    )
                     queue.put(rewards)
                     queue.put(next_observations)
                     queue.put(next_states)
@@ -414,8 +427,9 @@ class ParallelTrainer(Trainer):
                 actions = torch.vstack([queue.get() for queue in queues])
 
                 # step the environments
-                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                next_states = self.env.state()
+                with Timer() as timer:
+                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                    next_states = self.env.state()
 
                 # render the environments
                 if not self.headless:
@@ -440,6 +454,7 @@ class ParallelTrainer(Trainer):
                         "task": "eval-record_transition-post_interaction",
                         "timestep": timestep,
                         "timesteps": self.timesteps,
+                        "env_stepping_time_ms": timer.elapsed_time_ms,
                     }
                 )
                 queue.put(rewards)

@@ -353,7 +353,7 @@ class Memory(ABC):
         memory_path = os.path.join(
             directory,
             "memories",
-            "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format),
+            f"{datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S-%f')}_memory_{hex(id(self))}.{format}",
         )
 
         # torch

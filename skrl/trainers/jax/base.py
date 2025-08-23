@@ -10,6 +10,7 @@ from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.jax import MultiAgent
+from skrl.utils import Timer
 
 
 def generate_equally_spaced_scopes(*, num_envs: int, num_simultaneous_agents: int) -> List[int]:
@@ -178,11 +179,17 @@ class Trainer(ABC):
 
             with contextlib.nullcontext():
                 # compute actions
-                actions, outputs = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)
+                with Timer() as timer:
+                    actions, outputs = self.agents.act(
+                        observations, states, timestep=timestep, timesteps=self.timesteps
+                    )
+                    self.agents.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
 
                 # step the environments
-                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                next_states = self.env.state()
+                with Timer() as timer:
+                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                    next_states = self.env.state()
+                    self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)
 
                 # render the environments
                 if not self.headless:
@@ -261,12 +268,18 @@ class Trainer(ABC):
 
             with contextlib.nullcontext():
                 # compute actions
-                actions, outputs = self.agents.act(observations, states, timestep=timestep, timesteps=self.timesteps)
+                with Timer() as timer:
+                    actions, outputs = self.agents.act(
+                        observations, states, timestep=timestep, timesteps=self.timesteps
+                    )
+                    self.agents.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                 actions = actions if self.stochastic_evaluation else outputs.get("mean_actions", actions)
 
                 # step the environments
-                next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                next_states = self.env.state()
+                with Timer() as timer:
+                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                    next_states = self.env.state()
+                    self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)
 
                 # render the environments
                 if not self.headless:

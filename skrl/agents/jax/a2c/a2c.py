@@ -14,6 +14,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.utils import Timer
 
 
 # fmt: off
@@ -462,9 +463,11 @@ class A2C(Agent):
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.enable_training_mode(True)
-            self.update(timestep=timestep, timesteps=timesteps)
-            self.enable_training_mode(False)
+            with Timer() as timer:
+                self.enable_training_mode(True)
+                self.update(timestep=timestep, timesteps=timesteps)
+                self.enable_training_mode(False)
+                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

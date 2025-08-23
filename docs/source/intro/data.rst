@@ -130,7 +130,7 @@ Tracking custom metrics/scales
   .. code-block:: python
 
       # assuming agent is an instance of an Agent subclass
-      agent.writer.add_scalar("Resource / CPU usage", psutil.cpu_percent(), global_step=1000)
+      agent.writer.add_scalar(tag="Resource / CPU usage", value=psutil.cpu_percent(), timestep=1000)
 
 .. raw:: html
 

@@ -213,11 +213,11 @@ class MultiAgent(ABC):
         """
         for k, v in self.tracking_data.items():
             if k.endswith("(min)"):
-                self.writer.add_scalar(k, np.min(v), timestep)
+                self.writer.add_scalar(tag=k, value=np.min(v), timestep=timestep)
             elif k.endswith("(max)"):
-                self.writer.add_scalar(k, np.max(v), timestep)
+                self.writer.add_scalar(tag=k, value=np.max(v), timestep=timestep)
             else:
-                self.writer.add_scalar(k, np.mean(v), timestep)
+                self.writer.add_scalar(tag=k, value=np.mean(v), timestep=timestep)
         # reset data containers
         self._track_rewards.clear()
         self._track_timesteps.clear()

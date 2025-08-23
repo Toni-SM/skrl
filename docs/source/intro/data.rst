@@ -132,7 +132,7 @@ Tracking custom metrics/scales
 
 * **Tracking custom data directly to Tensorboard**
 
-  It is also feasible to access directly to the `SummaryWriter <https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter>`_ instance through the :literal:`writer` property if it is desired to write directly to Tensorboard, avoiding the base class's control and timing logic.
+  It is also feasible to access directly to the :literal:`SummaryWriter` instance through the :literal:`writer` property if it is desired to write directly to Tensorboard, avoiding the base class's control and timing logic.
 
   For example, to write directly to TensorBoard:
 

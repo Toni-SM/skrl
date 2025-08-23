@@ -10,11 +10,11 @@ from packaging import version
 
 import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils.tensorboard import SummaryWriter
 
 
 class Agent(ABC):

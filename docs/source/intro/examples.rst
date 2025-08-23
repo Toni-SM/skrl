@@ -1750,11 +1750,11 @@ This example shows how to use the library utilities to carry out the post-proces
 
 .. tabs::
 
-    .. tab:: Tensorboard files
+    .. tab:: TensorBoard files
 
         .. image:: ../_static/imgs/utils_tensorboard_file_iterator.svg
             :width: 100%
-            :alt: Tensorboard file iterator
+            :alt: TensorBoard file iterator
 
         .. raw:: html
 
@@ -1764,7 +1764,7 @@ This example shows how to use the library utilities to carry out the post-proces
 
         :download:`tensorboard_file_iterator.py <../../../examples/utils/tensorboard_file_iterator.py>`
 
-        **Note:** The code will load all the Tensorboard files of the experiments located in the :literal:`runs` folder. It is necessary to adjust the iterator's parameters for other paths
+        **Note:** The code will load all the TensorBoard files of the experiments located in the :literal:`runs` folder. It is necessary to adjust the iterator's parameters for other paths
 
         .. literalinclude:: ../../../examples/utils/tensorboard_file_iterator.py
             :language: python

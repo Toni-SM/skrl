@@ -204,7 +204,7 @@ Utils and configurations
     * :doc:`Model instantiators <api/utils/model_instantiators>`
     * :doc:`Runner <api/utils/runner>`
     * :doc:`Distributed runs <api/utils/distributed>`
-    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
+    * Memory and TensorBoard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`
     * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
     * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

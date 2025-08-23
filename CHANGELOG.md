@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits
 - Add `ScopedTimer` utils to measure code execution time
+- Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
 - Log agent inference and algorithm update, and environment steeping time to TensorBoard
 
 ### Changed (breaking changes)

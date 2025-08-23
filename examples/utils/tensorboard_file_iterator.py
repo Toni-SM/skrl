@@ -8,7 +8,7 @@ from skrl.utils import postprocessing
 labels = []
 rewards = []
 
-# load the Tensorboard files and iterate over them (tag: "Reward / Total reward (mean)")
+# load the TensorBoard files and iterate over them (tag: "Reward / Total reward (mean)")
 tensorboard_iterator = postprocessing.TensorboardFileIterator(
     "runs/*/events.out.tfevents.*", tags=["Reward / Total reward (mean)"]
 )

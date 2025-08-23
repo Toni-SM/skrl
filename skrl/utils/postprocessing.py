@@ -123,13 +123,13 @@ class MemoryFileIterator:
 
 class TensorboardFileIterator:
     def __init__(self, pathname: str, tags: Union[str, List[str]]) -> None:
-        """Python iterator for loading data from Tensorboard files.
+        """Python iterator for loading data from TensorBoard files.
 
-        The iterator will load the next Tensorboard file in the list of path names.
-        The iterator's output is a tuple of the directory name and the Tensorboard variables selected by the tags.
-        The Tensorboard data is returned as a dictionary with the tag as the key and a list of steps and values as the value.
+        The iterator will load the next TensorBoard file in the list of path names.
+        The iterator's output is a tuple of the directory name and the TensorBoard variables selected by the tags.
+        The TensorBoard data is returned as a dictionary with the tag as the key and a list of steps and values as the value.
 
-        :param pathname: String containing a path specification for the Tensorboard files.
+        :param pathname: String containing a path specification for the TensorBoard files.
             Python ``glob`` function is used to find all files matching the path specification.
         :param tags: String or list of strings containing the tags of the variables to load.
         """
@@ -158,7 +158,7 @@ class TensorboardFileIterator:
         try:
             for event in summary_iterator(file_path):
                 try:
-                    # get Tensorboard data
+                    # get TensorBoard data
                     step = event.step
                     tag = event.summary.value[0].tag
                     value = event.summary.value[0].simple_value

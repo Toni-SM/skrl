@@ -68,6 +68,183 @@ TRPO_DEFAULT_CONFIG = {
 # fmt: on
 
 
+def compute_gae(
+    *,
+    rewards: torch.Tensor,
+    dones: torch.Tensor,
+    values: torch.Tensor,
+    next_values: torch.Tensor,
+    discount_factor: float = 0.99,
+    lambda_coefficient: float = 0.95,
+) -> torch.Tensor:
+    """Compute the Generalized Advantage Estimator (GAE).
+
+    :param rewards: Rewards obtained by the agent.
+    :param dones: Signals to indicate that episodes have ended.
+    :param values: Values obtained by the agent.
+    :param next_values: Next values obtained by the agent.
+    :param discount_factor: Discount factor.
+    :param lambda_coefficient: Lambda coefficient.
+
+    :return: Generalized Advantage Estimator.
+    """
+    advantage = 0
+    advantages = torch.zeros_like(rewards)
+    not_dones = dones.logical_not()
+    memory_size = rewards.shape[0]
+
+    # advantages computation
+    for i in reversed(range(memory_size)):
+        next_values = values[i + 1] if i < memory_size - 1 else next_values
+        advantage = (
+            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        )
+        advantages[i] = advantage
+    # returns computation
+    returns = advantages + values
+    # normalize advantages
+    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+    return returns, advantages
+
+
+def surrogate_loss(
+    *,
+    policy: Model,
+    observations: torch.Tensor,
+    states: torch.Tensor,
+    rnn: Mapping[str, Any],
+    actions: torch.Tensor,
+    log_prob: torch.Tensor,
+    advantages: torch.Tensor,
+) -> torch.Tensor:
+    """Compute the surrogate objective (policy loss).
+
+    :param policy: Policy.
+    :param observations: Observations.
+    :param states: States.
+    :param rnn: RNN states.
+    :param actions: Actions.
+    :param log_prob: Log probability.
+    :param advantages: Advantages.
+
+    :return: Surrogate loss.
+    """
+    _, outputs = policy.act(
+        {"observations": observations, "states": states, "taken_actions": actions, **rnn}, role="policy"
+    )
+    new_log_prob = outputs["log_prob"]
+    return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
+
+
+def conjugate_gradient(
+    *,
+    policy: Model,
+    observations: torch.Tensor,
+    states: torch.Tensor,
+    rnn: Mapping[str, Any],
+    b: torch.Tensor,
+    damping: float = 0.1,
+    num_iterations: float = 10,
+    residual_tolerance: float = 1e-10,
+) -> torch.Tensor:
+    """Conjugate gradient algorithm to solve Ax = b using the iterative method.
+
+    https://en.wikipedia.org/wiki/Conjugate_gradient_method#As_an_iterative_method
+
+    :param policy: Policy.
+    :param observations: Observations.
+    :param states: States.
+    :param rnn: RNN states.
+    :param b: Vector b.
+    :param damping: Damping.
+    :param num_iterations: Number of iterations.
+    :param residual_tolerance: Residual tolerance.
+
+    :return: Conjugate vector.
+    """
+    x = torch.zeros_like(b)
+    r = b.clone()
+    p = b.clone()
+    rr_old = torch.dot(r, r)
+    for _ in range(num_iterations):
+        hv = fisher_vector_product(
+            policy=policy, observations=observations, states=states, rnn=rnn, vector=p, damping=damping
+        )
+        alpha = rr_old / torch.dot(p, hv)
+        x += alpha * p
+        r -= alpha * hv
+        rr_new = torch.dot(r, r)
+        if rr_new < residual_tolerance:
+            break
+        p = r + rr_new / rr_old * p
+        rr_old = rr_new
+    return x
+
+
+def fisher_vector_product(
+    *,
+    policy: Model,
+    observations: torch.Tensor,
+    states: torch.Tensor,
+    rnn: Mapping[str, Any],
+    vector: torch.Tensor,
+    damping: float = 0.1,
+) -> torch.Tensor:
+    """Compute the Fisher vector product (direct method).
+
+    https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/
+
+    :param policy: Policy.
+    :param observations: Observations.
+    :param states: States.
+    :param rnn: RNN states.
+    :param vector: Vector.
+    :param damping: Damping.
+
+    :return: Hessian vector product.
+    """
+    kl = kl_divergence(policy_1=policy, policy_2=policy, observations=observations, states=states, rnn=rnn)
+    kl_gradient = torch.autograd.grad(kl, policy.parameters(), create_graph=True)
+    flat_kl_gradient = torch.cat([gradient.view(-1) for gradient in kl_gradient])
+    hessian_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
+    flat_hessian_vector_gradient = torch.cat([gradient.contiguous().view(-1) for gradient in hessian_vector_gradient])
+    return flat_hessian_vector_gradient + damping * vector
+
+
+def kl_divergence(
+    *, policy_1: Model, policy_2: Model, observations: torch.Tensor, states: torch.Tensor, rnn: Mapping[str, Any]
+) -> torch.Tensor:
+    """Compute the KL divergence between two distributions.
+
+    https://en.wikipedia.org/wiki/Normal_distribution#Other_properties
+
+    :param policy_1: First policy.
+    :param policy_2: Second policy.
+    :param observations: Observations.
+    :param states: States.
+    :param rnn: RNN states.
+
+    :return: KL divergence.
+    """
+    _, outputs = policy_1.act({"observations": observations, "states": states, **rnn}, role="policy")
+    mu_1 = outputs["mean_actions"].detach()
+    logstd_1 = outputs["log_std"].detach()
+
+    with torch.backends.cudnn.flags(enabled=False):
+        _, outputs = policy_2.act({"observations": observations, "states": states, **rnn}, role="policy")
+        mu_2 = outputs["mean_actions"]
+        logstd_2 = outputs["log_std"]
+
+    kl = (
+        logstd_1
+        - logstd_2
+        + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp())
+        - 0.5
+    )
+    return torch.sum(kl, dim=-1).mean()
+
+
 class TRPO_RNN(Agent):
     def __init__(
         self,
@@ -428,164 +605,6 @@ class TRPO_RNN(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-
-        def compute_gae(
-            rewards: torch.Tensor,
-            dones: torch.Tensor,
-            values: torch.Tensor,
-            next_values: torch.Tensor,
-            discount_factor: float = 0.99,
-            lambda_coefficient: float = 0.95,
-        ) -> torch.Tensor:
-            """Compute the Generalized Advantage Estimator (GAE).
-
-            :param rewards: Rewards obtained by the agent.
-            :param dones: Signals to indicate that episodes have ended.
-            :param values: Values obtained by the agent.
-            :param next_values: Next values obtained by the agent.
-            :param discount_factor: Discount factor.
-            :param lambda_coefficient: Lambda coefficient.
-
-            :return: Generalized Advantage Estimator.
-            """
-            advantage = 0
-            advantages = torch.zeros_like(rewards)
-            not_dones = dones.logical_not()
-            memory_size = rewards.shape[0]
-
-            # advantages computation
-            for i in reversed(range(memory_size)):
-                next_values = values[i + 1] if i < memory_size - 1 else last_values
-                advantage = (
-                    rewards[i]
-                    - values[i]
-                    + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
-                )
-                advantages[i] = advantage
-            # returns computation
-            returns = advantages + values
-            # normalize advantages
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-            return returns, advantages
-
-        def surrogate_loss(
-            policy: Model,
-            observations: torch.Tensor,
-            states: torch.Tensor,
-            actions: torch.Tensor,
-            log_prob: torch.Tensor,
-            advantages: torch.Tensor,
-        ) -> torch.Tensor:
-            """Compute the surrogate objective (policy loss).
-
-            :param policy: Policy.
-            :param observations: Observations.
-            :param states: States.
-            :param actions: Actions.
-            :param log_prob: Log probability.
-            :param advantages: Advantages.
-
-            :return: Surrogate loss.
-            """
-            _, outputs = policy.act(
-                {"observations": observations, "states": states, "taken_actions": actions, **rnn_policy}, role="policy"
-            )
-            new_log_prob = outputs["log_prob"]
-            return (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
-
-        def conjugate_gradient(
-            policy: Model,
-            observations: torch.Tensor,
-            states: torch.Tensor,
-            b: torch.Tensor,
-            num_iterations: float = 10,
-            residual_tolerance: float = 1e-10,
-        ) -> torch.Tensor:
-            """Conjugate gradient algorithm to solve Ax = b using the iterative method.
-
-            https://en.wikipedia.org/wiki/Conjugate_gradient_method#As_an_iterative_method
-
-            :param policy: Policy.
-            :param observations: Observations.
-            :param states: States.
-            :param b: Vector b.
-            :param num_iterations: Number of iterations.
-            :param residual_tolerance: Residual tolerance.
-
-            :return: Conjugate vector.
-            """
-            x = torch.zeros_like(b)
-            r = b.clone()
-            p = b.clone()
-            rr_old = torch.dot(r, r)
-            for _ in range(num_iterations):
-                hv = fisher_vector_product(policy, observations, states, p, damping=self._damping)
-                alpha = rr_old / torch.dot(p, hv)
-                x += alpha * p
-                r -= alpha * hv
-                rr_new = torch.dot(r, r)
-                if rr_new < residual_tolerance:
-                    break
-                p = r + rr_new / rr_old * p
-                rr_old = rr_new
-            return x
-
-        def fisher_vector_product(
-            policy: Model, observations: torch.Tensor, states: torch.Tensor, vector: torch.Tensor, damping: float = 0.1
-        ) -> torch.Tensor:
-            """Compute the Fisher vector product (direct method).
-
-            https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/
-
-            :param policy: Policy.
-            :param observations: Observations.
-            :param states: States.
-            :param vector: Vector.
-            :param damping: Damping.
-
-            :return: Hessian vector product.
-            """
-            kl = kl_divergence(policy, policy, observations, states)
-            kl_gradient = torch.autograd.grad(kl, policy.parameters(), create_graph=True)
-            flat_kl_gradient = torch.cat([gradient.view(-1) for gradient in kl_gradient])
-            hessian_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
-            flat_hessian_vector_gradient = torch.cat(
-                [gradient.contiguous().view(-1) for gradient in hessian_vector_gradient]
-            )
-            return flat_hessian_vector_gradient + damping * vector
-
-        def kl_divergence(
-            policy_1: Model, policy_2: Model, observations: torch.Tensor, states: torch.Tensor
-        ) -> torch.Tensor:
-            """Compute the KL divergence between two distributions.
-
-            https://en.wikipedia.org/wiki/Normal_distribution#Other_properties
-
-            :param policy_1: First policy.
-            :param policy_2: Second policy.
-            :param observations: Observations.
-            :param states: States.
-
-            :return: KL divergence.
-            """
-            _, outputs = policy_1.act({"observations": observations, "states": states, **rnn_policy}, role="policy")
-            mu_1 = outputs["mean_actions"].detach()
-            logstd_1 = outputs["log_std"].detach()
-
-            with torch.backends.cudnn.flags(enabled=not self._rnn):
-                _, outputs = policy_2.act({"observations": observations, "states": states, **rnn_policy}, role="policy")
-                mu_2 = outputs["mean_actions"]
-                logstd_2 = outputs["log_std"]
-
-            kl = (
-                logstd_1
-                - logstd_2
-                + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp())
-                - 0.5
-            )
-            return torch.sum(kl, dim=-1).mean()
-
         # compute returns and advantages
         with torch.no_grad():
             inputs = {
@@ -651,24 +670,39 @@ class TRPO_RNN(Agent):
 
         # compute policy loss gradient
         policy_loss = surrogate_loss(
-            self.policy, sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages
+            policy=self.policy,
+            observations=sampled_observations,
+            states=sampled_states,
+            rnn=rnn_policy,
+            actions=sampled_actions,
+            log_prob=sampled_log_prob,
+            advantages=sampled_advantages,
         )
         policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
         flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
 
         # compute the search direction using the conjugate gradient algorithm
         search_direction = conjugate_gradient(
-            self.policy,
-            sampled_observations,
-            sampled_states,
-            flat_policy_loss_gradient.data,
+            policy=self.policy,
+            observations=sampled_observations,
+            states=sampled_states,
+            rnn=rnn_policy,
+            b=flat_policy_loss_gradient.data,
+            damping=self._damping,
             num_iterations=self._conjugate_gradient_steps,
         )
 
         # compute step size and full step
         xHx = (
             search_direction
-            * fisher_vector_product(self.policy, sampled_observations, sampled_states, search_direction, self._damping)
+            * fisher_vector_product(
+                policy=self.policy,
+                observations=sampled_observations,
+                states=sampled_states,
+                rnn=rnn_policy,
+                vector=search_direction,
+                damping=self._damping,
+            )
         ).sum(0, keepdim=True)
         step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
         full_step = step_size * search_direction
@@ -685,9 +719,21 @@ class TRPO_RNN(Agent):
             vector_to_parameters(new_params, self.policy.parameters())
 
             expected_improvement *= alpha
-            kl = kl_divergence(self.backup_policy, self.policy, sampled_observations, sampled_states)
+            kl = kl_divergence(
+                policy_1=self.backup_policy,
+                policy_2=self.policy,
+                observations=sampled_observations,
+                states=sampled_states,
+                rnn=rnn_policy,
+            )
             loss = surrogate_loss(
-                self.policy, sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages
+                policy=self.policy,
+                observations=sampled_observations,
+                states=sampled_states,
+                rnn=rnn_policy,
+                actions=sampled_actions,
+                log_prob=sampled_log_prob,
+                advantages=sampled_advantages,
             )
 
             if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:

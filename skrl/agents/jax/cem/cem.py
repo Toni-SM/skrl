@@ -1,6 +1,7 @@
 from typing import Any, Mapping, Optional, Tuple, Union
 
 import copy
+import functools
 import gymnasium
 
 import jax
@@ -52,6 +53,23 @@ CEM_DEFAULT_CONFIG = {
 }
 # [end-config-dict-jax]
 # fmt: on
+
+
+@functools.partial(jax.jit, static_argnames=("policy_act", "n"))
+def _update_policy(policy_act, policy_state_dict, inputs, elite_actions, n):
+    # compute policy loss
+    def _policy_loss(params):
+        # compute scores for the elite observations/states
+        _, outputs = policy_act(inputs, role="policy", params=params)
+        scores = outputs["net_output"]
+
+        # HACK: return optax.softmax_cross_entropy_with_integer_labels(scores, elite_actions).mean()
+        labels = jax.nn.one_hot(elite_actions, n)
+        return optax.softmax_cross_entropy(scores, labels).mean()
+
+    policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params)
+
+    return grad, policy_loss
 
 
 class CEM(Agent):
@@ -357,18 +375,13 @@ class CEM(Agent):
         )
 
         # compute policy loss
-        def _policy_loss(params):
-            # compute scores for the elite observations/states
-            _, outputs = self.policy.act(
-                {"observations": elite_observations, "states": elite_states}, role="policy", params=params
-            )
-            scores = outputs["net_output"]
-
-            # HACK: return optax.softmax_cross_entropy_with_integer_labels(scores, elite_actions).mean()
-            labels = jax.nn.one_hot(elite_actions, self.action_space.n)
-            return optax.softmax_cross_entropy(scores, labels).mean()
-
-        policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(self.policy.state_dict.params)
+        grad, policy_loss = _update_policy(
+            self.policy.act,
+            self.policy.state_dict,
+            {"observations": elite_observations, "states": elite_states},
+            elite_actions,
+            self.action_space.n,
+        )
 
         # optimization step (policy)
         self.optimizer = self.optimizer.step(

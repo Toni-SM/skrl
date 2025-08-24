@@ -72,6 +72,7 @@ MAPPO_DEFAULT_CONFIG = {
 
 
 def compute_gae(
+    *,
     rewards: torch.Tensor,
     dones: torch.Tensor,
     values: torch.Tensor,

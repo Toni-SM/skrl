@@ -566,13 +566,13 @@ class MAPPO(MultiAgent):
 
             values = memory.get_tensor_by_name("values")
             returns, advantages = (_compute_gae if self._jax else compute_gae)(
-                    rewards=memory.get_tensor_by_name("rewards"),
-                    dones=memory.get_tensor_by_name("terminated"),
-                    values=values,
-                    next_values=last_values,
-                    discount_factor=self._discount_factor[uid],
-                    lambda_coefficient=self._lambda[uid],
-                )
+                rewards=memory.get_tensor_by_name("rewards"),
+                dones=memory.get_tensor_by_name("terminated"),
+                values=values,
+                next_values=last_values,
+                discount_factor=self._discount_factor[uid],
+                lambda_coefficient=self._lambda[uid],
+            )
 
             memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
             memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))

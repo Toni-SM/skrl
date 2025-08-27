@@ -48,11 +48,11 @@ Learning algorithm
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# sample a batch from memory`
-|     [:math:`s, a, r, s', d_{_{end}}, d_{_{timeout}}`] with size :guilabel:`batch_size`
+|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
 |     :green:`# compute target values`
 |     :math:`Q' \leftarrow Q_{\phi_{target}}(s')`
 |     :math:`Q_{_{target}} \leftarrow \underset{a}{\max} \; Q' \qquad` :gray:`# the only difference with DDQN`
-|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q_{_{target}}`
+|     :math:`y \leftarrow r \;+` :guilabel:`discount_factor` :math:`\neg d \; Q_{_{target}}`
 |     :green:`# compute Q-network loss`
 |     :math:`Q \leftarrow Q_\phi(s)[a]`
 |     :math:`L_{Q_\phi} \leftarrow \frac{1}{N} \sum_{i=1}^N (Q - y)^2`

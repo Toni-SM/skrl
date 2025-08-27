@@ -70,7 +70,7 @@ RPO_DEFAULT_CONFIG = {
 
 def compute_gae(
     rewards: np.ndarray,
-    dones: np.ndarray,
+    terminated: np.ndarray,
     values: np.ndarray,
     next_values: np.ndarray,
     discount_factor: float = 0.99,
@@ -80,8 +80,8 @@ def compute_gae(
 
     :param rewards: Rewards obtained by the agent
     :type rewards: np.ndarray
-    :param dones: Signals to indicate that episodes have ended
-    :type dones: np.ndarray
+    :param terminated: Signals to indicate that episodes have ended
+    :type terminated: np.ndarray
     :param values: Values obtained by the agent
     :type values: np.ndarray
     :param next_values: Next values obtained by the agent
@@ -96,14 +96,14 @@ def compute_gae(
     """
     advantage = 0
     advantages = np.zeros_like(rewards)
-    not_dones = np.logical_not(dones)
+    not_terminated = np.logical_not(terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i] - values[i] + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -118,7 +118,7 @@ def compute_gae(
 @jax.jit
 def _compute_gae(
     rewards: jax.Array,
-    dones: jax.Array,
+    terminated: jax.Array,
     values: jax.Array,
     next_values: jax.Array,
     discount_factor: float = 0.99,
@@ -126,14 +126,14 @@ def _compute_gae(
 ) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
-    not_dones = jnp.logical_not(dones)
+    not_terminated = jnp.logical_not(terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i] - values[i] + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages = advantages.at[i].set(advantage)
     # returns computation
@@ -524,7 +524,7 @@ class RPO(Agent):
         if self._jax:
             returns, advantages = _compute_gae(
                 rewards=self.memory.get_tensor_by_name("rewards"),
-                dones=self.memory.get_tensor_by_name("terminated"),
+                terminated=self.memory.get_tensor_by_name("terminated"),
                 values=values,
                 next_values=last_values,
                 discount_factor=self._discount_factor,
@@ -533,7 +533,7 @@ class RPO(Agent):
         else:
             returns, advantages = compute_gae(
                 rewards=self.memory.get_tensor_by_name("rewards"),
-                dones=self.memory.get_tensor_by_name("terminated"),
+                terminated=self.memory.get_tensor_by_name("terminated"),
                 values=values,
                 next_values=last_values,
                 discount_factor=self._discount_factor,

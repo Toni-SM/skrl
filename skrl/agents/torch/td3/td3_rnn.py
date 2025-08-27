@@ -432,7 +432,7 @@ class TD3_RNN(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_terminated = self.memory.sample(
                 names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length
             )[0]
 
@@ -441,7 +441,7 @@ class TD3_RNN(Agent):
                 sampled_rnn = self.memory.sample_by_index(
                     names=self._rnn_tensors_names, indexes=self.memory.get_sampling_indexes()
                 )[0]
-                rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_dones}
+                rnn_policy = {"rnn": [s.transpose(0, 1) for s in sampled_rnn], "terminated": sampled_terminated}
 
             with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
 
@@ -473,7 +473,7 @@ class TD3_RNN(Agent):
                     )
                     target_q_values = torch.min(target_q1_values, target_q2_values)
                     target_values = (
-                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                        sampled_rewards + self._discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

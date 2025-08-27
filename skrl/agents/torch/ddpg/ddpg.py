@@ -366,7 +366,7 @@ class DDPG(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_terminated = self.memory.sample(
                 names=self._tensors_names, batch_size=self._batch_size
             )[0]
 
@@ -383,7 +383,7 @@ class DDPG(Agent):
                         {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic"
                     )
                     target_values = (
-                        sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+                        sampled_rewards + self._discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

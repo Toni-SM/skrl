@@ -459,7 +459,7 @@ class AMP(Agent):
 
         def compute_gae(
             rewards: torch.Tensor,
-            dones: torch.Tensor,
+            terminated: torch.Tensor,
             values: torch.Tensor,
             next_values: torch.Tensor,
             discount_factor: float = 0.99,
@@ -469,8 +469,8 @@ class AMP(Agent):
 
             :param rewards: Rewards obtained by the agent
             :type rewards: torch.Tensor
-            :param dones: Signals to indicate that episodes have ended
-            :type dones: torch.Tensor
+            :param terminated: Signals to indicate that episodes have ended
+            :type terminated: torch.Tensor
             :param values: Values obtained by the agent
             :type values: torch.Tensor
             :param next_values: Next values obtained by the agent
@@ -485,7 +485,7 @@ class AMP(Agent):
             """
             advantage = 0
             advantages = torch.zeros_like(rewards)
-            not_dones = dones.logical_not()
+            not_terminated = terminated.logical_not()
             memory_size = rewards.shape[0]
 
             # advantages computation
@@ -493,7 +493,7 @@ class AMP(Agent):
                 advantage = (
                     rewards[i]
                     - values[i]
-                    + discount_factor * (next_values[i] + lambda_coefficient * not_dones[i] * advantage)
+                    + discount_factor * (next_values[i] + lambda_coefficient * not_terminated[i] * advantage)
                 )
                 advantages[i] = advantage
             # returns computation
@@ -527,7 +527,7 @@ class AMP(Agent):
         next_values = self.memory.get_tensor_by_name("next_values")
         returns, advantages = compute_gae(
             rewards=combined_rewards,
-            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            terminated=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=next_values,
             discount_factor=self._discount_factor,

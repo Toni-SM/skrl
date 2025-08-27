@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\mu_\theta`), critic function approximator (:math:`Q_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d`)
 |   - loss (:math:`L`)
 
 .. raw:: html
@@ -50,7 +50,7 @@ Learning algorithm
 | :green:`# gradient steps`
 | **FOR** each gradient step up to :guilabel:`gradient_steps` **DO**
 |     :green:`# sample a batch from memory`
-|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, dones of size :guilabel:`batch_size`
+|     [:math:`s, a, r, s', d`] :math:`\leftarrow` states, actions, rewards, next_states, terminated of size :guilabel:`batch_size`
 |     :green:`# target policy smoothing`
 |     :math:`a' \leftarrow \mu_{\theta_{target}}(s')`
 |     :math:`noise \leftarrow \text{clip}(` :guilabel:`smooth_regularization_noise` :math:`, -c, c) \qquad` with :math:`c` as :guilabel:`smooth_regularization_clip`

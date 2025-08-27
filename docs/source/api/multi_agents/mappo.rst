@@ -14,7 +14,7 @@ Algorithm
 
 | For each iteration do:
 |     For each agent do:
-|         :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, dones :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
+|         :math:`\bullet \;` Collect, in a rollout memory, a set of states :math:`s`, actions :math:`a`, rewards :math:`r`, terminated :math:`d`, log probabilities :math:`logp` and values :math:`V` on policy using :math:`\pi_\theta` and :math:`V_\phi`
 |         :math:`\bullet \;` Estimate returns :math:`R` and advantages :math:`A` using Generalized Advantage Estimation (GAE(:math:`\lambda`)) from the collected data [:math:`r, d, V`]
 |         :math:`\bullet \;` Compute the entropy loss :math:`{L}_{entropy}`
 |         :math:`\bullet \;` Compute the clipped surrogate objective (policy loss) with :math:`ratio` as the probability ratio between the action under the current policy and the action under the previous policy: :math:`L^{clip}_{\pi_\theta} = \mathbb{E}[\min(A \; ratio, A \; \text{clip}(ratio, 1-c, 1+c))]`
@@ -30,7 +30,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy function approximator (:math:`\pi_\theta`), value function approximator (:math:`V_\phi`)
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d`)
 |   - shared states (:math:`s_{_{shared}}`), shared next states (:math:`s'_{_{shared}}`)
 |   - values (:math:`V`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)

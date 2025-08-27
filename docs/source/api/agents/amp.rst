@@ -21,7 +21,7 @@ Algorithm implementation
 
 | Main notation/symbols:
 |   - policy (:math:`\pi_\theta`), value (:math:`V_\phi`) and discriminator (:math:`D_\psi`) function approximators
-|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), dones (:math:`d`)
+|   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d`)
 |   - values (:math:`V`), next values (:math:`V'`), advantages (:math:`A`), returns (:math:`R`)
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)

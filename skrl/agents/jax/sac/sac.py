@@ -75,12 +75,12 @@ def _update_critic(
     sampled_states: Union[np.ndarray, jax.Array],
     sampled_actions: Union[np.ndarray, jax.Array],
     sampled_rewards: Union[np.ndarray, jax.Array],
-    sampled_dones: Union[np.ndarray, jax.Array],
+    sampled_terminated: Union[np.ndarray, jax.Array],
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values) - entropy_coefficient * next_log_prob
-    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
@@ -457,7 +457,7 @@ class SAC(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_terminated = self.memory.sample(
                 names=self._tensors_names, batch_size=self._batch_size
             )[0]
 
@@ -487,7 +487,7 @@ class SAC(Agent):
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
-                sampled_dones,
+                sampled_terminated,
                 self._discount_factor,
             )
 

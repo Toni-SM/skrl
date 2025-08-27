@@ -71,14 +71,14 @@ def _update_q_network(
     sampled_next_states,
     sampled_actions,
     sampled_rewards,
-    sampled_dones,
+    sampled_terminated,
     discount_factor,
 ):
     # compute target values
     q_values = q_network_act({"states": sampled_next_states}, "q_network")[0]
     actions = jnp.argmax(q_values, axis=-1, keepdims=True)
     target_q_values = next_q_values[jnp.arange(q_values.shape[0]), actions.reshape(-1)].reshape(-1, 1)
-    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_dones) * target_q_values
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute Q-network loss
     def _q_network_loss(params):
@@ -371,7 +371,7 @@ class DDQN(Agent):
         for gradient_step in range(self._gradient_steps):
 
             # sample a batch from memory
-            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones = self.memory.sample(
+            sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_terminated = self.memory.sample(
                 names=self.tensors_names, batch_size=self._batch_size
             )[0]
 
@@ -389,7 +389,7 @@ class DDQN(Agent):
                 sampled_next_states,
                 sampled_actions,
                 sampled_rewards,
-                sampled_dones,
+                sampled_terminated,
                 self._discount_factor,
             )
 

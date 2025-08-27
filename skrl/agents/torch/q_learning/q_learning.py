@@ -102,7 +102,7 @@ class Q_LEARNING(Agent):
         self._current_actions = None
         self._current_rewards = None
         self._current_next_states = None
-        self._current_dones = None
+        self._current_terminated = None
 
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent"""
@@ -173,7 +173,7 @@ class Q_LEARNING(Agent):
         self._current_actions = actions
         self._current_rewards = rewards
         self._current_next_states = next_states
-        self._current_dones = terminated + truncated
+        self._current_terminated = terminated
 
         if self.memory is not None:
             self.memory.add_samples(
@@ -236,7 +236,7 @@ class Q_LEARNING(Agent):
         q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate * (
             self._current_rewards
             + self._discount_factor
-            * self._current_dones.logical_not()
+            * self._current_terminated.logical_not()
             * q_table[env_ids, self._current_next_states, next_actions]
             - q_table[env_ids, self._current_states, self._current_actions]
         )

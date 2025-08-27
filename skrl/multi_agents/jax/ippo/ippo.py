@@ -535,17 +535,7 @@ class IPPO(MultiAgent):
             last_values = self._value_preprocessor[uid](last_values, inverse=True)
 
             values = memory.get_tensor_by_name("values")
-            if self._jax:
-                returns, advantages = _compute_gae(
-                    rewards=memory.get_tensor_by_name("rewards"),
-                    dones=memory.get_tensor_by_name("terminated"),
-                    values=values,
-                    next_values=last_values,
-                    discount_factor=self._discount_factor[uid],
-                    lambda_coefficient=self._lambda[uid],
-                )
-            else:
-                returns, advantages = compute_gae(
+            returns, advantages = (_compute_gae if self._jax else compute_gae)(
                     rewards=memory.get_tensor_by_name("rewards"),
                     dones=memory.get_tensor_by_name("terminated"),
                     values=values,

@@ -100,6 +100,7 @@ agent = CEM(
     memory=memory,
     cfg=cfg,
     observation_space=env.observation_space,
+    state_space=env.state_space,
     action_space=env.action_space,
     device=device,
 )

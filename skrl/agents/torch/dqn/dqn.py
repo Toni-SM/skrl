@@ -233,8 +233,8 @@ class DQN(Agent):
         }
 
         if not self._exploration_timesteps:
-            actions, outputs = self.q_network.act(inputs, role="q_network")
-            return torch.argmax(actions, dim=1, keepdim=True), outputs
+            q_values, outputs = self.q_network.act(inputs, role="q_network")
+            return torch.argmax(q_values, dim=1, keepdim=True), outputs
 
         # sample random actions
         actions, outputs = self.q_network.random_act(inputs, role="q_network")

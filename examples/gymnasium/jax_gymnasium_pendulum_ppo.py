@@ -73,7 +73,7 @@ class Policy(GaussianMixin, Model):
         x = nn.Dense(self.num_actions)(x)
         log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * nn.tanh(x), {"log_std": log_std}
+        return 2.0 * nn.tanh(x), {"log_std": log_std}
 
 
 class Value(DeterministicMixin, Model):

@@ -62,12 +62,14 @@ class Policy(GaussianMixin, Model):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, self.num_actions),
+            nn.Tanh(),
         )
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, inputs, role):
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.net(inputs["observations"])), {"log_std": self.log_std_parameter}
+        x = self.net(inputs["observations"])
+        return 2.0 * x, {"log_std": self.log_std_parameter}
 
 
 class Value(DeterministicMixin, Model):
@@ -121,7 +123,7 @@ cfg = TRPO_DEFAULT_CONFIG.copy()
 cfg["rollouts"] = 1024  # memory_size
 cfg["learning_epochs"] = 10
 cfg["mini_batches"] = 32
-cfg["discount_factor"] = 0.99
+cfg["discount_factor"] = 0.9
 cfg["lambda"] = 0.95
 cfg["learning_rate"] = 1e-3
 cfg["grad_norm_clip"] = 0.5

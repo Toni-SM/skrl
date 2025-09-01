@@ -63,12 +63,14 @@ class Policy(GaussianMixin, Model):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, self.num_actions),
+            nn.Tanh(),
         )
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, inputs, role):
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.net(inputs["observations"])), {"log_std": self.log_std_parameter}
+        x = self.net(inputs["observations"])
+        return 2.0 * x, {"log_std": self.log_std_parameter}
 
 
 class Value(DeterministicMixin, Model):
@@ -134,7 +136,6 @@ cfg["clip_predicted_values"] = False
 cfg["entropy_loss_scale"] = 0.0
 cfg["value_loss_scale"] = 0.5
 cfg["kl_threshold"] = 0
-cfg["mixed_precision"] = True
 cfg["observation_preprocessor"] = RunningStandardScaler
 cfg["observation_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 cfg["value_preprocessor"] = RunningStandardScaler

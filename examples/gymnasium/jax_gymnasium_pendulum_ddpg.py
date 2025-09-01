@@ -53,7 +53,7 @@ class Actor(DeterministicMixin, Model):
         x = nn.relu(nn.Dense(300)(x))
         x = nn.Dense(self.num_actions)(x)
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * nn.tanh(x), {}
+        return 2.0 * nn.tanh(x), {}
 
 
 class Critic(DeterministicMixin, Model):

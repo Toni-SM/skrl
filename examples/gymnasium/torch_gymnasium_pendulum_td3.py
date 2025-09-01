@@ -4,7 +4,6 @@ import gymnasium as gym
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # import the skrl components to build the RL system
 from skrl import logger
@@ -39,15 +38,19 @@ class Actor(DeterministicMixin, Model):
         )
         DeterministicMixin.__init__(self, clip_actions=clip_actions)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.action_layer = nn.Linear(300, self.num_actions)
+        self.net = nn.Sequential(
+            nn.Linear(self.num_observations, 400),
+            nn.ReLU(),
+            nn.Linear(400, 300),
+            nn.ReLU(),
+            nn.Linear(300, self.num_actions),
+            nn.Tanh(),
+        )
 
     def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(inputs["observations"]))
-        x = F.relu(self.linear_layer_2(x))
         # Pendulum-v1 action_space is -2 to 2
-        return 2 * torch.tanh(self.action_layer(x)), {}
+        x = self.net(inputs["observations"])
+        return 2.0 * x, {}
 
 
 class Critic(DeterministicMixin, Model):
@@ -57,14 +60,17 @@ class Critic(DeterministicMixin, Model):
         )
         DeterministicMixin.__init__(self)
 
-        self.linear_layer_1 = nn.Linear(self.num_observations + self.num_actions, 400)
-        self.linear_layer_2 = nn.Linear(400, 300)
-        self.linear_layer_3 = nn.Linear(300, 1)
+        self.net = nn.Sequential(
+            nn.Linear(self.num_observations + self.num_actions, 400),
+            nn.ReLU(),
+            nn.Linear(400, 300),
+            nn.ReLU(),
+            nn.Linear(300, 1),
+        )
 
     def compute(self, inputs, role):
-        x = F.relu(self.linear_layer_1(torch.cat([inputs["observations"], inputs["taken_actions"]], dim=1)))
-        x = F.relu(self.linear_layer_2(x))
-        return self.linear_layer_3(x), {}
+        x = self.net(torch.cat([inputs["observations"], inputs["taken_actions"]], dim=1))
+        return x, {}
 
 
 # load the environment (note: the environment version may change depending on the gymnasium version)

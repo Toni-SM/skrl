@@ -117,7 +117,7 @@ memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device, r
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
 models = {}
-models["policy"] = Actor(env.observation_space, env.state_space, env.action_space, device, clip_actions=True)
+models["policy"] = Actor(env.observation_space, env.state_space, env.action_space, device)
 models["critic_1"] = Critic(env.observation_space, env.state_space, env.action_space, device)
 models["critic_2"] = Critic(env.observation_space, env.state_space, env.action_space, device)
 models["target_critic_1"] = Critic(env.observation_space, env.state_space, env.action_space, device)

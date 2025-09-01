@@ -14,7 +14,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 - Remove checkpoints/models migration support from other RL libraries
-- Remove support for storing non-flattened data in memory
 - Remove Isaac Gym (web viewer, inverse kinematic) and Omniverse Isaac Gym (local environment instance, inverse kinematic) utils
 
 ## [1.4.3] - 2025-03-29

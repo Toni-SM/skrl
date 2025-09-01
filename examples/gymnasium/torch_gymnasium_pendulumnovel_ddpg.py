@@ -49,8 +49,8 @@ class Actor(DeterministicMixin, Model):
         )
 
     def compute(self, inputs, role):
-        # Pendulum-v1 action_space is -2 to 2
         x = self.net(inputs["observations"])
+        # Pendulum-v1 action_space is -2 to 2
         return 2.0 * x, {}
 
 

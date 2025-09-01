@@ -132,8 +132,8 @@ class Policy(GaussianMixin, Model):
         # flatten the RNN output
         rnn_output = torch.flatten(rnn_output, start_dim=0, end_dim=1)  # (N, L, D ∗ Hout) -> (N * L, D ∗ Hout)
 
-        # Pendulum-v1 action_space is -2 to 2
         x = self.net(rnn_output)
+        # Pendulum-v1 action_space is -2 to 2
         return 2.0 * x, {"log_std": self.log_std_parameter, "rnn": [hidden_states]}
 
 

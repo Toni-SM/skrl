@@ -69,6 +69,7 @@ class Actor(GaussianMixin, Model):
         self.gru = nn.GRU(
             input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
         )  # batch_first -> (batch, sequence, features)
+
         self.net = nn.Sequential(
             nn.Linear(self.hidden_size, 400),
             nn.ReLU(),
@@ -162,6 +163,7 @@ class Critic(DeterministicMixin, Model):
         self.gru = nn.GRU(
             input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
         )  # batch_first -> (batch, sequence, features)
+
         self.net = nn.Sequential(
             nn.Linear(self.hidden_size + self.num_actions, 400),
             nn.ReLU(),

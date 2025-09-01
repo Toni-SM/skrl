@@ -66,8 +66,8 @@ class Actor(GaussianMixin, Model):
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
 
     def compute(self, inputs, role):
-        # Pendulum-v1 action_space is -2 to 2
         x = self.net(inputs["observations"])
+        # Pendulum-v1 action_space is -2 to 2
         return 2.0 * x, {"log_std": self.log_std_parameter}
 
 

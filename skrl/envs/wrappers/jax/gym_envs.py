@@ -81,6 +81,8 @@ class GymWrapper(Wrapper):
             unflatten_tensorized_space(self.action_space, actions),
             squeeze_batch_dimension=not self._vectorized,
         )
+        if self._vectorized and isinstance(self.action_space, gymnasium.spaces.Discrete):
+            actions = actions.flatten()
 
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)

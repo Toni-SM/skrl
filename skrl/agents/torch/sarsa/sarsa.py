@@ -100,7 +100,8 @@ class SARSA(Agent):
         self._current_rewards = None
         self._current_next_observations = None
         self._current_next_states = None
-        self._current_dones = None
+        self._current_terminated = None
+        self._current_truncated = None
 
     def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent.
@@ -183,7 +184,8 @@ class SARSA(Agent):
         self._current_rewards = rewards
         self._current_next_observations = next_observations
         self._current_next_states = next_states
-        self._current_dones = terminated + truncated
+        self._current_terminated = terminated
+        self._current_truncated = truncated
 
         if self.memory is not None:
             self.memory.add_samples(
@@ -227,18 +229,17 @@ class SARSA(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        q_table = self.policy.table()
-        env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
+        q_table = next(iter(self.policy.tables().values()))
 
         # compute next actions
         inputs = {"observations": self._current_next_observations, "states": self._current_next_states}
         next_actions, _ = self.policy.act(inputs, role="policy")
 
         # update Q-table
-        q_table[env_ids, self._current_observations, self._current_actions] += self._learning_rate * (
+        q_table[self._current_observations, self._current_actions] += self._learning_rate * (
             self._current_rewards
             + self._discount_factor
-            * self._current_dones.logical_not()
-            * q_table[env_ids, self._current_next_observations, next_actions]
-            - q_table[env_ids, self._current_observations, self._current_actions]
+            * (self._current_terminated | self._current_truncated).logical_not()
+            * q_table[self._current_next_observations, next_actions]
+            - q_table[self._current_observations, self._current_actions]
         )

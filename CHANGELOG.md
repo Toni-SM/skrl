@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed (breaking changes)
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)
+- Update tabular model and algorithms to operate in any number of parallel environments
 
 ### Removed
 - Remove checkpoints/models migration support from other RL libraries

@@ -220,6 +220,7 @@ class DDQN(Agent):
         :param trainer_cfg: Trainer configuration.
         """
         super().init(trainer_cfg=trainer_cfg)
+        self.enable_models_training_mode(False)
 
         # create tensors in memory
         if self.memory is not None:
@@ -382,9 +383,9 @@ class DDQN(Agent):
         """
         if timestep >= self._learning_starts and not timestep % self._update_interval:
             with ScopedTimer() as timer:
-                self.enable_training_mode(True)
+                self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_training_mode(False)
+                self.enable_models_training_mode(False)
                 self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints

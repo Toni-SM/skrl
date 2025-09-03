@@ -265,6 +265,7 @@ class MAPPO(MultiAgent):
         :param trainer_cfg: Trainer configuration.
         """
         super().init(trainer_cfg=trainer_cfg)
+        self.enable_models_training_mode(False)
 
         # create tensors in memories
         if self.memories:
@@ -422,9 +423,9 @@ class MAPPO(MultiAgent):
         """
         self._rollout += 1
         if not self._rollout % self._rollouts and timestep >= self._learning_starts:
-            self.enable_training_mode(True)
+            self.enable_models_training_mode(True)
             self.update(timestep=timestep, timesteps=timesteps)
-            self.enable_training_mode(False)
+            self.enable_models_training_mode(False)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

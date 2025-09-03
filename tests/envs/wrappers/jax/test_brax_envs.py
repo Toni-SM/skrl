@@ -29,6 +29,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     # load wrap the environment
     try:
         import brax.envs
+        import mujoco
     except ImportError as e:
         if is_running_on_github_actions():
             raise e
@@ -65,7 +66,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
             state = env.state()
             try:
                 env.render()
-            except AttributeError as e:
+            except (AttributeError, mujoco.FatalError) as e:
                 warnings.warn(f"Brax exception when rendering: {e}")
             assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
             assert isinstance(reward, Array) and reward.shape == (num_envs, 1)

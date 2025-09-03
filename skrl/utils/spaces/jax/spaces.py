@@ -361,8 +361,8 @@ def compute_space_limits(
     if space is None:
         return None, None
     size = compute_space_size(space, occupied_size=occupied_size)
-    low = np.full((size,), -float("inf"))
-    high = np.full((size,), float("inf"))
+    low = np.full((size,), -float("inf"), dtype=np.float32)
+    high = np.full((size,), float("inf"), dtype=np.float32)
     _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
     # check for unbounded spaces
     if none_if_unbounded == "both":

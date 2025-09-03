@@ -11,10 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed (breaking changes)
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)
+- Update tabular model and algorithms to operate in any number of parallel environments
 
 ### Removed
 - Remove checkpoints/models migration support from other RL libraries
-- Remove support for storing non-flattened data in memory
 - Remove Isaac Gym (web viewer, inverse kinematic) and Omniverse Isaac Gym (local environment instance, inverse kinematic) utils
 
 ## [1.4.3] - 2025-03-29

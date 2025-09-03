@@ -14,7 +14,7 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
-from skrl.trainers.torch import ParallelTrainer, generate_equally_spaced_scopes
+from skrl.trainers.torch import SequentialTrainer, generate_equally_spaced_scopes
 from skrl.utils import set_seed
 
 
@@ -240,7 +240,7 @@ if __name__ == "__main__":
 
     # configure and instantiate the RL trainer
     cfg_trainer = {"timesteps": 15000, "headless": args.headless}
-    trainer = ParallelTrainer(cfg=cfg_trainer, env=env, agents=[agent_ddpg, agent_td3, agent_sac], scopes=scopes)
+    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent_ddpg, agent_td3, agent_sac], scopes=scopes)
 
     if args.checkpoint:
         if not os.path.exists(args.checkpoint):

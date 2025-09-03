@@ -1,6 +1,6 @@
 import argparse
 import os
-import gymnasium as gym
+import gym
 
 import torch
 import torch.nn as nn
@@ -14,7 +14,7 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 from skrl.resources.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
-from skrl.trainers.torch import ParallelTrainer, generate_equally_spaced_scopes
+from skrl.trainers.torch import SequentialTrainer, generate_equally_spaced_scopes
 from skrl.utils import set_seed
 
 
@@ -118,7 +118,7 @@ class Critic(DeterministicMixin, Model):
 
 if __name__ == "__main__":
 
-    # load the environment (note: the environment version may change depending on the gymnasium version)
+    # load the environment (note: the environment version may change depending on the gym version)
     task_name = "Pendulum"
     render_mode = "human" if not args.headless else None
     env_id = [spec for spec in gym.envs.registry if spec.startswith(f"{task_name}-v")][
@@ -127,17 +127,15 @@ if __name__ == "__main__":
     if args.num_envs <= 1:
         env = gym.make(env_id, render_mode=render_mode)
     else:
-        env = gym.make_vec(env_id, num_envs=args.num_envs, render_mode=render_mode, vectorization_mode="sync")
+        env = gym.vector.make(env_id, num_envs=args.num_envs, render_mode=render_mode, asynchronous=False)
     # wrap the environment
     env = wrap_env(env)
 
     device = env.device
     scopes = generate_equally_spaced_scopes(num_envs=args.num_envs, num_simultaneous_agents=3)
 
-    # instantiate memories as experience replay (unique for each agents)
-    memory_ddpg = RandomMemory(memory_size=15000, num_envs=scopes[0], device=device)
-    memory_td3 = RandomMemory(memory_size=15000, num_envs=scopes[1], device=device)
-    memory_sac = RandomMemory(memory_size=15000, num_envs=scopes[2], device=device)
+    # instantiate a memory as experience replay (shared by all agents)
+    memory = RandomMemory(memory_size=15000, num_envs=env.num_envs, device=device)
 
     # instantiate the agents' models (function approximators).
     # DDPG requires 4 models, visit its documentation for more details
@@ -210,7 +208,7 @@ if __name__ == "__main__":
 
     agent_ddpg = DDPG(
         models=models_ddpg,
-        memory=memory_ddpg,
+        memory=memory,
         cfg=cfg_ddpg,
         observation_space=env.observation_space,
         state_space=env.state_space,
@@ -220,7 +218,7 @@ if __name__ == "__main__":
 
     agent_td3 = TD3(
         models=models_td3,
-        memory=memory_td3,
+        memory=memory,
         cfg=cfg_td3,
         observation_space=env.observation_space,
         state_space=env.state_space,
@@ -230,7 +228,7 @@ if __name__ == "__main__":
 
     agent_sac = SAC(
         models=models_sac,
-        memory=memory_sac,
+        memory=memory,
         cfg=cfg_sac,
         observation_space=env.observation_space,
         state_space=env.state_space,
@@ -240,7 +238,7 @@ if __name__ == "__main__":
 
     # configure and instantiate the RL trainer
     cfg_trainer = {"timesteps": 15000, "headless": args.headless}
-    trainer = ParallelTrainer(cfg=cfg_trainer, env=env, agents=[agent_ddpg, agent_td3, agent_sac], scopes=scopes)
+    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent_ddpg, agent_td3, agent_sac], scopes=scopes)
 
     if args.checkpoint:
         if not os.path.exists(args.checkpoint):

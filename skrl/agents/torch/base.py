@@ -324,14 +324,17 @@ class Agent(ABC):
                 self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
                 self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
-    def enable_training_mode(self, enabled: bool = True) -> None:
+    def enable_training_mode(self, enabled: bool = True, *, apply_to_models: bool = False) -> None:
         """Set the training mode of the agent: enabled (training) or disabled (evaluation).
 
         The training mode can be queried by the ``training`` property.
 
         :param enabled: True to enable the training mode, False to enable the evaluation mode.
+        :param apply_to_models: Whether to apply the training mode to all the agent's models.
         """
         self.training = enabled
+        if apply_to_models:
+            self.enable_models_training_mode(enabled)
 
     def enable_models_training_mode(self, enabled: bool = True) -> None:
         """Set the training mode of all the agent's models: enabled (training) or disabled (evaluation).

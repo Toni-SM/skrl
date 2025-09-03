@@ -98,7 +98,8 @@ class Q_LEARNING(Agent):
         self._current_actions = None
         self._current_rewards = None
         self._current_next_observations = None
-        self._current_dones = None
+        self._current_terminated = None
+        self._current_truncated = None
 
     def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent.
@@ -106,6 +107,7 @@ class Q_LEARNING(Agent):
         :param trainer_cfg: Trainer configuration.
         """
         super().init(trainer_cfg=trainer_cfg)
+        self.enable_models_training_mode(False)
 
     def act(
         self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
@@ -179,7 +181,8 @@ class Q_LEARNING(Agent):
         self._current_actions = actions
         self._current_rewards = rewards
         self._current_next_observations = next_observations
-        self._current_dones = terminated + truncated
+        self._current_terminated = terminated
+        self._current_truncated = truncated
 
         if self.memory is not None:
             self.memory.add_samples(
@@ -209,9 +212,9 @@ class Q_LEARNING(Agent):
         """
         if timestep >= self._learning_starts:
             with ScopedTimer() as timer:
-                self.enable_training_mode(True)
+                self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_training_mode(False)
+                self.enable_models_training_mode(False)
                 self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
@@ -223,17 +226,16 @@ class Q_LEARNING(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        q_table = self.policy.table()
-        env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
+        q_table = next(iter(self.policy.tables().values()))
 
         # compute next actions
-        next_actions = torch.argmax(q_table[env_ids, self._current_next_observations], dim=-1, keepdim=True).view(-1, 1)
+        next_actions = torch.argmax(q_table[self._current_next_observations], dim=-1, keepdim=False)
 
         # update Q-table
-        q_table[env_ids, self._current_observations, self._current_actions] += self._learning_rate * (
+        q_table[self._current_observations, self._current_actions] += self._learning_rate * (
             self._current_rewards
             + self._discount_factor
-            * self._current_dones.logical_not()
-            * q_table[env_ids, self._current_next_observations, next_actions]
-            - q_table[env_ids, self._current_observations, self._current_actions]
+            * (self._current_terminated | self._current_truncated).logical_not()
+            * q_table[self._current_next_observations, next_actions]
+            - q_table[self._current_observations, self._current_actions]
         )

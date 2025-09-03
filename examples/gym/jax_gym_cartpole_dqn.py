@@ -1,30 +1,43 @@
+import argparse
+import os
 import gym
 
 # import the skrl components to build the RL system
-from skrl import config
+from skrl import config, logger
 from skrl.agents.jax.dqn import DQN, DQN_DEFAULT_CONFIG
 from skrl.envs.wrappers.jax import wrap_env
 from skrl.memories.jax import RandomMemory
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
-from skrl.utils.model_instantiators.jax import Shape, deterministic_model
+from skrl.utils.model_instantiators.jax import deterministic_model
 
 
 config.jax.backend = "numpy"  # or "jax"
 
 
+# parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--num_envs", type=int, default=1, help="Number of environments")
+parser.add_argument("--headless", action="store_true", help="Run in headless mode (no rendering)")
+parser.add_argument("--seed", type=int, default=None, help="Random seed")
+parser.add_argument("--checkpoint", type=str, default=None, help="Load checkpoint from path")
+parser.add_argument("--eval", action="store_true", help="Run in evaluation mode (logging/checkpointing disabled)")
+args, _ = parser.parse_known_args()
+
+
 # seed for reproducibility
-set_seed()  # e.g. `set_seed(42)` for fixed seed
+set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
 
 
-# load and wrap the gym environment.
-# note: the environment version may change depending on the gym version
-try:
-    env = gym.make("CartPole-v0")
-except gym.error.DeprecatedEnv as e:
-    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("CartPole-v")][0]
-    print("CartPole-v0 not found. Trying {}".format(env_id))
-    env = gym.make(env_id)
+# load the environment (note: the environment version may change depending on the gym version)
+task_name = "CartPole"
+render_mode = "human" if not args.headless else None
+env_id = [spec for spec in gym.envs.registry if spec.startswith(f"{task_name}-v")][-1]  # get latest environment version
+if args.num_envs <= 1:
+    env = gym.make(env_id, render_mode=render_mode)
+else:
+    env = gym.vector.make(env_id, num_envs=args.num_envs, render_mode=render_mode, asynchronous=False)
+# wrap the environment
 env = wrap_env(env)
 
 device = env.device
@@ -34,44 +47,31 @@ device = env.device
 memory = RandomMemory(memory_size=50000, num_envs=env.num_envs, device=device, replacement=False)
 
 
-# instantiate the agent's models (function approximators) using the model instantiator utility.
+# instantiate the agent's models (function approximators) using model instantiators.
 # DQN requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/dqn.html#models
+network = [{"name": "net", "input": "OBSERVATIONS", "layers": [64, 64], "activations": "relu"}]
 models = {}
 models["q_network"] = deterministic_model(
     observation_space=env.observation_space,
+    state_space=env.state_space,
     action_space=env.action_space,
     device=device,
-    clip_actions=False,
-    network=[
-        {
-            "name": "net",
-            "input": "STATES",
-            "layers": [64, 64],
-            "activations": "relu",
-        }
-    ],
+    network=network,
     output="ACTIONS",
 )
 models["target_q_network"] = deterministic_model(
     observation_space=env.observation_space,
+    state_space=env.state_space,
     action_space=env.action_space,
     device=device,
-    clip_actions=False,
-    network=[
-        {
-            "name": "net",
-            "input": "STATES",
-            "layers": [64, 64],
-            "activations": "relu",
-        }
-    ],
+    network=network,
     output="ACTIONS",
 )
 
 # instantiate models' state dict
 for role, model in models.items():
-    model.init_state_dict(role)
+    model.init_state_dict(role=role)
 
 # initialize models' parameters (weights and biases)
 for model in models.values():
@@ -85,23 +85,29 @@ cfg["learning_starts"] = 100
 cfg["exploration"]["final_epsilon"] = 0.04
 cfg["exploration"]["timesteps"] = 1500
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 1000
-cfg["experiment"]["checkpoint_interval"] = 5000
-cfg["experiment"]["directory"] = "runs/jax/CartPole"
+cfg["experiment"]["write_interval"] = "auto" if not args.eval else 0
+cfg["experiment"]["checkpoint_interval"] = "auto" if not args.eval else 0
+cfg["experiment"]["directory"] = f"runs/jax/{task_name}"
 
 agent = DQN(
     models=models,
     memory=memory,
     cfg=cfg,
     observation_space=env.observation_space,
+    state_space=env.state_space,
     action_space=env.action_space,
     device=device,
 )
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 50000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
+cfg_trainer = {"timesteps": 50000, "headless": args.headless}
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
-# start training
-trainer.train()
+if args.checkpoint:
+    if not os.path.exists(args.checkpoint):
+        logger.error(f"Checkpoint file not found: '{args.checkpoint}'")
+        exit(1)
+    agent.load(args.checkpoint)
+
+trainer.train() if not args.eval else trainer.eval()

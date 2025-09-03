@@ -1,6 +1,6 @@
 import argparse
 import os
-import gymnasium as gym
+import gym
 
 import torch
 import torch.nn as nn
@@ -118,7 +118,7 @@ class Critic(DeterministicMixin, Model):
 
 if __name__ == "__main__":
 
-    # load the environment (note: the environment version may change depending on the gymnasium version)
+    # load the environment (note: the environment version may change depending on the gym version)
     task_name = "Pendulum"
     render_mode = "human" if not args.headless else None
     env_id = [spec for spec in gym.envs.registry if spec.startswith(f"{task_name}-v")][
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     if args.num_envs <= 1:
         env = gym.make(env_id, render_mode=render_mode)
     else:
-        env = gym.make_vec(env_id, num_envs=args.num_envs, render_mode=render_mode, vectorization_mode="sync")
+        env = gym.vector.make(env_id, num_envs=args.num_envs, render_mode=render_mode, asynchronous=False)
     # wrap the environment
     env = wrap_env(env)
 

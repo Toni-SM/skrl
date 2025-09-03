@@ -103,7 +103,7 @@ class Memory(ABC):
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
     def _tensors_view(self, name: str) -> Union[np.ndarray, jax.Array]:
-        return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, self.tensors[name].shape[-1])
+        return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, *self.tensors[name].shape[2:])
 
     def share_memory(self) -> None:
         """Set the tensors to be shared between processes."""
@@ -147,6 +147,7 @@ class Memory(ABC):
         *,
         size: Union[int, Sequence[int], gymnasium.Space, None],
         dtype: Optional[jnp.dtype] = None,
+        keep_dimensions: bool = False,
     ) -> bool:
         """Create a new internal tensor in memory.
 
@@ -157,6 +158,8 @@ class Memory(ABC):
         :param size: Number of elements in the last dimension (effective data size).
             If a space is provided, the size will be computed as the number of elements occupied by the space.
         :param dtype: Data type. If not specified, the global default data type for PyTorch will be used.
+        :param keep_dimensions: Whether to create a tensor with the original data dimensions.
+            If enabled, only sequences of integers are supported as data ``size``.
 
         :return: True if the tensor was created, otherwise False.
 
@@ -165,7 +168,11 @@ class Memory(ABC):
         # don't create a tensor for None
         if size is None:
             return False
-        size = compute_space_size(size, occupied_size=True)
+        if keep_dimensions:
+            if not isinstance(size, (tuple, list)):
+                raise ValueError("Only sequences of integers are supported as `size` when `keep_dimensions` is enabled")
+        else:
+            size = compute_space_size(size, occupied_size=True)
         # check dtype and size if the tensor exists already
         if name in self.tensors:
             tensor = self.tensors[name]
@@ -175,14 +182,14 @@ class Memory(ABC):
                 raise ValueError(f"Tensor dtype ({dtype}) doesn't match the existing one ({tensor.dtype}): '{name}'")
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
-        shape = (self.memory_size, self.num_envs, size)
+        shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
         if self._jax:
             setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         else:
             setattr(self, f"_tensor_{name}", np.zeros(shape, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
-        self.tensors_view[name] = self.tensors[name].reshape((-1, size))
+        self.tensors_view[name] = self.tensors[name].reshape((-1, *shape[2:]))
         # fill (float) tensors with NaN. This is useful for early misuse detection.
         for name, tensor in self.tensors.items():
             if tensor.dtype == np.float32 or tensor.dtype == np.float64:

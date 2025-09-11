@@ -3,6 +3,8 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+import torch
+
 from skrl import config
 from skrl.utils.model_instantiators.torch import (
     categorical_model,
@@ -11,6 +13,7 @@ from skrl.utils.model_instantiators.torch import (
     multicategorical_model,
     multivariate_gaussian_model,
     shared_model,
+    tabular_model,
 )
 from skrl.utils.spaces.torch import flatten_tensorized_space, sample_space
 
@@ -398,3 +401,23 @@ def test_shared_multicategorical_deterministic_model(capsys, device, single_forw
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
+def test_tabular_model(capsys, device):
+    observation_space = spaces.Discrete(3)
+    action_space = spaces.Discrete(2)
+    model = tabular_model(
+        observation_space=observation_space,
+        action_space=action_space,
+        device=device,
+        variant="epsilon-greedy",
+        variant_kwargs={"epsilon": 0.1},
+    )
+    model.to(device=config.torch.parse_device(device))
+
+    inputs = _sample_inputs("OBSERVATIONS", observation_space, device)
+    inputs["observations"] = inputs["observations"].to(dtype=torch.int32)
+    output = model.act(inputs)
+    assert len(output) == 2
+    assert output[0].shape == (10, 1)

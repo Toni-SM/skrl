@@ -9,9 +9,9 @@ import torch.nn as nn
 from skrl import logger
 from skrl.agents.torch.sarsa import SARSA, SARSA_DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
-from skrl.models.torch import Model, TabularMixin
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
+from skrl.utils.model_instantiators.torch import tabular_model
 
 
 # parse arguments
@@ -26,30 +26,6 @@ args, _ = parser.parse_known_args()
 
 # seed for reproducibility
 set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
-
-
-# define model (tabular model) using mixin
-class EpilonGreedyPolicy(TabularMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device, epsilon=0.1):
-        Model.__init__(
-            self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
-        )
-        TabularMixin.__init__(self)
-
-        self.epsilon = epsilon
-        self.q_table = nn.Parameter(
-            torch.ones((self.num_observations, self.num_actions), dtype=torch.float32, device=self.device),
-            requires_grad=False,
-        )
-
-    def compute(self, inputs, role):
-        actions = torch.argmax(self.q_table[inputs["observations"]], dim=-1, keepdim=False)
-
-        # choose random actions for exploration according to epsilon
-        indexes = (torch.rand(inputs["observations"].shape[0], device=self.device) < self.epsilon).nonzero().flatten()
-        if indexes.numel():
-            actions[indexes] = torch.randint(self.num_actions, (indexes.numel(), 1), device=self.device)
-        return actions, {}
 
 
 # load the environment (note: the environment version may change depending on the gym version)
@@ -70,7 +46,14 @@ device = env.device
 # SARSA requires 1 model, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/sarsa.html#models
 models = {}
-models["policy"] = EpilonGreedyPolicy(env.observation_space, env.state_space, env.action_space, device, epsilon=0.1)
+models["policy"] = tabular_model(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=device,
+    variant="epilon-greedy",
+    variant_kwargs={"epsilon": 0.1},
+)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)

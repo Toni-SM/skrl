@@ -51,7 +51,7 @@ models["policy"] = tabular_model(
     state_space=env.state_space,
     action_space=env.action_space,
     device=device,
-    variant="epilon-greedy",
+    variant="epsilon-greedy",
     variant_kwargs={"epsilon": 0.1},
 )
 

@@ -29,7 +29,7 @@ set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
 
 
 # define model (tabular model) using mixin
-class EpilonGreedyPolicy(TabularMixin, Model):
+class EpsilonGreedyPolicy(TabularMixin, Model):
     def __init__(self, observation_space, state_space, action_space, device, epsilon=0.1):
         Model.__init__(
             self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
@@ -70,7 +70,7 @@ device = env.device
 # Q-learning requires 1 model, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/q_learning.html#models
 models = {}
-models["policy"] = EpilonGreedyPolicy(env.observation_space, env.state_space, env.action_space, device, epsilon=0.1)
+models["policy"] = EpsilonGreedyPolicy(env.observation_space, env.state_space, env.action_space, device, epsilon=0.1)
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)

@@ -15,7 +15,7 @@ def tabular_model(
     state_space: Optional[gymnasium.Space] = None,
     action_space: Optional[gymnasium.Space] = None,
     device: Optional[Union[str, torch.device]] = None,
-    variant: Literal["epilon-greedy"] = "epilon-greedy",
+    variant: Literal["epsilon-greedy"] = "epsilon-greedy",
     variant_kwargs: Mapping[str, Any] = {},
     return_source: bool = False,
 ) -> Union[Model, str]:
@@ -23,7 +23,7 @@ def tabular_model(
 
     Supported variants:
 
-    - ``epilon-greedy``: select a random sample for probabilities below epsilon.
+    - ``epsilon-greedy``: Simple method of balancing exploration and exploitation by randomly selecting one or the other.
 
       .. list-table::
           :header-rows: 1
@@ -35,7 +35,7 @@ def tabular_model(
           * - ``epsilon``
             - ``float``
             - ``0.1``
-            - Epsilon value for exploration
+            - Cut-off probability for choosing to explore
 
     :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
     :param state_space: State space. The ``num_states`` property will contain the size of the space.
@@ -49,7 +49,7 @@ def tabular_model(
     :return: Tabular model instance or definition source (if ``return_source`` is True).
     """
 
-    if variant == "epilon-greedy":
+    if variant == "epsilon-greedy":
         epsilon = float(variant_kwargs.get("epsilon", 0.1))
         template = f"""class TabularModel(TabularMixin, Model):
     def __init__(self, observation_space, state_space, action_space, device, role=""):

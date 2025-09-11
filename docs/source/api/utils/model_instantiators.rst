@@ -16,7 +16,7 @@ Utilities for quickly creating model instances.
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
     * - :doc:`Tabular model <../models/tabular>` (discrete domain)
-      - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
@@ -550,6 +550,8 @@ API (PyTorch)
 .. autofunction:: skrl.utils.model_instantiators.torch.multivariate_gaussian_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.shared_model
+
+.. autofunction:: skrl.utils.model_instantiators.torch.tabular_model
 
 .. raw:: html
 

@@ -206,5 +206,3 @@ Utils and configurations
     * :doc:`Distributed runs <api/utils/distributed>`
     * Memory and TensorBoard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`
-    * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
-    * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

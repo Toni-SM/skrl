@@ -21,6 +21,22 @@ def tabular_model(
 ) -> Union[Model, str]:
     """Instantiate a :class:`~skrl.models.torch.tabular.TabularMixin`-based model.
 
+    Supported variants:
+
+    - ``epilon-greedy``: select a random sample for probabilities below epsilon.
+
+      .. list-table::
+          :header-rows: 1
+
+          * - Argument
+            - Type
+            - Default
+            - Description
+          * - ``epsilon``
+            - ``float``
+            - ``0.1``
+            - Epsilon value for exploration
+
     :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.
     :param state_space: State space. The ``num_states`` property will contain the size of the space.
     :param action_space: Action space. The ``num_actions`` property will contain the size of the space.

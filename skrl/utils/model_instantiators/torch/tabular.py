@@ -51,7 +51,7 @@ def tabular_model(
 
     if variant == "epilon-greedy":
         epsilon = float(variant_kwargs.get("epsilon", 0.1))
-        template = f"""class EpilonGreedyModel(TabularMixin, Model):
+        template = f"""class TabularModel(TabularMixin, Model):
     def __init__(self, observation_space, state_space, action_space, device, role=""):
         Model.__init__(
             self,
@@ -86,6 +86,6 @@ def tabular_model(
     # instantiate model
     _locals = {}
     exec(template, globals(), _locals)
-    return _locals["EpilonGreedyModel"](
+    return _locals["TabularModel"](
         observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
     )

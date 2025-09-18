@@ -141,6 +141,11 @@ Configuration and hyperparameters
     :start-after: [start-config-dict-torch]
     :end-before: [end-config-dict-torch]
 
+.. autoclass:: skrl.agents.torch.ddpg.DDPG_CFG
+    :inherited-members:
+    :undoc-members:
+    :members:
+
 .. raw:: html
 
     <br>

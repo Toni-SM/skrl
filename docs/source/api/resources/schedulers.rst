@@ -1,3 +1,5 @@
+.. _learning_rate_schedulers:
+
 Learning rate schedulers
 ========================
 

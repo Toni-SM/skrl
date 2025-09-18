@@ -121,6 +121,12 @@ API (PyTorch)
 
     .. automethod:: __str__
 
+.. autoclass:: skrl.agents.torch.base.AgentCfg
+    :members:
+
+.. autoclass:: skrl.agents.torch.base.ExperimentCfg
+    :members:
+
 .. raw:: html
 
     <br>

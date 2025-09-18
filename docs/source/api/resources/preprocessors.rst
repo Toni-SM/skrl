@@ -1,3 +1,5 @@
+.. _preprocessors:
+
 Preprocessors
 =============
 

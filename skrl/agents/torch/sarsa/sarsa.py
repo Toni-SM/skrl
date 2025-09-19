@@ -10,33 +10,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-SARSA_DEFAULT_CONFIG = {
-    "discount_factor": 0.99,        # discount factor (gamma)
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "learning_rate": 0.5,           # learning rate (alpha)
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .sarsa_cfg import SARSA_CFG
 
 
 class SARSA(Agent):
@@ -65,8 +39,7 @@ class SARSA(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(SARSA_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: SARSA_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -74,7 +47,7 @@ class SARSA(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=SARSA_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -82,16 +55,6 @@ class SARSA(Agent):
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
-
-        # configuration
-        self._discount_factor = self.cfg["discount_factor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._learning_rate = self.cfg["learning_rate"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # create temporary variables needed for storage and computation
         self._current_observations = None
@@ -126,7 +89,7 @@ class SARSA(Agent):
         """
         inputs = {"observations": observations, "states": states}
         # sample random actions
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample actions
@@ -176,8 +139,8 @@ class SARSA(Agent):
         )
 
         # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        if self.cfg.rewards_shaper is not None:
+            rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
         self._current_observations = observations
         self._current_states = states
@@ -214,7 +177,7 @@ class SARSA(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
+        if timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -237,9 +200,9 @@ class SARSA(Agent):
         next_actions, _ = self.policy.act(inputs, role="policy")
 
         # update Q-table
-        q_table[self._current_observations, self._current_actions] += self._learning_rate * (
+        q_table[self._current_observations, self._current_actions] += self.cfg.learning_rate * (
             self._current_rewards
-            + self._discount_factor
+            + self.cfg.discount_factor
             * (self._current_terminated | self._current_truncated).logical_not()
             * q_table[self._current_next_observations, next_actions]
             - q_table[self._current_observations, self._current_actions]

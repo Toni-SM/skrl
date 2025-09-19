@@ -27,9 +27,8 @@ class A2C_CFG(AgentCfg):
     learning_rate: float | tuple[float, float] = 1e-3
     """Learning rate for the policy and value networks.
 
-    * If a float is provided, the same learning rate will be used for both the policy and value networks.
-    * If a tuple is provided instead, the first element will be the learning rate for the policy network
-      and the second element will be the learning rate for the value network.
+    * If a float is provided, the same learning rate will be used for the networks.
+    * If a tuple is provided, its elements will be used for each network in order.
     """
 
     learning_rate_scheduler: type | tuple[type | None, type | None] | None = None
@@ -37,9 +36,8 @@ class A2C_CFG(AgentCfg):
 
     See :ref:`learning_rate_schedulers` for more details.
 
-    * If a class is provided, the same learning rate scheduler will be used for both the policy and value networks.
-    * If a tuple is provided instead, the first element will be the learning rate scheduler for the policy network
-      and the second element will be the learning rate scheduler for the value network.
+    * If a class is provided, the same learning rate scheduler will be used for the networks.
+    * If a tuple is provided, its elements will be used for each network in order.
     """
 
     learning_rate_scheduler_kwargs: dict | tuple[dict, dict] = dataclasses.field(default_factory=dict)
@@ -52,9 +50,8 @@ class A2C_CFG(AgentCfg):
         The ``optimizer`` argument is automatically passed to the learning rate scheduler's constructor.
         Therefore, it must not be provided in the keyword arguments.
 
-    * If a dictionary is provided, the same keyword arguments will be used for both the policy and value networks.
-    * If a tuple is provided instead, the first element will be the keyword arguments for the policy network
-      and the second element will be the keyword arguments for the value network.
+    * If a dictionary is provided, the same keyword arguments will be used for the networks.
+    * If a tuple is provided, its elements will be used for each network in order.
     """
 
     observation_preprocessor: type | None = None

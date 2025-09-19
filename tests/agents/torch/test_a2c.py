@@ -2,12 +2,13 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import torch
 
 from skrl.agents.torch.a2c import A2C as Agent
-from skrl.agents.torch.a2c import A2C_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.a2c import A2C_CFG as DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
@@ -187,7 +188,7 @@ def test_agent(
         "rollouts": rollouts,
         "mini_batches": mini_batches,
         "discount_factor": discount_factor,
-        "lambda": lambda_,
+        "lambda_": lambda_,
         "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
@@ -217,8 +218,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = Agent(
         models=models,
         memory=memory,

@@ -14,7 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
 
-from .cfg import DDPG_CFG
+from .ddpg_cfg import DDPG_CFG
 
 
 class DDPG(Agent):

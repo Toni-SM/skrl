@@ -2,12 +2,13 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import torch
 
 from skrl.agents.torch.dqn import DDQN as Agent
-from skrl.agents.torch.dqn import DDQN_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.dqn import DDQN_CFG as DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
@@ -33,9 +34,7 @@ from ...utilities import SingleAgentEnv, check_config_keys, get_test_mixed_preci
     learning_starts=st.integers(min_value=0, max_value=5),
     update_interval=st.integers(min_value=1, max_value=3),
     target_update_interval=st.integers(min_value=1, max_value=5),
-    exploration_initial_epsilon=st.floats(min_value=0, max_value=1),
-    exploration_final_epsilon=st.floats(min_value=0, max_value=1),
-    exploration_timesteps=st.one_of(st.none(), st.integers(min_value=1, max_value=50)),
+    exploration_scheduler=st.one_of(st.none(), st.just(lambda timestep, timesteps: 1.0 - timestep / timesteps)),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
     mixed_precision=st.booleans(),
 )
@@ -65,9 +64,7 @@ def test_agent(
     learning_starts,
     update_interval,
     target_update_interval,
-    exploration_initial_epsilon,
-    exploration_final_epsilon,
-    exploration_timesteps,
+    exploration_scheduler,
     rewards_shaper,
     mixed_precision,
 ):
@@ -139,11 +136,7 @@ def test_agent(
         "learning_starts": learning_starts,
         "update_interval": update_interval,
         "target_update_interval": target_update_interval,
-        "exploration": {
-            "initial_epsilon": exploration_initial_epsilon,
-            "final_epsilon": exploration_final_epsilon,
-            "timesteps": exploration_timesteps,
-        },
+        "exploration_scheduler": exploration_scheduler,
         "rewards_shaper": rewards_shaper,
         "mixed_precision": get_test_mixed_precision(mixed_precision),
         "experiment": {
@@ -159,9 +152,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
-    check_config_keys(cfg["exploration"], DEFAULT_CONFIG["exploration"])
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = Agent(
         models=models,
         memory=memory,

@@ -173,12 +173,12 @@ class AMP_CFG(AgentCfg):
         super().expand()
         # learning rate
         if self.learning_rate is None:
-            self.learning_rate = (None, None)
+            self.learning_rate = (None, None, None)
         elif not isinstance(self.learning_rate, (tuple, list)):
             self.learning_rate = (self.learning_rate, self.learning_rate, self.learning_rate)
         # learning rate scheduler
         if self.learning_rate_scheduler is None:
-            self.learning_rate_scheduler = (None, None)
+            self.learning_rate_scheduler = (None, None, None)
         elif not isinstance(self.learning_rate_scheduler, (tuple, list)):
             self.learning_rate_scheduler = (
                 self.learning_rate_scheduler,

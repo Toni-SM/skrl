@@ -194,21 +194,15 @@ class DDPG(Agent):
 
         # add exploration noise
         if self._exploration_noise:
-            # sample noises
             noises = self._exploration_noise.sample(actions.shape)
-            # apply scale
             if self.cfg.exploration_scheduler:
                 noises.mul_(self.cfg.exploration_scheduler(timestep, timesteps))
-                self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
-                self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
-                self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
-            else:
-                self.track_data("Exploration / Exploration noise (max)", 0)
-                self.track_data("Exploration / Exploration noise (min)", 0)
-                self.track_data("Exploration / Exploration noise (mean)", 0)
-            # modify actions
             actions.add_(noises)
             actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+
+            self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
+            self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
+            self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
 
         return actions, outputs
 

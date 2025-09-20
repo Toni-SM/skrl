@@ -16,51 +16,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-jax]
-A2C_DEFAULT_CONFIG = {
-    "rollouts": 16,                 # number of rollouts before updating
-    "mini_batches": 1,              # number of mini batches to use for updating
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-
-    "learning_rate": 1e-3,                  # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-    "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
-    "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0.5,          # clipping coefficient for the norm of the gradients
-
-    "entropy_loss_scale": 0.0,      # entropy loss scaling factor
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-jax]
-# fmt: on
+from .a2c_cfg import A2C_CFG
 
 
 def compute_gae(
@@ -203,9 +159,7 @@ class A2C(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(A2C_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
-        _cfg = A2C_DEFAULT_CONFIG
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: A2C_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -213,7 +167,7 @@ class A2C(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=A2C_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -232,72 +186,54 @@ class A2C(Agent):
             if self.value is not None:
                 self.value.broadcast_parameters()
 
-        # configuration
-        self._mini_batches = self.cfg["mini_batches"]
-        self._rollouts = self.cfg["rollouts"]
-        self._rollout = 0
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._entropy_loss_scale = self.cfg["entropy_loss_scale"]
-
-        self._learning_rate = self.cfg["learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-        self._value_preprocessor = self.cfg["value_preprocessor"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._lambda = self.cfg["lambda"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
-
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
-            # scheduler
-            if self._learning_rate_scheduler:
-                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-            # optimizer
+            self.policy_learning_rate = self.cfg.learning_rate[0]
+            self.value_learning_rate = self.cfg.learning_rate[1]
+            # optimizers
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
                     model=self.policy,
-                    lr=self._learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.policy_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[0],
                 )
                 self.value_optimizer = Adam(
                     model=self.value,
-                    lr=self._learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.value_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[1],
                 )
-
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
+            # schedulers
+            self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
+            if self.policy_scheduler is not None:
+                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                    **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
+            self.value_scheduler = self.cfg.learning_rate_scheduler[1]
+            if self.value_scheduler is not None:
+                self.value_scheduler = self.cfg.learning_rate_scheduler[1](**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
         # - values
-        if self._value_preprocessor:
-            self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
+        if self.cfg.value_preprocessor:
+            self._value_preprocessor = self.cfg.value_preprocessor(**self.cfg.value_preprocessor_kwargs)
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
         else:
             self._value_preprocessor = self._empty_preprocessor
@@ -329,6 +265,7 @@ class A2C(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._rollout = 0
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -359,7 +296,7 @@ class A2C(Agent):
         }
         # sample random actions
         # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
@@ -419,8 +356,8 @@ class A2C(Agent):
             self._current_next_states = next_states
 
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
             inputs = {
@@ -433,8 +370,8 @@ class A2C(Agent):
             values = self._value_preprocessor(values, inverse=True)
 
             # time-limit (truncation) bootstrapping
-            if self._time_limit_bootstrap:
-                rewards += self._discount_factor * values * truncated
+            if self.cfg.time_limit_bootstrap:
+                rewards += self.cfg.discount_factor * values * truncated
 
             # storage transition in memory
             self.memory.add_samples(
@@ -463,7 +400,7 @@ class A2C(Agent):
         :param timesteps: Number of timesteps.
         """
         self._rollout += 1
-        if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -497,8 +434,8 @@ class A2C(Agent):
             dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
-            discount_factor=self._discount_factor,
-            lambda_coefficient=self._lambda,
+            discount_factor=self.cfg.discount_factor,
+            lambda_coefficient=self.cfg.lambda_,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
@@ -506,7 +443,7 @@ class A2C(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -537,7 +474,7 @@ class A2C(Agent):
                 sampled_log_prob,
                 sampled_advantages,
                 self.policy.get_entropy,
-                self._entropy_loss_scale,
+                self.cfg.entropy_loss_scale,
             )
 
             kl_divergences.append(kl_divergence.item())
@@ -546,7 +483,7 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad=grad, model=self.policy, lr=self._learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self.policy_learning_rate if self.policy_scheduler else None
             )
 
             # compute value loss
@@ -556,35 +493,46 @@ class A2C(Agent):
             if config.jax.is_distributed:
                 grad = self.value.reduce_parameters(grad)
             self.value_optimizer = self.value_optimizer.step(
-                grad=grad, model=self.value, lr=self._learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.value, lr=self.value_learning_rate if self.value_scheduler else None
             )
 
             # update cumulative losses
             cumulative_policy_loss += policy_loss.item()
             cumulative_value_loss += value_loss.item()
-            if self._entropy_loss_scale:
+            if self.cfg.entropy_loss_scale:
                 cumulative_entropy_loss += entropy_loss.item()
 
         # update learning rate
-        if self._learning_rate_scheduler:
-            if self._learning_rate_scheduler is KLAdaptiveLR:
-                kl = np.mean(kl_divergences)
-                # reduce (collect from all workers/processes) KL in distributed runs
-                if config.jax.is_distributed:
-                    kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
-                    kl /= config.jax.world_size
-                self._learning_rate = self.scheduler(timestep, lr=self._learning_rate, kl=kl)
+        # - compute KL for KL adaptive learning rate scheduler
+        if self.policy_scheduler is KLAdaptiveLR or self.value_scheduler is KLAdaptiveLR:
+            kl = np.mean(kl_divergences)
+            # reduce (collect from all workers/processes) KL in distributed runs
+            if config.jax.is_distributed:
+                kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
+                kl /= config.jax.world_size
+        # - policy learning rate
+        if self.policy_scheduler:
+            if self.policy_scheduler is KLAdaptiveLR:
+                self.policy_learning_rate = self.policy_scheduler(timestep, lr=self.policy_learning_rate, kl=kl)
             else:
-                self._learning_rate *= self.scheduler(timestep)
+                self.policy_learning_rate *= self.policy_scheduler(timestep)
+        # - value learning rate
+        if self.value_scheduler:
+            if self.value_scheduler is KLAdaptiveLR:
+                self.value_learning_rate = self.value_scheduler(timestep, lr=self.value_learning_rate, kl=kl)
+            else:
+                self.value_learning_rate *= self.value_scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / len(sampled_batches))
 
-        if self._entropy_loss_scale:
+        if self.cfg.entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
 
         self.track_data("Policy / Standard deviation", stddev.mean().item())
 
-        if self._learning_rate_scheduler:
-            self.track_data("Learning / Learning rate", self._learning_rate)
+        if self.policy_scheduler:
+            self.track_data("Learning / Learning rate (policy)", self.policy_learning_rate)
+        if self.value_scheduler:
+            self.track_data("Learning / Learning rate (value)", self.value_learning_rate)

@@ -2,12 +2,13 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import torch
 
 from skrl.agents.torch.trpo import TRPO as Agent
-from skrl.agents.torch.trpo import TRPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.torch.trpo import TRPO_CFG as DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
@@ -25,7 +26,7 @@ from ...utilities import SingleAgentEnv, check_config_keys, get_test_mixed_preci
     mini_batches=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     lambda_=st.floats(min_value=0, max_value=1),
-    value_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
+    learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(torch.optim.lr_scheduler.ConstantLR)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
@@ -65,7 +66,7 @@ def test_agent(
     mini_batches,
     discount_factor,
     lambda_,
-    value_learning_rate,
+    learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
     observation_preprocessor,
@@ -161,8 +162,8 @@ def test_agent(
         "learning_epochs": learning_epochs,
         "mini_batches": mini_batches,
         "discount_factor": discount_factor,
-        "lambda": lambda_,
-        "value_learning_rate": value_learning_rate,
+        "lambda_": lambda_,
+        "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
         "observation_preprocessor": observation_preprocessor,
@@ -196,8 +197,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = Agent(
         models=models,
         memory=memory,

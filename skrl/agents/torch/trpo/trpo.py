@@ -14,58 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-TRPO_DEFAULT_CONFIG = {
-    "rollouts": 16,                 # number of rollouts before updating
-    "learning_epochs": 8,           # number of learning epochs during each update
-    "mini_batches": 2,              # number of mini batches during each learning epoch
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-
-    "value_learning_rate": 1e-3,            # value learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-    "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
-    "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0.5,          # clipping coefficient for the norm of the gradients
-    "value_loss_scale": 1.0,        # value loss scaling factor
-
-    "damping": 0.1,                     # damping coefficient for computing the Hessian-vector product
-    "max_kl_divergence": 0.01,          # maximum KL divergence between old and new policy
-    "conjugate_gradient_steps": 10,     # maximum number of iterations for the conjugate gradient algorithm
-    "max_backtrack_steps": 10,          # maximum number of backtracking steps during line search
-    "accept_ratio": 0.5,                # accept ratio for the line search loss improvement
-    "step_fraction": 1.0,               # fraction of the step size for the line search
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .trpo_cfg import TRPO_CFG
 
 
 def compute_gae(
@@ -254,8 +203,7 @@ class TRPO(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(TRPO_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: TRPO_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -263,7 +211,7 @@ class TRPO(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=TRPO_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -284,66 +232,36 @@ class TRPO(Agent):
             if self.value is not None:
                 self.value.broadcast_parameters()
 
-        # configuration
-        self._learning_epochs = self.cfg["learning_epochs"]
-        self._mini_batches = self.cfg["mini_batches"]
-        self._rollouts = self.cfg["rollouts"]
-        self._rollout = 0
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-        self._value_loss_scale = self.cfg["value_loss_scale"]
-
-        self._max_kl_divergence = self.cfg["max_kl_divergence"]
-        self._damping = self.cfg["damping"]
-        self._conjugate_gradient_steps = self.cfg["conjugate_gradient_steps"]
-        self._max_backtrack_steps = self.cfg["max_backtrack_steps"]
-        self._accept_ratio = self.cfg["accept_ratio"]
-        self._step_fraction = self.cfg["step_fraction"]
-
-        self._value_learning_rate = self.cfg["value_learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-        self._value_preprocessor = self.cfg["value_preprocessor"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._lambda = self.cfg["lambda"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
-
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
-            self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self._value_learning_rate)
-            if self._learning_rate_scheduler is not None:
-                self.value_scheduler = self._learning_rate_scheduler(
-                    self.value_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-
+            # - optimizer
+            self.value_optimizer = torch.optim.Adam(self.value.parameters(), lr=self.cfg.learning_rate)
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
+            # - learning rate scheduler
+            self.value_scheduler = self.cfg.learning_rate_scheduler
+            if self.value_scheduler is not None:
+                self.value_scheduler = self.cfg.learning_rate_scheduler(
+                    self.value_optimizer, **self.cfg.learning_rate_scheduler_kwargs
+                )
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
         # - values
-        if self._value_preprocessor:
-            self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
+        if self.cfg.value_preprocessor:
+            self._value_preprocessor = self.cfg.value_preprocessor(**self.cfg.value_preprocessor_kwargs)
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
         else:
             self._value_preprocessor = self._empty_preprocessor
@@ -376,6 +294,7 @@ class TRPO(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._rollout = 0
 
     def act(
         self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
@@ -396,7 +315,7 @@ class TRPO(Agent):
         }
         # sample random actions
         # TODO: check for stochasticity
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
@@ -453,8 +372,8 @@ class TRPO(Agent):
             self._current_next_states = next_states
 
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
             inputs = {
@@ -465,8 +384,8 @@ class TRPO(Agent):
             values = self._value_preprocessor(values, inverse=True)
 
             # time-limit (truncation) bootstrapping
-            if self._time_limit_bootstrap:
-                rewards += self._discount_factor * values * truncated
+            if self.cfg.time_limit_bootstrap:
+                rewards += self.cfg.discount_factor * values * truncated
 
             # storage transition in memory
             self.memory.add_samples(
@@ -495,7 +414,7 @@ class TRPO(Agent):
         :param timesteps: Number of timesteps.
         """
         self._rollout += 1
-        if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -528,8 +447,8 @@ class TRPO(Agent):
             dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
-            discount_factor=self._discount_factor,
-            lambda_coefficient=self._lambda,
+            discount_factor=self.cfg.discount_factor,
+            lambda_coefficient=self.cfg.lambda_,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
@@ -562,8 +481,8 @@ class TRPO(Agent):
             observations=sampled_observations,
             states=sampled_states,
             b=flat_policy_loss_gradient.data,
-            damping=self._damping,
-            num_iterations=self._conjugate_gradient_steps,
+            damping=self.cfg.damping,
+            num_iterations=self.cfg.conjugate_gradient_steps,
         )
 
         # compute step size and full step
@@ -574,10 +493,10 @@ class TRPO(Agent):
                 observations=sampled_observations,
                 states=sampled_states,
                 vector=search_direction,
-                damping=self._damping,
+                damping=self.cfg.damping,
             )
         ).sum(0, keepdim=True)
-        step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
+        step_size = torch.sqrt(2 * self.cfg.max_kl_divergence / xHx)[0]
         full_step = step_size * search_direction
 
         # backtracking line search
@@ -587,7 +506,7 @@ class TRPO(Agent):
 
         expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
 
-        for alpha in [self._step_fraction * 0.5**i for i in range(self._max_backtrack_steps)]:
+        for alpha in [self.cfg.step_fraction * 0.5**i for i in range(self.cfg.max_backtrack_steps)]:
             new_params = params + alpha * full_step
             vector_to_parameters(new_params, self.policy.parameters())
 
@@ -607,7 +526,7 @@ class TRPO(Agent):
                 advantages=sampled_advantages,
             )
 
-            if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:
+            if kl < self.cfg.max_kl_divergence and (loss - policy_loss) / expected_improvement > self.cfg.accept_ratio:
                 restore_policy_flag = False
                 break
 
@@ -618,12 +537,12 @@ class TRPO(Agent):
             self.policy.reduce_parameters()
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self.cfg.mini_batches)
 
         cumulative_value_loss = 0
 
         # learning epochs
-        for epoch in range(self._learning_epochs):
+        for epoch in range(self.cfg.learning_epochs):
 
             # mini-batches loop
             for sampled_observations, sampled_states, sampled_returns in sampled_batches:
@@ -636,29 +555,29 @@ class TRPO(Agent):
                 # compute value loss
                 predicted_values, _ = self.value.act(inputs, role="value")
 
-                value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
+                value_loss = self.cfg.value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
 
                 # optimization step (value)
                 self.value_optimizer.zero_grad()
                 value_loss.backward()
                 if config.torch.is_distributed:
                     self.value.reduce_parameters()
-                if self._grad_norm_clip > 0:
-                    nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
+                if self.cfg.grad_norm_clip > 0:
+                    nn.utils.clip_grad_norm_(self.value.parameters(), self.cfg.grad_norm_clip)
                 self.value_optimizer.step()
 
                 # update cumulative losses
                 cumulative_value_loss += value_loss.item()
 
             # update learning rate
-            if self._learning_rate_scheduler:
+            if self.value_scheduler:
                 self.value_scheduler.step()
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
-        self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
+        self.track_data("Loss / Value loss", cumulative_value_loss / (self.cfg.learning_epochs * self.cfg.mini_batches))
 
         self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
-        if self._learning_rate_scheduler:
+        if self.value_scheduler:
             self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])

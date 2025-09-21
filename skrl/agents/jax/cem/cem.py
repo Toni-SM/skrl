@@ -16,43 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-jax]
-CEM_DEFAULT_CONFIG = {
-    "rollouts": 16,                 # number of rollouts before updating
-    "percentile": 0.70,             # percentile to compute the reward bound [0, 1]
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-
-    "learning_rate": 1e-2,          # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-jax]
-# fmt: on
+from .cem_cfg import CEM_CFG
 
 
 @functools.partial(jax.jit, static_argnames=("policy_act", "n"))
@@ -98,9 +62,7 @@ class CEM(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(CEM_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
-        _cfg = CEM_DEFAULT_CONFIG
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: CEM_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -108,7 +70,7 @@ class CEM(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=CEM_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -117,51 +79,32 @@ class CEM(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
 
-        # configuration
-        self._rollouts = self.cfg["rollouts"]
-        self._rollout = 0
-
-        self._percentile = self.cfg["percentile"]
-        self._discount_factor = self.cfg["discount_factor"]
-
-        self._learning_rate = self.cfg["learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-
-        self._episode_tracking = []
-
         # set up optimizer and learning rate scheduler
         if self.policy is not None:
-            # scheduler
-            if self._learning_rate_scheduler:
-                self.scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-            # optimizer
+            self.learning_rate = self.cfg.learning_rate
+            # - optimizer
             with jax.default_device(self.device):
                 self.optimizer = Adam(
-                    model=self.policy, lr=self._learning_rate, scale=not self._learning_rate_scheduler
+                    model=self.policy, lr=self.learning_rate, scale=not self.cfg.learning_rate_scheduler
                 )
-
             self.checkpoint_modules["optimizer"] = self.optimizer
+            # - learning rate scheduler
+            self.scheduler = self.cfg.learning_rate_scheduler
+            if self.scheduler is not None:
+                self.scheduler = self.cfg.learning_rate_scheduler(**self.cfg.learning_rate_scheduler_kwargs)
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
@@ -186,6 +129,10 @@ class CEM(Agent):
             self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
         self.tensors_names = ["observations", "states", "actions", "rewards"]
+
+        # create temporary variables needed for storage and computation
+        self._rollout = 0
+        self._episode_tracking = []
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -214,7 +161,7 @@ class CEM(Agent):
         }
         # sample random actions
         # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
@@ -269,8 +216,8 @@ class CEM(Agent):
 
         if self.memory is not None:
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             self.memory.add_samples(
                 observations=observations,
@@ -310,7 +257,7 @@ class CEM(Agent):
         :param timesteps: Number of timesteps.
         """
         self._rollout += 1
-        if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
             self._rollout = 0
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
@@ -351,7 +298,8 @@ class CEM(Agent):
                 returns.append(
                     np.sum(
                         rewards
-                        * self._discount_factor ** np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)
+                        * self.cfg.discount_factor
+                        ** np.flip(np.arange(rewards.shape[0]), axis=-1).reshape(rewards.shape)
                     )
                 )
 
@@ -360,7 +308,7 @@ class CEM(Agent):
             return
 
         returns = np.array(returns)
-        return_threshold = np.quantile(returns, self._percentile, axis=-1)
+        return_threshold = np.quantile(returns, self.cfg.percentile, axis=-1)
 
         # get elite observations/states and actions
         indexes = (returns >= return_threshold).nonzero()[0]
@@ -386,12 +334,12 @@ class CEM(Agent):
 
         # optimization step (policy)
         self.optimizer = self.optimizer.step(
-            grad=grad, model=self.policy, lr=self._learning_rate if self._learning_rate_scheduler else None
+            grad=grad, model=self.policy, lr=self.learning_rate if self.scheduler else None
         )
 
         # update learning rate
-        if self._learning_rate_scheduler:
-            self._learning_rate *= self.scheduler(timestep)
+        if self.scheduler:
+            self.learning_rate *= self.scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())
@@ -399,5 +347,5 @@ class CEM(Agent):
         self.track_data("Coefficient / Return threshold", return_threshold.item())
         self.track_data("Coefficient / Mean discounted returns", returns.mean().item())
 
-        if self._learning_rate_scheduler:
-            self.track_data("Learning / Learning rate", self._learning_rate)
+        if self.scheduler:
+            self.track_data("Learning / Learning rate", self.learning_rate)

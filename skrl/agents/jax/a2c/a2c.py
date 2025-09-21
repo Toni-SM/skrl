@@ -190,7 +190,7 @@ class A2C(Agent):
         if self.policy is not None and self.value is not None:
             self.policy_learning_rate = self.cfg.learning_rate[0]
             self.value_learning_rate = self.cfg.learning_rate[1]
-            # optimizers
+            # - optimizers
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
                     model=self.policy,
@@ -206,7 +206,7 @@ class A2C(Agent):
                 )
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["value_optimizer"] = self.value_optimizer
-            # schedulers
+            # - learning rate schedulers
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             if self.policy_scheduler is not None:
                 self.policy_scheduler = self.cfg.learning_rate_scheduler[0](

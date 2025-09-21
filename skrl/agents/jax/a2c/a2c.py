@@ -533,6 +533,6 @@ class A2C(Agent):
         self.track_data("Policy / Standard deviation", stddev.mean().item())
 
         if self.policy_scheduler:
-            self.track_data("Learning / Learning rate (policy)", self.policy_learning_rate)
+            self.track_data("Learning / Policy learning rate", self.policy_learning_rate)
         if self.value_scheduler:
-            self.track_data("Learning / Learning rate (value)", self.value_learning_rate)
+            self.track_data("Learning / Value learning rate", self.value_learning_rate)

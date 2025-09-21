@@ -463,4 +463,5 @@ class DDPG(Agent):
 
             if self.policy_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_learning_rate)
+            if self.critic_scheduler:
                 self.track_data("Learning / Critic learning rate", self.critic_learning_rate)

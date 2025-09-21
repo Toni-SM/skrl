@@ -127,12 +127,11 @@ class TD3(Agent):
 
         # set up target networks
         if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
-            # freeze target networks with respect to optimizers (update via .update_parameters())
+            # - freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic_1.freeze_parameters(True)
             self.target_critic_2.freeze_parameters(True)
-
-            # update target networks (hard update)
+            # - update target networks (hard update)
             self.target_policy.update_parameters(self.policy, polyak=1)
             self.target_critic_1.update_parameters(self.critic_1, polyak=1)
             self.target_critic_2.update_parameters(self.critic_2, polyak=1)

@@ -2,12 +2,13 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import optax
 
 from skrl.agents.jax.ddpg import DDPG as Agent
-from skrl.agents.jax.ddpg import DDPG_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.jax.ddpg import DDPG_CFG as DEFAULT_CONFIG
 from skrl.memories.jax import RandomMemory
 from skrl.resources.noises.jax import GaussianNoise, OrnsteinUhlenbeckNoise
 from skrl.resources.preprocessors.jax import RunningStandardScaler
@@ -25,8 +26,10 @@ from ...utilities import SingleAgentEnv, check_config_keys
     batch_size=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     polyak=st.floats(min_value=0, max_value=1),
-    actor_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
-    critic_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
+    learning_rate=st.one_of(
+        st.floats(min_value=1.0e-10, max_value=1),
+        st.tuples(st.floats(min_value=1.0e-10, max_value=1), st.floats(min_value=1.0e-10, max_value=1)),
+    ),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(optax.schedules.constant_schedule)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
@@ -35,9 +38,7 @@ from ...utilities import SingleAgentEnv, check_config_keys
     learning_starts=st.integers(min_value=0, max_value=5),
     grad_norm_clip=st.floats(min_value=0, max_value=1),
     exploration_noise=st.one_of(st.none(), st.just(OrnsteinUhlenbeckNoise), st.just(GaussianNoise)),
-    exploration_initial_scale=st.floats(min_value=0, max_value=1),
-    exploration_final_scale=st.floats(min_value=0, max_value=1),
-    exploration_timesteps=st.one_of(st.none(), st.integers(min_value=1, max_value=50)),
+    exploration_scheduler=st.one_of(st.none(), st.just(lambda timestep, timesteps: 1.0 - timestep / timesteps)),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
 )
 @hypothesis.settings(
@@ -58,8 +59,7 @@ def test_agent(
     batch_size,
     discount_factor,
     polyak,
-    actor_learning_rate,
-    critic_learning_rate,
+    learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
     observation_preprocessor,
@@ -68,9 +68,7 @@ def test_agent(
     learning_starts,
     grad_norm_clip,
     exploration_noise,
-    exploration_initial_scale,
-    exploration_final_scale,
-    exploration_timesteps,
+    exploration_scheduler,
     rewards_shaper,
 ):
     # spaces
@@ -153,8 +151,7 @@ def test_agent(
         "batch_size": batch_size,
         "discount_factor": discount_factor,
         "polyak": polyak,
-        "actor_learning_rate": actor_learning_rate,
-        "critic_learning_rate": critic_learning_rate,
+        "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
         "observation_preprocessor": observation_preprocessor,
@@ -164,13 +161,9 @@ def test_agent(
         "random_timesteps": random_timesteps,
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
-        "exploration": {
-            "noise": exploration_noise,
-            "noise_kwargs": {},
-            "initial_scale": exploration_initial_scale,
-            "final_scale": exploration_final_scale,
-            "timesteps": exploration_timesteps,
-        },
+        "exploration_noise": exploration_noise,
+        "exploration_noise_kwargs": {},
+        "exploration_scheduler": exploration_scheduler,
         "rewards_shaper": rewards_shaper,
         "experiment": {
             "directory": "",
@@ -188,12 +181,11 @@ def test_agent(
     # noise
     # - exploration
     if exploration_noise is OrnsteinUhlenbeckNoise:
-        cfg["exploration"]["noise_kwargs"] = {"theta": 0.1, "sigma": 0.2, "base_scale": 1.0, "device": env.device}
+        cfg["exploration_noise_kwargs"] = {"theta": 0.1, "sigma": 0.2, "base_scale": 1.0, "device": env.device}
     elif exploration_noise is GaussianNoise:
-        cfg["exploration"]["noise_kwargs"] = {"mean": 0, "std": 0.1, "device": env.device}
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
-    check_config_keys(cfg["exploration"], DEFAULT_CONFIG["exploration"])
+        cfg["exploration_noise_kwargs"] = {"mean": 0, "std": 0.1, "device": env.device}
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = Agent(
         models=models,
         memory=memory,

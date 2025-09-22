@@ -142,7 +142,7 @@ class IPPO(MultiAgent):
                 self.checkpoint_modules[uid]["optimizer"] = self.optimizers[uid]
                 # - learning rate schedulers
                 self.schedulers[uid] = self.cfg.learning_rate_scheduler[uid][0]
-                if self.cfg.learning_rate_scheduler[uid][0] is not None:
+                if self.schedulers[uid] is not None:
                     self.schedulers[uid] = self.cfg.learning_rate_scheduler[uid][0](
                         self.optimizers[uid], **self.cfg.learning_rate_scheduler_kwargs[uid][0]
                     )

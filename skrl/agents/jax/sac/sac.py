@@ -16,52 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-jax]
-SAC_DEFAULT_CONFIG = {
-    "gradient_steps": 1,            # gradient steps
-    "batch_size": 64,               # training batch size
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
-
-    "actor_learning_rate": 1e-3,    # actor learning rate
-    "critic_learning_rate": 1e-3,   # critic learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
-
-    "learn_entropy": True,          # learn entropy
-    "entropy_learning_rate": 1e-3,  # entropy learning rate
-    "initial_entropy_value": 0.2,   # initial entropy value
-    "target_entropy": None,         # target entropy
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-jax]
-# fmt: on
+from .sac_cfg import SAC_CFG
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -166,9 +121,7 @@ class SAC(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(SAC_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
-        _cfg = SAC_DEFAULT_CONFIG
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: SAC_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -176,7 +129,7 @@ class SAC(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=SAC_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -203,34 +156,10 @@ class SAC(Agent):
             if self.critic_2 is not None:
                 self.critic_2.broadcast_parameters()
 
-        # configuration
-        self._gradient_steps = self.cfg["gradient_steps"]
-        self._batch_size = self.cfg["batch_size"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
-
-        self._actor_learning_rate = self.cfg["actor_learning_rate"]
-        self._critic_learning_rate = self.cfg["critic_learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._entropy_learning_rate = self.cfg["entropy_learning_rate"]
-        self._learn_entropy = self.cfg["learn_entropy"]
-        self._entropy_coefficient = self.cfg["initial_entropy_value"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-
         # entropy
-        if self._learn_entropy:
-            self._target_entropy = self.cfg["target_entropy"]
+        self._entropy_coefficient = self.cfg.initial_entropy_value
+        if self.cfg.learn_entropy:
+            self._target_entropy = self.cfg.target_entropy
             if self._target_entropy is None:
                 if issubclass(type(self.action_space), gymnasium.spaces.Box):
                     self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
@@ -254,63 +183,70 @@ class SAC(Agent):
 
             with jax.default_device(self.device):
                 self.log_entropy_coefficient = _LogEntropyCoefficient(self._entropy_coefficient)
-                self.entropy_optimizer = Adam(model=self.log_entropy_coefficient, lr=self._entropy_learning_rate)
+                self.entropy_optimizer = Adam(model=self.log_entropy_coefficient, lr=self.cfg.learning_rate[2])
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            # schedulers
-            if self._learning_rate_scheduler:
-                self.policy_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-                self.critic_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-            # optimizers
+            self.policy_learning_rate = self.cfg.learning_rate[0]
+            self.critic_learning_rate = self.cfg.learning_rate[1]
+            # - optimizers
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
                     model=self.policy,
-                    lr=self._actor_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.policy_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[0],
                 )
                 self.critic_1_optimizer = Adam(
                     model=self.critic_1,
-                    lr=self._critic_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.critic_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[1],
                 )
                 self.critic_2_optimizer = Adam(
                     model=self.critic_2,
-                    lr=self._critic_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.critic_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[1],
                 )
-
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_1_optimizer"] = self.critic_1_optimizer
             self.checkpoint_modules["critic_2_optimizer"] = self.critic_2_optimizer
+            # - learning rate schedulers
+            self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
+            self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
+            if self.policy_scheduler is not None:
+                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                    **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
+            if self.critic_scheduler is not None:
+                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                    **self.cfg.learning_rate_scheduler_kwargs[1]
+                )
 
         # set up target networks
         if self.target_critic_1 is not None and self.target_critic_2 is not None:
-            # freeze target networks with respect to optimizers (update via .update_parameters())
+            # - freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_critic_1.freeze_parameters(True)
             self.target_critic_2.freeze_parameters(True)
-
-            # update target networks (hard update)
+            # - update target networks (hard update)
             self.target_critic_1.update_parameters(self.critic_1, polyak=1)
             self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
@@ -378,7 +314,7 @@ class SAC(Agent):
         }
         # sample random actions
         # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
@@ -433,8 +369,8 @@ class SAC(Agent):
 
         if self.memory is not None:
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
             self.memory.add_samples(
@@ -462,7 +398,7 @@ class SAC(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
+        if timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -480,7 +416,7 @@ class SAC(Agent):
         """
 
         # gradient steps
-        for gradient_step in range(self._gradient_steps):
+        for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory
             (
@@ -492,7 +428,7 @@ class SAC(Agent):
                 sampled_next_states,
                 sampled_terminated,
                 sampled_truncated,
-            ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
                 "observations": self._observation_preprocessor(sampled_observations, train=True),
@@ -528,17 +464,17 @@ class SAC(Agent):
                 sampled_rewards,
                 sampled_terminated,
                 sampled_truncated,
-                self._discount_factor,
+                self.cfg.discount_factor,
             )
 
             # optimization step (critic)
             if config.jax.is_distributed:
                 grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad=grad, model=self.critic_1, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad=grad, model=self.critic_2, lr=self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
 
             # compute policy (actor) loss
@@ -557,11 +493,11 @@ class SAC(Agent):
             if config.jax.is_distributed:
                 grad = self.policy.reduce_parameters(grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad=grad, model=self.policy, lr=self._actor_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.policy, lr=self.policy_learning_rate if self.policy_scheduler else None
             )
 
             # entropy learning
-            if self._learn_entropy:
+            if self.cfg.learn_entropy:
                 # compute entropy loss
                 grad, entropy_loss = _update_entropy(
                     self.log_entropy_coefficient.state_dict, self._target_entropy, log_prob
@@ -574,13 +510,14 @@ class SAC(Agent):
                 self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)
 
             # update target networks
-            self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
-            self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=self.cfg.polyak)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=self.cfg.polyak)
 
             # update learning rate
-            if self._learning_rate_scheduler:
-                self._actor_learning_rate *= self.policy_scheduler(timestep)
-                self._critic_learning_rate *= self.critic_scheduler(timestep)
+            if self.policy_scheduler:
+                self.policy_learning_rate *= self.policy_scheduler(timestep)
+            if self.critic_scheduler:
+                self.critic_learning_rate *= self.critic_scheduler(timestep)
 
             # record data
             if self.write_interval > 0:
@@ -599,10 +536,11 @@ class SAC(Agent):
                 self.track_data("Target / Target (min)", target_values.min().item())
                 self.track_data("Target / Target (mean)", target_values.mean().item())
 
-                if self._learn_entropy:
+                if self.cfg.learn_entropy:
                     self.track_data("Loss / Entropy loss", entropy_loss.item())
                     self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())
 
-                if self._learning_rate_scheduler:
-                    self.track_data("Learning / Policy learning rate", self._actor_learning_rate)
-                    self.track_data("Learning / Critic learning rate", self._critic_learning_rate)
+                if self.policy_scheduler:
+                    self.track_data("Learning / Policy learning rate", self.policy_learning_rate)
+                if self.critic_scheduler:
+                    self.track_data("Learning / Critic learning rate", self.critic_learning_rate)

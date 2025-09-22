@@ -2,12 +2,13 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import optax
 
 from skrl.agents.jax.sac import SAC as Agent
-from skrl.agents.jax.sac import SAC_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.agents.jax.sac import SAC_CFG as DEFAULT_CONFIG
 from skrl.memories.jax import RandomMemory
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
@@ -24,8 +25,14 @@ from ...utilities import SingleAgentEnv, check_config_keys
     batch_size=st.integers(min_value=1, max_value=5),
     discount_factor=st.floats(min_value=0, max_value=1),
     polyak=st.floats(min_value=0, max_value=1),
-    actor_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
-    critic_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
+    learning_rate=st.one_of(
+        st.floats(min_value=1.0e-10, max_value=1),
+        st.tuples(
+            st.floats(min_value=1.0e-10, max_value=1),
+            st.floats(min_value=1.0e-10, max_value=1),
+            st.floats(min_value=1.0e-10, max_value=1),
+        ),
+    ),
     learning_rate_scheduler=st.one_of(st.none(), st.just(KLAdaptiveLR), st.just(optax.schedules.constant_schedule)),
     learning_rate_scheduler_kwargs_value=st.floats(min_value=0.1, max_value=1),
     observation_preprocessor=st.one_of(st.none(), st.just(RunningStandardScaler)),
@@ -34,7 +41,6 @@ from ...utilities import SingleAgentEnv, check_config_keys
     learning_starts=st.integers(min_value=0, max_value=5),
     grad_norm_clip=st.floats(min_value=0, max_value=1),
     learn_entropy=st.booleans(),
-    entropy_learning_rate=st.floats(min_value=1.0e-10, max_value=1),
     initial_entropy_value=st.floats(min_value=0, max_value=1),
     target_entropy=st.one_of(st.none(), st.floats(min_value=-1, max_value=1)),
     rewards_shaper=st.one_of(st.none(), st.just(lambda rewards, *args, **kwargs: 0.5 * rewards)),
@@ -57,8 +63,7 @@ def test_agent(
     batch_size,
     discount_factor,
     polyak,
-    actor_learning_rate,
-    critic_learning_rate,
+    learning_rate,
     learning_rate_scheduler,
     learning_rate_scheduler_kwargs_value,
     observation_preprocessor,
@@ -67,7 +72,6 @@ def test_agent(
     learning_starts,
     grad_norm_clip,
     learn_entropy,
-    entropy_learning_rate,
     initial_entropy_value,
     target_entropy,
     rewards_shaper,
@@ -160,8 +164,7 @@ def test_agent(
         "batch_size": batch_size,
         "discount_factor": discount_factor,
         "polyak": polyak,
-        "actor_learning_rate": actor_learning_rate,
-        "critic_learning_rate": critic_learning_rate,
+        "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
         "observation_preprocessor": observation_preprocessor,
@@ -172,7 +175,6 @@ def test_agent(
         "learning_starts": learning_starts,
         "grad_norm_clip": grad_norm_clip,
         "learn_entropy": learn_entropy,
-        "entropy_learning_rate": entropy_learning_rate,
         "initial_entropy_value": initial_entropy_value,
         "target_entropy": target_entropy,
         "rewards_shaper": rewards_shaper,
@@ -189,8 +191,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "value"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = Agent(
         models=models,
         memory=memory,

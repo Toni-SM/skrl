@@ -15,62 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-TD3_DEFAULT_CONFIG = {
-    "gradient_steps": 1,            # gradient steps
-    "batch_size": 64,               # training batch size
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
-
-    "actor_learning_rate": 1e-3,    # actor learning rate
-    "critic_learning_rate": 1e-3,   # critic learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
-
-    "exploration": {
-        "noise": None,              # exploration noise (see skrl.resources.noises)
-        "noise_kwargs": {},         # exploration noise's kwargs (e.g. {"std": 0.1})
-        "initial_scale": 1.0,       # initial scale for the noise
-        "final_scale": 1e-3,        # final scale for the noise
-        "timesteps": None,          # timesteps for the noise decay
-    },
-
-    "policy_delay": 2,                         # policy delay update with respect to critic update
-    "smooth_regularization_noise": None,       # smooth noise for regularization (see skrl.resources.noises)
-    "smooth_regularization_noise_kwargs": {},  # smooth noise for regularization's kwargs (e.g. {"std": 0.1})
-    "smooth_regularization_clip": 0.5,         # clip for smooth regularization
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "mixed_precision": False,       # enable automatic mixed precision for higher performance
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .td3_cfg import TD3_CFG
 
 
 class TD3_RNN(Agent):
@@ -99,8 +44,7 @@ class TD3_RNN(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: TD3_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -108,7 +52,7 @@ class TD3_RNN(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=TD3_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -137,100 +81,73 @@ class TD3_RNN(Agent):
             if self.critic_2 is not None:
                 self.critic_2.broadcast_parameters()
 
-        # configuration
-        self._gradient_steps = self.cfg["gradient_steps"]
-        self._batch_size = self.cfg["batch_size"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
-
-        self._actor_learning_rate = self.cfg["actor_learning_rate"]
-        self._critic_learning_rate = self.cfg["critic_learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._exploration_noise = self.cfg["exploration"]["noise"]
-        self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
-        self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
-        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
-
-        self._policy_delay = self.cfg["policy_delay"]
-        self._critic_update_counter = 0
-
-        self._smooth_regularization_noise = self.cfg["smooth_regularization_noise"]
-        self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-
-        self._mixed_precision = self.cfg["mixed_precision"]
-
         # set up noise
-        if self._exploration_noise is not None:
-            self._exploration_noise = self._exploration_noise(**self.cfg["exploration"]["noise_kwargs"])
+        # - exploration noise
+        if self.cfg.exploration_noise is not None:
+            self._exploration_noise = self.cfg.exploration_noise(**self.cfg.exploration_noise_kwargs)
         else:
             logger.warning("agents:TD3: No exploration noise specified, training performance may be degraded")
-        if self._smooth_regularization_noise is not None:
-            self._smooth_regularization_noise = self._smooth_regularization_noise(
-                **self.cfg["smooth_regularization_noise_kwargs"]
+            self._exploration_noise = None
+        # - smooth regularization noise
+        if self.cfg.smooth_regularization_noise is not None:
+            self._smooth_regularization_noise = self.cfg.smooth_regularization_noise(
+                **self.cfg.smooth_regularization_noise_kwargs
             )
         else:
             logger.warning("agents:TD3: No smooth regularization noise specified, training variance may be high")
+            self._smooth_regularization_noise = None
 
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
         if version.parse(torch.__version__) >= version.parse("2.4"):
-            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self.cfg.mixed_precision)
         else:
-            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.mixed_precision)
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+            # - optimizers
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.cfg.learning_rate[0])
             self.critic_optimizer = torch.optim.Adam(
-                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate
+                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self.cfg.learning_rate[1]
             )
-            if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(
-                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-                self.critic_scheduler = self._learning_rate_scheduler(
-                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+            # - learning rate schedulers
+            self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
+            self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
+            if self.policy_scheduler is not None:
+                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                    self.policy_optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
+            if self.critic_scheduler is not None:
+                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                    self.critic_optimizer, **self.cfg.learning_rate_scheduler_kwargs[1]
+                )
 
         # set up target networks
         if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
-            # freeze target networks with respect to optimizers (update via .update_parameters())
+            # - freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic_1.freeze_parameters(True)
             self.target_critic_2.freeze_parameters(True)
-
-            # update target networks (hard update)
+            # - update target networks (hard update)
             self.target_policy.update_parameters(self.policy, polyak=1)
             self.target_critic_1.update_parameters(self.critic_1, polyak=1)
             self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
@@ -289,6 +206,9 @@ class TD3_RNN(Agent):
             self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
             self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
 
+        # create temporary variables needed for storage and computation
+        self._critic_update_counter = 0
+
     def act(
         self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
     ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
@@ -309,47 +229,27 @@ class TD3_RNN(Agent):
         inputs.update({"rnn": self._rnn_initial_states["policy"]} if self._rnn else {})
 
         # sample random actions
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample deterministic actions
-        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+        with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
 
         if self._rnn:
             self._rnn_final_states["policy"] = outputs.get("rnn", [])
 
         # add exploration noise
-        if self._exploration_noise is not None:
-            # sample noises
+        if self._exploration_noise:
             noises = self._exploration_noise.sample(actions.shape)
+            if self.cfg.exploration_scheduler:
+                noises.mul_(self.cfg.exploration_scheduler(timestep, timesteps))
+            actions.add_(noises)
+            actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
 
-            # define exploration timesteps
-            scale = self._exploration_final_scale
-            if self._exploration_timesteps is None:
-                self._exploration_timesteps = timesteps
-
-            # apply exploration noise
-            if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) * (
-                    self._exploration_initial_scale - self._exploration_final_scale
-                ) + self._exploration_final_scale
-                noises.mul_(scale)
-
-                # modify actions
-                actions.add_(noises)
-                actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
-
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
-                self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
-                self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
-
-            else:
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", 0)
-                self.track_data("Exploration / Exploration noise (min)", 0)
-                self.track_data("Exploration / Exploration noise (mean)", 0)
+            self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
+            self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
+            self.track_data("Exploration / Exploration noise (mean)", torch.mean(noises).item())
 
         return actions, outputs
 
@@ -398,8 +298,8 @@ class TD3_RNN(Agent):
 
         if self.memory is not None:
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # package RNN states
             rnn_states = {}
@@ -445,7 +345,7 @@ class TD3_RNN(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
+        if timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -463,7 +363,7 @@ class TD3_RNN(Agent):
         """
 
         # gradient steps
-        for gradient_step in range(self._gradient_steps):
+        for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory
             (
@@ -476,7 +376,7 @@ class TD3_RNN(Agent):
                 sampled_terminated,
                 sampled_truncated,
             ) = self.memory.sample(
-                names=self._tensors_names, batch_size=self._batch_size, sequence_length=self._rnn_sequence_length
+                names=self._tensors_names, batch_size=self.cfg.batch_size, sequence_length=self._rnn_sequence_length
             )[
                 0
             ]
@@ -491,7 +391,7 @@ class TD3_RNN(Agent):
                     "terminated": sampled_terminated | sampled_truncated,
                 }
 
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 inputs = {
                     "observations": self._observation_preprocessor(sampled_observations, train=True),
                     "states": self._state_preprocessor(sampled_states, train=True),
@@ -509,8 +409,8 @@ class TD3_RNN(Agent):
                     if self._smooth_regularization_noise is not None:
                         noises = torch.clamp(
                             self._smooth_regularization_noise.sample(next_actions.shape),
-                            min=-self._smooth_regularization_clip,
-                            max=self._smooth_regularization_clip,
+                            min=-self.cfg.smooth_regularization_clip,
+                            max=self.cfg.smooth_regularization_clip,
                         )
                         next_actions.add_(noises)
                         next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
@@ -525,7 +425,7 @@ class TD3_RNN(Agent):
                     target_q_values = torch.min(target_q1_values, target_q2_values)
                     target_values = (
                         sampled_rewards
-                        + self._discount_factor
+                        + self.cfg.discount_factor
                         * (sampled_terminated | sampled_truncated).logical_not()
                         * target_q_values
                     )
@@ -544,19 +444,19 @@ class TD3_RNN(Agent):
                 self.critic_1.reduce_parameters()
                 self.critic_2.reduce_parameters()
 
-            if self._grad_norm_clip > 0:
+            if self.cfg.grad_norm_clip > 0:
                 self.scaler.unscale_(self.critic_optimizer)
                 nn.utils.clip_grad_norm_(
-                    itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip
+                    itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self.cfg.grad_norm_clip
                 )
 
             self.scaler.step(self.critic_optimizer)
 
             # delayed update
             self._critic_update_counter += 1
-            if not self._critic_update_counter % self._policy_delay:
+            if not self._critic_update_counter % self.cfg.policy_delay:
 
-                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+                with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                     # compute policy (actor) loss
                     actions, _ = self.policy.act(inputs, role="policy")
                     critic_values, _ = self.critic_1.act({**inputs, "taken_actions": actions}, role="critic_1")
@@ -570,26 +470,27 @@ class TD3_RNN(Agent):
                 if config.torch.is_distributed:
                     self.policy.reduce_parameters()
 
-                if self._grad_norm_clip > 0:
+                if self.cfg.grad_norm_clip > 0:
                     self.scaler.unscale_(self.policy_optimizer)
-                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self.cfg.grad_norm_clip)
 
                 self.scaler.step(self.policy_optimizer)
 
                 # update target networks
-                self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
-                self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
-                self.target_policy.update_parameters(self.policy, polyak=self._polyak)
+                self.target_critic_1.update_parameters(self.critic_1, polyak=self.cfg.polyak)
+                self.target_critic_2.update_parameters(self.critic_2, polyak=self.cfg.polyak)
+                self.target_policy.update_parameters(self.policy, polyak=self.cfg.polyak)
 
             self.scaler.update()  # called once, after optimizers have been stepped
 
             # update learning rate
-            if self._learning_rate_scheduler:
+            if self.policy_scheduler:
                 self.policy_scheduler.step()
+            if self.critic_scheduler:
                 self.critic_scheduler.step()
 
             # record data
-            if not self._critic_update_counter % self._policy_delay:
+            if not self._critic_update_counter % self.cfg.policy_delay:
                 self.track_data("Loss / Policy loss", policy_loss.item())
             self.track_data("Loss / Critic loss", critic_loss.item())
 
@@ -605,6 +506,7 @@ class TD3_RNN(Agent):
             self.track_data("Target / Target (min)", torch.min(target_values).item())
             self.track_data("Target / Target (mean)", torch.mean(target_values).item())
 
-            if self._learning_rate_scheduler:
+            if self.policy_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+            if self.critic_scheduler:
                 self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])

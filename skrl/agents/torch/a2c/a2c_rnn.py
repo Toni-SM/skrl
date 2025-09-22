@@ -16,53 +16,7 @@ from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-A2C_DEFAULT_CONFIG = {
-    "rollouts": 16,                 # number of rollouts before updating
-    "mini_batches": 1,              # number of mini batches to use for updating
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-
-    "learning_rate": 1e-3,                  # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-    "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
-    "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0.5,          # clipping coefficient for the norm of the gradients
-
-    "entropy_loss_scale": 0.0,      # entropy loss scaling factor
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
-
-    "mixed_precision": False,       # enable automatic mixed precision for higher performance
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .a2c_cfg import A2C_CFG
 
 
 def compute_gae(
@@ -131,8 +85,7 @@ class A2C_RNN(Agent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(A2C_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: A2C_CFG
         super().__init__(
             models=models,
             memory=memory,
@@ -140,7 +93,7 @@ class A2C_RNN(Agent):
             state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=A2C_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -159,73 +112,48 @@ class A2C_RNN(Agent):
                 if self.value is not None and self.policy is not self.value:
                     self.value.broadcast_parameters()
 
-        # configuration
-        self._mini_batches = self.cfg["mini_batches"]
-        self._rollouts = self.cfg["rollouts"]
-        self._rollout = 0
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._entropy_loss_scale = self.cfg["entropy_loss_scale"]
-
-        self._learning_rate = self.cfg["learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._observation_preprocessor = self.cfg["observation_preprocessor"]
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-        self._value_preprocessor = self.cfg["value_preprocessor"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._lambda = self.cfg["lambda"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-        self._time_limit_bootstrap = self.cfg["time_limit_bootstrap"]
-
-        self._mixed_precision = self.cfg["mixed_precision"]
-
         # set up automatic mixed precision
         self._device_type = torch.device(device).type
         if version.parse(torch.__version__) >= version.parse("2.4"):
-            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self.cfg.mixed_precision)
         else:
-            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.mixed_precision)
 
         # set up optimizer and learning rate scheduler
         if self.policy is not None and self.value is not None:
+            # - optimizers
             if self.policy is self.value:
-                self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
+                self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.cfg.learning_rate[0])
             else:
                 self.optimizer = torch.optim.Adam(
-                    itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self._learning_rate
+                    itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self.cfg.learning_rate[0]
                 )
-            if self._learning_rate_scheduler is not None:
-                self.scheduler = self._learning_rate_scheduler(
-                    self.optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-
             self.checkpoint_modules["optimizer"] = self.optimizer
+            # - learning rate schedulers
+            self.scheduler = self.cfg.learning_rate_scheduler[0]
+            if self.scheduler is not None:
+                self.scheduler = self.cfg.learning_rate_scheduler[0](
+                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
 
         # set up preprocessors
         # - observations
-        if self._observation_preprocessor:
-            self._observation_preprocessor = self._observation_preprocessor(
-                **self.cfg["observation_preprocessor_kwargs"]
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
             )
             self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
         else:
             self._observation_preprocessor = self._empty_preprocessor
         # - states
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
         # - values
-        if self._value_preprocessor:
-            self._value_preprocessor = self._value_preprocessor(**self.cfg["value_preprocessor_kwargs"])
+        if self.cfg.value_preprocessor:
+            self._value_preprocessor = self.cfg.value_preprocessor(**self.cfg.value_preprocessor_kwargs)
             self.checkpoint_modules["value_preprocessor"] = self._value_preprocessor
         else:
             self._value_preprocessor = self._empty_preprocessor
@@ -301,6 +229,7 @@ class A2C_RNN(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._rollout = 0
 
     def act(
         self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
@@ -323,11 +252,11 @@ class A2C_RNN(Agent):
 
         # sample random actions
         # TODO: check for stochasticity
-        if timestep < self._random_timesteps:
+        if timestep < self.cfg.random_timesteps:
             return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+        with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = outputs["log_prob"]
 
@@ -384,11 +313,11 @@ class A2C_RNN(Agent):
             self._current_next_states = next_states
 
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # compute values
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 inputs = {
                     "observations": self._observation_preprocessor(observations),
                     "states": self._state_preprocessor(states),
@@ -398,8 +327,8 @@ class A2C_RNN(Agent):
                 values = self._value_preprocessor(values, inverse=True)
 
             # time-limit (truncation) bootstrapping
-            if self._time_limit_bootstrap:
-                rewards += self._discount_factor * values * truncated
+            if self.cfg.time_limit_bootstrap:
+                rewards += self.cfg.discount_factor * values * truncated
 
             # package RNN states
             rnn_states = {}
@@ -457,7 +386,7 @@ class A2C_RNN(Agent):
         :param timesteps: Number of timesteps.
         """
         self._rollout += 1
-        if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 self.update(timestep=timestep, timesteps=timesteps)
@@ -474,7 +403,7 @@ class A2C_RNN(Agent):
         :param timesteps: Number of timesteps.
         """
         # compute returns and advantages
-        with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+        with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             inputs = {
                 "observations": self._observation_preprocessor(self._current_next_observations),
                 "states": self._state_preprocessor(self._current_next_states),
@@ -491,8 +420,8 @@ class A2C_RNN(Agent):
             dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
-            discount_factor=self._discount_factor,
-            lambda_coefficient=self._lambda,
+            discount_factor=self.cfg.discount_factor,
+            lambda_coefficient=self.cfg.lambda_,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
@@ -501,14 +430,14 @@ class A2C_RNN(Agent):
 
         # sample mini-batches from memory
         sampled_batches = self.memory.sample_all(
-            names=self._tensors_names, mini_batches=self._mini_batches, sequence_length=self._rnn_sequence_length
+            names=self._tensors_names, mini_batches=self.cfg.mini_batches, sequence_length=self._rnn_sequence_length
         )
 
         rnn_policy, rnn_value = {}, {}
         if self._rnn:
             sampled_rnn_batches = self.memory.sample_all(
                 names=self._rnn_tensors_names,
-                mini_batches=self._mini_batches,
+                mini_batches=self.cfg.mini_batches,
                 sequence_length=self._rnn_sequence_length,
             )
 
@@ -555,7 +484,7 @@ class A2C_RNN(Agent):
                         "terminated": sampled_terminated | sampled_truncated,
                     }
 
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 inputs = {
                     "observations": self._observation_preprocessor(sampled_observations, train=True),
                     "states": self._state_preprocessor(sampled_states, train=True),
@@ -565,7 +494,7 @@ class A2C_RNN(Agent):
                 next_log_prob = outputs["log_prob"]
 
                 # compute approximate KL divergence for KLAdaptive learning rate scheduler
-                if self._learning_rate_scheduler:
+                if self.scheduler:
                     if isinstance(self.scheduler, KLAdaptiveLR):
                         with torch.no_grad():
                             ratio = next_log_prob - sampled_log_prob
@@ -573,8 +502,8 @@ class A2C_RNN(Agent):
                             kl_divergences.append(kl_divergence)
 
                 # compute entropy loss
-                if self._entropy_loss_scale:
-                    entropy_loss = -self._entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
+                if self.cfg.entropy_loss_scale:
+                    entropy_loss = -self.cfg.entropy_loss_scale * self.policy.get_entropy(role="policy").mean()
                 else:
                     entropy_loss = 0
 
@@ -595,13 +524,13 @@ class A2C_RNN(Agent):
                 if self.policy is not self.value:
                     self.value.reduce_parameters()
 
-            if self._grad_norm_clip > 0:
+            if self.cfg.grad_norm_clip > 0:
                 self.scaler.unscale_(self.optimizer)
                 if self.policy is self.value:
-                    nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self.cfg.grad_norm_clip)
                 else:
                     nn.utils.clip_grad_norm_(
-                        itertools.chain(self.policy.parameters(), self.value.parameters()), self._grad_norm_clip
+                        itertools.chain(self.policy.parameters(), self.value.parameters()), self.cfg.grad_norm_clip
                     )
 
             self.scaler.step(self.optimizer)
@@ -610,11 +539,11 @@ class A2C_RNN(Agent):
             # update cumulative losses
             cumulative_policy_loss += policy_loss.item()
             cumulative_value_loss += value_loss.item()
-            if self._entropy_loss_scale:
+            if self.cfg.entropy_loss_scale:
                 cumulative_entropy_loss += entropy_loss.item()
 
         # update learning rate
-        if self._learning_rate_scheduler:
+        if self.scheduler:
             if isinstance(self.scheduler, KLAdaptiveLR):
                 kl = torch.tensor(kl_divergences, device=self.device).mean()
                 # reduce (collect from all workers/processes) KL in distributed runs
@@ -629,10 +558,10 @@ class A2C_RNN(Agent):
         self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
         self.track_data("Loss / Value loss", cumulative_value_loss / len(sampled_batches))
 
-        if self._entropy_loss_scale:
+        if self.cfg.entropy_loss_scale:
             self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
 
         self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 
-        if self._learning_rate_scheduler:
+        if self.scheduler:
             self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

@@ -15,58 +15,7 @@ from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-jax]
-MAPPO_DEFAULT_CONFIG = {
-    "rollouts": 16,                 # number of rollouts before updating
-    "learning_epochs": 8,           # number of learning epochs during each update
-    "mini_batches": 2,              # number of mini batches during each learning epoch
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "lambda": 0.95,                 # TD(lambda) coefficient (lam) for computing returns and advantages
-
-    "learning_rate": 1e-3,                  # learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "observation_preprocessor": None,       # observation preprocessor class (see skrl.resources.preprocessors)
-    "observation_preprocessor_kwargs": {},  # observation preprocessor's kwargs (e.g. {"size": env.observation_space})
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.state_space})
-    "value_preprocessor": None,             # value preprocessor class (see skrl.resources.preprocessors)
-    "value_preprocessor_kwargs": {},        # value preprocessor's kwargs (e.g. {"size": 1})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0.5,              # clipping coefficient for the norm of the gradients
-    "ratio_clip": 0.2,                  # clipping coefficient for computing the clipped surrogate objective
-    "value_clip": 0.2,                  # clipping coefficient for computing the value loss (if clip_predicted_values is True)
-    "clip_predicted_values": False,     # clip predicted values during value loss computation
-
-    "entropy_loss_scale": 0.0,      # entropy loss scaling factor
-    "value_loss_scale": 1.0,        # value loss scaling factor
-
-    "kl_threshold": 0,              # KL divergence threshold for early stopping
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-    "time_limit_bootstrap": False,  # bootstrap at timeout termination (episode truncation)
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-jax]
-# fmt: on
+from .mappo_cfg import MAPPO_CFG
 
 
 def compute_gae(
@@ -229,9 +178,7 @@ class MAPPO(MultiAgent):
 
         :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(MAPPO_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
-        _cfg = MAPPO_DEFAULT_CONFIG
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: MAPPO_CFG
         super().__init__(
             possible_agents=possible_agents,
             models=models,
@@ -240,7 +187,7 @@ class MAPPO(MultiAgent):
             state_spaces=state_spaces,
             action_spaces=action_spaces,
             device=device,
-            cfg=_cfg,
+            cfg=MAPPO_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -261,93 +208,67 @@ class MAPPO(MultiAgent):
                     if self.values[uid] is not None:
                         self.values[uid].broadcast_parameters()
 
-        # configuration
-        self._learning_epochs = self._as_dict(self.cfg["learning_epochs"])
-        self._mini_batches = self._as_dict(self.cfg["mini_batches"])
-        self._rollouts = self.cfg["rollouts"]
-        self._rollout = 0
-
-        self._grad_norm_clip = self._as_dict(self.cfg["grad_norm_clip"])
-        self._ratio_clip = self._as_dict(self.cfg["ratio_clip"])
-        self._value_clip = self._as_dict(self.cfg["value_clip"])
-        self._clip_predicted_values = self._as_dict(self.cfg["clip_predicted_values"])
-
-        self._value_loss_scale = self._as_dict(self.cfg["value_loss_scale"])
-        self._entropy_loss_scale = self._as_dict(self.cfg["entropy_loss_scale"])
-
-        self._kl_threshold = self._as_dict(self.cfg["kl_threshold"])
-
-        self._learning_rate = self._as_dict(self.cfg["learning_rate"])
-        self._learning_rate_scheduler = self._as_dict(self.cfg["learning_rate_scheduler"])
-        self._learning_rate_scheduler_kwargs = self._as_dict(self.cfg["learning_rate_scheduler_kwargs"])
-
-        self._observation_preprocessor = self._as_dict(self.cfg["observation_preprocessor"])
-        self._observation_preprocessor_kwargs = self._as_dict(self.cfg["observation_preprocessor_kwargs"])
-        self._state_preprocessor = self._as_dict(self.cfg["state_preprocessor"])
-        self._state_preprocessor_kwargs = self._as_dict(self.cfg["state_preprocessor_kwargs"])
-        self._value_preprocessor = self._as_dict(self.cfg["value_preprocessor"])
-        self._value_preprocessor_kwargs = self._as_dict(self.cfg["value_preprocessor_kwargs"])
-
-        self._discount_factor = self._as_dict(self.cfg["discount_factor"])
-        self._lambda = self._as_dict(self.cfg["lambda"])
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-        self._time_limit_bootstrap = self._as_dict(self.cfg["time_limit_bootstrap"])
-
         # set up optimizer and learning rate scheduler
-        self.policy_optimizer = {}
-        self.value_optimizer = {}
-        self.schedulers = {}
-
+        self.policy_optimizer, self.value_optimizer = {}, {}
+        self.policy_scheduler, self.value_scheduler = {}, {}
+        self.policy_learning_rate, self.value_learning_rate = {}, {}
         for uid in self.possible_agents:
-            policy = self.policies[uid]
-            value = self.values[uid]
-            if policy is not None and value is not None:
-                # scheduler
-                self.schedulers[uid] = None
-                if self._learning_rate_scheduler[uid]:
-                    self.schedulers[uid] = self._learning_rate_scheduler[uid](
-                        **self._learning_rate_scheduler_kwargs[uid]
-                    )
-                # optimizer
+            if self.policies[uid] is not None and self.values[uid] is not None:
+                self.policy_learning_rate[uid] = self.cfg.learning_rate[uid][0]
+                self.value_learning_rate[uid] = self.cfg.learning_rate[uid][1]
+                # - optimizers
                 self.policy_optimizer[uid] = Adam(
-                    model=policy,
-                    lr=self._learning_rate[uid],
-                    grad_norm_clip=self._grad_norm_clip[uid],
-                    scale=not self._learning_rate_scheduler[uid],
+                    model=self.policies[uid],
+                    lr=self.policy_learning_rate[uid],
+                    grad_norm_clip=self.cfg.grad_norm_clip[uid],
+                    scale=not self.cfg.learning_rate_scheduler[uid][0],
                 )
                 self.value_optimizer[uid] = Adam(
-                    model=value,
-                    lr=self._learning_rate[uid],
-                    grad_norm_clip=self._grad_norm_clip[uid],
-                    scale=not self._learning_rate_scheduler[uid],
+                    model=self.values[uid],
+                    lr=self.value_learning_rate[uid],
+                    grad_norm_clip=self.cfg.grad_norm_clip[uid],
+                    scale=not self.cfg.learning_rate_scheduler[uid][1],
                 )
-
                 self.checkpoint_modules[uid]["policy_optimizer"] = self.policy_optimizer[uid]
                 self.checkpoint_modules[uid]["value_optimizer"] = self.value_optimizer[uid]
+                # - learning rate schedulers
+                self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0]
+                if self.policy_scheduler[uid] is not None:
+                    self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0](
+                        **self.cfg.learning_rate_scheduler_kwargs[uid][0]
+                    )
+                self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1]
+                if self.value_scheduler[uid] is not None:
+                    self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1](
+                        **self.cfg.learning_rate_scheduler_kwargs[uid][1]
+                    )
 
         # set up preprocessors
+        self._observation_preprocessor = {}
+        self._state_preprocessor = {}
+        self._value_preprocessor = {}
         for uid in self.possible_agents:
             # - observations
-            if self._observation_preprocessor[uid]:
-                self._observation_preprocessor[uid] = self._observation_preprocessor[uid](
-                    **self._observation_preprocessor_kwargs[uid]
+            if self.cfg.observation_preprocessor[uid]:
+                self._observation_preprocessor[uid] = self.cfg.observation_preprocessor[uid](
+                    **self.cfg.observation_preprocessor_kwargs[uid]
                 )
                 self.checkpoint_modules[uid]["observation_preprocessor"] = self._observation_preprocessor[uid]
             else:
                 self._observation_preprocessor[uid] = self._empty_preprocessor
             # - states
-            if self._state_preprocessor[uid]:
-                self._state_preprocessor[uid] = self._state_preprocessor[uid](**self._state_preprocessor_kwargs[uid])
+            if self.cfg.state_preprocessor[uid]:
+                self._state_preprocessor[uid] = self.cfg.state_preprocessor[uid](
+                    **self.cfg.state_preprocessor_kwargs[uid]
+                )
                 self.checkpoint_modules[uid]["state_preprocessor"] = self._state_preprocessor[uid]
             else:
                 self._state_preprocessor[uid] = self._empty_preprocessor
             # - values
-            if self._value_preprocessor[uid]:
-                self._value_preprocessor[uid] = self._value_preprocessor[uid](**self._value_preprocessor_kwargs[uid])
+            if self.cfg.value_preprocessor[uid]:
+                self._value_preprocessor[uid] = self.cfg.value_preprocessor[uid](
+                    **self.cfg.value_preprocessor_kwargs[uid]
+                )
                 self.checkpoint_modules[uid]["value_preprocessor"] = self._value_preprocessor[uid]
             else:
                 self._value_preprocessor[uid] = self._empty_preprocessor
@@ -382,6 +303,7 @@ class MAPPO(MultiAgent):
         self._current_next_observations = {}
         self._current_next_states = {}
         self._current_log_prob = {}
+        self._rollout = 0
 
         # set up models for just-in-time compilation with XLA
         for uid in self.possible_agents:
@@ -418,7 +340,7 @@ class MAPPO(MultiAgent):
             }
             # sample random actions
             # TODO, check for stochasticity
-            if timestep < self._random_timesteps:
+            if timestep < self.cfg.random_timesteps:
                 actions[uid], outputs[uid] = self.policies[uid].random_act(inputs, role="policy")
 
             # sample stochastic actions
@@ -481,8 +403,8 @@ class MAPPO(MultiAgent):
 
             for uid in self.possible_agents:
                 # reward shaping
-                if self._rewards_shaper is not None:
-                    rewards[uid] = self._rewards_shaper(rewards[uid], timestep, timesteps)
+                if self.cfg.rewards_shaper is not None:
+                    rewards[uid] = self.cfg.rewards_shaper(rewards[uid], timestep, timesteps)
 
                 # compute values
                 inputs = {
@@ -495,8 +417,8 @@ class MAPPO(MultiAgent):
                 values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) bootstrapping
-                if self._time_limit_bootstrap[uid]:
-                    rewards[uid] += self._discount_factor[uid] * values * truncated[uid]
+                if self.cfg.time_limit_bootstrap[uid]:
+                    rewards[uid] += self.cfg.discount_factor[uid] * values * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
@@ -525,7 +447,7 @@ class MAPPO(MultiAgent):
         :param timesteps: Number of timesteps.
         """
         self._rollout += 1
-        if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
             with ScopedTimer() as timer:
                 self.enable_models_training_mode(True)
                 for uid in self.possible_agents:
@@ -565,8 +487,8 @@ class MAPPO(MultiAgent):
             dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=last_values,
-            discount_factor=self._discount_factor[uid],
-            lambda_coefficient=self._lambda[uid],
+            discount_factor=self.cfg.discount_factor[uid],
+            lambda_coefficient=self.cfg.lambda_[uid],
         )
 
         memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
@@ -574,14 +496,14 @@ class MAPPO(MultiAgent):
         memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches[uid])
+        sampled_batches = memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches[uid])
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
 
         # learning epochs
-        for epoch in range(self._learning_epochs[uid]):
+        for epoch in range(self.cfg.learning_epochs[uid]):
             kl_divergences = []
 
             # mini-batches loop
@@ -607,15 +529,15 @@ class MAPPO(MultiAgent):
                     {**inputs, "taken_actions": sampled_actions},
                     sampled_log_prob,
                     sampled_advantages,
-                    self._ratio_clip[uid],
+                    self.cfg.ratio_clip[uid],
                     policy.get_entropy,
-                    self._entropy_loss_scale[uid],
+                    self.cfg.entropy_loss_scale[uid],
                 )
 
                 kl_divergences.append(kl_divergence.item())
 
                 # early stopping with KL divergence
-                if self._kl_threshold[uid] and kl_divergence > self._kl_threshold[uid]:
+                if self.cfg.kl_threshold[uid] and kl_divergence > self.cfg.kl_threshold[uid]:
                     break
 
                 # optimization step (policy)
@@ -624,7 +546,7 @@ class MAPPO(MultiAgent):
                 self.policy_optimizer[uid] = self.policy_optimizer[uid].step(
                     grad=grad,
                     model=policy,
-                    lr=self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None,
+                    lr=self.policy_learning_rate[uid] if self.policy_scheduler[uid] else None,
                 )
 
                 # compute value loss
@@ -634,9 +556,9 @@ class MAPPO(MultiAgent):
                     inputs,
                     sampled_values,
                     sampled_returns,
-                    self._value_loss_scale[uid],
-                    self._clip_predicted_values[uid],
-                    self._value_clip[uid],
+                    self.cfg.value_loss_scale[uid],
+                    self.cfg.value_clip[uid] > 0,
+                    self.cfg.value_clip[uid],
                 )
 
                 # optimization step (value)
@@ -645,43 +567,58 @@ class MAPPO(MultiAgent):
                 self.value_optimizer[uid] = self.value_optimizer[uid].step(
                     grad=grad,
                     model=value,
-                    lr=self._learning_rate[uid] if self._learning_rate_scheduler[uid] else None,
+                    lr=self.value_learning_rate[uid] if self.value_scheduler[uid] else None,
                 )
 
                 # update cumulative losses
                 cumulative_policy_loss += policy_loss.item()
                 cumulative_value_loss += value_loss.item()
-                if self._entropy_loss_scale[uid]:
+                if self.cfg.entropy_loss_scale[uid]:
                     cumulative_entropy_loss += entropy_loss.item()
 
             # update learning rate
-            if self._learning_rate_scheduler[uid]:
-                if self._learning_rate_scheduler[uid] is KLAdaptiveLR:
-                    kl = np.mean(kl_divergences)
-                    # reduce (collect from all workers/processes) KL in distributed runs
-                    if config.jax.is_distributed:
-                        kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
-                        kl /= config.jax.world_size
-                    self._learning_rate[uid] = self.schedulers[uid](timestep, lr=self._learning_rate[uid], kl=kl)
+            # - compute KL for KL adaptive learning rate scheduler
+            if self.policy_scheduler is KLAdaptiveLR or self.value_scheduler is KLAdaptiveLR:
+                kl = np.mean(kl_divergences)
+                # reduce (collect from all workers/processes) KL in distributed runs
+                if config.jax.is_distributed:
+                    kl = jax.pmap(lambda x: jax.lax.psum(x, "i"), axis_name="i")(kl.reshape(1)).item()
+                    kl /= config.jax.world_size
+            # - policy learning rate
+            if self.policy_scheduler[uid]:
+                if self.policy_scheduler[uid] is KLAdaptiveLR:
+                    self.policy_learning_rate[uid] = self.policy_scheduler[uid](
+                        timestep, lr=self.policy_learning_rate[uid], kl=kl
+                    )
                 else:
-                    self._learning_rate[uid] *= self.schedulers[uid](timestep)
+                    self.policy_learning_rate[uid] *= self.policy_scheduler[uid](timestep)
+            # - value learning rate
+            if self.value_scheduler[uid]:
+                if self.value_scheduler[uid] is KLAdaptiveLR:
+                    self.value_learning_rate[uid] = self.value_scheduler[uid](
+                        timestep, lr=self.value_learning_rate[uid], kl=kl
+                    )
+                else:
+                    self.value_learning_rate[uid] *= self.value_scheduler[uid](timestep)
 
         # record data
         self.track_data(
             f"Loss / Policy loss ({uid})",
-            cumulative_policy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            cumulative_policy_loss / (self.cfg.learning_epochs[uid] * self.cfg.mini_batches[uid]),
         )
         self.track_data(
             f"Loss / Value loss ({uid})",
-            cumulative_value_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+            cumulative_value_loss / (self.cfg.learning_epochs[uid] * self.cfg.mini_batches[uid]),
         )
-        if self._entropy_loss_scale:
+        if self.cfg.entropy_loss_scale:
             self.track_data(
                 f"Loss / Entropy loss ({uid})",
-                cumulative_entropy_loss / (self._learning_epochs[uid] * self._mini_batches[uid]),
+                cumulative_entropy_loss / (self.cfg.learning_epochs[uid] * self.cfg.mini_batches[uid]),
             )
 
         self.track_data(f"Policy / Standard deviation ({uid})", stddev.mean().item())
 
-        if self._learning_rate_scheduler[uid]:
-            self.track_data(f"Learning / Learning rate ({uid})", self._learning_rate[uid])
+        if self.policy_scheduler[uid]:
+            self.track_data("Learning / Policy learning rate ({uid})", self.policy_learning_rate[uid])
+        if self.value_scheduler[uid]:
+            self.track_data("Learning / Value learning rate ({uid})", self.value_learning_rate[uid])

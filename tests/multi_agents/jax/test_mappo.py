@@ -2,13 +2,14 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 
+import dataclasses
 import gymnasium
 
 import optax
 
 from skrl.memories.jax import RandomMemory
 from skrl.multi_agents.jax.mappo import MAPPO as MultiAgent
-from skrl.multi_agents.jax.mappo import MAPPO_DEFAULT_CONFIG as DEFAULT_CONFIG
+from skrl.multi_agents.jax.mappo import MAPPO_CFG as DEFAULT_CONFIG
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
@@ -37,7 +38,6 @@ from ...utilities import MultiAgentEnv, check_config_keys
     grad_norm_clip=st.floats(min_value=0, max_value=1),
     ratio_clip=st.floats(min_value=0, max_value=1),
     value_clip=st.floats(min_value=0, max_value=1),
-    clip_predicted_values=st.booleans(),
     entropy_loss_scale=st.floats(min_value=0, max_value=1),
     value_loss_scale=st.floats(min_value=0, max_value=1),
     kl_threshold=st.floats(min_value=0, max_value=1),
@@ -80,7 +80,6 @@ def test_agent(
     grad_norm_clip,
     ratio_clip,
     value_clip,
-    clip_predicted_values,
     entropy_loss_scale,
     value_loss_scale,
     kl_threshold,
@@ -176,7 +175,7 @@ def test_agent(
         "learning_epochs": learning_epochs,
         "mini_batches": mini_batches,
         "discount_factor": discount_factor,
-        "lambda": lambda_,
+        "lambda_": lambda_,
         "learning_rate": learning_rate,
         "learning_rate_scheduler": learning_rate_scheduler,
         "learning_rate_scheduler_kwargs": {},
@@ -191,7 +190,6 @@ def test_agent(
         "grad_norm_clip": grad_norm_clip,
         "ratio_clip": ratio_clip,
         "value_clip": value_clip,
-        "clip_predicted_values": clip_predicted_values,
         "entropy_loss_scale": entropy_loss_scale,
         "value_loss_scale": value_loss_scale,
         "kl_threshold": kl_threshold,
@@ -210,8 +208,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "value"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, DEFAULT_CONFIG)
-    check_config_keys(cfg["experiment"], DEFAULT_CONFIG["experiment"])
+    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
     agent = MultiAgent(
         possible_agents=env.possible_agents,
         models=models,

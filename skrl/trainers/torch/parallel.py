@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import copy
+import dataclasses
 import sys
 import tqdm
 
@@ -10,22 +11,8 @@ import torch.multiprocessing as mp
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
-from skrl.trainers.torch import Trainer
+from skrl.trainers.torch import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
-
-
-# fmt: off
-# [start-config-dict-torch]
-PARALLEL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,            # number of timesteps to train for
-    "headless": False,              # whether to use headless mode (no rendering)
-    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
-    "close_environment_at_exit": True,   # whether to close the environment on normal program termination
-    "environment_info": "episode",       # key used to get and log environment info
-    "stochastic_evaluation": False,      # whether to use actions rather than (deterministic) mean actions during evaluation
-}
-# [end-config-dict-torch]
-# fmt: on
 
 
 def fn_processor(process_index, *args):
@@ -145,6 +132,11 @@ def fn_processor(process_index, *args):
                 barrier.wait()
 
 
+@dataclasses.dataclass(kw_only=True)
+class ParallelTrainerCfg(TrainerCfg):
+    """Configuration for the parallel trainer."""
+
+
 class ParallelTrainer(Trainer):
     def __init__(
         self,
@@ -163,10 +155,13 @@ class ParallelTrainer(Trainer):
         :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
         :param cfg: Configuration dictionary.
         """
-        _cfg = copy.deepcopy(PARALLEL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
-        scopes = scopes if scopes is not None else []
-        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
+        self.cfg: ParallelTrainerCfg
+        super().__init__(
+            env=env,
+            agents=agents,
+            scopes=scopes if scopes is not None else [],
+            cfg=ParallelTrainerCfg(**cfg) if isinstance(cfg, dict) else cfg,
+        )
 
         mp.set_start_method(method="spawn", force=True)
 
@@ -242,13 +237,11 @@ class ParallelTrainer(Trainer):
         if states is not None and not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(
-            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
-        ):
+        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for pipe in producer_pipes:
-                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.timesteps})
+                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
             barrier.wait()
 
             # compute actions
@@ -258,7 +251,7 @@ class ParallelTrainer(Trainer):
                         {
                             "task": "act",
                             "timestep": timestep,
-                            "timesteps": self.timesteps,
+                            "timesteps": self.cfg.timesteps,
                         }
                     )
                     queue.put(observations)
@@ -273,7 +266,7 @@ class ParallelTrainer(Trainer):
                     next_states = self.env.state()
 
                 # render the environments
-                if not self.headless:
+                if not self.cfg.headless:
                     self.env.render()
 
                 # record the environments' transitions
@@ -293,7 +286,7 @@ class ParallelTrainer(Trainer):
                         {
                             "task": "record_transition",
                             "timestep": timestep,
-                            "timesteps": self.timesteps,
+                            "timesteps": self.cfg.timesteps,
                             "env_stepping_time_ms": timer.elapsed_time_ms,
                         }
                     )
@@ -307,7 +300,7 @@ class ParallelTrainer(Trainer):
 
             # post-interaction
             for pipe in producer_pipes:
-                pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.timesteps})
+                pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
             barrier.wait()
 
             # reset environments
@@ -400,13 +393,11 @@ class ParallelTrainer(Trainer):
         if states is not None and not states.is_cuda:
             states.share_memory_()
 
-        for timestep in tqdm.tqdm(
-            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
-        ):
+        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for pipe in producer_pipes:
-                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.timesteps})
+                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
             barrier.wait()
 
             # compute actions
@@ -416,8 +407,8 @@ class ParallelTrainer(Trainer):
                         {
                             "task": "act",
                             "timestep": timestep,
-                            "timesteps": self.timesteps,
-                            "stochastic_evaluation": self.stochastic_evaluation,
+                            "timesteps": self.cfg.timesteps,
+                            "stochastic_evaluation": self.cfg.stochastic_evaluation,
                         }
                     )
                     queue.put(observations)
@@ -432,7 +423,7 @@ class ParallelTrainer(Trainer):
                     next_states = self.env.state()
 
                 # render the environments
-                if not self.headless:
+                if not self.cfg.headless:
                     self.env.render()
 
                 # write data to TensorBoard
@@ -453,7 +444,7 @@ class ParallelTrainer(Trainer):
                     {
                         "task": "eval-record_transition-post_interaction",
                         "timestep": timestep,
-                        "timesteps": self.timesteps,
+                        "timesteps": self.cfg.timesteps,
                         "env_stepping_time_ms": timer.elapsed_time_ms,
                     }
                 )

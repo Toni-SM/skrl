@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import copy
+import dataclasses
 import sys
 import tqdm
 
@@ -9,22 +10,13 @@ import torch
 from skrl.agents.torch import Agent
 from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
-from skrl.trainers.torch import Trainer
+from skrl.trainers.torch import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
 
 
-# fmt: off
-# [start-config-dict-torch]
-SEQUENTIAL_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,            # number of timesteps to train for
-    "headless": False,              # whether to use headless mode (no rendering)
-    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
-    "close_environment_at_exit": True,   # whether to close the environment on normal program termination
-    "environment_info": "episode",       # key used to get and log environment info
-    "stochastic_evaluation": False,      # whether to use actions rather than (deterministic) mean actions during evaluation
-}
-# [end-config-dict-torch]
-# fmt: on
+@dataclasses.dataclass(kw_only=True)
+class SequentialTrainerCfg(TrainerCfg):
+    """Configuration for the sequential trainer."""
 
 
 class SequentialTrainer(Trainer):
@@ -45,10 +37,13 @@ class SequentialTrainer(Trainer):
         :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
         :param cfg: Configuration dictionary.
         """
-        _cfg = copy.deepcopy(SEQUENTIAL_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
-        scopes = scopes if scopes is not None else []
-        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
+        self.cfg: SequentialTrainerCfg
+        super().__init__(
+            env=env,
+            agents=agents,
+            scopes=scopes if scopes is not None else [],
+            cfg=SequentialTrainerCfg(**cfg) if isinstance(cfg, dict) else cfg,
+        )
 
         # init agents
         if self.num_simultaneous_agents > 1:
@@ -86,13 +81,11 @@ class SequentialTrainer(Trainer):
         observations, infos = self.env.reset()
         states = self.env.state()
 
-        for timestep in tqdm.tqdm(
-            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
-        ):
+        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for agent in self.agents:
-                agent.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+                agent.pre_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
 
             with torch.no_grad():
                 # compute actions
@@ -103,7 +96,7 @@ class SequentialTrainer(Trainer):
                             observations[scope[0] : scope[1]],
                             states[scope[0] : scope[1]] if states is not None else None,
                             timestep=timestep,
-                            timesteps=self.timesteps,
+                            timesteps=self.cfg.timesteps,
                         )
                         agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                     _actions.append(actions)
@@ -119,7 +112,7 @@ class SequentialTrainer(Trainer):
                         agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
                 # render the environments
-                if not self.headless:
+                if not self.cfg.headless:
                     self.env.render()
 
                 # record the environments' transitions
@@ -135,19 +128,19 @@ class SequentialTrainer(Trainer):
                         truncated=truncated[scope[0] : scope[1]],
                         infos=infos,
                         timestep=timestep,
-                        timesteps=self.timesteps,
+                        timesteps=self.cfg.timesteps,
                     )
 
                 # log environment info
-                if self.environment_info in infos:
-                    for k, v in infos[self.environment_info].items():
+                if self.cfg.environment_info in infos:
+                    for k, v in infos[self.cfg.environment_info].items():
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
                             for agent in self.agents:
                                 agent.track_data(f"Info / {k}", v.item())
 
             # post-interaction
             for agent in self.agents:
-                agent.post_interaction(timestep=timestep, timesteps=self.timesteps)
+                agent.post_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
 
             # reset environments
             # - parallel/vectorized environments (single or multi-agent)
@@ -186,13 +179,11 @@ class SequentialTrainer(Trainer):
         observations, infos = self.env.reset()
         states = self.env.state()
 
-        for timestep in tqdm.tqdm(
-            range(self.initial_timestep, self.timesteps), disable=self.disable_progressbar, file=sys.stdout
-        ):
+        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
 
             # pre-interaction
             for agent in self.agents:
-                agent.pre_interaction(timestep=timestep, timesteps=self.timesteps)
+                agent.pre_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
 
             with torch.no_grad():
                 # compute actions
@@ -203,10 +194,10 @@ class SequentialTrainer(Trainer):
                             observations[scope[0] : scope[1]],
                             states[scope[0] : scope[1]] if states is not None else None,
                             timestep=timestep,
-                            timesteps=self.timesteps,
+                            timesteps=self.cfg.timesteps,
                         )
                         agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
-                    _actions.append(actions if self.stochastic_evaluation else outputs.get("mean_actions", actions))
+                    _actions.append(actions if self.cfg.stochastic_evaluation else outputs.get("mean_actions", actions))
                     _outputs.append(outputs)
                 actions = torch.vstack(_actions)
 
@@ -219,7 +210,7 @@ class SequentialTrainer(Trainer):
                         agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
                 # render the environments
-                if not self.headless:
+                if not self.cfg.headless:
                     self.env.render()
 
                 # write data to TensorBoard
@@ -235,19 +226,19 @@ class SequentialTrainer(Trainer):
                         truncated=truncated[scope[0] : scope[1]],
                         infos=infos,
                         timestep=timestep,
-                        timesteps=self.timesteps,
+                        timesteps=self.cfg.timesteps,
                     )
 
                 # log environment info
-                if self.environment_info in infos:
-                    for k, v in infos[self.environment_info].items():
+                if self.cfg.environment_info in infos:
+                    for k, v in infos[self.cfg.environment_info].items():
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
                             for agent in self.agents:
                                 agent.track_data(f"Info / {k}", v.item())
 
             # post-interaction
             for agent in self.agents:
-                super(agent.__class__, agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+                super(agent.__class__, agent).post_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
 
             # reset environments
             # - parallel/vectorized environments (single or multi-agent)

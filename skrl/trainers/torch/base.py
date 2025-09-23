@@ -237,7 +237,7 @@ class Trainer(ABC):
                 if self.cfg.environment_info in infos:
                     for k, v in infos[self.cfg.environment_info].items():
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
-                            self.agents.track_data(f"Info / {k}", v.item())
+                            self.agents.track_data(k if "/" in k else f"Info / {k}", v.item())
 
             # post-interaction
             self.agents.post_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
@@ -331,7 +331,7 @@ class Trainer(ABC):
                 if self.cfg.environment_info in infos:
                     for k, v in infos[self.cfg.environment_info].items():
                         if isinstance(v, torch.Tensor) and v.numel() == 1:
-                            self.agents.track_data(f"Info / {k}", v.item())
+                            self.agents.track_data(k if "/" in k else f"Info / {k}", v.item())
 
             # post-interaction
             super(self.agents.__class__, self.agents).post_interaction(timestep=timestep, timesteps=self.cfg.timesteps)

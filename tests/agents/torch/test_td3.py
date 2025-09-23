@@ -8,7 +8,7 @@ import gymnasium
 import torch
 
 from skrl.agents.torch.td3 import TD3 as Agent
-from skrl.agents.torch.td3 import TD3_CFG as DEFAULT_CONFIG
+from skrl.agents.torch.td3 import TD3_CFG as AgentCfg
 from skrl.memories.torch import RandomMemory
 from skrl.resources.noises.torch import GaussianNoise, OrnsteinUhlenbeckNoise
 from skrl.resources.preprocessors.torch import RunningStandardScaler
@@ -223,8 +223,8 @@ def test_agent(
         }
     elif smooth_regularization_noise is GaussianNoise:
         cfg["smooth_regularization_noise_kwargs"] = {"mean": 0, "std": 0.1, "device": env.device}
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(AgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(AgentCfg().experiment))
     agent = Agent(
         models=models,
         memory=memory,

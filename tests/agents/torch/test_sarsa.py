@@ -6,7 +6,7 @@ import dataclasses
 import gymnasium
 
 from skrl.agents.torch.sarsa import SARSA as Agent
-from skrl.agents.torch.sarsa import SARSA_CFG as DEFAULT_CONFIG
+from skrl.agents.torch.sarsa import SARSA_CFG as AgentCfg
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils.model_instantiators.torch import tabular_model
@@ -96,8 +96,8 @@ def test_agent(
             "wandb_kwargs": {},
         },
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(AgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(AgentCfg().experiment))
     agent = Agent(
         models=models,
         memory=memory,

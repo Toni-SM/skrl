@@ -9,7 +9,7 @@ import optax
 
 from skrl.memories.jax import RandomMemory
 from skrl.multi_agents.jax.ippo import IPPO as MultiAgent
-from skrl.multi_agents.jax.ippo import IPPO_CFG as DEFAULT_CONFIG
+from skrl.multi_agents.jax.ippo import IPPO_CFG as MultiAgentCfg
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
@@ -208,8 +208,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "value"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(MultiAgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(MultiAgentCfg().experiment))
     agent = MultiAgent(
         possible_agents=env.possible_agents,
         models=models,

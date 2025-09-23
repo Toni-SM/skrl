@@ -8,7 +8,7 @@ import gymnasium
 import torch
 
 from skrl.agents.torch.cem import CEM as Agent
-from skrl.agents.torch.cem import CEM_CFG as DEFAULT_CONFIG
+from skrl.agents.torch.cem import CEM_CFG as AgentCfg
 from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
@@ -132,8 +132,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "factor"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(AgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(AgentCfg().experiment))
     agent = Agent(
         models=models,
         memory=memory,

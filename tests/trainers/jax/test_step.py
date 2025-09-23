@@ -6,7 +6,7 @@ import dataclasses
 import gymnasium
 
 from skrl.trainers.jax import StepTrainer, generate_equally_spaced_scopes
-from skrl.trainers.jax.step import StepTrainerCfg as DEFAULT_CONFIG
+from skrl.trainers.jax.step import StepTrainerCfg as TrainerCfg
 
 from ...utilities import AgentMock, MultiAgentEnv, MultiAgentMock, SingleAgentEnv, check_config_keys
 
@@ -74,7 +74,7 @@ def test_non_simultaneous_trainer_single_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = StepTrainer(cfg=cfg, env=env, agents=agent)
     # - training
     for _ in range(timesteps):
@@ -160,7 +160,7 @@ def test_simultaneous_trainer_single_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = StepTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
     for _ in range(timesteps):
@@ -244,7 +244,7 @@ def test_non_simultaneous_trainer_multi_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = StepTrainer(cfg=cfg, env=env, agents=agent)
     # - training
     for _ in range(timesteps):
@@ -341,7 +341,7 @@ def test_simultaneous_trainer_multi_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = StepTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
     for _ in range(timesteps):

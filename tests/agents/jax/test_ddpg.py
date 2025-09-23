@@ -8,7 +8,7 @@ import gymnasium
 import optax
 
 from skrl.agents.jax.ddpg import DDPG as Agent
-from skrl.agents.jax.ddpg import DDPG_CFG as DEFAULT_CONFIG
+from skrl.agents.jax.ddpg import DDPG_CFG as AgentCfg
 from skrl.memories.jax import RandomMemory
 from skrl.resources.noises.jax import GaussianNoise, OrnsteinUhlenbeckNoise
 from skrl.resources.preprocessors.jax import RunningStandardScaler
@@ -184,8 +184,8 @@ def test_agent(
         cfg["exploration_noise_kwargs"] = {"theta": 0.1, "sigma": 0.2, "base_scale": 1.0, "device": env.device}
     elif exploration_noise is GaussianNoise:
         cfg["exploration_noise_kwargs"] = {"mean": 0, "std": 0.1, "device": env.device}
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(AgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(AgentCfg().experiment))
     agent = Agent(
         models=models,
         memory=memory,

@@ -6,7 +6,7 @@ import dataclasses
 import gymnasium
 
 from skrl.trainers.torch import ParallelTrainer, generate_equally_spaced_scopes
-from skrl.trainers.torch.parallel import ParallelTrainerCfg as DEFAULT_CONFIG
+from skrl.trainers.torch.parallel import ParallelTrainerCfg as TrainerCfg
 
 from ...utilities import (
     AgentMock,
@@ -86,7 +86,7 @@ def test_non_simultaneous_trainer_single_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = ParallelTrainer(cfg=cfg, env=env, agents=agent)
     # - training
     trainer.train()
@@ -177,7 +177,7 @@ def test_simultaneous_trainer_single_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = ParallelTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
     trainer.train()
@@ -260,7 +260,7 @@ def test_non_simultaneous_trainer_multi_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = ParallelTrainer(cfg=cfg, env=env, agents=agent)
     # - training
     trainer.train()
@@ -362,7 +362,7 @@ def test_simultaneous_trainer_multi_agent(
         "environment_info": "episode",
         "stochastic_evaluation": stochastic_evaluation,
     }
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
+    check_config_keys(cfg, dataclasses.asdict(TrainerCfg()))
     trainer = ParallelTrainer(cfg=cfg, env=env, agents=agents, scopes=scopes)
     # - training
     trainer.train()

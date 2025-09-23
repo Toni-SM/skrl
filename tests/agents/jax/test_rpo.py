@@ -8,7 +8,7 @@ import gymnasium
 import optax
 
 from skrl.agents.jax.rpo import RPO as Agent
-from skrl.agents.jax.rpo import RPO_CFG as DEFAULT_CONFIG
+from skrl.agents.jax.rpo import RPO_CFG as AgentCfg
 from skrl.memories.jax import RandomMemory
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
@@ -188,8 +188,8 @@ def test_agent(
     cfg["learning_rate_scheduler_kwargs"][
         "kl_threshold" if learning_rate_scheduler is KLAdaptiveLR else "value"
     ] = learning_rate_scheduler_kwargs_value
-    check_config_keys(cfg, dataclasses.asdict(DEFAULT_CONFIG()))
-    check_config_keys(cfg["experiment"], dataclasses.asdict(DEFAULT_CONFIG().experiment))
+    check_config_keys(cfg, dataclasses.asdict(AgentCfg()))
+    check_config_keys(cfg["experiment"], dataclasses.asdict(AgentCfg().experiment))
     agent = Agent(
         models=models,
         memory=memory,

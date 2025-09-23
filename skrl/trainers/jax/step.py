@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Tuple, Union
 
 import contextlib
 import copy
+import dataclasses
 import sys
 import tqdm
 
@@ -12,22 +13,13 @@ import numpy as np
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.jax import MultiAgent
-from skrl.trainers.jax import Trainer
+from skrl.trainers.jax import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
 
 
-# fmt: off
-# [start-config-dict-jax]
-STEP_TRAINER_DEFAULT_CONFIG = {
-    "timesteps": 100000,            # number of timesteps to train for
-    "headless": False,              # whether to use headless mode (no rendering)
-    "disable_progressbar": False,   # whether to disable the progressbar. If None, disable on non-TTY
-    "close_environment_at_exit": True,   # whether to close the environment on normal program termination
-    "environment_info": "episode",       # key used to get and log environment info
-    "stochastic_evaluation": False,      # whether to use actions rather than (deterministic) mean actions during evaluation
-}
-# [end-config-dict-jax]
-# fmt: on
+@dataclasses.dataclass(kw_only=True)
+class StepTrainerCfg(TrainerCfg):
+    """Configuration for the step trainer."""
 
 
 class StepTrainer(Trainer):
@@ -48,10 +40,13 @@ class StepTrainer(Trainer):
         :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
         :param cfg: Configuration dictionary.
         """
-        _cfg = copy.deepcopy(STEP_TRAINER_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
-        scopes = scopes if scopes is not None else []
-        super().__init__(env=env, agents=agents, scopes=scopes, cfg=_cfg)
+        self.cfg: StepTrainerCfg
+        super().__init__(
+            env=env,
+            agents=agents,
+            scopes=scopes if scopes is not None else [],
+            cfg=StepTrainerCfg(**cfg) if isinstance(cfg, dict) else cfg,
+        )
 
         # init agents
         if self.num_simultaneous_agents > 1:
@@ -93,10 +88,10 @@ class StepTrainer(Trainer):
         if timestep is None:
             self._timestep += 1
             timestep = self._timestep
-        timesteps = timesteps if timesteps is not None else self.timesteps
+        timesteps = timesteps if timesteps is not None else self.cfg.timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.cfg.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # hack to simplify calls
@@ -125,7 +120,7 @@ class StepTrainer(Trainer):
                         self.observations[scope[0] : scope[1]],
                         self.states[scope[0] : scope[1]] if self.states is not None else None,
                         timestep=timestep,
-                        timesteps=self.timesteps,
+                        timesteps=self.cfg.timesteps,
                     )
                     agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
                 _actions.append(actions)
@@ -141,7 +136,7 @@ class StepTrainer(Trainer):
                     agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
             # render the environments
-            if not self.headless:
+            if not self.cfg.headless:
                 self.env.render()
 
             # record the environments' transitions
@@ -215,10 +210,10 @@ class StepTrainer(Trainer):
         if timestep is None:
             self._timestep += 1
             timestep = self._timestep
-        timesteps = timesteps if timesteps is not None else self.timesteps
+        timesteps = timesteps if timesteps is not None else self.cfg.timesteps
 
         if self._progress is None:
-            self._progress = tqdm.tqdm(total=timesteps, disable=self.disable_progressbar, file=sys.stdout)
+            self._progress = tqdm.tqdm(total=timesteps, disable=self.cfg.disable_progressbar, file=sys.stdout)
         self._progress.update(n=1)
 
         # hack to simplify calls
@@ -247,10 +242,10 @@ class StepTrainer(Trainer):
                         self.observations[scope[0] : scope[1]],
                         self.states[scope[0] : scope[1]] if self.states is not None else None,
                         timestep=timestep,
-                        timesteps=self.timesteps,
+                        timesteps=self.cfg.timesteps,
                     )
                     agent.track_data("Stats / Inference time (ms)", timer.elapsed_time_ms)
-                _actions.append(actions if self.stochastic_evaluation else outputs.get("mean_actions", actions))
+                _actions.append(actions if self.cfg.stochastic_evaluation else outputs.get("mean_actions", actions))
                 _outputs.append(outputs)
             actions = jnp.vstack(_actions)
 
@@ -263,7 +258,7 @@ class StepTrainer(Trainer):
                     agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
             # render the environments
-            if not self.headless:
+            if not self.cfg.headless:
                 self.env.render()
 
             # write data to TensorBoard
@@ -279,12 +274,12 @@ class StepTrainer(Trainer):
                     truncated=truncated[scope[0] : scope[1]],
                     infos=infos,
                     timestep=timestep,
-                    timesteps=self.timesteps,
+                    timesteps=self.cfg.timesteps,
                 )
 
         # post-interaction
         for agent in self.agents:
-            super(agent.__class__, agent).post_interaction(timestep=timestep, timesteps=self.timesteps)
+            super(agent.__class__, agent).post_interaction(timestep=timestep, timesteps=self.cfg.timesteps)
 
         # reset environments
         # - parallel/vectorized environments (single or multi-agent)

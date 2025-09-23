@@ -137,10 +137,15 @@ Usage
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/sac/sac.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``SAC_CFG``
+      - :py:class:`~skrl.agents.torch.sac.SAC_CFG`
+      - :py:class:`~skrl.agents.jax.sac.SAC_CFG`
 
 .. raw:: html
 
@@ -260,7 +265,10 @@ Support for advanced features is described in the next table
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.agents.torch.sac.SAC_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.torch.sac.SAC_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.sac.SAC
     :undoc-members:
@@ -281,7 +289,10 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.agents.jax.sac.SAC_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.jax.sac.SAC_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.sac.SAC
     :undoc-members:

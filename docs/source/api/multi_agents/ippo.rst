@@ -139,19 +139,15 @@ Usage
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
+.. list-table::
+    :header-rows: 1
 
-    The specification of a single value is automatically extended to all involved agents, unless the configuration of each individual agent is specified using a dictionary. For example:
-
-    .. code-block:: python
-
-        # specify a configuration value for each agent (agent names depend on environment)
-        cfg["discount_factor"] = {"agent_0": 0.99, "agent_1": 0.995, "agent_2": 0.985}
-
-.. literalinclude:: ../../../../skrl/multi_agents/torch/ippo/ippo.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``IPPO_CFG``
+      - :py:class:`~skrl.multi_agents.torch.ippo.IPPO_CFG`
+      - :py:class:`~skrl.multi_agents.jax.ippo.IPPO_CFG`
 
 .. raw:: html
 
@@ -255,7 +251,10 @@ Support for advanced features is described in the next table
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.multi_agents.torch.ippo.IPPO_DEFAULT_CONFIG
+.. autoclass:: skrl.multi_agents.torch.ippo.IPPO_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.multi_agents.torch.ippo.IPPO
     :undoc-members:
@@ -270,7 +269,10 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.multi_agents.jax.ippo.IPPO_DEFAULT_CONFIG
+.. autoclass:: skrl.multi_agents.jax.ippo.IPPO_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.multi_agents.jax.ippo.IPPO
     :undoc-members:

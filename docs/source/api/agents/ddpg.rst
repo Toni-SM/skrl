@@ -136,15 +136,15 @@ Usage
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/ddpg/ddpg.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. autoclass:: skrl.agents.torch.ddpg.DDPG_CFG
-    :inherited-members:
-    :undoc-members:
-    :members:
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``DDPG_CFG``
+      - :py:class:`~skrl.agents.torch.ddpg.DDPG_CFG`
+      - :py:class:`~skrl.agents.jax.ddpg.DDPG_CFG`
 
 .. raw:: html
 
@@ -257,7 +257,10 @@ Support for advanced features is described in the next table
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.agents.torch.ddpg.DDPG_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.torch.ddpg.DDPG_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.ddpg.DDPG
     :undoc-members:
@@ -278,7 +281,10 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.agents.jax.ddpg.DDPG_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.jax.ddpg.DDPG_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.ddpg.DDPG
     :undoc-members:

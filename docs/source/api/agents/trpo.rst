@@ -200,10 +200,15 @@ Usage
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/trpo/trpo.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``TRPO_CFG``
+      - :py:class:`~skrl.agents.torch.trpo.TRPO_CFG`
+      -
 
 .. raw:: html
 
@@ -305,7 +310,10 @@ Support for advanced features is described in the next table
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.agents.torch.trpo.TRPO_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.torch.trpo.TRPO_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.trpo.TRPO
     :undoc-members:

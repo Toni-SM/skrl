@@ -52,10 +52,15 @@ Usage
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``SequentialTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.SequentialTrainerCfg`
 
 .. raw:: html
 
@@ -64,9 +69,12 @@ Configuration
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.torch.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.torch.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -79,9 +87,12 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.trainers.jax.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.jax.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.jax.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

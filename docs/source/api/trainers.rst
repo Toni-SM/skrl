@@ -7,7 +7,6 @@ Trainers
     Sequential <trainers/sequential>
     Parallel <trainers/parallel>
     Step <trainers/step>
-    Manual training <trainers/manual>
 
 Trainers are responsible for orchestrating and managing the training/evaluation of agents and their interactions with the environment.
 
@@ -28,9 +27,6 @@ Trainers are responsible for orchestrating and managing the training/evaluation 
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
     * - :doc:`Step trainer <trainers/step>`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-    * - :doc:`Manual training <trainers/manual>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -73,7 +69,12 @@ Basic inheritance usage
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.trainers.torch.base.Trainer
+.. autoclass:: skrl.trainers.torch.TrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.torch.Trainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -89,7 +90,12 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.trainers.jax.base.Trainer
+.. autoclass:: skrl.trainers.jax.TrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.jax.Trainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

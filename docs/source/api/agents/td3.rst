@@ -146,10 +146,15 @@ Usage
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/td3/td3.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+    * - ``TD3_CFG``
+      - :py:class:`~skrl.agents.torch.td3.TD3_CFG`
+      - :py:class:`~skrl.agents.jax.td3.TD3_CFG`
 
 .. raw:: html
 
@@ -274,7 +279,10 @@ Support for advanced features is described in the next table
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.agents.torch.td3.TD3_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.torch.td3.TD3_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.td3.TD3
     :undoc-members:
@@ -295,7 +303,10 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.agents.jax.td3.TD3_DEFAULT_CONFIG
+.. autoclass:: skrl.agents.jax.td3.TD3_CFG
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.td3.TD3
     :undoc-members:

@@ -61,7 +61,7 @@ Basic inheritance usage
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.memories.torch.base.Memory
+.. autoclass:: skrl.memories.torch.Memory
     :undoc-members:
     :show-inheritance:
     :members:
@@ -75,7 +75,7 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.memories.jax.base.Memory
+.. autoclass:: skrl.memories.jax.Memory
     :undoc-members:
     :show-inheritance:
     :members:

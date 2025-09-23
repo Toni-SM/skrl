@@ -108,7 +108,7 @@ Mixin and inheritance
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.models.torch.base.Model
+.. autoclass:: skrl.models.torch.Model
     :undoc-members:
     :show-inheritance:
     :members:
@@ -160,7 +160,7 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.models.jax.base.Model
+.. autoclass:: skrl.models.jax.Model
     :undoc-members:
     :show-inheritance:
     :members:

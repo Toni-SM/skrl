@@ -67,7 +67,7 @@ Basic inheritance usage
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.resources.noises.torch.base.Noise
+.. autoclass:: skrl.resources.noises.torch.Noise
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -80,7 +80,7 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.resources.noises.jax.base.Noise
+.. autoclass:: skrl.resources.noises.jax.Noise
     :undoc-members:
     :show-inheritance:
     :inherited-members:

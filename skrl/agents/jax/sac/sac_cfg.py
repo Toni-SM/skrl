@@ -109,9 +109,7 @@ class SAC_CFG(AgentCfg):
         """Expand the configuration."""
         super().expand()
         # learning rate
-        if self.learning_rate is None:
-            self.learning_rate = (None, None, None)
-        elif not isinstance(self.learning_rate, (tuple, list)):
+        if not isinstance(self.learning_rate, (tuple, list)):
             self.learning_rate = (self.learning_rate, self.learning_rate, self.learning_rate)
         # learning rate scheduler
         if self.learning_rate_scheduler is None:

@@ -144,9 +144,7 @@ class MAPPO_CFG(MultiAgentCfg):
         )
         for uid in possible_agents:
             # learning rate
-            if self.learning_rate[uid] is None:
-                self.learning_rate[uid] = (None, None)
-            elif not isinstance(self.learning_rate[uid], (tuple, list)):
+            if not isinstance(self.learning_rate[uid], (tuple, list)):
                 self.learning_rate[uid] = (self.learning_rate[uid], self.learning_rate[uid])
             # learning rate scheduler
             if self.learning_rate_scheduler[uid] is None:

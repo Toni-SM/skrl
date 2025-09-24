@@ -61,6 +61,11 @@ tests = [
 "Source" = "https://github.com/Toni-SM/skrl"
 
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["skrl"]
+
+
 [tool.black]
 line-length = 120
 extend-exclude = """

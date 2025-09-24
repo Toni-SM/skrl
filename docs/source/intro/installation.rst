@@ -21,7 +21,7 @@ In this section, you will find the steps to install the library, troubleshoot kn
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
     * - Python
-      - ``>= 3.8``
+      - ``>= 3.10``
       - ``>= 3.10``
     * - Packages
       - `torch <https://pytorch.org>`_ ``>= 1.10``

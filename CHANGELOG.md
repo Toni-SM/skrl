@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
 - Log agent inference and algorithm update, and environment steeping time to TensorBoard
 
+### Changed
+- Update minimum supported Python version to 3.10
+
 ### Changed (breaking changes)
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)
 - Implement agent/multi-agent and trainer configurations using Python Data Classes

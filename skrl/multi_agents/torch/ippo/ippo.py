@@ -503,7 +503,7 @@ class IPPO(MultiAgent):
             f"Loss / Value loss ({uid})",
             cumulative_value_loss / (self.cfg.learning_epochs[uid] * self.cfg.mini_batches[uid]),
         )
-        if self.cfg.entropy_loss_scale:
+        if self.cfg.entropy_loss_scale[uid]:
             self.track_data(
                 f"Loss / Entropy loss ({uid})",
                 cumulative_entropy_loss / (self.cfg.learning_epochs[uid] * self.cfg.mini_batches[uid]),

@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - Update minimum supported Python version to 3.10
+- Drop support for PyTorch versions prior to 1.11 (the previous supported version was 1.10)
 
 ### Changed (breaking changes)
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)

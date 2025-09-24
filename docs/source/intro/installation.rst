@@ -24,14 +24,10 @@ In this section, you will find the steps to install the library, troubleshoot kn
       - ``>= 3.10``
       - ``>= 3.10``
     * - Packages
-      - `torch <https://pytorch.org>`_ ``>= 1.10``
+      - `torch <https://pytorch.org>`_ ``>= 1.11``
       - `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ ``>= 0.4.31``
         |br| `flax <https://flax.readthedocs.io>`_ ``>= 0.9.0``
         |br| `optax <https://optax.readthedocs.io>`_
-
-.. warning::
-
-    :doc:`Model instantiators <../api/utils/model_instantiators>` utilities require Python 3.9 or higher.
 
 .. warning::
 

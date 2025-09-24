@@ -29,7 +29,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 torch = [
-  "torch>=1.10",
+  "torch>=1.11",
 ]
 jax = [
   "jax>=0.4.31",
@@ -38,7 +38,7 @@ jax = [
   "optax",
 ]
 all = [
-  "torch>=1.10",
+  "torch>=1.11",
   "jax>=0.4.31",
   "jaxlib>=0.4.31",
   "flax>=0.9.0",

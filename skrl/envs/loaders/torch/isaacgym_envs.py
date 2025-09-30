@@ -7,9 +7,6 @@ from contextlib import contextmanager
 from skrl import logger
 
 
-__all__ = ["load_isaacgym_env_preview2", "load_isaacgym_env_preview3", "load_isaacgym_env_preview4"]
-
-
 @contextmanager
 def cwd(new_path: str) -> None:
     """Context manager to change the current working directory.
@@ -55,7 +52,7 @@ def _print_cfg(d, indent=0) -> None:
             print("  |   " * indent + f"  |-- {key}: {value}")
 
 
-def load_isaacgym_env_preview2(
+def load_isaacgym_env_preview4(
     task_name: str = "",
     num_envs: Optional[int] = None,
     headless: Optional[bool] = None,
@@ -63,141 +60,7 @@ def load_isaacgym_env_preview2(
     isaacgymenvs_path: str = "",
     show_cfg: bool = True,
 ):
-    """Load an Isaac Gym environment (preview 2).
-
-    :param task_name: The name of the task.
-        If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
-        Command line argument has priority over function parameter if both are specified.
-    :param num_envs: Number of parallel environments to create.
-        If not specified, the default number of environments defined in the task configuration is used.
-        Command line argument has priority over function parameter if both are specified.
-    :param headless: Whether to use headless mode (no rendering).
-        If not specified, the default task configuration is used.
-        Command line argument has priority over function parameter if both are specified.
-    :param cli_args: Isaac Gym environment configuration and command line arguments.
-    :param isaacgymenvs_path: The path to the ``rlgpu`` directory.
-        If empty, the path will obtained from isaacgym package metadata.
-    :param show_cfg: Whether to print the configuration.
-
-    :return: Isaac Gym environment (preview 2).
-
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
-    :raises RuntimeError: The isaacgym package is not installed or the path is wrong.
-    """
-    import isaacgym
-
-    # check task from command line arguments
-    defined = False
-    for arg in sys.argv:
-        if arg.startswith("--task"):
-            defined = True
-            break
-    # get task name from command line arguments
-    if defined:
-        arg_index = sys.argv.index("--task") + 1
-        if arg_index >= len(sys.argv):
-            raise ValueError(
-                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
-            )
-        if task_name and task_name != sys.argv[arg_index]:
-            logger.warning(f"Overriding task ({task_name}) with command line argument ({sys.argv[arg_index]})")
-    # get task name from function arguments
-    else:
-        if task_name:
-            sys.argv.append("--task")
-            sys.argv.append(task_name)
-        else:
-            raise ValueError(
-                "No task name defined. Set the task_name parameter or use --task <task_name> as command line argument"
-            )
-
-    # check num_envs from command line arguments
-    defined = False
-    for arg in sys.argv:
-        if arg.startswith("--num_envs"):
-            defined = True
-            break
-    # get num_envs from command line arguments
-    if defined:
-        if num_envs is not None:
-            logger.warning("Overriding num_envs with command line argument --num_envs")
-    # get num_envs from function arguments
-    elif num_envs is not None and num_envs > 0:
-        sys.argv.append("--num_envs")
-        sys.argv.append(str(num_envs))
-
-    # check headless from command line arguments
-    defined = False
-    for arg in sys.argv:
-        if arg.startswith("--headless"):
-            defined = True
-            break
-    # get headless from command line arguments
-    if defined:
-        if headless is not None:
-            logger.warning("Overriding headless with command line argument --headless")
-    # get headless from function arguments
-    elif headless is not None:
-        sys.argv.append("--headless")
-
-    # others command line arguments
-    sys.argv += cli_args
-
-    # get isaacgym envs path from isaacgym package metadata
-    if not isaacgymenvs_path:
-        if not hasattr(isaacgym, "__path__"):
-            raise RuntimeError(
-                "isaacgym package is not installed or could not be accessed by the current Python environment"
-            )
-        path = isaacgym.__path__
-        path = os.path.join(path[0], "..", "rlgpu")
-    else:
-        path = isaacgymenvs_path
-
-    # import required packages
-    sys.path.append(path)
-
-    status = True
-    try:
-        from utils.config import get_args, load_cfg, parse_sim_params  # type: ignore
-        from utils.parse_task import parse_task  # type: ignore
-    except Exception as e:
-        status = False
-        logger.error(f"Failed to import required packages: {e}")
-    if not status:
-        raise RuntimeError(
-            f"Path ({path}) is not valid or the isaacgym package is not installed in editable mode (pip install -e .)"
-        )
-
-    args = get_args()
-
-    # print config
-    if show_cfg:
-        print(f"\nIsaac Gym environment ({args.task})")
-        _print_cfg(vars(args))
-
-    # update task arguments
-    args.cfg_train = os.path.join(path, args.cfg_train)
-    args.cfg_env = os.path.join(path, args.cfg_env)
-
-    # load environment
-    with cwd(path):
-        cfg, cfg_train, _ = load_cfg(args)
-        sim_params = parse_sim_params(args, cfg, cfg_train)
-        task, env = parse_task(args, cfg, cfg_train, sim_params)
-
-    return env
-
-
-def load_isaacgym_env_preview3(
-    task_name: str = "",
-    num_envs: Optional[int] = None,
-    headless: Optional[bool] = None,
-    cli_args: Sequence[str] = [],
-    isaacgymenvs_path: str = "",
-    show_cfg: bool = True,
-):
-    """Load an Isaac Gym environment (preview 3).
+    """Load an Isaac Gym environment (preview 4).
 
     Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
 
@@ -215,7 +78,7 @@ def load_isaacgym_env_preview3(
         If empty, the path will obtained from ``isaacgymenvs`` package metadata.
     :param show_cfg: Whether to print the configuration.
 
-    :return: Isaac Gym environment (preview 3).
+    :return: Isaac Gym environment (preview 4).
 
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
     :raises RuntimeError: The ``isaacgymenvs`` package is not installed or the path is wrong.
@@ -351,37 +214,3 @@ def load_isaacgym_env_preview3(
         )
 
     return env
-
-
-def load_isaacgym_env_preview4(
-    task_name: str = "",
-    num_envs: Optional[int] = None,
-    headless: Optional[bool] = None,
-    cli_args: Sequence[str] = [],
-    isaacgymenvs_path: str = "",
-    show_cfg: bool = True,
-):
-    """Load an Isaac Gym environment (preview 4).
-
-    Isaac Gym benchmark environments: https://github.com/isaac-sim/IsaacGymEnvs
-
-    :param task_name: The name of the task.
-        If not specified, the task name is taken from the command line argument (``task=TASK_NAME``).
-        Command line argument has priority over function parameter if both are specified.
-    :param num_envs: Number of parallel environments to create.
-        If not specified, the default number of environments defined in the task configuration is used.
-        Command line argument has priority over function parameter if both are specified.
-    :param headless: Whether to use headless mode (no rendering).
-        If not specified, the default task configuration is used.
-        Command line argument has priority over function parameter if both are specified.
-    :param cli_args: IsaacGymEnvs configuration and command line arguments.
-    :param isaacgymenvs_path: The path to the ``isaacgymenvs`` directory.
-        If empty, the path will obtained from ``isaacgymenvs`` package metadata.
-    :param show_cfg: Whether to print the configuration.
-
-    :return: Isaac Gym environment (preview 4).
-
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
-    :raises RuntimeError: The ``isaacgymenvs`` package is not installed or the path is wrong.
-    """
-    return load_isaacgym_env_preview3(task_name, num_envs, headless, cli_args, isaacgymenvs_path, show_cfg)

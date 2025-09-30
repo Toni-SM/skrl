@@ -9,9 +9,8 @@ from skrl.envs.wrappers.torch.brax_envs import BraxWrapper
 from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.torch.isaacgym_envs import IsaacGymPreview2Wrapper, IsaacGymPreview3Wrapper
+from skrl.envs.wrappers.torch.isaacgym_envs import IsaacGymPreview4Wrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
-from skrl.envs.wrappers.torch.omniverse_isaacgym_envs import OmniverseIsaacGymWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 from skrl.envs.wrappers.torch.robosuite_envs import RobosuiteWrapper
 
@@ -29,10 +28,7 @@ def wrap_env(
         "brax",
         "isaaclab",
         "isaaclab-single-agent",
-        "isaacgym-preview2",
-        "isaacgym-preview3",
         "isaacgym-preview4",
-        "omniverse-isaacgym",
         "robosuite",
         "pettingzoo",
         "isaaclab-multi-agent",
@@ -69,14 +65,8 @@ def wrap_env(
                 - ``"brax"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
-            * - Isaac Gym preview 2
-                - ``"isaacgym-preview2"``
-            * - Isaac Gym preview 3
-                - ``"isaacgym-preview3"``
             * - Isaac Gym preview 4
                 - ``"isaacgym-preview4"``
-            * - Omniverse Isaac Gym
-                - ``"omniverse-isaacgym"``
             * - Robosuite
                 - ``"robosuite"``
 
@@ -121,12 +111,8 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
-        elif _in("omni.isaac.gym..*", base_classes):
-            return "omniverse-isaacgym"
         elif _in(["isaacgymenvs..*", "tasks..*.VecTask"], base_classes):
-            return "isaacgym-preview4"  # preview 4 is the same as 3
-        elif _in("rlgpu.tasks..*.VecTask", base_classes):
-            return "isaacgym-preview2"
+            return "isaacgym-preview4"
         elif _in("brax.envs..*", base_classes):
             return "brax"
         elif _in("robosuite.environments.", base_classes):
@@ -172,22 +158,10 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: Brax")
         return BraxWrapper(env)
-    elif wrapper == "isaacgym-preview2":
-        if verbose:
-            logger.info("Environment wrapper: Isaac Gym (preview 2)")
-        return IsaacGymPreview2Wrapper(env)
-    elif wrapper == "isaacgym-preview3":
-        if verbose:
-            logger.info("Environment wrapper: Isaac Gym (preview 3)")
-        return IsaacGymPreview3Wrapper(env)
     elif wrapper == "isaacgym-preview4":
         if verbose:
             logger.info("Environment wrapper: Isaac Gym (preview 4)")
-        return IsaacGymPreview3Wrapper(env)  # preview 4 is the same as 3
-    elif wrapper == "omniverse-isaacgym":
-        if verbose:
-            logger.info("Environment wrapper: Omniverse Isaac Gym")
-        return OmniverseIsaacGymWrapper(env)
+        return IsaacGymPreview4Wrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":

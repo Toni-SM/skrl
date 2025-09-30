@@ -9,7 +9,7 @@ import gymnasium
 import numpy as np
 import torch
 
-from skrl.envs.wrappers.torch import IsaacGymPreview3Wrapper, wrap_env
+from skrl.envs.wrappers.torch import IsaacGymPreview4Wrapper, wrap_env
 
 
 # hack to fix: `np.Inf` was removed in the NumPy 2.0 release. Use `np.inf` instead
@@ -60,14 +60,14 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     action = torch.ones((num_envs, 1))
 
     # check wrapper definition
-    assert isinstance(wrap_env(None, "isaacgym-preview4"), IsaacGymPreview3Wrapper)
+    assert isinstance(wrap_env(None, "isaacgym-preview4"), IsaacGymPreview4Wrapper)
 
     # load wrap the environment
     original_env = IsaacGymEnv(num_states)
     # TODO: env = wrap_env(original_env, "auto")
-    # TODO: assert isinstance(env, IsaacGymPreview3Wrapper)
+    # TODO: assert isinstance(env, IsaacGymPreview4Wrapper)
     env = wrap_env(original_env, "isaacgym-preview4")
-    assert isinstance(env, IsaacGymPreview3Wrapper)  # preview 4 is the same as 3
+    assert isinstance(env, IsaacGymPreview4Wrapper)
 
     # check properties
     if num_states:

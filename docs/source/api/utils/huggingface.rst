@@ -17,7 +17,7 @@ Integration
 Download model from HF Hub
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Several skrl-trained models (agent checkpoints) for different environments/tasks of Gym/Gymnasium, Isaac Gym, Omniverse Isaac Gym, etc. are available in the Hugging Face Hub
+Several skrl-trained models (agent checkpoints) for different environments/tasks of Gym/Gymnasium, Isaac Lab, etc. are available in the Hugging Face Hub
 
 These models can be used as comparison benchmarks, for collecting environment transitions in memory (for offline reinforcement learning, e.g.) or for pre-initialization of agents for performing similar tasks, among others
 

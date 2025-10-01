@@ -223,7 +223,7 @@ Bug detection and/or correction, feature requests and everything else are more t
         def __hash__(self):
             return id(self)
 
-4. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Omniverse Isaac Gym or Isaac Lab environments.
+4. When training/evaluating using JAX with the NVIDIA Isaac Lab (and Isaac Gym) environments.
 
     .. code-block:: text
 

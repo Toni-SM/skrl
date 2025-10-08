@@ -15,7 +15,12 @@ def is_device_available(device, *, backend) -> bool:
         except Exception as e:
             return False
     elif backend == "warp":
-        return True
+        import warp as wp
+
+        try:
+            wp.get_device(device)
+        except Exception as e:
+            return False
     else:
         raise ValueError(f"Invalid backend: {backend}")
     return True

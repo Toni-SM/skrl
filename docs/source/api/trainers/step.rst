@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Step trainer
 ============
 
@@ -58,9 +60,11 @@ Configuration
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``StepTrainerCfg``
       - :py:class:`~skrl.trainers.torch.StepTrainerCfg`
       - :py:class:`~skrl.trainers.jax.StepTrainerCfg`
+      -
 
 .. raw:: html
 

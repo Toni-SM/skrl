@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Double Deep Q-Network (DDQN)
 ============================
 
@@ -107,9 +109,11 @@ Configuration and hyperparameters
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``DDQN_CFG``
       - :py:class:`~skrl.agents.torch.ddqn.DDQN_CFG`
       - :py:class:`~skrl.agents.jax.ddqn.DDQN_CFG`
+      -
 
 .. raw:: html
 
@@ -186,22 +190,27 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
 .. raw:: html
 

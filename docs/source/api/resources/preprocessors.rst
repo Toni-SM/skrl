@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 .. _preprocessors:
 
 Preprocessors
@@ -20,6 +22,8 @@ Preprocessors are functions used to transform or encode raw input data into a fo
     * - Preprocessors
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Running standard scaler <preprocessors/running_standard_scaler>` |_4|
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

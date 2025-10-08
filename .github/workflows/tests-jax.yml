@@ -31,7 +31,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        python-version: '3.10'
         check-latest: true
     # install dependencies
     - name: Install dependencies
@@ -82,7 +82,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        python-version: '3.10'
         check-latest: true
     # install dependencies
     - name: Install dependencies
@@ -135,7 +135,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'  # jax.Array's device argument is only available in 3.10+ releases
+        python-version: '3.10'
         check-latest: true
     # install dependencies
     - name: Install dependencies

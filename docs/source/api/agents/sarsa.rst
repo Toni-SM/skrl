@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 State Action Reward State Action (SARSA)
 ========================================
 
@@ -82,8 +84,10 @@ Configuration and hyperparameters
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``SARSA_CFG``
       - :py:class:`~skrl.agents.torch.sarsa.SARSA_CFG`
+      -
       -
 
 .. raw:: html

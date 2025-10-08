@@ -20,7 +20,9 @@ In this section, you will find the steps to install the library, troubleshoot kn
     * - Dependencies
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Python
+      - ``>= 3.10``
       - ``>= 3.10``
       - ``>= 3.10``
     * - Packages
@@ -28,6 +30,7 @@ In this section, you will find the steps to install the library, troubleshoot kn
       - `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ ``>= 0.4.31``
         |br| `flax <https://flax.readthedocs.io>`_ ``>= 0.9.0``
         |br| `optax <https://optax.readthedocs.io>`_
+      - `warp-lang <https://nvidia.github.io/warp>`_ ``>= 1.8.1``
 
 .. warning::
 
@@ -68,6 +71,12 @@ To install **skrl** with pip, execute:
         .. code-block:: bash
 
             pip install skrl["jax"]
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. code-block:: bash
+
+            pip install skrl["warp"]
 
     .. group-tab:: All ML frameworks
 
@@ -116,6 +125,12 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install -e .["jax"]
 
+        .. group-tab:: |_4| |warp| |_4|
+
+            .. code-block:: bash
+
+                pip install -e .["warp"]
+
         .. group-tab:: All ML frameworks
 
             .. code-block:: bash
@@ -148,6 +163,12 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
             .. code-block:: bash
 
                 pip install .["jax"]
+
+        .. group-tab:: |_4| |warp| |_4|
+
+            .. code-block:: bash
+
+                pip install .["warp"]
 
         .. group-tab:: All ML frameworks
 

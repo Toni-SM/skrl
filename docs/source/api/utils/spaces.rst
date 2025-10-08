@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Spaces
 ======
 
@@ -88,3 +90,26 @@ API (JAX)
 .. autofunction:: skrl.utils.spaces.jax.unflatten_tensorized_space
 
 .. autofunction:: skrl.utils.spaces.jax.untensorize_space
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autofunction:: skrl.utils.spaces.warp.compute_space_limits
+
+.. autofunction:: skrl.utils.spaces.warp.compute_space_size
+
+.. autofunction:: skrl.utils.spaces.warp.convert_gym_space
+
+.. autofunction:: skrl.utils.spaces.warp.flatten_tensorized_space
+
+.. autofunction:: skrl.utils.spaces.warp.sample_space
+
+.. autofunction:: skrl.utils.spaces.warp.tensorize_space
+
+.. autofunction:: skrl.utils.spaces.warp.unflatten_tensorized_space
+
+.. autofunction:: skrl.utils.spaces.warp.untensorize_space

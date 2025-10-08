@@ -126,17 +126,38 @@ for example in "${examples[@]}"; do
     python_executable=$(python_virtual_environment "$example")
     echo "  |     |-- Python executable: $python_executable"
     # install per-example dependencies
+    # gym
     if [[ $example == "gym" ]]; then
         install_skrl "$python_executable" "${frameworks[@]}"
         echo "  |-- Installing $example dependencies..."
         $python_executable -m pip install --quiet gym
+    # gymnasium
     elif [[ $example == "gymnasium" ]]; then
         install_skrl "$python_executable" "${frameworks[@]}"
+    # isaaclab
     elif [[ $example == "isaaclab" ]]; then
         echo "  |-- Installing $example dependencies..."
-        isaaclab_dir=$PYTHON_VENV_DIR/deps/IsaacLab
+        # - install Isaac Sim
+        echo "  |     |-- Installing Isaac Sim..."
+        export OMNI_KIT_ACCEPT_EULA=YES
         $python_executable -m pip install --quiet "isaacsim[all,extscache]==5.0.0" --extra-index-url https://pypi.nvidia.com
-        git clone --quiet --single-branch --no-tags https://github.com/isaac-sim/IsaacLab.git $isaaclab_dir
+        # - install Isaac Lab
+        echo "  |     |-- Cloning Isaac Lab..."
+        current_dir=$(pwd)
+        isaaclab_dir=$PYTHON_VENV_DIR/deps/IsaacLab
+        mkdir -p $isaaclab_dir
+        cd $isaaclab_dir
+        git init --quiet
+        git remote add origin https://github.com/isaac-sim/IsaacLab.git 2>/dev/null
+        git fetch --quiet
+        git reset --quiet --hard origin/main
+        echo "  |     |-- Installing Isaac Lab..."
+        $python_executable -m pip install --quiet -e source/isaaclab
+        $python_executable -m pip install --quiet -e source/isaaclab_assets
+        $python_executable -m pip install --quiet -e source/isaaclab_rl
+        $python_executable -m pip install --quiet -e source/isaaclab_tasks
+        cd $current_dir
+        echo "  |     |-- Installing JAX..."
         $python_executable -m pip install --quiet "jax[cuda12]<0.6.0" "flax<0.10.7"
         install_skrl "$python_executable" "${frameworks[@]}"
     fi

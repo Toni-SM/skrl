@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Agents
 ======
 
@@ -30,44 +32,58 @@ Agents are autonomous entities that interact with the environment to learn and i
     * - Agents
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Advantage Actor Critic <agents/a2c>` (**A2C**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Adversarial Motion Priors <agents/amp>` (**AMP**)
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Cross-Entropy Method <agents/cem>` (**CEM**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Deep Deterministic Policy Gradient <agents/ddpg>` (**DDPG**)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Double Deep Q-Network <agents/ddqn>` (**DDQN**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Deep Q-Network <agents/dqn>` (**DQN**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Proximal Policy Optimization <agents/ppo>` (**PPO**)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Q-learning <agents/q_learning>` (**Q-learning**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Robust Policy Optimization <agents/rpo>` (**RPO**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Soft Actor-Critic <agents/sac>` (**SAC**)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`State Action Reward State Action <agents/sarsa>` (**SARSA**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Twin-Delayed DDPG <agents/td3>` (**TD3**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Trust Region Policy Optimization <agents/trpo>` (**TRPO**)
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 
 Base class
@@ -149,6 +165,32 @@ API (JAX)
     :members:
 
 .. autoclass:: skrl.agents.jax.Agent
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update, _empty_preprocessor, _get_internal_value
+    :members:
+
+    .. automethod:: __str__
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+^^^^^^^^^^
+
+.. autoclass:: skrl.agents.warp.AgentCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.agents.warp.ExperimentCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.agents.warp.Agent
     :undoc-members:
     :show-inheritance:
     :inherited-members:

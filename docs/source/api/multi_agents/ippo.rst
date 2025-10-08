@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Independent Proximal Policy Optimization (IPPO)
 ===============================================
 
@@ -145,9 +147,11 @@ Configuration and hyperparameters
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``IPPO_CFG``
       - :py:class:`~skrl.multi_agents.torch.ippo.IPPO_CFG`
       - :py:class:`~skrl.multi_agents.jax.ippo.IPPO_CFG`
+      -
 
 .. raw:: html
 
@@ -227,21 +231,26 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - for Policy and Value
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 
 .. raw:: html

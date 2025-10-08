@@ -1,0 +1,332 @@
+name: tests-warp
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  ############################################################
+  # Minimum requirements
+  ############################################################
+
+  warp-minimum-components:
+    name: Minimum requirements (components)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-components-agents-pytest.html \
+          --cov=skrl/agents/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-components-agents-coverage.html \
+          tests/agents/warp
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-components-trainers-pytest.html \
+          --cov=skrl/trainers/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-components-trainers-coverage.html \
+          tests/trainers/warp
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: warp-minimum-components.html
+        path: warp-minimum-components-*.html
+        retention-days: 3
+
+  warp-minimum-envs:
+    name: Minimum requirements (envs)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (Gymnasium)
+      run: |
+        python -m pip install --quiet gymnasium==0.26.1 pygame
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_gymnasium_envs.py
+    - name: Run tests (Gym)
+      run: |
+        python -m pip install --quiet gym==0.23.0
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_gym_envs.py
+    - name: Run tests (PettingZoo)
+      run: |
+        python -m pip install --quiet pettingzoo==1.22.2 pymunk
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_pettingzoo_envs.py
+    - name: Run tests (Brax)
+      run: |
+        python -m pip install --quiet brax==0.12.0 mujoco==3.2.6
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_brax_envs.py
+    - name: Run tests (Isaac Lab)
+      run: |
+        python -m pip install --quiet torch==1.11.0
+        pytest tests/envs/wrappers/warp/test_isaaclab_envs.py
+    - name: Run tests (Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/warp/test_isaacgym_envs.py
+
+  warp-minimum-utils:
+    name: Minimum requirements (utils)
+    runs-on: ubuntu-22.04
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet "numpy<2.0"  # 1.19.3
+        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (model_instantiators)
+      run: |
+        python -m pip install --quiet gym==0.23.0
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/warp
+    - name: Run tests (spaces)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-utils-spaces-coverage.html \
+          tests/utils/spaces/warp
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: warp-minimum-utils.html
+        path: warp-minimum-utils-*.html
+        retention-days: 3
+
+  ############################################################
+  # Latest requirements
+  ############################################################
+
+  warp-latest-components:
+    name: Latest requirements (components)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet warp
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-components-agents-pytest.html \
+          --cov=skrl/agents/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-components-agents-coverage.html \
+          tests/agents/warp
+    - name: Run tests (trainers)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-components-trainers-pytest.html \
+          --cov=skrl/trainers/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-components-trainers-coverage.html \
+          tests/trainers/warp
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: warp-latest-components.html
+        path: warp-latest-components-*.html
+        retention-days: 3
+
+  warp-latest-envs:
+    name: Latest requirements (envs)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet warp
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (Gymnasium)
+      run: |
+        python -m pip install --quiet gymnasium
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_gymnasium_envs.py
+    - name: Run tests (Gym)
+      run: |
+        python -m pip install --quiet gym
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_gym_envs.py
+    - name: Run tests (PettingZoo)
+      run: |
+        python -m pip install --quiet pettingzoo pygame pymunk
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_pettingzoo_envs.py
+    - name: Run tests (Brax)
+      run: |
+        python -m pip install --quiet brax
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_brax_envs.py
+    - name: Run tests (Isaac Lab)
+      run: |
+        python -m pip install --quiet torch
+        pytest tests/envs/wrappers/warp/test_isaaclab_envs.py
+    - name: Run tests (Isaac Gym)
+      run: |
+        pytest tests/envs/wrappers/warp/test_isaacgym_envs.py
+
+  warp-latest-utils:
+    name: Latest requirements (utils)
+    runs-on: ubuntu-latest
+    steps:
+    # setup
+    - uses: actions/checkout@v4
+    - name: Delete Python cache
+      if: env.DELETE_HOSTED_TOOL_PYTHON_CACHE == '1'
+      run: |
+        rm -rf /opt/hostedtoolcache/Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13
+        check-latest: true
+    # install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --quiet --upgrade pip
+        python -m pip install --quiet warp
+        python -m pip install --quiet -e .[warp]
+        python -m pip install --quiet -e .[tests]
+        python -m pip list
+    # run tests
+    - name: Run tests (model_instantiators)
+      run: |
+        python -m pip install --quiet gym
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-utils-model_instantiators-pytest.html \
+          --cov=skrl/utils/model_instantiators/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-utils-model_instantiators-coverage.html \
+          tests/utils/model_instantiators/warp
+    - name: Run tests (spaces)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-utils-spaces-pytest.html \
+          --cov=skrl/utils/spaces/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-utils-spaces-coverage.html \
+          tests/utils/spaces/warp
+    # report
+    - name: Save reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: warp-latest-utils.html
+        path: warp-latest-utils-*.html
+        retention-days: 3

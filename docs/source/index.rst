@@ -29,12 +29,15 @@ SKRL - Reinforcement Learning library (|version|)
     <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml">
         <img alt="tests-jax" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml/badge.svg">
     </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-warp.yml">
+        <img alt="tests-warp" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-warp.yml/badge.svg">
+    </a>
     <br><br>
 
-**skrl** is an open-source library for Reinforcement Learning written in Python (on top of `PyTorch <https://pytorch.org/>`_ and `JAX <https://jax.readthedocs.io>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (and `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ preview 4) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
+**skrl** is an open-source library for Reinforcement Learning written in Python (implemented in `PyTorch <https://pytorch.org/>`_, `JAX <https://jax.readthedocs.io>`_ and `NVIDIA Warp <https://nvidia.github.io/warp>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (and `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ preview 4) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
 
 **Main features:**
-    * PyTorch (|_1| |pytorch| |_1|) and JAX (|_1| |jax| |_1|)
+    * PyTorch (|_1| |pytorch| |_1|), JAX (|_1| |jax| |_1|) and Warp (|_1| |warp| |_1|)
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations

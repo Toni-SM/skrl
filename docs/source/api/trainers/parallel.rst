@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Parallel trainer
 ================
 
@@ -59,8 +61,10 @@ Configuration
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``ParallelTrainerCfg``
       - :py:class:`~skrl.trainers.torch.ParallelTrainerCfg`
+      -
       -
 
 .. raw:: html

@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Sequential trainer
 ==================
 
@@ -45,6 +47,13 @@ Usage
             :start-after: [jax-start-sequential]
             :end-before: [jax-end-sequential]
 
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. literalinclude:: ../../snippets/trainer.py
+            :language: python
+            :start-after: [warp-start-sequential]
+            :end-before: [warp-end-sequential]
+
 .. raw:: html
 
     <br>
@@ -58,9 +67,11 @@ Configuration
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``SequentialTrainerCfg``
       - :py:class:`~skrl.trainers.torch.SequentialTrainerCfg`
       - :py:class:`~skrl.trainers.jax.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.warp.SequentialTrainerCfg`
 
 .. raw:: html
 
@@ -93,6 +104,24 @@ API (JAX)
     :members:
 
 .. autoclass:: skrl.trainers.jax.SequentialTrainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.trainers.warp.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.warp.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

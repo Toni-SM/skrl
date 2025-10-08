@@ -165,3 +165,35 @@ API
     This property is ``True`` when the JAX's distributed environment variable ``WORLD_SIZE > 1``.
 
     Read-only attribute.
+
+.. raw:: html
+
+    <br>
+
+Warp
+----
+
+Warp specific configuration
+
+.. raw:: html
+
+    <br>
+
+API
+^^^
+
+.. autofunction:: skrl.config.warp.parse_device
+
+.. py:data:: skrl.config.warp.device
+    :type: warp.context.Device
+    :value: "cuda:0" | "cpu"
+
+    Default device.
+
+    The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+
+.. py:data:: skrl.config.warp.key
+    :type: int
+    :value: 0
+
+    Pseudo-random number generator (PRNG) key.

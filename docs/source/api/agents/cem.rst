@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Cross-Entropy Method (CEM)
 ==========================
 
@@ -102,9 +104,11 @@ Configuration and hyperparameters
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``CEM_CFG``
       - :py:class:`~skrl.agents.torch.cem.CEM_CFG`
       - :py:class:`~skrl.agents.jax.cem.CEM_CFG`
+      -
 
 .. raw:: html
 
@@ -176,16 +180,20 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Distributed
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 

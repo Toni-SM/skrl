@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 .. _noises:
 
 Noises
@@ -21,10 +23,13 @@ Definition of the noises used by the agents during the exploration stage. All no
     * - Noises
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Gaussian <noises/gaussian>` noise
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Ornstein-Uhlenbeck <noises/ornstein_uhlenbeck>` noise |_2|
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -81,6 +86,19 @@ API (JAX)
 ^^^^^^^^^
 
 .. autoclass:: skrl.resources.noises.jax.Noise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+^^^^^^^^^^
+
+.. autoclass:: skrl.resources.noises.warp.Noise
     :undoc-members:
     :show-inheritance:
     :inherited-members:

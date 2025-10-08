@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 .. _models_multicategorical:
 
 Multi-Categorical model

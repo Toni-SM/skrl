@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 KL Adaptive
 ===========
 
@@ -59,6 +61,8 @@ The learning rate scheduler usage is defined in each agent's configuration dicti
             cfg["learning_rate_scheduler"] = KLAdaptiveLR
             cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
 
+    .. group-tab:: |_4| |warp| |_4|
+
 .. raw:: html
 
     <br>
@@ -79,3 +83,12 @@ API (JAX)
 ---------
 
 .. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autofunction:: skrl.resources.schedulers.warp.kl_adaptive.KLAdaptiveLR

@@ -29,6 +29,7 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     - ``numpy``
     - ``torch`` (if available)
     - ``jax`` (skrl's PRNG key: ``config.jax.key``)
+    - ``warp`` (skrl's PRNG key: ``config.warp.key``)
 
     Example:
 
@@ -105,8 +106,9 @@ def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
     except Exception as e:
         logger.warning(f"PyTorch seeding error: {e}")
 
-    # jax
+    # jax/warp PRNG key
     config.jax.key = seed
+    config.warp.key = seed
 
     return seed
 

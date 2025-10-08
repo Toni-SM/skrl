@@ -23,10 +23,13 @@ In this section you will find how to load environments from NVIDIA Isaac Lab (an
     * - Loaders
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Isaac Lab environments <envs/isaaclab>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Isaac Gym environments <envs/isaac_gym>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -38,30 +41,40 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
     * - Wrappers
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Bi-DexHands
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Brax
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - DeepMind
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Gym
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Gymnasium
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - Isaac Lab
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - Isaac Gym (preview 4)
+      - .. centered:: :math:`\blacksquare`
+    * - Isaac Gym (preview 4) |_4|
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - PettingZoo
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Shimmy
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

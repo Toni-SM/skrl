@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Model instantiators
 ===================
 
@@ -15,27 +17,35 @@ Utilities for quickly creating model instances.
     * - Models
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Tabular model <../models/tabular>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Multi-Categorical model <../models/multicategorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Multivariate Gaussian model <../models/multivariate_gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Deterministic model <../models/deterministic>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Shared model <../models/shared_model>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 .. raw:: html
 
@@ -165,33 +175,43 @@ The following table lists the supported activation functions:
     * - Activations
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``relu``
-      - :py:class:`torch.nn.ReLU`
-      - :py:obj:`flax.linen.activation.relu`
+      - :py:class:`~torch.nn.ReLU`
+      - :py:obj:`~flax.linen.activation.relu`
+      - :py:obj:`~skrl.models.warp.nn.ReLU`
     * - ``tanh``
-      - :py:class:`torch.nn.Tanh`
-      - :py:obj:`flax.linen.activation.tanh`
+      - :py:class:`~torch.nn.Tanh`
+      - :py:obj:`~flax.linen.activation.tanh`
+      - :py:obj:`~skrl.models.warp.nn.Tanh`
     * - ``sigmoid``
-      - :py:class:`torch.nn.Sigmoid`
-      - :py:obj:`flax.linen.activation.sigmoid`
+      - :py:class:`~torch.nn.Sigmoid`
+      - :py:obj:`~flax.linen.activation.sigmoid`
+      -
     * - ``leaky_relu``
-      - :py:class:`torch.nn.LeakyReLU`
-      - :py:obj:`flax.linen.activation.leaky_relu`
+      - :py:class:`~torch.nn.LeakyReLU`
+      - :py:obj:`~flax.linen.activation.leaky_relu`
+      -
     * - ``elu``
-      - :py:class:`torch.nn.ELU`
-      - :py:obj:`flax.linen.activation.elu`
+      - :py:class:`~torch.nn.ELU`
+      - :py:obj:`~flax.linen.activation.elu`
+      - :py:obj:`~skrl.models.warp.nn.ELU`
     * - ``softplus``
-      - :py:class:`torch.nn.Softplus`
-      - :py:obj:`flax.linen.activation.softplus`
+      - :py:class:`~torch.nn.Softplus`
+      - :py:obj:`~flax.linen.activation.softplus`
+      -
     * - ``softsign``
-      - :py:class:`torch.nn.Softsign`
-      - :py:obj:`flax.linen.activation.soft_sign`
+      - :py:class:`~torch.nn.Softsign`
+      - :py:obj:`~flax.linen.activation.soft_sign`
+      -
     * - ``selu``
-      - :py:class:`torch.nn.SELU`
-      - :py:obj:`flax.linen.activation.selu`
+      - :py:class:`~torch.nn.SELU`
+      - :py:obj:`~flax.linen.activation.selu`
+      -
     * - ``softmax``
-      - :py:class:`torch.nn.Softmax`
-      - :py:obj:`flax.linen.activation.softmax`
+      - :py:class:`~torch.nn.Softmax`
+      - :py:obj:`~flax.linen.activation.softmax`
+      -
 
 |
 
@@ -206,15 +226,19 @@ The following table lists the supported layers and transformations:
     * - Layers
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``linear``
-      - :py:class:`torch.nn.Linear`
-      - :py:class:`flax.linen.Dense`
+      - :py:class:`~torch.nn.Linear`
+      - :py:class:`~flax.linen.Dense`
+      - :py:class:`~skrl.models.warp.nn.Linear`
     * - ``conv2d``
-      - :py:class:`torch.nn.Conv2d`
-      - :py:class:`flax.linen.Conv`
+      - :py:class:`~torch.nn.Conv2d`
+      - :py:class:`~flax.linen.Conv`
+      -
     * - ``flatten``
-      - :py:class:`torch.nn.Flatten`
-      - :py:obj:`jax.numpy.reshape`
+      - :py:class:`~torch.nn.Flatten`
+      - :py:obj:`~jax.numpy.reshape`
+      - :py:class:`~skrl.models.warp.nn.Flatten`
 
 |
 
@@ -238,24 +262,28 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
     * -
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
       - Type
       - Required
       - Description
     * -
       - ``in_features``
       - .. centered:: -
+      - ``in_features``
       - ``int``
       - .. centered:: :math:`\square`
       - Number of input features
     * - 0
       - ``out_features``
       - ``features``
+      - ``out_features``
       - ``int``
       - .. centered:: :math:`\blacksquare`
       - Number of output features
     * - 1
       - ``bias``
       - ``use_bias``
+      - ``bias``
       - ``bool``
       - .. centered:: :math:`\square`
       - Whether to add a bias
@@ -456,17 +484,20 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
     * -
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
       - Type
       - Required
       - Description
     * - 0
       - ``start_dim``
       - .. centered:: -
+      - .. centered:: -
       - ``int``
       - .. centered:: :math:`\square`
       - First dimension to flatten
     * - 1
       - ``end_dim``
+      - .. centered:: -
       - .. centered:: -
       - ``int``
       - .. centered:: :math:`\square`
@@ -567,3 +598,16 @@ API (JAX)
 .. autofunction:: skrl.utils.model_instantiators.jax.deterministic_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.gaussian_model
+
+.. raw:: html
+
+    <br>
+
+API (WARP)
+----------
+
+.. autofunction:: skrl.utils.model_instantiators.warp.deterministic_model
+
+.. autofunction:: skrl.utils.model_instantiators.warp.gaussian_model
+
+.. autofunction:: skrl.utils.model_instantiators.warp.shared_model

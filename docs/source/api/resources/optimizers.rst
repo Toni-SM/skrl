@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 .. _optimizers:
 
 Optimizers
@@ -20,6 +22,8 @@ Optimizers are algorithms that adjust the parameters of artificial neural networ
     * - Optimizers
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Adam <optimizers/adam>`\ |_5| |_5| |_5| |_5| |_5| |_5| |_3|
       - .. centered:: :math:`\scriptscriptstyle \texttt{PyTorch}`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Q-learning
 ==========
 
@@ -82,8 +84,10 @@ Configuration and hyperparameters
     * - Dataclass
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``Q_LEARNING_CFG``
       - :py:class:`~skrl.agents.torch.q_learning.Q_LEARNING_CFG`
+      -
       -
 
 .. raw:: html

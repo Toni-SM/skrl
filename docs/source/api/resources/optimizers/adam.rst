@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Adam
 ====
 
@@ -30,6 +32,8 @@ Usage
             # step the optimizer
             optimizer = optimizer.step(grad, model)
 
+    .. group-tab:: |_4| |warp| |_4|
+
 .. raw:: html
 
     <br>
@@ -38,6 +42,20 @@ API (JAX)
 ---------
 
 .. autoclass:: skrl.resources.optimizers.jax.adam.Adam
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __new__
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.resources.optimizers.warp.adam.Adam
     :show-inheritance:
     :inherited-members:
     :members:

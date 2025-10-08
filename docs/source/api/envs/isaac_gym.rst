@@ -65,6 +65,14 @@ Usage
                     :start-after: [start-isaac-gym-envs-preview-4-parameters-jax]
                     :end-before: [end-isaac-gym-envs-preview-4-parameters-jax]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/loaders.py
+                    :language: python
+                    :emphasize-lines: 2, 5
+                    :start-after: [start-isaac-gym-envs-preview-4-parameters-warp]
+                    :end-before: [end-isaac-gym-envs-preview-4-parameters-warp]
+
     .. group-tab:: Command line arguments (priority)
 
         .. tabs::
@@ -84,6 +92,14 @@ Usage
                     :emphasize-lines: 2, 5
                     :start-after: [start-isaac-gym-envs-preview-4-cli-jax]
                     :end-before: [end-isaac-gym-envs-preview-4-cli-jax]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/loaders.py
+                    :language: python
+                    :emphasize-lines: 2, 5
+                    :start-after: [start-isaac-gym-envs-preview-4-cli-warp]
+                    :end-before: [end-isaac-gym-envs-preview-4-cli-warp]
 
         Run the main script passing the configuration as command line arguments. For example:
 

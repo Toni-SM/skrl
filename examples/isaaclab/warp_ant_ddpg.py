@@ -1,0 +1,148 @@
+import argparse
+import os
+
+import skrl.models.warp.nn as nn
+
+# import the skrl components to build the RL system
+from skrl import logger
+from skrl.agents.warp.ddpg import DDPG, DDPG_CFG
+from skrl.envs.loaders.warp import load_isaaclab_env
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.memories.warp import RandomMemory
+from skrl.models.warp import DeterministicMixin, Model
+from skrl.resources.noises.warp import OrnsteinUhlenbeckNoise
+from skrl.resources.preprocessors.warp import RunningStandardScaler
+from skrl.trainers.warp import SequentialTrainer
+from skrl.utils import set_seed
+from skrl.utils.framework.warp import concatenate
+
+
+# parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--checkpoint", type=str, default=None, help="Load checkpoint from path")
+parser.add_argument("--eval", action="store_true", help="Run in evaluation mode (logging/checkpointing disabled)")
+
+
+# define models (deterministic models) using mixins
+class DeterministicActor(DeterministicMixin, Model):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        DeterministicMixin.__init__(self, clip_actions=clip_actions)
+
+        self.net = nn.Sequential(
+            nn.Linear(self.num_observations, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, self.num_actions),
+            nn.Tanh(),
+        )
+        self.__post_init__()
+
+    def compute(self, inputs, role):
+        return self.net(inputs["observations"]), {}
+
+
+class Critic(DeterministicMixin, Model):
+    def __init__(self, observation_space, state_space, action_space, device):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        DeterministicMixin.__init__(self)
+
+        self.net = nn.Sequential(
+            nn.Linear(self.num_observations + self.num_actions, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1),
+        )
+        self.__post_init__()
+
+    def compute(self, inputs, role):
+        return self.net(concatenate([inputs["observations"], inputs["taken_actions"]], axis=1)), {}
+
+
+# load the environment
+task_name = "Isaac-Ant-Direct-v0"
+env = load_isaaclab_env(task_name=task_name, parser=parser, num_envs=64)
+# wrap the environment
+env = wrap_env(env)
+
+device = env.device
+
+
+# defer parsing of arguments to include loader arguments (run with --help to see all the arguments)
+args, _ = parser.parse_known_args()
+
+
+# seed for reproducibility
+set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
+
+
+# instantiate a replay memory
+memory = RandomMemory(memory_size=16000, num_envs=env.num_envs, device=device)
+
+
+# instantiate the agent's models (function approximators).
+# DDPG requires 4 models, visit its documentation for more details
+# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#models
+models = {}
+models["policy"] = DeterministicActor(env.observation_space, env.state_space, env.action_space, device)
+models["target_policy"] = DeterministicActor(env.observation_space, env.state_space, env.action_space, device)
+models["critic"] = Critic(env.observation_space, env.state_space, env.action_space, device)
+models["target_critic"] = Critic(env.observation_space, env.state_space, env.action_space, device)
+
+
+# configure and instantiate the agent (visit its documentation to see all the options)
+# https://skrl.readthedocs.io/en/latest/api/agents/ddpg.html#configuration-and-hyperparameters
+cfg = DDPG_CFG()
+cfg.exploration_noise = OrnsteinUhlenbeckNoise
+cfg.exploration_noise_kwargs = {"theta": 0.15, "sigma": 0.1, "base_scale": 0.5, "device": device}
+cfg.exploration_scheduler = lambda timestep, timesteps: max(1 - timestep / timesteps, 1e-2)
+cfg.gradient_steps = 1
+cfg.batch_size = 4096
+cfg.discount_factor = 0.99
+cfg.polyak = 0.005
+cfg.learning_rate = 5e-4
+cfg.random_timesteps = 50
+cfg.learning_starts = 50
+cfg.state_preprocessor = RunningStandardScaler
+cfg.state_preprocessor_kwargs = {"size": env.observation_space, "device": device}
+# logging to TensorBoard and write checkpoints (in timesteps)
+cfg.experiment.write_interval = "auto" if not args.eval else 0
+cfg.experiment.checkpoint_interval = "auto" if not args.eval else 0
+cfg.experiment.directory = f"runs/warp/{task_name}"
+
+agent = DDPG(
+    models=models,
+    memory=memory,
+    cfg=cfg,
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=device,
+)
+
+
+# configure and instantiate the RL trainer
+cfg_trainer = {"timesteps": 160000, "headless": args.headless}
+trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
+
+if args.checkpoint:
+    if not os.path.exists(args.checkpoint):
+        logger.error(f"Checkpoint file not found: '{args.checkpoint}'")
+        exit(1)
+    agent.load(args.checkpoint)
+
+trainer.train() if not args.eval else trainer.eval()

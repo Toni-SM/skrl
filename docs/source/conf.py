@@ -42,6 +42,7 @@ intersphinx_mapping = {
     "flax": ("https://flax.readthedocs.io/en/latest/", None),
     "flax-linen": ("https://flax-linen.readthedocs.io/en/latest/", None),
     "optax": ("https://optax.readthedocs.io/en/latest/", None),
+    "warp": ("https://nvidia.github.io/warp/", None),
 }
 
 pygments_style = "tango"
@@ -70,12 +71,19 @@ rst_prolog = """
 .. |jax| image:: /_static/data/logo-jax.svg
     :width: 28
 
+.. |warp| image:: /_static/data/logo-warp.svg
+    :width: 25
+
 .. |pytorch| image:: /_static/data/logo-torch.svg
     :width: 16
 
 .. |br| raw:: html
 
             <br>
+
+.. |hr| raw:: html
+
+            <hr>
 
 """
 
@@ -122,6 +130,7 @@ autodoc_mock_imports = [
     "jaxlib",
     "flax",
     "optax",
+    "warp",
     "tensorboard",
     "tqdm",
     "packaging",

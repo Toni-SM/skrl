@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Running standard scaler
 =======================
 
@@ -83,6 +85,8 @@ The preprocessor class is set under the :literal:`"<variable>_preprocessor"` key
             cfg["value_preprocessor"] = RunningStandardScaler
             cfg["value_preprocessor_kwargs"] = {"size": 1}
 
+    .. group-tab:: |_4| |warp| |_4|
+
 .. raw:: html
 
     <br>
@@ -102,6 +106,20 @@ API (JAX)
 ---------
 
 .. autoclass:: skrl.resources.preprocessors.jax.running_standard_scaler.RunningStandardScaler
+    :undoc-members:
+    :private-members: _parallel_variance
+    :members:
+
+    .. automethod:: __call__
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.resources.preprocessors.warp.running_standard_scaler.RunningStandardScaler
     :undoc-members:
     :private-members: _parallel_variance
     :members:

@@ -25,7 +25,9 @@ A set of utilities and configurations for managing an RL setup is provided as pa
     * - Configurations
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`ML frameworks <config/frameworks>` configuration |_5| |_5| |_5| |_5| |_5| |_2|
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -35,24 +37,32 @@ A set of utilities and configurations for managing an RL setup is provided as pa
     * - Utils
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Random seed <utils/seed>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Spaces <utils/spaces>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Model instantiators <utils/model_instantiators>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Runner <utils/runner>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Distributed runs <utils/distributed>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - Memory and TensorBoard :doc:`file post-processing <utils/postprocessing>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - :doc:`Hugging Face integration <utils/huggingface>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

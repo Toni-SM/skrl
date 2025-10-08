@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 File post-processing
 ====================
 

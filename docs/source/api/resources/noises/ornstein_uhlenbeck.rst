@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 .. _ornstein-uhlenbeck-noise:
 
 Ornstein-Uhlenbeck noise
@@ -43,6 +45,14 @@ The noise usage is defined in each agent's configuration dictionary. A noise ins
             :start-after: [jax-start-ornstein-uhlenbeck]
             :end-before: [jax-end-ornstein-uhlenbeck]
 
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. literalinclude:: ../../../snippets/noises.py
+            :language: python
+            :emphasize-lines: 1, 4
+            :start-after: [warp-start-ornstein-uhlenbeck]
+            :end-before: [warp-end-ornstein-uhlenbeck]
+
 .. raw:: html
 
     <br>
@@ -65,6 +75,20 @@ API (JAX)
 ---------
 
 .. autoclass:: skrl.resources.noises.jax.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :private-members: _update
+    :members:
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.resources.noises.warp.ornstein_uhlenbeck.OrnsteinUhlenbeckNoise
     :undoc-members:
     :show-inheritance:
     :inherited-members:

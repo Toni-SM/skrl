@@ -1,5 +1,6 @@
 from typing import Any, Literal, Mapping, Optional, Tuple, Union
 
+import math
 from functools import partial
 
 import flax
@@ -9,6 +10,10 @@ import numpy as np
 
 from skrl import config
 from skrl.utils.spaces.jax import compute_space_limits
+
+
+LOG_SQRT_2_PI = math.log(math.sqrt(2 * math.pi))
+HALF_LOG_2_PI_PLUS = 0.5 + 0.5 * math.log(2 * math.pi)
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -30,7 +35,7 @@ def _gaussian(
 
     # log of the probability density function
     taken_actions = actions if taken_actions is None else taken_actions
-    log_prob = -jnp.square(taken_actions - loc) / (2 * jnp.square(scale)) - jnp.log(scale) - 0.5 * jnp.log(2 * jnp.pi)
+    log_prob = -jnp.square(taken_actions - loc) / (2 * jnp.square(scale)) - jnp.log(scale) - LOG_SQRT_2_PI
 
     if reduction is not None:
         log_prob = reduction(log_prob, axis=-1)
@@ -42,7 +47,7 @@ def _gaussian(
 
 @jax.jit
 def _entropy(scale):
-    return 0.5 + 0.5 * jnp.log(2 * jnp.pi) + jnp.log(scale)
+    return HALF_LOG_2_PI_PLUS + jnp.log(scale)
 
 
 class GaussianMixin:

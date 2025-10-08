@@ -59,6 +59,13 @@ Usage
                     :start-after: [jax-start-isaaclab]
                     :end-before: [jax-end-isaaclab]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-isaaclab]
+                    :end-before: [warp-end-isaaclab]
+
     .. tab:: Isaac Gym
 
         .. tabs::
@@ -125,6 +132,13 @@ Usage
                                     :start-after: [jax-start-gymnasium]
                                     :end-before: [jax-end-gymnasium]
 
+                            .. group-tab:: |_4| |warp| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [warp-start-gymnasium]
+                                    :end-before: [warp-end-gymnasium]
+
                     .. group-tab:: Vectorized environment
 
                         Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
@@ -144,6 +158,13 @@ Usage
                                     :language: python
                                     :start-after: [jax-start-gymnasium-vectorized]
                                     :end-before: [jax-end-gymnasium-vectorized]
+
+                            .. group-tab:: |_4| |warp| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [warp-start-gymnasium-vectorized]
+                                    :end-before: [warp-end-gymnasium-vectorized]
 
             .. tab:: Gym
 
@@ -205,6 +226,13 @@ Usage
                     :start-after: [jax-start-shimmy]
                     :end-before: [jax-end-shimmy]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-shimmy]
+                    :end-before: [warp-end-shimmy]
+
     .. tab:: Brax
 
         .. tabs::
@@ -258,6 +286,15 @@ API (JAX)
 ---------
 
 .. autofunction:: skrl.envs.wrappers.jax.wrap_env
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autofunction:: skrl.envs.wrappers.warp.wrap_env
 
 .. raw:: html
 
@@ -330,6 +367,28 @@ Internal API (JAX)
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+Internal API (Warp)
+-------------------
+
+.. autoclass:: skrl.envs.wrappers.warp.Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:

@@ -6,6 +6,7 @@ import gymnasium
 import warp as wp
 
 import skrl.models.warp.nn as nn  # noqa
+import skrl.utils.framework.warp as warp_utils  # noqa
 from skrl.models.warp import Model  # noqa
 from skrl.models.warp import DeterministicMixin, GaussianMixin  # noqa
 from skrl.utils.model_instantiators.warp.common import one_hot_encoding  # noqa

@@ -27,7 +27,9 @@ def test_parse_input(capsys):
             assert item not in output, f"'{item}' in '{output}'"
     # Mixed operation
     input = 'OBSERVATIONS["joint"] + concatenate([net * ACTIONS[:, -3:]]) - STATES["image"]'
-    statement = 'observations["joint"] + wp.concatenate([net * taken_actions[:, -3:]], axis=1) - states["image"]'
+    statement = (
+        'observations["joint"] + warp_utils.concatenate([net * taken_actions[:, -3:]], axis=1) - states["image"]'
+    )
     output = _parse_input(str(input))
     assert output.replace("'", '"') == statement, f"'{output}' != '{statement}'"
 

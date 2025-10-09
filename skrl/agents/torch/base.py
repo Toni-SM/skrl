@@ -1,4 +1,4 @@
-from typing import Any, Literal, Mapping, Optional, Tuple, Union
+from typing import Any, Literal
 
 import collections
 import copy
@@ -83,12 +83,12 @@ class Agent(ABC):
         self,
         *,
         cfg: AgentCfg,
-        models: Optional[Mapping[str, Model]] = None,
-        memory: Optional[Memory] = None,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | torch.device | None = None,
     ) -> None:
         """Base class that represent a RL agent/algorithm.
 
@@ -182,7 +182,7 @@ class Agent(ABC):
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
 
-    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
 
         .. warning::
@@ -303,8 +303,8 @@ class Agent(ABC):
 
     @abstractmethod
     def act(
-        self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
-    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.

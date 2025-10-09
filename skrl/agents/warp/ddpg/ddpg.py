@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any
 
 import gymnasium
 
@@ -77,13 +77,13 @@ class DDPG(Agent):
     def __init__(
         self,
         *,
-        models: Optional[Mapping[str, Model]] = None,
-        memory: Optional[Memory] = None,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, wp.context.Device]] = None,
-        cfg: Optional[dict] = None,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | wp.context.Device | None = None,
+        cfg: DDPG_CFG | dict = {},
     ) -> None:
         """Deep Deterministic Policy Gradient (DDPG).
 
@@ -179,7 +179,7 @@ class DDPG(Agent):
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
 
         :param trainer_cfg: Trainer configuration.
@@ -215,8 +215,8 @@ class DDPG(Agent):
             self.clip_actions_max = wp.array(self.action_space.high.flatten(), dtype=wp.float32, device=self.device)
 
     def act(
-        self, observations: wp.array, states: Union[wp.array, None], *, timestep: int, timesteps: int
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+        self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
+    ) -> tuple[wp.array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.

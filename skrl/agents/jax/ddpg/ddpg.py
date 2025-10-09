@@ -1,6 +1,5 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any
 
-import copy
 import functools
 import gymnasium
 
@@ -32,10 +31,10 @@ def _update_critic(
     critic_act,
     critic_state_dict,
     target_q_values: jax.Array,
-    inputs: Mapping[str, Union[np.ndarray, jax.Array]],
-    sampled_rewards: Union[np.ndarray, jax.Array],
-    sampled_terminated: Union[np.ndarray, jax.Array],
-    sampled_truncated: Union[np.ndarray, jax.Array],
+    inputs: dict[str, np.ndarray | jax.Array],
+    sampled_rewards: np.ndarray | jax.Array,
+    sampled_terminated: np.ndarray | jax.Array,
+    sampled_truncated: np.ndarray | jax.Array,
     discount_factor: float,
 ):
     # compute target values
@@ -73,13 +72,13 @@ class DDPG(Agent):
     def __init__(
         self,
         *,
-        models: Optional[Mapping[str, Model]] = None,
-        memory: Optional[Memory] = None,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, jax.Device]] = None,
-        cfg: Optional[dict] = None,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | jax.Device | None = None,
+        cfg: DDPG_CFG | dict = {},
     ) -> None:
         """Deep Deterministic Policy Gradient (DDPG).
 
@@ -190,7 +189,7 @@ class DDPG(Agent):
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
 
         :param trainer_cfg: Trainer configuration.
@@ -239,12 +238,12 @@ class DDPG(Agent):
 
     def act(
         self,
-        observations: Union[np.ndarray, jax.Array],
-        states: Union[np.ndarray, jax.Array, None],
+        observations: np.ndarray | jax.Array,
+        states: np.ndarray | jax.Array | None,
         *,
         timestep: int,
         timesteps: int,
-    ) -> Tuple[Union[np.ndarray, jax.Array], Mapping[str, Union[np.ndarray, jax.Array, Any]]]:
+    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -290,14 +289,14 @@ class DDPG(Agent):
     def record_transition(
         self,
         *,
-        observations: Union[np.ndarray, jax.Array],
-        states: Union[np.ndarray, jax.Array],
-        actions: Union[np.ndarray, jax.Array],
-        rewards: Union[np.ndarray, jax.Array],
-        next_observations: Union[np.ndarray, jax.Array],
-        next_states: Union[np.ndarray, jax.Array],
-        terminated: Union[np.ndarray, jax.Array],
-        truncated: Union[np.ndarray, jax.Array],
+        observations: np.ndarray | jax.Array,
+        states: np.ndarray | jax.Array,
+        actions: np.ndarray | jax.Array,
+        rewards: np.ndarray | jax.Array,
+        next_observations: np.ndarray | jax.Array,
+        next_states: np.ndarray | jax.Array,
+        terminated: np.ndarray | jax.Array,
+        truncated: np.ndarray | jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,

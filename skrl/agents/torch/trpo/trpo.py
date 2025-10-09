@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any
 
 import copy
 import gymnasium
@@ -181,13 +181,13 @@ class TRPO(Agent):
     def __init__(
         self,
         *,
-        models: Optional[Mapping[str, Model]] = None,
-        memory: Optional[Memory] = None,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[dict] = None,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | torch.device | None = None,
+        cfg: TRPO_CFG | dict = {},
     ) -> None:
         """Trust Region Policy Optimization (TRPO).
 
@@ -266,7 +266,7 @@ class TRPO(Agent):
         else:
             self._value_preprocessor = self._empty_preprocessor
 
-    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
 
         :param trainer_cfg: Trainer configuration.
@@ -297,8 +297,8 @@ class TRPO(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: Union[torch.Tensor, None], *, timestep: int, timesteps: int
-    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.

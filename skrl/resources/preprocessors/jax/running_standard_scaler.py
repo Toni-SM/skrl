@@ -1,5 +1,3 @@
-from typing import Mapping, Optional, Tuple, Union
-
 import gymnasium
 
 import jax
@@ -20,7 +18,7 @@ def _copyto(dst, src):
 @jax.jit
 def _parallel_variance(
     running_mean: jax.Array, running_variance: jax.Array, current_count: jax.Array, array: jax.Array
-) -> Tuple[jax.Array, jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array, jax.Array]:
     # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
     if array.ndim == 3:
         input_mean = jnp.mean(array, axis=(0, 1))
@@ -59,11 +57,11 @@ def _standardization(
 class RunningStandardScaler:
     def __init__(
         self,
-        size: Union[int, Tuple[int], gymnasium.Space],
+        size: int | list[int] | gymnasium.Space,
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: Optional[Union[str, jax.Device]] = None,
+        device: str | jax.Device | None = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 
@@ -101,7 +99,7 @@ class RunningStandardScaler:
             self.current_count = np.ones((1,), dtype=np.float32)
 
     @property
-    def state_dict(self) -> Mapping[str, Union[np.ndarray, jax.Array]]:
+    def state_dict(self) -> dict[str, np.ndarray | jax.Array]:
         """Dictionary containing references to the whole state of the module."""
 
         class _StateDict:
@@ -120,7 +118,7 @@ class RunningStandardScaler:
         )
 
     @state_dict.setter
-    def state_dict(self, value: Mapping[str, Union[np.ndarray, jax.Array]]) -> None:
+    def state_dict(self, value: dict[str, np.ndarray | jax.Array]) -> None:
         if self._jax:
             self.running_mean = _copyto(self.running_mean, value["running_mean"])
             self.running_variance = _copyto(self.running_variance, value["running_variance"])
@@ -131,7 +129,7 @@ class RunningStandardScaler:
             np.copyto(self.current_count, value["current_count"])
 
     def _parallel_variance(
-        self, input_mean: Union[np.ndarray, jax.Array], input_var: Union[np.ndarray, jax.Array], input_count: int
+        self, input_mean: np.ndarray | jax.Array, input_var: np.ndarray | jax.Array, input_count: int
     ) -> None:
         """Update internal variables using the parallel algorithm for computing variance.
 
@@ -155,8 +153,8 @@ class RunningStandardScaler:
         self.current_count = total_count
 
     def __call__(
-        self, x: Union[np.ndarray, jax.Array, None], *, train: bool = False, inverse: bool = False
-    ) -> Union[np.ndarray, jax.Array, None]:
+        self, x: np.ndarray | jax.Array | None, *, train: bool = False, inverse: bool = False
+    ) -> np.ndarray | jax.Array | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

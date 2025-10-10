@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 from functools import partial
 
 import jax
@@ -26,7 +24,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: Optional[Union[str, jax.Device]] = None,
+        device: str | jax.Device | None = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
@@ -58,7 +56,7 @@ class OrnsteinUhlenbeckNoise(Noise):
             self.mean = np.array(mean)
             self.std = np.array(std)
 
-    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jax.Array]:
+    def sample(self, size: list[int]) -> np.ndarray | jax.Array:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

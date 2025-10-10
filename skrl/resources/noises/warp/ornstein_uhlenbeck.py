@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 import warp as wp
 
 from skrl import config
@@ -32,7 +30,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: Optional[Union[str, wp.context.Device]] = None,
+        device: str | wp.context.Device | None = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
@@ -58,7 +56,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self.mean = mean
         self.std = std
 
-    def sample(self, size: Tuple[int]) -> wp.array:
+    def sample(self, size: list[int]) -> wp.array:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

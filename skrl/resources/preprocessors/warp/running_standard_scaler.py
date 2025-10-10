@@ -1,5 +1,3 @@
-from typing import Mapping, Optional, Tuple, Union
-
 import gymnasium
 
 import numpy as np
@@ -114,11 +112,11 @@ def _parallel_variance(
 class RunningStandardScaler:
     def __init__(
         self,
-        size: Union[int, Tuple[int], gymnasium.Space],
+        size: int | list[int] | gymnasium.Space,
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: Optional[Union[str, wp.context.Device]] = None,
+        device: str | wp.context.Device | None = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 
@@ -151,7 +149,7 @@ class RunningStandardScaler:
         self._cached_mean = wp.empty(size, dtype=wp.float32, device=self.device)
         self._cached_variance = wp.empty(size, dtype=wp.float32, device=self.device)
 
-    def state_dict(self) -> Mapping[str, wp.array]:
+    def state_dict(self) -> dict[str, wp.array]:
         """Dictionary containing references to the whole state of the module."""
         return {
             "running_mean": self.running_mean,
@@ -159,7 +157,7 @@ class RunningStandardScaler:
             "current_count": self.current_count,
         }
 
-    def load_state_dict(self, state_dict: Mapping[str, wp.array]) -> None:
+    def load_state_dict(self, state_dict: dict[str, wp.array]) -> None:
         def _load_from_array(dst, src):
             if isinstance(src, wp.array):
                 wp.copy(dst, src.to(dst.device))
@@ -173,8 +171,8 @@ class RunningStandardScaler:
         self.current_count = float(state_dict["current_count"])
 
     def __call__(
-        self, x: Union[wp.array, None], *, train: bool = False, inverse: bool = False, inplace: bool = False
-    ) -> Union[wp.array, None]:
+        self, x: wp.array | None, *, train: bool = False, inverse: bool = False, inplace: bool = False
+    ) -> wp.array | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 import torch
 from torch.distributions import Normal
 
@@ -19,7 +17,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
@@ -46,7 +44,7 @@ class OrnsteinUhlenbeckNoise(Noise):
             scale=torch.tensor(std, device=self.device, dtype=torch.float32),
         )
 
-    def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
+    def sample(self, size: list[int] | torch.Size) -> torch.Tensor:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

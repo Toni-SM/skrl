@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 import gymnasium
 
 import torch
@@ -12,11 +10,11 @@ from skrl.utils.spaces.torch import compute_space_size
 class RunningStandardScaler(nn.Module):
     def __init__(
         self,
-        size: Union[int, Tuple[int], gymnasium.Space],
+        size: int | list[int] | gymnasium.Space,
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 
@@ -99,8 +97,8 @@ class RunningStandardScaler(nn.Module):
         )
 
     def forward(
-        self, x: Union[torch.Tensor, None], *, train: bool = False, inverse: bool = False, no_grad: bool = True
-    ) -> Union[torch.Tensor, None]:
+        self, x: torch.Tensor | None, *, train: bool = False, inverse: bool = False, no_grad: bool = True
+    ) -> torch.Tensor | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

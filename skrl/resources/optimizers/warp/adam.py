@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import math
 
@@ -102,11 +102,11 @@ def create_adam_step_kernels(beta1: float, beta2: float, eps: float):
 class Adam:
     def __init__(
         self,
-        parameters: Sequence[wp.array],
+        parameters: list[wp.array],
         lr: float = 1e-3,
-        betas: Tuple[float, float] = (0.9, 0.999),
+        betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-08,
-        device: Optional[Union[str, wp.context.Device]] = None,
+        device: str | wp.context.Device | None = None,
     ) -> None:
         """Adam optimizer.
 
@@ -137,7 +137,7 @@ class Adam:
         self._sum_squares_kernel, self._clip_by_total_norm_kernel = None, None
         self._increase_timestep_kernel, self._adam_step_kernel = create_adam_step_kernels(*self._betas, self._eps)
 
-    def step(self, *, lr: Optional[float] = None) -> None:
+    def step(self, *, lr: float | None = None) -> None:
         """Perform an optimization step to update parameters.
 
         :param lr: Learning rate.
@@ -167,10 +167,10 @@ class Adam:
         else:
             wp.capture_launch(self._graph_adam_step)
 
-    def state_dict(self) -> Mapping[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    def load_state_dict(self, state_dict: Mapping[str, Any]) -> None:
+    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         raise NotImplementedError
 
     def clip_by_total_norm(self, max_norm: float):

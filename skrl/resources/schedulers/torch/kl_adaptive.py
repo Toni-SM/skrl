@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 
 from packaging import version
 
@@ -60,7 +60,7 @@ class KLAdaptiveLR(_LRScheduler):
 
         self._last_lr = [group["lr"] for group in self.optimizer.param_groups]
 
-    def step(self, kl: Optional[Union[torch.Tensor, float]] = None, *, epoch: Optional[int] = None) -> None:
+    def step(self, kl: torch.Tensor | float | None = None, *, epoch: int | None = None) -> None:
         """
         Step scheduler.
 

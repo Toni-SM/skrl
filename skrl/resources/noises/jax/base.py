@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 from abc import ABC, abstractmethod
 
 import jax
@@ -9,7 +7,7 @@ from skrl import config
 
 
 class Noise(ABC):
-    def __init__(self, *, device: Optional[Union[str, jax.Device]] = None) -> None:
+    def __init__(self, *, device: str | jax.Device | None = None) -> None:
         """Base noise class for implementing custom noises.
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.
@@ -18,7 +16,7 @@ class Noise(ABC):
 
         self.device = config.jax.parse_device(device)
 
-    def sample_like(self, tensor: Union[np.ndarray, jax.Array]) -> Union[np.ndarray, jax.Array]:
+    def sample_like(self, tensor: np.ndarray | jax.Array) -> np.ndarray | jax.Array:
         """Sample noise with the same size (shape) as the input tensor.
 
         This method will call the sampling method as follows ``.sample(tensor.shape)``.
@@ -38,7 +36,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jax.Array]:
+    def sample(self, size: list[int]) -> np.ndarray | jax.Array:
         """Sample noise.
 
         :param size: Noise shape.

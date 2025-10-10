@@ -1,5 +1,3 @@
-from typing import Optional
-
 import functools
 
 import flax
@@ -75,7 +73,7 @@ class Adam:
             def _create(cls, *, transformation, state, **kwargs):
                 return cls(transformation=transformation, state=state, **kwargs)
 
-            def step(self, *, grad: jax.Array, model: Model, lr: Optional[float] = None) -> "Optimizer":
+            def step(self, *, grad: jax.Array, model: Model, lr: float | None = None) -> "Optimizer":
                 """Performs a single optimization step.
 
                 :param grad: Gradients.

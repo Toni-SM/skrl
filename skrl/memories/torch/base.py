@@ -1,4 +1,4 @@
-from typing import List, Literal, Mapping, Optional, Sequence, Union
+from typing import Literal
 
 import csv
 import datetime
@@ -21,7 +21,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -87,7 +87,7 @@ class Memory(ABC):
             if not tensor.is_cuda:
                 tensor.share_memory_()
 
-    def get_tensor_names(self) -> Sequence[str]:
+    def get_tensor_names(self) -> list[str]:
         """Get the name of the internal tensors, sorted alphabetically.
 
         :return: Tensor names without the internal prefix (``_tensor_``).
@@ -120,8 +120,8 @@ class Memory(ABC):
         self,
         name: str,
         *,
-        size: Union[int, Sequence[int], gymnasium.Space, None],
-        dtype: Optional[torch.dtype] = None,
+        size: int | list[int] | gymnasium.Space | None,
+        dtype: torch.dtype | None = None,
         keep_dimensions: bool = False,
     ) -> bool:
         """Create a new internal tensor in memory.
@@ -185,7 +185,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: Mapping[str, torch.Tensor]) -> None:
+    def add_samples(self, **tensors: dict[str, torch.Tensor]) -> None:
         """Add/store samples in memory.
 
         .. important::
@@ -270,8 +270,8 @@ class Memory(ABC):
 
     @abstractmethod
     def sample(
-        self, names: Sequence[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[torch.Tensor]]:
+        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> list[list[torch.Tensor]]:
         """Data sampling method to be implemented by the inheriting classes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -285,8 +285,8 @@ class Memory(ABC):
         pass
 
     def sample_by_index(
-        self, names: Sequence[str], *, indexes: Union[tuple, np.ndarray, torch.Tensor], mini_batches: int = 1
-    ) -> List[List[torch.Tensor]]:
+        self, names: list[str], *, indexes: list | np.ndarray | torch.Tensor, mini_batches: int = 1
+    ) -> list[list[torch.Tensor]]:
         """Sample data from memory according to their indexes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -305,8 +305,8 @@ class Memory(ABC):
         return [[self.tensors_view[name][indexes] if name in self.tensors else None for name in names]]
 
     def sample_all(
-        self, names: Sequence[str], *, mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[torch.Tensor]]:
+        self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1
+    ) -> list[list[torch.Tensor]]:
         """Sample all data from memory.
 
         :param names: Tensors names from which to obtain the samples.
@@ -337,7 +337,7 @@ class Memory(ABC):
             ]
         return [[self.tensors_view[name] if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> Union[tuple, np.ndarray, torch.Tensor]:
+    def get_sampling_indexes(self) -> list | np.ndarray | torch.Tensor:
         """Get the last indexes used for sampling.
 
         :return: Last sampling indexes.

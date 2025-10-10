@@ -1,4 +1,4 @@
-from typing import List, Literal, Mapping, Optional, Sequence, Union
+from typing import Literal
 
 import csv
 import datetime
@@ -21,7 +21,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: Optional[Union[str, wp.context.Device]] = None,
+        device: str | wp.context.Device | None = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -86,7 +86,7 @@ class Memory(ABC):
         for tensor in self.tensors.values():
             pass
 
-    def get_tensor_names(self) -> Sequence[str]:
+    def get_tensor_names(self) -> list[str]:
         """Get the name of the internal tensors, sorted alphabetically.
 
         :return: Tensor names without the internal prefix (``_tensor_``).
@@ -118,8 +118,8 @@ class Memory(ABC):
         self,
         name: str,
         *,
-        size: Union[int, Sequence[int], gymnasium.Space, None],
-        dtype: Optional[type] = None,
+        size: int | list[int] | gymnasium.Space | None,
+        dtype: type | None = None,
         keep_dimensions: bool = False,
     ) -> bool:
         """Create a new internal tensor in memory.
@@ -184,7 +184,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: Mapping[str, wp.array]) -> None:
+    def add_samples(self, **tensors: dict[str, wp.array]) -> None:
         """Add/store samples in memory.
 
         .. important::
@@ -256,8 +256,8 @@ class Memory(ABC):
 
     @abstractmethod
     def sample(
-        self, names: Sequence[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[wp.array]]:
+        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> list[list[wp.array]]:
         """Data sampling method to be implemented by the inheriting classes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -271,8 +271,8 @@ class Memory(ABC):
         pass
 
     def sample_by_index(
-        self, names: Sequence[str], *, indexes: Union[tuple, np.ndarray, wp.array], mini_batches: int = 1
-    ) -> List[List[wp.array]]:
+        self, names: list[str], *, indexes: list | np.ndarray | wp.array, mini_batches: int = 1
+    ) -> list[list[wp.array]]:
         """Sample data from memory according to their indexes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -293,9 +293,7 @@ class Memory(ABC):
         indexes = wp.array(indexes, dtype=wp.int32, device=self.device)
         return [[(self.tensors_view[name][indexes].contiguous() if name in self.tensors else None) for name in names]]
 
-    def sample_all(
-        self, names: Sequence[str], *, mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[wp.array]]:
+    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[wp.array]]:
         """Sample all data from memory.
 
         :param names: Tensors names from which to obtain the samples.
@@ -326,7 +324,7 @@ class Memory(ABC):
             ]
         return [[self.tensors_view[name] if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> Union[tuple, np.ndarray, wp.array]:
+    def get_sampling_indexes(self) -> list | np.ndarray | wp.array:
         """Get the last indexes used for sampling.
 
         :return: Last sampling indexes.

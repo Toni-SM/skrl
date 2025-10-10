@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import functools
 import gymnasium
@@ -153,14 +153,14 @@ class MAPPO(MultiAgent):
     def __init__(
         self,
         *,
-        possible_agents: Sequence[str],
-        models: Mapping[str, Mapping[str, Model]],
-        memories: Optional[Mapping[str, Memory]] = None,
-        observation_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
-        state_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
-        action_spaces: Optional[Mapping[str, gymnasium.Space]] = None,
-        device: Optional[Union[str, jax.Device]] = None,
-        cfg: Optional[dict] = None,
+        possible_agents: list[str],
+        models: dict[str, dict[str, Model]],
+        memories: dict[str, Memory] | None = None,
+        observation_spaces: dict[str, gymnasium.Space] | None = None,
+        state_spaces: dict[str, gymnasium.Space] | None = None,
+        action_spaces: dict[str, gymnasium.Space] | None = None,
+        device: str | jax.Device | None = None,
+        cfg: MAPPO_CFG | dict = {},
     ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO).
 
@@ -273,7 +273,7 @@ class MAPPO(MultiAgent):
             else:
                 self._value_preprocessor[uid] = self._empty_preprocessor
 
-    def init(self, *, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
 
         :param trainer_cfg: Trainer configuration.
@@ -313,12 +313,12 @@ class MAPPO(MultiAgent):
 
     def act(
         self,
-        observations: Mapping[str, Union[np.ndarray, jax.Array]],
-        states: Mapping[str, Union[np.ndarray, jax.Array, None]],
+        observations: dict[str, np.ndarray | jax.Array],
+        states: dict[str, np.ndarray | jax.Array | None],
         *,
         timestep: int,
         timesteps: int,
-    ) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Union[Union[np.ndarray, jax.Array], Any]]]:
+    ) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -357,15 +357,15 @@ class MAPPO(MultiAgent):
     def record_transition(
         self,
         *,
-        observations: Mapping[str, Union[np.ndarray, jax.Array]],
-        states: Mapping[str, Union[np.ndarray, jax.Array]],
-        actions: Mapping[str, Union[np.ndarray, jax.Array]],
-        rewards: Mapping[str, Union[np.ndarray, jax.Array]],
-        next_observations: Mapping[str, Union[np.ndarray, jax.Array]],
-        next_states: Mapping[str, Union[np.ndarray, jax.Array]],
-        terminated: Mapping[str, Union[np.ndarray, jax.Array]],
-        truncated: Mapping[str, Union[np.ndarray, jax.Array]],
-        infos: Mapping[str, Any],
+        observations: dict[str, np.ndarray | jax.Array],
+        states: dict[str, np.ndarray | jax.Array | None],
+        actions: dict[str, np.ndarray | jax.Array],
+        rewards: dict[str, np.ndarray | jax.Array],
+        next_observations: dict[str, np.ndarray | jax.Array],
+        next_states: dict[str, np.ndarray | jax.Array],
+        terminated: dict[str, np.ndarray | jax.Array],
+        truncated: dict[str, np.ndarray | jax.Array],
+        infos: dict[str, Any],
         timestep: int,
         timesteps: int,
     ) -> None:

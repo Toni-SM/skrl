@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any
 
 import warp as wp
 
@@ -16,9 +16,7 @@ class DeterministicMixin:
         self._d_clip_actions = clip_actions
         self._d_clip_actions_min, self._d_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
 
-    def act(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act deterministically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

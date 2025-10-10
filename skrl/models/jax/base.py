@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable
 
 from abc import ABC, abstractmethod
 import gymnasium
@@ -13,12 +13,12 @@ from skrl.utils.spaces.jax import compute_space_size, flatten_tensorized_space, 
 
 
 @jax.jit
-def _vectorize_leaves(leaves: Sequence[jax.Array]) -> jax.Array:
+def _vectorize_leaves(leaves: list[jax.Array]) -> jax.Array:
     return jnp.expand_dims(jnp.concatenate(list(map(jnp.ravel, leaves)), axis=-1), 0)
 
 
 @jax.jit
-def _unvectorize_leaves(leaves: Sequence[jax.Array], vector: jax.Array) -> Sequence[jax.Array]:
+def _unvectorize_leaves(leaves: list[jax.Array], vector: jax.Array) -> list[jax.Array]:
     offset = 0
     for i, leaf in enumerate(leaves):
         leaves[i] = leaves[i].at[:].set(vector.at[0, offset : offset + leaf.size].get().reshape(leaf.shape))
@@ -36,20 +36,20 @@ class StateDict(flax.struct.PyTreeNode):
 
 
 class Model(flax.linen.Module, ABC):
-    observation_space: Optional[gymnasium.Space] = None
-    state_space: Optional[gymnasium.Space] = None
-    action_space: Optional[gymnasium.Space] = None
-    device: Optional[Union[str, jax.Device]] = None
+    observation_space: gymnasium.Space | None = None
+    state_space: gymnasium.Space | None = None
+    action_space: gymnasium.Space | None = None
+    device: str | jax.Device | None = None
 
     def __init__(
         self,
         *,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, jax.Device]] = None,
-        parent: Optional[Any] = None,
-        name: Optional[str] = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | jax.Device | None = None,
+        parent: Any | None = None,
+        name: str | None = None,
     ) -> None:
         """Base model class for implementing custom models.
 
@@ -80,10 +80,10 @@ class Model(flax.linen.Module, ABC):
 
     def init_state_dict(
         self,
-        inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]] = {},
+        inputs: dict[str, Any] = {},
         *,
         role: str = "",
-        key: Optional[jax.Array] = None,
+        key: jax.Array | None = None,
     ) -> None:
         """Initialize state dictionary.
 
@@ -117,11 +117,11 @@ class Model(flax.linen.Module, ABC):
 
     def random_act(
         self,
-        inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]],
+        inputs: dict[str, Any],
         *,
         role: str = "",
-        params: Optional[jax.Array] = None,
-    ) -> Tuple[Union[np.ndarray, jax.Array], Mapping[str, Union[np.ndarray, jax.Array, Any]]]:
+        params: jax.Array | None = None,
+    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -228,7 +228,7 @@ class Model(flax.linen.Module, ABC):
         )
         self.state_dict = self.state_dict.replace(params=params)
 
-    def get_specification(self) -> Mapping[str, Any]:
+    def get_specification(self) -> dict[str, Any]:
         """Returns the specification of the model.
 
         The following keys are used by the agents for initialization:
@@ -255,11 +255,11 @@ class Model(flax.linen.Module, ABC):
     @abstractmethod
     def act(
         self,
-        inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]],
+        inputs: dict[str, Any],
         *,
         role: str = "",
-        params: Optional[jax.Array] = None,
-    ) -> Tuple[jax.Array, Mapping[str, Union[jax.Array, Any]]]:
+        params: jax.Array | None = None,
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Act according to the specified behavior.
 
         Agents will call this method to get the expected action/value based on the observations/states.
@@ -294,7 +294,7 @@ class Model(flax.linen.Module, ABC):
         """
         self.training = enabled
 
-    def save(self, path: str, *, state_dict: Optional[dict] = None) -> None:
+    def save(self, path: str, *, state_dict: dict[str, Any] | None = None) -> None:
         """Save the model to the specified path.
 
         :param path: Path to save the model to.

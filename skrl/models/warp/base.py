@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any
 
 from abc import ABC, abstractmethod
 import gymnasium
@@ -25,10 +25,10 @@ class Model(nn.Module, ABC):
     def __init__(
         self,
         *,
-        observation_space: Optional[gymnasium.Space] = None,
-        state_space: Optional[gymnasium.Space] = None,
-        action_space: Optional[gymnasium.Space] = None,
-        device: Optional[Union[str, wp.context.Device]] = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | wp.context.Device | None = None,
     ) -> None:
         """Base model class for implementing custom models.
 
@@ -50,13 +50,11 @@ class Model(nn.Module, ABC):
 
         self.training = False
 
-    def init_state_dict(self, inputs: Mapping[str, Union[wp.array, Any]] = {}, *, role: str = "") -> None:
+    def init_state_dict(self, inputs: dict[str, Any] = {}, *, role: str = "") -> None:
         # TODO
         raise NotImplementedError
 
-    def random_act(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -149,7 +147,7 @@ class Model(nn.Module, ABC):
         """
         raise NotImplementedError
 
-    def get_specification(self) -> Mapping[str, Any]:
+    def get_specification(self) -> dict[str, Any]:
         """Returns the specification of the model.
 
         The following keys are used by the agents for initialization:
@@ -173,9 +171,7 @@ class Model(nn.Module, ABC):
         """
         return {}
 
-    def forward(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def forward(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Forward pass of the model.
 
         .. note::
@@ -196,9 +192,7 @@ class Model(nn.Module, ABC):
         return self.act(inputs, role=role)
 
     @abstractmethod
-    def compute(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def compute(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Define the computation performed by the model.
 
         .. warning::
@@ -219,9 +213,7 @@ class Model(nn.Module, ABC):
         raise NotImplementedError("The computation performed by the model (.compute()) is not implemented")
 
     @abstractmethod
-    def act(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act according to the specified behavior.
 
         Agents will call this method to get the expected action/value based on the observations/states.
@@ -254,7 +246,7 @@ class Model(nn.Module, ABC):
         """
         self.training = enabled
 
-    def save(self, path: str, *, state_dict: Optional[dict] = None) -> None:
+    def save(self, path: str, *, state_dict: dict[str, Any] | None = None) -> None:
         """Save the model to the specified path.
 
         :param path: Path to save the model to.

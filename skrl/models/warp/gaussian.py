@@ -1,4 +1,4 @@
-from typing import Any, Literal, Mapping, Tuple, Union
+from typing import Any, Literal
 
 import math
 
@@ -124,9 +124,7 @@ class GaussianMixin:
 
         self._g_key = config.warp.key
 
-    def act(
-        self, inputs: Mapping[str, Union[wp.array, Any]], *, role: str = ""
-    ) -> Tuple[wp.array, Mapping[str, Union[wp.array, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

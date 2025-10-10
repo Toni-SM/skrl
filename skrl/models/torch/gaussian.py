@@ -1,4 +1,4 @@
-from typing import Any, Literal, Mapping, Tuple, Union
+from typing import Any, Literal
 
 import torch
 from torch.distributions import Normal
@@ -51,9 +51,7 @@ class GaussianMixin:
             else torch.sum if reduction == "sum" else torch.prod if reduction == "prod" else None
         )
 
-    def act(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
-    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

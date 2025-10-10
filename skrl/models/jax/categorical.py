@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any
 
 from functools import partial
 
@@ -59,11 +59,11 @@ class CategoricalMixin:
 
     def act(
         self,
-        inputs: Mapping[str, Union[np.ndarray, jax.Array, Any]],
+        inputs: dict[str, Any],
         *,
         role: str = "",
-        params: Optional[jax.Array] = None,
-    ) -> Tuple[jax.Array, Mapping[str, Union[jax.Array, Any]]]:
+        params: jax.Array | None = None,
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

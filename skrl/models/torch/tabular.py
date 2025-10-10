@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any
 
 import torch
 
@@ -26,9 +26,7 @@ class TabularMixin:
         string += ")"
         return string
 
-    def act(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
-    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
         """Act in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -44,7 +42,7 @@ class TabularMixin:
         actions, outputs = self.compute(inputs, role)
         return actions, outputs
 
-    def tables(self, *, role: str = "") -> Mapping[str, torch.Tensor]:
+    def tables(self, *, role: str = "") -> dict[str, torch.Tensor]:
         """Return the *tables* defined by the model.
 
         :param role: Role played by the model.

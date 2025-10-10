@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any
 
 import torch
 from torch.distributions import Categorical
@@ -20,9 +20,7 @@ class CategoricalMixin:
         self._c_unnormalized_log_prob = unnormalized_log_prob
         self._c_distribution = None
 
-    def act(
-        self, inputs: Mapping[str, Union[torch.Tensor, Any]], *, role: str = ""
-    ) -> Tuple[torch.Tensor, Mapping[str, Union[torch.Tensor, Any]]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

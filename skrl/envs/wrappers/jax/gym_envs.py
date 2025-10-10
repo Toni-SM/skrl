@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union
+from typing import Any
 
 import gymnasium
 from packaging import version
@@ -61,11 +61,11 @@ class GymWrapper(Wrapper):
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
+    def step(self, actions: np.ndarray | jax.Array) -> tuple[
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
         Any,
     ]:
         """Perform a step in the environment.
@@ -118,7 +118,7 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> Union[Union[np.ndarray, jax.Array], None]:
+    def state(self) -> np.ndarray | jax.Array | None:
         """Get the environment state.
 
         :return: State.
@@ -133,7 +133,7 @@ class GymWrapper(Wrapper):
             state = jax.device_put(state, device=self.device)
         return state
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
+    def reset(self) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

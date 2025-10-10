@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any
 
 import gymnasium
 
@@ -22,7 +22,7 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         self._info = {}
 
     @property
-    def agents(self) -> Sequence[str]:
+    def agents(self) -> list[str]:
         """Names of all current agents.
 
         These may be changed as an environment progresses (i.e. agents can be added or removed).
@@ -30,7 +30,7 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return self.possible_agents
 
     @property
-    def possible_agents(self) -> Sequence[str]:
+    def possible_agents(self) -> list[str]:
         """Names of all possible agents the environment could generate.
 
         These can not be changed as an environment progresses.
@@ -38,7 +38,7 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         return [f"agent_{i}" for i in range(self.num_agents)]
 
     @property
-    def state_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def state_spaces(self) -> dict[str, gymnasium.Space]:
         """State spaces.
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
@@ -50,21 +50,21 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         }
 
     @property
-    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def observation_spaces(self) -> dict[str, gymnasium.Space]:
         """Observation spaces."""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.observation_space)}
 
     @property
-    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def action_spaces(self) -> dict[str, gymnasium.Space]:
         """Action spaces."""
         return {uid: convert_gym_space(space) for uid, space in zip(self.possible_agents, self._env.action_space)}
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, Any],
+    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, Any],
     ]:
         """Perform a step in the environment.
 
@@ -90,7 +90,7 @@ class BiDexHandsWrapper(MultiAgentEnvWrapper):
         """
         return self._states
 
-    def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

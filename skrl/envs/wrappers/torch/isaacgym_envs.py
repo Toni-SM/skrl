@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union
+from typing import Any
 
 import gymnasium
 
@@ -37,7 +37,7 @@ class IsaacGymPreview4Wrapper(Wrapper):
         return convert_gym_space(self._unwrapped.action_space)
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
+    def state_space(self) -> gymnasium.Space | None:
         """State space."""
         try:
             if self.num_states:
@@ -46,7 +46,7 @@ class IsaacGymPreview4Wrapper(Wrapper):
             pass
         return None
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -63,14 +63,14 @@ class IsaacGymPreview4Wrapper(Wrapper):
             self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def state(self) -> Union[torch.Tensor, None]:
+    def state(self) -> torch.Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
+    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

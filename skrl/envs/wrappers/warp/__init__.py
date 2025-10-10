@@ -1,4 +1,4 @@
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import re
 
@@ -27,7 +27,7 @@ def wrap_env(
         "bidexhands",
     ] = "auto",
     verbose: bool = True,
-) -> Union[Wrapper, MultiAgentEnvWrapper]:
+) -> Wrapper | MultiAgentEnvWrapper:
     """Wrap an environment to use a common interface.
 
     Example::

@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any
 
 from abc import ABC, abstractmethod
 import gymnasium
@@ -44,7 +44,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> Tuple[wp.array, Any]:
+    def reset(self) -> tuple[wp.array, Any]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -52,7 +52,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: wp.array) -> Tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -62,7 +62,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> Union[wp.array, None]:
+    def state(self) -> wp.array | None:
         """Get the environment state.
 
         :return: State.
@@ -108,7 +108,7 @@ class Wrapper(ABC):
         return self._unwrapped.num_agents if hasattr(self._unwrapped, "num_agents") else 1
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
+    def state_space(self) -> gymnasium.Space | None:
         """State space.
 
         If the wrapped environment does not have the ``state_space`` property, ``None`` will be returned.

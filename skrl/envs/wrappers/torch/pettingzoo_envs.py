@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple
+from typing import Any
 
 import collections
 
@@ -21,12 +21,12 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, Any],
+    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, Any],
     ]:
         """Perform a step in the environment.
 
@@ -68,7 +68,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device)
         )
 
-    def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

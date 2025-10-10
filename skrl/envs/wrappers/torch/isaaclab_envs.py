@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any
 
 import gymnasium
 
@@ -22,7 +22,7 @@ class IsaacLabWrapper(Wrapper):
         self._info = {}
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
+    def state_space(self) -> gymnasium.Space | None:
         """State space."""
         try:
             return self._unwrapped.single_observation_space["critic"]
@@ -49,7 +49,7 @@ class IsaacLabWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -64,14 +64,14 @@ class IsaacLabWrapper(Wrapper):
             self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def state(self) -> Union[torch.Tensor, None]:
+    def state(self) -> torch.Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
+    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -108,12 +108,12 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._observations = None
         self._info = {}
 
-    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, Any],
+    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, Any],
     ]:
         """Perform a step in the environment.
 
@@ -134,7 +134,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._info,
         )
 
-    def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

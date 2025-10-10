@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Tuple, Union
+from typing import Any
 
 import gymnasium
 from packaging import version
@@ -60,7 +60,7 @@ class IsaacLabWrapper(Wrapper):
         self._info = {}
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
+    def state_space(self) -> gymnasium.Space | None:
         """State space."""
         try:
             return self._unwrapped.single_observation_space["critic"]
@@ -87,11 +87,11 @@ class IsaacLabWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
+    def step(self, actions: np.ndarray | jax.Array) -> tuple[
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
         Any,
     ]:
         """Perform a step in the environment.
@@ -123,14 +123,14 @@ class IsaacLabWrapper(Wrapper):
             self._info,
         )
 
-    def state(self) -> Union[np.ndarray, jax.Array, None]:
+    def state(self) -> np.ndarray | jax.Array | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
+    def reset(self) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -170,12 +170,12 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._observations = None
         self._info = {}
 
-    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> Tuple[
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Any],
+    def step(self, actions: dict[str, np.ndarray | jax.Array]) -> tuple[
+        dict[str, np.ndarray | jax.Array],
+        dict[str, np.ndarray | jax.Array],
+        dict[str, np.ndarray | jax.Array],
+        dict[str, np.ndarray | jax.Array],
+        dict[str, Any],
     ]:
         """Perform a step in the environment.
 
@@ -201,7 +201,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._info,
         )
 
-    def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
+    def reset(self) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -216,7 +216,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._reset_once = False
         return self._observations, self._info
 
-    def state(self) -> Union[np.ndarray, jax.Array, None]:
+    def state(self) -> np.ndarray | jax.Array | None:
         """Get the environment state.
 
         :return: State.

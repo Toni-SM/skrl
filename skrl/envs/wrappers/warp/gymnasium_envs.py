@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union
+from typing import Any
 
 import gymnasium
 
@@ -51,7 +51,7 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def step(self, actions: wp.array) -> Tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -81,7 +81,7 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> Union[wp.array, None]:
+    def state(self) -> wp.array | None:
         """Get the environment state.
 
         :return: State.
@@ -93,7 +93,7 @@ class GymnasiumWrapper(Wrapper):
         except:
             return None
 
-    def reset(self) -> Tuple[wp.array, Any]:
+    def reset(self) -> tuple[wp.array, Any]:
         """Reset the environment.
 
         :return: Observation, info.

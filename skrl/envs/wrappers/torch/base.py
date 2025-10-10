@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any
 
 from abc import ABC, abstractmethod
 import gymnasium
@@ -44,7 +44,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> Tuple[torch.Tensor, Any]:
+    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -52,7 +52,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -62,7 +62,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> Union[torch.Tensor, None]:
+    def state(self) -> torch.Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -108,7 +108,7 @@ class Wrapper(ABC):
         return self._unwrapped.num_agents if hasattr(self._unwrapped, "num_agents") else 1
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
+    def state_space(self) -> gymnasium.Space | None:
         """State space.
 
         If the wrapped environment does not have the ``state_space`` property, ``None`` will be returned.
@@ -162,7 +162,7 @@ class MultiAgentEnvWrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> Tuple[Mapping[str, torch.Tensor], Mapping[str, Any]]:
+    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -170,12 +170,12 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: Mapping[str, torch.Tensor]) -> Tuple[
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, torch.Tensor],
-        Mapping[str, Any],
+    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, torch.Tensor],
+        dict[str, Any],
     ]:
         """Perform a step in the environment.
 
@@ -246,7 +246,7 @@ class MultiAgentEnvWrapper(ABC):
             return len(self.possible_agents)
 
     @property
-    def agents(self) -> Sequence[str]:
+    def agents(self) -> list[str]:
         """Names of all current agents.
 
         These may be changed as an environment progresses (i.e. agents can be added or removed).
@@ -254,7 +254,7 @@ class MultiAgentEnvWrapper(ABC):
         return self._unwrapped.agents
 
     @property
-    def possible_agents(self) -> Sequence[str]:
+    def possible_agents(self) -> list[str]:
         """Names of all possible agents the environment could generate.
 
         These can not be changed as an environment progresses.
@@ -262,7 +262,7 @@ class MultiAgentEnvWrapper(ABC):
         return self._unwrapped.possible_agents
 
     @property
-    def state_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def state_spaces(self) -> dict[str, gymnasium.Space]:
         """State spaces.
 
         Since the state space is a global view of the environment (and therefore the same for all the agents),
@@ -273,12 +273,12 @@ class MultiAgentEnvWrapper(ABC):
         return {agent: space for agent in self.possible_agents}
 
     @property
-    def observation_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def observation_spaces(self) -> dict[str, gymnasium.Space]:
         """Observation spaces."""
         return self._unwrapped.observation_spaces
 
     @property
-    def action_spaces(self) -> Mapping[str, gymnasium.Space]:
+    def action_spaces(self) -> dict[str, gymnasium.Space]:
         """Action spaces."""
         return self._unwrapped.action_spaces
 

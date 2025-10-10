@@ -1,5 +1,3 @@
-from typing import Optional, Sequence
-
 import os
 import sys
 from contextlib import contextmanager
@@ -55,9 +53,9 @@ def _print_cfg(d, indent=0) -> None:
 def load_isaacgym_env_preview4(
     *,
     task_name: str = "",
-    num_envs: Optional[int] = None,
-    headless: Optional[bool] = None,
-    cli_args: Sequence[str] = [],
+    num_envs: int | None = None,
+    headless: bool | None = None,
+    cli_args: list[str] = [],
     isaacgymenvs_path: str = "",
     show_cfg: bool = True,
 ):

@@ -1,5 +1,3 @@
-from typing import Optional, Sequence
-
 import argparse
 import sys
 
@@ -25,11 +23,11 @@ def _print_cfg(d, indent=0) -> None:
 def load_isaaclab_env(
     *,
     task_name: str = "",
-    num_envs: Optional[int] = None,
-    headless: Optional[bool] = None,
-    cli_args: Sequence[str] = [],
+    num_envs: int | None = None,
+    headless: bool | None = None,
+    cli_args: list[str] = [],
     show_cfg: bool = True,
-    parser: Optional[argparse.ArgumentParser] = None,
+    parser: argparse.ArgumentParser | None = None,
 ):
     """Load an Isaac Lab environment.
 

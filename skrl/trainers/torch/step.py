@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import copy
 import dataclasses
@@ -23,10 +23,10 @@ class StepTrainer(Trainer):
     def __init__(
         self,
         *,
-        env: Union[Wrapper, MultiAgentEnvWrapper],
-        agents: Union[Agent, MultiAgent, List[Agent], List[MultiAgent]],
-        scopes: Optional[List[int]] = None,
-        cfg: Optional[dict] = None,
+        env: Wrapper | MultiAgentEnvWrapper,
+        agents: Agent | MultiAgent | list[Agent] | list[MultiAgent],
+        scopes: list[int] | None = None,
+        cfg: StepTrainerCfg | dict = {},
     ) -> None:
         """Step-by-step trainer.
 
@@ -59,8 +59,8 @@ class StepTrainer(Trainer):
         self.states = None
 
     def train(
-        self, timestep: Optional[int] = None, timesteps: Optional[int] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        self, timestep: int | None = None, timesteps: int | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute a training iteration.
 
         This method executes the following steps once:
@@ -185,8 +185,8 @@ class StepTrainer(Trainer):
         return next_observations, rewards, terminated, truncated, infos
 
     def eval(
-        self, timestep: Optional[int] = None, timesteps: Optional[int] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        self, timestep: int | None = None, timesteps: int | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Execute an evaluation iteration.
 
         This method executes the following steps in loop:

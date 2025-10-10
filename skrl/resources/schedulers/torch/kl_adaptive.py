@@ -1,5 +1,3 @@
-from typing import Union
-
 from packaging import version
 
 import torch

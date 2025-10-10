@@ -1,5 +1,3 @@
-from typing import List, Optional, Union
-
 import atexit
 import contextlib
 import dataclasses
@@ -14,7 +12,7 @@ from skrl.multi_agents.jax import MultiAgent
 from skrl.utils import ScopedTimer
 
 
-def generate_equally_spaced_scopes(*, num_envs: int, num_simultaneous_agents: int) -> List[int]:
+def generate_equally_spaced_scopes(*, num_envs: int, num_simultaneous_agents: int) -> list[int]:
     """Generate a list of equally spaced scopes for simultaneous agents.
 
     :param num_envs: Number of environments.
@@ -70,9 +68,9 @@ class Trainer(ABC):
         self,
         *,
         cfg: TrainerCfg,
-        env: Union[Wrapper, MultiAgentEnvWrapper],
-        agents: Union[Agent, MultiAgent, List[Agent], List[MultiAgent]],
-        scopes: Optional[List[int]] = None,
+        env: Wrapper | MultiAgentEnvWrapper,
+        agents: Agent | MultiAgent | list[Agent] | list[MultiAgent],
+        scopes: list[int] | None = None,
     ) -> None:
         """Base trainer class for implementing custom trainers.
 

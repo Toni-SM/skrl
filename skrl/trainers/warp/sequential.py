@@ -1,5 +1,3 @@
-from typing import List, Optional, Union
-
 import contextlib
 import copy
 import dataclasses
@@ -22,9 +20,9 @@ class SequentialTrainer(Trainer):
         self,
         *,
         env: Wrapper,
-        agents: Union[Agent, List[Agent]],
-        scopes: Optional[List[int]] = None,
-        cfg: Optional[dict] = None,
+        agents: Agent | list[Agent],
+        scopes: list[int] | None = None,
+        cfg: SequentialTrainerCfg | dict = {},
     ) -> None:
         """Sequential trainer.
 

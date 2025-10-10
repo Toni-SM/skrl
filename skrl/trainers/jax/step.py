@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import contextlib
 import copy
@@ -26,10 +26,10 @@ class StepTrainer(Trainer):
     def __init__(
         self,
         *,
-        env: Union[Wrapper, MultiAgentEnvWrapper],
-        agents: Union[Agent, MultiAgent, List[Agent], List[MultiAgent]],
-        scopes: Optional[List[int]] = None,
-        cfg: Optional[dict] = None,
+        env: Wrapper | MultiAgentEnvWrapper,
+        agents: Agent | MultiAgent | list[Agent] | list[MultiAgent],
+        scopes: list[int] | None = None,
+        cfg: StepTrainerCfg | dict = {},
     ) -> None:
         """Step-by-step trainer.
 
@@ -61,11 +61,11 @@ class StepTrainer(Trainer):
         self.observations = None
         self.states = None
 
-    def train(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
+    def train(self, timestep: int | None = None, timesteps: int | None = None) -> tuple[
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
         Any,
     ]:
         """Execute a training iteration.
@@ -184,11 +184,11 @@ class StepTrainer(Trainer):
 
         return next_observations, rewards, terminated, truncated, infos
 
-    def eval(self, timestep: Optional[int] = None, timesteps: Optional[int] = None) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
+    def eval(self, timestep: int | None = None, timesteps: int | None = None) -> tuple[
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
+        np.ndarray | jax.Array,
         Any,
     ]:
         """Execute an evaluation iteration.

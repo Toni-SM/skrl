@@ -6,11 +6,9 @@ import re
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
-from skrl.envs.wrappers.jax.bidexhands_envs import BiDexHandsWrapper
 from skrl.envs.wrappers.jax.brax_envs import BraxWrapper
 from skrl.envs.wrappers.jax.gym_envs import GymWrapper
 from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.jax.isaacgym_envs import IsaacGymPreview4Wrapper
 from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
 
@@ -27,10 +25,8 @@ def wrap_env(
         "brax",
         "isaaclab",
         "isaaclab-single-agent",
-        "isaacgym-preview4",
-        "pettingzoo",
         "isaaclab-multi-agent",
-        "bidexhands",
+        "pettingzoo",
     ] = "auto",
     verbose: bool = True,
 ) -> Wrapper | MultiAgentEnvWrapper:
@@ -61,8 +57,6 @@ def wrap_env(
                 - ``"brax"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
-            * - Isaac Gym preview 4
-                - ``"isaacgym-preview4"``
 
         .. list-table:: Multi-agent environments |br|
             :header-rows: 1
@@ -73,8 +67,6 @@ def wrap_env(
                 - ``"pettingzoo"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
-            * - Bi-DexHands
-                - ``"bidexhands"``
     :param verbose: Whether to print verbose information about the environment and the wrapper.
 
     :return: Wrapped environment instance.
@@ -105,8 +97,6 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
-        elif _in(["isaacgymenvs..*", "tasks..*.VecTask"], base_classes):
-            return "isaacgym-preview4"
         elif _in("brax.envs..*", base_classes):
             return "brax"
         elif _in("dm_env..*", base_classes):
@@ -134,18 +124,10 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: Petting Zoo")
         return PettingZooWrapper(env)
-    elif wrapper == "bidexhands":
-        if verbose:
-            logger.info("Environment wrapper: Bi-DexHands")
-        return BiDexHandsWrapper(env)
     elif wrapper == "brax":
         if verbose:
             logger.info("Environment wrapper: Brax")
         return BraxWrapper(env)
-    elif wrapper == "isaacgym-preview4":
-        if verbose:
-            logger.info("Environment wrapper: Isaac Gym (preview 4)")
-        return IsaacGymPreview4Wrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":

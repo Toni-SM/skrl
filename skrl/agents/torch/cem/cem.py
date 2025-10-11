@@ -61,7 +61,7 @@ class CEM(Agent):
         self.checkpoint_modules["policy"] = self.policy
 
         # set up automatic mixed precision
-        self._device_type = torch.device(device).type
+        self._device_type = torch.device(self.device).type
         if version.parse(torch.__version__) >= version.parse("2.4"):
             self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self.cfg.mixed_precision)
         else:

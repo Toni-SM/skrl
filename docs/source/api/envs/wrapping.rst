@@ -12,7 +12,7 @@ This library works with a common API to interact with the following RL environme
 * OpenAI `Gym <https://www.gymlibrary.dev>`_
 * Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
 * Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
-* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (and `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ preview 4)
+* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -65,46 +65,6 @@ Usage
                     :language: python
                     :start-after: [warp-start-isaaclab]
                     :end-before: [warp-end-isaaclab]
-
-    .. tab:: Isaac Gym
-
-        .. tabs::
-
-            .. tab:: Preview 4 (isaacgymenvs.make)
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview4-make]
-                            :end-before: [pytorch-end-isaacgym-preview4-make]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview4-make]
-                            :end-before: [jax-end-isaacgym-preview4-make]
-
-            .. tab:: Preview 4
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview4]
-                            :end-before: [pytorch-end-isaacgym-preview4]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview4]
-                            :end-before: [jax-end-isaacgym-preview4]
 
     .. tab:: Gymnasium / Gym
 
@@ -313,11 +273,6 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview4Wrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
 .. autoclass:: skrl.envs.wrappers.torch.GymWrapper
     :undoc-members:
     :show-inheritance:
@@ -352,11 +307,6 @@ Internal API (JAX)
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview4Wrapper
     :undoc-members:
     :show-inheritance:
     :members:

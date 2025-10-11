@@ -11,7 +11,6 @@ This library works with a common API to interact with the following RL multi-age
 
 * Farama `PettingZoo <https://pettingzoo.farama.org>`_ (parallel API) and `Shimmy <https://shimmy.farama.org/>`_
 * NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
-* `Bi-DexHands <https://github.com/PKU-MARL/DexterousHands>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -94,24 +93,6 @@ Usage
                     :start-after: [jax-start-shimmy-multi-agent]
                     :end-before: [jax-end-shimmy-multi-agent]
 
-    .. tab:: Bi-DexHands
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [start-bidexhands-torch]
-                    :end-before: [end-bidexhands-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [start-bidexhands-jax]
-                    :end-before: [end-bidexhands-jax]
-
 .. raw:: html
 
     <br>
@@ -152,11 +133,6 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.BiDexHandsWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
 .. raw:: html
 
     <br>
@@ -175,11 +151,6 @@ Internal API (JAX)
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.PettingZooWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.jax.BiDexHandsWrapper
     :undoc-members:
     :show-inheritance:
     :members:

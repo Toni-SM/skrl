@@ -34,15 +34,16 @@ SKRL - Reinforcement Learning library (|version|)
     </a>
     <br><br>
 
-**skrl** is an open-source library for Reinforcement Learning written in Python (implemented in `PyTorch <https://pytorch.org/>`_, `JAX <https://jax.readthedocs.io>`_ and `NVIDIA Warp <https://nvidia.github.io/warp>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (and `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ preview 4) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
+**skrl** is an open-source library for Reinforcement Learning written in Python (implemented in `PyTorch <https://pytorch.org/>`_, `JAX <https://jax.readthedocs.io>`_ and `NVIDIA Warp <https://nvidia.github.io/warp>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
 
 **Main features:**
     * PyTorch (|_1| |pytorch| |_1|), JAX (|_1| |jax| |_1|) and Warp (|_1| |warp| |_1|)
     * Clean code
     * Modularity and reusability
     * Documented library, code and implementations
-    * Support for Gym/Gymnasium (single and vectorized), Google DeepMind and Brax, NVIDIA Isaac Lab (and Isaac Gym) environments, among others
-    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), Google Brax, and NVIDIA Isaac Lab (and Isaac Gym)
+    * Support for fundamental (``Box``, ``Discrete`` and ``MultiDiscrete``) and composite (``Dict`` and ``Tuple``) spaces
+    * Support for Gym/Gymnasium (single and vectorized), Google DeepMind and Brax, NVIDIA Isaac Lab environments, among others
+    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), Google Brax, and NVIDIA Isaac Lab
 
 .. raw:: html
 
@@ -138,12 +139,11 @@ Multi-agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Lab (and Isaac Gym) environment loaders, and wrappers for Gym/Gymnasium, DeepMind, Brax, Isaac Lab (and Isaac Gym) environments, among others
+    Definition of the Isaac Lab environment loader, and wrappers for Gym/Gymnasium, DeepMind, Brax, Isaac Lab environments, among others
 
-    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Brax**, **Isaac Lab** (and **Isaac Gym** preview 4) environments, among others
+    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Brax**, **Isaac Lab** environments, among others
     * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo**, **Isaac Lab** environments, among others
     * Loading :doc:`Isaac Lab environments <api/envs/isaaclab>`
-    * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
 
 Memories
 ^^^^^^^^

@@ -7,7 +7,6 @@ Environments
     Wrapping (single-agent) <envs/wrapping>
     Wrapping (multi-agents) <envs/multi_agents_wrapping>
     Isaac Lab environments <envs/isaaclab>
-    Isaac Gym environments <envs/isaac_gym>
 
 The environment plays a fundamental and crucial role in defining the RL setup. It is the place where the agent interacts, and it is responsible for providing the agent with information about its current state, as well as the rewards/penalties associated with each action.
 
@@ -15,7 +14,7 @@ The environment plays a fundamental and crucial role in defining the RL setup. I
 
     <br><hr>
 
-In this section you will find how to load environments from NVIDIA Isaac Lab (and Isaac Gym) with a simple function.
+In this section you will find how to load environments from NVIDIA Isaac Lab with a simple function.
 
 .. list-table::
     :header-rows: 1
@@ -25,10 +24,6 @@ In this section you will find how to load environments from NVIDIA Isaac Lab (an
       - .. centered:: |_4| |jax| |_4|
       - .. centered:: |_4| |warp| |_4|
     * - :doc:`Isaac Lab environments <envs/isaaclab>`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-    * - :doc:`Isaac Gym environments <envs/isaac_gym>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -42,10 +37,6 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
       - .. centered:: |_4| |warp| |_4|
-    * - Bi-DexHands
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
     * - Brax
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
@@ -66,10 +57,6 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
-    * - Isaac Gym (preview 4) |_4|
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\square`
     * - PettingZoo
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

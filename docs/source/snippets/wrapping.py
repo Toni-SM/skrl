@@ -51,73 +51,6 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
 
 # =============================================================================
 
-# [pytorch-start-isaacgym-preview4-make]
-import isaacgymenvs
-
-# import the environment wrapper
-from skrl.envs.wrappers.torch import wrap_env
-
-# create/load the environment using the easy-to-use API from NVIDIA
-env = isaacgymenvs.make(seed=0,
-                        task="Cartpole",
-                        num_envs=512,
-                        sim_device="cuda:0",
-                        rl_device="cuda:0",
-                        graphics_device_id=0,
-                        headless=False)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [pytorch-end-isaacgym-preview4-make]
-
-
-# [jax-start-isaacgym-preview4-make]
-import isaacgymenvs
-
-# import the environment wrapper
-from skrl.envs.wrappers.jax import wrap_env
-
-# create/load the environment using the easy-to-use API from NVIDIA
-env = isaacgymenvs.make(seed=0,
-                        task="Cartpole",
-                        num_envs=512,
-                        sim_device="cuda:0",
-                        rl_device="cuda:0",
-                        graphics_device_id=0,
-                        headless=False)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [jax-end-isaacgym-preview4-make]
-
-
-# [pytorch-start-isaacgym-preview4]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_isaacgym_env_preview4
-
-# load the environment
-env = load_isaacgym_env_preview4(task_name="Cartpole")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [pytorch-end-isaacgym-preview4]
-
-
-# [jax-start-isaacgym-preview4]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_isaacgym_env_preview4
-
-# load the environment
-env = load_isaacgym_env_preview4(task_name="Cartpole")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [jax-end-isaacgym-preview4]
-
-# =============================================================================
-
 # [pytorch-start-gym]
 # import the environment wrapper and gym
 from skrl.envs.wrappers.torch import wrap_env
@@ -319,33 +252,6 @@ env = suite.load(domain_name="cartpole", task_name="swingup")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
 # [pytorch-end-deepmind]
-
-# =============================================================================
-
-# [start-bidexhands-torch]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_bidexhands_env
-
-# load the environment
-env = load_bidexhands_env(task_name="ShadowHandOver")
-
-# wrap the environment
-env = wrap_env(env, wrapper="bidexhands")
-# [end-bidexhands-torch]
-
-
-# [start-bidexhands-jax]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_bidexhands_env
-
-# load the environment
-env = load_bidexhands_env(task_name="ShadowHandOver")
-
-# wrap the environment
-env = wrap_env(env, wrapper="bidexhands")
-# [end-bidexhands-jax]
 
 # =============================================================================
 

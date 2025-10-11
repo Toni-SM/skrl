@@ -134,7 +134,6 @@ autodoc_mock_imports = [
     "tensorboard",
     "tqdm",
     "packaging",
-    "isaacgym",
 ]
 
 # copybutton ext

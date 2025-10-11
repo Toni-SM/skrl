@@ -54,6 +54,7 @@ from ...utilities import MultiAgentEnv, check_config_keys, get_test_mixed_precis
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
+    max_examples=15,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])

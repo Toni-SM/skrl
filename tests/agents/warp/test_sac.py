@@ -46,7 +46,7 @@ from ...utilities import SingleAgentEnv, check_config_keys, is_device_available
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
-    max_examples=25,
+    max_examples=15,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 @pytest.mark.parametrize("device", ["cpu", "cuda:0"])

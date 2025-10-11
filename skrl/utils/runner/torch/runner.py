@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Type, Union
+from typing import Any, Type
 
 import copy
 
@@ -14,7 +14,7 @@ from skrl.utils import set_seed
 
 
 class Runner:
-    def __init__(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]) -> None:
+    def __init__(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any]) -> None:
         """Experiment runner.
 
         Configure and instantiate skrl components to execute training/evaluation workflows in a few lines of code.
@@ -189,9 +189,7 @@ class Runner:
 
         return update_dict(copy.deepcopy(cfg))
 
-    def _generate_models(
-        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]
-    ) -> Mapping[str, Mapping[str, Model]]:
+    def _generate_models(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any]) -> dict[str, dict[str, Model]]:
         """Generate model instances according to the environment specification and the given config.
 
         :param env: Wrapped environment.
@@ -318,9 +316,9 @@ class Runner:
 
     def _generate_agent(
         self,
-        env: Union[Wrapper, MultiAgentEnvWrapper],
-        cfg: Mapping[str, Any],
-        models: Mapping[str, Mapping[str, Model]],
+        env: Wrapper | MultiAgentEnvWrapper,
+        cfg: dict[str, Any],
+        models: dict[str, dict[str, Model]],
     ) -> Agent:
         """Generate agent instance according to the environment specification and the given config and models.
 
@@ -466,9 +464,7 @@ class Runner:
             }
         return self._component(agent_class)(cfg=agent_cfg, device=device, **agent_kwargs)
 
-    def _generate_trainer(
-        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], agent: Agent
-    ) -> Trainer:
+    def _generate_trainer(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], agent: Agent) -> Trainer:
         """Generate trainer instance according to the environment specification and the given config and agent.
 
         :param env: Wrapped environment.

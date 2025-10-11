@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Any
 
 import collections
 import csv
@@ -41,7 +41,7 @@ class MemoryFileIterator:
         """Return self to make iterable."""
         return self
 
-    def __next__(self) -> Tuple[str, dict]:
+    def __next__(self) -> tuple[str, dict[str, Any]]:
         """Return next batch.
 
         :return: Tuple of file name and data.
@@ -58,7 +58,7 @@ class MemoryFileIterator:
         else:
             raise ValueError(f"Unsupported format for {self.file_paths[self.n]}. Available formats: .pt, .csv, .npz")
 
-    def _format_numpy(self) -> Tuple[str, dict]:
+    def _format_numpy(self) -> tuple[str, dict[str, Any]]:
         """Load NumPy array from file.
 
         :return: Tuple of file name and data.
@@ -69,7 +69,7 @@ class MemoryFileIterator:
         self.n += 1
         return filename, data
 
-    def _format_torch(self) -> Tuple[str, dict]:
+    def _format_torch(self) -> tuple[str, dict[str, Any]]:
         """Load PyTorch tensor from file.
 
         :return: Tuple of file name and data.
@@ -82,7 +82,7 @@ class MemoryFileIterator:
         self.n += 1
         return filename, data
 
-    def _format_csv(self) -> Tuple[str, dict]:
+    def _format_csv(self) -> tuple[str, dict[str, Any]]:
         """Load CSV file from file.
 
         :return: Tuple of file name and data.
@@ -122,7 +122,7 @@ class MemoryFileIterator:
 
 
 class TensorboardFileIterator:
-    def __init__(self, pathname: str, tags: Union[str, List[str]]) -> None:
+    def __init__(self, pathname: str, tags: str | list[str]) -> None:
         """Python iterator for loading data from TensorBoard files.
 
         The iterator will load the next TensorBoard file in the list of path names.
@@ -141,7 +141,7 @@ class TensorboardFileIterator:
         """Return self to make iterable."""
         return self
 
-    def __next__(self) -> Tuple[str, dict]:
+    def __next__(self) -> tuple[str, dict[str, Any]]:
         """Return next batch.
 
         :return: Tuple of directory name and data.

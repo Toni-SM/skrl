@@ -1,4 +1,4 @@
-from typing import Any, Literal, Mapping, Optional, Union
+from typing import Any, Literal
 
 import gymnasium
 
@@ -11,14 +11,14 @@ from skrl.models.torch import Model
 
 def tabular_model(
     *,
-    observation_space: Optional[gymnasium.Space] = None,
-    state_space: Optional[gymnasium.Space] = None,
-    action_space: Optional[gymnasium.Space] = None,
-    device: Optional[Union[str, torch.device]] = None,
+    observation_space: gymnasium.Space | None = None,
+    state_space: gymnasium.Space | None = None,
+    action_space: gymnasium.Space | None = None,
+    device: str | torch.device | None = None,
     variant: Literal["epsilon-greedy"] = "epsilon-greedy",
-    variant_kwargs: Mapping[str, Any] = {},
+    variant_kwargs: dict[str, Any] = {},
     return_source: bool = False,
-) -> Union[Model, str]:
+) -> Model | str:
     """Instantiate a :class:`~skrl.models.torch.tabular.TabularMixin`-based model.
 
     Supported variants:

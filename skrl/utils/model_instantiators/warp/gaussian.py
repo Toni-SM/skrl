@@ -1,4 +1,4 @@
-from typing import Any, Literal, Mapping, Optional, Sequence, Union
+from typing import Any, Literal
 
 import textwrap
 import gymnasium
@@ -16,10 +16,10 @@ from skrl.utils.spaces.warp import unflatten_tensorized_space  # noqa
 
 def gaussian_model(
     *,
-    observation_space: Optional[gymnasium.Space] = None,
-    state_space: Optional[gymnasium.Space] = None,
-    action_space: Optional[gymnasium.Space] = None,
-    device: Optional[Union[str, wp.context.Device]] = None,
+    observation_space: gymnasium.Space | None = None,
+    state_space: gymnasium.Space | None = None,
+    action_space: gymnasium.Space | None = None,
+    device: str | wp.context.Device | None = None,
     clip_actions: bool = False,
     clip_log_std: bool = True,
     min_log_std: float = -20,
@@ -27,10 +27,10 @@ def gaussian_model(
     reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     initial_log_std: float = 0,
     fixed_log_std: bool = False,
-    network: Sequence[Mapping[str, Any]] = [],
-    output: Union[str, Sequence[str]] = "",
+    network: list[dict[str, Any]] = [],
+    output: str | list[str] = "",
     return_source: bool = False,
-) -> Union[Model, str]:
+) -> Model | str:
     """Instantiate a :class:`~skrl.models.warp.gaussian.GaussianMixin`-based model.
 
     :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.

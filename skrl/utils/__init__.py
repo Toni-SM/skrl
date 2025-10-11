@@ -1,5 +1,3 @@
-from typing import Optional
-
 import os
 import random
 import sys
@@ -10,7 +8,7 @@ import numpy as np
 from skrl import config, logger
 
 
-def set_seed(seed: Optional[int] = None, deterministic: bool = False) -> int:
+def set_seed(seed: int | None = None, deterministic: bool = False) -> int:
     """Set the seed for the random number generators.
 
     .. note::

@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Literal
 
 import gymnasium
 from gymnasium import spaces
@@ -10,9 +10,7 @@ from skrl import config
 from skrl.utils.framework.warp import concatenate
 
 
-def convert_gym_space(
-    space: Optional["gym.Space"], *, squeeze_batch_dimension: bool = False
-) -> Optional[gymnasium.Space]:
+def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
     """Converts a gym space to a gymnasium space.
 
     :param space: Gym space to convert to.
@@ -56,9 +54,7 @@ def convert_gym_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def tensorize_space(
-    space: Optional[spaces.Space], x: Any, *, device: Optional[Union[str, wp.context.Device]] = None
-) -> Any:
+def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | wp.context.Device | None = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to Warp arrays.
 
     :param space: Gymnasium space.
@@ -113,7 +109,7 @@ def tensorize_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
+def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
 
     :param space: Gymnasium space.
@@ -167,7 +163,7 @@ def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_di
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any) -> Optional[wp.array]:
+def flatten_tensorized_space(x: Any) -> wp.array | None:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
@@ -193,7 +189,7 @@ def flatten_tensorized_space(x: Any) -> Optional[wp.array]:
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 
-def unflatten_tensorized_space(space: Optional[Union[spaces.Space, Sequence[int], int]], x: Optional[wp.array]) -> Any:
+def unflatten_tensorized_space(space: spaces.Space | None, x: wp.array | None) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
     :param space: Gymnasium space.
@@ -237,7 +233,7 @@ def unflatten_tensorized_space(space: Optional[Union[spaces.Space, Sequence[int]
     raise ValueError(f"Unsupported space ({space})")
 
 
-def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]], *, occupied_size: bool = False) -> int:
+def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
 
     :param space: Gymnasium space.
@@ -274,12 +270,12 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
 
 
 def compute_space_limits(
-    space: Optional[spaces.Space],
+    space: spaces.Space | None,
     *,
     occupied_size: bool = False,
-    device: Optional[Union[str, wp.context.Device]] = None,
-    none_if_unbounded: Optional[Literal["both", "below", "above", "any"]] = None,
-) -> Tuple[Union[wp.array, None], Union[wp.array, None]]:
+    device: str | wp.context.Device | None = None,
+    none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
+) -> tuple[wp.array | None, wp.array | None]:
     """Get the low and high limits of a space.
 
     .. note::
@@ -354,11 +350,11 @@ def compute_space_limits(
 
 
 def sample_space(
-    space: Optional[spaces.Space],
+    space: spaces.Space | None,
     *,
     batch_size: int = 1,
     backend: Literal["numpy", "native"] = "numpy",
-    device: Optional[Union[str, wp.context.Device]] = None,
+    device: str | wp.context.Device | None = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 

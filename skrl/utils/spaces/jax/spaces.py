@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Literal
 
 import gymnasium
 from gymnasium import spaces
@@ -10,9 +10,7 @@ import numpy as np
 from skrl import config
 
 
-def convert_gym_space(
-    space: Optional["gym.Space"], *, squeeze_batch_dimension: bool = False
-) -> Optional[gymnasium.Space]:
+def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
     """Converts a gym space to a gymnasium space.
 
     :param space: Gym space to convert to.
@@ -57,7 +55,7 @@ def convert_gym_space(
 
 
 def tensorize_space(
-    space: Optional[spaces.Space], x: Any, *, device: Optional[Union[str, jax.Device]] = None, _jax: bool = True
+    space: spaces.Space | None, x: Any, *, device: str | jax.Device | None = None, _jax: bool = True
 ) -> Any:
     """Convert the sample/value items of a given gymnasium space to JAX or NumPy array.
 
@@ -130,7 +128,7 @@ def tensorize_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
+def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
 
     :param space: Gymnasium space.
@@ -196,7 +194,7 @@ def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_di
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> Optional[Union[jax.Array, np.ndarray]]:
+def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> jax.Array | np.ndarray | None:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
@@ -226,9 +224,7 @@ def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> Optional[Union[jax
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 
-def unflatten_tensorized_space(
-    space: Optional[Union[spaces.Space, Sequence[int], int]], x: Optional[Union[jax.Array, np.ndarray]]
-) -> Any:
+def unflatten_tensorized_space(space: spaces.Space | None, x: jax.Array | np.ndarray | None) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
     :param space: Gymnasium space.
@@ -272,7 +268,7 @@ def unflatten_tensorized_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]], *, occupied_size: bool = False) -> int:
+def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
 
     :param space: Gymnasium space.
@@ -309,12 +305,12 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
 
 
 def compute_space_limits(
-    space: Optional[spaces.Space],
+    space: spaces.Space | None,
     *,
     occupied_size: bool = False,
-    device: Optional[Union[str, jax.Device]] = None,
-    none_if_unbounded: Optional[Literal["both", "below", "above", "any"]] = None,
-) -> Tuple[Union[jax.Array, None], Union[jax.Array, None]]:
+    device: str | jax.Device | None = None,
+    none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
+) -> tuple[jax.Array | None, jax.Array | None]:
     """Get the low and high limits of a space.
 
     .. note::
@@ -389,11 +385,11 @@ def compute_space_limits(
 
 
 def sample_space(
-    space: Optional[spaces.Space],
+    space: spaces.Space | None,
     *,
     batch_size: int = 1,
     backend: Literal["numpy", "native"] = "numpy",
-    device: Optional[Union[str, jax.Device]] = None,
+    device: str | jax.Device | None = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 

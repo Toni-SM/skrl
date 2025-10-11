@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import warp as wp
 
 from skrl import config
@@ -9,9 +7,9 @@ class ScopedCapture:
     def __init__(
         self,
         *,
-        device: Optional[Union[str, wp.context.Device]] = None,
-        stream: Optional[wp.Stream] = None,
-        force_module_load: Optional[bool] = None,
+        device: str | wp.context.Device | None = None,
+        stream: wp.Stream | None = None,
+        force_module_load: bool | None = None,
         external: bool = False,
         enabled: bool = True,
     ) -> None:
@@ -36,7 +34,7 @@ class ScopedCapture:
             self._active = False
 
     @property
-    def graph(self) -> Optional[wp.context.Graph]:
+    def graph(self) -> wp.context.Graph | None:
         """Captured graph"""
         return self._graph
 

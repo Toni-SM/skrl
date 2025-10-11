@@ -1,5 +1,3 @@
-from typing import List
-
 import warp as wp
 
 
@@ -39,7 +37,7 @@ def clamp(array: wp.array, *, min: wp.array, max: wp.array, inplace: bool = Fals
     return output
 
 
-def concatenate(arrays: List[wp.array], *, axis: int = -1) -> wp.array:
+def concatenate(arrays: list[wp.array], *, axis: int = -1) -> wp.array:
     reference = arrays[0]
     shape = (reference.shape[0], sum([array.shape[1] for array in arrays]))
     output = wp.empty(shape, dtype=reference.dtype, device=reference.device, requires_grad=reference.requires_grad)

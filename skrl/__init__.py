@@ -1,5 +1,3 @@
-from typing import Union
-
 import logging
 import os
 import sys
@@ -70,7 +68,7 @@ class _Config(object):
                     torch.cuda.set_device(self._local_rank)
 
             @staticmethod
-            def parse_device(device: Union[str, "torch.device", None], validate: bool = True) -> "torch.device":
+            def parse_device(device: str | "torch.device" | None, validate: bool = True) -> "torch.device":
                 """Parse the input device and return a :py:class:`~torch.device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
@@ -114,7 +112,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: Union[str, "torch.device"]) -> None:
+            def device(self, device: str | "torch.device") -> None:
                 self._device = device
 
             @property
@@ -196,7 +194,7 @@ class _Config(object):
                         logger.warning(f"Failed to get the device local to process with index/rank {self._rank}: {e}")
 
             @staticmethod
-            def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
+            def parse_device(device: str | "jax.Device" | None) -> "jax.Device":
                 """Parse the input device and return a :py:class:`~jax.Device` instance.
 
                 .. hint::
@@ -244,7 +242,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: Union[str, "jax.Device"]) -> None:
+            def device(self, device: str | "jax.Device") -> None:
                 self._device = device
                 if not isinstance(self._key, np.ndarray):
                     import jax
@@ -283,7 +281,7 @@ class _Config(object):
                 return self._key
 
             @key.setter
-            def key(self, value: Union[int, np.ndarray, "jax.Array"]) -> None:
+            def key(self, value: int | np.ndarray | "jax.Array") -> None:
                 if isinstance(value, (int, float)):
                     value = np.array([0, value], dtype=np.uint32)
                 self._key = value
@@ -359,7 +357,7 @@ class _Config(object):
                     wp.init()
 
             @staticmethod
-            def parse_device(device: Union[str, "warp.context.Device", None]) -> "warp.context.Device":
+            def parse_device(device: str | "warp.context.Device" | None) -> "warp.context.Device":
                 """Parse the input device and return a :py:class:`~warp.context.Device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
@@ -388,7 +386,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: Union[str, "warp.context.Device"]) -> None:
+            def device(self, device: str | "warp.context.Device") -> None:
                 self._device = device
 
             @property

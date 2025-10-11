@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any
 
 import textwrap
 import gymnasium
@@ -15,15 +15,15 @@ from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 def categorical_model(
     *,
-    observation_space: Optional[gymnasium.Space] = None,
-    state_space: Optional[gymnasium.Space] = None,
-    action_space: Optional[gymnasium.Space] = None,
-    device: Optional[Union[str, torch.device]] = None,
+    observation_space: gymnasium.Space | None = None,
+    state_space: gymnasium.Space | None = None,
+    action_space: gymnasium.Space | None = None,
+    device: str | torch.device | None = None,
     unnormalized_log_prob: bool = True,
-    network: Sequence[Mapping[str, Any]] = [],
-    output: Union[str, Sequence[str]] = "",
+    network: list[dict[str, Any]] = [],
+    output: str | list[str] = "",
     return_source: bool = False,
-) -> Union[Model, str]:
+) -> Model | str:
     """Instantiate a :class:`~skrl.models.torch.categorical.CategoricalMixin`-based model.
 
     :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.

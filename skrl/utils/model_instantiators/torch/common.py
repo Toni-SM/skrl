@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, Tuple, Union
+from typing import Any
 
 import ast
 from gymnasium import spaces
@@ -26,7 +26,7 @@ def one_hot_encoding(space: spaces.Space, x: torch.Tensor) -> torch.Tensor:
         raise ValueError(f"Unsupported space ({space})")
 
 
-def _get_activation_function(activation: Union[str, None], as_module: bool = True) -> Union[str, None]:
+def _get_activation_function(activation: str | None, as_module: bool = True) -> str | None:
     """Get the activation function.
 
     Supported activation functions:
@@ -94,7 +94,7 @@ def _parse_input(source: str) -> str:
     return source
 
 
-def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequence[str]], Sequence[str], int]:
+def _parse_output(source: str | list[str]) -> tuple[str | list[str], list[str], int]:
     """Parse the network output expression by replacing substitutions and applying operations.
 
     :param source: Output expression.
@@ -136,7 +136,7 @@ def _parse_output(source: Union[str, Sequence[str]]) -> Tuple[Union[str, Sequenc
     return source, modules, size
 
 
-def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], str]) -> Sequence[str]:
+def _generate_modules(layers: list[str], activations: list[str] | str) -> list[str]:
     """Generate network modules.
 
     :param layers: Layer definitions.
@@ -240,7 +240,7 @@ def _generate_modules(layers: Sequence[str], activations: Union[Sequence[str], s
     return modules
 
 
-def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
+def get_num_units(token: str | Any) -> str | Any:
     """Get the number of units/features a token represents.
 
     :param token: Token.
@@ -263,8 +263,8 @@ def get_num_units(token: Union[str, Any]) -> Union[str, Any]:
 
 
 def generate_containers(
-    network: Sequence[Mapping[str, Any]], output: Union[str, Sequence[str]], embed_output: bool = True, indent: int = -1
-) -> Tuple[Sequence[Mapping[str, Any]], Mapping[str, Any]]:
+    network: list[dict[str, Any]], output: str | list[str], embed_output: bool = True, indent: int = -1
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Generate network containers.
 
     :param network: Network definition.

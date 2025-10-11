@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any
 
 import textwrap
 import gymnasium
@@ -21,16 +21,16 @@ from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
 
 def shared_model(
     *,
-    observation_space: Optional[gymnasium.Space] = None,
-    state_space: Optional[gymnasium.Space] = None,
-    action_space: Optional[gymnasium.Space] = None,
-    device: Optional[Union[str, torch.device]] = None,
-    structure: Sequence[str] = ["GaussianMixin", "DeterministicMixin"],
-    roles: Sequence[str] = [],
-    parameters: Sequence[Mapping[str, Any]] = [],
+    observation_space: gymnasium.Space | None = None,
+    state_space: gymnasium.Space | None = None,
+    action_space: gymnasium.Space | None = None,
+    device: str | torch.device | None = None,
+    structure: list[str] = ["GaussianMixin", "DeterministicMixin"],
+    roles: list[str] = [],
+    parameters: list[dict[str, Any]] = [],
     single_forward_pass: bool = True,
     return_source: bool = False,
-) -> Union[Model, str]:
+) -> Model | str:
     """Instantiate a shared model
 
     :param observation_space: Observation space. The ``num_observations`` property will contain the size of the space.

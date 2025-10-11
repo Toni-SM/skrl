@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 import warp as wp
@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-def scalar_mul(array: wp.array, scalar: Union[int, float], inplace: bool = False) -> wp.array:
+def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
     output = (
         array
         if inplace

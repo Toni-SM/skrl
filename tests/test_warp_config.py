@@ -1,5 +1,3 @@
-from typing import Union
-
 import hypothesis
 import hypothesis.strategies as st
 import pytest
@@ -12,7 +10,7 @@ from skrl import _Config, config
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda", "cuda:0", "cuda:10", "edge-case"])
-def test_parse_device(capsys, device: Union[str, None]):
+def test_parse_device(capsys, device):
     target_device = None
     if device in [None, "edge-case"]:
         target_device = wp.get_device()
@@ -30,7 +28,7 @@ def test_parse_device(capsys, device: Union[str, None]):
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda", "cuda:0", "cuda:10", "edge-case"])
-def test_device(capsys, device: Union[str, None]):
+def test_device(capsys, device):
     target_device = None
     if device in [None, "edge-case"]:
         target_device = wp.get_device()

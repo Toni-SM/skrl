@@ -1,5 +1,3 @@
-from typing import Any, Dict, Tuple, Union
-
 import pytest
 
 from collections.abc import Mapping
@@ -17,7 +15,7 @@ np.Inf = np.inf
 
 
 class IsaacGymEnv:
-    def __init__(self, num_states) -> None:
+    def __init__(self, num_states):
         self.num_actions = 1
         self.num_obs = 4
         self.num_states = num_states
@@ -29,14 +27,14 @@ class IsaacGymEnv:
         self.observation_space = gym.spaces.Box(np.ones(self.num_obs) * -np.Inf, np.ones(self.num_obs) * np.Inf)
         self.action_space = gym.spaces.Box(np.ones(self.num_actions) * -1.0, np.ones(self.num_actions) * 1.0)
 
-    def reset(self) -> Dict[str, torch.Tensor]:
+    def reset(self):
         obs_dict = {}
         obs_dict["obs"] = torch.ones((self.num_envs, self.num_obs), device=self.device, dtype=torch.float32)
         if self.num_states > 0:
             obs_dict["states"] = torch.ones((self.num_envs, self.num_states), device=self.device, dtype=torch.float32)
         return obs_dict
 
-    def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
+    def step(self, actions):
         assert actions.clone().shape == torch.Size([self.num_envs, 1])
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         terminated = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
@@ -47,10 +45,10 @@ class IsaacGymEnv:
         self.extras["time_outs"] = torch.zeros_like(terminated)
         return obs_dict, rewards, terminated, self.extras
 
-    def render(self, mode: str = "rgb_array") -> Union[np.ndarray, None]:
+    def render(self, mode: str = "rgb_array"):
         return None
 
-    def close(self) -> None:
+    def close(self):
         pass
 
 

@@ -1,5 +1,3 @@
-from typing import Union
-
 import hypothesis
 import hypothesis.strategies as st
 import pytest
@@ -13,7 +11,7 @@ from skrl import _Config, config
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda", "cuda:0", "cuda:10", "edge-case"])
 @pytest.mark.parametrize("validate", [True, False])
-def test_parse_device(capsys, device: Union[str, None], validate: bool):
+def test_parse_device(capsys, device, validate: bool):
     target_device = None
     if device in [None, "edge-case"]:
         target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -28,7 +26,7 @@ def test_parse_device(capsys, device: Union[str, None], validate: bool):
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda", "cuda:0", "cuda:10", "edge-case"])
-def test_device(capsys, device: Union[str, None]):
+def test_device(capsys, device):
     if device in [None, "edge-case"]:
         target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     else:

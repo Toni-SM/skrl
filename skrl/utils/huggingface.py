@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from skrl import __version__, logger
 
 

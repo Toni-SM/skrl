@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from packaging import version
 
 import torch

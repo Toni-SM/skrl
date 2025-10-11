@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from tensorboard.compat.proto.event_pb2 import Event
 from tensorboard.compat.proto.summary_pb2 import Summary

@@ -25,6 +25,7 @@ def gaussian_model(
     clip_log_std: bool = True,
     min_log_std: float = -20,
     max_log_std: float = 2,
+    apply_log_std_after_clip: bool = False,
     reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     initial_log_std: float = 0,
     fixed_log_std: bool = False,
@@ -42,6 +43,8 @@ def gaussian_model(
     :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
     :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
     :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
+    :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
+        applied after clipping (if ``clip_log_std`` is True).
     :param reduction: Reduction method for returning the log probability density function.
         If ``"none"``, the log probability density function is returned as a tensor of shape
         ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
@@ -88,6 +91,7 @@ def gaussian_model(
         clip_log_std=True,
         min_log_std=-20,
         max_log_std=2,
+        apply_log_std_after_clip=False,
         reduction="sum",
         role="",
     ):
@@ -104,6 +108,7 @@ def gaussian_model(
             clip_log_std=clip_log_std,
             min_log_std=min_log_std,
             max_log_std=max_log_std,
+            apply_log_std_after_clip=apply_log_std_after_clip,
             reduction=reduction,
             role=role,
         )
@@ -136,5 +141,6 @@ def gaussian_model(
         clip_log_std=clip_log_std,
         min_log_std=min_log_std,
         max_log_std=max_log_std,
+        apply_log_std_after_clip=apply_log_std_after_clip,
         reduction=reduction,
     )

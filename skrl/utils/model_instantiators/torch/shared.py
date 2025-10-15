@@ -70,6 +70,7 @@ def shared_model(
             clip_log_std={parameter.get("clip_log_std", True)},
             min_log_std={parameter.get("min_log_std", -20)},
             max_log_std={parameter.get("max_log_std", 2)},
+            apply_log_std_after_clip={parameter.get("apply_log_std_after_clip", False)},
             reduction="{parameter.get("reduction", "sum")}",
             role="{role}",
         )"""
@@ -80,6 +81,7 @@ def shared_model(
             clip_log_std={parameter.get("clip_log_std", True)},
             min_log_std={parameter.get("min_log_std", -20)},
             max_log_std={parameter.get("max_log_std", 2)},
+            apply_log_std_after_clip={parameter.get("apply_log_std_after_clip", False)},
             role="{role}",
         )"""
         raise ValueError(f"Unknown class: {class_name}")

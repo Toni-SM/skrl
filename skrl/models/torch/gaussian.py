@@ -20,6 +20,7 @@ class GaussianMixin:
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
+        apply_log_std_after_clip: bool = False,
         reduction: Literal["mean", "sum", "prod", "none"] = "sum",
         role: str = "",
     ) -> None:
@@ -32,6 +33,8 @@ class GaussianMixin:
         :param reduction: Reduction method for returning the log probability density function.
             If ``"none"``, the log probability density function is returned as a tensor of shape
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
+        :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
+            applied after clipping (if ``clip_log_std`` is True).
         :param role: Role played by the model.
 
         :raises ValueError: If the reduction method is not valid.
@@ -42,6 +45,7 @@ class GaussianMixin:
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std
         self._g_log_std_max = max_log_std
+        self._g_apply_log_std_after_clip = apply_log_std_after_clip
 
         self._g_distribution = None
 
@@ -79,8 +83,14 @@ class GaussianMixin:
             log_std = torch.clamp(log_std, self._g_log_std_min, self._g_log_std_max)
             outputs["log_std"] = log_std
 
+        # apply log standard deviation after clipping actions
+        if self._g_clip_actions and self._g_clip_log_std and self._g_apply_log_std_after_clip:
+            mean_actions_clipped = torch.clamp(mean_actions, self._g_clip_actions_min, self._g_clip_actions_max)
+        else:
+            mean_actions_clipped = mean_actions
+
         # distribution
-        self._g_distribution = Normal(mean_actions, log_std.exp())
+        self._g_distribution = Normal(mean_actions_clipped, log_std.exp())
 
         # sample using the reparameterization trick
         actions = self._g_distribution.rsample()

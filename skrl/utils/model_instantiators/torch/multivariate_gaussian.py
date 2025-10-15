@@ -25,6 +25,7 @@ def multivariate_gaussian_model(
     clip_log_std: bool = True,
     min_log_std: float = -20,
     max_log_std: float = 2,
+    apply_log_std_after_clip: bool = False,
     initial_log_std: float = 0,
     fixed_log_std: bool = False,
     network: list[dict[str, Any]] = [],
@@ -41,6 +42,8 @@ def multivariate_gaussian_model(
     :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
     :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
     :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
+    :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
+        applied after clipping (if ``clip_log_std`` is True).
     :param initial_log_std: Initial value for the log standard deviation.
     :param fixed_log_std: Whether the log standard deviation parameter should be fixed.
         Fixed parameters have the gradient computation deactivated.
@@ -84,6 +87,7 @@ def multivariate_gaussian_model(
         clip_log_std=True,
         min_log_std=-20,
         max_log_std=2,
+        apply_log_std_after_clip=False,
         role="",
     ):
         Model.__init__(
@@ -99,6 +103,7 @@ def multivariate_gaussian_model(
             clip_log_std=clip_log_std,
             min_log_std=min_log_std,
             max_log_std=max_log_std,
+            apply_log_std_after_clip=apply_log_std_after_clip,
             role=role,
         )
 
@@ -130,4 +135,5 @@ def multivariate_gaussian_model(
         clip_log_std=clip_log_std,
         min_log_std=min_log_std,
         max_log_std=max_log_std,
+        apply_log_std_after_clip=apply_log_std_after_clip,
     )

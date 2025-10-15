@@ -72,7 +72,7 @@ class MultivariateGaussianMixin:
             outputs["log_std"] = log_std
 
         # apply log standard deviation after clipping actions
-        if self._mg_clip_actions and self._mg_clip_log_std and self._mg_apply_log_std_after_clip:
+        if self._mg_clip_actions and self._mg_apply_log_std_after_clip:
             mean_actions_clipped = torch.clamp(mean_actions, self._mg_clip_actions_min, self._mg_clip_actions_max)
         else:
             mean_actions_clipped = mean_actions

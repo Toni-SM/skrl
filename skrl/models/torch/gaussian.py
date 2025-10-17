@@ -72,7 +72,7 @@ class GaussianMixin:
 
             - ``"log_std"``: log of the standard deviation.
             - ``"log_prob"``: log of the probability density function.
-            - ``"mean_actions"``: mean actions (network output).
+            - ``"mean_actions"``: mean actions (network output after optional clipping).
         """
         # map from observations/states to mean actions and log standard deviations
         mean_actions, outputs = self.compute(inputs, role)

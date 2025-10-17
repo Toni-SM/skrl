@@ -22,10 +22,10 @@ def gaussian_model(
     action_space: gymnasium.Space | None = None,
     device: str | torch.device | None = None,
     clip_actions: bool = False,
+    clip_mean_actions: bool = False,
     clip_log_std: bool = True,
     min_log_std: float = -20,
     max_log_std: float = 2,
-    apply_log_std_after_clip: bool = False,
     reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     initial_log_std: float = 0,
     fixed_log_std: bool = False,
@@ -40,11 +40,11 @@ def gaussian_model(
     :param action_space: Action space. The ``num_actions`` property will contain the size of the space.
     :param device: Data allocation and computation device. If not specified, the default device will be used.
     :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+    :param clip_mean_actions: Flag to indicate whether the mean actions should be clipped to the action space.
+        If ``True``, the mean actions will be clipped before sampling the actions.
     :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
     :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
     :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
-    :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
-        applied after clipping (if ``clip_log_std`` is True).
     :param reduction: Reduction method for returning the log probability density function.
         If ``"none"``, the log probability density function is returned as a tensor of shape
         ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
@@ -88,10 +88,10 @@ def gaussian_model(
         action_space,
         device=None,
         clip_actions=False,
+        clip_mean_actions=False,
         clip_log_std=True,
         min_log_std=-20,
         max_log_std=2,
-        apply_log_std_after_clip=False,
         reduction="sum",
         role="",
     ):
@@ -105,10 +105,10 @@ def gaussian_model(
         GaussianMixin.__init__(
             self,
             clip_actions=clip_actions,
+            clip_mean_actions=clip_mean_actions,
             clip_log_std=clip_log_std,
             min_log_std=min_log_std,
             max_log_std=max_log_std,
-            apply_log_std_after_clip=apply_log_std_after_clip,
             reduction=reduction,
             role=role,
         )
@@ -138,9 +138,9 @@ def gaussian_model(
         action_space=action_space,
         device=device,
         clip_actions=clip_actions,
+        clip_mean_actions=clip_mean_actions,
         clip_log_std=clip_log_std,
         min_log_std=min_log_std,
         max_log_std=max_log_std,
-        apply_log_std_after_clip=apply_log_std_after_clip,
         reduction=reduction,
     )

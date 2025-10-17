@@ -17,35 +17,35 @@ class GaussianMixin:
         self,
         *,
         clip_actions: bool = False,
+        clip_mean_actions: bool = False,
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
-        apply_log_std_after_clip: bool = False,
         reduction: Literal["mean", "sum", "prod", "none"] = "sum",
         role: str = "",
     ) -> None:
         """Gaussian mixin model (stochastic model).
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+        :param clip_mean_actions: Flag to indicate whether the mean actions should be clipped to the action space.
+            If ``True``, the mean actions will be clipped before sampling the actions.
         :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
         :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
         :param reduction: Reduction method for returning the log probability density function.
             If ``"none"``, the log probability density function is returned as a tensor of shape
             ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``.
-        :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
-            applied after clipping (if ``clip_log_std`` is True).
         :param role: Role played by the model.
 
         :raises ValueError: If the reduction method is not valid.
         """
         self._g_clip_actions = clip_actions
+        self._g_clip_mean_actions = clip_mean_actions
         self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
 
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std
         self._g_log_std_max = max_log_std
-        self._g_apply_log_std_after_clip = apply_log_std_after_clip
 
         self._g_distribution = None
 
@@ -78,19 +78,17 @@ class GaussianMixin:
         mean_actions, outputs = self.compute(inputs, role)
         log_std = outputs["log_std"]
 
+        # clip mean actions
+        if self._g_clip_mean_actions:
+            mean_actions = torch.clamp(mean_actions, self._g_clip_actions_min, self._g_clip_actions_max)
+
         # clamp log standard deviations
         if self._g_clip_log_std:
             log_std = torch.clamp(log_std, self._g_log_std_min, self._g_log_std_max)
             outputs["log_std"] = log_std
 
-        # apply log standard deviation after clipping actions
-        if self._g_clip_actions and self._g_apply_log_std_after_clip:
-            mean_actions_clipped = torch.clamp(mean_actions, self._g_clip_actions_min, self._g_clip_actions_max)
-        else:
-            mean_actions_clipped = mean_actions
-
         # distribution
-        self._g_distribution = Normal(mean_actions_clipped, log_std.exp())
+        self._g_distribution = Normal(mean_actions, log_std.exp())
 
         # sample using the reparameterization trick
         actions = self._g_distribution.rsample()

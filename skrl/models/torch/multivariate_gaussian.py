@@ -17,23 +17,24 @@ class MultivariateGaussianMixin:
         self,
         *,
         clip_actions: bool = False,
+        clip_mean_actions: bool = False,
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
-        apply_log_std_after_clip: bool = False,
         role: str = "",
     ) -> None:
         """Multivariate Gaussian mixin model (stochastic model).
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+        :param clip_mean_actions: Flag to indicate whether the mean actions should be clipped to the action space.
+            If ``True``, the mean actions will be clipped before sampling the actions.
         :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
         :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
-        :param apply_log_std_after_clip: Flag to indicate whether the log standard deviations should be
-            applied after clipping (if ``clip_log_std`` is True).
         :param role: Role played by the model.
         """
         self._mg_clip_actions = clip_actions
+        self._mg_clip_mean_actions = clip_mean_actions
         self._mg_clip_actions_min, self._mg_clip_actions_max = compute_space_limits(
             self.action_space, device=self.device
         )
@@ -41,7 +42,6 @@ class MultivariateGaussianMixin:
         self._mg_clip_log_std = clip_log_std
         self._mg_log_std_min = min_log_std
         self._mg_log_std_max = max_log_std
-        self._mg_apply_log_std_after_clip = apply_log_std_after_clip
 
         self._mg_distribution = None
 
@@ -66,20 +66,18 @@ class MultivariateGaussianMixin:
         mean_actions, outputs = self.compute(inputs, role)
         log_std = outputs["log_std"]
 
+        # clamp mean actions
+        if self._mg_clip_mean_actions:
+            mean_actions = torch.clamp(mean_actions, self._mg_clip_actions_min, self._mg_clip_actions_max)
+
         # clamp log standard deviations
         if self._mg_clip_log_std:
             log_std = torch.clamp(log_std, self._mg_log_std_min, self._mg_log_std_max)
             outputs["log_std"] = log_std
 
-        # apply log standard deviation after clipping actions
-        if self._mg_clip_actions and self._mg_apply_log_std_after_clip:
-            mean_actions_clipped = torch.clamp(mean_actions, self._mg_clip_actions_min, self._mg_clip_actions_max)
-        else:
-            mean_actions_clipped = mean_actions
-
         # distribution
         covariance = torch.diag(log_std.exp() * log_std.exp())
-        self._mg_distribution = MultivariateNormal(mean_actions_clipped, scale_tril=covariance)
+        self._mg_distribution = MultivariateNormal(mean_actions, scale_tril=covariance)
 
         # sample using the reparameterization trick
         actions = self._mg_distribution.rsample()

@@ -32,6 +32,8 @@ def _gaussian(
     log_std_max: float,
     clip_actions_min: wp.array1d(dtype=float),
     clip_actions_max: wp.array1d(dtype=float),
+    clip_mean_actions_min: wp.array1d(dtype=float),
+    clip_mean_actions_max: wp.array1d(dtype=float),
     taken_actions: wp.array2d(dtype=float),
     reduction: int,
     m: float,
@@ -43,6 +45,9 @@ def _gaussian(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
+    # clamp mean actions
+    if clip_mean_actions_min:
+        loc[i, j] = wp.clamp(loc[i, j], clip_mean_actions_min[j], clip_mean_actions_max[j])
     # clamp log standard deviations and compute distribution parameters
     scale[j] = wp.exp(wp.clamp(log_std[j], log_std_min, log_std_max))
     # sample actions
@@ -90,6 +95,7 @@ class GaussianMixin:
         self,
         *,
         clip_actions: bool = False,
+        clip_mean_actions: bool = False,
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
@@ -99,6 +105,8 @@ class GaussianMixin:
         """Gaussian mixin model (stochastic model).
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+        :param clip_mean_actions: Flag to indicate whether the mean actions should be clipped to the action space.
+            If ``True``, the mean actions will be clipped before sampling the actions.
         :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
         :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
@@ -110,8 +118,16 @@ class GaussianMixin:
         :raises ValueError: If the reduction method is not valid.
         """
         self._g_clip_actions = clip_actions
-        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(
-            self.action_space if self._g_clip_actions else None, device=self.device, none_if_unbounded="both"
+        self._g_clip_mean_actions = clip_mean_actions
+
+        clip_actions_min, clip_actions_max = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="both"
+        )
+        self._g_clip_actions_min, self._g_clip_actions_max = (
+            (clip_actions_min, clip_actions_max) if self._g_clip_actions else (None, None)
+        )
+        self._g_clip_mean_actions_min, self._g_clip_mean_actions_max = (
+            (clip_actions_min, clip_actions_max) if self._g_clip_mean_actions else (None, None)
         )
 
         self._g_clip_log_std = clip_log_std
@@ -141,7 +157,7 @@ class GaussianMixin:
 
             - ``"log_std"``: log of the standard deviation.
             - ``"log_prob"``: log of the probability density function.
-            - ``"mean_actions"``: mean actions (network output).
+            - ``"mean_actions"``: mean actions (network output after optional clipping).
         """
         # map from observations/states to mean actions and log standard deviations
         mean_actions, outputs = self.compute(inputs, role)
@@ -156,6 +172,7 @@ class GaussianMixin:
             log_prob = wp.zeros(shape=(shape[0], 1), dtype=wp.float32, device=self.device, requires_grad=True)
         scale = wp.empty(shape=log_std.shape, dtype=wp.float32, device=self.device, requires_grad=True)
 
+        # NOTE: mean_actions will be clipped in-place inside the kernel
         wp.launch(
             _gaussian,
             dim=shape,

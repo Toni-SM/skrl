@@ -21,8 +21,21 @@ HALF_LOG_2_PI_PLUS = 0.5 + 0.5 * math.log(2 * math.pi)
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @partial(jax.jit, static_argnames=("reduction"))
 def _gaussian(
-    loc, log_std, log_std_min, log_std_max, clip_actions_min, clip_actions_max, taken_actions, key, reduction
+    loc,
+    log_std,
+    log_std_min,
+    log_std_max,
+    clip_actions_min,
+    clip_actions_max,
+    clip_mean_actions_min,
+    clip_mean_actions_max,
+    taken_actions,
+    key,
+    reduction,
 ):
+    # clip mean actions
+    loc = jnp.clip(loc, a_min=clip_mean_actions_min, a_max=clip_mean_actions_max)
+
     # clamp log standard deviations
     log_std = jnp.clip(log_std, a_min=log_std_min, a_max=log_std_max)
 
@@ -44,7 +57,7 @@ def _gaussian(
     if log_prob.ndim != actions.ndim:
         log_prob = jnp.expand_dims(log_prob, -1)
 
-    return actions, log_prob, log_std, scale
+    return loc, actions, log_prob, log_std, scale
 
 
 @jax.jit
@@ -57,6 +70,7 @@ class GaussianMixin:
         self,
         *,
         clip_actions: bool = False,
+        clip_mean_actions: bool = False,
         clip_log_std: bool = True,
         min_log_std: float = -20,
         max_log_std: float = 2,
@@ -66,6 +80,8 @@ class GaussianMixin:
         """Gaussian mixin model (stochastic model).
 
         :param clip_actions: Flag to indicate whether the actions should be clipped to the action space.
+        :param clip_mean_actions: Flag to indicate whether the mean actions should be clipped to the action space.
+            If ``True``, the mean actions will be clipped before sampling the actions.
         :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped.
         :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True.
         :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True.
@@ -77,10 +93,19 @@ class GaussianMixin:
         :raises ValueError: If the reduction method is not valid.
         """
         self._g_clip_actions = clip_actions
+        self._g_clip_mean_actions = clip_mean_actions
+
         self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
+        self._g_clip_mean_actions_min, self._g_clip_mean_actions_max = (
+            self._g_clip_actions_min,
+            self._g_clip_actions_max,
+        )
         if not self._g_clip_actions:
             self._g_clip_actions_min = jnp.full_like(self._g_clip_actions_min, -jnp.inf)
             self._g_clip_actions_max = jnp.full_like(self._g_clip_actions_max, jnp.inf)
+        if not self._g_clip_mean_actions:
+            self._g_clip_mean_actions_min = jnp.full_like(self._g_clip_mean_actions_min, -jnp.inf)
+            self._g_clip_mean_actions_max = jnp.full_like(self._g_clip_mean_actions_max, jnp.inf)
 
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std if self._g_clip_log_std else -jnp.inf
@@ -122,7 +147,7 @@ class GaussianMixin:
 
             - ``"log_std"``: log of the standard deviation.
             - ``"log_prob"``: log of the probability density function.
-            - ``"mean_actions"``: mean actions (network output).
+            - ``"mean_actions"``: mean actions (network output after optional clipping).
         """
         with jax.default_device(self.device):
             self._g_i += 1
@@ -132,13 +157,15 @@ class GaussianMixin:
         # map from observations/states to mean actions and log standard deviations
         mean_actions, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
-        actions, log_prob, log_std, stddev = _gaussian(
+        mean_actions, actions, log_prob, log_std, stddev = _gaussian(
             mean_actions,
             outputs["log_std"],
             self._g_log_std_min,
             self._g_log_std_max,
             self._g_clip_actions_min,
             self._g_clip_actions_max,
+            self._g_clip_mean_actions_min,
+            self._g_clip_mean_actions_max,
             inputs.get("taken_actions", None),
             subkey,
             self._g_reduction,

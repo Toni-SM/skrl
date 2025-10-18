@@ -61,14 +61,17 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> torch.Tensor:
+    def state(self) -> dict[str, torch.Tensor | None]:
         """Get the environment state.
+
+        In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
 
         :return: State.
         """
-        return flatten_tensorized_space(
+        state = flatten_tensorized_space(
             tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device)
         )
+        return {uid: state for uid in self.possible_agents}
 
     def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
         """Reset the environment.

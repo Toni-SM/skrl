@@ -61,18 +61,22 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         assert isinstance(observation, Mapping)
+        assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for agent in possible_agents:
             assert isinstance(observation[agent], Array) and observation[agent].shape == (
                 num_envs,
                 math.prod((457, 120, 3)),
             )
+            assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, math.prod((560, 880, 3)))
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
             assert isinstance(observation, Mapping)
+            assert isinstance(state, Mapping)
             assert isinstance(reward, Mapping)
             assert isinstance(terminated, Mapping)
             assert isinstance(truncated, Mapping)
@@ -82,9 +86,9 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
                     num_envs,
                     math.prod((457, 120, 3)),
                 )
+                assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, math.prod((560, 880, 3)))
                 assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
                 assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
                 assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)
-            assert isinstance(state, Array) and state.shape == (num_envs, math.prod((560, 880, 3)))
 
     env.close()

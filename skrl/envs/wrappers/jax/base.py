@@ -199,7 +199,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> np.ndarray | jax.Array:
+    def state(self) -> dict[np.ndarray | jax.Array | None]:
         """Get the environment state.
 
         :return: State.
@@ -275,15 +275,24 @@ class MultiAgentEnvWrapper(ABC):
         return self._unwrapped.possible_agents
 
     @property
-    def state_spaces(self) -> dict[str, gymnasium.Space]:
+    def state_spaces(self) -> dict[str, gymnasium.Space | None]:
         """State spaces.
 
-        Since the state space is a global view of the environment (and therefore the same for all the agents),
-        this property returns a dictionary (for consistency with the other space-related properties) with the same
-        space for all the agents.
+        Although this property returns a dictionary, the space for each agent adheres to the next rules:
+
+        * The wrapped environment has the ``state_space`` attribute (homogeneous state).
+          The state is a global view of the environment, so the space is the same for all agents.
+        * The wrapped environment has the ``state_spaces`` attribute (heterogeneous state).
+          The state may differ for each agent, so the agent spaces may also differ.
+        * The wrapped environment does not have the previous attributes. The space is ``None`` for all agents.
         """
-        space = self._unwrapped.state_space
-        return {agent: space for agent in self.possible_agents}
+        if hasattr(self._unwrapped, "state_space"):
+            space = self._unwrapped.state_space
+            return {agent: space for agent in self.possible_agents}
+        elif hasattr(self._unwrapped, "state_spaces"):
+            return self._unwrapped.state_spaces
+        else:
+            return {agent: None for agent in self.possible_agents}
 
     @property
     def observation_spaces(self) -> dict[str, gymnasium.Space]:
@@ -295,12 +304,10 @@ class MultiAgentEnvWrapper(ABC):
         """Action spaces."""
         return self._unwrapped.action_spaces
 
-    def state_space(self, agent: str) -> gymnasium.Space:
+    def state_space(self, agent: str) -> gymnasium.Space | None:
         """State space.
 
-        Since the state space is a global view of the environment (and therefore the same for all the agents),
-        this method (implemented for consistency with the other space-related methods) returns the same
-        space for each queried agent.
+        See :py:attr:`state_spaces` for more details.
 
         :param agent: Name of the agent.
 

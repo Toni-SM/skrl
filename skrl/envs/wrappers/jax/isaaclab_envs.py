@@ -218,7 +218,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._reset_once = False
         return self._observations, self._info
 
-    def state(self) -> np.ndarray | jax.Array | None:
+    def state(self) -> dict[np.ndarray | jax.Array | None]:
         """Get the environment state.
 
         :return: State.
@@ -229,8 +229,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             state = self._unwrapped.state()
         if state is not None:
             state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
-            return _torch2jax(state, self._jax)
-        return state
+            state = _torch2jax(state, self._jax)
+        return {uid: state for uid in self.possible_agents}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""

@@ -188,6 +188,7 @@ def test_gaussian_model(capsys, device):
                 action_space=action_space,
                 device=device,
                 clip_actions=False,
+                clip_mean_actions=False,
                 clip_log_std=True,
                 min_log_std=-20,
                 max_log_std=2,
@@ -217,6 +218,7 @@ def test_multivariate_gaussian_model(capsys, device):
                 action_space=action_space,
                 device=device,
                 clip_actions=False,
+                clip_mean_actions=False,
                 clip_log_std=True,
                 min_log_std=-20,
                 max_log_std=2,
@@ -251,6 +253,7 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
                 parameters=[
                     {
                         "clip_actions": False,
+                        "clip_mean_actions": False,
                         "clip_log_std": True,
                         "min_log_std": -20,
                         "max_log_std": 2,
@@ -296,6 +299,7 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
                 parameters=[
                     {
                         "clip_actions": False,
+                        "clip_mean_actions": False,
                         "clip_log_std": True,
                         "min_log_std": -20,
                         "max_log_std": 2,

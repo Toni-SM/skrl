@@ -183,6 +183,8 @@ class GaussianMixin:
                 self._g_log_std_max,
                 self._g_clip_actions_min,
                 self._g_clip_actions_max,
+                self._g_clip_mean_actions_min,
+                self._g_clip_mean_actions_max,
                 inputs.get("taken_actions"),
                 self._g_reduction,
                 shape[1],

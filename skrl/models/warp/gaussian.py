@@ -39,6 +39,7 @@ def _gaussian(
     m: float,
     key: int,
     # outputs
+    loc_out: wp.array2d(dtype=float),
     actions: wp.array2d(dtype=float),
     log_prob: wp.array2d(dtype=float),
     scale: wp.array1d(dtype=float),
@@ -46,42 +47,44 @@ def _gaussian(
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
     # clamp mean actions
+    loc_ij = loc[i, j]
     if clip_mean_actions_min:
-        loc[i, j] = wp.clamp(loc[i, j], clip_mean_actions_min[j], clip_mean_actions_max[j])
+        loc_ij = wp.clamp(loc_ij, clip_mean_actions_min[j], clip_mean_actions_max[j])
+    loc_out[i, j] = loc_ij
     # clamp log standard deviations and compute distribution parameters
     scale[j] = wp.exp(wp.clamp(log_std[j], log_std_min, log_std_max))
     # sample actions
     if clip_actions_min:
-        actions[i, j] = wp.clamp(wp.randn(subkey) * scale[j] + loc[i, j], clip_actions_min[j], clip_actions_max[j])
+        actions[i, j] = wp.clamp(wp.randn(subkey) * scale[j] + loc_ij, clip_actions_min[j], clip_actions_max[j])
     else:
-        actions[i, j] = wp.randn(subkey) * scale[j] + loc[i, j]
+        actions[i, j] = wp.randn(subkey) * scale[j] + loc_ij
     # log of the probability density function
     if taken_actions:
         # mean
         if reduction == 0:
-            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc[i, j], scale[j]) / m)
+            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc_ij, scale[j]) / m)
         # sum
         elif reduction == 1:
-            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc[i, j], scale[j]))
+            wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc_ij, scale[j]))
         # prod
         elif reduction == 2:
             pass  # TODO: implement prod
         # none
         else:
-            log_prob[i, j] = _log_prob(taken_actions[i, j], loc[i, j], scale[j])
+            log_prob[i, j] = _log_prob(taken_actions[i, j], loc_ij, scale[j])
     else:
         # mean
         if reduction == 0:
-            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc[i, j], scale[j]) / m)
+            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc_ij, scale[j]) / m)
         # sum
         elif reduction == 1:
-            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc[i, j], scale[j]))
+            wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc_ij, scale[j]))
         # prod
         elif reduction == 2:
             pass  # TODO: implement prod
         # none
         else:
-            log_prob[i, j] = _log_prob(actions[i, j], loc[i, j], scale[j])
+            log_prob[i, j] = _log_prob(actions[i, j], loc_ij, scale[j])
 
 
 @wp.kernel
@@ -165,6 +168,7 @@ class GaussianMixin:
 
         self._g_key += 1
         shape = mean_actions.shape
+        mean_actions_clipped = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
         actions = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
         if self._g_reduction == "none":
             log_prob = wp.zeros(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
@@ -172,7 +176,6 @@ class GaussianMixin:
             log_prob = wp.zeros(shape=(shape[0], 1), dtype=wp.float32, device=self.device, requires_grad=True)
         scale = wp.empty(shape=log_std.shape, dtype=wp.float32, device=self.device, requires_grad=True)
 
-        # NOTE: mean_actions will be clipped in-place inside the kernel
         wp.launch(
             _gaussian,
             dim=shape,
@@ -190,12 +193,12 @@ class GaussianMixin:
                 shape[1],
                 self._g_key,
             ],
-            outputs=[actions, log_prob, scale],
+            outputs=[mean_actions_clipped, actions, log_prob, scale],
             device=self.device,
         )
 
         outputs["log_prob"] = log_prob
-        outputs["mean_actions"] = mean_actions
+        outputs["mean_actions"] = mean_actions_clipped
         outputs["stddev"] = scale
         return actions, outputs
 

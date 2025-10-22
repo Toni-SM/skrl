@@ -234,20 +234,24 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
         observation, info = env.reset()  # edge case: parallel environments are autoreset
         state = env.state()
         assert isinstance(observation, Mapping)
+        assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for i, agent in enumerate(possible_agents):
             assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
                 [num_envs, i + 20]
             )
-        if num_states:
-            assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
-        else:
-            assert state is None
+            if num_states:
+                assert isinstance(state[agent], torch.Tensor) and state[agent].shape == torch.Size(
+                    [num_envs, num_states]
+                )
+            else:
+                assert state[agent] is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
             assert isinstance(observation, Mapping)
+            assert isinstance(state, Mapping)
             assert isinstance(reward, Mapping)
             assert isinstance(terminated, Mapping)
             assert isinstance(truncated, Mapping)
@@ -256,6 +260,12 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
                 assert isinstance(observation[agent], torch.Tensor) and observation[agent].shape == torch.Size(
                     [num_envs, i + 20]
                 )
+                if num_states:
+                    assert isinstance(state[agent], torch.Tensor) and state[agent].shape == torch.Size(
+                        [num_envs, num_states]
+                    )
+                else:
+                    assert state[agent] is None
                 assert isinstance(reward[agent], torch.Tensor) and reward[agent].shape == torch.Size([num_envs, 1])
                 assert isinstance(terminated[agent], torch.Tensor) and terminated[agent].shape == torch.Size(
                     [num_envs, 1]
@@ -263,9 +273,5 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
                 assert isinstance(truncated[agent], torch.Tensor) and truncated[agent].shape == torch.Size(
                     [num_envs, 1]
                 )
-            if num_states:
-                assert isinstance(state, torch.Tensor) and state.shape == torch.Size([num_envs, num_states])
-            else:
-                assert state is None
 
     env.close()

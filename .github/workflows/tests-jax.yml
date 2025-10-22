@@ -10,6 +10,7 @@ on:
     paths: [ 'skrl/**', 'tests/**' ]
   schedule:
     - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
+  workflow_dispatch:
 
 defaults:
   run:
@@ -24,6 +25,7 @@ jobs:
   jax-minimum-components:
     name: Minimum requirements (components)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -55,6 +57,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-minimum-components-agents-coverage.html \
           tests/agents/jax
+    - name: Run tests (multi-agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-components-multi-agents-pytest.html \
+          --cov=skrl/multi_agents/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-components-multi-agents-coverage.html \
+          tests/multi_agents/jax
     - name: Run tests (trainers)
       run: |
         pytest \
@@ -75,6 +86,7 @@ jobs:
   jax-minimum-envs:
     name: Minimum requirements (envs)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -125,6 +137,7 @@ jobs:
   jax-minimum-utils:
     name: Minimum requirements (utils)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -181,6 +194,7 @@ jobs:
   jax-latest-components:
     name: Latest requirements (components)
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -211,6 +225,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-latest-components-agents-coverage.html \
           tests/agents/jax
+    - name: Run tests (multi-agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-components-multi-agents-pytest.html \
+          --cov=skrl/multi_agents/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-components-multi-agents-coverage.html \
+          tests/multi_agents/jax
     - name: Run tests (trainers)
       run: |
         pytest \
@@ -231,6 +254,7 @@ jobs:
   jax-latest-envs:
     name: Latest requirements (envs)
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -280,6 +304,7 @@ jobs:
   jax-latest-utils:
     name: Latest requirements (utils)
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4

@@ -26,5 +26,5 @@
   Use `--env DELETE_HOSTED_TOOL_PYTHON_CACHE=1` to delete the Python cache.
 
   ```bash
-  gh act -j Job-ID
+  gh act -j Job-ID  --artifact-server-path /tmp/artifacts
   ```

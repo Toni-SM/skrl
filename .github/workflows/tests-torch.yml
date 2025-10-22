@@ -10,6 +10,7 @@ on:
     paths: [ 'skrl/**', 'tests/**' ]
   schedule:
     - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
+  workflow_dispatch:
 
 defaults:
   run:
@@ -24,6 +25,7 @@ jobs:
   torch-minimum-components:
     name: Minimum requirements (components)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -55,6 +57,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-minimum-components-agents-coverage.html \
           tests/agents/torch
+    - name: Run tests (multi-agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-minimum-components-multi-agents-pytest.html \
+          --cov=skrl/multi_agents/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-minimum-components-multi-agents-coverage.html \
+          tests/multi_agents/torch
     - name: Run tests (trainers)
       run: |
         pytest \
@@ -75,6 +86,7 @@ jobs:
   torch-minimum-envs:
     name: Minimum requirements (envs)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -129,6 +141,7 @@ jobs:
   torch-minimum-utils:
     name: Minimum requirements (utils)
     runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false && github.event_name != 'workflow_dispatch'
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -189,6 +202,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -220,6 +234,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-latest-components-agents-coverage.html \
           tests/agents/torch
+    - name: Run tests (multi-agents)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-latest-components-multi-agents-pytest.html \
+          --cov=skrl/multi_agents/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-latest-components-multi-agents-coverage.html \
+          tests/multi_agents/torch
     - name: Run tests (trainers)
       run: |
         pytest \
@@ -244,6 +267,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4
@@ -304,6 +328,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4

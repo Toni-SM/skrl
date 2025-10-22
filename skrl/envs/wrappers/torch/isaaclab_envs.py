@@ -150,7 +150,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._reset_once = False
         return self._observations, self._info
 
-    def state(self) -> torch.Tensor:
+    def state(self) -> dict[str, torch.Tensor | None]:
         """Get the environment state.
 
         :return: State.
@@ -160,8 +160,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
             state = self._unwrapped.state()
         if state is not None:
-            return flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
-        return state
+            state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
+        return {uid: state for uid in self.possible_agents}
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""

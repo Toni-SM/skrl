@@ -283,7 +283,7 @@ class MultiAgentEnv:
 
     def state(self):
         if self.state_spaces is None:
-            return None
+            return {uid: None for uid in self.possible_agents}
         return _sample_flattened_spaces(
             spaces=self.state_spaces, num_envs=self.num_envs, device=self.device, ml_framework=self._ml_framework
         )

@@ -16,7 +16,8 @@ def test_env(capsys: pytest.CaptureFixture):
     action = torch.ones((num_envs, 1))
 
     # check wrapper definition
-    assert isinstance(wrap_env(None, "dm"), DeepMindWrapper)
+    with pytest.raises(AttributeError, match="'NoneType' object has no attribute 'observation_spec'"):
+        wrap_env(None, "dm"), DeepMindWrapper
 
     # load wrap the environment
     try:

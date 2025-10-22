@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Remove specific exploration noise settings (`initial_scale`, `final_scale` and `timesteps`)
     in favor of generic scheduling functions
 - Update tabular model definition to operate in any number of parallel environments
+- Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
 
 ### Removed
 - Remove checkpoints/models migration support from other RL libraries

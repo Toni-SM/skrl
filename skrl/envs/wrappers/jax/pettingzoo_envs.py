@@ -64,8 +64,10 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
             truncated = {uid: jax.device_put(value, device=self.device) for uid, value in truncated.items()}
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> np.ndarray | jax.Array:
+    def state(self) -> dict[np.ndarray | jax.Array | None]:
         """Get the environment state.
+
+        In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
 
         :return: State.
         """
@@ -75,7 +77,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         )
         if self._jax:
             state = jax.device_put(state, device=self.device)
-        return state
+        return {uid: state for uid in self.possible_agents}
 
     def reset(self) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
         """Reset the environment.

@@ -14,6 +14,7 @@ jobs:
   pre-commit:
     name: Pre-commit hooks
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
     # setup
     - uses: actions/checkout@v4

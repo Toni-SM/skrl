@@ -250,30 +250,32 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states
         observation, info = env.reset()  # edge case: parallel environments are autoreset
         state = env.state()
         assert isinstance(observation, Mapping)
+        assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for i, agent in enumerate(possible_agents):
             assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
-        if num_states:
-            assert isinstance(state, Array) and state.shape == (num_envs, num_states)
-        else:
-            assert state is None
+            if num_states:
+                assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, num_states)
+            else:
+                assert state[agent] is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
             assert isinstance(observation, Mapping)
+            assert isinstance(state, Mapping)
             assert isinstance(reward, Mapping)
             assert isinstance(terminated, Mapping)
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for i, agent in enumerate(possible_agents):
                 assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
+                if num_states:
+                    assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, num_states)
+                else:
+                    assert state[agent] is None
                 assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
                 assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
                 assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)
-            if num_states:
-                assert isinstance(state, Array) and state.shape == (num_envs, num_states)
-            else:
-                assert state is None
 
     env.close()

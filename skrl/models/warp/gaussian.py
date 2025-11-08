@@ -55,9 +55,9 @@ def _gaussian(
     scale[j] = wp.exp(wp.clamp(log_std[j], log_std_min, log_std_max))
     # sample actions
     if clip_actions_min:
-        actions[i, j] = wp.clamp(wp.randn(subkey) * scale[j] + loc_ij, clip_actions_min[j], clip_actions_max[j])
+        actions[i, j] = wp.clamp(2.0 * wp.randn(subkey) * scale[j] + loc_ij, clip_actions_min[j], clip_actions_max[j])
     else:
-        actions[i, j] = wp.randn(subkey) * scale[j] + loc_ij
+        actions[i, j] = 2.0 * wp.randn(subkey) * scale[j] + loc_ij
     # log of the probability density function
     if taken_actions:
         # mean

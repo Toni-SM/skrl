@@ -51,25 +51,20 @@ class Module(ABC):
         self._modules[name] = module
 
     def parameters(self, *, as_array: bool = True) -> list[_Parameter | wp.array]:
-        modules = self._modules.values()
-        if modules:
-            parameters = []
-            for module in modules:
-                parameters += [
-                    p.data if isinstance(p, _Parameter) and as_array else p
-                    for p in module.parameters(as_array=as_array)
-                ]
-        else:
-            parameters = [p.data if as_array else p for p in self._parameters.values()]
+        parameters = [p.data if as_array else p for p in self._parameters.values()]
+        for module in self._modules.values():
+            parameters += [
+                p.data if isinstance(p, _Parameter) and as_array else p for p in module.parameters(as_array=as_array)
+            ]
         return parameters
 
-    def named_parameters(self) -> tuple[str, _Parameter]:
+    def named_parameters(self) -> list[str, _Parameter]:
         return self._parameters.items()
 
     def modules(self) -> list[Module]:
         return self._modules.values()
 
-    def named_modules(self) -> tuple[str, Module]:
+    def named_modules(self) -> list[str, Module]:
         return self._modules.items()
 
     def state_dict(self, *, destination: dict[str, wp.array] | None = None, prefix: str = "") -> dict[str, wp.array]:

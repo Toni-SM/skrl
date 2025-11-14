@@ -320,9 +320,6 @@ class SAC(Agent):
 
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
-
         return actions, outputs
 
     def record_transition(

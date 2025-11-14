@@ -167,9 +167,6 @@ class CEM(Agent):
 
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
-
         return actions, outputs
 
     def record_transition(
@@ -283,11 +280,10 @@ class CEM(Agent):
         sampled_observations = self._observation_preprocessor(sampled_observations, train=True)
         sampled_states = self._state_preprocessor(sampled_states, train=True)
 
-        if self._jax:  # move to numpy backend
-            sampled_observations = jax.device_get(sampled_observations)
-            sampled_states = jax.device_get(sampled_states)
-            sampled_actions = jax.device_get(sampled_actions)
-            sampled_rewards = jax.device_get(sampled_rewards)
+        sampled_observations = jax.device_get(sampled_observations)
+        sampled_states = jax.device_get(sampled_states)
+        sampled_actions = jax.device_get(sampled_actions)
+        sampled_rewards = jax.device_get(sampled_rewards)
 
         # compute discounted return threshold
         limits = []

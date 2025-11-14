@@ -268,12 +268,8 @@ class TD3(Agent):
 
         # clip noise bounds
         if self.action_space is not None:
-            if self._jax:
-                self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-                self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
-            else:
-                self.clip_actions_min = np.array(self.action_space.low, dtype=np.float32)
-                self.clip_actions_max = np.array(self.action_space.high, dtype=np.float32)
+            self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
+            self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
 
         # create temporary variables needed for storage and computation
         self._update_counter = 0
@@ -316,22 +312,15 @@ class TD3(Agent):
 
         # sample deterministic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
 
         # add exploration noise
         if self._exploration_noise is not None:
             noises = self._exploration_noise.sample(actions.shape)
             scale = self.cfg.exploration_scheduler(timestep, timesteps) if self.cfg.exploration_scheduler else 1.0
             # modify actions
-            if self._jax:
-                actions, noises = _apply_exploration_noise(
-                    actions, noises, self.clip_actions_min, self.clip_actions_max, scale
-                )
-            else:
-                noises *= scale
-                actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
-
+            actions, noises = _apply_exploration_noise(
+                actions, noises, self.clip_actions_min, self.clip_actions_max, scale
+            )
             self.track_data("Exploration / Exploration noise (max)", noises.max().item())
             self.track_data("Exploration / Exploration noise (min)", noises.min().item())
             self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
@@ -457,21 +446,13 @@ class TD3(Agent):
             next_actions, _ = self.target_policy.act(next_inputs, role="target_policy")
             if self._smooth_regularization_noise is not None:
                 noises = self._smooth_regularization_noise.sample(next_actions.shape)
-                if self._jax:
-                    next_actions = _apply_smooth_regularization_noise(
-                        next_actions,
-                        noises,
-                        self.clip_actions_min,
-                        self.clip_actions_max,
-                        self.cfg.smooth_regularization_clip,
-                    )
-                else:
-                    noises = np.clip(
-                        noises, a_min=-self.cfg.smooth_regularization_clip, a_max=self.cfg.smooth_regularization_clip
-                    )
-                    next_actions = np.clip(
-                        next_actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max
-                    )
+                next_actions = _apply_smooth_regularization_noise(
+                    next_actions,
+                    noises,
+                    self.clip_actions_min,
+                    self.clip_actions_max,
+                    self.cfg.smooth_regularization_clip,
+                )
 
             # compute target values
             target_q1_values, _ = self.target_critic_1.act(

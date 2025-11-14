@@ -206,15 +206,11 @@ class DDQN(Agent):
         if self.cfg.exploration_scheduler is None:
             q_values, outputs = self.q_network.act(inputs, role="q_network")
             actions = jnp.argmax(q_values, axis=1, keepdims=True)
-            if not self._jax:  # numpy backend
-                actions = jax.device_get(actions)
             return actions, outputs
 
         # sample random actions
         actions, outputs = self.q_network.random_act(inputs, role="q_network")
         if timestep < self.cfg.random_timesteps:
-            if not self._jax:  # numpy backend
-                actions = jax.device_get(actions)
             return actions, outputs
 
         # sample actions with epsilon-greedy policy
@@ -223,13 +219,10 @@ class DDQN(Agent):
         if indexes.size:
             inputs = {k: None if v is None else v[indexes] for k, v in inputs.items()}
             q_values, outputs = self.q_network.act(inputs, role="q_network")
-            if self._jax:
-                raise NotImplementedError
-                actions[indexes] = jnp.argmax(q_values, axis=1, keepdims=True)
-            else:
-                q_values = jax.device_get(q_values)
-                actions = np.array(jax.device_get(actions))  # bypass: assignment destination is read-only
-                actions[indexes] = np.argmax(q_values, axis=1, keepdims=True)
+            # TODO: implement this using JAX
+            q_values = jax.device_get(q_values)
+            actions = np.array(jax.device_get(actions))  # bypass: assignment destination is read-only
+            actions[indexes] = np.argmax(q_values, axis=1, keepdims=True)
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)

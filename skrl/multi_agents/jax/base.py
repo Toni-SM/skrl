@@ -120,8 +120,6 @@ class MultiAgent(ABC):
         :param action_spaces: Action spaces.
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.training = False
 
         self.possible_agents = possible_agents
@@ -418,10 +416,9 @@ class MultiAgent(ABC):
                 self._cumulative_timesteps = np.zeros_like(_rewards, dtype=np.int32)
 
             # TODO: find a better way to avoid https://jax.readthedocs.io/en/latest/errors.html#jax.errors.ConcretizationTypeError
-            if self._jax:
-                _rewards = jax.device_get(_rewards)
-                _terminated = jax.device_get(_terminated)
-                _truncated = jax.device_get(_truncated)
+            _rewards = jax.device_get(_rewards)
+            _terminated = jax.device_get(_terminated)
+            _truncated = jax.device_get(_truncated)
 
             self._cumulative_rewards += _rewards
             self._cumulative_timesteps += 1

@@ -62,8 +62,6 @@ class Model(flax.linen.Module, ABC):
         :param parent: The parent Module of this Module. It is a Flax reserved attribute.
         :param name: The name of this Module. It is a Flax reserved attribute.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.device = config.jax.parse_device(device)
 
         self.observation_space = observation_space
@@ -102,13 +100,13 @@ class Model(flax.linen.Module, ABC):
         if not inputs:
             inputs = {
                 "observations": flatten_tensorized_space(
-                    sample_space(self.observation_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.observation_space, backend="native", device=self.device)
                 ),
                 "states": flatten_tensorized_space(
-                    sample_space(self.state_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.state_space, backend="native", device=self.device)
                 ),
                 "taken_actions": flatten_tensorized_space(
-                    sample_space(self.action_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.action_space, backend="native", device=self.device)
                 ),
             }
         if key is None:

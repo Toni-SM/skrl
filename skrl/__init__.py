@@ -251,20 +251,6 @@ class _Config(object):
                     self._key = np.asarray(jax.device_get(self._key))
 
             @property
-            def backend(self) -> str:
-                """Backend used by the different components to operate and generate arrays.
-
-                This configuration excludes models and optimizers.
-                Supported backend are: ``"numpy"`` and ``"jax"``.
-                """
-                return "jax"
-
-            @backend.setter
-            def backend(self, value: str) -> None:
-                if value != "jax":
-                    raise ValueError("Invalid jax backend. Supported values are: jax")
-
-            @property
             def key(self) -> "jax.Array":
                 """Pseudo-random number generator (PRNG) key.
 

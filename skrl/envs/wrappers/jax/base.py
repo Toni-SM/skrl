@@ -47,7 +47,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -55,13 +55,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: np.ndarray | jax.Array) -> tuple[
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        Any,
-    ]:
+    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -71,7 +65,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> np.ndarray | jax.Array | None:
+    def state(self) -> jax.Array | None:
         """Get the environment state.
 
         :return: State.
@@ -171,7 +165,7 @@ class MultiAgentEnvWrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -179,13 +173,9 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: dict[str, np.ndarray | jax.Array]) -> tuple[
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, Any],
-    ]:
+    def step(
+        self, actions: dict[str, jax.Array]
+    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -195,7 +185,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> dict[np.ndarray | jax.Array | None]:
+    def state(self) -> dict[jax.Array | None]:
         """Get the environment state.
 
         :return: State.

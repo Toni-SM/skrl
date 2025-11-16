@@ -42,13 +42,7 @@ class BraxWrapper(Wrapper):
         """Action space."""
         return convert_gym_space(self._unwrapped.action_space, squeeze_batch_dimension=True)
 
-    def step(self, actions: np.ndarray | jax.Array) -> tuple[
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        Any,
-    ]:
+    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -60,7 +54,7 @@ class BraxWrapper(Wrapper):
         truncated = jnp.zeros_like(terminated)
         return observation, reward.reshape(-1, 1), terminated.reshape(-1, 1), truncated.reshape(-1, 1), info
 
-    def state(self) -> np.ndarray | jax.Array | None:
+    def state(self) -> jax.Array | None:
         """Get the environment state.
 
         :return: State.
@@ -73,7 +67,7 @@ class BraxWrapper(Wrapper):
             return None
         return state
 
-    def reset(self) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

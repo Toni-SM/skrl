@@ -24,13 +24,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-    def step(self, actions: dict[str, np.ndarray | jax.Array]) -> tuple[
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, Any],
-    ]:
+    def step(
+        self, actions: dict[str, jax.Array]
+    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -63,7 +59,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> dict[np.ndarray | jax.Array | None]:
+    def state(self) -> dict[jax.Array | None]:
         """Get the environment state.
 
         In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
@@ -75,7 +71,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         )
         return {uid: state for uid in self.possible_agents}
 
-    def reset(self) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

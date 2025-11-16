@@ -274,13 +274,8 @@ class IPPO(MultiAgent):
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
     def act(
-        self,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -315,14 +310,14 @@ class IPPO(MultiAgent):
     def record_transition(
         self,
         *,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        actions: dict[str, np.ndarray | jax.Array],
-        rewards: dict[str, np.ndarray | jax.Array],
-        next_observations: dict[str, np.ndarray | jax.Array],
-        next_states: dict[str, np.ndarray | jax.Array],
-        terminated: dict[str, np.ndarray | jax.Array],
-        truncated: dict[str, np.ndarray | jax.Array],
+        observations: dict[str, jax.Array],
+        states: dict[str, jax.Array | None],
+        actions: dict[str, jax.Array],
+        rewards: dict[str, jax.Array],
+        next_observations: dict[str, jax.Array],
+        next_states: dict[str, jax.Array],
+        terminated: dict[str, jax.Array],
+        truncated: dict[str, jax.Array],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,

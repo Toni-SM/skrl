@@ -56,16 +56,13 @@ def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: boo
     raise ValueError(f"Unsupported space ({space})")
 
 
-def tensorize_space(
-    space: spaces.Space | None, x: Any, *, device: str | jax.Device | None = None, _jax: bool = True
-) -> Any:
+def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | jax.Device | None = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to JAX or NumPy array.
 
     :param space: Gymnasium space.
     :param x: Sample/value of the given space to tensorize to.
     :param device: Device on which a tensor/array is or will be allocated.
         This parameter is used when the space value is not a JAX array (e.g.: NumPy array, number).
-    :param _jax: Whether the converted value should be a JAX array.
 
     :return: Sample/value space with items converted to tensors,
         or ``None`` if the given space or the sample/value is ``None``.
@@ -79,54 +76,38 @@ def tensorize_space(
     # - Box
     if isinstance(space, spaces.Box):
         if isinstance(x, jax.Array):
-            if _jax:
-                return x.reshape(-1, *space.shape)
-            return jax.device_get(x).reshape(-1, *space.shape)
-        elif isinstance(x, np.ndarray):
-            if _jax:
-                return jax.device_put(x.reshape(-1, *space.shape), device=device)
             return x.reshape(-1, *space.shape)
+        elif isinstance(x, np.ndarray):
+            return jax.device_put(x.reshape(-1, *space.shape), device=device)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, jax.Array):
-            if _jax:
-                return x.reshape(-1, 1)
-            return jax.device_get(x).reshape(-1, 1)
-        elif isinstance(x, np.ndarray):
-            if _jax:
-                return jax.device_put(x.reshape(-1, 1), device=device)
             return x.reshape(-1, 1)
+        elif isinstance(x, np.ndarray):
+            return jax.device_put(x.reshape(-1, 1), device=device)
         elif isinstance(x, np.number) or type(x) in [int, float]:
-            if _jax:
-                return jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
-            return np.array([x], dtype=np.int32).reshape(-1, 1)
+            return jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, jax.Array):
-            if _jax:
-                return x.reshape(-1, *space.shape)
-            return jax.device_get(x).reshape(-1, *space.shape)
-        elif isinstance(x, np.ndarray):
-            if _jax:
-                return jax.device_put(x.reshape(-1, *space.shape), device=device)
             return x.reshape(-1, *space.shape)
+        elif isinstance(x, np.ndarray):
+            return jax.device_put(x.reshape(-1, *space.shape), device=device)
         elif type(x) in [list, tuple]:
-            if _jax:
-                return jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
-            return np.array(x, dtype=np.int32).reshape(-1, *space.shape)
+            return jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
     # - Tuple
     elif isinstance(space, spaces.Tuple):
-        return tuple([tensorize_space(s, _x, device=device, _jax=_jax) for s, _x in zip(space, x)])
+        return tuple([tensorize_space(s, _x, device=device) for s, _x in zip(space, x)])
     # - Dict
     elif isinstance(space, spaces.Dict):
-        return {k: tensorize_space(s, x[k], device=device, _jax=_jax) for k, s in space.items()}
+        return {k: tensorize_space(s, x[k], device=device) for k, s in space.items()}
     raise ValueError(f"Unsupported space ({space})")
 
 
@@ -196,11 +177,10 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> jax.Array | np.ndarray | None:
+def flatten_tensorized_space(x: Any) -> jax.Array | np.ndarray | None:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
-    :param _jax: Whether the space should be handled using JAX operations. It only affects composite spaces.
 
     :return: A tensor. The returned tensor will have shape (batch, space size),
         or ``None`` if the given tensorized sample/value is ``None``.
@@ -215,14 +195,10 @@ def flatten_tensorized_space(x: Any, *, _jax: bool = True) -> jax.Array | np.nda
     # composite spaces
     # - Tuple
     elif type(x) in [list, tuple]:
-        if _jax:
-            return jnp.concatenate([flatten_tensorized_space(_x, _jax=_jax) for _x in x], axis=-1)
-        return np.concatenate([flatten_tensorized_space(_x, _jax=_jax) for _x in x], axis=-1)
+        return jnp.concatenate([flatten_tensorized_space(_x) for _x in x], axis=-1)
     # - Dict
     elif isinstance(x, dict):
-        if _jax:
-            return jnp.concatenate([flatten_tensorized_space(x[k], _jax=_jax) for k in sorted(x.keys())], axis=-1)
-        return np.concatenate([flatten_tensorized_space(x[k], _jax=_jax) for k in sorted(x.keys())], axis=-1)
+        return jnp.concatenate([flatten_tensorized_space(x[k]) for k in sorted(x.keys())], axis=-1)
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 

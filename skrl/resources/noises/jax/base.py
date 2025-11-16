@@ -14,8 +14,6 @@ class Noise(ABC):
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.device = config.jax.parse_device(device)
 
     def sample_like(self, tensor: np.ndarray | jax.Array) -> np.ndarray | jax.Array:

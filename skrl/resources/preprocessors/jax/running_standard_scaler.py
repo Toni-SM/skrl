@@ -81,24 +81,15 @@ class RunningStandardScaler:
                    [0.7419659 , 0.8941783 ],
                    [0.59656656, 0.45325184]], dtype=float32)
         """
-        self._jax = config.jax.backend == "jax"
-
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
 
         self.device = config.jax.parse_device(device)
 
         size = compute_space_size(size, occupied_size=True)
-
-        if self._jax:
-            with jax.default_device(self.device):
-                self.running_mean = jnp.zeros(size, dtype=jnp.float32)
-                self.running_variance = jnp.ones(size, dtype=jnp.float32)
-                self.current_count = jnp.ones((1,), dtype=jnp.float32)
-        else:
-            self.running_mean = np.zeros(size, dtype=np.float32)
-            self.running_variance = np.ones(size, dtype=np.float32)
-            self.current_count = np.ones((1,), dtype=np.float32)
+        self.running_mean = jnp.zeros(size, dtype=jnp.float32, device=self.device)
+        self.running_variance = jnp.ones(size, dtype=jnp.float32, device=self.device)
+        self.current_count = jnp.ones((1,), dtype=jnp.float32, device=self.device)
 
     @property
     def state_dict(self) -> dict[str, np.ndarray | jax.Array]:
@@ -121,14 +112,9 @@ class RunningStandardScaler:
 
     @state_dict.setter
     def state_dict(self, value: dict[str, np.ndarray | jax.Array]) -> None:
-        if self._jax:
-            self.running_mean = _copyto(self.running_mean, value["running_mean"])
-            self.running_variance = _copyto(self.running_variance, value["running_variance"])
-            self.current_count = _copyto(self.current_count, value["current_count"])
-        else:
-            np.copyto(self.running_mean, value["running_mean"])
-            np.copyto(self.running_variance, value["running_variance"])
-            np.copyto(self.current_count, value["current_count"])
+        self.running_mean = _copyto(self.running_mean, value["running_mean"])
+        self.running_variance = _copyto(self.running_variance, value["running_variance"])
+        self.current_count = _copyto(self.current_count, value["current_count"])
 
     def _parallel_variance(
         self, input_mean: np.ndarray | jax.Array, input_var: np.ndarray | jax.Array, input_count: int
@@ -186,32 +172,12 @@ class RunningStandardScaler:
         if x is None:
             return None
         if train:
-            if self._jax:
-                self.running_mean, self.running_variance, self.current_count = _parallel_variance(
-                    self.running_mean, self.running_variance, self.current_count, x
-                )
-            else:
-                # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
-                if x.ndim == 3:
-                    self._parallel_variance(
-                        np.mean(x, axis=(0, 1)), np.var(x, axis=(0, 1), ddof=1), x.shape[0] * x.shape[1]
-                    )
-                else:
-                    self._parallel_variance(np.mean(x, axis=0), np.var(x, axis=0, ddof=1), x.shape[0])
+            self.running_mean, self.running_variance, self.current_count = _parallel_variance(
+                self.running_mean, self.running_variance, self.current_count, x
+            )
 
         # scale back the data to the original representation
         if inverse:
-            if self._jax:
-                return _inverse(self.running_mean, self.running_variance, self.clip_threshold, x)
-            return (
-                np.sqrt(self.running_variance) * np.clip(x, -self.clip_threshold, self.clip_threshold)
-                + self.running_mean
-            )
+            return _inverse(self.running_mean, self.running_variance, self.clip_threshold, x)
         # standardization by centering and scaling
-        if self._jax:
-            return _standardization(self.running_mean, self.running_variance, self.clip_threshold, self.epsilon, x)
-        return np.clip(
-            (x - self.running_mean) / (np.sqrt(self.running_variance) + self.epsilon),
-            a_min=-self.clip_threshold,
-            a_max=self.clip_threshold,
-        )
+        return _standardization(self.running_mean, self.running_variance, self.clip_threshold, self.epsilon, x)

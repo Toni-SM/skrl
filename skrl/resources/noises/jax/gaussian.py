@@ -31,14 +31,10 @@ class GaussianNoise(Noise):
         """
         super().__init__(device=device)
 
-        if self._jax:
-            self._i = 0
-            self._key = config.jax.key
-            self.mean = jnp.array(mean)
-            self.std = jnp.array(std)
-        else:
-            self.mean = np.array(mean)
-            self.std = np.array(std)
+        self.mean = mean
+        self.std = std
+        self._i = 0
+        self._key = config.jax.key
 
     def sample(self, size: list[int]) -> np.ndarray | jax.Array:
         """Sample a Gaussian noise.
@@ -60,7 +56,5 @@ class GaussianNoise(Noise):
                    [ 0.6218886 ,  1.1961104 ],
                    [ 0.23410667, -0.11247082]], dtype=float32)
         """
-        if self._jax:
-            self._i += 1
-            return _sample(self.mean, self.std, self._key, self._i, size)
-        return np.random.normal(self.mean, self.std, size)
+        self._i += 1
+        return _sample(self.mean, self.std, self._key, self._i, size)

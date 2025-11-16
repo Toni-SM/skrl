@@ -52,7 +52,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self._i = 0
         self._key = config.jax.key
 
-    def sample(self, size: list[int]) -> np.ndarray | jax.Array:
+    def sample(self, size: list[int]) -> jax.Array:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

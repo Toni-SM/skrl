@@ -92,7 +92,7 @@ class RunningStandardScaler:
         self.current_count = jnp.ones((1,), dtype=jnp.float32, device=self.device)
 
     @property
-    def state_dict(self) -> dict[str, np.ndarray | jax.Array]:
+    def state_dict(self) -> dict[str, jax.Array]:
         """Dictionary containing references to the whole state of the module."""
 
         class _StateDict:
@@ -111,14 +111,12 @@ class RunningStandardScaler:
         )
 
     @state_dict.setter
-    def state_dict(self, value: dict[str, np.ndarray | jax.Array]) -> None:
+    def state_dict(self, value: dict[str, jax.Array]) -> None:
         self.running_mean = _copyto(self.running_mean, value["running_mean"])
         self.running_variance = _copyto(self.running_variance, value["running_variance"])
         self.current_count = _copyto(self.current_count, value["current_count"])
 
-    def _parallel_variance(
-        self, input_mean: np.ndarray | jax.Array, input_var: np.ndarray | jax.Array, input_count: int
-    ) -> None:
+    def _parallel_variance(self, input_mean: jax.Array, input_var: jax.Array, input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance.
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
@@ -140,9 +138,7 @@ class RunningStandardScaler:
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def __call__(
-        self, x: np.ndarray | jax.Array | None, *, train: bool = False, inverse: bool = False
-    ) -> np.ndarray | jax.Array | None:
+    def __call__(self, x: jax.Array | None, *, train: bool = False, inverse: bool = False) -> jax.Array | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

@@ -116,12 +116,8 @@ class Model(flax.linen.Module, ABC):
             self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def random_act(
-        self,
-        inputs: dict[str, Any],
-        *,
-        role: str = "",
-        params: jax.Array | None = None,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -254,11 +250,7 @@ class Model(flax.linen.Module, ABC):
 
     @abstractmethod
     def act(
-        self,
-        inputs: dict[str, Any],
-        *,
-        role: str = "",
-        params: jax.Array | None = None,
+        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
     ) -> tuple[jax.Array, dict[str, Any]]:
         """Act according to the specified behavior.
 

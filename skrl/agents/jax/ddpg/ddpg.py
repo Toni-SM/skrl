@@ -33,10 +33,10 @@ def _update_critic(
     critic_act,
     critic_state_dict,
     target_q_values: jax.Array,
-    inputs: dict[str, np.ndarray | jax.Array],
-    sampled_rewards: np.ndarray | jax.Array,
-    sampled_terminated: np.ndarray | jax.Array,
-    sampled_truncated: np.ndarray | jax.Array,
+    inputs: dict[str, jax.Array],
+    sampled_rewards: jax.Array,
+    sampled_terminated: jax.Array,
+    sampled_truncated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
@@ -235,13 +235,8 @@ class DDPG(Agent):
             self.target_critic.apply = jax.jit(self.target_critic.apply, static_argnums=2)
 
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -280,14 +275,14 @@ class DDPG(Agent):
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,

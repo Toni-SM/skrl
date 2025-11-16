@@ -64,8 +64,6 @@ class Memory(ABC):
 
         :raises ValueError: Unsupported export format.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.memory_size = memory_size
         self.num_envs = num_envs
         self.device = config.jax.parse_device(device)
@@ -138,10 +136,7 @@ class Memory(ABC):
 
         :raises KeyError: The tensor does not exist.
         """
-        if self._jax:
-            self.tensors[name] = _copyto(self.tensors[name], tensor)
-        else:
-            np.copyto(self.tensors[name], tensor)
+        self.tensors[name] = _copyto(self.tensors[name], tensor)
 
     def create_tensor(
         self,
@@ -185,26 +180,17 @@ class Memory(ABC):
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
         shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
-        if self._jax:
-            setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
-        else:
-            setattr(self, f"_tensor_{name}", np.zeros(shape, dtype=dtype))
+        setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
         self.tensors_view[name] = self.tensors[name].reshape((-1, *shape[2:]))
         # fill (float) tensors with NaN. This is useful for early misuse detection.
         for name, tensor in self.tensors.items():
             if tensor.dtype == np.float32 or tensor.dtype == np.float64:
-                if self._jax:
-                    with jax.default_device(self.device):
-                        self.tensors[name] = _copyto(self.tensors[name], float("nan"))
-                else:
-                    tensor.fill(float("nan"))
+                with jax.default_device(self.device):
+                    self.tensors[name] = _copyto(self.tensors[name], float("nan"))
         # check views
-        if self._jax:
-            self._views = False  # TODO: check if views are available
-        else:
-            self._views = self._views and self.tensors_view[name].base is self.tensors[name]
+        self._views = False  # TODO: check if views are available
         return True
 
     def reset(self) -> None:
@@ -258,14 +244,9 @@ class Memory(ABC):
 
         # multi environment (current_num_envs = num_envs)
         if dim == 2 and shape[0] == self.num_envs:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name][self.memory_index] = tensor
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
             self.memory_index += 1
         # multi environment (current_num_envs < num_envs)
         elif dim == 2 and shape[0] < self.num_envs:
@@ -275,14 +256,9 @@ class Memory(ABC):
             raise NotImplementedError  # TODO: implement
         # single environment (current_num_envs = 1, implicit)
         elif dim == 1:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name][self.memory_index, self.env_index] = tensor
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
             self.env_index += 1
         else:
             raise ValueError(

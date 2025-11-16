@@ -76,11 +76,9 @@ class GymWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        if self._jax or isinstance(actions, jax.Array):
-            actions = np.asarray(jax.device_get(actions))
         actions = untensorize_space(
             self.action_space,
-            unflatten_tensorized_space(self.action_space, actions),
+            unflatten_tensorized_space(self.action_space, np.asarray(jax.device_get(actions))),
             squeeze_batch_dimension=not self._vectorized,
         )
         if self._vectorized and isinstance(self.action_space, gymnasium.spaces.Discrete):
@@ -101,18 +99,10 @@ class GymWrapper(Wrapper):
             observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to numpy or jax
-        observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
-        )
-        reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
-        terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
-        truncated = np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1)
-        if self._jax:
-            observation = jax.device_put(observation, device=self.device)
-            reward = jax.device_put(reward, device=self.device)
-            terminated = jax.device_put(terminated, device=self.device)
-            truncated = jax.device_put(truncated, device=self.device)
-
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        reward = jax.device_put(np.array(reward, dtype=np.float32).reshape(self.num_envs, -1), device=self.device)
+        terminated = jax.device_put(np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
+        truncated = jax.device_put(np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
         # save observation and info for vectorized envs
         if self._vectorized:
             self._observation = observation
@@ -127,12 +117,10 @@ class GymWrapper(Wrapper):
         """
         try:
             state = flatten_tensorized_space(
-                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device, _jax=False), _jax=False
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
             )
         except:
             return None
-        if self._jax:
-            state = jax.device_put(state, device=self.device)
         return state
 
     def reset(self) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
@@ -149,10 +137,8 @@ class GymWrapper(Wrapper):
                 else:
                     observation, self._info = self._env.reset()
                 self._observation = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
+                    tensorize_space(self.observation_space, observation, device=self.device)
                 )
-                if self._jax:
-                    self._observation = jax.device_put(self._observation, device=self.device)
                 self._reset_once = False
             return self._observation, self._info
 
@@ -162,12 +148,8 @@ class GymWrapper(Wrapper):
         else:
             observation, info = self._env.reset()
 
-        # convert response to numpy or jax
-        observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
-        )
-        if self._jax:
-            observation = jax.device_put(observation, device=self.device)
+        # convert response to jax
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

@@ -17,8 +17,6 @@ class Wrapper(ABC):
 
         :param env: The environment instance to wrap.
         """
-        self._jax = config.jax.backend == "jax"
-
         self._env = env
         try:
             self._unwrapped = self._env.unwrapped
@@ -143,8 +141,6 @@ class MultiAgentEnvWrapper(ABC):
 
         :param env: The multi-agent environment instance to wrap.
         """
-        self._jax = config.jax.backend == "jax"
-
         self._env = env
         try:
             self._unwrapped = self._env.unwrapped

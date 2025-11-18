@@ -5,19 +5,13 @@ import gymnasium as gym
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 
-from skrl import config
 from skrl.envs.wrappers.jax import GymnasiumWrapper, wrap_env
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
-def test_env(capsys: pytest.CaptureFixture, backend: str):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_env(capsys: pytest.CaptureFixture):
     num_envs = 1
-    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1))
 
     # check wrapper definition
     assert isinstance(wrap_env(None, "gymnasium"), GymnasiumWrapper)
@@ -43,31 +37,27 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     for _ in range(2):
         observation, info = env.reset()
         state = env.state()
-        assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
+        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 3)
         assert isinstance(info, Mapping)
         assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
-            assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
-            assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 3)
+            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
             assert state is None
 
     env.close()
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("vectorization_mode", ["async", "sync"])
-def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorization_mode: str):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_vectorized_env(capsys: pytest.CaptureFixture, vectorization_mode: str):
     num_envs = 10
-    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1))
 
     # check wrapper definition
     assert isinstance(wrap_env(None, "gymnasium"), GymnasiumWrapper)
@@ -99,17 +89,17 @@ def test_vectorized_env(capsys: pytest.CaptureFixture, backend: str, vectorizati
         state = env.state()
         observation, info = env.reset()  # edge case: vectorized environments are autoreset
         state = env.state()
-        assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
+        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 3)
         assert isinstance(info, Mapping)
         assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
-            assert isinstance(observation, Array) and observation.shape == (num_envs, 3)
-            assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 3)
+            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
             assert state is None
 

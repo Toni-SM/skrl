@@ -3,11 +3,25 @@ name: tests-jax
 on:
   push:
     branches: [ main, develop ]
-    paths: [ 'skrl/**', 'tests/**' ]
+    paths:
+    - 'skrl/**/jax/**'
+    - 'skrl/__init__.py'
+    - 'skrl/utils/__init__.py'
+    - 'tests/**/jax/**'
+    - 'tests/test_jax_config.py'
+    - 'tests/strategies.py'
+    - 'tests/utilities.py'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches: [ main, develop ]
-    paths: [ 'skrl/**', 'tests/**' ]
+    paths:
+    - 'skrl/**/jax/**'
+    - 'skrl/__init__.py'
+    - 'skrl/utils/__init__.py'
+    - 'tests/**/jax/**'
+    - 'tests/test_jax_config.py'
+    - 'tests/strategies.py'
+    - 'tests/utilities.py'
   schedule:
     - cron: "9 9 * * 6"  # every Saturday at 9:09 UTC
   workflow_dispatch:

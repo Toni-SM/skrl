@@ -63,13 +63,9 @@ class StepTrainer(Trainer):
         self.observations = None
         self.states = None
 
-    def train(self, timestep: int | None = None, timesteps: int | None = None) -> tuple[
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        Any,
-    ]:
+    def train(
+        self, timestep: int | None = None, timesteps: int | None = None
+    ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
         """Execute a training iteration.
 
         This method executes the following steps once:
@@ -186,13 +182,9 @@ class StepTrainer(Trainer):
 
         return next_observations, rewards, terminated, truncated, infos
 
-    def eval(self, timestep: int | None = None, timesteps: int | None = None) -> tuple[
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        np.ndarray | jax.Array,
-        Any,
-    ]:
+    def eval(
+        self, timestep: int | None = None, timesteps: int | None = None
+    ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
         """Execute an evaluation iteration.
 
         This method executes the following steps in loop:

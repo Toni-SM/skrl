@@ -15,7 +15,7 @@ from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils.model_instantiators.jax import categorical_model, deterministic_model, gaussian_model
 
-from ...utilities import MultiAgentEnv, check_config_keys
+from ...utilities import MultiAgentEnv, check_config_keys, is_device_available
 
 
 @hypothesis.given(
@@ -86,6 +86,10 @@ def test_agent(
     rewards_shaper,
     time_limit_bootstrap,
 ):
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
+
     # spaces
     observation_spaces = {}
     state_spaces = {}

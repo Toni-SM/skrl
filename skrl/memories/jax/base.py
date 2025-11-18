@@ -64,8 +64,6 @@ class Memory(ABC):
 
         :raises ValueError: Unsupported export format.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.memory_size = memory_size
         self.num_envs = num_envs
         self.device = config.jax.parse_device(device)
@@ -104,7 +102,7 @@ class Memory(ABC):
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _tensors_view(self, name: str) -> np.ndarray | jax.Array:
+    def _tensors_view(self, name: str) -> jax.Array:
         return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, *self.tensors[name].shape[2:])
 
     def share_memory(self) -> None:
@@ -119,7 +117,7 @@ class Memory(ABC):
         """
         return sorted(self.tensors.keys())
 
-    def get_tensor_by_name(self, name: str) -> np.ndarray | jax.Array:
+    def get_tensor_by_name(self, name: str) -> jax.Array:
         """Get a tensor by its name.
 
         :param name: Name of the tensor to get.
@@ -130,7 +128,7 @@ class Memory(ABC):
         """
         return self.tensors[name]
 
-    def set_tensor_by_name(self, name: str, tensor: np.ndarray | jax.Array) -> None:
+    def set_tensor_by_name(self, name: str, tensor: jax.Array) -> None:
         """Set a tensor by its name.
 
         :param name: Name of the tensor to set.
@@ -138,10 +136,7 @@ class Memory(ABC):
 
         :raises KeyError: The tensor does not exist.
         """
-        if self._jax:
-            self.tensors[name] = _copyto(self.tensors[name], tensor)
-        else:
-            np.copyto(self.tensors[name], tensor)
+        self.tensors[name] = _copyto(self.tensors[name], tensor)
 
     def create_tensor(
         self,
@@ -185,26 +180,17 @@ class Memory(ABC):
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
         shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
-        if self._jax:
-            setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
-        else:
-            setattr(self, f"_tensor_{name}", np.zeros(shape, dtype=dtype))
+        setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
         self.tensors_view[name] = self.tensors[name].reshape((-1, *shape[2:]))
         # fill (float) tensors with NaN. This is useful for early misuse detection.
         for name, tensor in self.tensors.items():
             if tensor.dtype == np.float32 or tensor.dtype == np.float64:
-                if self._jax:
-                    with jax.default_device(self.device):
-                        self.tensors[name] = _copyto(self.tensors[name], float("nan"))
-                else:
-                    tensor.fill(float("nan"))
+                with jax.default_device(self.device):
+                    self.tensors[name] = _copyto(self.tensors[name], float("nan"))
         # check views
-        if self._jax:
-            self._views = False  # TODO: check if views are available
-        else:
-            self._views = self._views and self.tensors_view[name].base is self.tensors[name]
+        self._views = False  # TODO: check if views are available
         return True
 
     def reset(self) -> None:
@@ -224,7 +210,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: dict[str, np.ndarray | jax.Array]) -> None:
+    def add_samples(self, **tensors: dict[str, jax.Array]) -> None:
         """Add/store samples in memory.
 
         .. important::
@@ -258,14 +244,9 @@ class Memory(ABC):
 
         # multi environment (current_num_envs = num_envs)
         if dim == 2 and shape[0] == self.num_envs:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name][self.memory_index] = tensor
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
             self.memory_index += 1
         # multi environment (current_num_envs < num_envs)
         elif dim == 2 and shape[0] < self.num_envs:
@@ -275,14 +256,9 @@ class Memory(ABC):
             raise NotImplementedError  # TODO: implement
         # single environment (current_num_envs = 1, implicit)
         elif dim == 1:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors and tensor is not None:
-                        self.tensors[name][self.memory_index, self.env_index] = tensor
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
             self.env_index += 1
         else:
             raise ValueError(
@@ -304,7 +280,7 @@ class Memory(ABC):
     @abstractmethod
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[np.ndarray | jax.Array]]:
+    ) -> list[list[jax.Array]]:
         """Data sampling method to be implemented by the inheriting classes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -318,8 +294,8 @@ class Memory(ABC):
         pass
 
     def sample_by_index(
-        self, names: list[str], *, indexes: list | np.ndarray | jax.Array, mini_batches: int = 1
-    ) -> list[list[np.ndarray | jax.Array]]:
+        self, names: list[str], *, indexes: list | jax.Array, mini_batches: int = 1
+    ) -> list[list[jax.Array]]:
         """Sample data from memory according to their indexes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -335,9 +311,7 @@ class Memory(ABC):
             return [[None if view is None else view[batch] for view in views] for batch in batches]
         return [[self._tensors_view(name)[indexes] if name in self.tensors else None for name in names]]
 
-    def sample_all(
-        self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[np.ndarray | jax.Array]]:
+    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[jax.Array]]:
         """Sample all data from memory.
 
         :param names: Tensors names from which to obtain the samples.
@@ -367,7 +341,7 @@ class Memory(ABC):
             return [[None if view is None else view[batch[0] : batch[1]] for view in views] for batch in batches]
         return [[self._tensors_view(name) if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> list | np.ndarray | jax.Array:
+    def get_sampling_indexes(self) -> list | jax.Array:
         """Get the last indexes used for sampling.
 
         :return: Last sampling indexes.

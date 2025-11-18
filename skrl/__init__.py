@@ -160,7 +160,6 @@ class _Config(object):
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration."""
-                self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
                 # JAX doesn't automatically start multiple processes from a single program invocation
@@ -250,21 +249,6 @@ class _Config(object):
                     import jax
 
                     self._key = np.asarray(jax.device_get(self._key))
-
-            @property
-            def backend(self) -> str:
-                """Backend used by the different components to operate and generate arrays.
-
-                This configuration excludes models and optimizers.
-                Supported backend are: ``"numpy"`` and ``"jax"``.
-                """
-                return self._backend
-
-            @backend.setter
-            def backend(self, value: str) -> None:
-                if value not in ["numpy", "jax"]:
-                    raise ValueError("Invalid jax backend. Supported values are: numpy, jax")
-                self._backend = value
 
             @property
             def key(self) -> "jax.Array":

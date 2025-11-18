@@ -6,21 +6,15 @@ import gymnasium
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 
-from skrl import config
 from skrl.envs.wrappers.jax import BraxWrapper, wrap_env
 
 from ....utilities import is_running_on_github_actions
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
-def test_env(capsys: pytest.CaptureFixture, backend: str):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_env(capsys: pytest.CaptureFixture):
     num_envs = 10
-    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1))
 
     # check wrapper definition
     with pytest.raises(AttributeError):
@@ -58,7 +52,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
         state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
         state = env.state()
-        assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
+        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
         assert isinstance(info, Mapping)
         assert state is None
         for _ in range(3):
@@ -69,10 +63,10 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
                     env.render()
             except (AttributeError, mujoco.FatalError) as e:
                 warnings.warn(f"Brax exception when rendering: {e}")
-            assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
-            assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
+            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
             assert state is None
 

@@ -20,45 +20,6 @@ from skrl.utils import ScopedTimer
 from .mappo_cfg import MAPPO_CFG
 
 
-def compute_gae(
-    rewards: np.ndarray,
-    dones: np.ndarray,
-    values: np.ndarray,
-    next_values: np.ndarray,
-    discount_factor: float = 0.99,
-    lambda_coefficient: float = 0.95,
-) -> np.ndarray:
-    """Compute the Generalized Advantage Estimator (GAE).
-
-    :param rewards: Rewards obtained by the agent.
-    :param dones: Signals to indicate that episodes have ended.
-    :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
-    :param discount_factor: Discount factor.
-    :param lambda_coefficient: Lambda coefficient.
-
-    :return: Generalized Advantage Estimator.
-    """
-    advantage = 0
-    advantages = np.zeros_like(rewards)
-    not_dones = np.logical_not(dones)
-    memory_size = rewards.shape[0]
-
-    # advantages computation
-    for i in reversed(range(memory_size)):
-        next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
-        )
-        advantages[i] = advantage
-    # returns computation
-    returns = advantages + values
-    # normalize advantages
-    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-    return returns, advantages
-
-
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _compute_gae(
@@ -314,13 +275,8 @@ class MAPPO(MultiAgent):
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
     def act(
-        self,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -349,24 +305,20 @@ class MAPPO(MultiAgent):
             actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
             log_prob[uid] = outputs[uid]["log_prob"]
 
-            if not self._jax:  # numpy backend
-                actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
-                log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
-
         self._current_log_prob = log_prob
         return actions, outputs
 
     def record_transition(
         self,
         *,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        actions: dict[str, np.ndarray | jax.Array],
-        rewards: dict[str, np.ndarray | jax.Array],
-        next_observations: dict[str, np.ndarray | jax.Array],
-        next_states: dict[str, np.ndarray | jax.Array],
-        terminated: dict[str, np.ndarray | jax.Array],
-        truncated: dict[str, np.ndarray | jax.Array],
+        observations: dict[str, jax.Array],
+        states: dict[str, jax.Array | None],
+        actions: dict[str, jax.Array],
+        rewards: dict[str, jax.Array],
+        next_observations: dict[str, jax.Array],
+        next_states: dict[str, jax.Array],
+        terminated: dict[str, jax.Array],
+        truncated: dict[str, jax.Array],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -414,8 +366,6 @@ class MAPPO(MultiAgent):
                     "states": self._state_preprocessor[uid](states[uid]),
                 }
                 values, _ = self.values[uid].act(inputs, role="value")
-                if not self._jax:  # numpy backend
-                    values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) bootstrapping
@@ -479,12 +429,10 @@ class MAPPO(MultiAgent):
         value.enable_training_mode(False)
         last_values, _ = value.act(inputs, role="value")
         value.enable_training_mode(True)
-        if not self._jax:  # numpy backend
-            last_values = jax.device_get(last_values)
         last_values = self._value_preprocessor[uid](last_values, inverse=True)
 
         values = memory.get_tensor_by_name("values")
-        returns, advantages = (_compute_gae if self._jax else compute_gae)(
+        returns, advantages = _compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
             dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
             values=values,

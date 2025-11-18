@@ -47,18 +47,12 @@ class OrnsteinUhlenbeckNoise(Noise):
         self.theta = theta
         self.sigma = sigma
         self.base_scale = base_scale
+        self.mean = mean
+        self.std = std
+        self._i = 0
+        self._key = config.jax.key
 
-        if self._jax:
-            self.mean = jnp.array(mean)
-            self.std = jnp.array(std)
-
-            self._i = 0
-            self._key = config.jax.key
-        else:
-            self.mean = np.array(mean)
-            self.std = np.array(std)
-
-    def sample(self, size: list[int]) -> np.ndarray | jax.Array:
+    def sample(self, size: list[int]) -> jax.Array:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.
@@ -80,9 +74,6 @@ class OrnsteinUhlenbeckNoise(Noise):
         """
         if hasattr(self.state, "shape") and self.state.shape != size:
             self.state = 0
-        if self._jax:
-            self._i += 1
-            self.state = _sample(self.theta, self.sigma, self.state, self.mean, self.std, self._key, self._i, size)
-        else:
-            self.state += -self.state * self.theta + self.sigma * np.random.normal(self.mean, self.std, size)
+        self._i += 1
+        self.state = _sample(self.theta, self.sigma, self.state, self.mean, self.std, self._key, self._i, size)
         return self.base_scale * self.state

@@ -126,11 +126,7 @@ class GaussianMixin:
         flax.linen.Module.__post_init__(self)
 
     def act(
-        self,
-        inputs: dict[str, Any],
-        *,
-        role: str = "",
-        params: jax.Array | None = None,
+        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
     ) -> tuple[jax.Array, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 

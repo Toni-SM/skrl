@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
 
 ### Removed
+- Remove NumPy backend for JAX implementation
 - Remove checkpoints/models migration support from other RL libraries
 - Remove support for Isaac Gym and Omniverse Isaac Gym environments (deprecated in favor of Isaac Lab)
 - Remove support for Bi-DexHands and robosuite environments

@@ -181,13 +181,8 @@ class DDQN(Agent):
             self.target_q_network.apply = jax.jit(self.target_q_network.apply, static_argnums=2)
 
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -206,15 +201,11 @@ class DDQN(Agent):
         if self.cfg.exploration_scheduler is None:
             q_values, outputs = self.q_network.act(inputs, role="q_network")
             actions = jnp.argmax(q_values, axis=1, keepdims=True)
-            if not self._jax:  # numpy backend
-                actions = jax.device_get(actions)
             return actions, outputs
 
         # sample random actions
         actions, outputs = self.q_network.random_act(inputs, role="q_network")
         if timestep < self.cfg.random_timesteps:
-            if not self._jax:  # numpy backend
-                actions = jax.device_get(actions)
             return actions, outputs
 
         # sample actions with epsilon-greedy policy
@@ -223,13 +214,10 @@ class DDQN(Agent):
         if indexes.size:
             inputs = {k: None if v is None else v[indexes] for k, v in inputs.items()}
             q_values, outputs = self.q_network.act(inputs, role="q_network")
-            if self._jax:
-                raise NotImplementedError
-                actions[indexes] = jnp.argmax(q_values, axis=1, keepdims=True)
-            else:
-                q_values = jax.device_get(q_values)
-                actions = np.array(jax.device_get(actions))  # bypass: assignment destination is read-only
-                actions[indexes] = np.argmax(q_values, axis=1, keepdims=True)
+            # TODO: implement this using JAX
+            q_values = jax.device_get(q_values)
+            actions = np.array(jax.device_get(actions))  # bypass: assignment destination is read-only
+            actions[indexes] = np.argmax(q_values, axis=1, keepdims=True)
 
         # record epsilon
         self.track_data("Exploration / Exploration epsilon", epsilon)
@@ -239,14 +227,14 @@ class DDQN(Agent):
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,

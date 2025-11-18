@@ -33,10 +33,10 @@ def _update_critic(
     critic_act,
     critic_state_dict,
     target_q_values: jax.Array,
-    inputs: dict[str, np.ndarray | jax.Array],
-    sampled_rewards: np.ndarray | jax.Array,
-    sampled_terminated: np.ndarray | jax.Array,
-    sampled_truncated: np.ndarray | jax.Array,
+    inputs: dict[str, jax.Array],
+    sampled_rewards: jax.Array,
+    sampled_terminated: jax.Array,
+    sampled_truncated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
@@ -223,12 +223,8 @@ class DDPG(Agent):
 
         # clip noise bounds
         if self.action_space is not None:
-            if self._jax:
-                self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-                self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
-            else:
-                self.clip_actions_min = np.array(self.action_space.low, dtype=np.float32)
-                self.clip_actions_max = np.array(self.action_space.high, dtype=np.float32)
+            self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
+            self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -239,13 +235,8 @@ class DDPG(Agent):
             self.target_critic.apply = jax.jit(self.target_critic.apply, static_argnums=2)
 
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -266,22 +257,15 @@ class DDPG(Agent):
 
         # sample deterministic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
 
         # add exploration noise
         if self._exploration_noise is not None:
             noises = self._exploration_noise.sample(actions.shape)
             scale = self.cfg.exploration_scheduler(timestep, timesteps) if self.cfg.exploration_scheduler else 1.0
             # modify actions
-            if self._jax:
-                actions, noises = _apply_exploration_noise(
-                    actions, noises, self.clip_actions_min, self.clip_actions_max, scale
-                )
-            else:
-                noises *= scale
-                actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
-
+            actions, noises = _apply_exploration_noise(
+                actions, noises, self.clip_actions_min, self.clip_actions_max, scale
+            )
             self.track_data("Exploration / Exploration noise (max)", noises.max().item())
             self.track_data("Exploration / Exploration noise (min)", noises.min().item())
             self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
@@ -291,14 +275,14 @@ class DDPG(Agent):
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,

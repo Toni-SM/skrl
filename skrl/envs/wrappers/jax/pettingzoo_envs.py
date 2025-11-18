@@ -24,47 +24,42 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-    def step(self, actions: dict[str, np.ndarray | jax.Array]) -> tuple[
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, np.ndarray | jax.Array],
-        dict[str, Any],
-    ]:
+    def step(
+        self, actions: dict[str, jax.Array]
+    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        if self._jax:
-            actions = jax.device_get(actions)
+        actions = jax.device_get(actions)
         actions = {
             uid: untensorize_space(self.action_spaces[uid], unflatten_tensorized_space(self.action_spaces[uid], action))
             for uid, action in actions.items()
         }
         observations, rewards, terminated, truncated, infos = self._env.step(actions)
 
-        # convert response to numpy or jax
+        # convert response to jax
         observations = {
-            uid: flatten_tensorized_space(
-                tensorize_space(self.observation_spaces[uid], value, device=self.device, _jax=False), _jax=False
-            )
+            uid: flatten_tensorized_space(tensorize_space(self.observation_spaces[uid], value, device=self.device))
             for uid, value in observations.items()
         }
-        rewards = {uid: np.array(value, dtype=np.float32).reshape(self.num_envs, -1) for uid, value in rewards.items()}
-        terminated = {
-            uid: np.array(value, dtype=np.int8).reshape(self.num_envs, -1) for uid, value in terminated.items()
+        rewards = {
+            uid: jax.device_put(np.array(value, dtype=np.float32).reshape(self.num_envs, -1), device=self.device)
+            for uid, value in rewards.items()
         }
-        truncated = {uid: np.array(value, dtype=np.int8).reshape(self.num_envs, -1) for uid, value in truncated.items()}
-        if self._jax:
-            observations = {uid: jax.device_put(value, device=self.device) for uid, value in observations.items()}
-            rewards = {uid: jax.device_put(value, device=self.device) for uid, value in rewards.items()}
-            terminated = {uid: jax.device_put(value, device=self.device) for uid, value in terminated.items()}
-            truncated = {uid: jax.device_put(value, device=self.device) for uid, value in truncated.items()}
+        terminated = {
+            uid: jax.device_put(np.array(value, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
+            for uid, value in terminated.items()
+        }
+        truncated = {
+            uid: jax.device_put(np.array(value, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
+            for uid, value in truncated.items()
+        }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> dict[np.ndarray | jax.Array | None]:
+    def state(self) -> dict[jax.Array | None]:
         """Get the environment state.
 
         In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
@@ -72,14 +67,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :return: State.
         """
         state = flatten_tensorized_space(
-            tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device, _jax=False),
-            _jax=False,
+            tensorize_space(next(iter(self.state_spaces.values())), self._env.state(), device=self.device)
         )
-        if self._jax:
-            state = jax.device_put(state, device=self.device)
         return {uid: state for uid in self.possible_agents}
 
-    def reset(self) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -93,13 +85,9 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
 
         # convert response to numpy or jax
         observations = {
-            uid: flatten_tensorized_space(
-                tensorize_space(self.observation_spaces[uid], value, device=self.device, _jax=False), _jax=False
-            )
+            uid: flatten_tensorized_space(tensorize_space(self.observation_spaces[uid], value, device=self.device))
             for uid, value in observations.items()
         }
-        if self._jax:
-            observations = {uid: jax.device_put(value, device=self.device) for uid, value in observations.items()}
         return observations, infos
 
     def render(self, *args, **kwargs) -> Any:

@@ -15,7 +15,7 @@ from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
 from skrl.utils.model_instantiators.jax import deterministic_model, gaussian_model
 
-from ...utilities import SingleAgentEnv, check_config_keys
+from ...utilities import SingleAgentEnv, check_config_keys, is_device_available
 
 
 @hypothesis.given(
@@ -76,6 +76,10 @@ def test_agent(
     target_entropy,
     rewards_shaper,
 ):
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
+
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(4,))
     state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,)) if asymmetric else None

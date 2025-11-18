@@ -8,7 +8,14 @@ import gymnasium
 from skrl.trainers.jax import StepTrainer, generate_equally_spaced_scopes
 from skrl.trainers.jax.step import StepTrainerCfg as TrainerCfg
 
-from ...utilities import AgentMock, MultiAgentEnv, MultiAgentMock, SingleAgentEnv, check_config_keys
+from ...utilities import (
+    AgentMock,
+    MultiAgentEnv,
+    MultiAgentMock,
+    SingleAgentEnv,
+    check_config_keys,
+    is_device_available,
+)
 
 
 @hypothesis.given(
@@ -39,6 +46,10 @@ def test_non_simultaneous_trainer_single_agent(
     close_environment_at_exit,
     stochastic_evaluation,
 ):
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
+
     # spaces
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(4,))
     state_space = gymnasium.spaces.Box(low=-1, high=1, shape=(5,)) if asymmetric else None
@@ -115,6 +126,10 @@ def test_simultaneous_trainer_single_agent(
     close_environment_at_exit,
     stochastic_evaluation,
 ):
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
+
     num_simultaneous_agents = min(num_envs, num_simultaneous_agents)
     scopes = generate_equally_spaced_scopes(
         num_envs=num_envs,
@@ -203,6 +218,11 @@ def test_non_simultaneous_trainer_multi_agent(
 ):
     pytest.skip("Skipping test for now. Not implemented yet.")
     # TODO: implement the feature
+
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
+
     # spaces
     observation_spaces = {}
     state_spaces = {}
@@ -289,6 +309,10 @@ def test_simultaneous_trainer_multi_agent(
 ):
     pytest.skip("Skipping test for now. Not implemented yet.")
     # TODO: implement the feature
+
+    # check device availability
+    if not is_device_available(device, backend="jax"):
+        pytest.skip(f"Device {device} not available")
 
     num_simultaneous_agents = min(num_envs, num_simultaneous_agents)
     scopes = generate_equally_spaced_scopes(

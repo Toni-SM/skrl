@@ -14,6 +14,14 @@ def is_device_available(device, *, backend) -> bool:
             torch.zeros((1,), device=device)
         except Exception as e:
             return False
+    elif backend == "jax":
+        import jax
+
+        try:
+            device_type, device_index = f"{device}:0".split(":")[:2]
+            jax.devices(device_type)[int(device_index)]
+        except (RuntimeError, IndexError) as e:
+            return False
     elif backend == "warp":
         import warp as wp
 

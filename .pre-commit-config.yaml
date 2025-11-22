@@ -33,6 +33,15 @@ repos:
   rev: 5.13.2
   hooks:
     - id: isort
+- repo: https://github.com/pycqa/flake8
+  rev: 7.3.0
+  hooks:
+    - id: flake8
+      additional_dependencies:
+        - flake8-return
+        - flake8-simplify
+        - flake8-unused-arguments
+        - flake8-warnings
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.10.0
   hooks:

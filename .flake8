@@ -1,0 +1,13 @@
+[flake8]
+count = True
+doctests = True
+exclude =
+    .git
+    docs/**
+max-complexity = 30
+max-doc-length = 120
+max-line-length = 120
+per-file-ignores =
+    */__init__.py:F401
+show-source=True
+statistics=True

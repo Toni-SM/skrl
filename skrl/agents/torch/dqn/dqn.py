@@ -127,9 +127,8 @@ class DQN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.int64)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = [
+        self._tensors_names = [
             "observations",
             "states",
             "actions",
@@ -137,7 +136,6 @@ class DQN(Agent):
             "next_observations",
             "next_states",
             "terminated",
-            "truncated",
         ]
 
         # create temporary variables needed for storage and computation
@@ -239,7 +237,6 @@ class DQN(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -285,8 +282,7 @@ class DQN(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
-            ) = self.memory.sample(names=self.tensors_names, batch_size=self.cfg.batch_size)[0]
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 inputs = {
@@ -304,10 +300,7 @@ class DQN(Agent):
 
                     target_q_values = torch.max(next_q_values, dim=-1, keepdim=True)[0]
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute Q-network loss

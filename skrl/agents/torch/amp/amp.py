@@ -206,7 +206,6 @@ class AMP(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -214,7 +213,7 @@ class AMP(Agent):
             self.memory.create_tensor(name="amp_observations", size=self.amp_observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="next_values", size=1, dtype=torch.float32)
 
-        self.tensors_names = [
+        self._tensors_names = [
             "observations",
             "states",
             "actions",
@@ -370,7 +369,6 @@ class AMP(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
                 amp_observations=amp_observations,
@@ -432,7 +430,7 @@ class AMP(Agent):
         next_values = self.memory.get_tensor_by_name("next_values")
         returns, advantages = compute_gae(
             rewards=combined_rewards,
-            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            dones=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=next_values,
             discount_factor=self.cfg.discount_factor,
@@ -444,7 +442,7 @@ class AMP(Agent):
         self.memory.set_tensor_by_name("advantages", advantages)
 
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self.tensors_names, mini_batches=self.cfg.mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
         sampled_motion_batches = self.motion_dataset.sample(
             names=["observations"],
             batch_size=self.memory.memory_size * self.memory.num_envs,
@@ -458,7 +456,7 @@ class AMP(Agent):
             )
         else:
             sampled_replay_batches = [
-                [batches[self.tensors_names.index("amp_observations")]] for batches in sampled_batches
+                [batches[self._tensors_names.index("amp_observations")]] for batches in sampled_batches
             ]
 
         cumulative_policy_loss = 0

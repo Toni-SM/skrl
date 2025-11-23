@@ -114,7 +114,7 @@ class CEM(Agent):
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-        self.tensors_names = ["observations", "states", "actions", "rewards"]
+        self._tensors_names = ["observations", "states", "actions", "rewards"]
 
         # create temporary variables needed for storage and computation
         self._rollout = 0
@@ -251,7 +251,7 @@ class CEM(Agent):
         """
         # sample all memory
         sampled_observations, sampled_states, sampled_actions, sampled_rewards = self.memory.sample_all(
-            names=self.tensors_names
+            names=self._tensors_names
         )[0]
 
         sampled_observations = self._observation_preprocessor(sampled_observations, train=True)

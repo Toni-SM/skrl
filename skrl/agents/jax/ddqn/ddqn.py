@@ -30,16 +30,13 @@ def _update_q_network(
     sampled_actions,
     sampled_rewards,
     sampled_terminated,
-    sampled_truncated,
     discount_factor,
 ):
     # compute target values
     q_values = q_network_act(next_inputs, role="q_network")[0]
     actions = jnp.argmax(q_values, axis=-1, keepdims=True)
     target_q_values = next_q_values[jnp.arange(q_values.shape[0]), actions.reshape(-1)].reshape(-1, 1)
-    target_values = (
-        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
-    )
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute Q-network loss
     def _q_network_loss(params):
@@ -159,9 +156,8 @@ class DDQN(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.int32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-        self.tensors_names = [
+        self._tensors_names = [
             "observations",
             "states",
             "actions",
@@ -169,7 +165,6 @@ class DDQN(Agent):
             "next_observations",
             "next_states",
             "terminated",
-            "truncated",
         ]
 
         # create temporary variables needed for storage and computation
@@ -280,7 +275,6 @@ class DDQN(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -326,8 +320,7 @@ class DDQN(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
-            ) = self.memory.sample(names=self.tensors_names, batch_size=self.cfg.batch_size)[0]
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
                 "observations": self._observation_preprocessor(sampled_observations, train=True),
@@ -350,7 +343,6 @@ class DDQN(Agent):
                 sampled_actions,
                 sampled_rewards,
                 sampled_terminated,
-                sampled_truncated,
                 self.cfg.discount_factor,
             )
 

@@ -24,7 +24,7 @@ from .a2c_cfg import A2C_CFG
 @jax.jit
 def _compute_gae(
     rewards: jax.Array,
-    dones: jax.Array,
+    terminated: jax.Array,
     values: jax.Array,
     next_values: jax.Array,
     discount_factor: float = 0.99,
@@ -32,14 +32,16 @@ def _compute_gae(
 ) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
-    not_dones = jnp.logical_not(dones)
+    not_terminated = jnp.logical_not(terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i]
+            - values[i]
+            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages = advantages.at[i].set(advantage)
     # returns computation
@@ -378,7 +380,7 @@ class A2C(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = _compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated"),
+            terminated=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor,

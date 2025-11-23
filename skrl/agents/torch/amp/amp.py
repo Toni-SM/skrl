@@ -200,9 +200,7 @@ class AMP(Agent):
         # create tensors in memory
         if self.memory is not None:
             self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_observations", size=self.observation_space, dtype=torch.float32)
             self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_states", size=self.state_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
@@ -217,16 +215,11 @@ class AMP(Agent):
             "observations",
             "states",
             "actions",
-            "rewards",
-            "next_observations",
-            "next_states",
-            "terminated",
             "log_prob",
             "values",
             "returns",
             "advantages",
             "amp_observations",
-            "next_values",
         ]
 
         # create tensors for motion dataset and reply buffer
@@ -366,8 +359,6 @@ class AMP(Agent):
                 states=states,
                 actions=actions,
                 rewards=rewards,
-                next_observations=next_observations,
-                next_states=next_states,
                 terminated=terminated,
                 log_prob=self._current_log_prob,
                 values=values,
@@ -473,16 +464,11 @@ class AMP(Agent):
                 sampled_observations,
                 sampled_states,
                 sampled_actions,
-                _,
-                _,
-                _,
-                _,
                 sampled_log_prob,
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
                 sampled_amp_observations,
-                _,
             ) in enumerate(sampled_batches):
 
                 with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):

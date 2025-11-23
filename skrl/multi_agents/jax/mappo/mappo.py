@@ -254,7 +254,6 @@ class MAPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-                self.memories[uid].create_tensor(name="truncated", size=1, dtype=jnp.int8)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
@@ -379,7 +378,6 @@ class MAPPO(MultiAgent):
                     actions=actions[uid],
                     rewards=rewards[uid],
                     terminated=terminated[uid],
-                    truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
                 )
@@ -434,7 +432,7 @@ class MAPPO(MultiAgent):
         values = memory.get_tensor_by_name("values")
         returns, advantages = _compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
-            dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
+            dones=memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor[uid],

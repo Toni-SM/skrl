@@ -48,7 +48,6 @@ def _critic_loss(
     target_values: wp.array2d(dtype=float),
     sampled_rewards: wp.array2d(dtype=float),
     sampled_terminated: wp.array2d(dtype=wp.int8),
-    sampled_truncated: wp.array2d(dtype=wp.int8),
     discount_factor: float,
     n: float,
     loss: wp.array(dtype=float),
@@ -56,10 +55,7 @@ def _critic_loss(
     i, j = wp.tid()
     # compute target values
     target_values[i, j] = (
-        sampled_rewards[i, j]
-        + discount_factor
-        * wp.float(wp.unot(wp.add(sampled_terminated[i, j], sampled_truncated[i, j])))
-        * target_values[i, j]
+        sampled_rewards[i, j] + discount_factor * wp.float(wp.unot(sampled_terminated[i, j])) * target_values[i, j]
     )
     # MSE loss
     wp.atomic_add(loss, 0, wp.pow(values[i, j] - target_values[i, j], 2.0) / n)
@@ -198,7 +194,6 @@ class DDPG(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=wp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=wp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=wp.int8)
 
             self._tensors_names = [
                 "observations",
@@ -208,7 +203,6 @@ class DDPG(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # clip noise bounds
@@ -316,7 +310,6 @@ class DDPG(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -362,7 +355,6 @@ class DDPG(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
@@ -394,7 +386,6 @@ class DDPG(Agent):
                         target_q_values,
                         sampled_rewards,
                         sampled_terminated,
-                        sampled_truncated,
                         self.cfg.discount_factor,
                         np.prod(critic_values.shape),
                         self._critic_loss,

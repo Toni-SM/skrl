@@ -419,7 +419,7 @@ class PPO_RNN(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            dones=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor,
@@ -468,7 +468,8 @@ class PPO_RNN(Agent):
                     if self.policy is self.value:
                         rnn_policy = {
                             "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
                         rnn_value = rnn_policy
                     else:
@@ -478,7 +479,8 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "policy" in n
                             ],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
                         rnn_value = {
                             "rnn": [
@@ -486,7 +488,8 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "value" in n
                             ],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
 
                 with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):

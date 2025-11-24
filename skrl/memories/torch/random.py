@@ -76,11 +76,11 @@ class RandomMemory(Memory):
             size -= sequence_indexes[-1].item()
         # generate random indexes
         if replacement:
-            indexes = torch.randint(0, size, (batch_size,))
+            indexes = torch.randint(0, size, (batch_size * mini_batches,))
         else:
             # details about the random sampling performance can be found here:
             # https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/19
-            indexes = torch.randperm(size, dtype=torch.long)[:batch_size]
+            indexes = torch.randperm(size, dtype=torch.long)[: batch_size * mini_batches]
         # generate sequence indexes
         if sequence_length > 1:
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.view(-1, 1)).view(-1)

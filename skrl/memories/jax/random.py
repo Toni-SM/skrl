@@ -76,9 +76,9 @@ class RandomMemory(Memory):
             size -= sequence_indexes[-1].item()
         # generate random indexes
         if replacement:
-            indexes = np.random.randint(0, size, (batch_size,))
+            indexes = np.random.randint(0, size, (batch_size * mini_batches,))
         else:
-            indexes = np.random.permutation(size)[:batch_size]
+            indexes = np.random.permutation(size)[: batch_size * mini_batches]
         # generate sequence indexes
         if sequence_length > 1:
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.reshape(-1, 1)).reshape(-1)

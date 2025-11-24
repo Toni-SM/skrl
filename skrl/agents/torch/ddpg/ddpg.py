@@ -150,7 +150,6 @@ class DDPG(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
             self._tensors_names = [
                 "observations",
@@ -160,7 +159,6 @@ class DDPG(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # clip noise bounds
@@ -264,7 +262,6 @@ class DDPG(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -310,7 +307,6 @@ class DDPG(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -330,10 +326,7 @@ class DDPG(Agent):
                         {**next_inputs, "taken_actions": next_actions}, role="target_critic"
                     )
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

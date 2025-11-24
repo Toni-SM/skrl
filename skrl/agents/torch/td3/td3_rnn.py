@@ -389,7 +389,8 @@ class TD3_RNN(Agent):
                 )[0]
                 rnn_policy = {
                     "rnn": [s.transpose(0, 1) for s in sampled_rnn],
-                    "terminated": sampled_terminated | sampled_truncated,
+                    "terminated": sampled_terminated,
+                    "truncated": sampled_truncated,
                 }
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -425,10 +426,7 @@ class TD3_RNN(Agent):
                     )
                     target_q_values = torch.min(target_q1_values, target_q2_values)
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

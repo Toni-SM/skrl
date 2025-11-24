@@ -45,7 +45,6 @@ def _time_limit_bootstrap(
 def _compute_gae(
     rewards: wp.array3d(dtype=float),
     terminated: wp.array3d(dtype=wp.int8),
-    truncated: wp.array3d(dtype=wp.int8),
     values: wp.array3d(dtype=float),
     returns: wp.array3d(dtype=float),
     advantages: wp.array3d(dtype=float),
@@ -62,7 +61,7 @@ def _compute_gae(
                 rewards[i, j, 0]
                 - values[i, j, 0]
                 + discount_factor
-                * wp.float(wp.unot(wp.add(terminated[i, j, 0], truncated[i, j, 0])))
+                * wp.float(wp.unot(terminated[i, j, 0]))
                 * (values[i + 1, j, 0] + lambda_coefficient * advantage)
             )
         else:
@@ -70,7 +69,7 @@ def _compute_gae(
                 rewards[i, j, 0]
                 - values[i, j, 0]
                 + discount_factor
-                * wp.float(wp.unot(wp.add(terminated[i, j, 0], truncated[i, j, 0])))
+                * wp.float(wp.unot(terminated[i, j, 0]))
                 * (last_values[j, 0] + lambda_coefficient * advantage)
             )
         advantages[i, j, 0] = advantage
@@ -273,7 +272,6 @@ class PPO(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=wp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=wp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=wp.int8)
             self.memory.create_tensor(name="log_prob", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="values", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=wp.float32)
@@ -390,7 +388,6 @@ class PPO(Agent):
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
-                truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
             )
@@ -447,7 +444,6 @@ class PPO(Agent):
             inputs=[
                 self.memory.get_tensor_by_name("rewards"),
                 self.memory.get_tensor_by_name("terminated"),
-                self.memory.get_tensor_by_name("truncated"),
                 values,
                 returns,
                 advantages,

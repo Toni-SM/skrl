@@ -34,14 +34,11 @@ def _update_critic(
     inputs: dict[str, jax.Array],
     sampled_rewards: jax.Array,
     sampled_terminated: jax.Array,
-    sampled_truncated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values) - entropy_coefficient * next_log_prob
-    target_values = (
-        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
-    )
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
@@ -269,7 +266,6 @@ class SAC(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
             self._tensors_names = [
                 "observations",
@@ -279,7 +275,6 @@ class SAC(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # set up models for just-in-time compilation with XLA
@@ -374,7 +369,6 @@ class SAC(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -420,7 +414,6 @@ class SAC(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
@@ -456,7 +449,6 @@ class SAC(Agent):
                 {**inputs, "taken_actions": sampled_actions},
                 sampled_rewards,
                 sampled_terminated,
-                sampled_truncated,
                 self.cfg.discount_factor,
             )
 

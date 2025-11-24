@@ -24,7 +24,7 @@ from .ippo_cfg import IPPO_CFG
 @jax.jit
 def _compute_gae(
     rewards: jax.Array,
-    dones: jax.Array,
+    terminated: jax.Array,
     values: jax.Array,
     next_values: jax.Array,
     discount_factor: float = 0.99,
@@ -32,14 +32,16 @@ def _compute_gae(
 ) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
-    not_dones = jnp.logical_not(dones)
+    not_terminated = jnp.logical_not(terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i]
+            - values[i]
+            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages = advantages.at[i].set(advantage)
     # returns computation
@@ -253,7 +255,6 @@ class IPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-                self.memories[uid].create_tensor(name="truncated", size=1, dtype=jnp.int8)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
@@ -378,7 +379,6 @@ class IPPO(MultiAgent):
                     actions=actions[uid],
                     rewards=rewards[uid],
                     terminated=terminated[uid],
-                    truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
                 )
@@ -433,7 +433,7 @@ class IPPO(MultiAgent):
         values = memory.get_tensor_by_name("values")
         returns, advantages = _compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
-            dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
+            terminated=memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor[uid],

@@ -23,7 +23,7 @@ from .ppo_cfg import PPO_CFG
 def compute_gae(
     *,
     rewards: torch.Tensor,
-    dones: torch.Tensor,
+    terminated: torch.Tensor,
     values: torch.Tensor,
     next_values: torch.Tensor,
     discount_factor: float = 0.99,
@@ -32,7 +32,7 @@ def compute_gae(
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
-    :param dones: Signals to indicate that episodes have ended.
+    :param terminated: Signals to indicate that episodes have ended.
     :param values: Values obtained by the agent.
     :param next_values: Next values obtained by the agent.
     :param discount_factor: Discount factor.
@@ -42,14 +42,16 @@ def compute_gae(
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_dones = dones.logical_not()
+    not_terminated = terminated.logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i]
+            - values[i]
+            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -174,7 +176,6 @@ class PPO(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -288,7 +289,6 @@ class PPO(Agent):
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
-                truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=values,
             )
@@ -338,7 +338,7 @@ class PPO(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            terminated=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor,

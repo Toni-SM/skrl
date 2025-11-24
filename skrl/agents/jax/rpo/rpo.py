@@ -76,15 +76,16 @@ def _update_policy(
         ratio = jnp.exp(next_log_prob - sampled_log_prob)
         surrogate = sampled_advantages * ratio
         surrogate_clipped = sampled_advantages * jnp.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
+        policy_loss = -jnp.minimum(surrogate, surrogate_clipped).mean()
 
         # compute entropy loss
         entropy_loss = 0
         if entropy_loss_scale:
             entropy_loss = -entropy_loss_scale * get_entropy(outputs["stddev"], role="policy").mean()
 
-        return -jnp.minimum(surrogate, surrogate_clipped).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
+        return policy_loss + entropy_loss, (policy_loss, entropy_loss, kl_divergence, outputs["stddev"])
 
-    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
+    (_, (policy_loss, entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
         policy_state_dict.params
     )
 

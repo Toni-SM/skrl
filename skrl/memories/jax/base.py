@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 import csv
 import datetime
@@ -279,7 +279,13 @@ class Memory(ABC):
 
     @abstractmethod
     def sample(
-        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+        self,
+        names: list[str],
+        *,
+        batch_size: int,
+        mini_batches: int = 1,
+        sequence_length: int = 1,
+        replacement: Optional[bool] = None,
     ) -> list[list[jax.Array]]:
         """Data sampling method to be implemented by the inheriting classes.
 
@@ -287,6 +293,7 @@ class Memory(ABC):
         :param batch_size: Number of elements to sample.
         :param mini_batches: Number of mini-batches to sample.
         :param sequence_length: Length of each sequence.
+        :param replacement: Override flag whether samples should be drawn with replacement.
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
             The sampled tensors will have the following shape: ``(batch_size, data_size)``.
@@ -321,25 +328,21 @@ class Memory(ABC):
         :return: Sampled data from memory.
             The sampled tensors will have the following shape: ``(memory_size * number_of_environments, data_size)``.
         """
-        # sequential order
-        if sequence_length > 1:
-            if mini_batches > 1:
-                batches = np.array_split(self.all_sequence_indexes, mini_batches)
-                views = [self._tensors_view(name) if name in self.tensors else None for name in names]
-                return [[None if view is None else view[batch] for view in views] for batch in batches]
-            return [
-                [
-                    self._tensors_view(name)[self.all_sequence_indexes] if name in self.tensors else None
-                    for name in names
-                ]
-            ]
-        # default order
         if mini_batches > 1:
             batch_size = (self.memory_size * self.num_envs) // mini_batches
-            batches = [(batch_size * i, batch_size * (i + 1)) for i in range(mini_batches)]
-            views = [self._tensors_view(name) if name in self.tensors else None for name in names]
-            return [[None if view is None else view[batch[0] : batch[1]] for view in views] for batch in batches]
-        return [[self._tensors_view(name) if name in self.tensors else None for name in names]]
+            return self.sample(
+                names=names,
+                batch_size=batch_size,
+                mini_batches=mini_batches,
+                sequence_length=sequence_length,
+                replacement=False,
+            )
+        elif sequence_length > 1:
+            return [
+                [self.tensors_view[name][self.all_sequence_indexes] if name in self.tensors else None for name in names]
+            ]
+        else:
+            return [[self.tensors_view[name] if name in self.tensors else None for name in names]]
 
     def get_sampling_indexes(self) -> list | jax.Array:
         """Get the last indexes used for sampling.

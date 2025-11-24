@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 import torch
 
@@ -49,7 +49,13 @@ class RandomMemory(Memory):
         self._replacement = replacement
 
     def sample(
-        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+        self,
+        names: list[str],
+        *,
+        batch_size: int,
+        mini_batches: int = 1,
+        sequence_length: int = 1,
+        replacement: Optional[bool] = None,
     ) -> list[list[torch.Tensor]]:
         """Sample a batch from memory randomly.
 
@@ -57,17 +63,19 @@ class RandomMemory(Memory):
         :param batch_size: Number of elements to sample.
         :param mini_batches: Number of mini-batches to sample.
         :param sequence_length: Length of each sequence.
+        :param replacement: Override flag whether samples should be drawn with replacement.
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
             The sampled tensors will have the following shape: ``(batch_size, data_size)``.
         """
+        replacement = replacement if replacement is not None else self._replacement
         # compute valid memory sizes
         size = len(self)
         if sequence_length > 1:
             sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
             size -= sequence_indexes[-1].item()
         # generate random indexes
-        if self._replacement:
+        if replacement:
             indexes = torch.randint(0, size, (batch_size,))
         else:
             # details about the random sampling performance can be found here:

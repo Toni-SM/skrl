@@ -5,12 +5,12 @@ import pytest
 import torch
 
 from skrl import config
-from skrl.memories.torch import Memory
+from skrl.memories.torch import RandomMemory
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_device(capsys, device):
-    memory = Memory(memory_size=5, num_envs=1, device=device)
+    memory = RandomMemory(memory_size=5, num_envs=1, device=device)
     memory.create_tensor("buffer", size=1)
 
     target_device = config.torch.parse_device(device)
@@ -22,7 +22,7 @@ def test_device(capsys, device):
 
 
 def test_share_memory(capsys):
-    memory = Memory(memory_size=5, num_envs=1, device="cuda")
+    memory = RandomMemory(memory_size=5, num_envs=1, device="cuda")
     memory.create_tensor("buffer", size=1)
 
     memory.share_memory()
@@ -42,7 +42,7 @@ def test_share_memory(capsys):
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 def test_get_tensor_names(capsys, tensor_names):
-    memory = Memory(memory_size=5, num_envs=1)
+    memory = RandomMemory(memory_size=5, num_envs=1)
     for name in tensor_names:
         memory.create_tensor(name, size=1)
 
@@ -59,13 +59,12 @@ def test_get_tensor_names(capsys, tensor_names):
     deadline=None,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
-@pytest.mark.parametrize("keepdim", [True, False])
-def test_get_tensor_by_name(capsys, tensor_name, keepdim):
-    memory = Memory(memory_size=5, num_envs=2)
+def test_get_tensor_by_name(capsys, tensor_name):
+    memory = RandomMemory(memory_size=5, num_envs=2)
     memory.create_tensor(tensor_name, size=1)
 
-    target_shape = (5, 2, 1) if keepdim else (10, 1)
-    assert memory.get_tensor_by_name(tensor_name, keepdim=keepdim).shape == target_shape
+    target_shape = (5, 2, 1)
+    assert memory.get_tensor_by_name(tensor_name).shape == target_shape
 
 
 @hypothesis.given(
@@ -79,9 +78,9 @@ def test_get_tensor_by_name(capsys, tensor_name, keepdim):
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
 def test_set_tensor_by_name(capsys, tensor_name):
-    memory = Memory(memory_size=5, num_envs=2)
+    memory = RandomMemory(memory_size=5, num_envs=2)
     memory.create_tensor(tensor_name, size=1)
 
     target_tensor = torch.arange(10, device=memory.device).reshape(5, 2, 1)
     memory.set_tensor_by_name(tensor_name, target_tensor)
-    assert torch.any(memory.get_tensor_by_name(tensor_name, keepdim=True) == target_tensor)
+    assert torch.any(memory.get_tensor_by_name(tensor_name) == target_tensor)

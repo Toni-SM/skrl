@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Update tabular model definition to operate in any number of parallel environments
 - Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
 
+### Fixed
+- Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
+- Fix time limits handling for termination and truncation signals
+
 ### Removed
 - Remove NumPy backend for JAX implementation
 - Remove checkpoints/models migration support from other RL libraries

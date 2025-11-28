@@ -25,7 +25,7 @@ def _apply_exploration_noise(
     actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
 ) -> jax.Array:
     noises = noises.at[:].multiply(scale)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+    return jnp.clip(actions + noises, min=clip_actions_min, max=clip_actions_max), noises
 
 
 @jax.jit
@@ -36,8 +36,8 @@ def _apply_smooth_regularization_noise(
     clip_actions_max: jax.Array,
     smooth_regularization_clip: float,
 ) -> jax.Array:
-    noises = jnp.clip(noises, a_min=-smooth_regularization_clip, a_max=smooth_regularization_clip)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max)
+    noises = jnp.clip(noises, min=-smooth_regularization_clip, max=smooth_regularization_clip)
+    return jnp.clip(actions + noises, min=clip_actions_min, max=clip_actions_max)
 
 
 @functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act"))

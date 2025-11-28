@@ -25,7 +25,7 @@ def _apply_exploration_noise(
     actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
 ) -> jax.Array:
     noises = noises.at[:].multiply(scale)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+    return jnp.clip(actions + noises, min=clip_actions_min, max=clip_actions_max), noises
 
 
 @functools.partial(jax.jit, static_argnames=("critic_act"))

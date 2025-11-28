@@ -36,7 +36,7 @@ class MultivariateGaussianMixin:
         self._mg_clip_actions = clip_actions
         self._mg_clip_mean_actions = clip_mean_actions
         self._mg_clip_actions_min, self._mg_clip_actions_max = compute_space_limits(
-            self.action_space, device=self.device
+            self.action_space, device=self.device, none_if_unbounded="any"
         )
 
         self._mg_clip_log_std = clip_log_std
@@ -66,13 +66,13 @@ class MultivariateGaussianMixin:
         mean_actions, outputs = self.compute(inputs, role)
         log_std = outputs["log_std"]
 
-        # clamp mean actions
+        # clip mean actions
         if self._mg_clip_mean_actions:
-            mean_actions = torch.clamp(mean_actions, self._mg_clip_actions_min, self._mg_clip_actions_max)
+            mean_actions = torch.clamp(mean_actions, min=self._mg_clip_actions_min, max=self._mg_clip_actions_max)
 
-        # clamp log standard deviations
+        # clip log standard deviations
         if self._mg_clip_log_std:
-            log_std = torch.clamp(log_std, self._mg_log_std_min, self._mg_log_std_max)
+            log_std = torch.clamp(log_std, min=self._mg_log_std_min, max=self._mg_log_std_max)
             outputs["log_std"] = log_std
 
         # distribution

@@ -41,7 +41,9 @@ class GaussianMixin:
         """
         self._g_clip_actions = clip_actions
         self._g_clip_mean_actions = clip_mean_actions
-        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
+        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         self._g_clip_log_std = clip_log_std
         self._g_log_std_min = min_log_std
@@ -80,11 +82,11 @@ class GaussianMixin:
 
         # clip mean actions
         if self._g_clip_mean_actions:
-            mean_actions = torch.clamp(mean_actions, self._g_clip_actions_min, self._g_clip_actions_max)
+            mean_actions = torch.clamp(mean_actions, min=self._g_clip_actions_min, max=self._g_clip_actions_max)
 
-        # clamp log standard deviations
+        # clip log standard deviations
         if self._g_clip_log_std:
-            log_std = torch.clamp(log_std, self._g_log_std_min, self._g_log_std_max)
+            log_std = torch.clamp(log_std, min=self._g_log_std_min, max=self._g_log_std_max)
             outputs["log_std"] = log_std
 
         # distribution

@@ -18,7 +18,9 @@ class DeterministicMixin:
         :param role: Role played by the model.
         """
         self._d_clip_actions = clip_actions
-        self._d_clip_actions_min, self._d_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
+        self._d_min_actions, self._d_max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         # https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.IncorrectPostInitOverrideError
         flax.linen.Module.__post_init__(self)
@@ -44,6 +46,6 @@ class DeterministicMixin:
 
         # clip actions
         if self._d_clip_actions:
-            actions = jnp.clip(actions, a_min=self._d_clip_actions_min, a_max=self._d_clip_actions_max)
+            actions = jnp.clip(actions, min=self._d_min_actions, max=self._d_max_actions)
 
         return actions, outputs

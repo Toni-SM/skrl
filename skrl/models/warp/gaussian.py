@@ -28,12 +28,12 @@ def _gaussian(
     # inputs
     loc: wp.array2d(dtype=float),
     log_std: wp.array1d(dtype=float),
-    log_std_min: float,
-    log_std_max: float,
-    clip_actions_min: wp.array1d(dtype=float),
-    clip_actions_max: wp.array1d(dtype=float),
-    clip_mean_actions_min: wp.array1d(dtype=float),
-    clip_mean_actions_max: wp.array1d(dtype=float),
+    min_log_std: float,
+    max_log_std: float,
+    min_actions: wp.array1d(dtype=float),
+    max_actions: wp.array1d(dtype=float),
+    min_mean_actions: wp.array1d(dtype=float),
+    max_mean_actions: wp.array1d(dtype=float),
     taken_actions: wp.array2d(dtype=float),
     reduction: int,
     m: float,
@@ -46,16 +46,16 @@ def _gaussian(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    # clamp mean actions
+    # clip mean actions
     loc_ij = loc[i, j]
-    if clip_mean_actions_min:
-        loc_ij = wp.clamp(loc_ij, clip_mean_actions_min[j], clip_mean_actions_max[j])
+    if min_mean_actions:
+        loc_ij = wp.clamp(loc_ij, min_mean_actions[j], max_mean_actions[j])
     loc_out[i, j] = loc_ij
-    # clamp log standard deviations and compute distribution parameters
-    scale[j] = wp.exp(wp.clamp(log_std[j], log_std_min, log_std_max))
+    # clip log standard deviations and compute distribution parameters
+    scale[j] = wp.exp(wp.clamp(log_std[j], min_log_std, max_log_std))
     # sample actions
-    if clip_actions_min:
-        actions[i, j] = wp.clamp(2.0 * wp.randn(subkey) * scale[j] + loc_ij, clip_actions_min[j], clip_actions_max[j])
+    if min_actions:
+        actions[i, j] = wp.clamp(2.0 * wp.randn(subkey) * scale[j] + loc_ij, min_actions[j], max_actions[j])
     else:
         actions[i, j] = 2.0 * wp.randn(subkey) * scale[j] + loc_ij
     # log of the probability density function
@@ -123,19 +123,15 @@ class GaussianMixin:
         self._g_clip_actions = clip_actions
         self._g_clip_mean_actions = clip_mean_actions
 
-        clip_actions_min, clip_actions_max = compute_space_limits(
-            self.action_space, device=self.device, none_if_unbounded="both"
-        )
-        self._g_clip_actions_min, self._g_clip_actions_max = (
-            (clip_actions_min, clip_actions_max) if self._g_clip_actions else (None, None)
-        )
-        self._g_clip_mean_actions_min, self._g_clip_mean_actions_max = (
-            (clip_actions_min, clip_actions_max) if self._g_clip_mean_actions else (None, None)
-        )
+        min_actions, max_actions = compute_space_limits(self.action_space, device=self.device, none_if_unbounded="both")
+        self._g_min_actions = min_actions if self._g_clip_actions else None
+        self._g_max_actions = max_actions if self._g_clip_actions else None
+        self._g_min_mean_actions = min_actions if self._g_clip_mean_actions else None
+        self._g_max_mean_actions = max_actions if self._g_clip_mean_actions else None
 
         self._g_clip_log_std = clip_log_std
-        self._g_log_std_min = min_log_std if self._g_clip_log_std else -wp.inf
-        self._g_log_std_max = max_log_std if self._g_clip_log_std else wp.inf
+        self._g_min_log_std = min_log_std if self._g_clip_log_std else -wp.inf
+        self._g_max_log_std = max_log_std if self._g_clip_log_std else wp.inf
 
         self._g_distribution = None
 
@@ -182,12 +178,12 @@ class GaussianMixin:
             inputs=[
                 mean_actions,
                 log_std,
-                self._g_log_std_min,
-                self._g_log_std_max,
-                self._g_clip_actions_min,
-                self._g_clip_actions_max,
-                self._g_clip_mean_actions_min,
-                self._g_clip_mean_actions_max,
+                self._g_min_log_std,
+                self._g_max_log_std,
+                self._g_min_actions,
+                self._g_max_actions,
+                self._g_min_mean_actions,
+                self._g_max_mean_actions,
                 inputs.get("taken_actions"),
                 self._g_reduction,
                 shape[1],

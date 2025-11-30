@@ -15,6 +15,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.torch import compute_space_limits
 
 from .td3_cfg import TD3_CFG
 
@@ -182,9 +183,9 @@ class TD3(Agent):
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         # create temporary variables needed for storage and computation
         self._update_counter = 0
@@ -220,7 +221,7 @@ class TD3(Agent):
             if self.cfg.exploration_scheduler:
                 noises.mul_(self.cfg.exploration_scheduler(timestep, timesteps))
             actions.add_(noises)
-            actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+            actions.clamp_(min=self._min_actions, max=self._max_actions)
 
             self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
             self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
@@ -352,7 +353,7 @@ class TD3(Agent):
                             max=self.cfg.smooth_regularization_clip,
                         )
                         next_actions.add_(noises)
-                        next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                        next_actions.clamp_(min=self._min_actions, max=self._max_actions)
 
                     # compute target values
                     target_q1_values, _ = self.target_critic_1.act(

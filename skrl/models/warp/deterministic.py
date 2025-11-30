@@ -16,7 +16,7 @@ class DeterministicMixin:
         :param role: Role played by the model.
         """
         self._d_clip_actions = clip_actions
-        self._d_clip_actions_min, self._d_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
+        self._d_min_actions, self._d_max_actions = compute_space_limits(self.action_space, device=self.device)
 
     def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act deterministically in response to the observations/states of the environment.
@@ -36,6 +36,6 @@ class DeterministicMixin:
 
         # clip actions
         if self._d_clip_actions:
-            actions = clamp(actions, min=self._d_clip_actions_min, max=self._d_clip_actions_max)
+            actions = clamp(actions, min=self._d_min_actions, max=self._d_max_actions)
 
         return actions, outputs

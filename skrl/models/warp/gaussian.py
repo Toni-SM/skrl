@@ -46,12 +46,12 @@ def _gaussian(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    # clamp mean actions
+    # clip mean actions
     loc_ij = loc[i, j]
     if clip_mean_actions_min:
         loc_ij = wp.clamp(loc_ij, clip_mean_actions_min[j], clip_mean_actions_max[j])
     loc_out[i, j] = loc_ij
-    # clamp log standard deviations and compute distribution parameters
+    # clip log standard deviations and compute distribution parameters
     scale[j] = wp.exp(wp.clamp(log_std[j], log_std_min, log_std_max))
     # sample actions
     if clip_actions_min:

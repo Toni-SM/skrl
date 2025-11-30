@@ -13,6 +13,7 @@ from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.resources.optimizers.warp import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.warp import compute_space_limits
 
 from .ddpg_cfg import DDPG_CFG
 
@@ -33,13 +34,13 @@ def enable_grad(obj, *, enabled: bool):
 def _apply_exploration_noise(
     actions: wp.array2d(dtype=float),
     noises: wp.array2d(dtype=float),
-    clip_actions_min: wp.array1d(dtype=float),
-    clip_actions_max: wp.array1d(dtype=float),
+    min_actions: wp.array1d(dtype=float),
+    max_actions: wp.array1d(dtype=float),
     scale: float,
 ):
     i, j = wp.tid()
     noises[i, j] = noises[i, j] * scale  # update in-place for logging
-    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], clip_actions_min[j], clip_actions_max[j])
+    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], min_actions[j], max_actions[j])
 
 
 @wp.kernel
@@ -206,9 +207,9 @@ class DDPG(Agent):
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = wp.array(self.action_space.low.flatten(), dtype=wp.float32, device=self.device)
-            self.clip_actions_max = wp.array(self.action_space.high.flatten(), dtype=wp.float32, device=self.device)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
     def act(
         self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
@@ -242,7 +243,7 @@ class DDPG(Agent):
             wp.launch(
                 _apply_exploration_noise,
                 dim=actions.shape,
-                inputs=[actions, noises, self.clip_actions_min, self.clip_actions_max, float(scale)],
+                inputs=[actions, noises, self._min_actions, self._max_actions, float(scale)],
                 device=self.device,
             )
 

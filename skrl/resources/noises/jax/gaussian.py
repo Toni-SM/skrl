@@ -14,7 +14,7 @@ from skrl.resources.noises.jax import Noise
 @partial(jax.jit, static_argnames=("shape"))
 def _sample(mean, std, key, iterator, shape):
     subkey = jax.random.fold_in(key, iterator)
-    return jax.random.normal(subkey, shape) * std + mean
+    return 2.0 * jax.random.normal(subkey, shape) * std + mean
 
 
 class GaussianNoise(Noise):

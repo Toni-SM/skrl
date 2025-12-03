@@ -12,6 +12,7 @@ from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.resources.optimizers.warp import Adam
+from skrl.resources.schedulers.warp import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
 from .ppo_cfg import PPO_CFG
@@ -225,7 +226,9 @@ class PPO(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler_name = self.scheduler.__qualname__.lower()
+                self.scheduler_type = None
+                if "kladaptive" in self.scheduler.__qualname__.lower().replace("_", ""):
+                    self.scheduler_type = KLAdaptiveLR
                 self.scheduler = self.cfg.learning_rate_scheduler[0](**self.cfg.learning_rate_scheduler_kwargs[0])
 
             # training variables
@@ -573,7 +576,7 @@ class PPO(Agent):
 
             # update learning rate
             if self.scheduler:
-                if self.scheduler_name in ["kl_adaptive", "kladaptivelr"]:
+                if self.scheduler_type is KLAdaptiveLR:
                     kl = np.mean(kl_divergences)
                     self.learning_rate = self.scheduler(timestep, lr=self.learning_rate, kl=kl)
                 else:

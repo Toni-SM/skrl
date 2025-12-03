@@ -14,7 +14,7 @@ from skrl.resources.noises.jax import Noise
 @partial(jax.jit, static_argnames=("shape"))
 def _sample(theta, sigma, state, mean, std, key, iterator, shape):
     subkey = jax.random.fold_in(key, iterator)
-    return state * theta + sigma * (jax.random.normal(subkey, shape) * std + mean)
+    return state * theta + sigma * (2.0 * jax.random.normal(subkey, shape) * std + mean)
 
 
 class OrnsteinUhlenbeckNoise(Noise):

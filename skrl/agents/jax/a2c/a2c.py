@@ -176,11 +176,17 @@ class A2C(Agent):
             # - learning rate schedulers
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             if self.policy_scheduler is not None:
+                self.policy_scheduler_type = None
+                if "kladaptive" in self.policy_scheduler.__qualname__.lower().replace("_", ""):
+                    self.policy_scheduler_type = KLAdaptiveLR
                 self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
                     **self.cfg.learning_rate_scheduler_kwargs[0]
                 )
             self.value_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.value_scheduler is not None:
+                self.value_scheduler_type = None
+                if "kladaptive" in self.value_scheduler.__qualname__.lower().replace("_", ""):
+                    self.value_scheduler_type = KLAdaptiveLR
                 self.value_scheduler = self.cfg.learning_rate_scheduler[1](**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up preprocessors
@@ -456,7 +462,7 @@ class A2C(Agent):
 
         # update learning rate
         # - compute KL for KL adaptive learning rate scheduler
-        if self.policy_scheduler is KLAdaptiveLR or self.value_scheduler is KLAdaptiveLR:
+        if self.policy_scheduler_type is KLAdaptiveLR or self.value_scheduler_type is KLAdaptiveLR:
             kl = np.mean(kl_divergences)
             # reduce (collect from all workers/processes) KL in distributed runs
             if config.jax.is_distributed:
@@ -464,13 +470,13 @@ class A2C(Agent):
                 kl /= config.jax.world_size
         # - policy learning rate
         if self.policy_scheduler:
-            if self.policy_scheduler is KLAdaptiveLR:
+            if self.policy_scheduler_type is KLAdaptiveLR:
                 self.policy_learning_rate = self.policy_scheduler(timestep, lr=self.policy_learning_rate, kl=kl)
             else:
                 self.policy_learning_rate *= self.policy_scheduler(timestep)
         # - value learning rate
         if self.value_scheduler:
-            if self.value_scheduler is KLAdaptiveLR:
+            if self.value_scheduler_type is KLAdaptiveLR:
                 self.value_learning_rate = self.value_scheduler(timestep, lr=self.value_learning_rate, kl=kl)
             else:
                 self.value_learning_rate *= self.value_scheduler(timestep)

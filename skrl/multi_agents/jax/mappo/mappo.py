@@ -177,6 +177,7 @@ class MAPPO(MultiAgent):
         # set up optimizer and learning rate scheduler
         self.policy_optimizer, self.value_optimizer = {}, {}
         self.policy_scheduler, self.value_scheduler = {}, {}
+        self.policy_scheduler_type, self.value_scheduler_type = {}, {}
         self.policy_learning_rate, self.value_learning_rate = {}, {}
         for uid in self.possible_agents:
             if self.policies[uid] is not None and self.values[uid] is not None:
@@ -200,11 +201,17 @@ class MAPPO(MultiAgent):
                 # - learning rate schedulers
                 self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0]
                 if self.policy_scheduler[uid] is not None:
+                    self.policy_scheduler_type[uid] = None
+                    if "kladaptive" in self.policy_scheduler[uid].__qualname__.lower().replace("_", ""):
+                        self.policy_scheduler_type[uid] = KLAdaptiveLR
                     self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][0]
                     )
                 self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1]
                 if self.value_scheduler[uid] is not None:
+                    self.value_scheduler_type[uid] = None
+                    if "kladaptive" in self.value_scheduler[uid].__qualname__.lower().replace("_", ""):
+                        self.value_scheduler_type[uid] = KLAdaptiveLR
                     self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][1]
                     )
@@ -529,7 +536,7 @@ class MAPPO(MultiAgent):
 
             # update learning rate
             # - compute KL for KL adaptive learning rate scheduler
-            if self.policy_scheduler is KLAdaptiveLR or self.value_scheduler is KLAdaptiveLR:
+            if self.policy_scheduler_type[uid] is KLAdaptiveLR or self.value_scheduler_type[uid] is KLAdaptiveLR:
                 kl = np.mean(kl_divergences)
                 # reduce (collect from all workers/processes) KL in distributed runs
                 if config.jax.is_distributed:
@@ -537,7 +544,7 @@ class MAPPO(MultiAgent):
                     kl /= config.jax.world_size
             # - policy learning rate
             if self.policy_scheduler[uid]:
-                if self.policy_scheduler[uid] is KLAdaptiveLR:
+                if self.policy_scheduler_type[uid] is KLAdaptiveLR:
                     self.policy_learning_rate[uid] = self.policy_scheduler[uid](
                         timestep, lr=self.policy_learning_rate[uid], kl=kl
                     )
@@ -545,7 +552,7 @@ class MAPPO(MultiAgent):
                     self.policy_learning_rate[uid] *= self.policy_scheduler[uid](timestep)
             # - value learning rate
             if self.value_scheduler[uid]:
-                if self.value_scheduler[uid] is KLAdaptiveLR:
+                if self.value_scheduler_type[uid] is KLAdaptiveLR:
                     self.value_learning_rate[uid] = self.value_scheduler[uid](
                         timestep, lr=self.value_learning_rate[uid], kl=kl
                     )

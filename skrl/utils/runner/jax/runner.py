@@ -18,16 +18,18 @@ from skrl.utils import set_seed
 
 
 class Runner:
-    def __init__(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any]) -> None:
+    def __init__(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], *, verbose: bool = False) -> None:
         """Experiment runner.
 
         Configure and instantiate skrl components to execute training/evaluation workflows in a few lines of code.
 
         :param env: Environment to train on.
         :param cfg: Runner configuration.
+        :param verbose: Whether to print extra information about the setup.
         """
         self._env = env
         self._cfg = cfg
+        self._verbose = verbose
 
         # set random seed
         set_seed(self._cfg.get("seed", None))
@@ -178,9 +180,14 @@ class Runner:
 
         # backward compatibility
         if "lambda" in cfg:
+            logger.warning("The 'lambda' field in the specified configuration is deprecated. Use 'lambda_' instead")
             cfg["lambda_"] = cfg["lambda"]
             del cfg["lambda"]
         if "clip_predicted_values" in cfg:
+            logger.warning(
+                "The 'clip_predicted_values' field in the specified configuration is deprecated. "
+                "Define a 'value_clip' value greater than 0 to clip the predicted values instead"
+            )
             cfg["value_clip"] = cfg["value_clip"] if cfg["clip_predicted_values"] else 0.0
             del cfg["clip_predicted_values"]
 
@@ -248,19 +255,20 @@ class Runner:
                                 "Unable to get AMP space via 'env.amp_observation_space'. Using 'env.observation_space' instead"
                             )
                     # print model source
-                    source = model_class(
-                        observation_space=observation_space,
-                        state_space=state_spaces[agent_id],
-                        action_space=action_spaces[agent_id],
-                        device=device,
-                        **self._process_cfg(models_cfg[role]),
-                        return_source=True,
-                    )
-                    print("==================================================")
-                    print(f"Model (role): {role}")
-                    print("==================================================\n")
-                    print(source)
-                    print("--------------------------------------------------")
+                    if self._verbose:
+                        source = model_class(
+                            observation_space=observation_space,
+                            state_space=state_spaces[agent_id],
+                            action_space=action_spaces[agent_id],
+                            device=device,
+                            **self._process_cfg(models_cfg[role]),
+                            return_source=True,
+                        )
+                        print("==================================================")
+                        print(f"Model (role): {role}")
+                        print("==================================================\n")
+                        print(source)
+                        print("--------------------------------------------------")
                     # instantiate model
                     models[agent_id][role] = model_class(
                         observation_space=observation_space,

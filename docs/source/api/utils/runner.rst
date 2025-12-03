@@ -63,6 +63,25 @@ Usage
                     :start-after: [start-cfg-yaml]
                     :end-before: [end-cfg-yaml]
 
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. tabs::
+
+            .. group-tab:: Python code
+
+                .. literalinclude:: ../../snippets/runner.txt
+                    :language: python
+                    :emphasize-lines: 1, 10, 13, 16
+                    :start-after: [start-runner-train-warp]
+                    :end-before: [end-runner-train-warp]
+
+            .. group-tab:: Example .yaml file (PPO)
+
+                .. literalinclude:: ../../snippets/runner.txt
+                    :language: yaml
+                    :start-after: [start-cfg-yaml]
+                    :end-before: [end-cfg-yaml]
+
 API (PyTorch)
 -------------
 
@@ -78,5 +97,16 @@ API (JAX)
 ---------
 
 .. autoclass:: skrl.utils.runner.jax.Runner
+    :show-inheritance:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.utils.runner.warp.Runner
     :show-inheritance:
     :members:

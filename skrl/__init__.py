@@ -331,10 +331,10 @@ class _Config(object):
                 self._device = "cuda:0"
                 # kernel-related config
                 self.tiled = True
-                self.block_dim = 256
-                self.tile_dim_0 = 64
-                self.tile_dim_1 = 64
-                self.tile_dim_2 = 64
+                self.block_dim = 128
+                self.tile_dim_0 = 32
+                self.tile_dim_1 = 32
+                self.tile_dim_2 = 32
 
                 # init Warp (don't import if it hasn't been imported)
                 if "warp" in sys.modules:

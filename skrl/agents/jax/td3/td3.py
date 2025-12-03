@@ -15,6 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.jax import compute_space_limits
 
 from .td3_cfg import TD3_CFG
 
@@ -22,22 +23,22 @@ from .td3_cfg import TD3_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _apply_exploration_noise(
-    actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
+    actions: jax.Array, noises: jax.Array, min_actions: jax.Array, max_actions: jax.Array, scale: float
 ) -> jax.Array:
     noises = noises.at[:].multiply(scale)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions), noises
 
 
 @jax.jit
 def _apply_smooth_regularization_noise(
     actions: jax.Array,
     noises: jax.Array,
-    clip_actions_min: jax.Array,
-    clip_actions_max: jax.Array,
+    min_actions: jax.Array,
+    max_actions: jax.Array,
     smooth_regularization_clip: float,
 ) -> jax.Array:
-    noises = jnp.clip(noises, a_min=-smooth_regularization_clip, a_max=smooth_regularization_clip)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max)
+    noises = jnp.clip(noises, min=-smooth_regularization_clip, max=smooth_regularization_clip)
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions)
 
 
 @functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act"))
@@ -48,17 +49,14 @@ def _update_critic(
     critic_2_state_dict,
     target_q1_values: jax.Array,
     target_q2_values: jax.Array,
-    inputs: dict[str, np.ndarray | jax.Array],
-    sampled_rewards: np.ndarray | jax.Array,
-    sampled_terminated: np.ndarray | jax.Array,
-    sampled_truncated: np.ndarray | jax.Array,
+    inputs: dict[str, jax.Array],
+    sampled_rewards: jax.Array,
+    sampled_terminated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values)
-    target_values = (
-        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
-    )
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
@@ -253,7 +251,6 @@ class TD3(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
             self._tensors_names = [
                 "observations",
@@ -263,17 +260,12 @@ class TD3(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            if self._jax:
-                self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-                self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
-            else:
-                self.clip_actions_min = np.array(self.action_space.low, dtype=np.float32)
-                self.clip_actions_max = np.array(self.action_space.high, dtype=np.float32)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         # create temporary variables needed for storage and computation
         self._update_counter = 0
@@ -289,13 +281,8 @@ class TD3(Agent):
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -316,22 +303,13 @@ class TD3(Agent):
 
         # sample deterministic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
 
         # add exploration noise
         if self._exploration_noise is not None:
             noises = self._exploration_noise.sample(actions.shape)
             scale = self.cfg.exploration_scheduler(timestep, timesteps) if self.cfg.exploration_scheduler else 1.0
             # modify actions
-            if self._jax:
-                actions, noises = _apply_exploration_noise(
-                    actions, noises, self.clip_actions_min, self.clip_actions_max, scale
-                )
-            else:
-                noises *= scale
-                actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
-
+            actions, noises = _apply_exploration_noise(actions, noises, self._min_actions, self._max_actions, scale)
             self.track_data("Exploration / Exploration noise (max)", noises.max().item())
             self.track_data("Exploration / Exploration noise (min)", noises.min().item())
             self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
@@ -341,14 +319,14 @@ class TD3(Agent):
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -395,7 +373,6 @@ class TD3(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -441,7 +418,6 @@ class TD3(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
@@ -457,21 +433,13 @@ class TD3(Agent):
             next_actions, _ = self.target_policy.act(next_inputs, role="target_policy")
             if self._smooth_regularization_noise is not None:
                 noises = self._smooth_regularization_noise.sample(next_actions.shape)
-                if self._jax:
-                    next_actions = _apply_smooth_regularization_noise(
-                        next_actions,
-                        noises,
-                        self.clip_actions_min,
-                        self.clip_actions_max,
-                        self.cfg.smooth_regularization_clip,
-                    )
-                else:
-                    noises = np.clip(
-                        noises, a_min=-self.cfg.smooth_regularization_clip, a_max=self.cfg.smooth_regularization_clip
-                    )
-                    next_actions = np.clip(
-                        next_actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max
-                    )
+                next_actions = _apply_smooth_regularization_noise(
+                    next_actions,
+                    noises,
+                    self._min_actions,
+                    self._max_actions,
+                    self.cfg.smooth_regularization_clip,
+                )
 
             # compute target values
             target_q1_values, _ = self.target_critic_1.act(
@@ -492,7 +460,6 @@ class TD3(Agent):
                 {**inputs, "taken_actions": sampled_actions},
                 sampled_rewards,
                 sampled_terminated,
-                sampled_truncated,
                 self.cfg.discount_factor,
             )
 

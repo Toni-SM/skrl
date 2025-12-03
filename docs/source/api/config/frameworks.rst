@@ -99,15 +99,6 @@ API
     The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
     However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
 
-.. py:data:: skrl.config.jax.backend
-    :type: str
-    :value: "numpy"
-
-    Backend used by the different components to operate and generate arrays.
-
-    This configuration excludes models and optimizers.
-    Supported backend are: ``"numpy"`` and ``"jax"``.
-
 .. py:data:: skrl.config.jax.key
     :type: jax.Array
     :value: [0, 0]

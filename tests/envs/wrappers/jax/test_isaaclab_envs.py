@@ -140,14 +140,10 @@ class IsaacLabMultiAgentEnv:
         pass
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
-    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1))
 
     # check wrapper definition
     with pytest.raises(AttributeError):
@@ -179,42 +175,35 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
         state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
         state = env.state()
-        assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
+        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
         assert isinstance(info, Mapping)
         if num_states:
-            assert isinstance(state, Array) and state.shape == (num_envs, num_states)
+            assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
         else:
             assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
-            assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
-            assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
+            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
             if num_states:
-                assert isinstance(state, Array) and state.shape == (num_envs, num_states)
+                assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
             else:
                 assert state is None
 
     env.close()
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
     num_agents = 3
     possible_agents = [f"agent_{i}" for i in range(num_agents)]
-    action = {
-        f"agent_{i}": jnp.ones((num_envs, i + 10)) if backend == "jax" else np.ones((num_envs, i + 10))
-        for i in range(num_agents)
-    }
+    action = {f"agent_{i}": jnp.ones((num_envs, i + 10)) for i in range(num_agents)}
 
     # check wrapper definition
     with pytest.raises(AttributeError):
@@ -253,9 +242,9 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states
         assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for i, agent in enumerate(possible_agents):
-            assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
+            assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (num_envs, i + 20)
             if num_states:
-                assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, num_states)
+                assert isinstance(state[agent], jax.Array) and state[agent].shape == (num_envs, num_states)
             else:
                 assert state[agent] is None
         for _ in range(3):
@@ -269,13 +258,13 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for i, agent in enumerate(possible_agents):
-                assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
+                assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (num_envs, i + 20)
                 if num_states:
-                    assert isinstance(state[agent], Array) and state[agent].shape == (num_envs, num_states)
+                    assert isinstance(state[agent], jax.Array) and state[agent].shape == (num_envs, num_states)
                 else:
                     assert state[agent] is None
-                assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
-                assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
-                assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)
+                assert isinstance(reward[agent], jax.Array) and reward[agent].shape == (num_envs, 1)
+                assert isinstance(terminated[agent], jax.Array) and terminated[agent].shape == (num_envs, 1)
+                assert isinstance(truncated[agent], jax.Array) and truncated[agent].shape == (num_envs, 1)
 
     env.close()

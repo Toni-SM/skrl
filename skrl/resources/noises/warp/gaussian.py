@@ -10,7 +10,7 @@ from skrl.resources.noises.warp import Noise
 def _sample(dst: wp.array2d(dtype=float), mean: float, std: float, key: int):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    dst[i, j] = wp.randn(subkey) * std + mean
+    dst[i, j] = 2.0 * wp.randn(subkey) * std + mean
 
 
 class GaussianNoise(Noise):

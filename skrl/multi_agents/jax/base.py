@@ -120,8 +120,6 @@ class MultiAgent(ABC):
         :param action_spaces: Action spaces.
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.training = False
 
         self.possible_agents = possible_agents
@@ -353,13 +351,8 @@ class MultiAgent(ABC):
 
     @abstractmethod
     def act(
-        self,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -375,14 +368,14 @@ class MultiAgent(ABC):
     def record_transition(
         self,
         *,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        actions: dict[str, np.ndarray | jax.Array],
-        rewards: dict[str, np.ndarray | jax.Array],
-        next_observations: dict[str, np.ndarray | jax.Array],
-        next_states: dict[str, np.ndarray | jax.Array],
-        terminated: dict[str, np.ndarray | jax.Array],
-        truncated: dict[str, np.ndarray | jax.Array],
+        observations: dict[str, jax.Array],
+        states: dict[str, jax.Array | None],
+        actions: dict[str, jax.Array],
+        rewards: dict[str, jax.Array],
+        next_observations: dict[str, jax.Array],
+        next_states: dict[str, jax.Array],
+        terminated: dict[str, jax.Array],
+        truncated: dict[str, jax.Array],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -418,10 +411,9 @@ class MultiAgent(ABC):
                 self._cumulative_timesteps = np.zeros_like(_rewards, dtype=np.int32)
 
             # TODO: find a better way to avoid https://jax.readthedocs.io/en/latest/errors.html#jax.errors.ConcretizationTypeError
-            if self._jax:
-                _rewards = jax.device_get(_rewards)
-                _terminated = jax.device_get(_terminated)
-                _truncated = jax.device_get(_truncated)
+            _rewards = jax.device_get(_rewards)
+            _terminated = jax.device_get(_terminated)
+            _truncated = jax.device_get(_truncated)
 
             self._cumulative_rewards += _rewards
             self._cumulative_timesteps += 1

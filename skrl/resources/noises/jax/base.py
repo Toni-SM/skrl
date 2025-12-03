@@ -14,11 +14,9 @@ class Noise(ABC):
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.device = config.jax.parse_device(device)
 
-    def sample_like(self, tensor: np.ndarray | jax.Array) -> np.ndarray | jax.Array:
+    def sample_like(self, tensor: jax.Array) -> jax.Array:
         """Sample noise with the same size (shape) as the input tensor.
 
         This method will call the sampling method as follows ``.sample(tensor.shape)``.
@@ -38,7 +36,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: list[int]) -> np.ndarray | jax.Array:
+    def sample(self, size: list[int]) -> jax.Array:
         """Sample noise.
 
         :param size: Noise shape.

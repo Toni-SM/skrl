@@ -65,7 +65,6 @@ class SARSA(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_terminated = None
-        self._current_truncated = None
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
@@ -150,19 +149,6 @@ class SARSA(Agent):
         self._current_next_observations = next_observations
         self._current_next_states = next_states
         self._current_terminated = terminated
-        self._current_truncated = truncated
-
-        if self.memory is not None:
-            self.memory.add_samples(
-                observations=observations,
-                states=states,
-                actions=actions,
-                rewards=rewards,
-                next_observations=next_observations,
-                next_states=next_states,
-                terminated=terminated,
-                truncated=truncated,
-            )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -204,7 +190,7 @@ class SARSA(Agent):
         q_table[self._current_observations, self._current_actions] += self.cfg.learning_rate * (
             self._current_rewards
             + self.cfg.discount_factor
-            * (self._current_terminated | self._current_truncated).logical_not()
+            * self._current_terminated.logical_not()
             * q_table[self._current_next_observations, next_actions]
             - q_table[self._current_observations, self._current_actions]
         )

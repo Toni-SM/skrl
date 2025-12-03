@@ -31,17 +31,14 @@ def _update_critic(
     target_q2_values: jax.Array,
     entropy_coefficient,
     next_log_prob,
-    inputs: dict[str, np.ndarray | jax.Array],
-    sampled_rewards: np.ndarray | jax.Array,
-    sampled_terminated: np.ndarray | jax.Array,
-    sampled_truncated: np.ndarray | jax.Array,
+    inputs: dict[str, jax.Array],
+    sampled_rewards: jax.Array,
+    sampled_terminated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values) - entropy_coefficient * next_log_prob
-    target_values = (
-        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
-    )
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
@@ -269,7 +266,6 @@ class SAC(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
             self._tensors_names = [
                 "observations",
@@ -279,7 +275,6 @@ class SAC(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # set up models for just-in-time compilation with XLA
@@ -292,13 +287,8 @@ class SAC(Agent):
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -320,22 +310,19 @@ class SAC(Agent):
 
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
-
         return actions, outputs
 
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -382,7 +369,6 @@ class SAC(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -428,7 +414,6 @@ class SAC(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
@@ -464,7 +449,6 @@ class SAC(Agent):
                 {**inputs, "taken_actions": sampled_actions},
                 sampled_rewards,
                 sampled_terminated,
-                sampled_truncated,
                 self.cfg.discount_factor,
             )
 

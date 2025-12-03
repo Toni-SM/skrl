@@ -20,50 +20,11 @@ from skrl.utils import ScopedTimer
 from .ippo_cfg import IPPO_CFG
 
 
-def compute_gae(
-    rewards: np.ndarray,
-    dones: np.ndarray,
-    values: np.ndarray,
-    next_values: np.ndarray,
-    discount_factor: float = 0.99,
-    lambda_coefficient: float = 0.95,
-) -> np.ndarray:
-    """Compute the Generalized Advantage Estimator (GAE).
-
-    :param rewards: Rewards obtained by the agent.
-    :param dones: Signals to indicate that episodes have ended.
-    :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
-    :param discount_factor: Discount factor.
-    :param lambda_coefficient: Lambda coefficient.
-
-    :return: Generalized Advantage Estimator.
-    """
-    advantage = 0
-    advantages = np.zeros_like(rewards)
-    not_dones = np.logical_not(dones)
-    memory_size = rewards.shape[0]
-
-    # advantages computation
-    for i in reversed(range(memory_size)):
-        next_values = values[i + 1] if i < memory_size - 1 else next_values
-        advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
-        )
-        advantages[i] = advantage
-    # returns computation
-    returns = advantages + values
-    # normalize advantages
-    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-    return returns, advantages
-
-
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _compute_gae(
     rewards: jax.Array,
-    dones: jax.Array,
+    terminated: jax.Array,
     values: jax.Array,
     next_values: jax.Array,
     discount_factor: float = 0.99,
@@ -71,14 +32,16 @@ def _compute_gae(
 ) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
-    not_dones = jnp.logical_not(dones)
+    not_terminated = jnp.logical_not(terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i]
+            - values[i]
+            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages = advantages.at[i].set(advantage)
     # returns computation
@@ -113,15 +76,16 @@ def _update_policy(
         ratio = jnp.exp(next_log_prob - sampled_log_prob)
         surrogate = sampled_advantages * ratio
         surrogate_clipped = sampled_advantages * jnp.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
+        policy_loss = -jnp.minimum(surrogate, surrogate_clipped).mean()
 
         # compute entropy loss
         entropy_loss = 0
         if entropy_loss_scale:
             entropy_loss = -entropy_loss_scale * get_entropy(outputs["stddev"], role="policy").mean()
 
-        return -jnp.minimum(surrogate, surrogate_clipped).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
+        return policy_loss + entropy_loss, (policy_loss, entropy_loss, kl_divergence, outputs["stddev"])
 
-    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
+    (_, (policy_loss, entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
         policy_state_dict.params
     )
 
@@ -292,7 +256,6 @@ class IPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
-                self.memories[uid].create_tensor(name="truncated", size=1, dtype=jnp.int8)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
@@ -313,13 +276,8 @@ class IPPO(MultiAgent):
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
     def act(
-        self,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[dict[str, np.ndarray | jax.Array], dict[str, Any]]:
+        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -348,24 +306,20 @@ class IPPO(MultiAgent):
             actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
             log_prob[uid] = outputs[uid]["log_prob"]
 
-            if not self._jax:  # numpy backend
-                actions = {uid: jax.device_get(_actions) for uid, _actions in actions.items()}
-                log_prob = {uid: jax.device_get(_log_prob) for uid, _log_prob in log_prob.items()}
-
         self._current_log_prob = log_prob
         return actions, outputs
 
     def record_transition(
         self,
         *,
-        observations: dict[str, np.ndarray | jax.Array],
-        states: dict[str, np.ndarray | jax.Array | None],
-        actions: dict[str, np.ndarray | jax.Array],
-        rewards: dict[str, np.ndarray | jax.Array],
-        next_observations: dict[str, np.ndarray | jax.Array],
-        next_states: dict[str, np.ndarray | jax.Array],
-        terminated: dict[str, np.ndarray | jax.Array],
-        truncated: dict[str, np.ndarray | jax.Array],
+        observations: dict[str, jax.Array],
+        states: dict[str, jax.Array | None],
+        actions: dict[str, jax.Array],
+        rewards: dict[str, jax.Array],
+        next_observations: dict[str, jax.Array],
+        next_states: dict[str, jax.Array],
+        terminated: dict[str, jax.Array],
+        truncated: dict[str, jax.Array],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -413,8 +367,6 @@ class IPPO(MultiAgent):
                     "states": self._state_preprocessor[uid](states[uid]),
                 }
                 values, _ = self.values[uid].act(inputs, role="value")
-                if not self._jax:  # numpy backend
-                    values = jax.device_get(values)
                 values = self._value_preprocessor[uid](values, inverse=True)
 
                 # time-limit (truncation) bootstrapping
@@ -428,7 +380,6 @@ class IPPO(MultiAgent):
                     actions=actions[uid],
                     rewards=rewards[uid],
                     terminated=terminated[uid],
-                    truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
                     values=values,
                 )
@@ -478,14 +429,12 @@ class IPPO(MultiAgent):
         value.enable_training_mode(False)
         last_values, _ = value.act(inputs, role="value")
         value.enable_training_mode(True)
-        if not self._jax:  # numpy backend
-            last_values = jax.device_get(last_values)
         last_values = self._value_preprocessor[uid](last_values, inverse=True)
 
         values = memory.get_tensor_by_name("values")
-        returns, advantages = (_compute_gae if self._jax else compute_gae)(
+        returns, advantages = _compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
-            dones=memory.get_tensor_by_name("terminated") | memory.get_tensor_by_name("truncated"),
+            terminated=memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor[uid],

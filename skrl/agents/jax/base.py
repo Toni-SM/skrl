@@ -103,7 +103,6 @@ class Agent(ABC):
         :param action_space: Action space.
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
-        self._jax = config.jax.backend == "jax"
         self.training = False
 
         self.models = models
@@ -309,13 +308,8 @@ class Agent(ABC):
 
     @abstractmethod
     def act(
-        self,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array | None,
-        *,
-        timestep: int,
-        timesteps: int,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -331,14 +325,14 @@ class Agent(ABC):
     def record_transition(
         self,
         *,
-        observations: np.ndarray | jax.Array,
-        states: np.ndarray | jax.Array,
-        actions: np.ndarray | jax.Array,
-        rewards: np.ndarray | jax.Array,
-        next_observations: np.ndarray | jax.Array,
-        next_states: np.ndarray | jax.Array,
-        terminated: np.ndarray | jax.Array,
-        truncated: np.ndarray | jax.Array,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -370,10 +364,9 @@ class Agent(ABC):
                 self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
 
             # TODO: find a better way to avoid https://jax.readthedocs.io/en/latest/errors.html#jax.errors.ConcretizationTypeError
-            if self._jax:
-                rewards = jax.device_get(rewards)
-                terminated = jax.device_get(terminated)
-                truncated = jax.device_get(truncated)
+            rewards = jax.device_get(rewards)
+            terminated = jax.device_get(terminated)
+            truncated = jax.device_get(truncated)
 
             self._cumulative_rewards += rewards
             self._cumulative_timesteps += 1

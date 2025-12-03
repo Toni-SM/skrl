@@ -14,6 +14,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.torch import compute_space_limits
 
 from .ddpg_cfg import DDPG_CFG
 
@@ -150,7 +151,6 @@ class DDPG(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
             self._tensors_names = [
                 "observations",
@@ -160,13 +160,12 @@ class DDPG(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
     def act(
         self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
@@ -199,7 +198,7 @@ class DDPG(Agent):
             if self.cfg.exploration_scheduler:
                 noises.mul_(self.cfg.exploration_scheduler(timestep, timesteps))
             actions.add_(noises)
-            actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+            actions.clamp_(min=self._min_actions, max=self._max_actions)
 
             self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
             self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
@@ -264,7 +263,6 @@ class DDPG(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -310,7 +308,6 @@ class DDPG(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -330,10 +327,7 @@ class DDPG(Agent):
                         {**next_inputs, "taken_actions": next_actions}, role="target_critic"
                     )
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

@@ -53,6 +53,7 @@ def shared_model(
             return f"""GaussianMixin.__init__(
             self,
             clip_actions={parameter.get("clip_actions", False)},
+            clip_mean_actions={parameter.get("clip_mean_actions", False)},
             clip_log_std={parameter.get("clip_log_std", True)},
             min_log_std={parameter.get("min_log_std", -20)},
             max_log_std={parameter.get("max_log_std", 2)},

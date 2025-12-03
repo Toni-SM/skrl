@@ -15,6 +15,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.torch import compute_space_limits
 
 from .td3_cfg import TD3_CFG
 
@@ -203,9 +204,9 @@ class TD3_RNN(Agent):
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = torch.tensor(self.action_space.low, device=self.device)
-            self.clip_actions_max = torch.tensor(self.action_space.high, device=self.device)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         # create temporary variables needed for storage and computation
         self._update_counter = 0
@@ -246,7 +247,7 @@ class TD3_RNN(Agent):
             if self.cfg.exploration_scheduler:
                 noises.mul_(self.cfg.exploration_scheduler(timestep, timesteps))
             actions.add_(noises)
-            actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+            actions.clamp_(min=self._min_actions, max=self._max_actions)
 
             self.track_data("Exploration / Exploration noise (max)", torch.max(noises).item())
             self.track_data("Exploration / Exploration noise (min)", torch.min(noises).item())
@@ -389,7 +390,8 @@ class TD3_RNN(Agent):
                 )[0]
                 rnn_policy = {
                     "rnn": [s.transpose(0, 1) for s in sampled_rnn],
-                    "terminated": sampled_terminated | sampled_truncated,
+                    "terminated": sampled_terminated,
+                    "truncated": sampled_truncated,
                 }
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -414,7 +416,7 @@ class TD3_RNN(Agent):
                             max=self.cfg.smooth_regularization_clip,
                         )
                         next_actions.add_(noises)
-                        next_actions.clamp_(min=self.clip_actions_min, max=self.clip_actions_max)
+                        next_actions.clamp_(min=self._min_actions, max=self._max_actions)
 
                     # compute target values
                     target_q1_values, _ = self.target_critic_1.act(
@@ -425,10 +427,7 @@ class TD3_RNN(Agent):
                     )
                     target_q_values = torch.min(target_q1_values, target_q2_values)
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

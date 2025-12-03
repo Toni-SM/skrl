@@ -23,7 +23,7 @@ from .ppo_cfg import PPO_CFG
 def compute_gae(
     *,
     rewards: torch.Tensor,
-    dones: torch.Tensor,
+    terminated: torch.Tensor,
     values: torch.Tensor,
     next_values: torch.Tensor,
     discount_factor: float = 0.99,
@@ -32,7 +32,7 @@ def compute_gae(
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
-    :param dones: Signals to indicate that episodes have ended.
+    :param terminated: Signals to indicate that episodes have ended.
     :param values: Values obtained by the agent.
     :param next_values: Next values obtained by the agent.
     :param discount_factor: Discount factor.
@@ -42,14 +42,16 @@ def compute_gae(
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_dones = dones.logical_not()
+    not_terminated = terminated.logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         next_values = values[i + 1] if i < memory_size - 1 else next_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i]
+            - values[i]
+            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -419,7 +421,7 @@ class PPO_RNN(Agent):
         values = self.memory.get_tensor_by_name("values")
         returns, advantages = compute_gae(
             rewards=self.memory.get_tensor_by_name("rewards"),
-            dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+            terminated=self.memory.get_tensor_by_name("terminated"),
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor,
@@ -468,7 +470,8 @@ class PPO_RNN(Agent):
                     if self.policy is self.value:
                         rnn_policy = {
                             "rnn": [s.transpose(0, 1) for s in sampled_rnn_batches[i]],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
                         rnn_value = rnn_policy
                     else:
@@ -478,7 +481,8 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "policy" in n
                             ],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
                         rnn_value = {
                             "rnn": [
@@ -486,7 +490,8 @@ class PPO_RNN(Agent):
                                 for s, n in zip(sampled_rnn_batches[i], self._rnn_tensors_names)
                                 if "value" in n
                             ],
-                            "terminated": sampled_terminated | sampled_truncated,
+                            "terminated": sampled_terminated,
+                            "truncated": sampled_truncated,
                         }
 
                 with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):

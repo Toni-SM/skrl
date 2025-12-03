@@ -170,7 +170,6 @@ class SAC(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
             self._tensors_names = [
                 "observations",
@@ -180,7 +179,6 @@ class SAC(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
     def act(
@@ -268,7 +266,6 @@ class SAC(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -314,7 +311,6 @@ class SAC(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -342,10 +338,7 @@ class SAC(Agent):
                         torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                     )
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

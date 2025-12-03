@@ -13,6 +13,7 @@ from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.resources.optimizers.warp import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.warp import compute_space_limits
 
 from .ddpg_cfg import DDPG_CFG
 
@@ -33,13 +34,13 @@ def enable_grad(obj, *, enabled: bool):
 def _apply_exploration_noise(
     actions: wp.array2d(dtype=float),
     noises: wp.array2d(dtype=float),
-    clip_actions_min: wp.array1d(dtype=float),
-    clip_actions_max: wp.array1d(dtype=float),
+    min_actions: wp.array1d(dtype=float),
+    max_actions: wp.array1d(dtype=float),
     scale: float,
 ):
     i, j = wp.tid()
     noises[i, j] = noises[i, j] * scale  # update in-place for logging
-    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], clip_actions_min[j], clip_actions_max[j])
+    actions[i, j] = wp.clamp(actions[i, j] + noises[i, j], min_actions[j], max_actions[j])
 
 
 @wp.kernel
@@ -48,7 +49,6 @@ def _critic_loss(
     target_values: wp.array2d(dtype=float),
     sampled_rewards: wp.array2d(dtype=float),
     sampled_terminated: wp.array2d(dtype=wp.int8),
-    sampled_truncated: wp.array2d(dtype=wp.int8),
     discount_factor: float,
     n: float,
     loss: wp.array(dtype=float),
@@ -56,10 +56,7 @@ def _critic_loss(
     i, j = wp.tid()
     # compute target values
     target_values[i, j] = (
-        sampled_rewards[i, j]
-        + discount_factor
-        * wp.float(wp.unot(wp.add(sampled_terminated[i, j], sampled_truncated[i, j])))
-        * target_values[i, j]
+        sampled_rewards[i, j] + discount_factor * wp.float(wp.unot(sampled_terminated[i, j])) * target_values[i, j]
     )
     # MSE loss
     wp.atomic_add(loss, 0, wp.pow(values[i, j] - target_values[i, j], 2.0) / n)
@@ -198,7 +195,6 @@ class DDPG(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=wp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=wp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=wp.int8)
 
             self._tensors_names = [
                 "observations",
@@ -208,13 +204,12 @@ class DDPG(Agent):
                 "next_observations",
                 "next_states",
                 "terminated",
-                "truncated",
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = wp.array(self.action_space.low.flatten(), dtype=wp.float32, device=self.device)
-            self.clip_actions_max = wp.array(self.action_space.high.flatten(), dtype=wp.float32, device=self.device)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
     def act(
         self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
@@ -248,7 +243,7 @@ class DDPG(Agent):
             wp.launch(
                 _apply_exploration_noise,
                 dim=actions.shape,
-                inputs=[actions, noises, self.clip_actions_min, self.clip_actions_max, float(scale)],
+                inputs=[actions, noises, self._min_actions, self._max_actions, float(scale)],
                 device=self.device,
             )
 
@@ -316,7 +311,6 @@ class DDPG(Agent):
                 next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -362,7 +356,6 @@ class DDPG(Agent):
                 sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
             ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
             inputs = {
@@ -394,7 +387,6 @@ class DDPG(Agent):
                         target_q_values,
                         sampled_rewards,
                         sampled_terminated,
-                        sampled_truncated,
                         self.cfg.discount_factor,
                         np.prod(critic_values.shape),
                         self._critic_loss,

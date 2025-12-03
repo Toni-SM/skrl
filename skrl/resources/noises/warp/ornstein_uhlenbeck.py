@@ -19,7 +19,7 @@ def _sample(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    state[i, j] = state[i, j] * theta + sigma * (wp.randn(subkey) * std + mean)
+    state[i, j] = state[i, j] * theta + sigma * (2.0 * wp.randn(subkey) * std + mean)
     dst[i, j] = base_scale * state[i, j]
 
 

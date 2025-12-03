@@ -62,8 +62,6 @@ class Model(flax.linen.Module, ABC):
         :param parent: The parent Module of this Module. It is a Flax reserved attribute.
         :param name: The name of this Module. It is a Flax reserved attribute.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.device = config.jax.parse_device(device)
 
         self.observation_space = observation_space
@@ -102,13 +100,13 @@ class Model(flax.linen.Module, ABC):
         if not inputs:
             inputs = {
                 "observations": flatten_tensorized_space(
-                    sample_space(self.observation_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.observation_space, backend="native", device=self.device)
                 ),
                 "states": flatten_tensorized_space(
-                    sample_space(self.state_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.state_space, backend="native", device=self.device)
                 ),
                 "taken_actions": flatten_tensorized_space(
-                    sample_space(self.action_space, backend="native", device=self.device), _jax=self._jax
+                    sample_space(self.action_space, backend="native", device=self.device)
                 ),
             }
         if key is None:
@@ -118,12 +116,8 @@ class Model(flax.linen.Module, ABC):
             self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def random_act(
-        self,
-        inputs: dict[str, Any],
-        *,
-        role: str = "",
-        params: jax.Array | None = None,
-    ) -> tuple[np.ndarray | jax.Array, dict[str, Any]]:
+        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
+    ) -> tuple[jax.Array, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -256,11 +250,7 @@ class Model(flax.linen.Module, ABC):
 
     @abstractmethod
     def act(
-        self,
-        inputs: dict[str, Any],
-        *,
-        role: str = "",
-        params: jax.Array | None = None,
+        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
     ) -> tuple[jax.Array, dict[str, Any]]:
         """Act according to the specified behavior.
 

@@ -39,14 +39,15 @@ def clamp(array: wp.array, *, min: wp.array, max: wp.array, inplace: bool = Fals
     return output
 
 
-def concatenate(arrays: list[wp.array], *, axis: int = -1) -> wp.array:
+def concatenate(arrays: list[wp.array], *, axis: int = -1, dtype: type | None = None) -> wp.array:
     reference = arrays[0]
+    dtype = reference.dtype if dtype is None else dtype
     shape = (reference.shape[0], sum([array.shape[1] for array in arrays]))
-    output = wp.empty(shape, dtype=reference.dtype, device=reference.device, requires_grad=reference.requires_grad)
+    output = wp.empty(shape, dtype=dtype, device=reference.device, requires_grad=reference.requires_grad)
     index = 0
     for array in arrays:
         next_index = index + array.shape[1]
-        wp.copy(output[:, index:next_index], array)
+        wp.copy(output[:, index:next_index], type_cast(array, dtype))
         index = next_index
     return output
 

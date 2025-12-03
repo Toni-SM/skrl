@@ -51,7 +51,7 @@ class RandomMemory(Memory):
 
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[np.ndarray | jax.Array]]:
+    ) -> list[list[jax.Array]]:
         """Sample a batch from memory randomly.
 
         :param names: Tensors names from which to obtain the samples.

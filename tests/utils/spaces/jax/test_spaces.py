@@ -147,15 +147,14 @@ def test_compute_space_limits(capsys):
     deadline=None,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
-@pytest.mark.parametrize("_jax", [True, False])
-def test_tensorize_space(capsys, space: gymnasium.spaces.Space, _jax: bool):
+def test_tensorize_space(capsys, space: gymnasium.spaces.Space):
     def check_tensorized_space(s, x, n):
         if isinstance(s, gymnasium.spaces.Box):
-            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, *s.shape)
+            assert isinstance(x, jax.Array) and x.shape == (n, *s.shape)
         elif isinstance(s, gymnasium.spaces.Discrete):
-            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, 1)
+            assert isinstance(x, jax.Array) and x.shape == (n, 1)
         elif isinstance(s, gymnasium.spaces.MultiDiscrete):
-            assert isinstance(x, jax.Array if _jax else np.ndarray) and x.shape == (n, *s.nvec.shape)
+            assert isinstance(x, jax.Array) and x.shape == (n, *s.nvec.shape)
         elif isinstance(s, gymnasium.spaces.Dict):
             list(map(check_tensorized_space, s.values(), x.values(), [n] * len(s)))
         elif isinstance(s, gymnasium.spaces.Tuple):
@@ -163,21 +162,21 @@ def test_tensorize_space(capsys, space: gymnasium.spaces.Space, _jax: bool):
         else:
             raise ValueError(f"Invalid space type: {type(s)}")
 
-    assert tensorize_space(None, None, _jax=_jax) is None
-    assert tensorize_space(space, None, _jax=_jax) is None
+    assert tensorize_space(None, None) is None
+    assert tensorize_space(space, None) is None
 
-    tensorized_space = tensorize_space(space, space.sample(), _jax=_jax)
+    tensorized_space = tensorize_space(space, space.sample())
     check_tensorized_space(space, tensorized_space, 1)
 
-    tensorized_space = tensorize_space(space, tensorized_space, _jax=_jax)
+    tensorized_space = tensorize_space(space, tensorized_space)
     check_tensorized_space(space, tensorized_space, 1)
 
     sampled_space = sample_space(space, batch_size=5, backend="numpy")
-    tensorized_space = tensorize_space(space, sampled_space, _jax=_jax)
+    tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
     sampled_space = sample_space(space, batch_size=5, backend="native")
-    tensorized_space = tensorize_space(space, sampled_space, _jax=_jax)
+    tensorized_space = tensorize_space(space, sampled_space)
     check_tensorized_space(space, tensorized_space, 5)
 
 
@@ -241,21 +240,20 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
     deadline=None,
     phases=[hypothesis.Phase.explicit, hypothesis.Phase.reuse, hypothesis.Phase.generate],
 )
-@pytest.mark.parametrize("_jax", [True, False])
-def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space, _jax: bool):
+def test_flatten_tensorized_space(capsys, space: gymnasium.spaces.Space):
     space_size = compute_space_size(space, occupied_size=True)
 
-    assert flatten_tensorized_space(None, _jax=_jax) is None
+    assert flatten_tensorized_space(None) is None
 
-    tensorized_space = tensorize_space(space, space.sample(), _jax=_jax)
-    flattened_space = flatten_tensorized_space(tensorized_space, _jax=_jax)
+    tensorized_space = tensorize_space(space, space.sample())
+    flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (1, space_size)
-    assert isinstance(flattened_space, jax.Array if _jax else np.ndarray)
+    assert isinstance(flattened_space, jax.Array)
 
-    tensorized_space = sample_space(space, batch_size=5, backend="native" if _jax else "numpy")
-    flattened_space = flatten_tensorized_space(tensorized_space, _jax=_jax)
+    tensorized_space = sample_space(space, batch_size=5, backend="native")
+    flattened_space = flatten_tensorized_space(tensorized_space)
     assert flattened_space.shape == (5, space_size)
-    assert isinstance(flattened_space, jax.Array if _jax else np.ndarray)
+    assert isinstance(flattened_space, jax.Array)
 
 
 @hypothesis.given(space=gymnasium_space_stategy())

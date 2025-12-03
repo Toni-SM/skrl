@@ -370,7 +370,8 @@ class SAC_RNN(Agent):
                 )[0]
                 rnn_policy = {
                     "rnn": [s.transpose(0, 1) for s in sampled_rnn],
-                    "terminated": sampled_terminated | sampled_truncated,
+                    "terminated": sampled_terminated,
+                    "truncated": sampled_truncated,
                 }
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -400,10 +401,7 @@ class SAC_RNN(Agent):
                         torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                     )
                     target_values = (
-                        sampled_rewards
-                        + self.cfg.discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss

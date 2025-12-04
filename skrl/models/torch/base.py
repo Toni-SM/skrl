@@ -40,11 +40,11 @@ class Model(torch.nn.Module, ABC):
         self.num_actions = compute_space_size(action_space)
 
     def init_state_dict(self, inputs: dict[str, Any] = {}, *, role: str = "") -> None:
-        """Initialize lazy PyTorch modules' parameters.
+        """Initialize lazy modules' parameters.
 
         .. hint::
 
-            Calling this method only makes sense when using models that contain lazy PyTorch modules
+            Calling this method only makes sense when using models that contain lazy modules
             (e.g. model instantiators), and always before performing any operation on model parameters.
 
         :param inputs: Model inputs. The most common keys are:

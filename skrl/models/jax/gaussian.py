@@ -23,21 +23,21 @@ HALF_LOG_2_PI_PLUS = 0.5 + 0.5 * math.log(2 * math.pi)
 def _gaussian(
     loc,
     log_std,
-    log_std_min,
-    log_std_max,
-    clip_actions_min,
-    clip_actions_max,
-    clip_mean_actions_min,
-    clip_mean_actions_max,
+    min_log_std,
+    max_log_std,
+    min_actions,
+    max_actions,
+    min_mean_actions,
+    max_mean_actions,
     taken_actions,
     key,
     reduction,
 ):
     # clip mean actions
-    loc = jnp.clip(loc, a_min=clip_mean_actions_min, a_max=clip_mean_actions_max)
+    loc = jnp.clip(loc, min=min_mean_actions, max=max_mean_actions)
 
-    # clamp log standard deviations
-    log_std = jnp.clip(log_std, a_min=log_std_min, a_max=log_std_max)
+    # clip log standard deviations
+    log_std = jnp.clip(log_std, min=min_log_std, max=max_log_std)
 
     # distribution
     scale = jnp.exp(log_std)
@@ -46,7 +46,7 @@ def _gaussian(
     actions = jax.random.normal(key, loc.shape) * scale + loc
 
     # clip actions
-    actions = jnp.clip(actions, a_min=clip_actions_min, a_max=clip_actions_max)
+    actions = jnp.clip(actions, min=min_actions, max=max_actions)
 
     # log of the probability density function
     taken_actions = actions if taken_actions is None else taken_actions
@@ -95,21 +95,15 @@ class GaussianMixin:
         self._g_clip_actions = clip_actions
         self._g_clip_mean_actions = clip_mean_actions
 
-        self._g_clip_actions_min, self._g_clip_actions_max = compute_space_limits(self.action_space, device=self.device)
-        self._g_clip_mean_actions_min, self._g_clip_mean_actions_max = (
-            self._g_clip_actions_min,
-            self._g_clip_actions_max,
-        )
-        if not self._g_clip_actions:
-            self._g_clip_actions_min = jnp.full_like(self._g_clip_actions_min, -jnp.inf)
-            self._g_clip_actions_max = jnp.full_like(self._g_clip_actions_max, jnp.inf)
-        if not self._g_clip_mean_actions:
-            self._g_clip_mean_actions_min = jnp.full_like(self._g_clip_mean_actions_min, -jnp.inf)
-            self._g_clip_mean_actions_max = jnp.full_like(self._g_clip_mean_actions_max, jnp.inf)
+        min_actions, max_actions = compute_space_limits(self.action_space, device=self.device, none_if_unbounded="any")
+        self._g_min_actions = min_actions if self._g_clip_actions else None
+        self._g_max_actions = max_actions if self._g_clip_actions else None
+        self._g_min_mean_actions = min_actions if self._g_clip_mean_actions else None
+        self._g_max_mean_actions = max_actions if self._g_clip_mean_actions else None
 
         self._g_clip_log_std = clip_log_std
-        self._g_log_std_min = min_log_std if self._g_clip_log_std else -jnp.inf
-        self._g_log_std_max = max_log_std if self._g_clip_log_std else jnp.inf
+        self._g_min_log_std = min_log_std if self._g_clip_log_std else None
+        self._g_max_log_std = max_log_std if self._g_clip_log_std else None
 
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("Reduction must be one of 'mean', 'sum', 'prod' or 'none'")
@@ -156,12 +150,12 @@ class GaussianMixin:
         mean_actions, actions, log_prob, log_std, stddev = _gaussian(
             mean_actions,
             outputs["log_std"],
-            self._g_log_std_min,
-            self._g_log_std_max,
-            self._g_clip_actions_min,
-            self._g_clip_actions_max,
-            self._g_clip_mean_actions_min,
-            self._g_clip_mean_actions_max,
+            self._g_min_log_std,
+            self._g_max_log_std,
+            self._g_min_actions,
+            self._g_max_actions,
+            self._g_min_mean_actions,
+            self._g_max_mean_actions,
             inputs.get("taken_actions", None),
             subkey,
             self._g_reduction,

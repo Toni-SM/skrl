@@ -15,6 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.spaces.jax import compute_space_limits
 
 from .td3_cfg import TD3_CFG
 
@@ -22,22 +23,22 @@ from .td3_cfg import TD3_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _apply_exploration_noise(
-    actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
+    actions: jax.Array, noises: jax.Array, min_actions: jax.Array, max_actions: jax.Array, scale: float
 ) -> jax.Array:
     noises = noises.at[:].multiply(scale)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions), noises
 
 
 @jax.jit
 def _apply_smooth_regularization_noise(
     actions: jax.Array,
     noises: jax.Array,
-    clip_actions_min: jax.Array,
-    clip_actions_max: jax.Array,
+    min_actions: jax.Array,
+    max_actions: jax.Array,
     smooth_regularization_clip: float,
 ) -> jax.Array:
-    noises = jnp.clip(noises, a_min=-smooth_regularization_clip, a_max=smooth_regularization_clip)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max)
+    noises = jnp.clip(noises, min=-smooth_regularization_clip, max=smooth_regularization_clip)
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions)
 
 
 @functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act"))
@@ -262,9 +263,9 @@ class TD3(Agent):
             ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-            self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
 
         # create temporary variables needed for storage and computation
         self._update_counter = 0
@@ -308,9 +309,7 @@ class TD3(Agent):
             noises = self._exploration_noise.sample(actions.shape)
             scale = self.cfg.exploration_scheduler(timestep, timesteps) if self.cfg.exploration_scheduler else 1.0
             # modify actions
-            actions, noises = _apply_exploration_noise(
-                actions, noises, self.clip_actions_min, self.clip_actions_max, scale
-            )
+            actions, noises = _apply_exploration_noise(actions, noises, self._min_actions, self._max_actions, scale)
             self.track_data("Exploration / Exploration noise (max)", noises.max().item())
             self.track_data("Exploration / Exploration noise (min)", noises.min().item())
             self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
@@ -437,8 +436,8 @@ class TD3(Agent):
                 next_actions = _apply_smooth_regularization_noise(
                     next_actions,
                     noises,
-                    self.clip_actions_min,
-                    self.clip_actions_max,
+                    self._min_actions,
+                    self._max_actions,
                     self.cfg.smooth_regularization_clip,
                 )
 

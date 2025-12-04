@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Implement RL algorithms in NVIDIA Warp
 - Add Tabular model instantiator (epsilon-greedy variant)
+- Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits
 - Add `ScopedTimer` utils to measure code execution time
 - Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
@@ -24,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     in favor of generic scheduling functions
 - Update tabular model definition to operate in any number of parallel environments
 - Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
+
+### Fixed
+- Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
+- Fix time limits handling for termination and truncation signals
 
 ### Removed
 - Remove NumPy backend for JAX implementation

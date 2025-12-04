@@ -71,14 +71,17 @@ def _update_policy(
         ratio = next_log_prob - sampled_log_prob
         kl_divergence = ((jnp.exp(ratio) - 1) - ratio).mean()
 
+        # compute policy loss
+        policy_loss = -(sampled_advantages * next_log_prob).mean()
+
         # compute entropy loss
         entropy_loss = 0
         if entropy_loss_scale:
             entropy_loss = -entropy_loss_scale * get_entropy(outputs["stddev"], role="policy").mean()
 
-        return -(sampled_advantages * next_log_prob).mean(), (entropy_loss, kl_divergence, outputs["stddev"])
+        return policy_loss + entropy_loss, (policy_loss, entropy_loss, kl_divergence, outputs["stddev"])
 
-    (policy_loss, (entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
+    (_, (policy_loss, entropy_loss, kl_divergence, stddev)), grad = jax.value_and_grad(_policy_loss, has_aux=True)(
         policy_state_dict.params
     )
 

@@ -53,8 +53,37 @@ class Model(nn.Module, ABC):
         self.training = False
 
     def init_state_dict(self, inputs: dict[str, Any] = {}, *, role: str = "") -> None:
-        # TODO
-        raise NotImplementedError
+        """Initialize lazy modules' parameters.
+
+        .. hint::
+
+            Calling this method only makes sense when using models that contain lazy modules
+            (e.g. model instantiators), and always before performing any operation on model parameters.
+
+        :param inputs: Model inputs. The most common keys are:
+
+            - ``"observations"``: observation of the environment used to make the decision.
+            - ``"states"``: state of the environment used to make the decision.
+            - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+
+            If not specified, ``inputs`` will have random samples from the observation, state and action spaces.
+        :param role: Role played by the model.
+        """
+        if not inputs:
+            inputs = {
+                "observations": flatten_tensorized_space(
+                    sample_space(self.observation_space, backend="native", device=self.device)
+                ),
+                "states": flatten_tensorized_space(
+                    sample_space(self.state_space, backend="native", device=self.device)
+                ),
+                "taken_actions": flatten_tensorized_space(
+                    sample_space(self.action_space, backend="native", device=self.device)
+                ),
+            }
+        # init parameters
+        self.to(device=self.device)
+        self.compute(inputs=inputs, role=role)
 
     def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
         """Act randomly according to the action space.

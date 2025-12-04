@@ -2,7 +2,7 @@ import math
 
 import warp as wp
 
-from .config import block_dim, tiles_dim_0, tiles_dim_1
+from .config import block_dim, tile_dim_0, tile_dim_1
 from .module import Module
 
 
@@ -24,11 +24,11 @@ def create_kernel_elu(alpha: float):
     ):
         i, j = wp.tid()
         # load input
-        x = wp.tile_load(input, shape=(tiles_dim_0, tiles_dim_1), offset=(i * tiles_dim_0, j * tiles_dim_1))
+        x = wp.tile_load(input, shape=(tile_dim_0, tile_dim_1), offset=(i * tile_dim_0, j * tile_dim_1))
         # computation
         x = wp.tile_map(function, x)
         # store output
-        wp.tile_store(output, x, offset=(i * tiles_dim_0, j * tiles_dim_1))
+        wp.tile_store(output, x, offset=(i * tile_dim_0, j * tile_dim_1))
 
     return kernel
 
@@ -45,11 +45,11 @@ def create_kernel_relu():
     ):
         i, j = wp.tid()
         # load input
-        x = wp.tile_load(input, shape=(tiles_dim_0, tiles_dim_1), offset=(i * tiles_dim_0, j * tiles_dim_1))
+        x = wp.tile_load(input, shape=(tile_dim_0, tile_dim_1), offset=(i * tile_dim_0, j * tile_dim_1))
         # computation
         x = wp.tile_map(function, x)
         # store output
-        wp.tile_store(output, x, offset=(i * tiles_dim_0, j * tiles_dim_1))
+        wp.tile_store(output, x, offset=(i * tile_dim_0, j * tile_dim_1))
 
     return kernel
 
@@ -66,11 +66,11 @@ def create_kernel_tanh():
     ):
         i, j = wp.tid()
         # load input
-        x = wp.tile_load(input, shape=(tiles_dim_0, tiles_dim_1), offset=(i * tiles_dim_0, j * tiles_dim_1))
+        x = wp.tile_load(input, shape=(tile_dim_0, tile_dim_1), offset=(i * tile_dim_0, j * tile_dim_1))
         # computation
         x = wp.tile_map(function, x)
         # store output
-        wp.tile_store(output, x, offset=(i * tiles_dim_0, j * tiles_dim_1))
+        wp.tile_store(output, x, offset=(i * tile_dim_0, j * tile_dim_1))
 
     return kernel
 
@@ -96,7 +96,7 @@ class ELU(Module):
         # launch kernel
         wp.launch_tiled(
             self._kernel,
-            dim=[math.ceil(shape[0] / tiles_dim_0), math.ceil(shape[1] / tiles_dim_1)],
+            dim=[math.ceil(shape[0] / tile_dim_0), math.ceil(shape[1] / tile_dim_1)],
             inputs=[input],
             outputs=[output],
             device=self.device,
@@ -121,7 +121,7 @@ class ReLU(Module):
         # launch kernel
         wp.launch_tiled(
             self._kernel,
-            dim=[math.ceil(shape[0] / tiles_dim_0), math.ceil(shape[1] / tiles_dim_1)],
+            dim=[math.ceil(shape[0] / tile_dim_0), math.ceil(shape[1] / tile_dim_1)],
             inputs=[input],
             outputs=[output],
             device=self.device,
@@ -146,7 +146,7 @@ class Tanh(Module):
         # launch kernel
         wp.launch_tiled(
             self._kernel,
-            dim=[math.ceil(shape[0] / tiles_dim_0), math.ceil(shape[1] / tiles_dim_1)],
+            dim=[math.ceil(shape[0] / tile_dim_0), math.ceil(shape[1] / tile_dim_1)],
             inputs=[input],
             outputs=[output],
             device=self.device,

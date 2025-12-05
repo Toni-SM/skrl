@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import math
+
 import warp as wp
 
 
-__all__ = ["clamp", "concatenate", "convert_to_numpy_in_place", "type_cast"]
+__all__ = ["clamp", "concatenate", "convert_to_numpy_in_place", "resolve_dim", "type_cast"]
 
 
 @wp.kernel
@@ -97,3 +99,28 @@ def _type_cast_4d(src: wp.array(ndim=4), dst: wp.array(ndim=4)):
 
 
 _TYPE_CAST = [None, _type_cast_1d, _type_cast_2d, _type_cast_3d, _type_cast_4d]
+
+
+def resolve_dim(*, config, shape: tuple[int, ...], tiled: bool) -> tuple[int, ...]:
+    if tiled:
+        ndim = len(shape)
+        if ndim == 1:
+            return (math.ceil(shape[0] / config.tile_dim_0),)
+        elif ndim == 2:
+            return (math.ceil(shape[0] / config.tile_dim_0), math.ceil(shape[1] / config.tile_dim_1))
+        elif ndim == 3:
+            return (
+                math.ceil(shape[0] / config.tile_dim_0),
+                math.ceil(shape[1] / config.tile_dim_1),
+                math.ceil(shape[2] / config.tile_dim_2),
+            )
+        elif ndim == 4:
+            return (
+                math.ceil(shape[0] / config.tile_dim_0),
+                math.ceil(shape[1] / config.tile_dim_1),
+                math.ceil(shape[2] / config.tile_dim_2),
+                math.ceil(shape[3] / config.tile_dim_3),
+            )
+        else:
+            raise ValueError(f"Unsupported number of dimensions: {ndim}")
+    return shape

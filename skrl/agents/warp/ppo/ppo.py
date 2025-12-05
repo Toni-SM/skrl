@@ -225,8 +225,8 @@ class PPO(Agent):
             # self.checkpoint_modules["optimizer"] = self.optimizer
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
+            self.scheduler_type = None
             if self.scheduler is not None:
-                self.scheduler_type = None
                 if "kladaptive" in self.scheduler.__qualname__.lower().replace("_", ""):
                     self.scheduler_type = KLAdaptiveLR
                 self.scheduler = self.cfg.learning_rate_scheduler[0](**self.cfg.learning_rate_scheduler_kwargs[0])

@@ -200,16 +200,16 @@ class MAPPO(MultiAgent):
                 self.checkpoint_modules[uid]["value_optimizer"] = self.value_optimizer[uid]
                 # - learning rate schedulers
                 self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0]
+                self.policy_scheduler_type[uid] = None
                 if self.policy_scheduler[uid] is not None:
-                    self.policy_scheduler_type[uid] = None
                     if "kladaptive" in self.policy_scheduler[uid].__qualname__.lower().replace("_", ""):
                         self.policy_scheduler_type[uid] = KLAdaptiveLR
                     self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][0]
                     )
                 self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1]
+                self.value_scheduler_type[uid] = None
                 if self.value_scheduler[uid] is not None:
-                    self.value_scheduler_type[uid] = None
                     if "kladaptive" in self.value_scheduler[uid].__qualname__.lower().replace("_", ""):
                         self.value_scheduler_type[uid] = KLAdaptiveLR
                     self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1](

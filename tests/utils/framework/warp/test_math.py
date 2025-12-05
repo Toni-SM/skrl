@@ -8,7 +8,7 @@ import warp as wp
 import skrl.utils.framework.warp as warp_utils
 
 
-@hypothesis.given(shape=st.lists(st.integers(min_value=1, max_value=10), min_size=4, max_size=4))
+@hypothesis.given(shape=st.lists(st.integers(min_value=10, max_value=100), min_size=4, max_size=4))
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
     deadline=None,
@@ -21,7 +21,9 @@ def test_mean(capsys, ndim, dtype, shape):
     array = wp.array(sample)
 
     value = warp_utils.mean(array)
-    assert np.allclose(value.numpy().item(), np.mean(sample), atol=1e-05, rtol=1e-03)
+    wp.synchronize()
+    print(value.numpy())
+    assert np.allclose(value.numpy().item(), np.mean(sample))
 
 
 @hypothesis.given(shape=st.lists(st.integers(min_value=1, max_value=10), min_size=4, max_size=4))

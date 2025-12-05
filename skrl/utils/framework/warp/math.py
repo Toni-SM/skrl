@@ -5,6 +5,10 @@ from typing import Any
 import numpy as np
 import warp as wp
 
+from skrl import config
+
+from . import ops
+
 
 __all__ = [
     "scalar_mul",
@@ -22,6 +26,65 @@ __all__ = [
 ]
 
 
+d0 = config.warp.tile_dim_0
+d1 = config.warp.tile_dim_1
+d2 = config.warp.tile_dim_2
+d3 = config.warp.tile_dim_3
+block_dim = config.warp.block_dim
+
+# Warp kernels
+
+
+@wp.kernel
+def _mean_1d(src: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
+    i = wp.tid()
+    shape = (d0,)
+    offset = (i * d0,)
+    t_src = wp.tile_load(src, shape=shape, offset=offset)
+    wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
+
+
+@wp.kernel
+def _mean_2d(src: wp.array(ndim=2), n: int, dst: wp.array(ndim=1)):
+    i, j = wp.tid()
+    shape = (d0, d1)
+    offset = (i * d0, j * d1)
+    t_src = wp.tile_load(src, shape=shape, offset=offset)
+    wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
+
+
+@wp.kernel
+def _mean_3d(src: wp.array(ndim=3), n: int, dst: wp.array(ndim=1)):
+    i, j, k = wp.tid()
+    shape = (d0, d1, d2)
+    offset = (i * d0, j * d1, k * d2)
+    t_src = wp.tile_load(src, shape=shape, offset=offset)
+    wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
+
+
+@wp.kernel
+def _mean_4d(src: wp.array(ndim=4), n: int, dst: wp.array(ndim=1)):
+    i, j, k = wp.tid()
+    shape = (d0, d1, d2, d3)
+    d = src.shape[3]
+    count = d / d3
+    if d % d3:
+        count += 1
+    for l in range(count):
+        offset = (i * d0, j * d1, k * d2, l * d3)
+        t_src = wp.tile_load(src, shape=shape, offset=offset)
+        wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
+    # offset = (i * d0, j * d1, k * d2)
+    # for l in range(src.shape[3]):
+    #     t_src = wp.tile_load(src[:, :, :, l], shape=shape, offset=offset)
+    #     wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
+
+
+_MEAN = [None, _mean_1d, _mean_2d, _mean_3d, _mean_4d]
+
+# Functions
+
+
 def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
     output = (
         array
@@ -32,14 +95,18 @@ def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> w
     return output
 
 
-def mean(array: wp.array, *, dtype: type = wp.float32) -> wp.array:
-    output = wp.zeros((1,), dtype=dtype, device=array.device, requires_grad=array.requires_grad)
-    wp.launch(
+def mean(array: wp.array, *, dtype: type = wp.float32, output: wp.array | None = None) -> wp.array:
+    shape = array.shape
+    device = array.device
+    if output is None:
+        output = wp.zeros((1,), dtype=dtype, device=device, requires_grad=array.requires_grad)
+    wp.launch_tiled(
         _MEAN[array.ndim],
-        dim=array.shape,
-        inputs=[array, np.prod(array.shape).item()],
+        dim=ops.resolve_dim(config=config.warp, shape=shape, tiled=True),
+        inputs=[array, np.prod(shape).item()],
         outputs=[output],
-        device=array.device,
+        device=device,
+        block_dim=config.warp.block_dim,
     )
     return output
 
@@ -165,33 +232,6 @@ def _f_tanh(x: Any):
 
 
 # Warp kernels
-
-
-@wp.kernel
-def _mean_1d(src: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
-    i = wp.tid()
-    wp.atomic_add(dst, 0, dst.dtype(src[i]) / dst.dtype(n))
-
-
-@wp.kernel
-def _mean_2d(src: wp.array(ndim=2), n: int, dst: wp.array(ndim=1)):
-    i, j = wp.tid()
-    wp.atomic_add(dst, 0, dst.dtype(src[i, j]) / dst.dtype(n))
-
-
-@wp.kernel
-def _mean_3d(src: wp.array(ndim=3), n: int, dst: wp.array(ndim=1)):
-    i, j, k = wp.tid()
-    wp.atomic_add(dst, 0, dst.dtype(src[i, j, k]) / dst.dtype(n))
-
-
-@wp.kernel
-def _mean_4d(src: wp.array(ndim=4), n: int, dst: wp.array(ndim=1)):
-    i, j, k, l = wp.tid()
-    wp.atomic_add(dst, 0, dst.dtype(src[i, j, k, l]) / dst.dtype(n))
-
-
-_MEAN = [None, _mean_1d, _mean_2d, _mean_3d, _mean_4d]
 
 
 @wp.kernel

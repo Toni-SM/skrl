@@ -119,7 +119,7 @@ def resolve_dim(*, config, shape: tuple[int, ...], tiled: bool) -> tuple[int, ..
                 math.ceil(shape[0] / config.tile_dim_0),
                 math.ceil(shape[1] / config.tile_dim_1),
                 math.ceil(shape[2] / config.tile_dim_2),
-                math.ceil(shape[3] / config.tile_dim_3),
+                # math.ceil(shape[3] / config.tile_dim_3),
             )
         else:
             raise ValueError(f"Unsupported number of dimensions: {ndim}")

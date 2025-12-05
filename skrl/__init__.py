@@ -335,6 +335,7 @@ class _Config(object):
                 self.tile_dim_0 = 32
                 self.tile_dim_1 = 32
                 self.tile_dim_2 = 32
+                self.tile_dim_3 = 32
 
                 # init Warp (don't import if it hasn't been imported)
                 if "warp" in sys.modules:

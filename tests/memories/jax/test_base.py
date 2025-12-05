@@ -2,6 +2,7 @@ import pytest
 
 import jax
 import jax.numpy as jnp
+
 from skrl.memories.jax import RandomMemory
 
 

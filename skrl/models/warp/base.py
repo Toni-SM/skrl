@@ -8,19 +8,28 @@ import gymnasium
 import warp as wp
 
 from skrl import config, logger
+from skrl.utils.framework.warp import resolve_dim
 from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space, sample_space
 
 from . import nn
 
 
-@wp.kernel
+d0 = config.warp.tile_dim_0
+d1 = config.warp.tile_dim_1
+
+
+@wp.kernel(enable_backward=False)
 def _polyak_averaging(
     parameters: wp.array2d(dtype=float),
     model_parameters: wp.array2d(dtype=float),
     polyak: float,
 ):
     i, j = wp.tid()
-    parameters[i, j] = (1.0 - polyak) * parameters[i, j] + polyak * model_parameters[i, j]
+    shape = (d0, d1)
+    offset = (i * d0, j * d1)
+    t_parameters = wp.tile_load(parameters, shape=shape, offset=offset)
+    t_model_parameters = wp.tile_load(model_parameters, shape=shape, offset=offset)
+    wp.tile_store(parameters, (1.0 - polyak) * t_parameters + polyak * t_model_parameters, offset=offset)
 
 
 class Model(nn.Module, ABC):
@@ -359,11 +368,12 @@ class Model(nn.Module, ABC):
         # soft update (use in-place operations to avoid creating new parameters)
         else:
             for parameters, model_parameters in zip(self.parameters(), model.parameters()):
-                wp.launch(
+                wp.launch_tiled(
                     _polyak_averaging,
-                    dim=parameters.shape,
+                    dim=resolve_dim(config=config.warp, shape=parameters.shape, tiled=True),
                     inputs=[parameters, model_parameters, polyak],
                     device=self.device,
+                    block_dim=config.warp.block_dim,
                 )
 
     def broadcast_parameters(self, *, rank: int = 0) -> None:

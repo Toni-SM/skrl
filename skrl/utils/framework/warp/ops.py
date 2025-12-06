@@ -4,8 +4,15 @@ import math
 
 import warp as wp
 
+from skrl import config
+
 
 __all__ = ["clamp", "concatenate", "convert_to_numpy_in_place", "resolve_dim", "type_cast"]
+
+T1D = config.warp.tile_shape_1d
+T2D = config.warp.tile_shape_2d
+T3D = config.warp.tile_shape_3d
+T4D = config.warp.tile_shape_4d
 
 
 @wp.kernel
@@ -101,26 +108,25 @@ def _type_cast_4d(src: wp.array(ndim=4), dst: wp.array(ndim=4)):
 _TYPE_CAST = [None, _type_cast_1d, _type_cast_2d, _type_cast_3d, _type_cast_4d]
 
 
-def resolve_dim(*, config, shape: tuple[int, ...], tiled: bool) -> tuple[int, ...]:
+def resolve_dim(*, shape: tuple[int, ...], tiled: bool, dimensions: int | None = None) -> tuple[int, ...]:
     if tiled:
         ndim = len(shape)
         if ndim == 1:
-            return (math.ceil(shape[0] / config.tile_dim_0),)
+            return (math.ceil(shape[0] / T1D[0]),)
         elif ndim == 2:
-            return (math.ceil(shape[0] / config.tile_dim_0), math.ceil(shape[1] / config.tile_dim_1))
+            grid = (math.ceil(shape[0] / T2D[0]), math.ceil(shape[1] / T2D[1]))
+            return grid if dimensions is None else grid[:dimensions]
         elif ndim == 3:
-            return (
-                math.ceil(shape[0] / config.tile_dim_0),
-                math.ceil(shape[1] / config.tile_dim_1),
-                math.ceil(shape[2] / config.tile_dim_2),
-            )
+            grid = (math.ceil(shape[0] / T3D[0]), math.ceil(shape[1] / T3D[1]), math.ceil(shape[2] / T3D[2]))
+            return grid if dimensions is None else grid[:dimensions]
         elif ndim == 4:
-            return (
-                math.ceil(shape[0] / config.tile_dim_0),
-                math.ceil(shape[1] / config.tile_dim_1),
-                math.ceil(shape[2] / config.tile_dim_2),
-                # math.ceil(shape[3] / config.tile_dim_3),
+            grid = (
+                math.ceil(shape[0] / T4D[0]),
+                math.ceil(shape[1] / T4D[1]),
+                math.ceil(shape[2] / T4D[2]),
+                math.ceil(shape[3] / T4D[3]),
             )
+            return grid[:3] if dimensions is None else grid[:dimensions]  # tiled launch grid must be less than 4D
         else:
             raise ValueError(f"Unsupported number of dimensions: {ndim}")
     return shape

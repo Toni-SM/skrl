@@ -25,12 +25,10 @@ __all__ = [
     "std",
 ]
 
-
-d0 = config.warp.tile_dim_0
-d1 = config.warp.tile_dim_1
-d2 = config.warp.tile_dim_2
-d3 = config.warp.tile_dim_3
-block_dim = config.warp.block_dim
+T1D = config.warp.tile_shape_1d
+T2D = config.warp.tile_shape_2d
+T3D = config.warp.tile_shape_3d
+T4D = config.warp.tile_shape_4d
 
 # Warp kernels
 
@@ -38,8 +36,8 @@ block_dim = config.warp.block_dim
 @wp.kernel
 def _mean_1d(src: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
     i = wp.tid()
-    shape = (d0,)
-    offset = (i * d0,)
+    shape = (wp.static(T1D[0]),)
+    offset = (i * wp.static(T1D[0]),)
     t_src = wp.tile_load(src, shape=shape, offset=offset)
     wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
 
@@ -47,8 +45,8 @@ def _mean_1d(src: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
 @wp.kernel
 def _mean_2d(src: wp.array(ndim=2), n: int, dst: wp.array(ndim=1)):
     i, j = wp.tid()
-    shape = (d0, d1)
-    offset = (i * d0, j * d1)
+    shape = (wp.static(T2D[0]), wp.static(T2D[1]))
+    offset = (i * wp.static(T2D[0]), j * wp.static(T2D[1]))
     t_src = wp.tile_load(src, shape=shape, offset=offset)
     wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
 
@@ -56,8 +54,8 @@ def _mean_2d(src: wp.array(ndim=2), n: int, dst: wp.array(ndim=1)):
 @wp.kernel
 def _mean_3d(src: wp.array(ndim=3), n: int, dst: wp.array(ndim=1)):
     i, j, k = wp.tid()
-    shape = (d0, d1, d2)
-    offset = (i * d0, j * d1, k * d2)
+    shape = (wp.static(T3D[0]), wp.static(T3D[1]), wp.static(T3D[2]))
+    offset = (i * wp.static(T3D[0]), j * wp.static(T3D[1]), k * wp.static(T3D[2]))
     t_src = wp.tile_load(src, shape=shape, offset=offset)
     wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
 
@@ -65,34 +63,20 @@ def _mean_3d(src: wp.array(ndim=3), n: int, dst: wp.array(ndim=1)):
 @wp.kernel
 def _mean_4d(src: wp.array(ndim=4), n: int, dst: wp.array(ndim=1)):
     i, j, k = wp.tid()
-    shape = (d0, d1, d2, d3)
+    shape = (wp.static(T4D[0]), wp.static(T4D[1]), wp.static(T4D[2]), wp.static(T4D[3]))
     d = src.shape[3]
-    count = d / d3
-    if d % d3:
+    count = d / wp.static(T4D[3])
+    if d % wp.static(T4D[3]):
         count += 1
     for l in range(count):
-        offset = (i * d0, j * d1, k * d2, l * d3)
+        offset = (i * wp.static(T4D[0]), j * wp.static(T4D[1]), k * wp.static(T4D[2]), l * wp.static(T4D[3]))
         t_src = wp.tile_load(src, shape=shape, offset=offset)
         wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
-    # offset = (i * d0, j * d1, k * d2)
-    # for l in range(src.shape[3]):
-    #     t_src = wp.tile_load(src[:, :, :, l], shape=shape, offset=offset)
-    #     wp.tile_atomic_add(dst, wp.tile_astype(wp.tile_sum(t_src), dtype=dst.dtype) * (dst.dtype(1.0) / dst.dtype(n)))
 
 
 _MEAN = [None, _mean_1d, _mean_2d, _mean_3d, _mean_4d]
 
 # Functions
-
-
-def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
-    output = (
-        array
-        if inplace
-        else wp.empty(array.shape, dtype=array.dtype, device=array.device, requires_grad=array.requires_grad)
-    )
-    wp.launch(_scalar_mul, dim=array.shape, inputs=[output, array, scalar], device=array.device)
-    return output
 
 
 def mean(array: wp.array, *, dtype: type = wp.float32, output: wp.array | None = None) -> wp.array:
@@ -102,12 +86,22 @@ def mean(array: wp.array, *, dtype: type = wp.float32, output: wp.array | None =
         output = wp.zeros((1,), dtype=dtype, device=device, requires_grad=array.requires_grad)
     wp.launch_tiled(
         _MEAN[array.ndim],
-        dim=ops.resolve_dim(config=config.warp, shape=shape, tiled=True),
+        dim=ops.resolve_dim(shape=shape, tiled=True),
         inputs=[array, np.prod(shape).item()],
         outputs=[output],
         device=device,
         block_dim=config.warp.block_dim,
     )
+    return output
+
+
+def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
+    output = (
+        array
+        if inplace
+        else wp.empty(array.shape, dtype=array.dtype, device=array.device, requires_grad=array.requires_grad)
+    )
+    wp.launch(_scalar_mul, dim=array.shape, inputs=[output, array, scalar], device=array.device)
     return output
 
 

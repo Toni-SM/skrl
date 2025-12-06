@@ -330,8 +330,13 @@ class _Config(object):
                 # device
                 self._device = "cuda:0"
                 # kernel-related config
-                self.tiled = True
                 self.block_dim = 128
+                self.tile_shape_1d = (64,)  # 64
+                self.tile_shape_2d = (32, 32)  # 1024
+                self.tile_shape_3d = (16, 16, 16)  # 4096
+                self.tile_shape_4d = (8, 8, 8, 8)  # 4096
+
+                self.tiled = True
                 self.tile_dim_0 = 32
                 self.tile_dim_1 = 32
                 self.tile_dim_2 = 32

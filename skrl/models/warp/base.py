@@ -14,8 +14,10 @@ from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space,
 from . import nn
 
 
-d0 = config.warp.tile_dim_0
-d1 = config.warp.tile_dim_1
+T1D = config.warp.tile_shape_1d
+T2D = config.warp.tile_shape_2d
+T3D = config.warp.tile_shape_3d
+T4D = config.warp.tile_shape_4d
 
 
 @wp.kernel(enable_backward=False)
@@ -25,8 +27,8 @@ def _polyak_averaging(
     polyak: float,
 ):
     i, j = wp.tid()
-    shape = (d0, d1)
-    offset = (i * d0, j * d1)
+    shape = (wp.static(T2D[0]), wp.static(T2D[1]))
+    offset = (i * wp.static(T2D[0]), j * wp.static(T2D[1]))
     t_parameters = wp.tile_load(parameters, shape=shape, offset=offset)
     t_model_parameters = wp.tile_load(model_parameters, shape=shape, offset=offset)
     wp.tile_store(parameters, (1.0 - polyak) * t_parameters + polyak * t_model_parameters, offset=offset)
@@ -370,7 +372,7 @@ class Model(nn.Module, ABC):
             for parameters, model_parameters in zip(self.parameters(), model.parameters()):
                 wp.launch_tiled(
                     _polyak_averaging,
-                    dim=resolve_dim(config=config.warp, shape=parameters.shape, tiled=True),
+                    dim=resolve_dim(shape=parameters.shape, tiled=True),
                     inputs=[parameters, model_parameters, polyak],
                     device=self.device,
                     block_dim=config.warp.block_dim,

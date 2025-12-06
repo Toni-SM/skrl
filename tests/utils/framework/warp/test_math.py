@@ -21,8 +21,6 @@ def test_mean(capsys, ndim, dtype, shape):
     array = wp.array(sample)
 
     value = warp_utils.mean(array)
-    wp.synchronize()
-    print(value.numpy())
     assert np.allclose(value.numpy().item(), np.mean(sample))
 
 

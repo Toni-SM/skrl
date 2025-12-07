@@ -54,6 +54,14 @@ Usage
                     :start-after: [start-isaaclab-envs-parameters-jax]
                     :end-before: [end-isaaclab-envs-parameters-jax]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/loaders.py
+                    :language: python
+                    :emphasize-lines: 2, 5
+                    :start-after: [start-isaaclab-envs-parameters-warp]
+                    :end-before: [end-isaaclab-envs-parameters-warp]
+
     .. tab:: Command line arguments (priority)
 
         .. tabs::
@@ -73,6 +81,14 @@ Usage
                     :emphasize-lines: 2, 5
                     :start-after: [start-isaaclab-envs-cli-jax]
                     :end-before: [end-isaaclab-envs-cli-jax]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/loaders.py
+                    :language: python
+                    :emphasize-lines: 2, 5
+                    :start-after: [start-isaaclab-envs-cli-warp]
+                    :end-before: [end-isaaclab-envs-cli-warp]
 
         Run the main script passing the configuration as command line arguments. For example:
 

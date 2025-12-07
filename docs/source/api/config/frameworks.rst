@@ -92,20 +92,12 @@ API
 
 .. py:data:: skrl.config.jax.device
     :type: jax.Device
-    :value: "cuda:${LOCAL_RANK}" | "cpu"
+    :value: "cuda:${JAX_LOCAL_RANK}" | "cpu"
 
     Default device.
 
-    The default device, unless specified, is ``cuda:0`` (or ``cuda:JAX_LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise.
-
-.. py:data:: skrl.config.jax.backend
-    :type: str
-    :value: "numpy"
-
-    Backend used by the different components to operate and generate arrays.
-
-    This configuration excludes models and optimizers.
-    Supported backend are: ``"numpy"`` and ``"jax"``.
+    The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+    However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
 
 .. py:data:: skrl.config.jax.key
     :type: jax.Array
@@ -164,3 +156,35 @@ API
     This property is ``True`` when the JAX's distributed environment variable ``WORLD_SIZE > 1``.
 
     Read-only attribute.
+
+.. raw:: html
+
+    <br>
+
+Warp
+----
+
+Warp specific configuration
+
+.. raw:: html
+
+    <br>
+
+API
+^^^
+
+.. autofunction:: skrl.config.warp.parse_device
+
+.. py:data:: skrl.config.warp.device
+    :type: warp.context.Device
+    :value: "cuda:0" | "cpu"
+
+    Default device.
+
+    The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+
+.. py:data:: skrl.config.warp.key
+    :type: int
+    :value: 0
+
+    Pseudo-random number generator (PRNG) key.

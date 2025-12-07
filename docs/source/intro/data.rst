@@ -12,15 +12,6 @@ In this section, you will find the information you need to log data with TensorB
 
 `TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents (**can be customized independently for each agent using its configuration dictionary**).
 
-.. .. admonition:: |jax|
-.. note::
-
-    A standalone JAX installation does not include any package for writing events to Tensorboard. In this case it is necessary to install (if not installed) one of the following frameworks/packages:
-
-    * `PyTorch <https://pytorch.org/get-started/locally>`_
-    * `TensorFlow <https://www.tensorflow.org/install>`_
-    * `TensorboardX <https://github.com/lanpa/tensorboardX#install>`_
-
 .. raw:: html
 
     <br>
@@ -130,16 +121,16 @@ Tracking custom metrics/scales
       # assuming agent is an instance of an Agent subclass
       agent.track_data("Resource / CPU usage", psutil.cpu_percent())
 
-* **Tracking custom data directly to Tensorboard**
+* **Tracking custom data directly to TensorBoard**
 
-  It is also feasible to access directly to the `SummaryWriter <https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter>`_ instance through the :literal:`writer` property if it is desired to write directly to Tensorboard, avoiding the base class's control and timing logic.
+  It is also feasible to access directly to the :literal:`SummaryWriter` instance through the :literal:`writer` property if it is desired to write directly to TensorBoard, avoiding the base class's control and timing logic.
 
   For example, to write directly to TensorBoard:
 
   .. code-block:: python
 
       # assuming agent is an instance of an Agent subclass
-      agent.writer.add_scalar("Resource / CPU usage", psutil.cpu_percent(), global_step=1000)
+      agent.writer.add_scalar(tag="Resource / CPU usage", value=psutil.cpu_percent(), timestep=1000)
 
 .. raw:: html
 

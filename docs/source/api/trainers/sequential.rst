@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Sequential trainer
 ==================
 
@@ -45,6 +47,13 @@ Usage
             :start-after: [jax-start-sequential]
             :end-before: [jax-end-sequential]
 
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. literalinclude:: ../../snippets/trainer.py
+            :language: python
+            :start-after: [warp-start-sequential]
+            :end-before: [warp-end-sequential]
+
 .. raw:: html
 
     <br>
@@ -52,10 +61,17 @@ Usage
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``SequentialTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.warp.SequentialTrainerCfg`
 
 .. raw:: html
 
@@ -64,9 +80,12 @@ Configuration
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.torch.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.torch.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
@@ -79,9 +98,30 @@ API (PyTorch)
 API (JAX)
 ---------
 
-.. autoclass:: skrl.trainers.jax.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.jax.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainer
+.. autoclass:: skrl.trainers.jax.SequentialTrainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+----------
+
+.. autoclass:: skrl.trainers.warp.SequentialTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.warp.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

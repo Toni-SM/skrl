@@ -10,34 +10,32 @@ In this section, you will find the steps to install the library, troubleshoot kn
 **Dependencies**
 ----------------
 
-**skrl** requires Python 3.6 or higher and the following libraries (they will be installed automatically):
+* General dependencies: `gymnasium <https://gymnasium.farama.org/>`_, `packaging <https://packaging.pypa.io>`_, `tensorboard <https://www.tensorflow.org/tensorboard>`_ and `tqdm <https://tqdm.github.io>`_.
 
-    * `gymnasium <https://gymnasium.farama.org/>`_
-    * `packaging <https://packaging.pypa.io>`_
-    * `tensorboard <https://www.tensorflow.org/tensorboard>`_
-    * `tqdm <https://tqdm.github.io>`_
+* ML framework-specific dependencies:
 
-Machine learning (ML) framework
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. list-table::
+    :header-rows: 1
 
-According to the specific ML frameworks, the following libraries are required:
+    * - Dependencies
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - Python
+      - ``>= 3.10``
+      - ``>= 3.10``
+      - ``>= 3.10``
+    * - Packages
+      - `torch <https://pytorch.org>`_ ``>= 1.11``
+      - `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ ``>= 0.4.31``
+        |br| `flax <https://flax.readthedocs.io>`_ ``>= 0.9.0``
+        |br| `optax <https://optax.readthedocs.io>`_
+      - `warp-lang <https://nvidia.github.io/warp>`_ ``>= 1.8.1``
 
-PyTorch
-"""""""
+.. warning::
 
-    * `torch <https://pytorch.org>`_ 1.10.0 or higher
-
-JAX
-"""
-
-    .. warning::
-
-        It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
-        Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the steps described below.
-
-    * `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ 0.4.3 or higher
-    * `flax <https://flax.readthedocs.io>`_
-    * `optax <https://optax.readthedocs.io>`_
+    It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
+    Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the steps described below.
 
 .. raw:: html
 
@@ -73,6 +71,12 @@ To install **skrl** with pip, execute:
         .. code-block:: bash
 
             pip install skrl["jax"]
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. code-block:: bash
+
+            pip install skrl["warp"]
 
     .. group-tab:: All ML frameworks
 
@@ -121,6 +125,12 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install -e .["jax"]
 
+        .. group-tab:: |_4| |warp| |_4|
+
+            .. code-block:: bash
+
+                pip install -e .["warp"]
+
         .. group-tab:: All ML frameworks
 
             .. code-block:: bash
@@ -153,6 +163,12 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
             .. code-block:: bash
 
                 pip install .["jax"]
+
+        .. group-tab:: |_4| |warp| |_4|
+
+            .. code-block:: bash
+
+                pip install .["warp"]
 
         .. group-tab:: All ML frameworks
 
@@ -228,7 +244,7 @@ Bug detection and/or correction, feature requests and everything else are more t
         def __hash__(self):
             return id(self)
 
-4. When training/evaluating using JAX with the NVIDIA Isaac Gym Preview, Omniverse Isaac Gym or Isaac Lab environments.
+4. When training/evaluating using JAX with the NVIDIA Isaac Lab (and Isaac Gym) environments.
 
     .. code-block:: text
 

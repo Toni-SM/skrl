@@ -69,11 +69,11 @@ for filename, data in memory_iterator:
 from skrl.utils import postprocessing
 
 
-# assuming there is a directory called "runs" with experiments and Tensorboard files in it
+# assuming there is a directory called "runs" with experiments and TensorBoard files in it
 tensorboard_iterator = postprocessing.TensorboardFileIterator("runs/*/events.out.tfevents.*", \
     tags=["Reward / Total reward (mean)"])
 for dirname, data in tensorboard_iterator:
-    dirname    # str: path of the directory (experiment name) containing the Tensorboard file
+    dirname    # str: path of the directory (experiment name) containing the TensorBoard file
     data    # dict: keys are the tags, values are lists of [step, value] pairs
 
     # example of simple usage:

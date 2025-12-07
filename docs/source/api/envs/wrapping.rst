@@ -12,8 +12,7 @@ This library works with a common API to interact with the following RL environme
 * OpenAI `Gym <https://www.gymlibrary.dev>`_
 * Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
 * Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
-* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (as well as `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ (preview 2, 3 and 4) and `Omniverse Isaac Gym <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_)
-* `robosuite <https://robosuite.ai/>`_
+* NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -60,121 +59,12 @@ Usage
                     :start-after: [jax-start-isaaclab]
                     :end-before: [jax-end-isaaclab]
 
-    .. tab:: Omniverse Isaac Gym
+            .. group-tab:: |_4| |warp| |_4|
 
-        .. tabs::
-
-            .. tab:: Common environment
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-omniverse-isaacgym]
-                            :end-before: [pytorch-end-omniverse-isaacgym]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-omniverse-isaacgym]
-                            :end-before: [jax-end-omniverse-isaacgym]
-
-            .. tab:: Multi-threaded environment
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-omniverse-isaacgym-mt]
-                            :end-before: [pytorch-end-omniverse-isaacgym-mt]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-omniverse-isaacgym-mt]
-                            :end-before: [jax-end-omniverse-isaacgym-mt]
-
-    .. tab:: Isaac Gym
-
-        .. tabs::
-
-            .. tab:: Preview 4 (isaacgymenvs.make)
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview4-make]
-                            :end-before: [pytorch-end-isaacgym-preview4-make]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview4-make]
-                            :end-before: [jax-end-isaacgym-preview4-make]
-
-            .. tab:: Preview 4
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview4]
-                            :end-before: [pytorch-end-isaacgym-preview4]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview4]
-                            :end-before: [jax-end-isaacgym-preview4]
-
-            .. tab:: Preview 3
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview3]
-                            :end-before: [pytorch-end-isaacgym-preview3]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview3]
-                            :end-before: [jax-end-isaacgym-preview3]
-
-            .. tab:: Preview 2
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaacgym-preview2]
-                            :end-before: [pytorch-end-isaacgym-preview2]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaacgym-preview2]
-                            :end-before: [jax-end-isaacgym-preview2]
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-isaaclab]
+                    :end-before: [warp-end-isaaclab]
 
     .. tab:: Gymnasium / Gym
 
@@ -202,6 +92,13 @@ Usage
                                     :start-after: [jax-start-gymnasium]
                                     :end-before: [jax-end-gymnasium]
 
+                            .. group-tab:: |_4| |warp| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [warp-start-gymnasium]
+                                    :end-before: [warp-end-gymnasium]
+
                     .. group-tab:: Vectorized environment
 
                         Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
@@ -221,6 +118,13 @@ Usage
                                     :language: python
                                     :start-after: [jax-start-gymnasium-vectorized]
                                     :end-before: [jax-end-gymnasium-vectorized]
+
+                            .. group-tab:: |_4| |warp| |_4|
+
+                                .. literalinclude:: ../../snippets/wrapping.py
+                                    :language: python
+                                    :start-after: [warp-start-gymnasium-vectorized]
+                                    :end-before: [warp-end-gymnasium-vectorized]
 
             .. tab:: Gym
 
@@ -282,6 +186,13 @@ Usage
                     :start-after: [jax-start-shimmy]
                     :end-before: [jax-end-shimmy]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-shimmy]
+                    :end-before: [warp-end-shimmy]
+
     .. tab:: Brax
 
         .. tabs::
@@ -318,24 +229,6 @@ Usage
             ..         :start-after: [jax-start-deepmind]
             ..         :end-before: [jax-end-deepmind]
 
-    .. tab:: robosuite
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-robosuite]
-                    :end-before: [pytorch-end-robosuite]
-
-            .. .. group-tab:: |_4| |jax| |_4|
-
-            ..     .. literalinclude:: ../../snippets/wrapping.py
-            ..         :language: python
-            ..         :start-after: [jax-start-robosuite]
-            ..         :end-before: [jax-end-robosuite]
-
 .. raw:: html
 
     <br>
@@ -358,6 +251,15 @@ API (JAX)
 
     <br>
 
+API (Warp)
+----------
+
+.. autofunction:: skrl.envs.wrappers.warp.wrap_env
+
+.. raw:: html
+
+    <br>
+
 Internal API (PyTorch)
 ----------------------
 
@@ -367,21 +269,6 @@ Internal API (PyTorch)
     :members:
 
 .. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.torch.OmniverseIsaacGymWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview3Wrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.torch.IsaacGymPreview2Wrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -407,12 +294,6 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.RobosuiteWrapper
-    :undoc-members:
-    :show-inheritance:
-    :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
-    :members:
-
 .. raw:: html
 
     <br>
@@ -430,27 +311,34 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.OmniverseIsaacGymWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview3Wrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.jax.IsaacGymPreview2Wrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
 .. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. raw:: html
+
+    <br>
+
+Internal API (Warp)
+-------------------
+
+.. autoclass:: skrl.envs.wrappers.warp.Wrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:

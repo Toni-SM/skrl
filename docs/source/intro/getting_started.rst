@@ -43,7 +43,7 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as Gym/Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, and NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, and NVIDIA Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
 * For **multi-agent** environments, skrl offers a function to **wrap environments** based on PettingZoo and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
@@ -102,122 +102,6 @@ Among the methods and properties defined in the wrapped environment, the state, 
                             :language: python
                             :start-after: [jax-start-isaaclab]
                             :end-before: [jax-end-isaaclab]
-
-            .. tab:: Omniverse Isaac Gym
-
-                .. tabs::
-
-                    .. tab:: Common environment
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-omniverse-isaacgym]
-                                    :end-before: [pytorch-end-omniverse-isaacgym]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-omniverse-isaacgym]
-                                    :end-before: [jax-end-omniverse-isaacgym]
-
-                    .. tab:: Multi-threaded environment
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-omniverse-isaacgym-mt]
-                                    :end-before: [pytorch-end-omniverse-isaacgym-mt]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-omniverse-isaacgym-mt]
-                                    :end-before: [jax-end-omniverse-isaacgym-mt]
-
-            .. tab:: Isaac Gym
-
-                .. tabs::
-
-                    .. tab:: Preview 4 (isaacgymenvs.make)
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-isaacgym-preview4-make]
-                                    :end-before: [pytorch-end-isaacgym-preview4-make]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-isaacgym-preview4-make]
-                                    :end-before: [jax-end-isaacgym-preview4-make]
-
-                    .. tab:: Preview 4
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-isaacgym-preview4]
-                                    :end-before: [pytorch-end-isaacgym-preview4]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-isaacgym-preview4]
-                                    :end-before: [jax-end-isaacgym-preview4]
-
-                    .. tab:: Preview 3
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-isaacgym-preview3]
-                                    :end-before: [pytorch-end-isaacgym-preview3]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-isaacgym-preview3]
-                                    :end-before: [jax-end-isaacgym-preview3]
-
-                    .. tab:: Preview 2
-
-                        .. tabs::
-
-                            .. group-tab:: |_4| |pytorch| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [pytorch-start-isaacgym-preview2]
-                                    :end-before: [pytorch-end-isaacgym-preview2]
-
-                            .. group-tab:: |_4| |jax| |_4|
-
-                                .. literalinclude:: ../snippets/wrapping.py
-                                    :language: python
-                                    :start-after: [jax-start-isaacgym-preview2]
-                                    :end-before: [jax-end-isaacgym-preview2]
 
             .. tab:: Gymnasium / Gym
 
@@ -361,24 +245,6 @@ Among the methods and properties defined in the wrapped environment, the state, 
                     ..         :start-after: [jax-start-deepmind]
                     ..         :end-before: [jax-end-deepmind]
 
-            .. tab:: robosuite
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-robosuite]
-                            :end-before: [pytorch-end-robosuite]
-
-                    .. .. group-tab:: |_4| |jax| |_4|
-
-                    ..     .. literalinclude:: ../snippets/wrapping.py
-                    ..         :language: python
-                    ..         :start-after: [jax-start-robosuite]
-                    ..         :end-before: [jax-end-robosuite]
-
     .. group-tab:: Multi-agent environments
 
         .. tabs::
@@ -436,24 +302,6 @@ Among the methods and properties defined in the wrapped environment, the state, 
                             :language: python
                             :start-after: [jax-start-shimmy-multi-agent]
                             :end-before: [jax-end-shimmy-multi-agent]
-
-            .. tab:: Bi-DexHands
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [start-bidexhands-torch]
-                            :end-before: [end-bidexhands-torch]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [start-bidexhands-jax]
-                            :end-before: [end-bidexhands-jax]
 
 Once the environment is known (and instantiated), it is time to configure and instantiate the agent. Agents are composed, apart from the optimization algorithm, by several components, such as memories, models or noises, for example, according to their nature. The following subsections focus on those components.
 

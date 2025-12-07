@@ -1,4 +1,6 @@
-from typing import Any, Tuple
+from __future__ import annotations
+
+from typing import Any
 
 import gymnasium
 from packaging import version
@@ -19,10 +21,9 @@ from skrl.utils.spaces.torch import (
 
 class GymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """OpenAI Gym environment wrapper
+        """OpenAI Gym environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported OpenAI Gym environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -50,39 +51,40 @@ class GymWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_observation_space)
         return convert_gym_space(self._env.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = untensorize_space(
             self.action_space,
             unflatten_tensorized_space(self.action_space, actions),
             squeeze_batch_dimension=not self._vectorized,
         )
+        if self._vectorized and isinstance(self.action_space, gymnasium.spaces.Discrete):
+            actions = actions.flatten()
 
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
             # truncated: https://gymnasium.farama.org/tutorials/handling_time_limits
-            if type(info) is list:
+            if isinstance(info, (tuple, list)):
                 truncated = np.array([d.get("TimeLimit.truncated", False) for d in info], dtype=terminated.dtype)
                 terminated *= np.logical_not(truncated)
+                info = {}
             else:
                 truncated = info.get("TimeLimit.truncated", False)
                 if truncated:
@@ -91,7 +93,7 @@ class GymWrapper(Wrapper):
             observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to torch
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         reward = torch.tensor(reward, device=self.device, dtype=torch.float32).view(self.num_envs, -1)
         terminated = torch.tensor(terminated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
         truncated = torch.tensor(truncated, device=self.device, dtype=torch.bool).view(self.num_envs, -1)
@@ -103,11 +105,22 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> torch.Tensor | None:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: torch.Tensor and any other info
+        :return: State.
+        """
+        try:
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        except:
+            return None
+
+    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
@@ -118,7 +131,7 @@ class GymWrapper(Wrapper):
                 else:
                     observation, self._info = self._env.reset()
                 self._observation = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, observation, self.device)
+                    tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
             return self._observation, self._info
@@ -128,15 +141,15 @@ class GymWrapper(Wrapper):
             info = {}
         else:
             observation, info = self._env.reset()
-        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, self.device))
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         if self._vectorized:
             return None
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

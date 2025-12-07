@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Memories
 ========
 
@@ -18,7 +20,9 @@ Memories are storage components that allow agents to collect and use/reuse curre
     * - Memories
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Random memory <memories/random>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -61,7 +65,7 @@ Basic inheritance usage
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.memories.torch.base.Memory
+.. autoclass:: skrl.memories.torch.Memory
     :undoc-members:
     :show-inheritance:
     :members:
@@ -75,7 +79,21 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.memories.jax.base.Memory
+.. autoclass:: skrl.memories.jax.Memory
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. automethod:: __len__
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+^^^^^^^^^^
+
+.. autoclass:: skrl.memories.warp.Memory
     :undoc-members:
     :show-inheritance:
     :members:

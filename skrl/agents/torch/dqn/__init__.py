@@ -1,2 +1,2 @@
-from skrl.agents.torch.dqn.ddqn import DDQN, DDQN_DEFAULT_CONFIG
-from skrl.agents.torch.dqn.dqn import DQN, DQN_DEFAULT_CONFIG
+from skrl.agents.torch.dqn.dqn import DQN
+from skrl.agents.torch.dqn.dqn_cfg import DQN_CFG

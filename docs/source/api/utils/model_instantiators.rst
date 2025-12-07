@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Model instantiators
 ===================
 
@@ -15,24 +17,35 @@ Utilities for quickly creating model instances.
     * - Models
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Tabular model <../models/tabular>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <../models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Multi-Categorical model <../models/multicategorical>` (discrete domain)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Gaussian model <../models/gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Multivariate Gaussian model <../models/multivariate_gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Deterministic model <../models/deterministic>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Shared model <../models/shared_model>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 .. raw:: html
 
@@ -42,13 +55,15 @@ Network definitions
 -------------------
 
 The network is composed of one or more containers.
-For each container its input, hidden layers and activation functions are specified.
+For each container, the input, hidden layers and activation functions can be specified.
 
 Implementation details:
 
-- The network compute/forward is done by calling the containers in the order in which they are defined
-- Containers use :py:class:`torch.nn.Sequential` in PyTorch, and :py:class:`flax.linen.Sequential` in JAX
-- If a single activation function is specified (mapping or sequence), it will be applied after each layer (except ``flatten`` layers) in the container
+- Container names must be valid `Python identifiers <https://docs.python.org/3/reference/lexical_analysis.html#identifiers>`_ and unique.
+- The network compute/forward is done by calling the containers in the order in which they are defined.
+- Containers use :py:class:`torch.nn.Sequential` in PyTorch, and :py:class:`flax.linen.Sequential` in JAX.
+- If a single activation function is specified (mapping or sequence), it will be applied after each layer
+  (except ``flatten`` layers) in the container.
 
 .. tabs::
 
@@ -71,18 +86,21 @@ Implementation details:
 Inputs
 ^^^^^^
 
-Inputs can be specified using tokens or previously defined container outputs (by container name).
-Certain operations could be specified on them, including indexing and slicing
+Inputs can be specified using tokens or previously defined container outputs (by container names).
+Certain operations could be specified on them, including indexing and slicing.
 
 .. hint::
 
-    Operations can be mixed to create complex input statements
+    Operations can be mixed to create complex input statements.
 
 Available tokens:
 
-* ``STATES``: Token indicating the input states (``inputs["states"]``) forwarded to the model
-* ``ACTIONS``: Token indicating the input actions (``inputs["taken_actions"]``) forwarded to the model
-* ``STATES_ACTIONS``: Token indicating the concatenation of the forwarded input states and actions
+* ``OBSERVATIONS``: Unflattened tensorized input ``observations`` (tensorized observation space) forwarded to the model.
+* ``STATES``: Unflattened tensorized input ``states`` (tensorized state space) forwarded to the model.
+* ``ACTIONS``: Unflattened tensorized input ``taken_actions`` (tensorized action space) forwarded to the model.
+* ``OBSERVATION_SPACE``: Token indicating the ``observation_space`` of the model.
+* ``STATE_SPACE``: Token indicating the ``state_space`` of the model.
+* ``ACTION_SPACE``: Token indicating the ``action_space`` of the model.
 
 Supported operations:
 
@@ -91,40 +109,44 @@ Supported operations:
 
     * - Operations
       - Example
-    * - Tensor/array indexing and slicing
-        |br| E.g.: :py:class:`gymnasium.spaces.Box`
-      - ``STATES[:, 0]``
-        |br| ``STATES[:, 2:5]``
-    * - Dictionary indexing by key
-        |br| E.g.: :py:class:`gymnasium.spaces.Dict`
+    * - Tensor/array indexing and slicing.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Box` space
+      - ``OBSERVATIONS[:, 0]``
+        |br| ``OBSERVATIONS[:, 2:5]``
+    * - Dictionary indexing by key.
+        |br| E.g.: :py:class:`~gymnasium.spaces.Dict` space
       - ``STATES["joint-pos"]``
     * - Arithmetic (``+``, ``-``, ``*``, ``/``)
       - ``features_extractor + ACTIONS``
     * - Concatenation
       - ``concatenate([features_extractor, ACTIONS])``
     * - Permute dimensions
-      - ``permute(STATES, (0, 3, 1, 2))``
+      - ``permute(OBSERVATIONS, (0, 3, 1, 2))``
+    * - One-hot encoding :py:class:`~gymnasium.spaces.Discrete`
+        |br| and :py:class:`~gymnasium.spaces.MultiDiscrete` spaces
+      - ``one_hot_encoding(OBSERVATION_SPACE, OBSERVATIONS)``
 
 |
 
-Output
-^^^^^^
+Outputs
+^^^^^^^
 
-The output can be specified using tokens or defined container outputs (by container name).
-Certain operations could be specified on it
+Outputs can be specified using tokens or previously defined container outputs (by container names).
+Certain operations could be specified on them.
 
 .. note::
 
-    If a token is used, a linear layer will be created with the last container in the list (as the number of input features) and the value represented by the token (as the number of output features)
+    If a token is used, a linear layer will be created with the last container in the list (as the number of input features)
+    and the value represented by the token (as the number of output features).
 
 .. hint::
 
-    Operations can be mixed to create complex output statement
+    Operations can be mixed to create complex output statements.
 
 Available tokens:
 
-* ``ACTIONS``: Token indicating that the output shape is the number of elements in the action space
-* ``ONE``: Token indicating that the output shape is 1
+* ``ACTIONS``: Token indicating that the output shape is the number of elements in the action space.
+* ``ONE``: Token indicating that the output shape is 1.
 
 Supported operations:
 
@@ -153,33 +175,43 @@ The following table lists the supported activation functions:
     * - Activations
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``relu``
-      - :py:class:`torch.nn.ReLU`
-      - :py:obj:`flax.linen.activation.relu`
+      - :py:class:`~torch.nn.ReLU`
+      - :py:obj:`~flax.linen.activation.relu`
+      - :py:obj:`~skrl.models.warp.nn.ReLU`
     * - ``tanh``
-      - :py:class:`torch.nn.Tanh`
-      - :py:obj:`flax.linen.activation.tanh`
+      - :py:class:`~torch.nn.Tanh`
+      - :py:obj:`~flax.linen.activation.tanh`
+      - :py:obj:`~skrl.models.warp.nn.Tanh`
     * - ``sigmoid``
-      - :py:class:`torch.nn.Sigmoid`
-      - :py:obj:`flax.linen.activation.sigmoid`
+      - :py:class:`~torch.nn.Sigmoid`
+      - :py:obj:`~flax.linen.activation.sigmoid`
+      -
     * - ``leaky_relu``
-      - :py:class:`torch.nn.LeakyReLU`
-      - :py:obj:`flax.linen.activation.leaky_relu`
+      - :py:class:`~torch.nn.LeakyReLU`
+      - :py:obj:`~flax.linen.activation.leaky_relu`
+      -
     * - ``elu``
-      - :py:class:`torch.nn.ELU`
-      - :py:obj:`flax.linen.activation.elu`
+      - :py:class:`~torch.nn.ELU`
+      - :py:obj:`~flax.linen.activation.elu`
+      - :py:obj:`~skrl.models.warp.nn.ELU`
     * - ``softplus``
-      - :py:class:`torch.nn.Softplus`
-      - :py:obj:`flax.linen.activation.softplus`
+      - :py:class:`~torch.nn.Softplus`
+      - :py:obj:`~flax.linen.activation.softplus`
+      -
     * - ``softsign``
-      - :py:class:`torch.nn.Softsign`
-      - :py:obj:`flax.linen.activation.soft_sign`
+      - :py:class:`~torch.nn.Softsign`
+      - :py:obj:`~flax.linen.activation.soft_sign`
+      -
     * - ``selu``
-      - :py:class:`torch.nn.SELU`
-      - :py:obj:`flax.linen.activation.selu`
+      - :py:class:`~torch.nn.SELU`
+      - :py:obj:`~flax.linen.activation.selu`
+      -
     * - ``softmax``
-      - :py:class:`torch.nn.Softmax`
-      - :py:obj:`flax.linen.activation.softmax`
+      - :py:class:`~torch.nn.Softmax`
+      - :py:obj:`~flax.linen.activation.softmax`
+      -
 
 |
 
@@ -194,15 +226,19 @@ The following table lists the supported layers and transformations:
     * - Layers
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - ``linear``
-      - :py:class:`torch.nn.Linear`
-      - :py:class:`flax.linen.Dense`
+      - :py:class:`~torch.nn.Linear`
+      - :py:class:`~flax.linen.Dense`
+      - :py:class:`~skrl.models.warp.nn.Linear`
     * - ``conv2d``
-      - :py:class:`torch.nn.Conv2d`
-      - :py:class:`flax.linen.Conv`
+      - :py:class:`~torch.nn.Conv2d`
+      - :py:class:`~flax.linen.Conv`
+      -
     * - ``flatten``
-      - :py:class:`torch.nn.Flatten`
-      - :py:obj:`jax.numpy.reshape`
+      - :py:class:`~torch.nn.Flatten`
+      - :py:obj:`~jax.numpy.reshape`
+      - :py:class:`~skrl.models.warp.nn.Flatten`
 
 |
 
@@ -213,7 +249,8 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 
 .. note::
 
-    The tokens ``STATES`` (number of elements in the observation/state space), ``ACTIONS`` (number of elements in the action space), ``STATES_ACTIONS`` (the sum of the number of elements of the observation/state space and of the action space) and ``ONE`` (1) can be used as the layer's number of input/output features
+    The tokens ``NUM_OBSERVATIONS`` (number of elements in the observation space), ``NUM_STATES`` (number of elements in the state space),
+    ``NUM_ACTIONS`` (number of elements in the action space), and ``ONE`` (1) can be used as the layer's number of input/output features
 
 .. note::
 
@@ -225,24 +262,28 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
     * -
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
       - Type
       - Required
       - Description
     * -
       - ``in_features``
       - .. centered:: -
+      - ``in_features``
       - ``int``
       - .. centered:: :math:`\square`
       - Number of input features
     * - 0
       - ``out_features``
       - ``features``
+      - ``out_features``
       - ``int``
       - .. centered:: :math:`\blacksquare`
       - Number of output features
     * - 1
       - ``bias``
       - ``use_bias``
+      - ``bias``
       - ``bool``
       - .. centered:: :math:`\square`
       - Whether to add a bias
@@ -443,17 +484,20 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
     * -
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
       - Type
       - Required
       - Description
     * - 0
       - ``start_dim``
       - .. centered:: -
+      - .. centered:: -
       - ``int``
       - .. centered:: :math:`\square`
       - First dimension to flatten
     * - 1
       - ``end_dim``
+      - .. centered:: -
       - .. centered:: -
       - ``int``
       - .. centered:: :math:`\square`
@@ -528,6 +572,8 @@ API (PyTorch)
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
 
+.. autofunction:: skrl.utils.model_instantiators.torch.multicategorical_model
+
 .. autofunction:: skrl.utils.model_instantiators.torch.deterministic_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.gaussian_model
@@ -535,6 +581,8 @@ API (PyTorch)
 .. autofunction:: skrl.utils.model_instantiators.torch.multivariate_gaussian_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.shared_model
+
+.. autofunction:: skrl.utils.model_instantiators.torch.tabular_model
 
 .. raw:: html
 
@@ -545,6 +593,21 @@ API (JAX)
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
 
+.. autofunction:: skrl.utils.model_instantiators.jax.multicategorical_model
+
 .. autofunction:: skrl.utils.model_instantiators.jax.deterministic_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.gaussian_model
+
+.. raw:: html
+
+    <br>
+
+API (WARP)
+----------
+
+.. autofunction:: skrl.utils.model_instantiators.warp.deterministic_model
+
+.. autofunction:: skrl.utils.model_instantiators.warp.gaussian_model
+
+.. autofunction:: skrl.utils.model_instantiators.warp.shared_model

@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 Models
 ======
 
@@ -24,27 +26,35 @@ Models (or agent models) refer to a representation of the agent's policy, value 
     * - Models
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Tabular model <models/tabular>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Multi-Categorical model <models/multicategorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Multivariate Gaussian model <models/multivariate_gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Deterministic model <models/deterministic>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Shared model <models/shared_model>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
 
 Base class
 ----------
@@ -108,31 +118,50 @@ Mixin and inheritance
 API (PyTorch)
 ^^^^^^^^^^^^^
 
-.. autoclass:: skrl.models.torch.base.Model
+.. autoclass:: skrl.models.torch.Model
     :undoc-members:
     :show-inheritance:
-    :private-members: _get_space_size
     :members:
 
     .. py:property:: device
+        :type: torch.device
 
-        Device to be used for the computations
+        Data allocation and computation device.
 
     .. py:property:: observation_space
+        :type: gymnasium.Space | None
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+        Observation space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: state_space
+        :type: gymnasium.Space | None
+
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
+        :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
+        :type: int
 
-        Number of elements in the observation/state space
+        Number of elements in the observation space.
+
+    .. py:property:: num_states
+        :type: int
+
+        Number of elements in the state space.
 
     .. py:property:: num_actions
+        :type: int
 
-        Number of elements in the action space
+        Number of elements in the action space.
+
+    .. py:property:: training
+        :type: bool
+
+        Whether this model is in training (true) or evaluation (false) mode.
 
 .. raw:: html
 
@@ -141,28 +170,100 @@ API (PyTorch)
 API (JAX)
 ^^^^^^^^^
 
-.. autoclass:: skrl.models.jax.base.Model
+.. autoclass:: skrl.models.jax.Model
     :undoc-members:
     :show-inheritance:
-    :private-members: _get_space_size
     :members:
 
     .. py:property:: device
+        :type: jax.Device
 
-        Device to be used for the computations
+        Data allocation and computation device.
 
     .. py:property:: observation_space
+        :type: gymnasium.Space | None
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+        Observation space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: state_space
+        :type: gymnasium.Space | None
+
+        State space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: action_space
+        :type: gymnasium.Space | None
 
-        Action space. It is a replica of the class constructor parameter of the same name
+        Action space. It is a replica of the class constructor argument of the same name.
 
     .. py:property:: num_observations
+        :type: int
 
-        Number of elements in the observation/state space
+        Number of elements in the observation space.
+
+    .. py:property:: num_states
+        :type: int
+
+        Number of elements in the state space.
 
     .. py:property:: num_actions
+        :type: int
 
-        Number of elements in the action space
+        Number of elements in the action space.
+
+    .. py:property:: training
+        :type: bool
+
+        Whether this model is in training (true) or evaluation (false) mode.
+
+
+.. raw:: html
+
+    <br>
+
+API (Warp)
+^^^^^^^^^^
+
+.. autoclass:: skrl.models.warp.Model
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+    .. py:property:: device
+        :type: warp.context.Device
+
+        Data allocation and computation device.
+
+    .. py:property:: observation_space
+        :type: gymnasium.Space | None
+
+        Observation space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: state_space
+        :type: gymnasium.Space | None
+
+        State space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: action_space
+        :type: gymnasium.Space | None
+
+        Action space. It is a replica of the class constructor argument of the same name.
+
+    .. py:property:: num_observations
+        :type: int
+
+        Number of elements in the observation space.
+
+    .. py:property:: num_states
+        :type: int
+
+        Number of elements in the state space.
+
+    .. py:property:: num_actions
+        :type: int
+
+        Number of elements in the action space.
+
+    .. py:property:: training
+        :type: bool
+
+        Whether this model is in training (true) or evaluation (false) mode.

@@ -1,10 +1,13 @@
-from typing import List, Mapping, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Literal
 
 import csv
 import datetime
 import functools
 import operator
 import os
+from abc import ABC, abstractmethod
 import gymnasium
 
 import jax
@@ -32,56 +35,49 @@ def _copyto_i_j(dst, src, i, j):
     return dst.at[i, j].set(src)
 
 
-class Memory:
+class Memory(ABC):
     def __init__(
         self,
+        *,
         memory_size: int,
         num_envs: int = 1,
-        device: Optional[jax.Device] = None,
+        device: str | jax.Device | None = None,
         export: bool = False,
-        export_format: str = "pt",  # TODO: set default format for jax
+        export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
     ) -> None:
-        """Base class representing a memory with circular buffers
+        """Base class that represents a memory with circular buffers.
 
-        Buffers are jax or numpy arrays with shape (memory size, number of environments, data size).
-        Circular buffers are implemented with two integers: a memory index and an environment index
+        Buffers are tensors with shape ``(memory_size, num_envs, data_size)``.
+        Circular buffer is implemented with two integers: a memory index (``memory_index``, dimension 0)
+        and an environment index (``env_index``, dimension 1).
 
-        :param memory_size: Maximum number of elements in the first dimension of each internal storage
-        :type memory_size: int
-        :param num_envs: Number of parallel environments (default: ``1``)
-        :type num_envs: int, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or jax.Device, optional
-        :param export: Export the memory to a file (default: ``False``).
-                       If True, the memory will be exported when the memory is filled
-        :type export: bool, optional
-        :param export_format: Export format (default: ``"pt"``).
-                              Supported formats: torch (pt), numpy (np), comma separated values (csv)
-        :type export_format: str, optional
-        :param export_directory: Directory where the memory will be exported (default: ``""``).
-                                 If empty, the agent's experiment directory will be used
-        :type export_directory: str, optional
+        :param memory_size: Maximum number of elements in the first dimension for each tensor.
+        :param num_envs: Number of parallel environments.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param export: Export the memory to a file. If ``True``, the memory will be exported once it is filled
+            and before the circular buffer starts to overwrite the oldest data.
+        :param export_format: File format to export the memory.
+            Supported formats: PyTorch (``"pt"``), NumPy (``"npz"``) or comma separated values (``"csv"``).
+        :param export_directory: Directory where the memory files will be exported.
+            If not specified, the agent's experiment directory will be used.
 
-        :raises ValueError: The export format is not supported
+        :raises ValueError: Unsupported export format.
         """
-        self._jax = config.jax.backend == "jax"
-
         self.memory_size = memory_size
         self.num_envs = num_envs
         self.device = config.jax.parse_device(device)
 
         # internal variables
         self.filled = False
+        # - indexes
         self.env_index = 0
         self.memory_index = 0
-
+        # - allocation
         self.tensors = {}
         self.tensors_view = {}
-        self.tensors_keep_dimensions = {}
         self._views = True  # whether the views are not array copies
-
+        # - sampling
         self.sampling_indexes = None
         self.all_sequence_indexes = np.concatenate(
             [np.arange(i, memory_size * num_envs + i, num_envs) for i in range(num_envs)]
@@ -91,246 +87,183 @@ class Memory:
         self.export = export
         self.export_format = export_format
         self.export_directory = export_directory
-
-        if not self.export_format in ["pt", "np", "csv"]:
-            raise ValueError(f"Export format not supported ({self.export_format})")
+        if self.export_format not in ["pt", "npz", "csv"]:
+            raise ValueError(f"Unsupported export format: '{self.export_format}'")
 
     def __len__(self) -> int:
-        """Compute and return the current (valid) size of the memory
+        """Compute and return the current (valid) size of the memory.
 
-        The valid size is calculated as the ``memory_size * num_envs`` if the memory is full (filled).
-        Otherwise, the ``memory_index * num_envs + env_index`` is returned
+        The valid size is computed as:
 
-        :return: Valid size
-        :rtype: int
+        * ``memory_size * num_envs`` if the memory is full (filled)
+        * ``memory_index * num_envs + env_index`` otherwise
+
+        :return: Valid size.
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _get_tensors_view(self, name):
-        if self.tensors_keep_dimensions[name]:
-            return (
-                self.tensors_view[name]
-                if self._views
-                else self.tensors[name].reshape(-1, *self.tensors_keep_dimensions[name])
-            )
-        return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, self.tensors[name].shape[-1])
+    def _tensors_view(self, name: str) -> jax.Array:
+        return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, *self.tensors[name].shape[2:])
 
     def share_memory(self) -> None:
-        """Share the tensors between processes"""
+        """Set the tensors to be shared between processes."""
         for tensor in self.tensors.values():
             pass
 
-    def get_tensor_names(self) -> Tuple[str]:
-        """Get the name of the internal tensors in alphabetical order
+    def get_tensor_names(self) -> list[str]:
+        """Get the name of the internal tensors, sorted alphabetically.
 
-        :return: Tensor names without internal prefix (_tensor_)
-        :rtype: tuple of strings
+        :return: Tensor names without the internal prefix (``_tensor_``).
         """
         return sorted(self.tensors.keys())
 
-    def get_tensor_by_name(self, name: str, keepdim: bool = True) -> Union[np.ndarray, jax.Array]:
-        """Get a tensor by its name
+    def get_tensor_by_name(self, name: str) -> jax.Array:
+        """Get a tensor by its name.
 
-        :param name: Name of the tensor to retrieve
-        :type name: str
-        :param keepdim: Keep the tensor's shape (memory size, number of environments, size) (default: ``True``)
-                        If False, the returned tensor will have a shape of (memory size * number of environments, size)
-        :type keepdim: bool, optional
+        :param name: Name of the tensor to get.
 
-        :raises KeyError: The tensor does not exist
+        :return: Tensor.
 
-        :return: Tensor
-        :rtype: np.ndarray or jax.Array
+        :raises KeyError: The tensor does not exist.
         """
-        return self.tensors[name] if keepdim else self._get_tensors_view(name)
+        return self.tensors[name]
 
-    def set_tensor_by_name(self, name: str, tensor: Union[np.ndarray, jax.Array]) -> None:
-        """Set a tensor by its name
+    def set_tensor_by_name(self, name: str, tensor: jax.Array) -> None:
+        """Set a tensor by its name.
 
-        :param name: Name of the tensor to set
-        :type name: str
-        :param tensor: Tensor to set
-        :type tensor: np.ndarray or jax.Array
+        :param name: Name of the tensor to set.
+        :param tensor: Tensor to set.
 
-        :raises KeyError: The tensor does not exist
+        :raises KeyError: The tensor does not exist.
         """
-        if self._jax:
-            self.tensors[name] = _copyto(self.tensors[name], tensor)
-        else:
-            np.copyto(self.tensors[name], tensor)
+        self.tensors[name] = _copyto(self.tensors[name], tensor)
 
     def create_tensor(
         self,
         name: str,
-        size: Union[int, Tuple[int], gymnasium.Space],
-        dtype: Optional[np.dtype] = None,
+        *,
+        size: int | list[int] | gymnasium.Space | None,
+        dtype: jnp.dtype | None = None,
         keep_dimensions: bool = False,
     ) -> bool:
-        """Create a new internal tensor in memory
+        """Create a new internal tensor in memory.
 
-        The tensor will have a 3-components shape (memory size, number of environments, size).
-        The internal representation will use _tensor_<name> as the name of the class property
+        The tensor will have a 3-dimensional with shape ``(memory_size, num_envs, data_size)``.
+        The internal representation will use ``_tensor_<name>`` as the name of the class property.
 
-        :param name: Tensor name (the name has to follow the python PEP 8 style)
-        :type name: str
+        :param name: Tensor name (the name must follow the python PEP 8 style).
         :param size: Number of elements in the last dimension (effective data size).
-                     The product of the elements will be computed for sequences or gymnasium spaces
-        :type size: int, tuple or list of integers or gymnasium space
-        :param dtype: Data type (np.dtype) (default: ``None``).
-                      If None, the global default jax.numpy.float32 data type will be used
-        :type dtype: np.dtype or None, optional
-        :param keep_dimensions: Whether or not to keep the dimensions defined through the size parameter (default: ``False``)
-        :type keep_dimensions: bool, optional
+            If a space is provided, the size will be computed as the number of elements occupied by the space.
+        :param dtype: Data type. If not specified, the global default data type for PyTorch will be used.
+        :param keep_dimensions: Whether to create a tensor with the original data dimensions.
+            If enabled, only sequences of integers are supported as data ``size``.
 
-        :raises ValueError: The tensor name exists already but the size or dtype are different
+        :return: True if the tensor was created, otherwise False.
 
-        :return: True if the tensor was created, otherwise False
-        :rtype: bool
+        :raises ValueError: A tensor with the same name exists already but its size and/or dtype is different.
         """
-        # compute data size
-        if not keep_dimensions:
+        # don't create a tensor for None
+        if size is None:
+            return False
+        if keep_dimensions:
+            if not isinstance(size, (tuple, list)):
+                raise ValueError("Only sequences of integers are supported as `size` when `keep_dimensions` is enabled")
+        else:
             size = compute_space_size(size, occupied_size=True)
-        # check dtype and size if the tensor exists
+        # check dtype and size if the tensor exists already
         if name in self.tensors:
             tensor = self.tensors[name]
             if tensor.shape[-1] != size:
-                raise ValueError(f"Size of tensor {name} ({size}) doesn't match the existing one ({tensor.shape[-1]})")
+                raise ValueError(f"Tensor size ({size}) doesn't match the existing one ({tensor.shape[-1]}): '{name}'")
             if dtype is not None and tensor.dtype != dtype:
-                raise ValueError(f"Dtype of tensor {name} ({dtype}) doesn't match the existing one ({tensor.dtype})")
+                raise ValueError(f"Tensor dtype ({dtype}) doesn't match the existing one ({tensor.dtype}): '{name}'")
             return False
-        # define tensor shape
-        tensor_shape = (
-            (self.memory_size, self.num_envs, *size) if keep_dimensions else (self.memory_size, self.num_envs, size)
-        )
-        view_shape = (-1, *size) if keep_dimensions else (-1, size)
         # create tensor (_tensor_<name>) and add it to the internal storage
-        if self._jax:
-            with jax.default_device(self.device):
-                setattr(self, f"_tensor_{name}", jnp.zeros(tensor_shape, dtype=dtype))
-        else:
-            setattr(self, f"_tensor_{name}", np.zeros(tensor_shape, dtype=dtype))
+        shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
+        setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
-        with jax.default_device(self.device):
-            self.tensors_view[name] = self.tensors[name].reshape(*view_shape)
-        self.tensors_keep_dimensions[name] = size if keep_dimensions else None
-        # fill the tensors (float tensors) with NaN
+        self.tensors_view[name] = self.tensors[name].reshape((-1, *shape[2:]))
+        # fill (float) tensors with NaN. This is useful for early misuse detection.
         for name, tensor in self.tensors.items():
             if tensor.dtype == np.float32 or tensor.dtype == np.float64:
-                if self._jax:
-                    with jax.default_device(self.device):
-                        self.tensors[name] = _copyto(self.tensors[name], float("nan"))
-                else:
-                    self.tensors[name].fill(float("nan"))
+                with jax.default_device(self.device):
+                    self.tensors[name] = _copyto(self.tensors[name], float("nan"))
         # check views
-        if self._jax:
-            self._views = False  # TODO: check if views are available
-        else:
-            self._views = self._views and self.tensors_view[name].base is self.tensors[name]
+        self._views = False  # TODO: check if views are available
         return True
 
     def reset(self) -> None:
-        """Reset the memory by cleaning internal indexes and flags
+        """Reset the memory by clearing internal indexes and flags.
 
-        Old data will be retained until overwritten, but access through the available methods will not be guaranteed
+        .. note::
 
-        Default values of the internal indexes and flags
+            Old data will be retained until overwritten, but access through the available methods will not be guaranteed.
 
-        - filled: False
-        - env_index: 0
-        - memory_index: 0
+        Default values of the internal indexes and flags after the reset:
+
+        * ``filled``: ``False``
+        * ``env_index``: 0
+        * ``memory_index``: 0
         """
         self.filled = False
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: Mapping[str, Union[np.ndarray, jax.Array]]) -> None:
-        """Record samples in memory
+    def add_samples(self, **tensors: dict[str, jax.Array]) -> None:
+        """Add/store samples in memory.
 
-        Samples should be a tensor with 2-components shape (number of environments, data size).
-        All tensors must be of the same shape
+        .. important::
 
-        According to the number of environments, the following classification is made:
+            All tensors must have the same dimensions (2 dimensions) and shape: ``(current_num_envs, data_size)``.
+            If the tensors have one dimension, it is assumed that ``current_num_envs`` is 1.
 
-        - one environment:
-          Store a single sample (tensors with one dimension) and increment the environment index (second index) by one
+            No check is performed for compatibility of the shapes or for memory write overflow.
 
-        - number of environments less than num_envs:
-          Store the samples and increment the environment index (second index) by the number of the environments
+        According to the number of environments, the following behavior is performed:
 
-        - number of environments equals num_envs:
-          Store the samples and increment the memory index (first index) by one
+        * ``current_num_envs = num_envs``: store samples and increment the memory index (1st index) by one.
+        * ``current_num_envs < num_envs``: store samples and increment the environment index (2nd index)
+          by the current number of environments.
+        * ``current_num_envs > num_envs`` and ``num_envs = 1``: store multiple samples and increment the memory index
+          (1st index) by the number of samples. If the number of samples is greater than the remaining memory size,
+          the memory will be filled and circular buffer will overwrite the oldest data with the remaining samples.
 
-        :param tensors: Sampled data as key-value arguments where the keys are the names of the tensors to be modified.
-                        Non-existing tensors will be skipped
-        :type tensors: dict
+        :param tensors: Sample data, as key-value arguments (keys: tensor names). Non-existing tensors will be skipped.
 
-        :raises ValueError: No tensors were provided or the tensors have incompatible shapes
+        :raises ValueError: No tensors were provided or the tensors have incompatible shapes.
         """
         if not tensors:
             raise ValueError(
-                "No samples to be recorded in memory. Pass samples as key-value arguments (where key is the tensor name)"
+                "There are no samples. Provide samples as key-value arguments, where keys are the tensor names"
             )
 
         # dimensions and shapes of the tensors (assume all tensors have the dimensions of the first tensor)
-        tmp = tensors.get("states", tensors[next(iter(tensors))])  # ask for states first
+        tmp = tensors.get("observations", tensors[next(iter(tensors))])  # ask for observations first
         dim, shape = tmp.ndim, tmp.shape
 
-        # multi environment (number of environments equals num_envs)
-        if dim > 1 and shape[0] == self.num_envs:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors:
-                        self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors:
-                        self.tensors[name][self.memory_index] = tensor
+        # multi environment (current_num_envs = num_envs)
+        if dim == 2 and shape[0] == self.num_envs:
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i(self.tensors[name], tensor, self.memory_index)
             self.memory_index += 1
-        # multi environment (number of environments less than num_envs)
-        elif dim > 1 and shape[0] < self.num_envs:
-            raise NotImplementedError  # TODO:
-            for name, tensor in tensors.items():
-                if name in self.tensors:
-                    self.tensors[name] = (
-                        self.tensors[name]
-                        .at[self.memory_index, self.env_index : self.env_index + tensor.shape[0]]
-                        .set(tensor)
-                    )
-            self.env_index += tensor.shape[0]
-        # single environment - multi sample (number of environments greater than num_envs (num_envs = 1))
-        elif dim > 1 and self.num_envs == 1:
-            raise NotImplementedError  # TODO:
-            for name, tensor in tensors.items():
-                if name in self.tensors:
-                    num_samples = min(shape[0], self.memory_size - self.memory_index)
-                    remaining_samples = shape[0] - num_samples
-                    # copy the first n samples
-                    self.tensors[name] = (
-                        self.tensors[name]
-                        .at[self.memory_index : self.memory_index + num_samples]
-                        .set(tensor[:num_samples].unsqueeze(dim=1))
-                    )
-                    self.memory_index += num_samples
-                    # storage remaining samples
-                    if remaining_samples > 0:
-                        self.tensors[name] = (
-                            self.tensors[name].at[:remaining_samples].set(tensor[num_samples:].unsqueeze(dim=1))
-                        )
-                        self.memory_index = remaining_samples
-        # single environment
+        # multi environment (current_num_envs < num_envs)
+        elif dim == 2 and shape[0] < self.num_envs:
+            raise NotImplementedError  # TODO: implement
+        # single environment - multi sample (num_envs = 1, current_num_envs > 1)
+        elif dim == 2 and self.num_envs == 1:
+            raise NotImplementedError  # TODO: implement
+        # single environment (current_num_envs = 1, implicit)
         elif dim == 1:
-            if self._jax:
-                for name, tensor in tensors.items():
-                    if name in self.tensors:
-                        self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
-            else:
-                for name, tensor in tensors.items():
-                    if name in self.tensors:
-                        self.tensors[name][self.memory_index, self.env_index] = tensor
+            for name, tensor in tensors.items():
+                if name in self.tensors and tensor is not None:
+                    self.tensors[name] = _copyto_i_j(self.tensors[name], tensor, self.memory_index, self.env_index)
             self.env_index += 1
         else:
-            raise ValueError(f"Expected shape (number of environments = {self.num_envs}, data size), got {shape}")
+            raise ValueError(
+                f"Expected shape (current_num_envs, data_size) where current_num_envs <= {self.num_envs}, got {shape}"
+            )
 
         # update indexes and flags
         if self.env_index >= self.num_envs:
@@ -344,180 +277,96 @@ class Memory:
             if self.export:
                 self.save(directory=self.export_directory, format=self.export_format)
 
+    @abstractmethod
     def sample(
-        self, names: Tuple[str], batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[Union[np.ndarray, jax.Array]]]:
-        """Data sampling method to be implemented by the inheriting classes
+        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+    ) -> list[list[jax.Array]]:
+        """Data sampling method to be implemented by the inheriting classes.
 
-        :param names: Tensors names from which to obtain the samples
-        :type names: tuple or list of strings
-        :param batch_size: Number of element to sample
-        :type batch_size: int
-        :param mini_batches: Number of mini-batches to sample (default: ``1``)
-        :type mini_batches: int, optional
-        :param sequence_length: Length of each sequence (default: ``1``)
-        :type sequence_length: int, optional
-
-        :raises NotImplementedError: The method has not been implemented
+        :param names: Tensors names from which to obtain the samples.
+        :param batch_size: Number of elements to sample.
+        :param mini_batches: Number of mini-batches to sample.
+        :param sequence_length: Length of each sequence.
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
-                 The sampled tensors will have the following shape: (batch size, data size)
-        :rtype: list of np.ndarray or jax.Array list
+            The sampled tensors will have the following shape: ``(batch_size, data_size)``.
         """
-        raise NotImplementedError("The sampling method (.sample()) is not implemented")
+        pass
 
     def sample_by_index(
-        self, names: Tuple[str], indexes: Union[tuple, np.ndarray, jax.Array], mini_batches: int = 1
-    ) -> List[List[Union[np.ndarray, jax.Array]]]:
-        """Sample data from memory according to their indexes
+        self, names: list[str], *, indexes: list | jax.Array, mini_batches: int = 1
+    ) -> list[list[jax.Array]]:
+        """Sample data from memory according to their indexes.
 
-        :param names: Tensors names from which to obtain the samples
-        :type names: tuple or list of strings
-        :param indexes: Indexes used for sampling
-        :type indexes: tuple or list, np.ndarray or jax.Array
-        :param mini_batches: Number of mini-batches to sample (default: ``1``)
-        :type mini_batches: int, optional
+        :param names: Tensors names from which to obtain the samples.
+        :param indexes: Indexes used for sampling.
+        :param mini_batches: Number of mini-batches to sample.
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
-                 The sampled tensors will have the following shape: (number of indexes, data size)
-        :rtype: list of np.ndarray or jax.Array list
+            The sampled tensors will have the following shape: ``(number_of_indexes, data_size)``.
         """
         if mini_batches > 1:
             batches = np.array_split(indexes, mini_batches)
-            views = [self._get_tensors_view(name) for name in names]
-            return [[view[batch] for view in views] for batch in batches]
-        return [[self._get_tensors_view(name)[indexes] for name in names]]
+            views = [self._tensors_view(name) if name in self.tensors else None for name in names]
+            return [[None if view is None else view[batch] for view in views] for batch in batches]
+        return [[self._tensors_view(name)[indexes] if name in self.tensors else None for name in names]]
 
-    def sample_all(
-        self, names: Tuple[str], mini_batches: int = 1, sequence_length: int = 1
-    ) -> List[List[Union[np.ndarray, jax.Array]]]:
-        """Sample all data from memory
+    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[jax.Array]]:
+        """Sample all data from memory.
 
-        :param names: Tensors names from which to obtain the samples
-        :type names: tuple or list of strings
-        :param mini_batches: Number of mini-batches to sample (default: ``1``)
-        :type mini_batches: int, optional
-        :param sequence_length: Length of each sequence (default: ``1``)
-        :type sequence_length: int, optional
+        :param names: Tensors names from which to obtain the samples.
+        :param mini_batches: Number of mini-batches to sample.
+        :param sequence_length: Length of each sequence.
 
         :return: Sampled data from memory.
-                 The sampled tensors will have the following shape: (memory size * number of environments, data size)
-        :rtype: list of np.ndarray or jax.Array list
+            The sampled tensors will have the following shape: ``(memory_size * number_of_environments, data_size)``.
         """
         # sequential order
         if sequence_length > 1:
             if mini_batches > 1:
                 batches = np.array_split(self.all_sequence_indexes, mini_batches)
-                return [[self._get_tensors_view(name)[batch] for name in names] for batch in batches]
-            return [[self._get_tensors_view(name)[self.all_sequence_indexes] for name in names]]
-
+                views = [self._tensors_view(name) if name in self.tensors else None for name in names]
+                return [[None if view is None else view[batch] for view in views] for batch in batches]
+            return [
+                [
+                    self._tensors_view(name)[self.all_sequence_indexes] if name in self.tensors else None
+                    for name in names
+                ]
+            ]
         # default order
         if mini_batches > 1:
-            indexes = np.arange(self.memory_size * self.num_envs)
-            batches = np.array_split(indexes, mini_batches)
-            views = [self._get_tensors_view(name) for name in names]
-            return [[view[batch] for view in views] for batch in batches]
-        return [[self._get_tensors_view(name) for name in names]]
+            batch_size = (self.memory_size * self.num_envs) // mini_batches
+            batches = [(batch_size * i, batch_size * (i + 1)) for i in range(mini_batches)]
+            views = [self._tensors_view(name) if name in self.tensors else None for name in names]
+            return [[None if view is None else view[batch[0] : batch[1]] for view in views] for batch in batches]
+        return [[self._tensors_view(name) if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> Union[tuple, np.ndarray, jax.Array]:
-        """Get the last indexes used for sampling
+    def get_sampling_indexes(self) -> list | jax.Array:
+        """Get the last indexes used for sampling.
 
-        :return: Last sampling indexes
-        :rtype: tuple or list, np.ndarray or jax.Array
+        :return: Last sampling indexes.
         """
         return self.sampling_indexes
 
-    def save(self, directory: str = "", format: str = "pt") -> None:
-        """Save the memory to a file
-
-        Supported formats:
-
-        - PyTorch (pt)
-        - NumPy (npz)
-        - Comma-separated values (csv)
+    def save(self, directory: str = "", *, format: Literal["pt", "npz", "csv"] = "pt") -> None:
+        """Save the memory to a file.
 
         :param directory: Path to the folder where the memory will be saved.
-                          If not provided, the directory defined in the constructor will be used
-        :type directory: str
-        :param format: Format of the file where the memory will be saved (default: ``"pt"``)
-        :type format: str, optional
+            If not provided, the directory defined in the constructor will be used.
+        :param format: Format of the file where the memory will be saved.
+            Supported formats: PyTorch (``"pt"``), NumPy (``"npz"``) or comma separated values (``"csv"``).
 
-        :raises ValueError: If the format is not supported
+        :raises ValueError: Unsupported format.
         """
-        if not directory:
-            directory = self.export_directory
-        os.makedirs(os.path.join(directory, "memories"), exist_ok=True)
-        memory_path = os.path.join(
-            directory,
-            "memories",
-            "{}_memory_{}.{}".format(datetime.datetime.now().strftime("%y-%m-%d_%H-%M-%S-%f"), hex(id(self)), format),
-        )
-
-        # torch
-        if format == "pt":
-            import torch
-
-            torch.save({name: self.tensors[name] for name in self.get_tensor_names()}, memory_path)
-        # numpy
-        elif format == "npz":
-            np.savez(memory_path, **{name: self.tensors[name].cpu().numpy() for name in self.get_tensor_names()})
-        # comma-separated values
-        elif format == "csv":
-            # open csv writer # TODO: support keeping the dimensions
-            with open(memory_path, "a") as file:
-                writer = csv.writer(file)
-                names = self.get_tensor_names()
-                # write headers
-                headers = [[f"{name}.{i}" for i in range(self.tensors[name].shape[-1])] for name in names]
-                writer.writerow([item for sublist in headers for item in sublist])
-                # write rows
-                for i in range(len(self)):
-                    writer.writerow(
-                        functools.reduce(
-                            operator.iconcat,
-                            [
-                                self.tensors[name].reshape(-1, self.tensors[name].shape[-1])[i].tolist()
-                                for name in names
-                            ],
-                            [],
-                        )
-                    )
-        # unsupported format
-        else:
-            raise ValueError(f"Unsupported format: {format}. Available formats: pt, csv, npz")
+        raise NotImplementedError("Saving is not supported yet")
 
     def load(self, path: str) -> None:
-        """Load the memory from a file
+        """Load the memory from a file.
 
-        Supported formats:
-        - PyTorch (pt)
-        - NumPy (npz)
-        - Comma-separated values (csv)
+        Supported formats: PyTorch (``"pt"``), NumPy (``"npz"``) or comma separated values (``"csv"``).
 
-        :param path: Path to the file where the memory will be loaded
-        :type path: str
+        :param path: Path to the file where the memory will be loaded.
 
-        :raises ValueError: If the format is not supported
+        :raises ValueError: Unsupported format.
         """
-        # torch
-        if path.endswith(".pt"):
-            import torch
-
-            data = torch.load(path)
-            for name in self.get_tensor_names():
-                setattr(self, f"_tensor_{name}", jnp.array(data[name].cpu().numpy()))
-
-        # numpy
-        elif path.endswith(".npz"):
-            data = np.load(path)
-            for name in data:
-                setattr(self, f"_tensor_{name}", jnp.array(data[name]))
-
-        # comma-separated values
-        elif path.endswith(".csv"):
-            # TODO: load the memory from a csv
-            pass
-
-        # unsupported format
-        else:
-            raise ValueError(f"Unsupported format: {path}")
+        raise NotImplementedError("Loading is not supported yet")

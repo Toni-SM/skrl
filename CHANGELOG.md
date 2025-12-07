@@ -2,6 +2,65 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.0.0] - Unreleased
+### Added
+- Implement RL algorithms in NVIDIA Warp
+- Add Tabular model instantiator (epsilon-greedy variant)
+- Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
+- Add `compute_space_limits` space utility to get Gymnasium spaces' limits
+- Add `ScopedTimer` utils to measure code execution time
+- Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
+- Log agent inference and algorithm update, and environment steeping time to TensorBoard
+
+### Changed
+- Update minimum supported Python version to 3.10
+- Drop support for PyTorch versions prior to 1.11 (the previous supported version was 1.10)
+
+### Changed (breaking changes)
+- Refactor the library to differentiate between environment observations and states (also known as privileged observation)
+- Implement agent/multi-agent and trainer configurations using Python Data Classes
+  - Unify the different learning rate settings under the `learning_rate` configuration
+  - Remove the `clip_predicted_values` redundant configuration by checking for `value_clip > 0`
+  - Remove specific exploration noise settings (`initial_scale`, `final_scale` and `timesteps`)
+    in favor of generic scheduling functions
+- Update tabular model definition to operate in any number of parallel environments
+- Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
+
+### Fixed
+- Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
+- Fix time limits handling for termination and truncation signals
+
+### Removed
+- Remove NumPy backend for JAX implementation
+- Remove checkpoints/models migration support from other RL libraries
+- Remove support for Isaac Gym and Omniverse Isaac Gym environments (deprecated in favor of Isaac Lab)
+- Remove support for Bi-DexHands and robosuite environments
+- Remove Isaac Gym (web viewer, inverse kinematic) and Omniverse Isaac Gym (local environment instance, inverse kinematic) utils
+
+## [1.4.3] - 2025-03-29
+### Changed
+- Update the GitHub Actions workflows for testing and coverage
+- Update minimum supported Python version to 3.8 and minimum dependencies versions
+
+### Fixed
+- Fix environment wrapper issues with spaces utilities's keyword-only arguments (introduced in previous version)
+- Fix noise device definition in runner implementations
+
+## [1.4.2] - 2025-03-18
+### Added
+- Add Multi-Categorical model instantiator
+- Add `one_hot_encoding` function to model instantiators to one-hot encode `Discrete` and `MultiDiscrete` tensorized spaces
+- Allow `None` type spaces and samples/values in spaces utilities and define keyword-only arguments
+
+### Fixed
+- Cast model instantiator's `initial_log_std` parameter to `float` in PyTorch
+- Fix common property overwriting (e.g. `clip_actions`) in shared models composed of different mixin types
+
+## [1.4.1] - 2025-01-27
+### Fixed
+- Force the use of the device local to process in distributed runs in JAX
+- Update runner implementation to parse noises definitions for off-policy agents
+
 ## [1.4.0] - 2025-01-16
 ### Added
 - Utilities to operate on Gymnasium spaces (`Box`, `Discrete`, `MultiDiscrete`, `Tuple` and `Dict`)
@@ -88,7 +147,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.1.0] - 2024-02-12
 ### Added
-- MultiCategorical mixin to operate MultiDiscrete action spaces
+- `MultiCategoricalMixin` to operate `MultiDiscrete` action spaces
 
 ### Changed (breaking changes)
 - Rename the `ManualTrainer` to `StepTrainer`
@@ -104,7 +163,7 @@ This release also announces the publication of the **skrl** paper in the Journal
 Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
 
 Summary of the most relevant features:
-- JAX support
+- RL algorithm implementations in JAX
 - New documentation theme and structure
 - Multi-agent Reinforcement Learning (MARL)
 
@@ -129,7 +188,7 @@ Summary of the most relevant features:
 
 ## [1.0.0-rc.1] - 2023-07-25
 ### Added
-- JAX support (with Flax and Optax)
+- Implement RL algorithms in JAX (Flax/Optax)
 - RPO agent
 - IPPO and MAPPO multi-agent
 - Multi-agent base class

@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 Parallel trainer
 ================
 
@@ -53,10 +55,17 @@ Usage
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/parallel.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
+
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``ParallelTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.ParallelTrainerCfg`
+      -
+      -
 
 .. raw:: html
 
@@ -65,9 +74,12 @@ Configuration
 API (PyTorch)
 -------------
 
-.. autoclass:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
+.. autoclass:: skrl.trainers.torch.ParallelTrainerCfg
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-.. autoclass:: skrl.trainers.torch.parallel.ParallelTrainer
+.. autoclass:: skrl.trainers.torch.ParallelTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

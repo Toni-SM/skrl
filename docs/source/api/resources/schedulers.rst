@@ -1,3 +1,7 @@
+:tocdepth: 4
+
+.. _learning_rate_schedulers:
+
 Learning rate schedulers
 ========================
 
@@ -18,7 +22,9 @@ Learning rate schedulers are techniques that adjust the learning rate over time 
     * - Learning rate schedulers
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`KL Adaptive <schedulers/kl_adaptive>`
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
@@ -29,6 +35,8 @@ Learning rate schedulers are techniques that adjust the learning rate over time 
 - **PyTorch**: The implemented schedulers inherit from the PyTorch :literal:`_LRScheduler` class. Visit `How to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details.
 
 - **JAX**: The implemented schedulers must parameterize and return a function that maps step counts to values. Visit `Optimizer Schedules <https://optax.readthedocs.io/en/latest/api/optimizer_schedules.html>`_ in the Optax documentation for more details.
+
+- **Warp**: The implemented schedulers must parameterize and return a function that maps step counts to values.
 
 .. raw:: html
 
@@ -98,3 +106,5 @@ The following examples show how to set the scheduler for an agent:
                     cfg = DEFAULT_CONFIG.copy()
                     cfg["learning_rate_scheduler"] = KLAdaptiveLR
                     cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
+
+    .. group-tab:: |_4| |warp| |_4|

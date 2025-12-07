@@ -232,7 +232,7 @@ agent = DDPG(models=models,
 
 # [torch-start-ddqn]
 # import the agent and its default configuration
-from skrl.agents.torch.dqn import DDQN, DDQN_DEFAULT_CONFIG
+from skrl.agents.torch.ddqn import DDQN, DDQN_DEFAULT_CONFIG
 
 # instantiate the agent's models
 models = {}

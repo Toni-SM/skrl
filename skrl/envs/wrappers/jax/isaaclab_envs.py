@@ -1,6 +1,9 @@
-from typing import Any, Mapping, Tuple, Union
+from __future__ import annotations
+
+from typing import Any
 
 import gymnasium
+from packaging import version
 
 import jax
 import jax.dlpack as jax_dlpack
@@ -26,37 +29,35 @@ if _CPU:
     logger.warning("Isaac Lab runs on GPU, but there is no GPU backend for JAX. JAX operations will run on CPU.")
 
 
-def _jax2torch(array, device, from_jax=True):
-    if from_jax:
-        return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
-    return torch.tensor(array, device=device)
+def _jax2torch(array, device):
+    if version.parse(jax.__version__) >= version.parse("0.7.0"):
+        return torch_dlpack.from_dlpack(array).to(device=device)
+    return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
 
 
-def _torch2jax(tensor, to_jax=True):
-    if to_jax:
-        return jax_dlpack.from_dlpack(
-            torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
-        )
-    return tensor.cpu().numpy()
+def _torch2jax(tensor):
+    if version.parse(jax.__version__) >= version.parse("0.7.0"):
+        return jax_dlpack.from_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
+    return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
 
 
 class IsaacLabWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper
+        """Isaac Lab environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
         self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
+        self._states = None
         self._info = {}
 
     @property
-    def state_space(self) -> Union[gymnasium.Space, None]:
-        """State space"""
+    def state_space(self) -> gymnasium.Space | None:
+        """State space."""
         try:
             return self._unwrapped.single_observation_space["critic"]
         except KeyError:
@@ -68,82 +69,87 @@ class IsaacLabWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         try:
             return self._unwrapped.single_observation_space["policy"]
         except:
-            return self._unwrapped.observation_space["policy"]
+            return self._unwrapped.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         try:
             return self._unwrapped.single_action_space
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Any,
-    ]:
-        """Perform a step in the environment
+    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
-        actions = _jax2torch(actions, self._env_device, self._jax)
+        actions = _jax2torch(actions, self._env_device)
         actions = unflatten_tensorized_space(self.action_space, actions)
 
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
-        observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
 
+        self._observations = _torch2jax(
+            flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+        )
         terminated = terminated.to(dtype=torch.int8)
         truncated = truncated.to(dtype=torch.int8)
+        states = observations.get("critic", None)
+        if states is not None:
+            self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
 
-        self._observations = _torch2jax(observations, self._jax)
         return (
             self._observations,
-            _torch2jax(reward.view(-1, 1), self._jax),
-            _torch2jax(terminated.view(-1, 1), self._jax),
-            _torch2jax(truncated.view(-1, 1), self._jax),
+            _torch2jax(reward.view(-1, 1)),
+            _torch2jax(terminated.view(-1, 1)),
+            _torch2jax(truncated.view(-1, 1)),
             self._info,
         )
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+    def state(self) -> jax.Array | None:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: State.
+        """
+        return self._states
+
+    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
-            observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
-            self._observations = _torch2jax(observations, self._jax)
+            self._observations = _torch2jax(
+                flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+            )
+            states = observations.get("critic", None)
+            if states is not None:
+                self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
             self._reset_once = False
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()
 
 
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
     def __init__(self, env: Any) -> None:
-        """Isaac Lab environment wrapper for multi-agent implementation
+        """Isaac Lab environment wrapper for multi-agent implementation.
 
-        :param env: The environment to wrap
-        :type env: Any supported Isaac Lab environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
@@ -152,22 +158,16 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._observations = None
         self._info = {}
 
-    def step(self, actions: Mapping[str, Union[np.ndarray, jax.Array]]) -> Tuple[
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Union[np.ndarray, jax.Array]],
-        Mapping[str, Any],
-    ]:
-        """Perform a step in the environment
+    def step(
+        self, actions: dict[str, jax.Array]
+    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: dictionary of np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of dictionaries of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
-        actions = {uid: _jax2torch(value, self._env_device, self._jax) for uid, value in actions.items()}
+        actions = {uid: _jax2torch(value, self._env_device) for uid, value in actions.items()}
         actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
 
         with torch.no_grad():
@@ -176,20 +176,19 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
         }
 
-        self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
+        self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
         return (
             self._observations,
-            {uid: _torch2jax(value.view(-1, 1), self._jax) for uid, value in rewards.items()},
-            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1), self._jax) for uid, value in terminated.items()},
-            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1), self._jax) for uid, value in truncated.items()},
+            {uid: _torch2jax(value.view(-1, 1)) for uid, value in rewards.items()},
+            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1)) for uid, value in terminated.items()},
+            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1)) for uid, value in truncated.items()},
             self._info,
         )
 
-    def reset(self) -> Tuple[Mapping[str, Union[np.ndarray, jax.Array]], Mapping[str, Any]]:
-        """Reset the environment
+    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+        """Reset the environment.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
@@ -197,29 +196,27 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
                 k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
                 for k, v in observations.items()
             }
-            self._observations = {uid: _torch2jax(value, self._jax) for uid, value in observations.items()}
+            self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
             self._reset_once = False
         return self._observations, self._info
 
-    def state(self) -> Union[np.ndarray, jax.Array, None]:
-        """Get the environment state
+    def state(self) -> dict[jax.Array | None]:
+        """Get the environment state.
 
-        :return: State
-        :rtype: np.ndarray, jax.Array or None
+        :return: State.
         """
         try:
             state = self._env.state()
         except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
             state = self._unwrapped.state()
         if state is not None:
-            state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
-            return _torch2jax(state, self._jax)
-        return state
+            state = _torch2jax(flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state)))
+        return {uid: state for uid in self.possible_agents}
 
     def render(self, *args, **kwargs) -> None:
-        """Render the environment"""
+        """Render the environment."""
         return None
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

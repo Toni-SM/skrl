@@ -1,11 +1,16 @@
-from typing import Any, Mapping, Type, Union
+from __future__ import annotations
+
+from typing import Any, Literal, Type
 
 import copy
+import dataclasses
+import math  # noqa
 
 from skrl import logger
 from skrl.agents.jax import Agent
 from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
 from skrl.models.jax import Model
+from skrl.resources.noises.jax import GaussianNoise, OrnsteinUhlenbeckNoise  # noqa
 from skrl.resources.preprocessors.jax import RunningStandardScaler  # noqa
 from skrl.resources.schedulers.jax import KLAdaptiveLR  # noqa
 from skrl.trainers.jax import Trainer
@@ -13,21 +18,21 @@ from skrl.utils import set_seed
 
 
 class Runner:
-    def __init__(self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]) -> None:
-        """Experiment runner
+    def __init__(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], *, verbose: bool = False) -> None:
+        """Experiment runner.
 
-        Class that configures and instantiates skrl components to execute training/evaluation workflows in a few lines of code
+        Configure and instantiate skrl components to execute training/evaluation workflows in a few lines of code.
 
-        :param env: Environment to train on
-        :param cfg: Runner configuration
+        :param env: Environment to train on.
+        :param cfg: Runner configuration.
+        :param verbose: Whether to print extra information about the setup.
         """
         self._env = env
         self._cfg = cfg
+        self._verbose = verbose
 
         # set random seed
         set_seed(self._cfg.get("seed", None))
-
-        self._cfg["agent"]["rewards_shaper"] = None  # FIXME: avoid 'dictionary changed size during iteration'
 
         self._models = self._generate_models(self._env, copy.deepcopy(self._cfg))
         self._agent = self._generate_agent(self._env, copy.deepcopy(self._cfg), self._models)
@@ -35,21 +40,21 @@ class Runner:
 
     @property
     def trainer(self) -> Trainer:
-        """Trainer instance"""
+        """Trainer instance."""
         return self._trainer
 
     @property
     def agent(self) -> Agent:
-        """Agent instance"""
+        """Agent instance."""
         return self._agent
 
     @staticmethod
     def load_cfg_from_yaml(path: str) -> dict:
-        """Load a runner configuration from a yaml file
+        """Load a runner configuration from a yaml file.
 
-        :param path: File path
+        :param path: File path.
 
-        :return: Loaded configuration, or an empty dict if an error has occurred
+        :return: Loaded configuration, or an empty dict if an error has occurred.
         """
         try:
             import yaml
@@ -65,96 +70,87 @@ class Runner:
             return {}
 
     def _component(self, name: str) -> Type:
-        """Get skrl component (e.g.: agent, trainer, etc..) from string identifier
+        """Get skrl component (e.g.: agent, trainer, etc..) from string identifier.
 
-        :return: skrl component
+        :return: skrl component.
         """
-        component = None
-        name = name.lower()
-        # model
-        if name == "gaussianmixin":
-            from skrl.utils.model_instantiators.jax import gaussian_model as component
-        elif name == "categoricalmixin":
-            from skrl.utils.model_instantiators.jax import categorical_model as component
-        elif name == "deterministicmixin":
-            from skrl.utils.model_instantiators.jax import deterministic_model as component
-        # memory
-        elif name == "randommemory":
-            from skrl.memories.jax import RandomMemory as component
-        # agent
-        elif name in ["a2c", "a2c_default_config"]:
-            from skrl.agents.jax.a2c import A2C, A2C_DEFAULT_CONFIG
+        from skrl.agents.jax.a2c import A2C, A2C_CFG
+        from skrl.agents.jax.cem import CEM, CEM_CFG
+        from skrl.agents.jax.ddpg import DDPG, DDPG_CFG
+        from skrl.agents.jax.ddqn import DDQN, DDQN_CFG
+        from skrl.agents.jax.dqn import DQN, DQN_CFG
+        from skrl.agents.jax.ppo import PPO, PPO_CFG
+        from skrl.agents.jax.rpo import RPO, RPO_CFG
+        from skrl.agents.jax.sac import SAC, SAC_CFG
+        from skrl.agents.jax.td3 import TD3, TD3_CFG
+        from skrl.memories.jax import RandomMemory
+        from skrl.multi_agents.jax.ippo import IPPO, IPPO_CFG
+        from skrl.multi_agents.jax.mappo import MAPPO, MAPPO_CFG
+        from skrl.trainers.jax import SequentialTrainer, SequentialTrainerCfg
+        from skrl.utils.model_instantiators.jax import (
+            categorical_model,
+            deterministic_model,
+            gaussian_model,
+            multicategorical_model,
+        )
 
-            component = A2C_DEFAULT_CONFIG if "default_config" in name else A2C
-        elif name in ["cem", "cem_default_config"]:
-            from skrl.agents.jax.cem import CEM, CEM_DEFAULT_CONFIG
-
-            component = CEM_DEFAULT_CONFIG if "default_config" in name else CEM
-        elif name in ["ddpg", "ddpg_default_config"]:
-            from skrl.agents.jax.ddpg import DDPG, DDPG_DEFAULT_CONFIG
-
-            component = DDPG_DEFAULT_CONFIG if "default_config" in name else DDPG
-        elif name in ["ddqn", "ddqn_default_config"]:
-            from skrl.agents.jax.dqn import DDQN, DDQN_DEFAULT_CONFIG
-
-            component = DDQN_DEFAULT_CONFIG if "default_config" in name else DDQN
-        elif name in ["dqn", "dqn_default_config"]:
-            from skrl.agents.jax.dqn import DQN, DQN_DEFAULT_CONFIG
-
-            component = DQN_DEFAULT_CONFIG if "default_config" in name else DQN
-        elif name in ["ppo", "ppo_default_config"]:
-            from skrl.agents.jax.ppo import PPO, PPO_DEFAULT_CONFIG
-
-            component = PPO_DEFAULT_CONFIG if "default_config" in name else PPO
-        elif name in ["rpo", "rpo_default_config"]:
-            from skrl.agents.jax.rpo import RPO, RPO_DEFAULT_CONFIG
-
-            component = RPO_DEFAULT_CONFIG if "default_config" in name else RPO
-        elif name in ["sac", "sac_default_config"]:
-            from skrl.agents.jax.sac import SAC, SAC_DEFAULT_CONFIG
-
-            component = SAC_DEFAULT_CONFIG if "default_config" in name else SAC
-        elif name in ["td3", "td3_default_config"]:
-            from skrl.agents.jax.td3 import TD3, TD3_DEFAULT_CONFIG
-
-            component = TD3_DEFAULT_CONFIG if "default_config" in name else TD3
-        # multi-agent
-        elif name in ["ippo", "ippo_default_config"]:
-            from skrl.multi_agents.jax.ippo import IPPO, IPPO_DEFAULT_CONFIG
-
-            component = IPPO_DEFAULT_CONFIG if "default_config" in name else IPPO
-        elif name in ["mappo", "mappo_default_config"]:
-            from skrl.multi_agents.jax.mappo import MAPPO, MAPPO_DEFAULT_CONFIG
-
-            component = MAPPO_DEFAULT_CONFIG if "default_config" in name else MAPPO
-        # trainer
-        elif name == "sequentialtrainer":
-            from skrl.trainers.jax import SequentialTrainer as component
+        component = {
+            # models
+            "gaussianmixin": gaussian_model,
+            "categoricalmixin": categorical_model,
+            "multicategoricalmixin": multicategorical_model,
+            "deterministicmixin": deterministic_model,
+            # memories
+            "randommemory": RandomMemory,
+            # agents
+            "a2c": A2C,
+            "a2c_cfg": A2C_CFG,
+            "cem": CEM,
+            "cem_cfg": CEM_CFG,
+            "ddpg": DDPG,
+            "ddpg_cfg": DDPG_CFG,
+            "ddqn": DDQN,
+            "ddqn_cfg": DDQN_CFG,
+            "dqn": DQN,
+            "dqn_cfg": DQN_CFG,
+            "ppo": PPO,
+            "ppo_cfg": PPO_CFG,
+            "rpo": RPO,
+            "rpo_cfg": RPO_CFG,
+            "sac": SAC,
+            "sac_cfg": SAC_CFG,
+            "td3": TD3,
+            "td3_cfg": TD3_CFG,
+            # multi-agents
+            "ippo": IPPO,
+            "ippo_cfg": IPPO_CFG,
+            "mappo": MAPPO,
+            "mappo_cfg": MAPPO_CFG,
+            # trainers
+            "sequentialtrainer": SequentialTrainer,
+            "sequentialtrainer_cfg": SequentialTrainerCfg,
+        }.get(name.lower())
 
         if component is None:
-            raise ValueError(f"Unknown component '{name}' in runner cfg")
+            raise ValueError(f"Component '{name}' is not supported in the runner cfg")
         return component
 
     def _process_cfg(self, cfg: dict) -> dict:
-        """Convert simple types to skrl classes/components
+        """Convert simple types to skrl classes/components.
 
-        :param cfg: A configuration dictionary
+        :param cfg: A configuration dictionary.
 
-        :return: Updated dictionary
+        :return: Updated dictionary.
         """
         _direct_eval = [
             "learning_rate_scheduler",
-            "shared_state_preprocessor",
+            "observation_preprocessor",
             "state_preprocessor",
             "value_preprocessor",
-            "amp_state_preprocessor",
+            "amp_observation_preprocessor",
+            "exploration_noise",
+            "smooth_regularization_noise",
         ]
-
-        def reward_shaper_function(scale):
-            def reward_shaper(rewards, *args, **kwargs):
-                return rewards * scale
-
-            return reward_shaper
 
         def update_dict(d):
             for key, value in d.items():
@@ -162,37 +158,64 @@ class Runner:
                     update_dict(value)
                 else:
                     if key in _direct_eval:
-                        if type(d[key]) is str:
+                        if isinstance(value, str):
                             d[key] = eval(value)
                     elif key.endswith("_kwargs"):
                         d[key] = value if value is not None else {}
-                    elif key in ["rewards_shaper_scale"]:
-                        d["rewards_shaper"] = reward_shaper_function(value)
             return d
 
-        return update_dict(copy.deepcopy(cfg))
+        cfg = update_dict(copy.deepcopy(cfg))
+        if "class" in cfg:
+            del cfg["class"]
 
-    def _generate_models(
-        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any]
-    ) -> Mapping[str, Mapping[str, Model]]:
-        """Generate model instances according to the environment specification and the given config
+        # materialize exploration scheduler
+        if "exploration_scheduler" in cfg:
+            cfg["exploration_scheduler"] = eval(f"lambda timestep, timesteps: {cfg['exploration_scheduler']}")
+        # materialize rewards shaper
+        if "rewards_shaper_scale" in cfg:
+            scale = cfg["rewards_shaper_scale"]
+            if scale is not None and scale != 1.0:
+                cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * scale
+            del cfg["rewards_shaper_scale"]
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
+        # backward compatibility
+        if "lambda" in cfg:
+            logger.warning("The 'lambda' field in the specified configuration is deprecated. Use 'lambda_' instead")
+            cfg["lambda_"] = cfg["lambda"]
+            del cfg["lambda"]
+        if "clip_predicted_values" in cfg:
+            logger.warning(
+                "The 'clip_predicted_values' field in the specified configuration is deprecated. "
+                "Define a 'value_clip' value greater than 0 to clip the predicted values instead"
+            )
+            cfg["value_clip"] = cfg["value_clip"] if cfg["clip_predicted_values"] else 0.0
+            del cfg["clip_predicted_values"]
 
-        :return: Model instances
+        return cfg
+
+    def _generate_models(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any]) -> dict[str, dict[str, Model]]:
+        """Generate model instances according to the environment specification and the given config.
+
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
+
+        :return: Model instances.
         """
         multi_agent = isinstance(env, MultiAgentEnvWrapper)
         device = env.device
         possible_agents = env.possible_agents if multi_agent else ["agent"]
-        state_spaces = env.state_spaces if multi_agent else {"agent": env.state_space}
         observation_spaces = env.observation_spaces if multi_agent else {"agent": env.observation_space}
+        state_spaces = env.state_spaces if multi_agent else {"agent": env.state_space}
         action_spaces = env.action_spaces if multi_agent else {"agent": env.action_space}
 
         # override cfg
-        cfg["models"]["separate"] = True  # shared model is not supported in JAX
+        if cfg.get("models", {}).get("separate") is not None:
+            cfg["models"]["separate"] = True  # shared model is not supported in JAX
 
-        agent_class = cfg.get("agent", {}).get("class", "").lower()
+        agent_class = cfg.get("agent", {}).get("class")
+        if not agent_class:
+            raise ValueError(f"The 'agent.class' field is not defined in the specified configuration")
+        agent_class = agent_class.lower()
 
         # instantiate models
         models = {}
@@ -201,27 +224,29 @@ class Runner:
             models[agent_id] = {}
             models_cfg = _cfg.get("models")
             if not models_cfg:
-                raise ValueError("No 'models' are defined in cfg")
+                raise ValueError("The 'models' field is not defined in the specified configuration")
             # get separate (non-shared) configuration and remove 'separate' key
             try:
                 separate = models_cfg["separate"]
                 del models_cfg["separate"]
             except KeyError:
                 separate = True
-                logger.warning("No 'separate' field defined in 'models' cfg. Defining it as True by default")
+                logger.warning(
+                    "The 'models.separate' field is not defined in the specified configuration. Falling back to True by default"
+                )
             # non-shared models
             if separate:
                 for role in models_cfg:
                     # get instantiator function and remove 'class' key
                     model_class = models_cfg[role].get("class")
                     if not model_class:
-                        raise ValueError(f"No 'class' field defined in 'models:{role}' cfg")
+                        raise ValueError(
+                            f"The 'models.{role}.class' field is not defined in the specified configuration"
+                        )
                     del models_cfg[role]["class"]
                     model_class = self._component(model_class)
                     # get specific spaces according to agent/model cfg
                     observation_space = observation_spaces[agent_id]
-                    if agent_class == "mappo" and role == "value":
-                        observation_space = state_spaces[agent_id]
                     if agent_class == "amp" and role == "discriminator":
                         try:
                             observation_space = env.amp_observation_space
@@ -230,21 +255,24 @@ class Runner:
                                 "Unable to get AMP space via 'env.amp_observation_space'. Using 'env.observation_space' instead"
                             )
                     # print model source
-                    source = model_class(
-                        observation_space=observation_space,
-                        action_space=action_spaces[agent_id],
-                        device=device,
-                        **self._process_cfg(models_cfg[role]),
-                        return_source=True,
-                    )
-                    print("==================================================")
-                    print(f"Model (role): {role}")
-                    print("==================================================\n")
-                    print(source)
-                    print("--------------------------------------------------")
+                    if self._verbose:
+                        source = model_class(
+                            observation_space=observation_space,
+                            state_space=state_spaces[agent_id],
+                            action_space=action_spaces[agent_id],
+                            device=device,
+                            **self._process_cfg(models_cfg[role]),
+                            return_source=True,
+                        )
+                        print("==================================================")
+                        print(f"Model (role): {role}")
+                        print("==================================================\n")
+                        print(source)
+                        print("--------------------------------------------------")
                     # instantiate model
                     models[agent_id][role] = model_class(
                         observation_space=observation_space,
+                        state_space=state_spaces[agent_id],
                         action_space=action_spaces[agent_id],
                         device=device,
                         **self._process_cfg(models_cfg[role]),
@@ -256,131 +284,120 @@ class Runner:
         # initialize models' state dict
         for agent_id in possible_agents:
             for role, model in models[agent_id].items():
-                model.init_state_dict(role)
+                model.init_state_dict(role=role)
 
         return models
 
     def _generate_agent(
         self,
-        env: Union[Wrapper, MultiAgentEnvWrapper],
-        cfg: Mapping[str, Any],
-        models: Mapping[str, Mapping[str, Model]],
+        env: Wrapper | MultiAgentEnvWrapper,
+        cfg: dict[str, Any],
+        models: dict[str, dict[str, Model]],
     ) -> Agent:
-        """Generate agent instance according to the environment specification and the given config and models
+        """Generate agent instance according to the environment specification and the given config and models.
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
-        :param models: Agent's model instances
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
+        :param models: Agent's model instances.
 
-        :return: Agent instances
+        :return: Agent instances.
         """
         multi_agent = isinstance(env, MultiAgentEnvWrapper)
         device = env.device
         num_envs = env.num_envs
         possible_agents = env.possible_agents if multi_agent else ["agent"]
-        state_spaces = env.state_spaces if multi_agent else {"agent": env.state_space}
         observation_spaces = env.observation_spaces if multi_agent else {"agent": env.observation_space}
+        state_spaces = env.state_spaces if multi_agent else {"agent": env.state_space}
         action_spaces = env.action_spaces if multi_agent else {"agent": env.action_space}
 
-        agent_class = cfg.get("agent", {}).get("class", "").lower()
-        if not agent_class:
-            raise ValueError(f"No 'class' field defined in 'agent' cfg")
+        # override cfg
+        if cfg.get("agent", {}).get("mixed_precision") is not None:
+            del cfg["agent"]["mixed_precision"]  # mixed precision is not supported in JAX
 
-        # check for memory configuration (backward compatibility)
-        if not "memory" in cfg:
-            logger.warning(
-                "Deprecation warning: No 'memory' field defined in cfg. Using the default generated configuration"
-            )
-            cfg["memory"] = {"class": "RandomMemory", "memory_size": -1}
-        # get memory class and remove 'class' field
-        try:
-            memory_class = self._component(cfg["memory"]["class"])
-            del cfg["memory"]["class"]
-        except KeyError:
-            memory_class = self._component("RandomMemory")
-            logger.warning("No 'class' field defined in 'memory' cfg. 'RandomMemory' will be used as default")
-        memories = {}
+        # get agent class
+        if "agent" not in cfg:
+            raise ValueError(f"The 'agent' field is not defined in the specified configuration")
+        if "class" not in cfg["agent"]:
+            raise ValueError(f"The 'agent.class' field is not defined in the specified configuration")
+        agent_class = cfg["agent"]["class"].lower()
+
+        # get memory class
+        if "memory" not in cfg:
+            raise ValueError(f"The 'memory' field is not defined in the specified configuration")
+        if "class" not in cfg["memory"]:
+            raise ValueError(f"The 'memory.class' field is not defined in the specified configuration")
+        memory_class = self._component(cfg["memory"]["class"])
         # instantiate memory
         if cfg["memory"]["memory_size"] < 0:
             cfg["memory"]["memory_size"] = cfg["agent"]["rollouts"]  # memory_size is the agent's number of rollouts
-        for agent_id in possible_agents:
-            memories[agent_id] = memory_class(num_envs=num_envs, device=device, **self._process_cfg(cfg["memory"]))
+        memories = {
+            agent_id: memory_class(num_envs=num_envs, device=device, **self._process_cfg(cfg["memory"]))
+            for agent_id in possible_agents
+        }
 
         # single-agent configuration and instantiation
         if agent_class in ["a2c", "cem", "ddpg", "ddqn", "dqn", "ppo", "rpo", "sac", "td3"]:
             agent_id = possible_agents[0]
-            agent_cfg = self._component(f"{agent_class}_DEFAULT_CONFIG").copy()
-            agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update({"size": observation_spaces[agent_id], "device": device})
-            agent_cfg["value_preprocessor_kwargs"].update({"size": 1, "device": device})
+            agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
+            agent_cfg.get("observation_preprocessor_kwargs", {}).update(
+                {"size": observation_spaces[agent_id], "device": device}
+            )
+            agent_cfg.get("state_preprocessor_kwargs", {}).update({"size": state_spaces[agent_id], "device": device})
+            agent_cfg.get("value_preprocessor_kwargs", {}).update({"size": 1, "device": device})
+            agent_cfg.get("exploration_noise_kwargs", {}).update({"device": device})
+            agent_cfg.get("smooth_regularization_noise_kwargs", {}).update({"device": device})
             agent_kwargs = {
                 "models": models[agent_id],
                 "memory": memories[agent_id],
                 "observation_space": observation_spaces[agent_id],
+                "state_space": state_spaces[agent_id],
                 "action_space": action_spaces[agent_id],
             }
         # multi-agent configuration and instantiation
-        elif agent_class in ["ippo"]:
-            agent_cfg = self._component(f"{agent_class}_DEFAULT_CONFIG").copy()
-            agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update(
+        elif agent_class in ["ippo", "mappo"]:
+            agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
+            agent_cfg.get("observation_preprocessor_kwargs", {}).update(
                 {agent_id: {"size": observation_spaces[agent_id], "device": device} for agent_id in possible_agents}
             )
-            agent_cfg["value_preprocessor_kwargs"].update({"size": 1, "device": device})
-            agent_kwargs = {
-                "models": models,
-                "memories": memories,
-                "observation_spaces": observation_spaces,
-                "action_spaces": action_spaces,
-                "possible_agents": possible_agents,
-            }
-        elif agent_class in ["mappo"]:
-            agent_cfg = self._component(f"{agent_class}_DEFAULT_CONFIG").copy()
-            agent_cfg.update(self._process_cfg(cfg["agent"]))
-            agent_cfg["state_preprocessor_kwargs"].update(
-                {agent_id: {"size": observation_spaces[agent_id], "device": device} for agent_id in possible_agents}
-            )
-            agent_cfg["shared_state_preprocessor_kwargs"].update(
+            agent_cfg.get("state_preprocessor_kwargs", {}).update(
                 {agent_id: {"size": state_spaces[agent_id], "device": device} for agent_id in possible_agents}
             )
-            agent_cfg["value_preprocessor_kwargs"].update({"size": 1, "device": device})
+            agent_cfg.get("value_preprocessor_kwargs", {}).update({"size": 1, "device": device})
             agent_kwargs = {
                 "models": models,
                 "memories": memories,
                 "observation_spaces": observation_spaces,
+                "state_spaces": state_spaces,
                 "action_spaces": action_spaces,
-                "shared_observation_spaces": state_spaces,
                 "possible_agents": possible_agents,
             }
         return self._component(agent_class)(cfg=agent_cfg, device=device, **agent_kwargs)
 
-    def _generate_trainer(
-        self, env: Union[Wrapper, MultiAgentEnvWrapper], cfg: Mapping[str, Any], agent: Agent
-    ) -> Trainer:
-        """Generate trainer instance according to the environment specification and the given config and agent
+    def _generate_trainer(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], agent: Agent) -> Trainer:
+        """Generate trainer instance according to the environment specification and the given config and agent.
 
-        :param env: Wrapped environment
-        :param cfg: A configuration dictionary
-        :param agent: Agent's model instances
+        :param env: Wrapped environment.
+        :param cfg: A configuration dictionary.
+        :param agent: Agent's model instances.
 
-        :return: Trainer instances
+        :return: Trainer instances.
         """
-        # get trainer class and remove 'class' field
-        try:
-            trainer_class = self._component(cfg["trainer"]["class"])
-            del cfg["trainer"]["class"]
-        except KeyError:
-            trainer_class = self._component("SequentialTrainer")
-            logger.warning("No 'class' field defined in 'trainer' cfg. 'SequentialTrainer' will be used as default")
+        # get trainer class
+        if "trainer" not in cfg:
+            raise ValueError(f"The 'trainer' field is not defined in the specified configuration")
+        if "class" not in cfg["trainer"]:
+            raise ValueError(f"The 'trainer.class' field is not defined in the specified configuration")
+        trainer_class = cfg["trainer"]["class"].lower()
         # instantiate trainer
-        return trainer_class(env=env, agents=agent, cfg=cfg["trainer"])
+        trainer_cfg = self._component(f"{trainer_class}_CFG")(**self._process_cfg(cfg["trainer"]))
+        return self._component(trainer_class)(env=env, agents=agent, cfg=trainer_cfg)
 
-    def run(self, mode: str = "train") -> None:
-        """Run the training/evaluation
+    def run(self, mode: Literal["train", "eval"] = "train") -> None:
+        """Run the training/evaluation.
 
-        :param mode: Running mode: ``"train"`` for training or ``"eval"`` for evaluation (default: ``"train"``)
+        :param mode: Running mode: ``"train"`` for training or ``"eval"`` for evaluation.
 
-        :raises ValueError: The specified running mode is not valid
+        :raises ValueError: The specified running mode is not valid.
         """
         if mode == "train":
             self._trainer.train()

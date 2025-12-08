@@ -203,7 +203,7 @@ class CEM(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
@@ -215,17 +215,17 @@ class CEM(Agent):
                 rewards=rewards,
             )
 
-        # track episodes internally
-        if self._rollout:
-            indexes = (terminated + truncated).nonzero()[0]
-            if indexes.size:
-                for i in indexes:
-                    try:
-                        self._episode_tracking[i.item()].append(self._rollout + 1)
-                    except IndexError:
-                        logger.warning(f"IndexError: {i.item()}")
-        else:
-            self._episode_tracking = [[0] for _ in range(rewards.shape[-1])]
+            # track episodes internally
+            if self._rollout:
+                indexes = (terminated + truncated).nonzero()[0]
+                if indexes.size:
+                    for i in indexes:
+                        try:
+                            self._episode_tracking[i.item()].append(self._rollout + 1)
+                        except IndexError:
+                            logger.warning(f"IndexError: {i.item()}")
+            else:
+                self._episode_tracking = [[0] for _ in range(rewards.shape[-1])]
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.

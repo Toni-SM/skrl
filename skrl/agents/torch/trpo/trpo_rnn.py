@@ -436,7 +436,7 @@ class TRPO_RNN(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 

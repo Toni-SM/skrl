@@ -323,7 +323,7 @@ class AMP(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             amp_observations = infos["amp_obs"]
 
             # reward shaping

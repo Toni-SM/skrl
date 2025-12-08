@@ -262,7 +262,7 @@ class DDQN(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)

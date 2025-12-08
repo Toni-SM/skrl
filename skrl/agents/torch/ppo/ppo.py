@@ -265,6 +265,7 @@ class PPO(Agent):
             timestep=timestep,
             timesteps=timesteps,
         )
+
         if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states

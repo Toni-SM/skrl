@@ -136,15 +136,16 @@ class Q_LEARNING(Agent):
             timesteps=timesteps,
         )
 
-        # reward shaping
-        if self.cfg.rewards_shaper is not None:
-            rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
+        if self.training:
+            # reward shaping
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-        self._current_observations = observations
-        self._current_actions = actions
-        self._current_rewards = rewards
-        self._current_next_observations = next_observations
-        self._current_terminated = terminated
+            self._current_observations = observations
+            self._current_actions = actions
+            self._current_rewards = rewards
+            self._current_next_observations = next_observations
+            self._current_terminated = terminated
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.

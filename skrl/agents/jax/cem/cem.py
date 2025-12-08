@@ -241,14 +241,15 @@ class CEM(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            self._rollout = 0
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                self._rollout = 0
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

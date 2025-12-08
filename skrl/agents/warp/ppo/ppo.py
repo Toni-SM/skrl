@@ -286,6 +286,7 @@ class PPO(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._current_values = None
         self._rollout = 0
 
     def act(
@@ -313,6 +314,11 @@ class PPO(Agent):
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = outputs["log_prob"]
+
+        # compute values
+        if self.training:
+            values, _ = self.value.act(inputs, role="value")
+            self._current_values = self._value_preprocessor(values, inverse=True, inplace=True)
 
         return actions, outputs
 
@@ -367,20 +373,12 @@ class PPO(Agent):
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            inputs = {
-                "observations": self._observation_preprocessor(observations),
-                "states": self._state_preprocessor(states),
-            }
-            values, _ = self.value.act(inputs, role="value")
-            values = self._value_preprocessor(values, inverse=True, inplace=True)
-
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
                 wp.launch(
                     _time_limit_bootstrap,
                     dim=rewards.shape[0],
-                    inputs=[rewards, values, truncated, self.cfg.discount_factor],
+                    inputs=[rewards, self._current_values, truncated, self.cfg.discount_factor],
                     device=self.device,
                 )
 
@@ -392,7 +390,7 @@ class PPO(Agent):
                 rewards=rewards,
                 terminated=terminated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:

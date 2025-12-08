@@ -252,6 +252,7 @@ class PPO(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._current_values = None
         self._rollout = 0
 
         # set up models for just-in-time compilation with XLA
@@ -284,6 +285,12 @@ class PPO(Agent):
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = outputs["log_prob"]
+
+        # compute values
+        if self.training:
+            values, _ = self.value.act(inputs, role="value")
+            self._current_values = self._value_preprocessor(values, inverse=True)
+
         return actions, outputs
 
     def record_transition(
@@ -337,17 +344,9 @@ class PPO(Agent):
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            inputs = {
-                "observations": self._observation_preprocessor(observations),
-                "states": self._state_preprocessor(states),
-            }
-            values, _ = self.value.act(inputs, role="value")
-            values = self._value_preprocessor(values, inverse=True)
-
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * values * truncated
+                rewards += self.cfg.discount_factor * self._current_values * truncated
 
             # storage transition in memory
             self.memory.add_samples(
@@ -357,7 +356,7 @@ class PPO(Agent):
                 rewards=rewards,
                 terminated=terminated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:

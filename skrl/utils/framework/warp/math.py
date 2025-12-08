@@ -34,7 +34,7 @@ T4D = config.warp.tile_shape_4d
 
 
 @wp.func
-def _var_auxiliary_func(a: Any, b: Any):
+def _var_auxiliary_func(a: wp.float32, b: wp.float32):
     return wp.pow(a - b, 2.0)
 
 

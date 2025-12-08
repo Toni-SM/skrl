@@ -21,7 +21,7 @@ def test_mean(capsys, ndim, dtype, shape):
     array = wp.array(sample)
 
     value = warp_utils.mean(array)
-    assert np.allclose(value.numpy().item(), np.mean(sample))
+    assert np.allclose(value.numpy().item(), np.mean(sample), rtol=1e-05, atol=1e-08)
 
 
 @hypothesis.given(shape=st.lists(st.integers(min_value=1, max_value=10), min_size=4, max_size=4))
@@ -37,10 +37,10 @@ def test_var(capsys, ndim, dtype, shape):
     array = wp.array(sample)
 
     value = warp_utils.var(array, correction=0)
-    assert np.allclose(value.numpy().item(), np.var(sample, ddof=0), atol=1e-05, rtol=1e-03)
+    assert np.allclose(value.numpy().item(), np.var(sample, ddof=0), rtol=1e-05, atol=1e-08)
 
     value = warp_utils.var(array, correction=1)
-    assert np.allclose(value.numpy().item(), np.var(sample, ddof=1), atol=1e-05, rtol=1e-03, equal_nan=True)
+    assert np.allclose(value.numpy().item(), np.var(sample, ddof=1), rtol=1e-05, atol=1e-08, equal_nan=True)
 
 
 @hypothesis.given(shape=st.lists(st.integers(min_value=1, max_value=10), min_size=4, max_size=4))

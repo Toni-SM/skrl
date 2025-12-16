@@ -21,6 +21,14 @@ def _create_kernels(clip_threshold, epsilon):
     def inverse_auxiliary_func(running_variance: wp.float32, src: wp.float32):
         return wp.sqrt(running_variance) * wp.clamp(src, -wp.static(clip_threshold), wp.static(clip_threshold))
 
+    @wp.func
+    def standardization_auxiliary_func(running_variance: wp.float32, subtraction: wp.float32):
+        return wp.clamp(
+            subtraction / (wp.sqrt(running_variance) + wp.static(epsilon)),
+            -wp.static(clip_threshold),
+            wp.static(clip_threshold),
+        )
+
     @wp.kernel(enable_backward=False)
     def inverse_2d(
         src: wp.array(ndim=2),
@@ -69,37 +77,55 @@ def _create_kernels(clip_threshold, epsilon):
             dst, wp.tile_map(inverse_auxiliary_func, t_running_variance, t_src) + t_running_mean, offset=offset
         )
 
-    return inverse_2d, inverse_3d
+    @wp.kernel(enable_backward=False)
+    def standardization_2d(
+        src: wp.array(ndim=2),
+        running_mean: wp.array(ndim=1),
+        running_variance: wp.array(ndim=1),
+        dst: wp.array(ndim=2),
+    ):
+        i, j = wp.tid()
+        shape = (wp.static(T2D[0]), wp.static(T2D[1]))
+        shape_data = (wp.static(T2D[1]),)
+        offset = (i * wp.static(T2D[0]), j * wp.static(T2D[1]))
+        offset_data = (j * wp.static(T2D[1]),)
 
+        t_src = wp.tile_load(src, shape=shape, offset=offset)
+        t_running_mean = wp.tile_broadcast(
+            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
+        )
+        t_running_variance = wp.tile_broadcast(
+            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
+        )
+        wp.tile_store(
+            dst, wp.tile_map(standardization_auxiliary_func, t_running_variance, t_src - t_running_mean), offset=offset
+        )
 
-@wp.kernel(enable_backward=False)
-def _standardization_2d(
-    src: wp.array(ndim=2),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
-    clip_threshold: float,
-    epsilon: float,
-    dst: wp.array(ndim=2),
-):
-    i, j = wp.tid()
-    dst[i, j] = wp.clamp(
-        (src[i, j] - running_mean[j]) / (wp.sqrt(running_variance[j]) + epsilon), -clip_threshold, clip_threshold
-    )
+    @wp.kernel(enable_backward=False)
+    def standardization_3d(
+        src: wp.array(ndim=3),
+        running_mean: wp.array(ndim=1),
+        running_variance: wp.array(ndim=1),
+        dst: wp.array(ndim=3),
+    ):
+        i, j, k = wp.tid()
+        shape = (wp.static(T3D[0]), wp.static(T3D[1]), wp.static(T3D[2]))
+        shape_data = (wp.static(T3D[2]),)
+        offset = (i * wp.static(T3D[0]), j * wp.static(T3D[1]), k * wp.static(T3D[2]))
+        offset_data = (k * wp.static(T3D[2]),)
 
+        t_src = wp.tile_load(src, shape=shape, offset=offset)
+        t_running_mean = wp.tile_broadcast(
+            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
+        )
+        t_running_variance = wp.tile_broadcast(
+            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
+        )
+        wp.tile_store(
+            dst, wp.tile_map(standardization_auxiliary_func, t_running_variance, t_src - t_running_mean), offset=offset
+        )
 
-@wp.kernel(enable_backward=False)
-def _standardization_3d(
-    src: wp.array(ndim=3),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
-    clip_threshold: float,
-    epsilon: float,
-    dst: wp.array(ndim=3),
-):
-    i, j, k = wp.tid()
-    dst[i, j, k] = wp.clamp(
-        (src[i, j, k] - running_mean[k]) / (wp.sqrt(running_variance[k]) + epsilon), -clip_threshold, clip_threshold
-    )
+    return inverse_2d, inverse_3d, standardization_2d, standardization_3d
 
 
 @wp.kernel(enable_backward=False)
@@ -188,7 +214,9 @@ class RunningStandardScaler:
         self._cached_mean = wp.empty(size, dtype=wp.float32, device=self.device)
         self._cached_variance = wp.empty(size, dtype=wp.float32, device=self.device)
 
-        self._inverse_2d, self._inverse_3d = _create_kernels(clip_threshold, epsilon)
+        self._inverse_2d, self._inverse_3d, self._standardization_2d, self._standardization_3d = _create_kernels(
+            clip_threshold, epsilon
+        )
 
     def state_dict(self) -> dict[str, wp.array]:
         """Dictionary containing references to the whole state of the module."""
@@ -292,11 +320,12 @@ class RunningStandardScaler:
             return output
         # standardization by centering and scaling
         output = x if inplace else wp.empty_like(x)
-        wp.launch(
-            _standardization_2d if ndim == 2 else _standardization_3d,
-            dim=x.shape,
-            inputs=[x, self.running_mean, self.running_variance, self.clip_threshold, self.epsilon],
+        wp.launch_tiled(
+            self._standardization_2d if ndim == 2 else self._standardization_3d,
+            dim=resolve_dim(shape=x.shape, tiled=True),
+            inputs=[x, self.running_mean, self.running_variance],
             outputs=[output],
             device=self.device,
+            block_dim=config.warp.block_dim,
         )
         return output

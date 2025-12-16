@@ -6,33 +6,70 @@ import numpy as np
 import warp as wp
 
 from skrl import config
+from skrl.utils.framework.warp import resolve_dim
 from skrl.utils.spaces.warp import compute_space_size
 
 
-@wp.kernel(enable_backward=False)
-def _inverse_2d(
-    src: wp.array(ndim=2),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
-    clip_threshold: float,
-    dst: wp.array(ndim=2),
-):
-    i, j = wp.tid()
-    dst[i, j] = wp.sqrt(running_variance[j]) * wp.clamp(src[i, j], -clip_threshold, clip_threshold) + running_mean[j]
+T1D = config.warp.tile_shape_1d
+T2D = config.warp.tile_shape_2d
+T3D = config.warp.tile_shape_3d
+T4D = config.warp.tile_shape_4d
 
 
-@wp.kernel(enable_backward=False)
-def _inverse_3d(
-    src: wp.array(ndim=3),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
-    clip_threshold: float,
-    dst: wp.array(ndim=3),
-):
-    i, j, k = wp.tid()
-    dst[i, j, k] = (
-        wp.sqrt(running_variance[k]) * wp.clamp(src[i, j, k], -clip_threshold, clip_threshold) + running_mean[k]
-    )
+def _create_kernels(clip_threshold, epsilon):
+    @wp.func
+    def inverse_auxiliary_func(running_variance: wp.float32, src: wp.float32):
+        return wp.sqrt(running_variance) * wp.clamp(src, -wp.static(clip_threshold), wp.static(clip_threshold))
+
+    @wp.kernel(enable_backward=False)
+    def inverse_2d(
+        src: wp.array(ndim=2),
+        running_mean: wp.array(ndim=1),
+        running_variance: wp.array(ndim=1),
+        dst: wp.array(ndim=2),
+    ):
+        i, j = wp.tid()
+        shape = (wp.static(T2D[0]), wp.static(T2D[1]))
+        shape_data = (wp.static(T2D[1]),)
+        offset = (i * wp.static(T2D[0]), j * wp.static(T2D[1]))
+        offset_data = (j * wp.static(T2D[1]),)
+
+        t_src = wp.tile_load(src, shape=shape, offset=offset)
+        t_running_mean = wp.tile_broadcast(
+            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
+        )
+        t_running_variance = wp.tile_broadcast(
+            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
+        )
+        wp.tile_store(
+            dst, wp.tile_map(inverse_auxiliary_func, t_running_variance, t_src) + t_running_mean, offset=offset
+        )
+
+    @wp.kernel(enable_backward=False)
+    def inverse_3d(
+        src: wp.array(ndim=3),
+        running_mean: wp.array(ndim=1),
+        running_variance: wp.array(ndim=1),
+        dst: wp.array(ndim=3),
+    ):
+        i, j, k = wp.tid()
+        shape = (wp.static(T3D[0]), wp.static(T3D[1]), wp.static(T3D[2]))
+        shape_data = (wp.static(T3D[2]),)
+        offset = (i * wp.static(T3D[0]), j * wp.static(T3D[1]), k * wp.static(T3D[2]))
+        offset_data = (k * wp.static(T3D[2]),)
+
+        t_src = wp.tile_load(src, shape=shape, offset=offset)
+        t_running_mean = wp.tile_broadcast(
+            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
+        )
+        t_running_variance = wp.tile_broadcast(
+            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
+        )
+        wp.tile_store(
+            dst, wp.tile_map(inverse_auxiliary_func, t_running_variance, t_src) + t_running_mean, offset=offset
+        )
+
+    return inverse_2d, inverse_3d
 
 
 @wp.kernel(enable_backward=False)
@@ -151,6 +188,8 @@ class RunningStandardScaler:
         self._cached_mean = wp.empty(size, dtype=wp.float32, device=self.device)
         self._cached_variance = wp.empty(size, dtype=wp.float32, device=self.device)
 
+        self._inverse_2d, self._inverse_3d = _create_kernels(clip_threshold, epsilon)
+
     def state_dict(self) -> dict[str, wp.array]:
         """Dictionary containing references to the whole state of the module."""
         return {
@@ -242,12 +281,13 @@ class RunningStandardScaler:
         # scale back the data to the original representation
         if inverse:
             output = x if inplace else wp.empty_like(x)
-            wp.launch(
-                _inverse_2d if ndim == 2 else _inverse_3d,
-                dim=x.shape,
-                inputs=[x, self.running_mean, self.running_variance, self.clip_threshold],
+            wp.launch_tiled(
+                self._inverse_2d if ndim == 2 else self._inverse_3d,
+                dim=resolve_dim(shape=x.shape, tiled=True),
+                inputs=[x, self.running_mean, self.running_variance],
                 outputs=[output],
                 device=self.device,
+                block_dim=config.warp.block_dim,
             )
             return output
         # standardization by centering and scaling

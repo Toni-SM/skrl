@@ -216,6 +216,7 @@ class PPO(Agent):
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = outputs["log_prob"]
+
             # compute values
             if self.training:
                 values, _ = self.value.act(inputs, role="value")

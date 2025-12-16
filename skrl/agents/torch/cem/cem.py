@@ -189,6 +189,7 @@ class CEM(Agent):
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
+
             self.memory.add_samples(
                 observations=observations,
                 states=states,

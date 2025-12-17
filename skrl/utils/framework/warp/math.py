@@ -34,8 +34,8 @@ T4D = config.warp.tile_shape_4d
 
 
 @wp.func
-def _var_auxiliary_func(a: wp.float32, b: wp.float32):
-    return wp.pow(a - b, 2.0)
+def _var_auxiliary_func(x: wp.float32, x_mean: wp.float32, x_mask: wp.float32):
+    return wp.pow(x - (x_mean * x_mask), 2.0)
 
 
 # Warp kernels
@@ -90,7 +90,7 @@ def _var_1d(src: wp.array(ndim=1), mask: wp.array(ndim=1), mean: wp.array(ndim=1
     t_src = wp.tile_astype(wp.tile_load(src, shape=shape, offset=offset), dtype=dst.dtype)
     t_mask = wp.tile_astype(wp.tile_load(mask, shape=shape, offset=offset), dtype=dst.dtype)
     t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=(1,)), shape=shape)
-    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, wp.tile_map(wp.mul, t_mask, t_mean)))
+    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, t_mean, t_mask))
     wp.tile_atomic_add(dst, _sum * (dst.dtype(1.0) / dst.dtype(n)))
 
 
@@ -102,7 +102,7 @@ def _var_2d(src: wp.array(ndim=2), mask: wp.array(ndim=2), mean: wp.array(ndim=1
     t_src = wp.tile_astype(wp.tile_load(src, shape=shape, offset=offset), dtype=dst.dtype)
     t_mask = wp.tile_astype(wp.tile_load(mask, shape=shape, offset=offset), dtype=dst.dtype)
     t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=(1,)), shape=shape)
-    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, wp.tile_map(wp.mul, t_mask, t_mean)))
+    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, t_mean, t_mask))
     wp.tile_atomic_add(dst, _sum * (dst.dtype(1.0) / dst.dtype(n)))
 
 
@@ -114,7 +114,7 @@ def _var_3d(src: wp.array(ndim=3), mask: wp.array(ndim=3), mean: wp.array(ndim=1
     t_src = wp.tile_astype(wp.tile_load(src, shape=shape, offset=offset), dtype=dst.dtype)
     t_mask = wp.tile_astype(wp.tile_load(mask, shape=shape, offset=offset), dtype=dst.dtype)
     t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=(1,)), shape=shape)
-    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, wp.tile_map(wp.mul, t_mask, t_mean)))
+    _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, t_mean, t_mask))
     wp.tile_atomic_add(dst, _sum * (dst.dtype(1.0) / dst.dtype(n)))
 
 
@@ -131,8 +131,13 @@ def _var_4d(src: wp.array(ndim=4), mask: wp.array(ndim=4), mean: wp.array(ndim=1
         t_src = wp.tile_astype(wp.tile_load(src, shape=shape, offset=offset), dtype=dst.dtype)
         t_mask = wp.tile_astype(wp.tile_load(mask, shape=shape, offset=offset), dtype=dst.dtype)
         t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=(1,)), shape=shape)
-        _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, wp.tile_map(wp.mul, t_mask, t_mean)))
+        _sum = wp.tile_sum(wp.tile_map(_var_auxiliary_func, t_src, t_mean, t_mask))
         wp.tile_atomic_add(dst, _sum * (dst.dtype(1.0) / dst.dtype(n)))
+
+
+@wp.kernel
+def _std(src: wp.array(ndim=1), dst: wp.array(ndim=1)):
+    dst[0] = wp.sqrt(src[0])
 
 
 _MEAN = [None, _mean_1d, _mean_2d, _mean_3d, _mean_4d]
@@ -175,6 +180,15 @@ def var(array: wp.array, *, dtype: type = wp.float32, correction: int = 1, outpu
     return output
 
 
+def std(array: wp.array, *, dtype: type = wp.float32, correction: int = 1, output: wp.array | None = None) -> wp.array:
+    device = array.device
+    variance = var(array, dtype=dtype, correction=correction, output=output)
+    if output is None:
+        output = wp.empty((1,), dtype=dtype, device=device, requires_grad=True) if array.requires_grad else variance
+    wp.launch(_std, dim=1, inputs=[variance], outputs=[output], device=device)
+    return output
+
+
 def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
     output = (
         array
@@ -182,13 +196,6 @@ def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> w
         else wp.empty(array.shape, dtype=array.dtype, device=array.device, requires_grad=array.requires_grad)
     )
     wp.launch(_scalar_mul, dim=array.shape, inputs=[output, array, scalar], device=array.device)
-    return output
-
-
-def std(array: wp.array, *, dtype: type = wp.float32, correction: int = 1) -> wp.array:
-    _var = var(array, dtype=dtype, correction=correction)
-    output = wp.zeros((1,), dtype=dtype, device=array.device, requires_grad=True) if array.requires_grad else _var
-    wp.launch(_std, dim=1, inputs=[_var], outputs=[output], device=array.device)
     return output
 
 
@@ -486,11 +493,6 @@ def _tanh_3d(src: wp.array(ndim=3), dst: wp.array(ndim=3)):
 def _tanh_4d(src: wp.array(ndim=4), dst: wp.array(ndim=4)):
     i, j, k, l = wp.tid()
     dst[i, j, k, l] = _f_tanh(src[i, j, k, l])
-
-
-@wp.kernel
-def _std(src: wp.array(ndim=1), dst: wp.array(ndim=1)):
-    dst[0] = wp.sqrt(src[0])
 
 
 @wp.kernel

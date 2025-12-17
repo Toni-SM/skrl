@@ -18,24 +18,17 @@ T4D = config.warp.tile_shape_4d
 
 def _create_kernels(clip_threshold, epsilon):
     @wp.func
-    def inverse_auxiliary_func(running_variance: wp.float32, src: wp.float32):
-        return wp.sqrt(running_variance) * wp.clamp(src, -wp.static(clip_threshold), wp.static(clip_threshold))
+    def inverse_auxiliary_func(x: wp.float32, mean: wp.float32, variance: wp.float32):
+        return wp.sqrt(variance) * wp.clamp(x, -wp.static(clip_threshold), wp.static(clip_threshold)) + mean
 
     @wp.func
-    def standardization_auxiliary_func(running_variance: wp.float32, subtraction: wp.float32):
+    def standardization_auxiliary_func(x: wp.float32, mean: wp.float32, variance: wp.float32):
         return wp.clamp(
-            subtraction / (wp.sqrt(running_variance) + wp.static(epsilon)),
-            -wp.static(clip_threshold),
-            wp.static(clip_threshold),
+            (x - mean) / (wp.sqrt(variance) + wp.static(epsilon)), -wp.static(clip_threshold), wp.static(clip_threshold)
         )
 
     @wp.kernel(enable_backward=False)
-    def inverse_2d(
-        src: wp.array(ndim=2),
-        running_mean: wp.array(ndim=1),
-        running_variance: wp.array(ndim=1),
-        dst: wp.array(ndim=2),
-    ):
+    def inverse_2d(src: wp.array(ndim=2), mean: wp.array(ndim=1), variance: wp.array(ndim=1), dst: wp.array(ndim=2)):
         i, j = wp.tid()
         shape = (wp.static(T2D[0]), wp.static(T2D[1]))
         shape_data = (wp.static(T2D[1]),)
@@ -43,23 +36,12 @@ def _create_kernels(clip_threshold, epsilon):
         offset_data = (j * wp.static(T2D[1]),)
 
         t_src = wp.tile_load(src, shape=shape, offset=offset)
-        t_running_mean = wp.tile_broadcast(
-            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
-        )
-        t_running_variance = wp.tile_broadcast(
-            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
-        )
-        wp.tile_store(
-            dst, wp.tile_map(inverse_auxiliary_func, t_running_variance, t_src) + t_running_mean, offset=offset
-        )
+        t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=shape_data, offset=offset_data), shape=shape)
+        t_variance = wp.tile_broadcast(wp.tile_load(variance, shape=shape_data, offset=offset_data), shape=shape)
+        wp.tile_store(dst, wp.tile_map(inverse_auxiliary_func, t_src, t_mean, t_variance), offset=offset)
 
     @wp.kernel(enable_backward=False)
-    def inverse_3d(
-        src: wp.array(ndim=3),
-        running_mean: wp.array(ndim=1),
-        running_variance: wp.array(ndim=1),
-        dst: wp.array(ndim=3),
-    ):
+    def inverse_3d(src: wp.array(ndim=3), mean: wp.array(ndim=1), variance: wp.array(ndim=1), dst: wp.array(ndim=3)):
         i, j, k = wp.tid()
         shape = (wp.static(T3D[0]), wp.static(T3D[1]), wp.static(T3D[2]))
         shape_data = (wp.static(T3D[2]),)
@@ -67,21 +49,15 @@ def _create_kernels(clip_threshold, epsilon):
         offset_data = (k * wp.static(T3D[2]),)
 
         t_src = wp.tile_load(src, shape=shape, offset=offset)
-        t_running_mean = wp.tile_broadcast(
-            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
-        )
-        t_running_variance = wp.tile_broadcast(
-            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
-        )
-        wp.tile_store(
-            dst, wp.tile_map(inverse_auxiliary_func, t_running_variance, t_src) + t_running_mean, offset=offset
-        )
+        t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=shape_data, offset=offset_data), shape=shape)
+        t_variance = wp.tile_broadcast(wp.tile_load(variance, shape=shape_data, offset=offset_data), shape=shape)
+        wp.tile_store(dst, wp.tile_map(inverse_auxiliary_func, t_src, t_mean, t_variance), offset=offset)
 
     @wp.kernel(enable_backward=False)
     def standardization_2d(
         src: wp.array(ndim=2),
-        running_mean: wp.array(ndim=1),
-        running_variance: wp.array(ndim=1),
+        mean: wp.array(ndim=1),
+        variance: wp.array(ndim=1),
         dst: wp.array(ndim=2),
     ):
         i, j = wp.tid()
@@ -91,21 +67,15 @@ def _create_kernels(clip_threshold, epsilon):
         offset_data = (j * wp.static(T2D[1]),)
 
         t_src = wp.tile_load(src, shape=shape, offset=offset)
-        t_running_mean = wp.tile_broadcast(
-            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
-        )
-        t_running_variance = wp.tile_broadcast(
-            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
-        )
-        wp.tile_store(
-            dst, wp.tile_map(standardization_auxiliary_func, t_running_variance, t_src - t_running_mean), offset=offset
-        )
+        t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=shape_data, offset=offset_data), shape=shape)
+        t_variance = wp.tile_broadcast(wp.tile_load(variance, shape=shape_data, offset=offset_data), shape=shape)
+        wp.tile_store(dst, wp.tile_map(standardization_auxiliary_func, t_src, t_mean, t_variance), offset=offset)
 
     @wp.kernel(enable_backward=False)
     def standardization_3d(
         src: wp.array(ndim=3),
-        running_mean: wp.array(ndim=1),
-        running_variance: wp.array(ndim=1),
+        mean: wp.array(ndim=1),
+        variance: wp.array(ndim=1),
         dst: wp.array(ndim=3),
     ):
         i, j, k = wp.tid()
@@ -115,15 +85,9 @@ def _create_kernels(clip_threshold, epsilon):
         offset_data = (k * wp.static(T3D[2]),)
 
         t_src = wp.tile_load(src, shape=shape, offset=offset)
-        t_running_mean = wp.tile_broadcast(
-            wp.tile_load(running_mean, shape=shape_data, offset=offset_data), shape=shape
-        )
-        t_running_variance = wp.tile_broadcast(
-            wp.tile_load(running_variance, shape=shape_data, offset=offset_data), shape=shape
-        )
-        wp.tile_store(
-            dst, wp.tile_map(standardization_auxiliary_func, t_running_variance, t_src - t_running_mean), offset=offset
-        )
+        t_mean = wp.tile_broadcast(wp.tile_load(mean, shape=shape_data, offset=offset_data), shape=shape)
+        t_variance = wp.tile_broadcast(wp.tile_load(variance, shape=shape_data, offset=offset_data), shape=shape)
+        wp.tile_store(dst, wp.tile_map(standardization_auxiliary_func, t_src, t_mean, t_variance), offset=offset)
 
     return inverse_2d, inverse_3d, standardization_2d, standardization_3d
 

@@ -29,6 +29,12 @@ API
 
     The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise.
 
+.. py:data:: skrl.config.torch.key
+    :type: int
+    :value: 0
+
+    Pseudo-random number generator (PRNG) key.
+
 .. py:data:: skrl.config.torch.local_rank
     :type: int
     :value: 0

@@ -8,7 +8,7 @@ from packaging import version
 import numpy as np
 import torch
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.torch.base import Wrapper
 from skrl.utils.spaces.torch import (
     convert_gym_space,
@@ -35,6 +35,7 @@ class GymWrapper(Wrapper):
 
         import gym
 
+        self._seed = config.torch.key
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):
@@ -126,22 +127,26 @@ class GymWrapper(Wrapper):
         if self._vectorized:
             if self._reset_once:
                 if self._deprecated_api:
+                    self._env.seed(self._seed)
                     observation = self._env.reset()
                     self._info = {}
                 else:
-                    observation, self._info = self._env.reset()
+                    observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
                     tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
         if self._deprecated_api:
+            self._env.seed(self._seed)
             observation = self._env.reset()
             info = {}
         else:
-            observation, info = self._env.reset()
+            observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

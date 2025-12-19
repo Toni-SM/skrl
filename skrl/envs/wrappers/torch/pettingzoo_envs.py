@@ -6,6 +6,7 @@ import collections
 
 import torch
 
+from skrl import config
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
 from skrl.utils.spaces.torch import (
     flatten_tensorized_space,
@@ -22,6 +23,8 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
+
+        self._seed = config.torch.key
 
     def step(self, actions: dict[str, torch.Tensor]) -> tuple[
         dict[str, torch.Tensor],
@@ -78,12 +81,13 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
 
         :return: Observation, info.
         """
-        outputs = self._env.reset()
+        outputs = self._env.reset(seed=self._seed)
         if isinstance(outputs, collections.abc.Mapping):
             observations = outputs
             infos = {uid: {} for uid in self.possible_agents}
         else:
             observations, infos = outputs
+        self._seed = None
 
         # convert response to torch
         observations = {

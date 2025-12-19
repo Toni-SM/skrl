@@ -8,7 +8,7 @@ from packaging import version
 import jax
 import numpy as np
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
 from skrl.utils.spaces.jax import (
     convert_gym_space,
@@ -35,6 +35,7 @@ class GymWrapper(Wrapper):
 
         import gym
 
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):
@@ -110,12 +111,11 @@ class GymWrapper(Wrapper):
         :return: State.
         """
         try:
-            state = flatten_tensorized_space(
+            return flatten_tensorized_space(
                 tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
             )
         except:
             return None
-        return state
 
     def reset(self) -> tuple[jax.Array, dict[str, Any]]:
         """Reset the environment.
@@ -126,24 +126,26 @@ class GymWrapper(Wrapper):
         if self._vectorized:
             if self._reset_once:
                 if self._deprecated_api:
+                    self._env.seed(self._seed)
                     observation = self._env.reset()
                     self._info = {}
                 else:
-                    observation, self._info = self._env.reset()
+                    observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
                     tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
         if self._deprecated_api:
+            self._env.seed(self._seed)
             observation = self._env.reset()
             info = {}
         else:
-            observation, info = self._env.reset()
-
-        # convert response to jax
+            observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

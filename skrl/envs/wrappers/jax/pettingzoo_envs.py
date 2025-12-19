@@ -7,6 +7,7 @@ import collections
 import jax
 import numpy as np
 
+from skrl import config
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper
 from skrl.utils.spaces.jax import (
     flatten_tensorized_space,
@@ -23,6 +24,8 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
+
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
 
     def step(
         self, actions: dict[str, jax.Array]
@@ -76,12 +79,13 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
 
         :return: Observation, info.
         """
-        outputs = self._env.reset()
+        outputs = self._env.reset(seed=self._seed)
         if isinstance(outputs, collections.abc.Mapping):
             observations = outputs
             infos = {uid: {} for uid in self.possible_agents}
         else:
             observations, infos = outputs
+        self._seed = None
 
         # convert response to numpy or jax
         observations = {

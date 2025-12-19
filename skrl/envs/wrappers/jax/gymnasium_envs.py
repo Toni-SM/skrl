@@ -7,7 +7,7 @@ import gymnasium
 import jax
 import numpy as np
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
 from skrl.utils.spaces.jax import (
     flatten_tensorized_space,
@@ -25,6 +25,7 @@ class GymnasiumWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._vectorized = False
         try:
             self._vectorized = self._vectorized or isinstance(env, gymnasium.vector.VectorEnv)
@@ -88,12 +89,11 @@ class GymnasiumWrapper(Wrapper):
         :return: State.
         """
         try:
-            state = flatten_tensorized_space(
+            return flatten_tensorized_space(
                 tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
             )
         except:
             return None
-        return state
 
     def reset(self) -> tuple[jax.Array, dict[str, Any]]:
         """Reset the environment.
@@ -103,17 +103,17 @@ class GymnasiumWrapper(Wrapper):
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
             if self._reset_once:
-                observation, self._info = self._env.reset()
+                observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
                     tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
-        observation, info = self._env.reset()
-
-        # convert response to numpy or jax
+        observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

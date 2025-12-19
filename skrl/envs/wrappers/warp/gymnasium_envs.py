@@ -7,7 +7,7 @@ import gymnasium
 import numpy as np
 import warp as wp
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.warp.base import Wrapper
 from skrl.utils.spaces.warp import (
     flatten_tensorized_space,
@@ -25,6 +25,7 @@ class GymnasiumWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = config.warp.key
         self._vectorized = False
         try:
             self._vectorized = self._vectorized or isinstance(env, gymnasium.vector.VectorEnv)
@@ -103,15 +104,17 @@ class GymnasiumWrapper(Wrapper):
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
             if self._reset_once:
-                observation, self._info = self._env.reset()
+                observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
                     tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
-        observation, info = self._env.reset()
+        observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:

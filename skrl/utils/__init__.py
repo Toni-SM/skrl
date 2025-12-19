@@ -28,8 +28,7 @@ def set_seed(seed: int | None = None, deterministic: bool = False) -> int:
     - ``random``
     - ``numpy``
     - ``torch`` (if available)
-    - ``jax`` (skrl's PRNG key: ``config.jax.key``)
-    - ``warp`` (skrl's PRNG key: ``config.warp.key``)
+    - ``skrl`` (PRNG keys: ``config.torch.key``, ``config.jax.key``, ``config.warp.key``)
 
     Example:
 
@@ -81,7 +80,8 @@ def set_seed(seed: int | None = None, deterministic: bool = False) -> int:
 
     logger.info(f"Seed: {seed}")
 
-    # numpy
+    # python / numpy
+    os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
 
@@ -92,21 +92,24 @@ def set_seed(seed: int | None = None, deterministic: bool = False) -> int:
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-
         if deterministic:
-            torch.backends.cudnn.benchmark = False
-            torch.backends.cudnn.deterministic = True
-
             # On CUDA 10.1, set environment variable CUDA_LAUNCH_BLOCKING=1
             # On CUDA 10.2 or later, set environment variable CUBLAS_WORKSPACE_CONFIG=:16:8 or CUBLAS_WORKSPACE_CONFIG=:4096:8
-
+            os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
+            torch.use_deterministic_algorithms(True)
             logger.warning("PyTorch/cuDNN deterministic algorithms are enabled. This may affect performance")
+        else:
+            torch.backends.cudnn.benchmark = True
+            torch.backends.cudnn.deterministic = False
     except ImportError:
         pass
     except Exception as e:
         logger.warning(f"PyTorch seeding error: {e}")
 
-    # jax/warp PRNG key
+    # framework PRNG key
+    config.torch.key = seed
     config.jax.key = seed
     config.warp.key = seed
 

@@ -51,6 +51,7 @@ class _Config(object):
         class PyTorch(object):
             def __init__(self) -> None:
                 """PyTorch configuration."""
+                self._key = 0
                 # torch.distributed config
                 self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
                 self._rank = int(os.getenv("RANK", "0"))
@@ -116,6 +117,15 @@ class _Config(object):
             @device.setter
             def device(self, device: str | "torch.device") -> None:
                 self._device = device
+
+            @property
+            def key(self) -> int:
+                """Pseudo-random number generator (PRNG) key."""
+                return self._key
+
+            @key.setter
+            def key(self, value: int) -> None:
+                self._key = value
 
             @property
             def local_rank(self) -> int:

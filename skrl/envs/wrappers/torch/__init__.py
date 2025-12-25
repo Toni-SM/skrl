@@ -11,6 +11,7 @@ from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
+from skrl.envs.wrappers.torch.mani_skill_envs import ManiSkillWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 
 
@@ -28,6 +29,7 @@ def wrap_env(
         "isaaclab",
         "isaaclab-single-agent",
         "isaaclab-multi-agent",
+        "mani-skill",
         "pettingzoo",
     ] = "auto",
     verbose: bool = True,
@@ -61,6 +63,8 @@ def wrap_env(
                 - ``"brax"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
+            * - ManiSkill
+              - ``"mani-skill"``
 
         .. list-table:: Multi-agent environments |br|
             :header-rows: 1
@@ -101,6 +105,8 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
+        elif _in("mani_skill.envs..*", base_classes):
+            return "mani-skill"
         elif _in("brax.envs..*", base_classes):
             return "brax"
         elif _in("dm_env..*", base_classes):
@@ -136,6 +142,10 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: Brax")
         return BraxWrapper(env)
+    elif wrapper == "mani-skill":
+        if verbose:
+            logger.info("Environment wrapper: ManiSkill")
+        return ManiSkillWrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":

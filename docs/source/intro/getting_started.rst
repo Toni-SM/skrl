@@ -43,7 +43,7 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as Gym/Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, and NVIDIA Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, ManiSkill, and NVIDIA Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
 * For **multi-agent** environments, skrl offers a function to **wrap environments** based on PettingZoo and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
@@ -238,12 +238,30 @@ Among the methods and properties defined in the wrapped environment, the state, 
                             :start-after: [pytorch-start-deepmind]
                             :end-before: [pytorch-end-deepmind]
 
-                    .. .. group-tab:: |_4| |jax| |_4|
+            .. tab:: ManiSkill
 
-                    ..     .. literalinclude:: ../snippets/wrapping.py
-                    ..         :language: python
-                    ..         :start-after: [jax-start-deepmind]
-                    ..         :end-before: [jax-end-deepmind]
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-mani-skill]
+                            :end-before: [pytorch-end-mani-skill]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-mani-skill]
+                            :end-before: [jax-end-mani-skill]
+
+                    .. group-tab:: |_4| |warp| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [warp-start-mani-skill]
+                            :end-before: [warp-end-mani-skill]
 
     .. group-tab:: Multi-agent environments
 

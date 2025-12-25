@@ -57,6 +57,10 @@ In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :d
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+    * - ManiSkill
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
     * - PettingZoo
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

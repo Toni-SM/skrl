@@ -13,6 +13,7 @@ This library works with a common API to interact with the following RL environme
 * Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
 * Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
 * NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
+* `ManiSkill <https://maniskill.readthedocs.io/en/latest/index.html>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -222,12 +223,30 @@ Usage
                     :start-after: [pytorch-start-deepmind]
                     :end-before: [pytorch-end-deepmind]
 
-            .. .. group-tab:: |_4| |jax| |_4|
+    .. tab:: ManiSkill
 
-            ..     .. literalinclude:: ../../snippets/wrapping.py
-            ..         :language: python
-            ..         :start-after: [jax-start-deepmind]
-            ..         :end-before: [jax-end-deepmind]
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-mani-skill]
+                    :end-before: [pytorch-end-mani-skill]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-mani-skill]
+                    :end-before: [jax-end-mani-skill]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-mani-skill]
+                    :end-before: [warp-end-mani-skill]
 
 .. raw:: html
 
@@ -294,6 +313,11 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
+.. autoclass:: skrl.envs.wrappers.torch.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
 .. raw:: html
 
     <br>
@@ -321,6 +345,11 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
+.. autoclass:: skrl.envs.wrappers.jax.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
 .. raw:: html
 
     <br>
@@ -339,6 +368,11 @@ Internal API (Warp)
     :members:
 
 .. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.ManiSkillWrapper
     :undoc-members:
     :show-inheritance:
     :members:

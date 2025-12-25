@@ -3,18 +3,18 @@ import os
 import gymnasium as gym
 import mani_skill.envs  # needed to register the ManiSkill environment entry points
 
-import torch
-import torch.nn as nn
+import flax.linen as nn
+import jax.numpy as jnp
 
 # import the skrl components to build the RL system
-from skrl import logger
-from skrl.agents.torch.ppo import PPO, PPO_CFG
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveLR
-from skrl.trainers.torch import SequentialTrainer
+from skrl import config, logger
+from skrl.agents.jax.ppo import PPO, PPO_CFG
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.memories.jax import RandomMemory
+from skrl.models.jax import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.jax import RunningStandardScaler
+from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.trainers.jax import SequentialTrainer
 from skrl.utils import set_seed
 
 
@@ -45,9 +45,15 @@ class Policy(GaussianMixin, Model):
         min_log_std=-20,
         max_log_std=2,
         reduction="sum",
+        **kwargs,
     ):
         Model.__init__(
-            self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
         )
         GaussianMixin.__init__(
             self,
@@ -58,40 +64,35 @@ class Policy(GaussianMixin, Model):
             reduction=reduction,
         )
 
-        self.net = nn.Sequential(
-            nn.Linear(self.num_observations, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, self.num_actions),
-        )
-        self.log_std_parameter = nn.Parameter(-0.5 * torch.ones(self.num_actions))
-
-    def compute(self, inputs, role):
-        return self.net(inputs["observations"]), {"log_std": self.log_std_parameter}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.tanh(nn.Dense(256)(inputs["observations"]))
+        x = nn.tanh(nn.Dense(256)(x))
+        x = nn.tanh(nn.Dense(256)(x))
+        x = nn.Dense(self.num_actions)(x)
+        log_std = self.param("log_std", lambda _: jnp.zeros(self.num_actions))
+        return x, {"log_std": log_std}
 
 
 class Value(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device):
+    def __init__(self, observation_space, state_space, action_space, device, **kwargs):
         Model.__init__(
-            self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
         )
         DeterministicMixin.__init__(self)
 
-        self.net = nn.Sequential(
-            nn.Linear(self.num_observations, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, 256),
-            nn.Tanh(),
-            nn.Linear(256, 1),
-        )
-
-    def compute(self, inputs, role):
-        return self.net(inputs["observations"]), {}
+    @nn.compact  # marks the given module method allowing inlined submodules
+    def __call__(self, inputs, role):
+        x = nn.tanh(nn.Dense(256)(inputs["observations"]))
+        x = nn.tanh(nn.Dense(256)(x))
+        x = nn.tanh(nn.Dense(256)(x))
+        x = nn.Dense(1)(x)
+        return x, {}
 
 
 # load the environment
@@ -117,6 +118,10 @@ models = {}
 models["policy"] = Policy(env.observation_space, env.state_space, env.action_space, device, clip_actions=True)
 models["value"] = Value(env.observation_space, env.state_space, env.action_space, device)
 
+# instantiate models' state dict
+for role, model in models.items():
+    model.init_state_dict(role=role)
+
 
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
@@ -141,7 +146,7 @@ cfg.value_preprocessor_kwargs = {"size": 1, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg.experiment.write_interval = "auto" if not args.eval else 0
 cfg.experiment.checkpoint_interval = "auto" if not args.eval else 0
-cfg.experiment.directory = f"runs/torch/{task_name}"
+cfg.experiment.directory = f"runs/jax/{task_name}"
 
 agent = PPO(
     models=models,

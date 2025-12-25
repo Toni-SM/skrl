@@ -49,11 +49,13 @@ class ManiSkillWrapper(Wrapper):
         """
         super().__init__(env)
 
-        self._env_device = torch.device(self._unwrapped.device)
         self._reset_once = True
         self._observations = None
         self._states = None
         self._info = {}
+
+        if self._unwrapped:
+            self._env_device = torch.device(self._unwrapped.device)
 
     @property
     def state_space(self) -> gymnasium.Space | None:

@@ -4,10 +4,15 @@ from typing import Any
 
 import gymnasium
 
-import torch
+import warp as wp
 
-from skrl.envs.wrappers.torch.base import Wrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+
+try:
+    import torch
+except:
+    pass  # TODO: show warning message
+from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.spaces.warp import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class ManiSkillWrapper(Wrapper):
@@ -51,7 +56,7 @@ class ManiSkillWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -59,7 +64,8 @@ class ManiSkillWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info.
         """
         actions = unflatten_tensorized_space(self.action_space, actions)
-        observations, reward, terminated, truncated, self._info = self._env.step(actions)
+        with torch.no_grad():
+            observations, reward, terminated, truncated, self._info = self._env.step(wp.to_torch(actions))
 
         # auto-reset environments
         dones = (terminated | truncated).flatten()
@@ -67,24 +73,34 @@ class ManiSkillWrapper(Wrapper):
             env_idx = torch.arange(self.num_envs, device=dones.device)[dones]
             observations, self._info = self._env.reset(options={"env_idx": env_idx})
 
-        self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
-        return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
+        self._observations = flatten_tensorized_space(
+            tensorize_space(self.observation_space, wp.from_torch(observations))
+        )
+        return (
+            self._observations,
+            wp.from_torch(reward.view(-1, 1)),
+            wp.from_torch(terminated.view(-1, 1)),
+            wp.from_torch(truncated.view(-1, 1)),
+            self._info,
+        )
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> wp.array | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[wp.array, Any]:
         """Reset the environment.
 
         :return: Observation, info.
         """
         if self._reset_once:
             observations, self._info = self._env.reset()
-            self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
+            self._observations = flatten_tensorized_space(
+                tensorize_space(self.observation_space, wp.from_torch(observations))
+            )
             self._reset_once = False
         return self._observations, self._info
 

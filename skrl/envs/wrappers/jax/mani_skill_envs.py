@@ -99,7 +99,7 @@ class ManiSkillWrapper(Wrapper):
             # auto-reset environments
             dones = (terminated | truncated).flatten()
             if dones.any():
-                env_idx = torch.arange(0, self.num_envs, device=self._env_device)[dones]
+                env_idx = torch.arange(self.num_envs, device=dones.device)[dones]
                 observations, self._info = self._env.reset(options={"env_idx": env_idx})
 
         self._observations = _torch2jax(flatten_tensorized_space(tensorize_space(self.observation_space, observations)))

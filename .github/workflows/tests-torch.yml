@@ -141,6 +141,12 @@ jobs:
     - name: Run tests (Isaac Lab)
       run: |
         pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
+    - name: Run tests (ManiSkill)
+      continue-on-error: true
+      run: |
+        python -m pip install --quiet mani-skill==3.0.0b22
+        python -m pip list
+        pytest tests/envs/wrappers/torch/test_mani_skill_envs.py
     - name: Run tests (DeepMind Control Suite)
       run: |
         python -m pip install --quiet dm-control==1.0.15 mujoco==3.0.0
@@ -322,6 +328,12 @@ jobs:
     - name: Run tests (Isaac Lab)
       run: |
         pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
+    - name: Run tests (ManiSkill)
+      continue-on-error: true
+      run: |
+        python -m pip install --quiet mani-skill
+        python -m pip list
+        pytest tests/envs/wrappers/torch/test_mani_skill_envs.py
     - name: Run tests (DeepMind Control Suite)
       continue-on-error: true
       run: |

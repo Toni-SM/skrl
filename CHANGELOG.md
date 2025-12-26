@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [2.0.0] - Unreleased
 ### Added
 - Implement RL algorithms in NVIDIA Warp
+- Add wrapper for ManiSkill environments
 - Add Tabular model instantiator (epsilon-greedy variant)
 - Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits

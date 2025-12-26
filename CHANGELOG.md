@@ -30,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
 - Fix time limits handling for termination and truncation signals
-- Fix the randomness of Gymnasium/Gym and PettingZoo environments by seeding right after initialization
+- Fix the randomness of the environments by seeding right after initialization (on the first reset)
 
 ### Removed
 - Remove NumPy backend for JAX implementation

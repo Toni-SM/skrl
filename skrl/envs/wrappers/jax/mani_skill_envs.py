@@ -18,7 +18,7 @@ except:
 else:
     from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
 
 
@@ -49,6 +49,7 @@ class ManiSkillWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._reset_once = True
         self._observations = None
         self._states = None
@@ -92,12 +93,10 @@ class ManiSkillWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = _jax2torch(actions, self._env_device)
-        actions = unflatten_tensorized_space(self.action_space, actions)
+        actions = unflatten_tensorized_space(self.action_space, _jax2torch(actions, self._env_device))
 
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
-
             # auto-reset environments
             dones = (terminated | truncated).flatten()
             if dones.any():
@@ -129,11 +128,12 @@ class ManiSkillWrapper(Wrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset(seed=self._seed)
             self._observations = _torch2jax(
                 flatten_tensorized_space(tensorize_space(self.observation_space, observations))
             )
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:

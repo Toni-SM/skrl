@@ -18,7 +18,7 @@ except:
 else:
     from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
 
 
@@ -49,11 +49,14 @@ class IsaacLabWrapper(Wrapper):
         """
         super().__init__(env)
 
-        self._env_device = torch.device(self._unwrapped.device)
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._reset_once = True
         self._observations = None
         self._states = None
         self._info = {}
+
+        if self._unwrapped:
+            self._env_device = torch.device(self._unwrapped.device)
 
     @property
     def state_space(self) -> gymnasium.Space | None:
@@ -90,8 +93,7 @@ class IsaacLabWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = _jax2torch(actions, self._env_device)
-        actions = unflatten_tensorized_space(self.action_space, actions)
+        actions = unflatten_tensorized_space(self.action_space, _jax2torch(actions, self._env_device))
 
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
@@ -126,7 +128,7 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset(seed=self._seed)
             self._observations = _torch2jax(
                 flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
             )
@@ -134,6 +136,7 @@ class IsaacLabWrapper(Wrapper):
             if states is not None:
                 self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
@@ -153,10 +156,13 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-        self._env_device = torch.device(self._unwrapped.device)
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._reset_once = True
         self._observations = None
         self._info = {}
+
+        if self._unwrapped:
+            self._env_device = torch.device(self._unwrapped.device)
 
     def step(
         self, actions: dict[str, jax.Array]
@@ -191,13 +197,14 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset(seed=self._seed)
             observations = {
                 k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
                 for k, v in observations.items()
             }
             self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def state(self) -> dict[jax.Array | None]:

@@ -11,8 +11,11 @@ try:
     import torch
 except:
     pass  # TODO: show warning message
+else:
+    from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+
+from skrl import config
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.spaces.warp import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class IsaacLabWrapper(Wrapper):
@@ -23,6 +26,7 @@ class IsaacLabWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = config.warp.key
         self._reset_once = True
         self._observations = None
         self._states = None
@@ -63,15 +67,18 @@ class IsaacLabWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = unflatten_tensorized_space(self.action_space, actions)
+        actions = unflatten_tensorized_space(self.action_space, wp.to_torch(actions))
+
         with torch.no_grad():
-            observations, reward, terminated, truncated, self._info = self._env.step(wp.to_torch(actions))
-        self._observations = flatten_tensorized_space(
-            tensorize_space(self.observation_space, wp.from_torch(observations["policy"]))
+            observations, reward, terminated, truncated, self._info = self._env.step(actions)
+
+        self._observations = wp.from_torch(
+            flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
         )
         states = observations.get("critic", None)
         if states is not None:
-            self._states = flatten_tensorized_space(tensorize_space(self.state_space, wp.from_torch(states)))
+            self._states = wp.from_torch(flatten_tensorized_space(tensorize_space(self.state_space, states)))
+
         return (
             self._observations,
             wp.from_torch(reward.view(-1, 1)),
@@ -93,14 +100,15 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
-            self._observations = flatten_tensorized_space(
-                tensorize_space(self.observation_space, wp.from_torch(observations["policy"]))
+            observations, self._info = self._env.reset(seed=self._seed)
+            self._observations = wp.from_torch(
+                flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
             )
             states = observations.get("critic", None)
             if states is not None:
-                self._states = flatten_tensorized_space(tensorize_space(self.state_space, wp.from_torch(states)))
+                self._states = wp.from_torch(flatten_tensorized_space(tensorize_space(self.state_space, states)))
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:

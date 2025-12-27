@@ -6,6 +6,7 @@ import gymnasium
 
 import torch
 
+from skrl import config
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
@@ -18,6 +19,7 @@ class IsaacLabWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = config.torch.key
         self._reset_once = True
         self._observations = None
         self._states = None
@@ -59,7 +61,8 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, reward, terminated, truncated, info.
         """
         actions = unflatten_tensorized_space(self.action_space, actions)
-        observations, reward, terminated, truncated, self._info = self._env.step(actions)
+        with torch.no_grad():
+            observations, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
         states = observations.get("critic", None)
         if states is not None:
@@ -79,7 +82,7 @@ class IsaacLabWrapper(Wrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset(seed=self._seed)
             self._observations = flatten_tensorized_space(
                 tensorize_space(self.observation_space, observations["policy"])
             )
@@ -87,6 +90,7 @@ class IsaacLabWrapper(Wrapper):
             if states is not None:
                 self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:
@@ -106,6 +110,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
+        self._seed = config.torch.key
         self._reset_once = True
         self._observations = None
         self._info = {}
@@ -124,7 +129,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, reward, terminated, truncated, info.
         """
         actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
-        observations, rewards, terminated, truncated, self._info = self._env.step(actions)
+        with torch.no_grad():
+            observations, rewards, terminated, truncated, self._info = self._env.step(actions)
         self._observations = {
             k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
         }
@@ -142,12 +148,13 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
+            observations, self._info = self._env.reset(seed=self._seed)
             self._observations = {
                 k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
                 for k, v in observations.items()
             }
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def state(self) -> dict[str, torch.Tensor | None]:

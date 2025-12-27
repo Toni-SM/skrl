@@ -11,8 +11,11 @@ try:
     import torch
 except:
     pass  # TODO: show warning message
+else:
+    from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+
+from skrl import config
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.spaces.warp import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class ManiSkillWrapper(Wrapper):
@@ -23,6 +26,7 @@ class ManiSkillWrapper(Wrapper):
         """
         super().__init__(env)
 
+        self._seed = config.warp.key
         self._reset_once = True
         self._observations = None
         self._states = None
@@ -63,19 +67,20 @@ class ManiSkillWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = unflatten_tensorized_space(self.action_space, actions)
+        actions = unflatten_tensorized_space(self.action_space, wp.to_torch(actions))
+
         with torch.no_grad():
-            observations, reward, terminated, truncated, self._info = self._env.step(wp.to_torch(actions))
+            observations, reward, terminated, truncated, self._info = self._env.step(actions)
+            # auto-reset environments
+            dones = (terminated | truncated).flatten()
+            if dones.any():
+                env_idx = torch.arange(self.num_envs, device=dones.device)[dones]
+                observations, self._info = self._env.reset(options={"env_idx": env_idx})
 
-        # auto-reset environments
-        dones = (terminated | truncated).flatten()
-        if dones.any():
-            env_idx = torch.arange(self.num_envs, device=dones.device)[dones]
-            observations, self._info = self._env.reset(options={"env_idx": env_idx})
-
-        self._observations = flatten_tensorized_space(
-            tensorize_space(self.observation_space, wp.from_torch(observations))
+        self._observations = wp.from_torch(
+            flatten_tensorized_space(tensorize_space(self.observation_space, observations))
         )
+
         return (
             self._observations,
             wp.from_torch(reward.view(-1, 1)),
@@ -97,11 +102,12 @@ class ManiSkillWrapper(Wrapper):
         :return: Observation, info.
         """
         if self._reset_once:
-            observations, self._info = self._env.reset()
-            self._observations = flatten_tensorized_space(
-                tensorize_space(self.observation_space, wp.from_torch(observations))
+            observations, self._info = self._env.reset(seed=self._seed)
+            self._observations = wp.from_torch(
+                flatten_tensorized_space(tensorize_space(self.observation_space, observations))
             )
             self._reset_once = False
+            self._seed = None
         return self._observations, self._info
 
     def render(self, *args, **kwargs) -> None:

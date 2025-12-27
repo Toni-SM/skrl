@@ -146,8 +146,7 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     action = jnp.ones((num_envs, 1))
 
     # check wrapper definition
-    with pytest.raises(AttributeError):
-        assert isinstance(wrap_env(None, "isaaclab-single-agent"), IsaacLabWrapper)
+    assert isinstance(wrap_env(None, "isaaclab-single-agent"), IsaacLabWrapper)
 
     # load wrap the environment
     original_env = IsaacLabEnv(num_states)
@@ -206,8 +205,7 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
     action = {f"agent_{i}": jnp.ones((num_envs, i + 10)) for i in range(num_agents)}
 
     # check wrapper definition
-    with pytest.raises(AttributeError):
-        assert isinstance(wrap_env(None, "isaaclab-multi-agent"), IsaacLabMultiAgentWrapper)
+    assert isinstance(wrap_env(None, "isaaclab-multi-agent"), IsaacLabMultiAgentWrapper)
 
     # load wrap the environment
     original_env = IsaacLabMultiAgentEnv(num_states)

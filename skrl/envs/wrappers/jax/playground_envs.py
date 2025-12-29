@@ -37,12 +37,12 @@ class PlaygroundWrapper(Wrapper):
         else:
             self._observation_space = gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=(observation_size,))
             self._state_space = None
-        self._action_space = gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=(action_size,))
+        self._action_space = gymnasium.spaces.Box(low=-1.0, high=1.0, shape=(action_size,))
 
         # set wrapped environment for just-in-time compilation with XLA
         self._env_state = None
-        self._env_step = jax.jit(self.env.step)
-        self._env_reset = jax.jit(self.env.reset)
+        self._env_step = jax.jit(env.step)
+        self._env_reset = jax.jit(env.reset)
         self._env_reset_key = jax.random.split(config.jax.key, self.num_envs)
 
     @property
@@ -119,18 +119,23 @@ class PlaygroundWrapper(Wrapper):
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""
-        # frame = self._env.render(mode="rgb_array")
-        # frame = frame[0] if frame.ndim == 4 else frame
+        import mujoco
 
-        # # render the frame using OpenCV
-        # try:
-        #     import cv2
+        # render frame
+        scene_option = mujoco.MjvOption()
+        scene_option.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = True
+        scene_option.flags[mujoco.mjtVisFlag.mjVIS_PERTFORCE] = True
+        scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = False
+        frame = self._unwrapped.render(self._env_state, width=640, height=480, scene_option=scene_option)
+        # show rendered frame using OpenCV
+        try:
+            import cv2
 
-        #     cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        #     cv2.waitKey(1)
-        # except ImportError as e:
-        #     logger.warning(f"Unable to import opencv-python: {e}. Frame will not be rendered.")
-        # return frame
+            cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            cv2.waitKey(1)
+        except ImportError as e:
+            logger.warning(f"Unable to import opencv-python: {e}. Frame will not be rendered.")
+        return frame
 
     def close(self) -> None:
         """Close the environment."""

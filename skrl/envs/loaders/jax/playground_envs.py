@@ -57,7 +57,11 @@ def load_playground_env(
 
     :return: MuJoCo Playground environment.
 
-    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments,
+        or the task name is invalid.
+    :raises ValueError: The number of environments has not been defined, neither by the function parameter nor by the command line arguments.
+    :raises ValueError: The episode length has not been defined, neither by the function parameter nor by the command line arguments.
+        The task configuration does not provide a default episode length.
     """
     import functools
     from mujoco_playground import registry

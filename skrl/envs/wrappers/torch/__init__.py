@@ -13,6 +13,7 @@ from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 from skrl.envs.wrappers.torch.mani_skill_envs import ManiSkillWrapper
 from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
+from skrl.envs.wrappers.torch.playground_envs import PlaygroundWrapper
 
 
 __all__ = ["wrap_env", "Wrapper", "MultiAgentEnvWrapper"]
@@ -31,6 +32,7 @@ def wrap_env(
         "isaaclab-multi-agent",
         "mani-skill",
         "pettingzoo",
+        "playground",
     ] = "auto",
     verbose: bool = True,
 ) -> Wrapper | MultiAgentEnvWrapper:
@@ -65,6 +67,8 @@ def wrap_env(
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
             * - ManiSkill
               - ``"mani-skill"``
+            * - MuJoCo Playground
+              - ``"playground"``
 
         .. list-table:: Multi-agent environments |br|
             :header-rows: 1
@@ -105,6 +109,8 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
+        elif _in("mujoco_playground..*", base_classes):
+            return "playground"
         elif _in("mani_skill.envs..*", base_classes):
             return "mani-skill"
         elif _in("brax.envs..*", base_classes):
@@ -146,6 +152,10 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: ManiSkill")
         return ManiSkillWrapper(env)
+    elif wrapper == "playground":
+        if verbose:
+            logger.info("Environment wrapper: MuJoCo Playground")
+        return PlaygroundWrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":

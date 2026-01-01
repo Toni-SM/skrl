@@ -6,8 +6,6 @@ import re
 
 from skrl import logger
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
-from skrl.envs.wrappers.torch.brax_envs import BraxWrapper
-from skrl.envs.wrappers.torch.deepmind_envs import DeepMindWrapper
 from skrl.envs.wrappers.torch.gym_envs import GymWrapper
 from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
@@ -25,8 +23,6 @@ def wrap_env(
         "auto",
         "gym",
         "gymnasium",
-        "dm",
-        "brax",
         "isaaclab",
         "isaaclab-single-agent",
         "isaaclab-multi-agent",
@@ -59,10 +55,6 @@ def wrap_env(
                 - ``"gym"``
             * - Gymnasium
                 - ``"gymnasium"``
-            * - DeepMind
-                - ``"dm"``
-            * - Brax
-                - ``"brax"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
             * - ManiSkill
@@ -113,10 +105,6 @@ def wrap_env(
             return "playground"
         elif _in("mani_skill.envs..*", base_classes):
             return "mani-skill"
-        elif _in("brax.envs..*", base_classes):
-            return "brax"
-        elif _in("dm_env..*", base_classes):
-            return "dm"
         elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
             return "pettingzoo"
         elif _in("gymnasium..*", base_classes):
@@ -140,14 +128,6 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: Petting Zoo")
         return PettingZooWrapper(env)
-    elif wrapper == "dm":
-        if verbose:
-            logger.info("Environment wrapper: DeepMind")
-        return DeepMindWrapper(env)
-    elif wrapper == "brax":
-        if verbose:
-            logger.info("Environment wrapper: Brax")
-        return BraxWrapper(env)
     elif wrapper == "mani-skill":
         if verbose:
             logger.info("Environment wrapper: ManiSkill")

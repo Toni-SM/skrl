@@ -6,7 +6,6 @@ import re
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
-from skrl.envs.wrappers.jax.brax_envs import BraxWrapper
 from skrl.envs.wrappers.jax.gym_envs import GymWrapper
 from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
 from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
@@ -24,7 +23,6 @@ def wrap_env(
         "auto",
         "gym",
         "gymnasium",
-        "brax",
         "isaaclab",
         "isaaclab-single-agent",
         "isaaclab-multi-agent",
@@ -57,8 +55,6 @@ def wrap_env(
                 - ``"gym"``
             * - Gymnasium
                 - ``"gymnasium"``
-            * - Brax
-                - ``"brax"``
             * - Isaac Lab
                 - ``"isaaclab"`` (``"isaaclab-single-agent"``)
             * - ManiSkill
@@ -109,10 +105,6 @@ def wrap_env(
             return "playground"
         elif _in("mani_skill.envs..*", base_classes):
             return "mani-skill"
-        elif _in("brax.envs..*", base_classes):
-            return "brax"
-        elif _in("dm_env..*", base_classes):
-            return "dm"
         elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
             return "pettingzoo"
         elif _in("gymnasium..*", base_classes):
@@ -136,10 +128,6 @@ def wrap_env(
         if verbose:
             logger.info("Environment wrapper: Petting Zoo")
         return PettingZooWrapper(env)
-    elif wrapper == "brax":
-        if verbose:
-            logger.info("Environment wrapper: Brax")
-        return BraxWrapper(env)
     elif wrapper == "mani-skill":
         if verbose:
             logger.info("Environment wrapper: ManiSkill")

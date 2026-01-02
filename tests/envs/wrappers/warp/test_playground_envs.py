@@ -3,11 +3,10 @@ import pytest
 from collections.abc import Mapping
 import gymnasium as gym
 
-import jax
-import jax.numpy as jnp
+import warp as wp
 
-from skrl.envs.loaders.jax import load_playground_env
-from skrl.envs.wrappers.jax import PlaygroundWrapper, wrap_env
+from skrl.envs.loaders.warp import load_playground_env
+from skrl.envs.wrappers.warp import PlaygroundWrapper, wrap_env
 
 from ....utilities import is_running_on_github_actions
 
@@ -18,7 +17,7 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
     num_observations = 5 if task_name == "CartpoleBalance" else 57
     num_states = 0 if task_name == "CartpoleBalance" else 128
     num_actions = 1 if task_name == "CartpoleBalance" else 16
-    action = jnp.ones((num_envs, num_actions))
+    action = wp.ones((num_envs, num_actions))
 
     # check wrapper definition
     with pytest.raises(AttributeError):
@@ -49,7 +48,7 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (num_actions,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
-    assert isinstance(env.device, jax.Device)
+    assert isinstance(env.device, wp.context.Device)
     # check internal properties
     assert env._env is original_env
     assert env._unwrapped is original_env.unwrapped
@@ -59,23 +58,23 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
         state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
         state = env.state()
-        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, num_observations)
+        assert isinstance(observation, wp.array) and observation.shape == (num_envs, num_observations)
         assert isinstance(info, Mapping)
         if num_states:
-            assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
+            assert isinstance(state, wp.array) and state.shape == (num_envs, num_states)
         else:
             assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
-            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, num_observations)
-            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, wp.array) and observation.shape == (num_envs, num_observations)
+            assert isinstance(reward, wp.array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, wp.array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, wp.array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
             if num_states:
-                assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
+                assert isinstance(state, wp.array) and state.shape == (num_envs, num_states)
             else:
                 assert state is None
 

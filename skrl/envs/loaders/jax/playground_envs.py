@@ -89,7 +89,7 @@ def load_playground_env(
     parser.add_argument("--randomization", action="store_true", default=False, help="Whether to use randomization")
     parser.add_argument("--vision", action="store_true", default=False, help="Whether to use vision-based environment")
 
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     task_name = args.task or task_name
     if not task_name:

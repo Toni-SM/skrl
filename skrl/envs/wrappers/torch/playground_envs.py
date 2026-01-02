@@ -150,6 +150,10 @@ class PlaygroundWrapper(Wrapper):
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""
+        if self.num_envs > 1:
+            logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")
+            return
+
         import mujoco
 
         # render frame

@@ -7,6 +7,7 @@ Environments
     Wrapping (single-agent) <envs/wrapping>
     Wrapping (multi-agents) <envs/multi_agents_wrapping>
     Isaac Lab environments <envs/isaaclab>
+    Playground environments <envs/playground>
 
 The environment plays a fundamental and crucial role in defining the RL setup. It is the place where the agent interacts, and it is responsible for providing the agent with information about its current state, as well as the rewards/penalties associated with each action.
 

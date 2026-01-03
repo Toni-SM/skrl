@@ -214,47 +214,6 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
 
 # =============================================================================
 
-# [pytorch-start-brax]
-# import the environment wrapper
-from skrl.envs.wrappers.torch import wrap_env
-import brax.envs
-
-# load the environment
-env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
-# [pytorch-end-brax]
-
-
-# [jax-start-brax]
-# import the environment wrapper
-from skrl.envs.wrappers.jax import wrap_env
-import brax.envs
-
-# load the environment
-env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
-# [jax-end-brax]
-
-# =============================================================================
-
-# [pytorch-start-deepmind]
-# import the environment wrapper and the deepmind suite
-from skrl.envs.wrappers.torch import wrap_env
-from dm_control import suite
-
-# load the environment
-env = suite.load(domain_name="cartpole", task_name="swingup")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
-# [pytorch-end-deepmind]
-
-# =============================================================================
-
 # [start-pettingzoo-torch]
 # import the environment wrapper
 from skrl.envs.wrappers.torch import wrap_env

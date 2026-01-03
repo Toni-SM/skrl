@@ -48,13 +48,13 @@ def wrap_env(
             :header-rows: 1
 
             * - Environment
-                - Wrapper tag
+              - Wrapper tag
             * - OpenAI Gym
-                - ``"gym"``
+              - ``"gym"``
             * - Gymnasium
-                - ``"gymnasium"``
+              - ``"gymnasium"``
             * - Isaac Lab
-                - ``"isaaclab"`` (``"isaaclab-single-agent"``)
+              - ``"isaaclab"`` (``"isaaclab-single-agent"``)
             * - ManiSkill
               - ``"mani-skill"``
             * - MuJoCo Playground
@@ -64,11 +64,11 @@ def wrap_env(
             :header-rows: 1
 
             * - Environment
-                - Wrapper tag
+              - Wrapper tag
             * - Petting Zoo
-                - ``"pettingzoo"``
+              - ``"pettingzoo"``
             * - Isaac Lab
-                - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
+              - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
     :param verbose: Whether to print verbose information about the environment and the wrapper.
 
     :return: Wrapped environment instance.

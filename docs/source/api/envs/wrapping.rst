@@ -11,9 +11,9 @@ This library works with a common API to interact with the following RL environme
 
 * OpenAI `Gym <https://www.gymlibrary.dev>`_
 * Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
-* Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
 * NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
 * `ManiSkill <https://maniskill.readthedocs.io/en/latest/index.html>`_
+* `MuJoCo Playground <https://playground.mujoco.org>`_
 
 To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
 
@@ -41,31 +41,6 @@ Usage
 -----
 
 .. tabs::
-
-    .. tab:: Isaac Lab
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-isaaclab]
-                    :end-before: [pytorch-end-isaaclab]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-isaaclab]
-                    :end-before: [jax-end-isaaclab]
-
-            .. group-tab:: |_4| |warp| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [warp-start-isaaclab]
-                    :end-before: [warp-end-isaaclab]
 
     .. tab:: Gymnasium / Gym
 
@@ -169,7 +144,7 @@ Usage
                                     :start-after: [jax-start-gym-vectorized]
                                     :end-before: [jax-end-gym-vectorized]
 
-    .. tab:: Shimmy
+    .. tab:: Isaac Lab
 
         .. tabs::
 
@@ -177,51 +152,22 @@ Usage
 
                 .. literalinclude:: ../../snippets/wrapping.py
                     :language: python
-                    :start-after: [pytorch-start-shimmy]
-                    :end-before: [pytorch-end-shimmy]
+                    :start-after: [pytorch-start-isaaclab]
+                    :end-before: [pytorch-end-isaaclab]
 
             .. group-tab:: |_4| |jax| |_4|
 
                 .. literalinclude:: ../../snippets/wrapping.py
                     :language: python
-                    :start-after: [jax-start-shimmy]
-                    :end-before: [jax-end-shimmy]
+                    :start-after: [jax-start-isaaclab]
+                    :end-before: [jax-end-isaaclab]
 
             .. group-tab:: |_4| |warp| |_4|
 
                 .. literalinclude:: ../../snippets/wrapping.py
                     :language: python
-                    :start-after: [warp-start-shimmy]
-                    :end-before: [warp-end-shimmy]
-
-    .. tab:: Brax
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-brax]
-                    :end-before: [pytorch-end-brax]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-brax]
-                    :end-before: [jax-end-brax]
-
-    .. tab:: DeepMind
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-deepmind]
-                    :end-before: [pytorch-end-deepmind]
+                    :start-after: [warp-start-isaaclab]
+                    :end-before: [warp-end-isaaclab]
 
     .. tab:: ManiSkill
 
@@ -247,6 +193,56 @@ Usage
                     :language: python
                     :start-after: [warp-start-mani-skill]
                     :end-before: [warp-end-mani-skill]
+
+    .. tab:: Playground
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-playground]
+                    :end-before: [pytorch-end-playground]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-playground]
+                    :end-before: [jax-end-playground]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-playground]
+                    :end-before: [warp-end-playground]
+
+    .. tab:: Shimmy
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-shimmy]
+                    :end-before: [pytorch-end-shimmy]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-shimmy]
+                    :end-before: [jax-end-shimmy]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-shimmy]
+                    :end-before: [warp-end-shimmy]
 
 .. raw:: html
 
@@ -287,11 +283,6 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
 .. autoclass:: skrl.envs.wrappers.torch.GymWrapper
     :undoc-members:
     :show-inheritance:
@@ -302,18 +293,17 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.DeepMindWrapper
-    :undoc-members:
-    :show-inheritance:
-    :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
-    :members:
-
-.. autoclass:: skrl.envs.wrappers.torch.BraxWrapper
+.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
 .. autoclass:: skrl.envs.wrappers.torch.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.torch.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -330,7 +320,7 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.jax.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -340,12 +330,17 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
+.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.jax.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -362,17 +357,22 @@ Internal API (Warp)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
-    :undoc-members:
-    :show-inheritance:
-    :members:
-
 .. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
+.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
 .. autoclass:: skrl.envs.wrappers.warp.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:

@@ -129,6 +129,11 @@ jobs:
         python -m pip install --quiet mani-skill==3.0.0b22
         python -m pip list
         pytest tests/envs/wrappers/warp/test_mani_skill_envs.py
+    - name: Run tests (Playground)
+      run: |
+        python -m pip install --quiet brax==0.12.5 mujoco==3.3.6 git+https://github.com/google-deepmind/mujoco_playground.git@1bd244f
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_playground_envs.py
 
   warp-minimum-utils:
     name: Minimum requirements (utils)
@@ -278,6 +283,11 @@ jobs:
         python -m pip install --quiet mani-skill
         python -m pip list
         pytest tests/envs/wrappers/warp/test_mani_skill_envs.py
+    - name: Run tests (Playground)
+      run: |
+        python -m pip install --quiet git+https://github.com/google-deepmind/mujoco_playground.git
+        python -m pip list
+        pytest tests/envs/wrappers/warp/test_playground_envs.py
 
   warp-latest-utils:
     name: Latest requirements (utils)

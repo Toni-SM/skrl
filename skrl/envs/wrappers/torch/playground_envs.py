@@ -3,19 +3,15 @@ from __future__ import annotations
 from typing import Any
 
 import gymnasium
+import mujoco
 from packaging import version
 
+import jax
+import jax.dlpack as jax_dlpack
+import jax.numpy as jnp
 import numpy as np
 import torch
 import torch.utils.dlpack as torch_dlpack
-
-
-try:
-    import jax
-    import jax.dlpack as jax_dlpack
-    import jax.numpy as jnp
-except:
-    pass  # TODO: show warning message
 
 from skrl import config, logger
 from skrl.envs.wrappers.torch.base import Wrapper
@@ -153,8 +149,6 @@ class PlaygroundWrapper(Wrapper):
         if self.num_envs > 1:
             logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")
             return
-
-        import mujoco
 
         # render frame
         scene_option = mujoco.MjvOption()

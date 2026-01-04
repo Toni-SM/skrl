@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import gymnasium
+import mujoco
 
 import jax
 import jax.numpy as jnp
@@ -122,8 +123,6 @@ class PlaygroundWrapper(Wrapper):
         if self.num_envs > 1:
             logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")
             return
-
-        import mujoco
 
         # render frame
         scene_option = mujoco.MjvOption()

@@ -6,12 +6,6 @@ import re
 
 from skrl import logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
-from skrl.envs.wrappers.jax.gym_envs import GymWrapper
-from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
-from skrl.envs.wrappers.jax.mani_skill_envs import ManiSkillWrapper
-from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
-from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper
 
 
 __all__ = ["wrap_env", "Wrapper", "MultiAgentEnvWrapper"]
@@ -67,7 +61,7 @@ def wrap_env(
 
             * - Environment
               - Wrapper tag
-            * - Petting Zoo
+            * - PettingZoo
               - ``"pettingzoo"``
             * - Isaac Lab
               - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
@@ -119,24 +113,36 @@ def wrap_env(
     if wrapper == "gym":
         if verbose:
             logger.info("Environment wrapper: Gym")
+        from skrl.envs.wrappers.jax.gym_envs import GymWrapper
+
         return GymWrapper(env)
     elif wrapper == "gymnasium":
         if verbose:
-            logger.info("Environment wrapper: gymnasium")
+            logger.info("Environment wrapper: Gymnasium")
+        from skrl.envs.wrappers.jax.gymnasium_envs import GymnasiumWrapper
+
         return GymnasiumWrapper(env)
     elif wrapper == "pettingzoo":
         if verbose:
-            logger.info("Environment wrapper: Petting Zoo")
+            logger.info("Environment wrapper: PettingZoo")
+        from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
+
         return PettingZooWrapper(env)
     elif wrapper == "mani-skill":
         if verbose:
             logger.info("Environment wrapper: ManiSkill")
+        from skrl.envs.wrappers.jax.mani_skill_envs import ManiSkillWrapper
+
         return ManiSkillWrapper(env)
     elif wrapper == "playground":
         if verbose:
             logger.info("Environment wrapper: MuJoCo Playground")
+        from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper
+
         return PlaygroundWrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
+        from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
+
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":
             env_type = "single-agent"

@@ -3,21 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 import gymnasium
+import mujoco
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 import warp as wp
 
-
-try:
-    import jax
-    import jax.numpy as jnp
-except:
-    pass  # TODO: show warning message
-else:
-    from skrl.utils.spaces.jax import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
-
 from skrl import config, logger
 from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.spaces.jax import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class PlaygroundWrapper(Wrapper):
@@ -138,8 +133,6 @@ class PlaygroundWrapper(Wrapper):
         if self.num_envs > 1:
             logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")
             return
-
-        import mujoco
 
         # render frame
         scene_option = mujoco.MjvOption()

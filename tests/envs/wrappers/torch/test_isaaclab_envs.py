@@ -6,7 +6,8 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from skrl.envs.wrappers.torch import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 
 
 class IsaacLabEnv(gym.Env):

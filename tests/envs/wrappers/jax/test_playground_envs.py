@@ -7,7 +7,8 @@ import jax
 import jax.numpy as jnp
 
 from skrl.envs.loaders.jax import load_playground_env
-from skrl.envs.wrappers.jax import PlaygroundWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper
 
 from ....utilities import is_running_on_github_actions
 

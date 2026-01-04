@@ -6,7 +6,8 @@ import gymnasium as gym
 import torch
 
 from skrl.envs.loaders.torch import load_playground_env
-from skrl.envs.wrappers.torch import PlaygroundWrapper, wrap_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.wrappers.torch.playground_envs import PlaygroundWrapper
 
 from ....utilities import is_running_on_github_actions
 

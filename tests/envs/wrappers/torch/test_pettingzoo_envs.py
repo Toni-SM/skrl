@@ -7,7 +7,8 @@ from pettingzoo.butterfly import pistonball_v6
 
 import torch
 
-from skrl.envs.wrappers.torch import PettingZooWrapper, wrap_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.wrappers.torch.pettingzoo_envs import PettingZooWrapper
 
 
 def test_env(capsys: pytest.CaptureFixture):

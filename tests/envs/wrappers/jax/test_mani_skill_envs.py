@@ -6,7 +6,8 @@ import gymnasium
 import jax
 import jax.numpy as jnp
 
-from skrl.envs.wrappers.jax import ManiSkillWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.mani_skill_envs import ManiSkillWrapper
 
 from ....utilities import is_running_on_github_actions
 

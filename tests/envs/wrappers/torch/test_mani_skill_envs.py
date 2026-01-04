@@ -5,7 +5,8 @@ import gymnasium
 
 import torch
 
-from skrl.envs.wrappers.torch import ManiSkillWrapper, wrap_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.wrappers.torch.mani_skill_envs import ManiSkillWrapper
 
 from ....utilities import is_running_on_github_actions
 

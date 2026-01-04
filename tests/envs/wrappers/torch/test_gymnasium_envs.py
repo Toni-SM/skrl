@@ -5,7 +5,8 @@ import gymnasium as gym
 
 import torch
 
-from skrl.envs.wrappers.torch import GymnasiumWrapper, wrap_env
+from skrl.envs.wrappers.torch import wrap_env
+from skrl.envs.wrappers.torch.gymnasium_envs import GymnasiumWrapper
 
 
 def test_env(capsys: pytest.CaptureFixture):

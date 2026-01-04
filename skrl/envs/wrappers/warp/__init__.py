@@ -6,9 +6,6 @@ import re
 
 from skrl import logger
 from skrl.envs.wrappers.warp.base import MultiAgentEnvWrapper, Wrapper
-from skrl.envs.wrappers.warp.gymnasium_envs import GymnasiumWrapper
-from skrl.envs.wrappers.warp.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
-from skrl.envs.wrappers.warp.mani_skill_envs import ManiSkillWrapper
 
 
 __all__ = ["wrap_env", "Wrapper", "MultiAgentEnvWrapper"]
@@ -20,13 +17,12 @@ def wrap_env(
         "auto",
         "gym",
         "gymnasium",
-        "dm",
-        "brax",
         "isaaclab",
         "isaaclab-single-agent",
         "isaaclab-multi-agent",
         "mani-skill",
         "pettingzoo",
+        "playground",
     ] = "auto",
     verbose: bool = True,
 ) -> Wrapper | MultiAgentEnvWrapper:
@@ -48,27 +44,27 @@ def wrap_env(
             :header-rows: 1
 
             * - Environment
-                - Wrapper tag
+              - Wrapper tag
             * - OpenAI Gym
-                - ``"gym"``
+              - ``"gym"``
             * - Gymnasium
-                - ``"gymnasium"``
-            * - Brax
-                - ``"brax"``
+              - ``"gymnasium"``
             * - Isaac Lab
-                - ``"isaaclab"`` (``"isaaclab-single-agent"``)
+              - ``"isaaclab"`` (``"isaaclab-single-agent"``)
             * - ManiSkill
               - ``"mani-skill"``
+            * - MuJoCo Playground
+              - ``"playground"``
 
         .. list-table:: Multi-agent environments |br|
             :header-rows: 1
 
             * - Environment
-                - Wrapper tag
-            * - Petting Zoo
-                - ``"pettingzoo"``
+              - Wrapper tag
+            * - PettingZoo
+              - ``"pettingzoo"``
             * - Isaac Lab
-                - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
+              - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
     :param verbose: Whether to print verbose information about the environment and the wrapper.
 
     :return: Wrapped environment instance.
@@ -99,12 +95,10 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
+        elif _in("mujoco_playground..*", base_classes):
+            return "playground"
         elif _in("mani_skill.envs..*", base_classes):
             return "mani-skill"
-        elif _in("brax.envs..*", base_classes):
-            return "brax"
-        elif _in("dm_env..*", base_classes):
-            return "dm"
         elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
             return "pettingzoo"
         elif _in("gymnasium..*", base_classes):
@@ -122,21 +116,29 @@ def wrap_env(
         return GymWrapper(env)
     elif wrapper == "gymnasium":
         if verbose:
-            logger.info("Environment wrapper: gymnasium")
+            logger.info("Environment wrapper: Gymnasium")
+        from skrl.envs.wrappers.warp.gymnasium_envs import GymnasiumWrapper
+
         return GymnasiumWrapper(env)
     elif wrapper == "pettingzoo":
         if verbose:
-            logger.info("Environment wrapper: Petting Zoo")
+            logger.info("Environment wrapper: PettingZoo")
         return PettingZooWrapper(env)
-    elif wrapper == "brax":
-        if verbose:
-            logger.info("Environment wrapper: Brax")
-        return BraxWrapper(env)
     elif wrapper == "mani-skill":
         if verbose:
             logger.info("Environment wrapper: ManiSkill")
+        from skrl.envs.wrappers.warp.mani_skill_envs import ManiSkillWrapper
+
         return ManiSkillWrapper(env)
+    elif wrapper == "playground":
+        if verbose:
+            logger.info("Environment wrapper: MuJoCo Playground")
+        from skrl.envs.wrappers.warp.playground_envs import PlaygroundWrapper
+
+        return PlaygroundWrapper(env)
     elif type(wrapper) is str and wrapper.startswith("isaaclab"):
+        from skrl.envs.wrappers.warp.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
+
         # use specified wrapper
         if wrapper == "isaaclab-single-agent":
             env_type = "single-agent"

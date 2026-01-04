@@ -8,18 +8,12 @@ from packaging import version
 import jax
 import jax.dlpack as jax_dlpack
 import numpy as np
-
-
-try:
-    import torch
-    import torch.utils.dlpack as torch_dlpack
-except:
-    pass  # TODO: show warning message
-else:
-    from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+import torch
+import torch.utils.dlpack as torch_dlpack
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 # ML frameworks conversion utilities

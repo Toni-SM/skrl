@@ -8,8 +8,8 @@ import jax.numpy as jnp
 import numpy as np
 import torch
 
-from skrl import config
-from skrl.envs.wrappers.jax import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 
 
 class IsaacLabEnv(gym.Env):

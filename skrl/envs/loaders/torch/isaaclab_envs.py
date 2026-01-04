@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import sys
+import gymnasium
 
 from skrl import logger
 
@@ -60,9 +62,6 @@ def load_isaaclab_env(
 
     :raises ValueError: The task name has not been defined, neither by the function parameter nor by the command line arguments.
     """
-    import atexit
-    import gymnasium
-
     # check task from command line arguments
     defined = False
     for arg in sys.argv:

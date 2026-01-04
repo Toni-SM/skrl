@@ -43,7 +43,7 @@ At each step (also called timestep) of interaction with the environment, the age
 
 The environment plays a fundamental role in the definition of the RL schema. For example, the selection of the agent depends strongly on the observation and action space nature. There are several interfaces to interact with the environments such as Gym/Gymnasium or DeepMind. However, each of them has a different API and work with non-compatible data types.
 
-* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, Google DeepMind and Brax, ManiSkill, and NVIDIA Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
+* For **single-agent** environments, skrl offers a function to **wrap environments** based on Gym/Gymnasium, ManiSkill, MuJoCo Playground, and NVIDIA Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the Gym/Gymnasium API) as shown in the following figure. Refer to the :doc:`Wrapping (single-agent) <../api/envs/wrapping>` section for more information.
 
 * For **multi-agent** environments, skrl offers a function to **wrap environments** based on PettingZoo and Isaac Lab interfaces, among others. The wrapped environments provide, to the library components, a common interface (adapted from the PettingZoo) as shown in the following figure. Refer to the :doc:`Wrapping (multi-agents) <../api/envs/multi_agents_wrapping>` section for more information.
 
@@ -85,24 +85,6 @@ Among the methods and properties defined in the wrapped environment, the state, 
 
         .. tabs::
 
-            .. tab:: Isaac Lab
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-isaaclab]
-                            :end-before: [pytorch-end-isaaclab]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-isaaclab]
-                            :end-before: [jax-end-isaaclab]
-
             .. tab:: Gymnasium / Gym
 
                 .. tabs::
@@ -129,6 +111,13 @@ Among the methods and properties defined in the wrapped environment, the state, 
                                             :start-after: [jax-start-gymnasium]
                                             :end-before: [jax-end-gymnasium]
 
+                                    .. group-tab:: |_4| |warp| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [warp-start-gymnasium]
+                                            :end-before: [warp-end-gymnasium]
+
                             .. group-tab:: Vectorized environment
 
                                 Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
@@ -148,6 +137,13 @@ Among the methods and properties defined in the wrapped environment, the state, 
                                             :language: python
                                             :start-after: [jax-start-gymnasium-vectorized]
                                             :end-before: [jax-end-gymnasium-vectorized]
+
+                                    .. group-tab:: |_4| |warp| |_4|
+
+                                        .. literalinclude:: ../snippets/wrapping.py
+                                            :language: python
+                                            :start-after: [warp-start-gymnasium-vectorized]
+                                            :end-before: [warp-end-gymnasium-vectorized]
 
                     .. tab:: Gym
 
@@ -191,7 +187,7 @@ Among the methods and properties defined in the wrapped environment, the state, 
                                             :start-after: [jax-start-gym-vectorized]
                                             :end-before: [jax-end-gym-vectorized]
 
-            .. tab:: Shimmy
+            .. tab:: Isaac Lab
 
                 .. tabs::
 
@@ -199,44 +195,22 @@ Among the methods and properties defined in the wrapped environment, the state, 
 
                         .. literalinclude:: ../snippets/wrapping.py
                             :language: python
-                            :start-after: [pytorch-start-shimmy]
-                            :end-before: [pytorch-end-shimmy]
+                            :start-after: [pytorch-start-isaaclab]
+                            :end-before: [pytorch-end-isaaclab]
 
                     .. group-tab:: |_4| |jax| |_4|
 
                         .. literalinclude:: ../snippets/wrapping.py
                             :language: python
-                            :start-after: [jax-start-shimmy]
-                            :end-before: [jax-end-shimmy]
+                            :start-after: [jax-start-isaaclab]
+                            :end-before: [jax-end-isaaclab]
 
-            .. tab:: Brax
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
+                    .. group-tab:: |_4| |warp| |_4|
 
                         .. literalinclude:: ../snippets/wrapping.py
                             :language: python
-                            :start-after: [pytorch-start-brax]
-                            :end-before: [pytorch-end-brax]
-
-                    .. group-tab:: |_4| |jax| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [jax-start-brax]
-                            :end-before: [jax-end-brax]
-
-            .. tab:: DeepMind
-
-                .. tabs::
-
-                    .. group-tab:: |_4| |pytorch| |_4|
-
-                        .. literalinclude:: ../snippets/wrapping.py
-                            :language: python
-                            :start-after: [pytorch-start-deepmind]
-                            :end-before: [pytorch-end-deepmind]
+                            :start-after: [warp-start-isaaclab]
+                            :end-before: [warp-end-isaaclab]
 
             .. tab:: ManiSkill
 
@@ -262,6 +236,56 @@ Among the methods and properties defined in the wrapped environment, the state, 
                             :language: python
                             :start-after: [warp-start-mani-skill]
                             :end-before: [warp-end-mani-skill]
+
+            .. tab:: Playground
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-playground]
+                            :end-before: [pytorch-end-playground]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-playground]
+                            :end-before: [jax-end-playground]
+
+                    .. group-tab:: |_4| |warp| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [warp-start-playground]
+                            :end-before: [warp-end-playground]
+
+            .. tab:: Shimmy
+
+                .. tabs::
+
+                    .. group-tab:: |_4| |pytorch| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [pytorch-start-shimmy]
+                            :end-before: [pytorch-end-shimmy]
+
+                    .. group-tab:: |_4| |jax| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [jax-start-shimmy]
+                            :end-before: [jax-end-shimmy]
+
+                    .. group-tab:: |_4| |warp| |_4|
+
+                        .. literalinclude:: ../snippets/wrapping.py
+                            :language: python
+                            :start-after: [warp-start-shimmy]
+                            :end-before: [warp-end-shimmy]
 
     .. group-tab:: Multi-agent environments
 

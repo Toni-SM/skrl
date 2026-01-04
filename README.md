@@ -19,13 +19,24 @@
 <h2 align="center" style="border-bottom: 0 !important;">SKRL - Reinforcement Learning library</h2>
 <br>
 
-**skrl** is an open-source modular library for Reinforcement Learning written in Python (implemented in [PyTorch](https://pytorch.org/), [JAX](https://jax.readthedocs.io) and [NVIDIA Warp](https://nvidia.github.io/warp/)) and designed with a focus on modularity, readability, simplicity, and transparency of algorithm implementation. In addition to supporting the OpenAI [Gym](https://www.gymlibrary.dev), Farama [Gymnasium](https://gymnasium.farama.org) and [PettingZoo](https://pettingzoo.farama.org), Google [DeepMind](https://github.com/deepmind/dm_env) and [Brax](https://github.com/google/brax), [ManiSkill](https://maniskill.readthedocs.io/en/latest/index.html), among other environment interfaces, it allows loading and configuring NVIDIA [Isaac Lab](https://isaac-sim.github.io/IsaacLab/index.html) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
+**Documentation:** <strong>https://skrl.readthedocs.io</strong>
+
+**Description**: ``skrl`` is an open-source modular library for Reinforcement Learning written in Python
+(implemented in [PyTorch](https://pytorch.org/), [JAX](https://jax.readthedocs.io) and [NVIDIA Warp](https://nvidia.github.io/warp/))
+and designed with a focus on modularity, readability, simplicity, and transparency of algorithm implementation.
+In addition to supporting
+OpenAI [Gym](https://www.gymlibrary.dev),
+Farama [Gymnasium](https://gymnasium.farama.org) and [PettingZoo](https://pettingzoo.farama.org),
+[ManiSkill](https://maniskill.readthedocs.io/en/latest/index.html),
+among other environment interfaces, it allows loading and configuring
+NVIDIA [Isaac Lab](https://isaac-sim.github.io/IsaacLab/index.html) and
+[MuJoCo Playground](https://playground.mujoco.org/)
+environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments),
+which may or may not share resources, in the same run.
 
 <br>
 
-### Please, visit the documentation for usage details and examples
-
-<strong>https://skrl.readthedocs.io</strong>
+### Refer to the documentation for details and examples: https://skrl.readthedocs.io
 
 <br>
 

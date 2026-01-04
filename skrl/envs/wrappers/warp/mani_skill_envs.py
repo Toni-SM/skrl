@@ -4,18 +4,12 @@ from typing import Any
 
 import gymnasium
 
+import torch
 import warp as wp
-
-
-try:
-    import torch
-except:
-    pass  # TODO: show warning message
-else:
-    from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 from skrl import config
 from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 class ManiSkillWrapper(Wrapper):

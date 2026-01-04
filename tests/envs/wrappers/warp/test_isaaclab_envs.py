@@ -7,7 +7,8 @@ import numpy as np
 import torch
 import warp as wp
 
-from skrl.envs.wrappers.warp import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.envs.wrappers.warp.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 
 
 class IsaacLabEnv(gym.Env):

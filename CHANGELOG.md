@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add wrapper for ManiSkill environments
 - Add Tabular model instantiator (epsilon-greedy variant)
 - Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
+- Add `render_interval` option to trainers to specify the rendering interval for the environments.
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits
 - Add `ScopedTimer` utils to measure code execution time
 - Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries

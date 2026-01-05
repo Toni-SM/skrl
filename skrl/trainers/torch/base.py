@@ -45,6 +45,9 @@ class TrainerCfg(ABC):
     headless: bool = False
     """Whether to run in headless mode (do not call ``env.render()``)."""
 
+    render_interval: int = 1
+    """Interval (in timesteps) for rendering the environments. Only effective if ``headless`` is False."""
+
     disable_progressbar: bool | None = False
     """Whether to disable the progressbar. If None, disable on non-TTY."""
 
@@ -215,7 +218,7 @@ class Trainer(ABC):
                     self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # record the environments' transitions
@@ -309,7 +312,7 @@ class Trainer(ABC):
                     self.agents.track_data("Stats / Env stepping time (ms)", timer.elapsed_time_ms)
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # record the environments' transitions

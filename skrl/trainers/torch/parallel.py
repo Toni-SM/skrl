@@ -266,7 +266,7 @@ class ParallelTrainer(Trainer):
                     next_states = self.env.state()
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # record the environments' transitions
@@ -423,7 +423,7 @@ class ParallelTrainer(Trainer):
                     next_states = self.env.state()
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # write data to TensorBoard

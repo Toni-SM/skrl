@@ -23,6 +23,7 @@ from ...utilities import (
     # trainer config
     timesteps=st.integers(min_value=1, max_value=50),
     headless=st.booleans(),
+    render_interval=st.integers(min_value=1, max_value=5),
     disable_progressbar=st.booleans(),
     close_environment_at_exit=st.booleans(),
     stochastic_evaluation=st.booleans(),
@@ -42,6 +43,7 @@ def test_non_simultaneous_trainer_single_agent(
     # trainer config
     timesteps,
     headless,
+    render_interval,
     disable_progressbar,
     close_environment_at_exit,
     stochastic_evaluation,
@@ -80,6 +82,7 @@ def test_non_simultaneous_trainer_single_agent(
     cfg = {
         "timesteps": timesteps,
         "headless": headless,
+        "render_interval": render_interval,
         "disable_progressbar": disable_progressbar,
         "close_environment_at_exit": close_environment_at_exit,
         "environment_info": "episode",
@@ -99,6 +102,7 @@ def test_non_simultaneous_trainer_single_agent(
     # trainer config
     timesteps=st.integers(min_value=1, max_value=50),
     headless=st.booleans(),
+    render_interval=st.integers(min_value=1, max_value=5),
     disable_progressbar=st.booleans(),
     close_environment_at_exit=st.booleans(),
     stochastic_evaluation=st.booleans(),
@@ -119,6 +123,7 @@ def test_simultaneous_trainer_single_agent(
     # trainer config
     timesteps,
     headless,
+    render_interval,
     disable_progressbar,
     close_environment_at_exit,
     stochastic_evaluation,
@@ -167,6 +172,7 @@ def test_simultaneous_trainer_single_agent(
     cfg = {
         "timesteps": timesteps,
         "headless": headless,
+        "render_interval": render_interval,
         "disable_progressbar": disable_progressbar,
         "close_environment_at_exit": close_environment_at_exit,
         "environment_info": "episode",
@@ -188,6 +194,7 @@ def test_simultaneous_trainer_single_agent(
     # trainer config
     timesteps=st.integers(min_value=1, max_value=50),
     headless=st.booleans(),
+    render_interval=st.integers(min_value=1, max_value=5),
     disable_progressbar=st.booleans(),
     close_environment_at_exit=st.booleans(),
     stochastic_evaluation=st.booleans(),
@@ -208,6 +215,7 @@ def test_non_simultaneous_trainer_multi_agent(
     # trainer config
     timesteps,
     headless,
+    render_interval,
     disable_progressbar,
     close_environment_at_exit,
     stochastic_evaluation,
@@ -252,6 +260,7 @@ def test_non_simultaneous_trainer_multi_agent(
     cfg = {
         "timesteps": timesteps,
         "headless": headless,
+        "render_interval": render_interval,
         "disable_progressbar": disable_progressbar,
         "close_environment_at_exit": close_environment_at_exit,
         "environment_info": "episode",
@@ -272,6 +281,7 @@ def test_non_simultaneous_trainer_multi_agent(
     # trainer config
     timesteps=st.integers(min_value=1, max_value=50),
     headless=st.booleans(),
+    render_interval=st.integers(min_value=1, max_value=5),
     disable_progressbar=st.booleans(),
     close_environment_at_exit=st.booleans(),
     stochastic_evaluation=st.booleans(),
@@ -293,6 +303,7 @@ def test_simultaneous_trainer_multi_agent(
     # trainer config
     timesteps,
     headless,
+    render_interval,
     disable_progressbar,
     close_environment_at_exit,
     stochastic_evaluation,
@@ -350,6 +361,7 @@ def test_simultaneous_trainer_multi_agent(
     cfg = {
         "timesteps": timesteps,
         "headless": headless,
+        "render_interval": render_interval,
         "disable_progressbar": disable_progressbar,
         "close_environment_at_exit": close_environment_at_exit,
         "environment_info": "episode",

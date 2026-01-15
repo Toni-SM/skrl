@@ -153,7 +153,7 @@ agent = PPO(
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 16000, "headless": args.headless}
+cfg_trainer = {"timesteps": 16000, "headless": args.headless, "render_interval": 3}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 if args.checkpoint:

@@ -113,7 +113,7 @@ class SequentialTrainer(Trainer):
                         agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # record the environments' transitions
@@ -204,7 +204,7 @@ class SequentialTrainer(Trainer):
                         agent.track_data("Stats / Env stepping time (ms)", elapsed_time_ms)
 
                 # render the environments
-                if not self.cfg.headless:
+                if not self.cfg.headless and not timestep % self.cfg.render_interval:
                     self.env.render()
 
                 # write data to TensorBoard

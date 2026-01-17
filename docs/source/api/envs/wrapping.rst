@@ -283,27 +283,27 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.GymWrapper
+.. autoclass:: skrl.envs.wrappers.torch.gym_envs.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.torch.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.torch.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.ManiSkillWrapper
+.. autoclass:: skrl.envs.wrappers.torch.mani_skill_envs.ManiSkillWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.PlaygroundWrapper
+.. autoclass:: skrl.envs.wrappers.torch.playground_envs.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -320,27 +320,27 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.GymWrapper
+.. autoclass:: skrl.envs.wrappers.jax.gym_envs.GymWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.jax.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.jax.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.ManiSkillWrapper
+.. autoclass:: skrl.envs.wrappers.jax.mani_skill_envs.ManiSkillWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.PlaygroundWrapper
+.. autoclass:: skrl.envs.wrappers.jax.playground_envs.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -357,22 +357,22 @@ Internal API (Warp)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.warp.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.warp.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.ManiSkillWrapper
+.. autoclass:: skrl.envs.wrappers.warp.mani_skill_envs.ManiSkillWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.PlaygroundWrapper
+.. autoclass:: skrl.envs.wrappers.warp.playground_envs.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
     :members:

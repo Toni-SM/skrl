@@ -10,7 +10,7 @@ import skrl
 
 # project information
 project = "skrl"
-copyright = "2021-2025, Toni-SM"
+copyright = "2021-2026, Toni-SM"
 author = "Toni-SM"
 
 if skrl.__version__ != "unknown":
@@ -123,17 +123,18 @@ epub_show_urls = "footnote"
 autodoc_member_order = "groupwise"
 autoclass_content = "init"
 autodoc_mock_imports = [
+    "flax",
     "gym",
     "gymnasium",
-    "torch",
     "jax",
     "jaxlib",
-    "flax",
+    "mujoco",
     "optax",
-    "warp",
-    "tensorboard",
-    "tqdm",
     "packaging",
+    "tensorboard",
+    "torch",
+    "tqdm",
+    "warp",
 ]
 
 # copybutton ext

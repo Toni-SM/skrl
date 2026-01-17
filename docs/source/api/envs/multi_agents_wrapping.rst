@@ -123,12 +123,12 @@ Internal API (PyTorch)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabMultiAgentWrapper
+.. autoclass:: skrl.envs.wrappers.torch.isaaclab_envs.IsaacLabMultiAgentWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.PettingZooWrapper
+.. autoclass:: skrl.envs.wrappers.torch.pettingzoo_envs.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:
@@ -145,12 +145,12 @@ Internal API (JAX)
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabMultiAgentWrapper
+.. autoclass:: skrl.envs.wrappers.jax.isaaclab_envs.IsaacLabMultiAgentWrapper
     :undoc-members:
     :show-inheritance:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.PettingZooWrapper
+.. autoclass:: skrl.envs.wrappers.jax.pettingzoo_envs.PettingZooWrapper
     :undoc-members:
     :show-inheritance:
     :members:

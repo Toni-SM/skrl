@@ -10,7 +10,8 @@ In this section, you will find the steps to install the library, troubleshoot kn
 **Dependencies**
 ----------------
 
-* General dependencies: `gymnasium <https://gymnasium.farama.org/>`_, `packaging <https://packaging.pypa.io>`_, `tensorboard <https://www.tensorflow.org/tensorboard>`_ and `tqdm <https://tqdm.github.io>`_.
+* General dependencies: `gymnasium <https://gymnasium.farama.org/>`_, `packaging <https://packaging.pypa.io>`_,
+  `tensorboard <https://www.tensorflow.org/tensorboard>`_ and `tqdm <https://tqdm.github.io>`_.
 
 * ML framework-specific dependencies:
 
@@ -34,8 +35,9 @@ In this section, you will find the steps to install the library, troubleshoot kn
 
 .. warning::
 
-    It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
-    Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the steps described below.
+    It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs
+    its CPU version by default. Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
+    page before proceeding with the steps described below.
 
 .. raw:: html
 
@@ -97,14 +99,15 @@ To install **skrl** with pip, execute:
 GitHub repository
 ^^^^^^^^^^^^^^^^^
 
-Clone or download the library from its GitHub repository (https://github.com/Toni-SM/skrl)
+Clone or download the library from its GitHub repository (https://github.com/Toni-SM/skrl):
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        git clone https://github.com/Toni-SM/skrl.git
-        cd skrl
+    git clone https://github.com/Toni-SM/skrl.git
+    cd skrl
 
-* **Install in editable/development mode** (links the package to its original location allowing any modifications to be reflected directly in its Python environment)
+* **Install in editable/development mode** (links the package to its original location allowing any modifications to be
+  reflected directly in its Python environment):
 
     .. tabs::
 
@@ -118,8 +121,10 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
-                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
+                as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
+                page before proceeding with the next steps.
 
             .. code-block:: bash
 
@@ -143,7 +148,8 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install -e .
 
-* **Install in the current Python site-packages directory** (modifications to the code downloaded from GitHub will not be reflected in your Python environment)
+* **Install in the current Python site-packages directory** (modifications to the code downloaded from GitHub will
+  not be reflected in your Python environment):
 
     .. tabs::
 
@@ -157,8 +163,10 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
             .. warning::
 
-                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**, as JAX installs its CPU version by default.
-                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_ page before proceeding with the next steps.
+                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
+                as JAX installs its CPU version by default.
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_margin
+                page before proceeding with the next steps.
 
             .. code-block:: bash
 
@@ -189,7 +197,7 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 **Discussions and issues**
 --------------------------
 
-To ask questions or discuss about the library visit skrl's GitHub discussions
+To ask questions or discuss about the library visit skrl's GitHub discussions.
 
 .. centered:: https://github.com/Toni-SM/skrl/discussions
 

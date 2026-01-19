@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 import warp as wp
@@ -50,7 +50,13 @@ class RandomMemory(Memory):
         self._replacement = replacement
 
     def sample(
-        self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
+        self,
+        names: list[str],
+        *,
+        batch_size: int,
+        mini_batches: int = 1,
+        sequence_length: int = 1,
+        replacement: Optional[bool] = None,
     ) -> list[list[wp.array]]:
         """Sample a batch from memory randomly.
 
@@ -58,20 +64,22 @@ class RandomMemory(Memory):
         :param batch_size: Number of elements to sample.
         :param mini_batches: Number of mini-batches to sample.
         :param sequence_length: Length of each sequence.
+        :param replacement: Override flag whether samples should be drawn with replacement.
 
         :return: Sampled data from tensors sorted according to their position in the list of names.
             The sampled tensors will have the following shape: ``(batch_size, data_size)``.
         """
+        replacement = replacement if replacement is not None else self._replacement
         # compute valid memory sizes
         size = len(self)
         if sequence_length > 1:
             sequence_indexes = np.arange(0, self.num_envs * sequence_length, self.num_envs)
             size -= sequence_indexes[-1].item()
         # generate random indexes
-        if self._replacement:
-            indexes = np.random.randint(0, size, (batch_size,))
+        if replacement:
+            indexes = np.random.randint(0, size, (batch_size * mini_batches,))
         else:
-            indexes = np.random.permutation(size)[:batch_size]
+            indexes = np.random.permutation(size)[: batch_size * mini_batches]
         # generate sequence indexes
         if sequence_length > 1:
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.reshape(-1, 1)).reshape(-1)

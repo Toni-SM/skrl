@@ -4,20 +4,16 @@ Saving, loading and logging
 In this section, you will find the information you need to log data with TensorBoard or Weights & Biases
 and to save and load checkpoints and memories to and from persistent storage.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**TensorBoard integration**
----------------------------
+TensorBoard integration
+-----------------------
 
 `TensorBoard <https://www.tensorflow.org/tensorboard>`_ is used for tracking and visualizing metrics and scalars
 (coefficients, losses, etc.). The tracking and writing of metrics and scalars is the responsibility of the agents
 (**can be customized independently for each agent using its configuration**).
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 ^^^^^^^^^^^^^
@@ -41,9 +37,7 @@ Each agent offers the following parameters under the :literal:`experiment` key:
   tracking and writing to TensorBoard. If set to ``"auto"`` (default value), the interval will be defined to collect
   100 samples throughout training/evaluation (``timesteps / 100``).
 
-.. raw:: html
-
-    <br>
+|
 
 Tracked metrics/scales visualization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -60,9 +54,7 @@ TensorBoard can be launched using the following command in a terminal:
     :align: center
     :alt: TensorBoard panel
 
-.. raw:: html
-
-    <br>
+|
 
 Tracking custom metrics/scales
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,12 +85,10 @@ Tracking custom metrics/scales
       :start-after: [start-data-agent-writer-add-scalar]
       :end-before: [end-data-agent-writer-add-scalar]
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**Weights & Biases integration**
---------------------------------
+Weights & Biases integration
+----------------------------
 
 `Weights & Biases (wandb) <https://wandb.ai>`_ is also supported for tracking and visualizing metrics and scalars.
 Its configuration is responsibility of the agents (**can be customized independently for each agent using its configuration**).
@@ -114,9 +104,7 @@ to login to the :literal:`wandb` library on the current machine.
 
         pip install wandb
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 ^^^^^^^^^^^^^
@@ -143,16 +131,12 @@ Visit the Weights & Biases documentation for more details about the configuratio
   * :literal:`"config"`: will be updated with the configuration dictionaries of both the agent (and its models) and the trainer.
     The update will be done even if a value has been set for the parameter.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Checkpoints
+-----------
 
-**Checkpoints**
----------------
-
-.. raw:: html
-
-    <br>
+|
 
 Saving checkpoints
 ^^^^^^^^^^^^^^^^^^
@@ -189,137 +173,86 @@ The best models are updated internally on each TensorBoard writing interval :lit
 and they are saved on each checkpoint interval :literal:`checkpoint_interval`.
 The :literal:`store_separately` key specifies whether the best modules are grouped and stored together or separately.
 
-.. raw:: html
-
-    <br>
+|
 
 Loading checkpoints
 ^^^^^^^^^^^^^^^^^^^
 
-Checkpoints can be loaded (e.g. to resume or continue training) for each of the instantiated agents (or models) independently via the :literal:`.load(...)` method (`Agent.load <../modules/skrl.agents.base_class.html#skrl.agents.torch.base.Agent.load>`_ or `Model.load <../modules/skrl.models.base_class.html#skrl.models.torch.base.Model.load>`_). It accepts the path (relative or absolute) of the checkpoint to load as the only argument. The checkpoint will be dynamically mapped to the device specified as argument in the class constructor (internally the torch load's :literal:`map_location` method is used during loading).
+Checkpoints can be loaded (e.g. to resume or continue training) for each of the instantiated agent independently via
+the :py:meth:`~skrl.agents.torch.Agent.load` (or for each model, via the :py:meth:`~skrl.models.torch.Model.load` method).
+It accepts the path (relative or absolute) of the checkpoint to load as the only argument.
+The checkpoint will be dynamically mapped to the device specified as argument in the class constructor.
 
 .. note::
 
-    The agents or models instances must have the same architecture/structure as the one used to save the checkpoint. The current implementation load the model's state-dict directly.
+    The agents or models instances must have the same architecture/structure as the one used to save the checkpoint.
+    The current implementation loads the model's state-dict directly.
 
 .. note::
 
-    Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance` can be ignored without problems during evaluation. The reason for this is that during the evaluation not all components, such as optimizers or other models apart from the policy, may be defined.
+    Warnings such as :literal:`[skrl:WARNING] Cannot load the <module> module. The agent doesn't have such an instance`
+    can be ignored without problems during evaluation. The reason for this is that during the evaluation not all components,
+    such as optimizers or other models apart from the policy, may be defined.
 
-The following code snippets show how to load the checkpoints through the instantiated agent (recommended) or models. See the :doc:`Examples <examples>` section for showcases about how to checkpoints and use them to continue the training or evaluate experiments.
+The following code snippets show how to load the checkpoints through the instantiated agent (recommended) or models.
+See the :doc:`Examples <examples>` section for showcases about how to save and load checkpoints and use them
+to continue the training or evaluate experiments.
 
 .. tabs::
 
     .. tab:: Agent (recommended)
 
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 12
-                    :start-after: [start-checkpoint-load-agent-torch]
-                    :end-before: [end-checkpoint-load-agent-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 12
-                    :start-after: [start-checkpoint-load-agent-jax]
-                    :end-before: [end-checkpoint-load-agent-jax]
+        .. literalinclude:: ../snippets/data.py
+            :language: python
+            :start-after: [start-checkpoint-load-agent]
+            :end-before: [end-checkpoint-load-agent]
 
     .. tab:: Model
 
-        .. tabs::
+        .. literalinclude:: ../snippets/data.py
+            :language: python
+            :start-after: [start-checkpoint-load-model]
+            :end-before: [end-checkpoint-load-model]
 
-            .. group-tab:: |_4| |pytorch| |_4|
+In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub
+(`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../api/utils/huggingface>`
+for more details.
 
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 22
-                    :start-after: [start-checkpoint-load-model-torch]
-                    :end-before: [end-checkpoint-load-model-torch]
+.. literalinclude:: ../snippets/data.py
+    :language: python
+    :emphasize-lines: 1, 4
+    :start-after: [start-checkpoint-load-huggingface]
+    :end-before: [end-checkpoint-load-huggingface]
 
-            .. group-tab:: |_4| |jax| |_4|
+|br| |hr|
 
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 22
-                    :start-after: [start-checkpoint-load-model-jax]
-                    :end-before: [end-checkpoint-load-model-jax]
+Memory export / import
+----------------------
 
-In addition, it is possible to load, through the library utilities, trained agent checkpoints from the Hugging Face Hub (`huggingface.co/skrl <https://huggingface.co/skrl>`_). See the :doc:`Hugging Face integration <../api/utils/huggingface>` for more information.
-
-.. tabs::
-
-    .. tab:: Agent (from Hugging Face Hub)
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 2, 13-14
-                    :start-after: [start-checkpoint-load-huggingface-torch]
-                    :end-before: [end-checkpoint-load-huggingface-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/data.py
-                    :language: python
-                    :emphasize-lines: 2, 13-14
-                    :start-after: [start-checkpoint-load-huggingface-jax]
-                    :end-before: [end-checkpoint-load-huggingface-jax]
-
-
-.. raw:: html
-
-    <br><hr>
-
-**Memory export/import**
-------------------------
-
-.. raw:: html
-
-    <br>
+|
 
 Exporting memories
 ^^^^^^^^^^^^^^^^^^
 
-Memories can be automatically exported to files at each filling cycle (before data overwriting is performed). Its activation, the output files' format and their path can be modified through the constructor parameters when an instance is created.
+Memories can be automatically exported to files at each filling cycle (before data is overwritten). Its activation,
+the output files' format and their path can be modified through the constructor parameters when an instance is created.
 
-.. tabs::
-
-    .. group-tab:: |_4| |pytorch| |_4|
-
-        .. literalinclude:: ../snippets/data.py
-            :language: python
-            :emphasize-lines: 7-9
-            :start-after: [start-export-memory-torch]
-            :end-before: [end-export-memory-torch]
-
-    .. group-tab:: |_4| |jax| |_4|
-
-        .. literalinclude:: ../snippets/data.py
-            :language: python
-            :emphasize-lines: 7-9
-            :start-after: [start-export-memory-jax]
-            :end-before: [end-export-memory-jax]
+.. literalinclude:: ../snippets/data.py
+    :language: python
+    :emphasize-lines: 5-7
+    :start-after: [start-export-memory]
+    :end-before: [end-export-memory]
 
 * **export**: enable or disable the memory export (default is disabled).
 
-* **export_format**: the format of the exported memory (default is :literal:`"pt"`). Supported formats are PyTorch (:literal:`"pt"`), NumPy (:literal:`"np"`) and Comma-separated values (:literal:`"csv"`).
+* **export_format**: the format of the exported memory (default is :literal:`"pt"`).
+  Supported formats are PyTorch (:literal:`"pt"`), NumPy (:literal:`"np"`) and Comma-separated values (:literal:`"csv"`).
 
 * **export_directory**: the directory where the memory will be exported (default is :literal:`"memory"`).
 
-.. raw:: html
-
-    <br>
+|
 
 Importing memories
 ^^^^^^^^^^^^^^^^^^
 
-TODO :red:`(coming soon)`
+:red:`TODO`

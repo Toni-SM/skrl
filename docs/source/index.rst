@@ -56,22 +56,17 @@ which may or may not share resources, in the same run.
     * Support for Gym/Gymnasium (single and vectorized), ManiSkill, MuJoCo Playground, NVIDIA Isaac Lab environments, among others.
     * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), ManiSkill, MuJoCo Playground, and NVIDIA Isaac Lab environments.
 
-.. raw:: html
+|
 
-    <br>
-
-.. warning::
+.. hint::
 
     **skrl** is under **active continuous development**. Make sure you always have the latest version.
-    Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its
+    |br| Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its
     `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
 | **GitHub repository:** https://github.com/Toni-SM/skrl
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
-|
-
-**Citing skrl:** To cite this library (created at Mondragon Unibertsitatea) use the following reference to its article:
-`skrl: Modular and Flexible Library for Reinforcement Learning <http://jmlr.org/papers/v24/23-0112.html>`_.
+| **Paper:** `skrl: Modular and Flexible Library for Reinforcement Learning <http://jmlr.org/papers/v24/23-0112.html>`_.
 
 .. code-block:: bibtex
 
@@ -86,9 +81,7 @@ which may or may not share resources, in the same run.
       url     = {http://jmlr.org/papers/v24/23-0112.html}
     }
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 User guide
 ----------
@@ -103,9 +96,7 @@ To start using the library, visit the following links:
     intro/examples
     intro/data
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Library components (overview)
 -----------------------------

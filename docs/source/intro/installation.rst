@@ -3,12 +3,10 @@ Installation
 
 In this section, you will find the steps to install the library, troubleshoot known issues, review changes between versions, and more.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**Dependencies**
-----------------
+Dependencies
+------------
 
 * General dependencies: `gymnasium <https://gymnasium.farama.org/>`_, `packaging <https://packaging.pypa.io>`_,
   `tensorboard <https://www.tensorflow.org/tensorboard>`_ and `tqdm <https://tqdm.github.io>`_.
@@ -39,16 +37,12 @@ In this section, you will find the steps to install the library, troubleshoot kn
     its CPU version by default. Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
     page before proceeding with the steps described below.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Library Installation
+--------------------
 
-**Library Installation**
-------------------------
-
-.. raw:: html
-
-    <br>
+|
 
 Python Package Index (PyPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -92,9 +86,7 @@ To install **skrl** with pip, execute:
 
             pip install skrl
 
-.. raw:: html
-
-    <br>
+|
 
 GitHub repository
 ^^^^^^^^^^^^^^^^^
@@ -190,12 +182,10 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 pip install .
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**Discussions and issues**
---------------------------
+Discussions and issues
+----------------------
 
 To ask questions or discuss about the library visit skrl's GitHub discussions.
 
@@ -205,12 +195,10 @@ Bug detection and/or correction, feature requests and everything else are more t
 
 .. centered:: https://github.com/Toni-SM/skrl/issues
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**Known issues and troubleshooting**
-------------------------------------
+Known issues and troubleshooting
+--------------------------------
 
 1. When using the parallel trainer with PyTorch 1.12.
 
@@ -267,12 +255,10 @@ Bug detection and/or correction, feature requests and everything else are more t
 
         export XLA_PYTHON_CLIENT_MEM_FRACTION=.50  # lowering preallocated GPU memory to 50%
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-**Changelog**
--------------
+Changelog
+---------
 
 .. literalinclude:: ../../../CHANGELOG.md
     :language: markdown

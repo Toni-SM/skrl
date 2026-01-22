@@ -47,7 +47,7 @@ Library Installation
 Python Package Index (PyPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To install **skrl** with pip, execute:
+To install *skrl* with pip, execute:
 
 .. tabs::
 
@@ -187,11 +187,12 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 Discussions and issues
 ----------------------
 
-To ask questions or discuss about the library visit skrl's GitHub discussions.
+To ask questions or discuss about the library visit *skrl*'s GitHub discussions.
 
 .. centered:: https://github.com/Toni-SM/skrl/discussions
 
-Bug detection and/or correction, feature requests and everything else are more than welcome. Come on, open a new issue!
+Bug detection and/or correction, feature requests and everything else are more than welcome.
+|br| Come on, open a new issue!
 
 .. centered:: https://github.com/Toni-SM/skrl/issues
 
@@ -200,7 +201,7 @@ Bug detection and/or correction, feature requests and everything else are more t
 Known issues and troubleshooting
 --------------------------------
 
-1. When using the parallel trainer with PyTorch 1.12.
+#. When using the parallel trainer with PyTorch 1.12.
 
     See PyTorch issue `#80831 <https://github.com/pytorch/pytorch/issues/80831>`_
 
@@ -208,39 +209,7 @@ Known issues and troubleshooting
 
         AttributeError: 'Adam' object has no attribute '_warned_capturable_if_run_uncaptured'
 
-2. When installing the JAX version in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Lab on Isaac Sim 2022.2.1 and earlier).
-
-    .. code-block:: text
-
-        ERROR: Ignored the following versions that require a different python version: 0.4.0 Requires-Python >=3.8; ...
-        ERROR: Could not find a version that satisfies the requirement jax>=0.4.3; extra == "jax" (from skrl[jax]) (from versions: 0.0, ..., 0.3.25)
-        ERROR: No matching distribution found for jax>=0.4.3; extra == "jax"
-
-    JAX support for Python 3.7 is up to version 0.3.25, while skrl requires ``jax>=0.4.3``.
-    Furthermore, ``jaxlib<=0.3.25`` builds are only available up to NVIDIA CUDA 11 and cuDNN 8.2 versions.
-
-    However, it is possible to use **skrl** under these circumstances, subject to the following points:
-
-    * Install JAX, Flax and Optax manually using ``pip install jax flax optax`` and ignore the installation errors for skrl.
-
-    * The ``jax.Device = jax.xla.Device`` statement is required by skrl to support ``jax<0.4.3``.
-
-    * Overload models ``__hash__`` method to avoid :literal:`"TypeError: Failed to hash Flax Module"`.
-
-3. When training/evaluating using JAX in Python 3.7 (e.g. OmniIsaacGymEnvs or Isaac Lab on Isaac Sim 2022.2.1 and earlier).
-
-    .. code-block:: text
-
-        TypeError: Failed to hash Flax Module. The module probably contains unhashable attributes
-
-    Overload the ``__hash__`` method for each defined model to avoid this issue:
-
-    .. code-block:: python
-
-        def __hash__(self):
-            return id(self)
-
-4. When training/evaluating using JAX with the NVIDIA Isaac Lab (and Isaac Gym) environments.
+#. When training/evaluating using JAX with the NVIDIA Isaac Lab (and Isaac Gym) environments.
 
     .. code-block:: text
 

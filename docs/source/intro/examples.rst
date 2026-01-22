@@ -1,7 +1,9 @@
 Examples
 ========
 
-In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks. With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to solve your reinforcement learning problems.
+In this section, you will find a variety of examples that demonstrate how to use this library to solve reinforcement learning tasks.
+With the knowledge and skills you gain from trying these examples, you will be well on your way to using this library to
+solve your reinforcement learning problems.
 
 .. note::
 
@@ -9,15 +11,16 @@ In this section, you will find a variety of examples that demonstrate how to use
 
 |br| |hr|
 
-**Gymnasium / Gym**
--------------------
+Gymnasium / Gym
+---------------
 
 |
 
 Gymnasium / Gym environments
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ / `Gym <https://www.gymlibrary.dev/>`_ environments (**one agent, one environment**)
+Training/evaluation of agents in `Gymnasium <https://gymnasium.farama.org/>`_ / `Gym <https://www.gymlibrary.dev/>`_
+environments (single and vectorized).
 
 .. image:: ../_static/imgs/example_gym.png
     :width: 100%
@@ -26,7 +29,17 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
 
 |
 
-**Benchmark results** are listed in `Benchmark results #32 (Gymnasium/Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4308370>`_
+**Benchmark results** are listed in `Benchmark results #32 (Gymnasium/Gym) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4308370>`_.
+
+The scripts define and parse the following command line arguments:
+
+* ``--num_envs``: Number of environments. Default: 1.
+* ``--headless``: Run in headless mode (no rendering). Default: False.
+* ``--seed``: Random seed. Default: None.
+* ``--checkpoint``: Load checkpoint from path. Default: None.
+* ``--eval``: Run in evaluation mode (logging/checkpointing disabled). Default: False.
+
+|
 
 .. tabs::
 
@@ -120,9 +133,54 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
                       -
                       -
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. list-table::
+                    :align: left
+                    :header-rows: 1
+                    :stub-columns: 1
+                    :class: nowrap
+
+                    * - Environment
+                      - Script
+                      - Checkpoint (Hugging Face)
+                    * - CartPole
+                      - |br|
+                        |br|
+                      -
+                    * - FrozenLake
+                      -
+                      -
+                    * - Pendulum
+                      - :download:`warp_gymnasium_pendulum_ddpg.py <../../../examples/gymnasium/warp_gymnasium_pendulum_ddpg.py>`
+                        |br| :download:`warp_gymnasium_pendulum_ppo.py <../../../examples/gymnasium/warp_gymnasium_pendulum_ppo.py>`
+                        |br| :download:`warp_gymnasium_pendulum_sac.py <../../../examples/gymnasium/warp_gymnasium_pendulum_sac.py>`
+                        |br|
+                        |br|
+                      -
+                    * - PendulumNoVel*
+                        |br| (RNN / GRU / LSTM)
+                      - |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                        |br|
+                      -
+                    * - Taxi
+                      -
+                      -
+
         .. note::
 
-            (*) The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
+            (*) The examples use a wrapper around the original environment to mask the velocity in the observation.
+            The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks.
 
     .. group-tab:: Gym
 
@@ -216,127 +274,17 @@ Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ 
 
         .. note::
 
-            (*) The examples use a wrapper around the original environment to mask the velocity in the observation. The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks
-
-|
-
-Gymnasium / Gym vectorized environments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Training/evaluation of an agent in `Gymnasium <https://gymnasium.farama.org/>`_ / `Gym <https://www.gymlibrary.dev/>`_ vectorized environments (**one agent, multiple independent copies of the same environment in parallel**)
-
-.. tabs::
-
-    .. group-tab:: Gymnasium
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. list-table::
-                    :align: left
-                    :header-rows: 1
-                    :stub-columns: 1
-                    :class: nowrap
-
-                    * - Environment
-                      - Script
-                      - Checkpoint (Hugging Face)
-                    * - CartPole
-                      - :download:`torch_gymnasium_cartpole_vector_dqn.py <../../../examples/gymnasium/torch_gymnasium_cartpole_vector_dqn.py>`
-                      -
-                    * - FrozenLake
-                      - :download:`torch_gymnasium_frozen_lake_vector_q_learning.py <../../../examples/gymnasium/torch_gymnasium_frozen_lake_vector_q_learning.py>`
-                      -
-                    * - Pendulum
-                      - :download:`torch_gymnasium_pendulum_vector_ddpg.py <../../../examples/gymnasium/torch_gymnasium_pendulum_vector_ddpg.py>`
-                      -
-                    * - Taxi
-                      - :download:`torch_gymnasium_taxi_vector_sarsa.py <../../../examples/gymnasium/torch_gymnasium_taxi_vector_sarsa.py>`
-                      -
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. list-table::
-                    :align: left
-                    :header-rows: 1
-                    :stub-columns: 1
-                    :class: nowrap
-
-                    * - Environment
-                      - Script
-                      - Checkpoint (Hugging Face)
-                    * - CartPole
-                      - :download:`jax_gymnasium_cartpole_vector_dqn.py <../../../examples/gymnasium/jax_gymnasium_cartpole_vector_dqn.py>`
-                      -
-                    * - FrozenLake
-                      -
-                      -
-                    * - Pendulum
-                      - :download:`jax_gymnasium_pendulum_vector_ddpg.py <../../../examples/gymnasium/jax_gymnasium_pendulum_vector_ddpg.py>`
-                      -
-                    * - Taxi
-                      -
-                      -
-
-    .. group-tab:: Gym
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. list-table::
-                    :align: left
-                    :header-rows: 1
-                    :stub-columns: 1
-                    :class: nowrap
-
-                    * - Environment
-                      - Script
-                      - Checkpoint (Hugging Face)
-                    * - CartPole
-                      - :download:`torch_gym_cartpole_vector_dqn.py <../../../examples/gym/torch_gym_cartpole_vector_dqn.py>`
-                      -
-                    * - FrozenLake
-                      - :download:`torch_gym_frozen_lake_vector_q_learning.py <../../../examples/gym/torch_gym_frozen_lake_vector_q_learning.py>`
-                      -
-                    * - Pendulum
-                      - :download:`torch_gym_pendulum_vector_ddpg.py <../../../examples/gym/torch_gym_pendulum_vector_ddpg.py>`
-                      -
-                    * - Taxi
-                      - :download:`torch_gym_taxi_vector_sarsa.py <../../../examples/gym/torch_gym_taxi_vector_sarsa.py>`
-                      -
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. list-table::
-                    :align: left
-                    :header-rows: 1
-                    :stub-columns: 1
-                    :class: nowrap
-
-                    * - Environment
-                      - Script
-                      - Checkpoint (Hugging Face)
-                    * - CartPole
-                      - :download:`jax_gym_cartpole_vector_dqn.py <../../../examples/gym/jax_gym_cartpole_vector_dqn.py>`
-                      -
-                    * - FrozenLake
-                      -
-                      -
-                    * - Pendulum
-                      - :download:`jax_gym_pendulum_vector_ddpg.py <../../../examples/gym/jax_gym_pendulum_vector_ddpg.py>`
-                      -
-                    * - Taxi
-                      -
-                      -
+            (*) The examples use a wrapper around the original environment to mask the velocity in the observation.
+            The intention is to make the MDP partially observable and to show the capabilities of recurrent neural networks.
 
 |
 
 Shimmy (API conversion)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym) that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_ (API conversion tool) package
+The following examples show the training in several popular environments (Atari, DeepMind Control and OpenAI Gym)
+that have been converted to the Gymnasium API using the `Shimmy <https://github.com/Farama-Foundation/Shimmy>`_
+(API conversion tool) package.
 
 .. image:: ../_static/imgs/example_shimmy.png
     :width: 100%
@@ -345,11 +293,24 @@ The following examples show the training in several popular environments (Atari,
 
 .. note::
 
-    From **skrl**, no extra implementation is necessary, since it fully supports Gymnasium API
+    From *skrl*, no extra implementation is necessary, since it fully supports Gymnasium API.
 
 .. note::
 
-    Because the Gymnasium API requires that the rendering mode be specified during the initialization of the environment, it is not enough to set the :literal:`headless` option in the trainer configuration to render the environment. In this case, it is necessary to call the :literal:`gymnasium.make` function using :literal:`render_mode="human"` or any other supported option
+    Because the Gymnasium API requires that the rendering mode be specified during the initialization of the environment,
+    it is not enough to set the :literal:`headless` option in the trainer configuration to render the environment.
+    In this case, it is necessary to call the :literal:`gymnasium.make` function using :literal:`render_mode="human"`
+    or any other supported option.
+
+The scripts define and parse the following command line arguments:
+
+* ``--num_envs``: Number of environments. Default: 1.
+* ``--headless``: Run in headless mode (no rendering). Default: False.
+* ``--seed``: Random seed. Default: None.
+* ``--checkpoint``: Load checkpoint from path. Default: None.
+* ``--eval``: Run in evaluation mode (logging/checkpointing disabled). Default: False.
+
+|
 
 .. tabs::
 
@@ -397,20 +358,18 @@ The following examples show the training in several popular environments (Atari,
 
 |br| |hr|
 
-**Other supported APIs**
-------------------------
+ManiSkill
+---------
 
-|
+Training/evaluation of agents in `ManiSkill <https://maniskill.readthedocs.io/>`_ environments.
 
-DeepMind environments
-^^^^^^^^^^^^^^^^^^^^^
+The scripts define and parse the following command line arguments:
 
-These examples perform the training of one agent in a DeepMind environment (**one agent, one environment**)
-
-.. image:: ../_static/imgs/example_deepmind.png
-    :width: 100%
-    :align: center
-    :alt: DeepMind environments
+* ``--num_envs``: Number of environments. Default: 1.
+* ``--headless``: Run in headless mode (no rendering). Default: False.
+* ``--seed``: Random seed. Default: None.
+* ``--checkpoint``: Load checkpoint from path. Default: None.
+* ``--eval``: Run in evaluation mode (logging/checkpointing disabled). Default: False.
 
 |
 
@@ -427,24 +386,120 @@ These examples perform the training of one agent in a DeepMind environment (**on
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Control: Cartpole SwingUp
-              - :download:`torch_dm_cartpole_swingup_ddpg.py <../../../examples/deepmind/torch_dm_cartpole_swingup_ddpg.py>`
+            * - PushCube
+              - :download:`torch_mani_skill_push_cube_ppo.py <../../../examples/mani_skill/torch_mani_skill_push_cube_ppo.py>`
               -
-            * - Manipulation: Reach Site Vision
-              - :download:`torch_dm_manipulation_stack_sac.py <../../../examples/deepmind/torch_dm_manipulation_stack_sac.py>`
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - PushCube
+              - :download:`jax_mani_skill_push_cube_ppo.py <../../../examples/mani_skill/jax_mani_skill_push_cube_ppo.py>`
+              -
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - PushCube
+              - :download:`warp_mani_skill_push_cube_ppo.py <../../../examples/mani_skill/warp_mani_skill_push_cube_ppo.py>`
               -
 
 |br| |hr|
 
-**NVIDIA Isaac Lab**
---------------------
+MuJoCo Playground
+-----------------
+
+Training/evaluation of agents in `MuJoCo Playground <https://playground.mujoco.org>`_ environments.
+
+The :py:func:`~skrl.envs.loaders.jax.load_playground_env` loader function defines the following command line arguments:
+
+* ``--task``: Name of the task.
+* ``--num_envs``: Number of environments to simulate.
+* ``--seed``: Random seed.
+* ``--episode_length``: Length of the episode.
+* ``--action_repeat``: Number of times to repeat the given action per step.
+* ``--full_reset``: Whether to perform a full reset of the environment on each step,
+  rather than resetting to an initial cached state. Default: False.
+* ``--randomization``: Whether to use randomization. Default: False.
+* ``--vision``: Whether to use vision-based environment. Default: False.
+
+While the scripts add additional command line arguments to the parser, such as:
+
+* ``--headless``: Run in headless mode (no rendering). Default: False.
+* ``--checkpoint``: Load checkpoint from path. Default: None.
+* ``--eval``: Run in evaluation mode (logging/checkpointing disabled). Default: False.
 
 |
 
-Isaac Lab environments
-^^^^^^^^^^^^^^^^^^^^^^
+.. tabs::
 
-Training/evaluation of an agent in `Isaac Lab environments <https://isaac-sim.github.io/IsaacLab/index.html>`_ (**one agent, multiple environments**)
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - CartpoleBalance
+              - :download:`torch_playground_cartpole_balance_ppo.py <../../../examples/playground/torch_playground_cartpole_balance_ppo.py>`
+              -
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - CartpoleBalance
+              - :download:`jax_playground_cartpole_balance_ppo.py <../../../examples/playground/jax_playground_cartpole_balance_ppo.py>`
+              -
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - CartpoleBalance
+              - :download:`warp_playground_cartpole_balance_ppo.py <../../../examples/playground/warp_playground_cartpole_balance_ppo.py>`
+              -
+
+|br| |hr|
+
+NVIDIA Isaac Lab
+----------------
+
+Training/evaluation of agents in `Isaac Lab environments <https://isaac-sim.github.io/IsaacLab/index.html>`_.
 
 .. image:: ../_static/imgs/example_isaaclab.png
     :width: 100%
@@ -453,71 +508,13 @@ Training/evaluation of an agent in `Isaac Lab environments <https://isaac-sim.gi
 
 |
 
-The agent configuration is mapped, as far as possible, from the Isaac Lab configuration for rl_games. Shared models or separated models are used depending on the value of the :literal:`network.separate` variable. The following list shows the mapping between the two configurations:
-
-.. tabs::
-
-    .. tab:: PPO
-
-        .. code-block:: bash
-
-            # memory
-            memory_size = horizon_length
-
-            # agent
-            rollouts = horizon_length
-            learning_epochs = mini_epochs
-            mini_batches = horizon_length * num_actors / minibatch_size
-            discount_factor = gamma
-            lambda = tau
-            learning_rate = learning_rate
-            learning_rate_scheduler = skrl.resources.schedulers.torch.KLAdaptiveLR
-            learning_rate_scheduler_kwargs = {"kl_threshold": kl_threshold}
-            random_timesteps = 0
-            learning_starts = 0
-            grad_norm_clip = grad_norm  # if truncate_grads else 0
-            ratio_clip = e_clip
-            value_clip = e_clip
-            clip_predicted_values = clip_value
-            entropy_loss_scale = entropy_coef
-            value_loss_scale = 0.5 * critic_coef
-            kl_threshold = 0
-            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
-
-            # trainer
-            timesteps = horizon_length * max_epochs
-
-    .. tab:: DDPG / TD3 / SAC
-
-        .. code-block:: bash
-
-            # memory
-            memory_size = replay_buffer_size / num_envs
-
-            # agent
-            gradient_steps = 1
-            batch_size = batch_size
-            discount_factor = gamma
-            polyak = critic_tau
-            actor_learning_rate = actor_lr
-            critic_learning_rate = critic_lr
-            random_timesteps = num_warmup_steps * num_steps_per_episode
-            learning_starts = num_warmup_steps * num_steps_per_episode
-            grad_norm_clip = 0
-            learn_entropy = learnable_temperature
-            entropy_learning_rate = alpha_lr
-            initial_entropy_value = init_alpha
-            target_entropy = None
-            rewards_shaper = lambda rewards, timestep, timesteps: rewards * scale_value
-
-            # trainer
-            timesteps = num_steps_per_episode * max_epochs
-
-**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Lab) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_
+**Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Lab) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_.
 
 .. note::
 
-    Isaac Lab environments implement a functionality to get their configuration from the command line. Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`
+    Isaac Lab environments implement a functionality to get their configuration from the command line.
+    Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.
+    In this case, it is necessary to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
 
 .. tabs::
 
@@ -595,8 +592,8 @@ The agent configuration is mapped, as far as possible, from the Isaac Lab config
 
 |br| |hr|
 
-**Real-world examples**
------------------------
+Real-world examples
+-------------------
 
 These examples show basic real-world and sim2real use cases to guide and support advanced RL implementations
 
@@ -1008,33 +1005,39 @@ These examples show basic real-world and sim2real use cases to guide and support
 
 |br| |hr|
 
-.. _library_utilities:
-
-**Library utilities (skrl.utils module)**
------------------------------------------
-
-This example shows how to use the library utilities to carry out the post-processing of files and data generated by the experiments
+Others
+------
 
 |
 
-.. tabs::
+.. _library_utilities:
 
-    .. tab:: TensorBoard files
+Library utilities
+^^^^^^^^^^^^^^^^^
 
-        .. image:: ../_static/imgs/utils_tensorboard_file_iterator.svg
-            :width: 100%
-            :alt: TensorBoard file iterator
+|
 
-        .. raw:: html
+TensorBoard post-processing
+"""""""""""""""""""""""""""
 
-            <br><br>
+This example shows how to use the library utilities to post-process the TensorBoard files generated by the experiments.
 
-        Example of a figure, generated by the code, showing the total reward (left) and the mean and standard deviation (right) of all experiments located in the runs folder
+.. figure:: ../_static/imgs/utils_tensorboard_file_iterator.svg
+    :figwidth: 100%
+    :alt: TensorBoard file iterator.
 
-        :download:`tensorboard_file_iterator.py <../../../examples/utils/tensorboard_file_iterator.py>`
+    Example generated by the code showing the total reward (left) and the mean and standard deviation (right)
+    of all experiments located in the :literal:`runs` folder.
 
-        **Note:** The code will load all the TensorBoard files of the experiments located in the :literal:`runs` folder. It is necessary to adjust the iterator's parameters for other paths
+|
 
-        .. literalinclude:: ../../../examples/utils/tensorboard_file_iterator.py
-            :language: python
-            :emphasize-lines: 5, 12-14
+**Script:** :download:`tensorboard_file_iterator.py <../../../examples/utils/tensorboard_file_iterator.py>`
+
+.. note::
+
+    The code will load all the TensorBoard files of the experiments located in the :literal:`runs` folder.
+    It is necessary to adjust the iterator's parameters for other paths.
+
+.. literalinclude:: ../../../examples/utils/tensorboard_file_iterator.py
+    :language: python
+    :emphasize-lines: 5, 12-14

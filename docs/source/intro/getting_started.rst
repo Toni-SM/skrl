@@ -1,7 +1,7 @@
 Getting Started
 ===============
 
-In this section, you will learn about the different components of the **skrl** library to create reinforcement learning tasks.
+In this section, you will learn about the different components of the *skrl* library to create reinforcement learning tasks.
 Whether you are a beginner or an experienced researcher, this section will provide you with a solid foundation to build upon.
 
 We recommend visiting the :doc:`Examples <examples>` to see how the components can be integrated and applied in practice.
@@ -9,8 +9,8 @@ Let's get started!
 
 |br| |hr|
 
-**Reinforcement Learning schema**
----------------------------------
+Reinforcement Learning schema
+-----------------------------
 
 **Reinforcement Learning (RL)** is a Machine Learning sub-field for decision making that allows an agent to learn from
 its interaction with the environment as shown in the following schema:

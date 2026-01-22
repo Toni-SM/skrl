@@ -510,11 +510,26 @@ Training/evaluation of agents in `Isaac Lab environments <https://isaac-sim.gith
 
 **Benchmark results** are listed in `Benchmark results #32 (NVIDIA Isaac Lab) <https://github.com/Toni-SM/skrl/discussions/32#discussioncomment-4744446>`_.
 
+The :py:func:`~skrl.envs.loaders.torch.load_isaaclab_env` loader function defines the following command line arguments:
+
+* ``--task``: Name of the task.
+* ``--num_envs``: Number of environments.
+* ``--seed``: Random seed.
+* ``--disable_fabric``: Disable fabric and use USD I/O operations. Default: False.
+* ``--distributed``: Run training with multiple GPUs or nodes. Default: False.
+
+While the scripts add additional command line arguments to the parser, such as:
+
+* ``--checkpoint``: Load checkpoint from path. Default: None.
+* ``--eval``: Run in evaluation mode (logging/checkpointing disabled). Default: False.
+
 .. note::
 
     Isaac Lab environments implement a functionality to get their configuration from the command line.
     Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.
     In this case, it is necessary to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
+
+|
 
 .. tabs::
 
@@ -529,29 +544,41 @@ Training/evaluation of agents in `Isaac Lab environments <https://isaac-sim.gith
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Isaac-Ant-v0
-              - :download:`torch_ant_ppo.py <../../../examples/isaaclab/torch_ant_ppo.py>`
-                |br| :download:`torch_ant_ddpg.py <../../../examples/isaaclab/torch_ant_ddpg.py>`
-                |br| :download:`torch_ant_td3.py <../../../examples/isaaclab/torch_ant_td3.py>`
-                |br| :download:`torch_ant_sac.py <../../../examples/isaaclab/torch_ant_sac.py>`
-              - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
-                |br|
-                |br|
-                |br|
-            * - Isaac-Cartpole-v0
-              - :download:`torch_cartpole_ppo.py <../../../examples/isaaclab/torch_cartpole_ppo.py>`
-              - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
-            * - Isaac-Humanoid-v0
-              - :download:`torch_humanoid_ppo.py <../../../examples/isaaclab/torch_humanoid_ppo.py>`
-              - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
-            * - Isaac-Lift-Franka-v0
-              - :download:`torch_lift_franka_ppo.py <../../../examples/isaaclab/torch_lift_franka_ppo.py>`
-              - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
-            * - Isaac-Reach-Franka-v0
-              - :download:`torch_reach_franka_ppo.py <../../../examples/isaaclab/torch_reach_franka_ppo.py>`
-              - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
-            * - Isaac-Velocity-Anymal-C-v0
-              - :download:`torch_velocity_anymal_c_ppo.py <../../../examples/isaaclab/torch_velocity_anymal_c_ppo.py>`
+            * - Isaac-Ant-Direct-v0
+              - :download:`torch_ant_direct_ddpg.py <../../../examples/isaaclab/torch_ant_direct_ddpg.py>`
+                |br| :download:`torch_ant_direct_td3.py <../../../examples/isaaclab/torch_ant_direct_td3.py>`
+                |br| :download:`torch_ant_direct_sac.py <../../../examples/isaaclab/torch_ant_direct_sac.py>`
+              -
+            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
+              - :download:`torch_cartpole_direct_box_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_box_ppo.py>`
+                |br| :download:`torch_cartpole_direct_box_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_discrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_box_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_multidiscrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_dict_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_dict_box_ppo.py>`
+                |br| :download:`torch_cartpole_direct_dict_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_dict_discrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_dict_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_dict_multidiscrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_discrete_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_discrete_box_ppo.py>`
+                |br| :download:`torch_cartpole_direct_discrete_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_discrete_discrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_discrete_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_discrete_multidiscrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_multidiscrete_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_multidiscrete_box_ppo.py>`
+                |br| :download:`torch_cartpole_direct_multidiscrete_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_multidiscrete_discrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_multidiscrete_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_multidiscrete_multidiscrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_tuple_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_tuple_box_ppo.py>`
+                |br| :download:`torch_cartpole_direct_tuple_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_tuple_discrete_ppo.py>`
+                |br| :download:`torch_cartpole_direct_tuple_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_tuple_multidiscrete_ppo.py>`
               -
 
     .. group-tab:: |_4| |jax| |_4|
@@ -565,29 +592,61 @@ Training/evaluation of agents in `Isaac Lab environments <https://isaac-sim.gith
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Isaac-Ant-v0
-              - :download:`jax_ant_ppo.py <../../../examples/isaaclab/jax_ant_ppo.py>`
-                |br| :download:`jax_ant_ddpg.py <../../../examples/isaaclab/jax_ant_ddpg.py>`
-                |br| :download:`jax_ant_td3.py <../../../examples/isaaclab/jax_ant_td3.py>`
-                |br| :download:`jax_ant_sac.py <../../../examples/isaaclab/jax_ant_sac.py>`
-              - `IsaacOrbit-Isaac-Ant-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Ant-v0-PPO>`_
+            * - Isaac-Ant-Direct-v0
+              - :download:`jax_ant_direct_ddpg.py <../../../examples/isaaclab/jax_ant_direct_ddpg.py>`
+                |br| :download:`jax_ant_direct_td3.py <../../../examples/isaaclab/jax_ant_direct_td3.py>`
+                |br| :download:`jax_ant_direct_sac.py <../../../examples/isaaclab/jax_ant_direct_sac.py>`
+              -
+            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
+              -
+              -
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. list-table::
+            :align: left
+            :header-rows: 1
+            :stub-columns: 1
+            :class: nowrap
+
+            * - Environment
+              - Script
+              - Checkpoint (Hugging Face)
+            * - Isaac-Ant-Direct-v0
+              - :download:`warp_ant_direct_ddpg.py <../../../examples/isaaclab/warp_ant_direct_ddpg.py>`
                 |br|
-                |br|
-                |br|
-            * - Isaac-Cartpole-v0
-              - :download:`jax_cartpole_ppo.py <../../../examples/isaaclab/jax_cartpole_ppo.py>`
-              - `IsaacOrbit-Isaac-Cartpole-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Cartpole-v0-PPO>`_
-            * - Isaac-Humanoid-v0
-              - :download:`jax_humanoid_ppo.py <../../../examples/isaaclab/jax_humanoid_ppo.py>`
-              - `IsaacOrbit-Isaac-Humanoid-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Humanoid-v0-PPO>`_
-            * - Isaac-Lift-Franka-v0
-              - :download:`jax_lift_franka_ppo.py <../../../examples/isaaclab/jax_lift_franka_ppo.py>`
-              - `IsaacOrbit-Isaac-Lift-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Lift-Franka-v0-PPO>`_
-            * - Isaac-Reach-Franka-v0
-              - :download:`jax_reach_franka_ppo.py <../../../examples/isaaclab/jax_reach_franka_ppo.py>`
-              - `IsaacOrbit-Isaac-Reach-Franka-v0-PPO <https://huggingface.co/skrl/IsaacOrbit-Isaac-Reach-Franka-v0-PPO>`_
-            * - Isaac-Velocity-Anymal-C-v0
-              - :download:`jax_velocity_anymal_c_ppo.py <../../../examples/isaaclab/jax_velocity_anymal_c_ppo.py>`
+                |br| :download:`warp_ant_direct_sac.py <../../../examples/isaaclab/warp_ant_direct_sac.py>`
+              -
+            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
+                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
+              -
               -
 
 |br| |hr|

@@ -1,11 +1,11 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Advantage Actor Critic (A2C)
 ============================
 
-A2C (synchronous version of A3C) is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm
+A2C (synchronous version of A3C) is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm.
 
-Paper: `Asynchronous Methods for Deep Reinforcement Learning <https://arxiv.org/abs/1602.01783>`_
+**Paper:** `Asynchronous Methods for Deep Reinforcement Learning <https://arxiv.org/abs/1602.01783>`_.
 
 .. raw:: html
 
@@ -16,7 +16,7 @@ Algorithm
 
 .. note::
 
-    This algorithm implementation relies on the existence of parallel environments instead of parallel actor-learners
+    This algorithm implementation relies on the existence of parallel environments instead of parallel actor-learners.
 
 .. raw:: html
 
@@ -96,7 +96,8 @@ Usage
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`a2c_rnn.py`) to maintain the readability of the standard implementation (:literal:`a2c.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`a2c_rnn.py`) to maintain the readability of the standard implementation (:literal:`a2c.py`).
 
 .. tabs::
 
@@ -128,7 +129,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -162,12 +164,12 @@ Configuration and hyperparameters
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -190,7 +192,9 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -224,7 +228,7 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -255,14 +259,26 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.a2c
+.. autosummary::
+    :nosignatures:
+
+    A2C_CFG
+    A2C
+    A2C_RNN
 
 .. autoclass:: skrl.agents.torch.a2c.A2C_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -270,23 +286,29 @@ API (PyTorch)
 .. autoclass:: skrl.agents.torch.a2c.A2C
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.a2c.A2C_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.a2c
+.. autosummary::
+    :nosignatures:
+
+    A2C_CFG
+    A2C
 
 .. autoclass:: skrl.agents.jax.a2c.A2C_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -294,5 +316,5 @@ API (JAX)
 .. autoclass:: skrl.agents.jax.a2c.A2C
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

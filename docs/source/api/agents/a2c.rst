@@ -7,9 +7,7 @@ A2C (synchronous version of A3C) is a **model-free**, **stochastic** **on-policy
 
 **Paper:** `Asynchronous Methods for Deep Reinforcement Learning <https://arxiv.org/abs/1602.01783>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
@@ -18,9 +16,7 @@ Algorithm
 
     This algorithm implementation relies on the existence of parallel environments instead of parallel actor-learners.
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -32,9 +28,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -87,9 +81,7 @@ Learning algorithm
 |     step :math:`\text{scheduler}_{\theta} (\text{optimizer}_{\theta})`
 |     step :math:`\text{scheduler}_{\phi} (\text{optimizer}_{\phi})`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -138,9 +130,7 @@ Usage
                     :start-after: [torch-start-a2c-rnn]
                     :end-before: [torch-end-a2c-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -157,9 +147,7 @@ Configuration and hyperparameters
       - :py:class:`~skrl.agents.jax.a2c.A2C_CFG`
       -
 
-.. raw:: html
-
-    <br>
+|
 
 Spaces
 ^^^^^^
@@ -185,9 +173,7 @@ The implementation supports the following `Gymnasium spaces <https://gymnasium.f
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
@@ -221,9 +207,7 @@ under the argument :literal:`models`.
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^

@@ -21,8 +21,8 @@ Agents
     TRPO <agents/trpo>
 
 Agents are autonomous entities that interact with the environment to learn and improve their behavior.
-Agents' goal is to learn an optimal policy, which is a correspondence between states and actions that maximizes the
-cumulative reward received from the environment over time.
+Agents' goal is to learn an optimal policy, which is a correspondence between states and actions that maximizes
+the cumulative reward received from the environment over time.
 
 |br| |hr|
 

@@ -1,22 +1,19 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Soft Actor-Critic (SAC)
 =======================
 
-SAC is a **model-free**, **stochastic** **off-policy** **actor-critic** algorithm that uses double Q-learning (like TD3) and **entropy** regularization to maximize a trade-off between exploration and exploitation
+SAC is a **model-free**, **stochastic** **off-policy** **actor-critic** algorithm that uses double Q-learning (like TD3)
+and **entropy** regularization to maximize a trade-off between exploration and exploitation.
 
-Paper: `Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor <https://arxiv.org/abs/1801.01290>`_
+**Paper:** `Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor <https://arxiv.org/abs/1801.01290>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -27,9 +24,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`), entropy coefficient (:math:`\alpha`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -83,16 +78,15 @@ Learning algorithm
 |         step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`sac_rnn.py`) to maintain the readability of the standard implementation (:literal:`sac.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`sac_rnn.py`) to maintain the readability of the standard implementation (:literal:`sac.py`).
 
 .. tabs::
 
@@ -132,7 +126,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -140,9 +135,7 @@ Usage
                     :start-after: [torch-start-sac-rnn]
                     :end-before: [torch-end-sac-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -159,9 +152,7 @@ Configuration and hyperparameters
       - :py:class:`~skrl.agents.jax.sac.SAC_CFG`
       - :py:class:`~skrl.agents.warp.sac.SAC_CFG`
 
-.. raw:: html
-
-    <br>
+|
 
 Spaces
 ^^^^^^
@@ -187,14 +178,14 @@ The implementation supports the following `Gymnasium spaces <https://gymnasium.f
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic and 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic and 4 deterministic function approximators.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -237,14 +228,12 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -275,14 +264,26 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.sac
+.. autosummary::
+    :nosignatures:
+
+    SAC_CFG
+    SAC
+    SAC_RNN
 
 .. autoclass:: skrl.agents.torch.sac.SAC_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -290,23 +291,29 @@ API (PyTorch)
 .. autoclass:: skrl.agents.torch.sac.SAC
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.sac.SAC_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.sac
+.. autosummary::
+    :nosignatures:
+
+    SAC_CFG
+    SAC
 
 .. autoclass:: skrl.agents.jax.sac.SAC_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -314,17 +321,23 @@ API (JAX)
 .. autoclass:: skrl.agents.jax.sac.SAC
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.agents.warp.sac
+.. autosummary::
+    :nosignatures:
+
+    SAC_CFG
+    SAC
 
 .. autoclass:: skrl.agents.warp.sac.SAC_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -332,5 +345,5 @@ API (Warp)
 .. autoclass:: skrl.agents.warp.sac.SAC
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

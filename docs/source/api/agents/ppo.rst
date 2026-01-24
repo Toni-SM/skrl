@@ -1,15 +1,15 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Proximal Policy Optimization (PPO)
 ==================================
 
-PPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that alternates between sampling data through interaction with the environment, and optimizing a *surrogate* objective function while avoiding that the new policy does not move too far away from the old one
+PPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that alternates between sampling
+data through interaction with the environment, and optimizing a *surrogate* objective function while avoiding that
+the new policy does not move too far away from the old one.
 
-Paper: `Proximal Policy Optimization Algorithms <https://arxiv.org/abs/1707.06347>`_
+**Paper:** `Proximal Policy Optimization Algorithms <https://arxiv.org/abs/1707.06347>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
@@ -22,9 +22,7 @@ Algorithm
 |     :math:`\bullet \;` Compute the value loss :math:`L_{V_\phi}` as the mean squared error (MSE) between the predicted values :math:`V_{_{predicted}}` and the estimated returns :math:`R`
 |     :math:`\bullet \;` Optimize the total loss :math:`L = L^{clip}_{\pi_\theta} - c_1 \, L_{V_\phi} + c_2 \, {L}_{entropy}`
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -36,9 +34,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -103,16 +99,15 @@ Learning algorithm
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`ppo_rnn.py`) to maintain the readability of the standard implementation (:literal:`ppo.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`ppo_rnn.py`) to maintain the readability of the standard implementation (:literal:`ppo.py`).
 
 .. tabs::
 
@@ -152,7 +147,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -160,9 +156,7 @@ Usage
                     :start-after: [torch-start-ppo-rnn]
                     :end-before: [torch-end-ppo-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -179,9 +173,7 @@ Configuration and hyperparameters
       - :py:class:`~skrl.agents.jax.ppo.PPO_CFG`
       - :py:class:`~skrl.agents.warp.ppo.PPO_CFG`
 
-.. raw:: html
-
-    <br>
+|
 
 Spaces
 ^^^^^^
@@ -207,14 +199,14 @@ The implementation supports the following `Gymnasium spaces <https://gymnasium.f
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -241,14 +233,12 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -279,14 +269,26 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.ppo
+.. autosummary::
+    :nosignatures:
+
+    PPO_CFG
+    PPO
+    PPO_RNN
 
 .. autoclass:: skrl.agents.torch.ppo.PPO_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -294,23 +296,29 @@ API (PyTorch)
 .. autoclass:: skrl.agents.torch.ppo.PPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.ppo.PPO_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.ppo
+.. autosummary::
+    :nosignatures:
+
+    PPO_CFG
+    PPO
 
 .. autoclass:: skrl.agents.jax.ppo.PPO_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -318,17 +326,23 @@ API (JAX)
 .. autoclass:: skrl.agents.jax.ppo.PPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.agents.warp.ppo
+.. autosummary::
+    :nosignatures:
+
+    PPO_CFG
+    PPO
 
 .. autoclass:: skrl.agents.warp.ppo.PPO_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -336,5 +350,5 @@ API (Warp)
 .. autoclass:: skrl.agents.warp.ppo.PPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

@@ -1,5 +1,8 @@
 import os
 import sys
+import inspect
+import operator
+
 
 # skrl library
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -22,11 +25,13 @@ master_doc = "index"
 
 # general configuration
 extensions = [
+    "autodocsumm",
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.linkcode",
     "sphinx_tabs.tabs",
     "sphinx_copybutton",
     "notfound.extension",
@@ -121,7 +126,9 @@ epub_show_urls = "footnote"
 
 # autodoc ext
 autodoc_member_order = "groupwise"
-autoclass_content = "init"
+autodoc_default_options = {
+    "autosummary": True,
+}
 autodoc_mock_imports = [
     "flax",
     "gym",
@@ -136,6 +143,9 @@ autodoc_mock_imports = [
     "tqdm",
     "warp",
 ]
+autoclass_content = "init"
+autosummary_generate = True
+autosummary_generate_overwrite = False
 
 # copybutton ext
 copybutton_prompt_text = r">>> |\.\.\. "
@@ -151,6 +161,32 @@ notfound_context = {
 <p>Try using the search box or go to the homepage.</p>
 """,
 }
+
+# linkcode ext
+def linkcode_resolve(domain, info):
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+    if not info["fullname"]:
+        return None
+
+    try:
+        mod = sys.modules.get(info["module"])
+        obj = operator.attrgetter(info["fullname"])(mod)
+        if isinstance(obj, property):
+            obj = obj.fget
+        filename = inspect.getsourcefile(obj)
+        source, linenum = inspect.getsourcelines(obj)
+    except Exception:
+        return None
+
+    github_version = os.environ.get("GITHUB_REF_NAME") or os.environ.get("CI_COMMIT_REF_NAME") or "develop"
+    filename = os.path.relpath(filename, start=os.path.dirname(skrl.__file__))
+    lines = f"#L{linenum}-L{linenum + len(source)}" if linenum else ""
+
+    return f"https://github.com/Toni-SM/skrl/blob/{github_version}/skrl/{filename}{lines}"
+
 
 # suppress warning messages
 suppress_warnings = [

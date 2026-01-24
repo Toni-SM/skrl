@@ -157,7 +157,7 @@ Clone or download the library from its GitHub repository (https://github.com/Ton
 
                 It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
                 as JAX installs its CPU version by default.
-                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_margin
+                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
                 page before proceeding with the next steps.
 
             .. code-block:: bash

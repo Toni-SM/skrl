@@ -21,24 +21,20 @@ def export_policy_as_jit(
     optimize: bool = True,
     device: str | torch.device = "cpu",
 ) -> None:
-    """Export a policy to a Torch JIT file.
+    """Export a policy to a TorchScript (JIT) file.
 
-    This exporter is designed for skrl models during evaluation. It wraps the given
-    policy together with an optional observation preprocessor and produces a single
-    module with a simple `forward(obs)` -> `actions` interface.
+    The exporter wraps the given policy together with optional observation and
+    state preprocessors into a single module exposing
+    ``forward(observations, states) -> actions`` for inference.
 
-    Limitations:
-    - Torch-only base
-    - Non-recurrent policies (RNN/LSTM/GRU export is out of scope here)
-
-    Args:
-        policy: A skrl policy model (torch.nn.Module) implementing `act(inputs)`.
-        observation_preprocessor: Optional module to preprocess observations.
-        path: Directory to save the file to.
-        filename: Output file name, defaults to "policy.pt".
-        example_inputs: Example inputs for tracing. If None, dummy inputs with batch size 1 will be used.
-        optimize: Whether to optimize the traced model for inference, defaults to True.
-        device: Device to use for export, defaults to "cpu".
+    :param policy: Policy model to be exported.
+    :param observation_preprocessor: Module to preprocess observations, applied before the policy.
+    :param state_preprocessor: Module to preprocess states, applied before the policy.
+    :param path: Directory where the exported file will be saved.
+    :param filename: Output file name. Defaults to ``"policy.pt"``.
+    :param example_inputs: Example inputs for tracing. If ``None``, dummy inputs with batch size 1 are used.
+    :param optimize: Whether to optimize the traced model for inference. Defaults to ``True``.
+    :param device: Device used for export. Defaults to ``"cpu"``.
     """
 
     exporter = _TorchPolicyExporter(policy, observation_preprocessor, state_preprocessor)
@@ -78,25 +74,21 @@ def export_policy_as_onnx(
 ) -> None:
     """Export a policy to an ONNX file.
 
-    This exporter is designed for skrl models during evaluation. It wraps the given
-    policy together with an optional observation preprocessor and produces a single
-    ONNX graph with `obs` input and `actions` output.
+    The exporter wraps the given policy together with optional observation and
+    state preprocessors into a single module exposing
+    ``forward(observations, states) -> actions`` for inference.
 
-    Limitations:
-    - Torch-only base
-    - Non-recurrent policies (RNN/LSTM/GRU export is out of scope here)
-
-    Args:
-        policy: A skrl policy model (torch.nn.Module) implementing `act(inputs)`.
-        observation_preprocessor: Optional module to preprocess observations.
-        path: Directory to save the file to.
-        filename: Output file name, defaults to "policy.onnx".
-        example_inputs: Example inputs for tracing. If None, dummy inputs with batch size 1 will be used.
-        optimize: Whether to optimize the model for inference, defaults to True.
-        dynamo: Whether to use Torch Dynamo for export, defaults to True.
-        opset_version: ONNX opset version to use, defaults to 18.
-        verbose: Whether to print the model export graph summary.
-        device: Device to use for export, defaults to "cpu".
+    :param policy: Policy model to be exported.
+    :param observation_preprocessor: Module to preprocess observations, applied before the policy.
+    :param state_preprocessor: Module to preprocess states, applied before the policy.
+    :param path: Directory where the exported file will be saved.
+    :param filename: Output file name. Defaults to ``"policy.onnx"``.
+    :param example_inputs: Example inputs for export. If ``None``, dummy inputs with batch size 1 are used.
+    :param optimize: Whether to optimize the exported model for inference. Defaults to ``True``.
+    :param dynamo: Whether to use Torch Dynamo for export. Defaults to ``True``.
+    :param opset_version: ONNX opset version to use. Defaults to ``18``.
+    :param verbose: Whether to print the export graph summary.
+    :param device: Device used for export. Defaults to ``"cpu"``.
     """
 
     exporter = _TorchPolicyExporter(policy, observation_preprocessor, state_preprocessor)
@@ -131,10 +123,15 @@ def export_policy_as_onnx(
 
 
 class _TorchPolicyExporter(torch.nn.Module):
-    """Wrap a skrl policy and optional observation preprocessor for export.
+    """Wrapper that prepares a policy model for export.
 
-    The wrapper exposes a minimal `forward(obs)` that returns actions, handling the
-    internal policy call and dict construction expected by skrl models.
+    This module exposes a minimal ``forward(observations, states)`` that returns
+    actions, handling the internal policy call and input dictionary construction
+    expected by policy's ``act()`` method.
+
+    :param policy: A policy model to be wrapped.
+    :param observation_preprocessor: Optional preprocessor applied to observations.
+    :param state_preprocessor: Optional preprocessor applied to states.
     """
 
     def __init__(
@@ -144,20 +141,24 @@ class _TorchPolicyExporter(torch.nn.Module):
         state_preprocessor: torch.nn.Module | None = None,
     ) -> None:
         super().__init__()
-        # keep given instances to preserve any registered buffers/state; move to CPU on export
+
         self.policy = policy
         self._observation_preprocessor = (
             observation_preprocessor if observation_preprocessor is not None else torch.nn.Identity()
         )
         self._state_preprocessor = state_preprocessor if state_preprocessor is not None else torch.nn.Identity()
 
-        # skrl `Model` exposes `num_observations` (0 if `observation_space` is None)
-        # fall back to attempting to infer input size from first linear layer if necessary
         self._num_observations = getattr(self.policy, "num_observations", 0)
         self._num_states = getattr(self.policy, "num_states", 0)
 
     @torch.no_grad()
     def forward(self, observations: torch.Tensor, states: torch.Tensor) -> torch.Tensor:
+        """Compute actions from observations and states.
+
+        :param observations: Batch of environment observations.
+        :param states: Batch of agent states (or zeros if unused).
+        :returns: Batch of actions produced by the policy.
+        """
         actions, _ = self.policy.act(
             {
                 "observations": self._observation_preprocessor(observations),

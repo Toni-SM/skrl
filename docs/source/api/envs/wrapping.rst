@@ -82,8 +82,6 @@ The following snippets show how to wrap environments from the different supporte
 
                     .. group-tab:: Vectorized environment
 
-                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
-
                         .. tabs::
 
                             .. group-tab:: |_4| |pytorch| |_4|
@@ -130,8 +128,6 @@ The following snippets show how to wrap environments from the different supporte
                                     :end-before: [jax-end-gym]
 
                     .. group-tab:: Vectorized environment
-
-                        Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
 
                         .. tabs::
 

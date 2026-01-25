@@ -38,7 +38,7 @@ a **wrapping mechanism is provided** as shown in the following image.
 Usage
 -----
 
-The following snippets show how to wrap environments from the different supported libraries:
+The following snippets show how to wrap multi-agent environments from the different supported libraries:
 
 |
 

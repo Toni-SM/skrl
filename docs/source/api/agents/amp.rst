@@ -258,7 +258,7 @@ API
 PyTorch
 ^^^^^^^
 
-.. automodule:: skrl.agents.torch.a2c
+.. automodule:: skrl.agents.torch.amp
 .. autosummary::
     :nosignatures:
 

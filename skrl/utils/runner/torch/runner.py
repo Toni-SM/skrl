@@ -88,7 +88,7 @@ class Runner:
         from skrl.memories.torch import RandomMemory
         from skrl.multi_agents.torch.ippo import IPPO, IPPO_CFG
         from skrl.multi_agents.torch.mappo import MAPPO, MAPPO_CFG
-        from skrl.trainers.torch import SequentialTrainer, SequentialTrainerCfg
+        from skrl.trainers.torch import SequentialTrainer, SequentialTrainerCfg, ParallelTrainer, ParallelTrainerCfg
         from skrl.utils.model_instantiators.torch import (
             categorical_model,
             deterministic_model,
@@ -139,6 +139,8 @@ class Runner:
             # trainers
             "sequentialtrainer": SequentialTrainer,
             "sequentialtrainer_cfg": SequentialTrainerCfg,
+            "paralleltrainer": ParallelTrainer,
+            "paralleltrainer_cfg": ParallelTrainerCfg,
         }.get(name.lower())
 
         if component is None:

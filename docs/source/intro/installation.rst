@@ -47,7 +47,7 @@ Library Installation
 Python Package Index (PyPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To install *skrl* with pip, execute:
+To install *skrl* from PyPI, execute:
 
 .. tabs::
 
@@ -55,7 +55,7 @@ To install *skrl* with pip, execute:
 
         .. code-block:: bash
 
-            pip install skrl["torch"]
+            pip install skrl[torch]
 
     .. group-tab:: |_4| |jax| |_4|
 
@@ -66,19 +66,19 @@ To install *skrl* with pip, execute:
 
         .. code-block:: bash
 
-            pip install skrl["jax"]
+            pip install skrl[jax]
 
     .. group-tab:: |_4| |warp| |_4|
 
         .. code-block:: bash
 
-            pip install skrl["warp"]
+            pip install skrl[warp]
 
     .. group-tab:: All ML frameworks
 
         .. code-block:: bash
 
-            pip install skrl["all"]
+            pip install skrl[all]
 
     .. group-tab:: No ML framework
 
@@ -91,96 +91,157 @@ To install *skrl* with pip, execute:
 GitHub repository
 ^^^^^^^^^^^^^^^^^
 
-Clone or download the library from its GitHub repository (https://github.com/Toni-SM/skrl):
+To install *skrl* from the GitHub repository, follow one of the following options:
+
+From Git
+""""""""
+
+Install, in the Python environment, the development version from the ``develop`` branch,
+or the stable version (latest published version on PyPI) from the ``main`` branch:
+
+.. tabs::
+
+    .. group-tab:: |_4| |pytorch| |_4|
+
+        .. tabs::
+
+            .. group-tab:: Development version
+
+                .. code-block:: bash
+
+                    pip install "skrl[torch] @ git+https://github.com/Toni-SM/skrl.git@develop"
+
+            .. group-tab:: Stable version
+
+                .. code-block:: bash
+
+                    pip install "skrl[torch] @ git+https://github.com/Toni-SM/skrl.git@main"
+
+    .. group-tab:: |_4| |jax| |_4|
+
+        .. warning::
+
+            It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
+            as JAX installs its CPU version by default.
+            Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
+            page before proceeding with the next steps.
+
+        .. tabs::
+
+            .. group-tab:: Development version
+
+                .. code-block:: bash
+
+                    pip install "skrl[jax] @ git+https://github.com/Toni-SM/skrl.git@develop"
+
+            .. group-tab:: Stable version
+
+                .. code-block:: bash
+
+                    pip install "skrl[jax] @ git+https://github.com/Toni-SM/skrl.git@main"
+
+    .. group-tab:: |_4| |warp| |_4|
+
+        .. tabs::
+
+            .. group-tab:: Development version
+
+                .. code-block:: bash
+
+                    pip install "skrl[warp] @ git+https://github.com/Toni-SM/skrl.git@develop"
+
+            .. group-tab:: Stable version
+
+                .. code-block:: bash
+
+                    pip install "skrl[warp] @ git+https://github.com/Toni-SM/skrl.git@main"
+
+    .. group-tab:: All ML frameworks
+
+        .. tabs::
+
+            .. group-tab:: Development version
+
+                .. code-block:: bash
+
+                    pip install "skrl[all] @ git+https://github.com/Toni-SM/skrl.git@develop"
+
+            .. group-tab:: Stable version
+
+                .. code-block:: bash
+
+                    pip install "skrl[all] @ git+https://github.com/Toni-SM/skrl.git@main"
+
+    .. group-tab:: No ML framework
+
+        .. tabs::
+
+            .. group-tab:: Development version
+
+                .. code-block:: bash
+
+                    pip install git+https://github.com/Toni-SM/skrl.git@develop
+
+            .. group-tab:: Stable version
+
+                .. code-block:: bash
+
+                    pip install git+https://github.com/Toni-SM/skrl.git@main
+
+Editable installation
+"""""""""""""""""""""
+
+The editable installation is useful when you want to modify the library (e.g.: add new features, fix bugs, etc.),
+and test the changes immediately without reinstalling it. In this mode, the library is linked to
+its original location, allowing any modifications to be reflected directly in the Python environment.
+
+Clone or download the library from its GitHub repository:
 
 .. code-block:: bash
 
     git clone https://github.com/Toni-SM/skrl.git
     cd skrl
 
-* **Install in editable/development mode** (links the package to its original location allowing any modifications to be
-  reflected directly in its Python environment):
+Then, install the library in editable/development mode:
 
-    .. tabs::
+.. tabs::
 
-        .. group-tab:: |_4| |pytorch| |_4|
+    .. group-tab:: |_4| |pytorch| |_4|
 
-            .. code-block:: bash
+        .. code-block:: bash
 
-                pip install -e .["torch"]
+            pip install -e .[torch]
 
-        .. group-tab:: |_4| |jax| |_4|
+    .. group-tab:: |_4| |jax| |_4|
 
-            .. warning::
+        .. warning::
 
-                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
-                as JAX installs its CPU version by default.
-                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
-                page before proceeding with the next steps.
+            It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
+            as JAX installs its CPU version by default.
+            Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
+            page before proceeding with the next steps.
 
-            .. code-block:: bash
+        .. code-block:: bash
 
-                pip install -e .["jax"]
+            pip install -e .[jax]
 
-        .. group-tab:: |_4| |warp| |_4|
+    .. group-tab:: |_4| |warp| |_4|
 
-            .. code-block:: bash
+        .. code-block:: bash
 
-                pip install -e .["warp"]
+            pip install -e .[warp]
 
-        .. group-tab:: All ML frameworks
+    .. group-tab:: All ML frameworks
 
-            .. code-block:: bash
+        .. code-block:: bash
 
-                pip install -e .["all"]
+            pip install -e .[all]
 
-        .. group-tab:: No ML framework
+    .. group-tab:: No ML framework
 
-            .. code-block:: bash
+        .. code-block:: bash
 
-                pip install -e .
-
-* **Install in the current Python site-packages directory** (modifications to the code downloaded from GitHub will
-  not be reflected in your Python environment):
-
-    .. tabs::
-
-        .. group-tab:: |_4| |pytorch| |_4|
-
-            .. code-block:: bash
-
-                pip install .["torch"]
-
-        .. group-tab:: |_4| |jax| |_4|
-
-            .. warning::
-
-                It is **recommended to install JAX manually before proceeding to install the skrl dependencies**,
-                as JAX installs its CPU version by default.
-                Visit the JAX `installation <https://jax.readthedocs.io/en/latest/installation.html>`_
-                page before proceeding with the next steps.
-
-            .. code-block:: bash
-
-                pip install .["jax"]
-
-        .. group-tab:: |_4| |warp| |_4|
-
-            .. code-block:: bash
-
-                pip install .["warp"]
-
-        .. group-tab:: All ML frameworks
-
-            .. code-block:: bash
-
-                pip install .["all"]
-
-        .. group-tab:: No ML framework
-
-            .. code-block:: bash
-
-                pip install .
+            pip install -e .
 
 |br| |hr|
 

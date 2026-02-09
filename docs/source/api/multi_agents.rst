@@ -15,8 +15,8 @@ the cumulative reward received from the environment over time.
 
 |br| |hr|
 
-Implemented agents
-------------------
+Implemented multi-agents
+------------------------
 
 The following table lists the implemented multi-agents and their support for different frameworks.
 

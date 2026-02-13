@@ -1,99 +1,65 @@
-# [start-base-class-torch]
-from typing import Union, Tuple
-
-import torch
-
-from skrl.resources.noises.torch import Noise
-
-
-class CustomNoise(Noise):
-    def __init__(self, device: Union[str, torch.device] = "cuda:0") -> None:
-        """
-        :param device: Device on which a torch tensor is or will be allocated (default: "cuda:0")
-        :type device: str or torch.device, optional
-        """
-        super().__init__(device)
-
-    def sample(self, size: Union[Tuple[int], torch.Size]) -> torch.Tensor:
-        """Sample noise
-
-        :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers, or torch.Size
-
-        :return: Sampled noise
-        :rtype: torch.Tensor
-        """
-        # ================================
-        # - sample noise
-        # ================================
-# [end-base-class-torch]
-
-
-# [start-base-class-jax]
-from typing import Optional, Union, Tuple
-
-import numpy as np
-
-import jaxlib
-import jax.numpy as jnp
-
-from skrl.resources.noises.torch import Noise
-
-
-class CustomNoise(Noise):
-    def __init__(self, device: Optional[Union[str, jaxlib.xla_extension.Device]] = None) -> None:
-        """Custom noise
-
-        :param device: Device on which a jax array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda:0"`` if available or ``"cpu"``
-        :type device: str or jaxlib.xla_extension.Device, optional
-        """
-        super().__init__(device)
-
-    def sample(self, size: Tuple[int]) -> Union[np.ndarray, jnp.ndarray]:
-        """Sample noise
-
-        :param size: Shape of the sampled tensor
-        :type size: tuple or list of integers
-
-        :return: Sampled noise
-        :rtype: np.ndarray or jnp.ndarray
-        """
-        # ================================
-        # - sample noise
-        # ================================
-# [end-base-class-jax]
-
-# =============================================================================
-
 # [torch-start-gaussian]
+# import the noise class
 from skrl.resources.noises.torch import GaussianNoise
 
-cfg = DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2, device="cuda:0")
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = GaussianNoise
+cfg.exploration_noise_kwargs = {"mean": 0.0, "std": 0.1, "device": device}
 # [torch-end-gaussian]
 
 
 # [jax-start-gaussian]
+# import the noise class
 from skrl.resources.noises.jax import GaussianNoise
 
-cfg = DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = GaussianNoise(mean=0, std=0.2)
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = GaussianNoise
+cfg.exploration_noise_kwargs = {"mean": 0.0, "std": 0.1, "device": device}
 # [jax-end-gaussian]
+
+
+# [warp-start-gaussian]
+# import the noise class
+from skrl.resources.noises.warp import GaussianNoise
+
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = GaussianNoise
+cfg.exploration_noise_kwargs = {"mean": 0.0, "std": 0.1, "device": device}
+# [warp-end-gaussian]
 
 # =============================================================================
 
 # [torch-start-ornstein-uhlenbeck]
+# import the noise class
 from skrl.resources.noises.torch import OrnsteinUhlenbeckNoise
 
-cfg = DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0, device="cuda:0")
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = OrnsteinUhlenbeckNoise
+cfg.exploration_noise_kwargs = {"theta": 0.15, "sigma": 0.1, "base_scale": 0.5, "device": device}
 # [torch-end-ornstein-uhlenbeck]
 
 
 # [jax-start-ornstein-uhlenbeck]
+# import the noise class
 from skrl.resources.noises.jax import OrnsteinUhlenbeckNoise
 
-cfg = DEFAULT_CONFIG.copy()
-cfg["exploration"]["noise"] = OrnsteinUhlenbeckNoise(theta=0.15, sigma=0.2, base_scale=1.0)
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = OrnsteinUhlenbeckNoise
+cfg.exploration_noise_kwargs = {"theta": 0.15, "sigma": 0.1, "base_scale": 0.5, "device": device}
 # [jax-end-ornstein-uhlenbeck]
+
+
+# [warp-start-ornstein-uhlenbeck]
+# import the noise class
+from skrl.resources.noises.warp import OrnsteinUhlenbeckNoise
+
+cfg = AGENT_CFG()
+# ...
+cfg.exploration_noise = OrnsteinUhlenbeckNoise
+cfg.exploration_noise_kwargs = {"theta": 0.15, "sigma": 0.1, "base_scale": 0.5, "device": device}
+# [warp-end-ornstein-uhlenbeck]

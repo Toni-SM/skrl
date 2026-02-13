@@ -10,11 +10,15 @@ Preprocessors
 
     Running standard scaler <preprocessors/running_standard_scaler>
 
-Preprocessors are functions used to transform or encode raw input data into a form more suitable for the learning algorithm.
+Preprocessors are functions used to transform or encode raw input data into a form
+that is more suitable for the learning algorithm.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented preprocessors
+-------------------------
+
+The following table lists the implemented preprocessors and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1

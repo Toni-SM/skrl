@@ -1,13 +1,11 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Parallel trainer
 ================
 
 Train agents in parallel using multiple processes.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -33,11 +31,12 @@ Usage
 
 .. note::
 
-    Each process adds a GPU memory overhead (~1GB, although it can be much higher) due to PyTorch's CUDA kernels. See PyTorch `Issue #12873 <https://github.com/pytorch/pytorch/issues/12873>`_ for more details
+    Each process adds a GPU memory overhead (~1GB, although it can be much higher) due to PyTorch's CUDA kernels.
+    See PyTorch `Issue #12873 <https://github.com/pytorch/pytorch/issues/12873>`_ for more details.
 
 .. note::
 
-    At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented
+    At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented.
 
 .. tabs::
 
@@ -48,9 +47,7 @@ Usage
             :start-after: [pytorch-start-parallel]
             :end-before: [pytorch-end-parallel]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 -------------
@@ -63,23 +60,34 @@ Configuration
       - .. centered:: |_4| |jax| |_4|
       - .. centered:: |_4| |warp| |_4|
     * - ``ParallelTrainerCfg``
-      - :py:class:`~skrl.trainers.torch.ParallelTrainerCfg`
+      - :py:class:`~skrl.trainers.torch.parallel.ParallelTrainerCfg`
       -
       -
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.trainers.torch.ParallelTrainerCfg
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.trainers.torch.parallel
+.. autosummary::
+    :nosignatures:
+
+    ParallelTrainerCfg
+    ParallelTrainer
+
+.. autoclass:: skrl.trainers.torch.parallel.ParallelTrainerCfg
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. autoclass:: skrl.trainers.torch.ParallelTrainer
+.. autoclass:: skrl.trainers.torch.parallel.ParallelTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

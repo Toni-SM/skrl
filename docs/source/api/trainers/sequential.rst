@@ -1,13 +1,11 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Sequential trainer
 ==================
 
 Train agents sequentially (i.e., one after the other in each interaction with the environment).
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -54,9 +52,7 @@ Usage
             :start-after: [warp-start-sequential]
             :end-before: [warp-end-sequential]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 -------------
@@ -69,59 +65,82 @@ Configuration
       - .. centered:: |_4| |jax| |_4|
       - .. centered:: |_4| |warp| |_4|
     * - ``SequentialTrainerCfg``
-      - :py:class:`~skrl.trainers.torch.SequentialTrainerCfg`
-      - :py:class:`~skrl.trainers.jax.SequentialTrainerCfg`
-      - :py:class:`~skrl.trainers.warp.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.torch.sequential.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.sequential.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.warp.sequential.SequentialTrainerCfg`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.trainers.torch.SequentialTrainerCfg
-    :show-inheritance:
-    :inherited-members:
-    :members:
+PyTorch
+^^^^^^^
 
-.. autoclass:: skrl.trainers.torch.SequentialTrainer
+.. automodule:: skrl.trainers.torch.sequential
+.. autosummary::
+    :nosignatures:
+
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainerCfg
     :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. raw:: html
-
-    <br>
-
-API (JAX)
----------
-
-.. autoclass:: skrl.trainers.jax.SequentialTrainerCfg
-    :show-inheritance:
-    :inherited-members:
-    :members:
-
-.. autoclass:: skrl.trainers.jax.SequentialTrainer
+.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.trainers.jax.sequential
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.trainers.warp.SequentialTrainerCfg
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainerCfg
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. autoclass:: skrl.trainers.warp.SequentialTrainer
+.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.trainers.warp.sequential
+.. autosummary::
+    :nosignatures:
+
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.warp.sequential.SequentialTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.warp.sequential.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

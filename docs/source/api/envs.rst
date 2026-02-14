@@ -9,11 +9,11 @@ Environments
     Isaac Lab environments <envs/isaaclab>
     Playground environments <envs/playground>
 
-The environment plays a fundamental and crucial role in defining the RL setup. It is the place where the agent interacts, and it is responsible for providing the agent with information about its current state, as well as the rewards/penalties associated with each action.
+The environment plays a fundamental and crucial role in defining the RL setup.
+It is the place where the agent interacts, and it is responsible for providing the agent with information about
+its current state, as well as the rewards/penalties associated with each action.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 In this section you will find how to load environments from NVIDIA Isaac Lab and MuJoCo Playground with a simple function.
 
@@ -33,7 +33,8 @@ In this section you will find how to load environments from NVIDIA Isaac Lab and
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
 
-In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and :doc:`multi-agent <envs/multi_agents_wrapping>` RL environment interfaces.
+In addition, you will be able to :doc:`wrap single-agent <envs/wrapping>` and
+:doc:`multi-agent <envs/multi_agents_wrapping>` RL environment interfaces.
 
 .. list-table::
     :header-rows: 1

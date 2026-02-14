@@ -3,9 +3,7 @@
 Wrapping (single-agent)
 =======================
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 This library works with a common API to interact with the following RL environments:
 

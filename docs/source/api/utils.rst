@@ -16,9 +16,7 @@ Utils and configurations
 
 A set of utilities and configurations for managing an RL setup is provided as part of the library.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 .. list-table::
     :header-rows: 1

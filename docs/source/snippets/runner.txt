@@ -37,6 +37,26 @@ runner.agent.load("path/to/checkpoints/agent.pickle")
 runner.run("train")  # or "eval" for evaluation
 # [end-runner-train-jax]
 
+
+# [start-runner-train-warp]
+from skrl.utils.runner.warp import Runner
+from skrl.envs.wrappers.warp import wrap_env
+
+# load and wrap some environment
+env = ...
+env = wrap_env(env)
+
+# load the experiment config and instantiate the runner
+cfg = Runner.load_cfg_from_yaml("path/to/cfg.yaml")
+runner = Runner(env, cfg)
+
+# load a checkpoint to continue training or for evaluation (optional)
+runner.agent.load("path/to/checkpoints/agent.pickle")
+
+# run the training
+runner.run("train")  # or "eval" for evaluation
+# [end-runner-train-warp]
+
 # =============================================================================
 
 # [start-cfg-yaml]

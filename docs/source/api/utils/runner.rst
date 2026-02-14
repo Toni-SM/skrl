@@ -5,23 +5,21 @@ Runner
 
 Utility that configures and instantiates skrl's components to run training/evaluation workflows in a few lines of code.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Usage
 -----
 
 .. hint::
 
-    The ``Runner`` classes encapsulates, and greatly simplifies, the definitions and instantiations needed to execute RL tasks.
-    However, such simplification hides and makes difficult the modification and readability of the code (models, agents, etc.).
+    The ``Runner`` classes encapsulates, and greatly simplifies, the definitions and instantiations
+    needed to execute RL tasks. However, such simplification hides and makes difficult the modification
+    and readability of the code (models, agents, etc.).
 
-    For more control and readability over the RL system setup refer to the :doc:`Examples <../../intro/examples>` section's training scripts (**recommended!**)
+    For more control and readability over the RL system setup refer to the :doc:`Examples <../../intro/examples>`
+    section's training scripts (**recommended!**).
 
-.. raw:: html
-
-    <br>
+|
 
 .. tabs::
 
@@ -82,31 +80,58 @@ Usage
                     :start-after: [start-cfg-yaml]
                     :end-before: [end-cfg-yaml]
 
-API (PyTorch)
--------------
+|
+
+API
+---
+
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.utils.runner.torch
+.. autosummary::
+    :nosignatures:
+
+    Runner
 
 .. autoclass:: skrl.utils.runner.torch.Runner
+    :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.utils.runner.jax
+.. autosummary::
+    :nosignatures:
+
+    Runner
 
 .. autoclass:: skrl.utils.runner.jax.Runner
+    :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.utils.runner.warp
+.. autosummary::
+    :nosignatures:
+
+    Runner
 
 .. autoclass:: skrl.utils.runner.warp.Runner
+    :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:

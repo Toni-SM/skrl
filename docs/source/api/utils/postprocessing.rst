@@ -5,18 +5,16 @@ File post-processing
 
 Utilities for processing files generated during training/evaluation.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Exported memories
 -----------------
 
-This library provides an implementation for quickly loading exported memory files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
+This library provides an implementation for quickly loading exported memory files to inspect their contents
+in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>`
+for example usage.
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 ^^^^^
@@ -47,9 +45,7 @@ Usage
             :start-after: [start-memory_file_iterator-csv]
             :end-before: [end-memory_file_iterator-csv]
 
-.. raw:: html
-
-    <br>
+|
 
 API
 ^^^
@@ -64,31 +60,28 @@ API
     .. automethod:: __iter__
     .. automethod:: __next__
 
-.. raw:: html
-
-    <br>
+|
 
 TensorBoard files
 -----------------
 
-This library provides an implementation for quickly loading TensorBoard files to inspect their contents in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>` for a real use case
+This library provides an implementation for quickly loading TensorBoard files to inspect their contents
+in future post-processing steps. See the section :ref:`Library utilities (skrl.utils module) <library_utilities>`
+for example usage.
 
-.. raw:: html
-
-    <br>
+|
 
 Requirements
 ^^^^^^^^^^^^
 
-This utility requires the `TensorFlow <https://www.tensorflow.org/>`_ package to be installed to load and parse TensorBoard files:
+This utility requires the `TensorFlow <https://www.tensorflow.org/>`_ package to be installed
+to load and parse TensorBoard files:
 
 .. code-block:: bash
 
     pip install tensorflow
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 ^^^^^
@@ -103,9 +96,7 @@ Usage
             :start-after: [start-tensorboard_file_iterator-list]
             :end-before: [end-tensorboard_file_iterator-list]
 
-.. raw:: html
-
-    <br>
+|
 
 API
 ^^^

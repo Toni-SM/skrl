@@ -1,16 +1,29 @@
 # [start-definition-torch]
 class CategoricalModel(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 # [end-definition-torch]
 
 
 # [start-definition-jax]
 class CategoricalModel(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 # [end-definition-jax]
 
 # =============================================================================
@@ -24,9 +37,15 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
                                  nn.ReLU(),
@@ -55,9 +74,15 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.fc1 = nn.Linear(self.num_observations, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -86,9 +111,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     def setup(self):
         self.fc1 = nn.Dense(64)
@@ -122,9 +154,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
@@ -157,9 +196,15 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.net = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=4),
                                  nn.ReLU(),
@@ -200,9 +245,15 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -250,9 +301,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     def setup(self):
         self.conv1 = nn.Conv(32, kernel_size=(8, 8), strides=(4, 4), padding="VALID")
@@ -303,9 +361,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
@@ -352,8 +417,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class RNN(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -438,8 +509,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class RNN(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -528,8 +605,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class GRU(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -614,8 +697,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class GRU(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -704,8 +793,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class LSTM(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
@@ -795,8 +890,14 @@ from skrl.models.torch import Model, CategoricalMixin
 class LSTM(CategoricalMixin, Model):
     def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
                  num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers

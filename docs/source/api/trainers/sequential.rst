@@ -22,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Sequential trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----

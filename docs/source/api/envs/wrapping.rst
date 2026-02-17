@@ -16,9 +16,7 @@ This library works with a common API to interact with the following RL environme
 To operate with them, out-of-the-box, and to support interoperability between these non-compatible interfaces,
 a **wrapping mechanism is provided** as shown in the following image.
 
-.. raw:: html
-
-    <br>
+|
 
 .. image:: ../../_static/imgs/wrapping-light.svg
     :width: 100%
@@ -32,9 +30,7 @@ a **wrapping mechanism is provided** as shown in the following image.
     :class: only-dark
     :alt: Environment wrapping
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----

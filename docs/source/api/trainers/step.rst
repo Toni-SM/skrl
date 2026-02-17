@@ -22,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Step-by-step trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----

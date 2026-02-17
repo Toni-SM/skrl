@@ -22,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Parallel trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----

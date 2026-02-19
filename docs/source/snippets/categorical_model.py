@@ -486,9 +486,11 @@ class RNN(CategoricalMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -603,9 +605,11 @@ class RNN(CategoricalMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -726,9 +730,11 @@ class GRU(CategoricalMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -843,9 +849,11 @@ class GRU(CategoricalMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]

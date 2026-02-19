@@ -31,7 +31,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/runner.txt
                     :language: python
-                    :emphasize-lines: 1, 10, 13, 16
                     :start-after: [start-runner-train-torch]
                     :end-before: [end-runner-train-torch]
 
@@ -50,7 +49,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/runner.txt
                     :language: python
-                    :emphasize-lines: 1, 10, 13, 16
                     :start-after: [start-runner-train-jax]
                     :end-before: [end-runner-train-jax]
 
@@ -69,7 +67,6 @@ Usage
 
                 .. literalinclude:: ../../snippets/runner.txt
                     :language: python
-                    :emphasize-lines: 1, 10, 13, 16
                     :start-after: [start-runner-train-warp]
                     :end-before: [end-runner-train-warp]
 

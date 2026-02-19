@@ -7,13 +7,13 @@ agent = Agent(cfg={})
 
 # [start-data-configuration]
 ExperimentCfg(
-    directory="",                # experiment's parent directory
-    experiment_name="",          # experiment name
-    write_interval="auto",       # TensorBoard writing interval (timesteps)
+    directory="",  # experiment's parent directory
+    experiment_name="",  # experiment name
+    write_interval="auto",  # TensorBoard writing interval (timesteps)
     checkpoint_interval="auto",  # interval for checkpoints (timesteps)
-    store_separately=False,      # whether to store checkpoints separately
-    wandb=False,                 # whether to use Weights & Biases
-    wandb_kwargs={},             # Weights & Biases arguments
+    store_separately=False,  # whether to store checkpoints separately
+    wandb=False,  # whether to use Weights & Biases
+    wandb_kwargs={},  # Weights & Biases arguments
 )
 # [end-data-configuration]
 
@@ -62,6 +62,6 @@ memory = RandomMemory(
     device=device,
     export=True,
     export_format="pt",
-    export_directory="./memories"
+    export_directory="./memories",
 )
 # [end-export-memory]

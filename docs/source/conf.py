@@ -1,6 +1,7 @@
 import os
 import sys
 import inspect
+import logging
 import operator
 
 
@@ -162,6 +163,7 @@ notfound_context = {
 """,
 }
 
+
 # linkcode ext
 def linkcode_resolve(domain, info):
     if domain != "py":
@@ -193,11 +195,11 @@ suppress_warnings = [
     "ref.python",  # more than one target found for cross-reference
 ]
 
-# hack to suppress 'WARNING: duplicate object description... use :no-index:'
-import logging
 
+# hack to suppress 'WARNING: duplicate object description... use :no-index:'
 class DuplicateObjectDescriptionFilter(logging.Filter):
     def filter(self, record):
         return "duplicate object description" not in record.getMessage()
+
 
 logging.getLogger("sphinx.sphinx.domains.python").addFilter(DuplicateObjectDescriptionFilter())

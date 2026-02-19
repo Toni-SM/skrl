@@ -72,7 +72,7 @@ import mani_skill.envs  # needed to register the ManiSkill environment entry poi
 
 # load the environment
 env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
-env = gym.make('PushCube', num_envs=1024, **env_kwargs)
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
@@ -87,7 +87,7 @@ import mani_skill.envs  # needed to register the ManiSkill environment entry poi
 
 # load the environment
 env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
-env = gym.make('PushCube', num_envs=1024, **env_kwargs)
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
@@ -102,7 +102,7 @@ import mani_skill.envs  # needed to register the ManiSkill environment entry poi
 
 # load the environment
 env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
-env = gym.make('PushCube', num_envs=1024, **env_kwargs)
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
@@ -156,7 +156,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -169,7 +169,7 @@ from skrl.envs.wrappers.jax import wrap_env
 import gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -209,7 +209,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
@@ -222,7 +222,7 @@ from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
@@ -235,7 +235,7 @@ from skrl.envs.wrappers.warp import wrap_env
 import gymnasium as gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'

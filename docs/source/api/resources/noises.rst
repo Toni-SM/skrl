@@ -68,7 +68,7 @@ PyTorch
 JAX
 """
 
-.. automodule:: skrl.memories.jax
+.. automodule:: skrl.resources.noises.jax
 .. autosummary::
     :nosignatures:
 

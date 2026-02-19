@@ -25,7 +25,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/multicategorical_model.py
             :language: python
-            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-torch]
             :end-before: [end-definition-torch]
 
@@ -33,7 +32,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/multicategorical_model.py
             :language: python
-            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-jax]
             :end-before: [end-definition-jax]
 

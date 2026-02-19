@@ -16,7 +16,6 @@ Usage
 
         .. literalinclude:: ../../snippets/memories.py
             :language: python
-            :emphasize-lines: 2, 7
             :start-after: [start-random-torch]
             :end-before: [end-random-torch]
 
@@ -24,7 +23,6 @@ Usage
 
         .. literalinclude:: ../../snippets/memories.py
             :language: python
-            :emphasize-lines: 2, 7
             :start-after: [start-random-jax]
             :end-before: [end-random-jax]
 
@@ -32,7 +30,6 @@ Usage
 
         .. literalinclude:: ../../snippets/memories.py
             :language: python
-            :emphasize-lines: 2, 7
             :start-after: [start-random-warp]
             :end-before: [end-random-warp]
 

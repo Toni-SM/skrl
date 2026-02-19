@@ -25,7 +25,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/gaussian_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
             :start-after: [start-definition-torch]
             :end-before: [end-definition-torch]
 
@@ -33,7 +32,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/gaussian_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
             :start-after: [start-definition-jax]
             :end-before: [end-definition-jax]
 
@@ -41,7 +39,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/gaussian_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
             :start-after: [start-definition-warp]
             :end-before: [end-definition-warp]
 

@@ -2,7 +2,7 @@
 # import the memory class
 from skrl.memories.torch import RandomMemory
 
-# instantiate the memory (assumes there is a wrapped environment: env)
+# instantiate the memory (given a wrapped environment: `env`)
 # for 1000 samples per environment for example (note that, some algorithms
 # require the capacity to be equal to the number of rollouts, such as PPO)
 memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)
@@ -13,7 +13,7 @@ memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device
 # import the memory class
 from skrl.memories.jax import RandomMemory
 
-# instantiate the memory (assumes there is a wrapped environment: env)
+# instantiate the memory (given a wrapped environment: `env`)
 # for 1000 samples per environment for example (note that, some algorithms
 # require the capacity to be equal to the number of rollouts, such as PPO)
 memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)
@@ -24,7 +24,7 @@ memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device
 # import the memory class
 from skrl.memories.warp import RandomMemory
 
-# instantiate the memory (assumes there is a wrapped environment: env)
+# instantiate the memory (given a wrapped environment: `env`)
 # for 1000 samples per environment for example (note that, some algorithms
 # require the capacity to be equal to the number of rollouts, such as PPO)
 memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)

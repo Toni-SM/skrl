@@ -23,7 +23,6 @@ Note that the use of this mixin must comply with the following rules:
 
         .. literalinclude:: ../../snippets/multivariate_gaussian_model.py
             :language: python
-            :emphasize-lines: 1, 4-5
             :start-after: [start-definition-torch]
             :end-before: [end-definition-torch]
 

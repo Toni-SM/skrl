@@ -1,6 +1,6 @@
 # [start-definition-torch]
 class DeterministicModel(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -14,7 +14,7 @@ class DeterministicModel(DeterministicMixin, Model):
 
 # [start-definition-jax]
 class DeterministicModel(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, **kwargs):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False, **kwargs):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -60,7 +60,7 @@ class MLP(DeterministicMixin, Model):
         return self.net(torch.cat([inputs["observations"], inputs["taken_actions"]], dim=1)), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = MLP(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -102,7 +102,7 @@ class MLP(DeterministicMixin, Model):
         return self.fc3(x), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = MLP(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -121,7 +121,7 @@ from skrl.models.jax import Model, DeterministicMixin
 
 # define the model
 class MLP(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, **kwargs):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False, **kwargs):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -147,7 +147,7 @@ class MLP(DeterministicMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = MLP(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -169,7 +169,7 @@ from skrl.models.jax import Model, DeterministicMixin
 
 # define the model
 class MLP(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, **kwargs):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False, **kwargs):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -189,7 +189,7 @@ class MLP(DeterministicMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = MLP(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -247,7 +247,7 @@ class CNN(DeterministicMixin, Model):
         return self.net(torch.cat([x, inputs["taken_actions"]], dim=1)), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = CNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -308,7 +308,7 @@ class CNN(DeterministicMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = CNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -327,7 +327,7 @@ from skrl.models.jax import Model, DeterministicMixin
 
 # define the model
 class CNN(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, **kwargs):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False, **kwargs):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -370,7 +370,7 @@ class CNN(DeterministicMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = CNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -392,7 +392,7 @@ from skrl.models.jax import Model, DeterministicMixin
 
 # define the model
 class CNN(DeterministicMixin, Model):
-    def __init__(self, observation_space, state_space, action_space, device=None, clip_actions=False, **kwargs):
+    def __init__(self, observation_space, state_space, action_space, device, clip_actions=False, **kwargs):
         Model.__init__(
             self,
             observation_space=observation_space,
@@ -426,7 +426,7 @@ class CNN(DeterministicMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = CNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -477,8 +477,11 @@ class RNN(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.rnn = nn.RNN(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.net = nn.Sequential(
             nn.Linear(self.hidden_size + self.num_actions, 64),
@@ -493,9 +496,11 @@ class RNN(DeterministicMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -539,7 +544,7 @@ class RNN(DeterministicMixin, Model):
         return self.net(torch.cat([rnn_output, inputs["taken_actions"]], dim=1)), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = RNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -590,8 +595,11 @@ class RNN(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.rnn = nn.RNN(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size + self.num_actions, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -602,9 +610,11 @@ class RNN(DeterministicMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -653,7 +663,7 @@ class RNN(DeterministicMixin, Model):
         return self.fc3(x), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = RNN(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -705,8 +715,11 @@ class GRU(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.gru = nn.GRU(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.net = nn.Sequential(
             nn.Linear(self.hidden_size + self.num_actions, 64),
@@ -721,9 +734,11 @@ class GRU(DeterministicMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -767,7 +782,7 @@ class GRU(DeterministicMixin, Model):
         return self.net(torch.cat([rnn_output, inputs["taken_actions"]], dim=1)), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = GRU(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -818,8 +833,11 @@ class GRU(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.gru = nn.GRU(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size + self.num_actions, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -830,9 +848,11 @@ class GRU(DeterministicMixin, Model):
         return {
             "rnn": {
                 "sequence_length": self.sequence_length,
-                "sizes": [(self.num_layers, self.num_envs, self.hidden_size)],
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
             }
-        }  # hidden states (D ∗ num_layers, N, Hout)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -881,7 +901,7 @@ class GRU(DeterministicMixin, Model):
         return self.fc3(x), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = GRU(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -933,8 +953,11 @@ class LSTM(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.lstm = nn.LSTM(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.net = nn.Sequential(
             nn.Linear(self.hidden_size + self.num_actions, 64),
@@ -951,10 +974,10 @@ class LSTM(DeterministicMixin, Model):
                 "sequence_length": self.sequence_length,
                 "sizes": [
                     (self.num_layers, self.num_envs, self.hidden_size),  # hidden states (D ∗ num_layers, N, Hout)
-                    (self.num_layers, self.num_envs, self.hidden_size),
+                    (self.num_layers, self.num_envs, self.hidden_size),  # cell states  (D ∗ num_layers, N, Hcell)
                 ],
             }
-        }  # cell states   (D ∗ num_layers, N, Hcell)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -1008,7 +1031,7 @@ class LSTM(DeterministicMixin, Model):
         }
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = LSTM(
     observation_space=env.observation_space,
     state_space=env.state_space,
@@ -1059,8 +1082,11 @@ class LSTM(DeterministicMixin, Model):
         self.sequence_length = sequence_length
 
         self.lstm = nn.LSTM(
-            input_size=self.num_observations, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True
-        )  # batch_first -> (batch, sequence, features)
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size + self.num_actions, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -1073,10 +1099,10 @@ class LSTM(DeterministicMixin, Model):
                 "sequence_length": self.sequence_length,
                 "sizes": [
                     (self.num_layers, self.num_envs, self.hidden_size),  # hidden states (D ∗ num_layers, N, Hout)
-                    (self.num_layers, self.num_envs, self.hidden_size),
+                    (self.num_layers, self.num_envs, self.hidden_size),  # cell states  (D ∗ num_layers, N, Hcell)
                 ],
             }
-        }  # cell states   (D ∗ num_layers, N, Hcell)
+        }
 
     def compute(self, inputs, role):
         observations = inputs["observations"]
@@ -1133,7 +1159,7 @@ class LSTM(DeterministicMixin, Model):
         return self.fc3(x), {"rnn": [rnn_states[0], rnn_states[1]]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
+# instantiate the model (given a wrapped environment: `env`)
 critic = LSTM(
     observation_space=env.observation_space,
     state_space=env.state_space,

@@ -1,38 +1,33 @@
 import argparse
 import os
-import brax.envs
 
-import torch
-import torch.nn as nn
+import warp as wp
+
+import skrl.models.warp.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger
-from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.memories.torch import RandomMemory
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveLR
-from skrl.trainers.torch import SequentialTrainer
+from skrl.agents.warp.ppo import PPO, PPO_CFG
+from skrl.envs.loaders.warp import load_playground_env
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.memories.warp import RandomMemory
+from skrl.models.warp import DeterministicMixin, GaussianMixin, Model
+from skrl.resources.preprocessors.warp import RunningStandardScaler
+from skrl.resources.schedulers.warp import KLAdaptiveLR
+from skrl.trainers.warp import SequentialTrainer
 from skrl.utils import set_seed
 
 
-# parse arguments
+# parse arguments (some arguments are already defined by the loader)
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_envs", type=int, default=2048, help="Number of environments")
 parser.add_argument("--headless", action="store_true", help="Run in headless mode (no rendering)")
-parser.add_argument("--seed", type=int, default=None, help="Random seed")
 parser.add_argument("--checkpoint", type=str, default=None, help="Load checkpoint from path")
 parser.add_argument("--eval", action="store_true", help="Run in evaluation mode (logging/checkpointing disabled)")
 args, _ = parser.parse_known_args()
 
 
-# seed for reproducibility
-set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
-
-
 # define shared model (stochastic and deterministic models) using mixins
-class SharedModel(GaussianMixin, Model):
+class Shared(GaussianMixin, DeterministicMixin, Model):
     def __init__(
         self,
         observation_space,
@@ -46,7 +41,11 @@ class SharedModel(GaussianMixin, Model):
         reduction="sum",
     ):
         Model.__init__(
-            self, observation_space=observation_space, state_space=state_space, action_space=action_space, device=device
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
         )
         GaussianMixin.__init__(
             self,
@@ -60,14 +59,17 @@ class SharedModel(GaussianMixin, Model):
 
         self.net = nn.Sequential(
             nn.Linear(self.num_observations, 32),
-            nn.ELU(),
+            nn.Tanh(),
             nn.Linear(32, 32),
-            nn.ELU(),
+            nn.Tanh(),
         )
+        self.tanh = nn.Tanh()
 
         self.value_layer = nn.Linear(32, 1)
         self.policy_layer = nn.Linear(32, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.ones(self.num_actions))
+        self.log_std_parameter = nn.Parameter(wp.zeros(self.num_actions))
+
+        self.__post_init__()
 
     def act(self, inputs, role):
         if role == "policy":
@@ -78,66 +80,66 @@ class SharedModel(GaussianMixin, Model):
     def compute(self, inputs, role):
         if role == "policy":
             self._shared_output = self.net(inputs["observations"])
-            return self.policy_layer(self._shared_output), {"log_std": self.log_std_parameter}
+            return self.tanh(self.policy_layer(self._shared_output)), {"log_std": self.log_std_parameter.data}
         elif role == "value":
-            if self._shared_output is None:
-                x = self.net(inputs["observations"])
-            else:
-                x = self._shared_output
-                self._shared_output = None
-            return self.value_layer(x), {}
+            shared_output = self.net(inputs["observations"]) if self._shared_output is None else self._shared_output
+            self._shared_output = None
+            return self.value_layer(shared_output), {}
 
 
 # load the environment
-task_name = "inverted_pendulum"
-env = brax.envs.create(task_name, batch_size=args.num_envs, episode_length=250, backend="spring")
+task_name = "CartpoleBalance"
+env = load_playground_env(task_name=task_name, num_envs=1024, episode_length=300, parser=parser)
 # wrap the environment
 env = wrap_env(env)
 
 device = env.device
 
 
+# defer parsing of arguments to include loader arguments (run with --help to see all the arguments)
+args, _ = parser.parse_known_args()
+
+
+# seed for reproducibility
+set_seed(args.seed)  # e.g. `set_seed(42)` for fixed seed
+
+
 # instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=16, num_envs=env.num_envs, device=device)
+memory = RandomMemory(memory_size=32, num_envs=env.num_envs, device=device)
 
 
 # instantiate the agent's models (function approximators).
 # PPO requires 2 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#models
 models = {}
-models["policy"] = SharedModel(env.observation_space, env.state_space, env.action_space, device)
+models["policy"] = Shared(env.observation_space, env.state_space, env.action_space, device, clip_actions=True)
 models["value"] = models["policy"]  # same instance: shared model
 
 
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html#configuration-and-hyperparameters
-cfg = PPO_DEFAULT_CONFIG.copy()
-cfg["rollouts"] = 16  # memory_size
-cfg["learning_epochs"] = 8
-cfg["mini_batches"] = 1
-cfg["discount_factor"] = 0.99
-cfg["lambda"] = 0.95
-cfg["learning_rate"] = 3e-4
-cfg["learning_rate_scheduler"] = KLAdaptiveLR
-cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.008}
-cfg["random_timesteps"] = 0
-cfg["learning_starts"] = 0
-cfg["grad_norm_clip"] = 1.0
-cfg["ratio_clip"] = 0.2
-cfg["value_clip"] = 0.2
-cfg["clip_predicted_values"] = True
-cfg["entropy_loss_scale"] = 0.0
-cfg["value_loss_scale"] = 2.0
-cfg["kl_threshold"] = 0
-cfg["time_limit_bootstrap"] = True
-cfg["observation_preprocessor"] = RunningStandardScaler
-cfg["observation_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
-cfg["value_preprocessor"] = RunningStandardScaler
-cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
+cfg = PPO_CFG()
+cfg.rollouts = 32  # memory_size
+cfg.learning_epochs = 8
+cfg.mini_batches = 8
+cfg.discount_factor = 0.99
+cfg.lambda_ = 0.95
+cfg.learning_rate = 5e-4
+cfg.learning_rate_scheduler = KLAdaptiveLR
+cfg.learning_rate_scheduler_kwargs = {"kl_threshold": 0.008}
+cfg.observation_preprocessor = RunningStandardScaler
+cfg.observation_preprocessor_kwargs = {"size": env.observation_space, "device": device}
+cfg.value_preprocessor = RunningStandardScaler
+cfg.value_preprocessor_kwargs = {"size": 1, "device": device}
+cfg.grad_norm_clip = 1.0
+cfg.ratio_clip = 0.2
+cfg.value_clip = 0.2
+cfg.entropy_loss_scale = 0.0
+cfg.value_loss_scale = 2.0
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = "auto" if not args.eval else 0
-cfg["experiment"]["checkpoint_interval"] = "auto" if not args.eval else 0
-cfg["experiment"]["directory"] = f"runs/torch/{task_name}"
+cfg.experiment.write_interval = "auto" if not args.eval else 0
+cfg.experiment.checkpoint_interval = "auto" if not args.eval else 0
+cfg.experiment.directory = f"runs/warp/{task_name}"
 
 agent = PPO(
     models=models,
@@ -151,7 +153,7 @@ agent = PPO(
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 1600, "headless": args.headless}
+cfg_trainer = {"timesteps": 16000, "headless": args.headless, "render_interval": 3}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 if args.checkpoint:

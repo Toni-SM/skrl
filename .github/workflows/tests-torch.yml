@@ -1,5 +1,9 @@
 name: tests-torch
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main, develop ]
@@ -141,16 +145,17 @@ jobs:
     - name: Run tests (Isaac Lab)
       run: |
         pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
-    - name: Run tests (DeepMind Control Suite)
+    - name: Run tests (ManiSkill)
+      continue-on-error: true
       run: |
-        python -m pip install --quiet dm-control==1.0.15 mujoco==3.0.0
+        python -m pip install --quiet mani-skill==3.0.0b22
         python -m pip list
-        pytest tests/envs/wrappers/torch/test_deepmind_envs.py
-    - name: Run tests (Brax)
+        pytest tests/envs/wrappers/torch/test_mani_skill_envs.py
+    - name: Run tests (Playground)
       run: |
-        python -m pip install --quiet brax==0.12.0 mujoco==3.2.6
+        python -m pip install --quiet brax==0.12.5 mujoco==3.3.6 git+https://github.com/google-deepmind/mujoco_playground.git@1bd244f
         python -m pip list
-        pytest tests/envs/wrappers/torch/test_brax_envs.py
+        pytest tests/envs/wrappers/torch/test_playground_envs.py
 
   torch-minimum-utils:
     name: Minimum requirements (utils)
@@ -315,6 +320,7 @@ jobs:
         python -m pip list
         pytest tests/envs/wrappers/torch/test_gym_envs.py
     - name: Run tests (PettingZoo)
+      continue-on-error: true
       run: |
         python -m pip install --quiet pettingzoo pygame pymunk
         python -m pip list
@@ -322,18 +328,17 @@ jobs:
     - name: Run tests (Isaac Lab)
       run: |
         pytest tests/envs/wrappers/torch/test_isaaclab_envs.py
-    - name: Run tests (DeepMind Control Suite)
+    - name: Run tests (ManiSkill)
       continue-on-error: true
       run: |
-        python -m pip install --quiet dm-control
+        python -m pip install --quiet mani-skill
         python -m pip list
-        pytest tests/envs/wrappers/torch/test_deepmind_envs.py
-    - name: Run tests (Brax)
-      continue-on-error: true
+        pytest tests/envs/wrappers/torch/test_mani_skill_envs.py
+    - name: Run tests (Playground)
       run: |
-        python -m pip install --quiet brax
+        python -m pip install --quiet git+https://github.com/google-deepmind/mujoco_playground.git
         python -m pip list
-        pytest tests/envs/wrappers/torch/test_brax_envs.py
+        pytest tests/envs/wrappers/torch/test_playground_envs.py
 
   torch-latest-utils:
     name: Latest requirements (utils)

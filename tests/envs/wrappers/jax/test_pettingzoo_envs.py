@@ -8,7 +8,8 @@ from pettingzoo.butterfly import pistonball_v6
 import jax
 import jax.numpy as jnp
 
-from skrl.envs.wrappers.jax import PettingZooWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
 
 
 def test_env(capsys: pytest.CaptureFixture):

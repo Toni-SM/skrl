@@ -5,8 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [2.0.0] - Unreleased
 ### Added
 - Implement RL algorithms in NVIDIA Warp
+- Add loader and wrapper for MuJoCo Playground environments
+- Add wrapper for ManiSkill environments
 - Add Tabular model instantiator (epsilon-greedy variant)
 - Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
+- Add `render_interval` option to trainers to specify the rendering interval for the environments
 - Add `compute_space_limits` space utility to get Gymnasium spaces' limits
 - Add `ScopedTimer` utils to measure code execution time
 - Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
@@ -29,12 +32,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
 - Fix time limits handling for termination and truncation signals
-- Fix the randomness of Gymnasium/Gym and PettingZoo environments by seeding right after initialization
+- Fix the randomness of the environments by seeding right after initialization (on the first reset)
 
 ### Removed
 - Remove NumPy backend for JAX implementation
 - Remove checkpoints/models migration support from other RL libraries
 - Remove support for Isaac Gym and Omniverse Isaac Gym environments (deprecated in favor of Isaac Lab)
+- Remove support for Brax and DeepMind environments (in favor of MuJoCo Playground environments)
 - Remove support for Bi-DexHands and robosuite environments
 - Remove Isaac Gym (web viewer, inverse kinematic) and Omniverse Isaac Gym (local environment instance, inverse kinematic) utils
 

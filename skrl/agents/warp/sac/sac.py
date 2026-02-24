@@ -471,7 +471,7 @@ class SAC(Agent):
                 tape.zero()
 
                 # compute entropy coefficient
-                self._entropy_coefficient = np.exp(self.log_entropy_coefficient.numpy())
+                self._entropy_coefficient = np.exp(self.log_entropy_coefficient.numpy()).item()
 
             # update target networks
             self.target_critic_1.update_parameters(self.critic_1, polyak=self.cfg.polyak)
@@ -501,7 +501,7 @@ class SAC(Agent):
 
             if self.cfg.learn_entropy:
                 self.track_data("Loss / Entropy loss", self._entropy_loss.numpy().item())
-                self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())
+                self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient)
 
             if self.policy_scheduler:
                 self.track_data("Learning / Policy learning rate", self.policy_learning_rate)

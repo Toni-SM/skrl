@@ -1,13 +1,11 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Step trainer
 ============
 
 Train agents controlling the training/evaluation loop step-by-step.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -24,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Step-by-step trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -47,9 +43,7 @@ Usage
             :start-after: [jax-start-step]
             :end-before: [jax-end-step]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 -------------
@@ -62,41 +56,58 @@ Configuration
       - .. centered:: |_4| |jax| |_4|
       - .. centered:: |_4| |warp| |_4|
     * - ``StepTrainerCfg``
-      - :py:class:`~skrl.trainers.torch.StepTrainerCfg`
-      - :py:class:`~skrl.trainers.jax.StepTrainerCfg`
+      - :py:class:`~skrl.trainers.torch.step.StepTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.step.StepTrainerCfg`
       -
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.trainers.torch.StepTrainerCfg
-    :show-inheritance:
-    :inherited-members:
-    :members:
+PyTorch
+^^^^^^^
 
-.. autoclass:: skrl.trainers.torch.StepTrainer
+.. automodule:: skrl.trainers.torch.step
+.. autosummary::
+    :nosignatures:
+
+    StepTrainerCfg
+    StepTrainer
+
+.. autoclass:: skrl.trainers.torch.step.StepTrainerCfg
     :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. raw:: html
-
-    <br>
-
-API (JAX)
----------
-
-.. autoclass:: skrl.trainers.jax.StepTrainerCfg
+.. autoclass:: skrl.trainers.torch.step.StepTrainer
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. autoclass:: skrl.trainers.jax.StepTrainer
+|
+
+JAX
+^^^
+
+.. automodule:: skrl.trainers.jax.step
+.. autosummary::
+    :nosignatures:
+
+    StepTrainerCfg
+    StepTrainer
+
+.. autoclass:: skrl.trainers.jax.step.StepTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.jax.step.StepTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

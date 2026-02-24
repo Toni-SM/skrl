@@ -1,15 +1,14 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Trust Region Policy Optimization (TRPO)
 =======================================
 
-TRPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that deploys an iterative procedure to optimize the policy, with guaranteed monotonic improvement
+TRPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that deploys an iterative procedure
+to optimize the policy, with guaranteed monotonic improvement.
 
-Paper: `Trust Region Policy Optimization <https://arxiv.org/abs/1502.05477>`_
+**Paper:** `Trust Region Policy Optimization <https://arxiv.org/abs/1502.05477>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
@@ -23,9 +22,7 @@ Algorithm
 |     :math:`\bullet \;` Perform a backtracking line search with exponential decay to find the final policy update :math:`\; \theta_{new} = \theta + \alpha \; \beta \;` ensuring improvement of the surrogate objective and satisfaction of the :math:`KL` divergence constraint
 |     :math:`\bullet \;` Update the value function :math:`V_\phi` using the computed returns :math:`R`
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -37,9 +34,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -154,16 +149,15 @@ Learning algorithm
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_\phi(\text{optimizer}_\phi)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`trpo_rnn.py`) to maintain the readability of the standard implementation (:literal:`trpo.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`trpo_rnn.py`) to maintain the readability of the standard implementation (:literal:`trpo.py`).
 
 .. tabs::
 
@@ -187,7 +181,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -195,9 +190,7 @@ Usage
                     :start-after: [torch-start-trpo-rnn]
                     :end-before: [torch-end-trpo-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -214,19 +207,17 @@ Configuration and hyperparameters
       -
       -
 
-.. raw:: html
-
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -242,14 +233,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic and 1 deterministic function approximator.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -274,14 +265,12 @@ The implementation uses 1 stochastic and 1 deterministic function approximator. 
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -312,14 +301,26 @@ Support for advanced features is described in the next table
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.trpo
+.. autosummary::
+    :nosignatures:
+
+    TRPO_CFG
+    TRPO
+    TRPO_RNN
 
 .. autoclass:: skrl.agents.torch.trpo.TRPO_CFG
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -327,11 +328,11 @@ API (PyTorch)
 .. autoclass:: skrl.agents.torch.trpo.TRPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.trpo.TRPO_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

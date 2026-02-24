@@ -4,5 +4,6 @@ sphinx-tabs
 sphinx-autobuild
 sphinx-copybutton
 sphinx-notfound-page
+autodocsumm
 decorator
 numpy

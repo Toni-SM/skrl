@@ -1,24 +1,22 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Wrapping (single-agent)
 =======================
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 This library works with a common API to interact with the following RL environments:
 
 * OpenAI `Gym <https://www.gymlibrary.dev>`_
 * Farama `Gymnasium <https://gymnasium.farama.org/>`_ and `Shimmy <https://shimmy.farama.org/>`_
-* Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_
 * NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_
+* `ManiSkill <https://maniskill.readthedocs.io/en/latest/index.html>`_
+* `MuJoCo Playground <https://playground.mujoco.org>`_
 
-To operate with them and to support interoperability between these non-compatible interfaces, a **wrapping mechanism is provided** as shown in the diagram below
+To operate with them, out-of-the-box, and to support interoperability between these non-compatible interfaces,
+a **wrapping mechanism is provided** as shown in the following image.
 
-.. raw:: html
-
-    <br>
+|
 
 .. image:: ../../_static/imgs/wrapping-light.svg
     :width: 100%
@@ -32,39 +30,16 @@ To operate with them and to support interoperability between these non-compatibl
     :class: only-dark
     :alt: Environment wrapping
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
+The following snippets show how to wrap environments from the different supported libraries:
+
+|
+
 .. tabs::
-
-    .. tab:: Isaac Lab
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-isaaclab]
-                    :end-before: [pytorch-end-isaaclab]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-isaaclab]
-                    :end-before: [jax-end-isaaclab]
-
-            .. group-tab:: |_4| |warp| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [warp-start-isaaclab]
-                    :end-before: [warp-end-isaaclab]
 
     .. tab:: Gymnasium / Gym
 
@@ -100,8 +75,6 @@ Usage
                                     :end-before: [warp-end-gymnasium]
 
                     .. group-tab:: Vectorized environment
-
-                        Visit the Gymnasium documentation (`Vector <https://gymnasium.farama.org/api/vector>`__) for more information about the creation and usage of vectorized environments
 
                         .. tabs::
 
@@ -150,8 +123,6 @@ Usage
 
                     .. group-tab:: Vectorized environment
 
-                        Visit the Gym documentation (`Vector <https://www.gymlibrary.dev/api/vector>`__) for more information about the creation and usage of vectorized environments
-
                         .. tabs::
 
                             .. group-tab:: |_4| |pytorch| |_4|
@@ -167,6 +138,81 @@ Usage
                                     :language: python
                                     :start-after: [jax-start-gym-vectorized]
                                     :end-before: [jax-end-gym-vectorized]
+
+    .. tab:: Isaac Lab
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-isaaclab]
+                    :end-before: [pytorch-end-isaaclab]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-isaaclab]
+                    :end-before: [jax-end-isaaclab]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-isaaclab]
+                    :end-before: [warp-end-isaaclab]
+
+    .. tab:: ManiSkill
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-mani-skill]
+                    :end-before: [pytorch-end-mani-skill]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-mani-skill]
+                    :end-before: [jax-end-mani-skill]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-mani-skill]
+                    :end-before: [warp-end-mani-skill]
+
+    .. tab:: Playground
+
+        .. tabs::
+
+            .. group-tab:: |_4| |pytorch| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [pytorch-start-playground]
+                    :end-before: [pytorch-end-playground]
+
+            .. group-tab:: |_4| |jax| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [jax-start-playground]
+                    :end-before: [jax-end-playground]
+
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-playground]
+                    :end-before: [warp-end-playground]
 
     .. tab:: Shimmy
 
@@ -193,152 +239,182 @@ Usage
                     :start-after: [warp-start-shimmy]
                     :end-before: [warp-end-shimmy]
 
-    .. tab:: Brax
+|
 
-        .. tabs::
+API
+---
 
-            .. group-tab:: |_4| |pytorch| |_4|
+|
 
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-brax]
-                    :end-before: [pytorch-end-brax]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [jax-start-brax]
-                    :end-before: [jax-end-brax]
-
-    .. tab:: DeepMind
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../../snippets/wrapping.py
-                    :language: python
-                    :start-after: [pytorch-start-deepmind]
-                    :end-before: [pytorch-end-deepmind]
-
-            .. .. group-tab:: |_4| |jax| |_4|
-
-            ..     .. literalinclude:: ../../snippets/wrapping.py
-            ..         :language: python
-            ..         :start-after: [jax-start-deepmind]
-            ..         :end-before: [jax-end-deepmind]
-
-.. raw:: html
-
-    <br>
-
-API (PyTorch)
--------------
+PyTorch
+^^^^^^^
 
 .. autofunction:: skrl.envs.wrappers.torch.wrap_env
 
-.. raw:: html
+|
 
-    <br>
-
-API (JAX)
----------
+JAX
+^^^
 
 .. autofunction:: skrl.envs.wrappers.jax.wrap_env
 
-.. raw:: html
+|
 
-    <br>
-
-API (Warp)
-----------
+Warp
+^^^^
 
 .. autofunction:: skrl.envs.wrappers.warp.wrap_env
 
-.. raw:: html
+|
 
-    <br>
+Internal API
+------------
 
-Internal API (PyTorch)
-----------------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.envs.wrappers.torch
+.. autosummary::
+    :nosignatures:
+
+    Wrapper
+    ~gym_envs.GymWrapper
+    ~gymnasium_envs.GymnasiumWrapper
+    ~isaaclab_envs.IsaacLabWrapper
+    ~mani_skill_envs.ManiSkillWrapper
+    ~playground_envs.PlaygroundWrapper
 
 .. autoclass:: skrl.envs.wrappers.torch.Wrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.torch.gym_envs.GymWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.GymWrapper
+.. autoclass:: skrl.envs.wrappers.torch.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.torch.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.DeepMindWrapper
+.. autoclass:: skrl.envs.wrappers.torch.mani_skill_envs.ManiSkillWrapper
     :undoc-members:
     :show-inheritance:
-    :private-members: _spec_to_space, _observation_to_tensor, _tensor_to_action
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.torch.BraxWrapper
+.. autoclass:: skrl.envs.wrappers.torch.playground_envs.PlaygroundWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-Internal API (JAX)
-------------------
+.. automodule:: skrl.envs.wrappers.jax
+.. autosummary::
+    :nosignatures:
+
+    Wrapper
+    ~gym_envs.GymWrapper
+    ~gymnasium_envs.GymnasiumWrapper
+    ~isaaclab_envs.IsaacLabWrapper
+    ~mani_skill_envs.ManiSkillWrapper
+    ~playground_envs.PlaygroundWrapper
 
 .. autoclass:: skrl.envs.wrappers.jax.Wrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.jax.gym_envs.GymWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.jax.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.jax.BraxWrapper
+.. autoclass:: skrl.envs.wrappers.jax.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. raw:: html
+.. autoclass:: skrl.envs.wrappers.jax.mani_skill_envs.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-    <br>
+.. autoclass:: skrl.envs.wrappers.jax.playground_envs.PlaygroundWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
-Internal API (Warp)
--------------------
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.envs.wrappers.warp
+.. autosummary::
+    :nosignatures:
+
+    Wrapper
+    ~gymnasium_envs.GymnasiumWrapper
+    ~isaaclab_envs.IsaacLabWrapper
+    ~mani_skill_envs.ManiSkillWrapper
+    ~playground_envs.PlaygroundWrapper
 
 .. autoclass:: skrl.envs.wrappers.warp.Wrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.IsaacLabWrapper
+.. autoclass:: skrl.envs.wrappers.warp.gymnasium_envs.GymnasiumWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-.. autoclass:: skrl.envs.wrappers.warp.GymnasiumWrapper
+.. autoclass:: skrl.envs.wrappers.warp.isaaclab_envs.IsaacLabWrapper
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.mani_skill_envs.ManiSkillWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.playground_envs.PlaygroundWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:

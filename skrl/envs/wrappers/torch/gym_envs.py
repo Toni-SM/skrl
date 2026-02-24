@@ -2,6 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
+
+# hack to fix: module 'numpy' has no attribute 'bool8'
+try:
+    import numpy as np
+
+    np.bool8
+except AttributeError:
+    np.bool8 = np.bool
+
+import gym
 import gymnasium
 from packaging import version
 
@@ -26,14 +36,6 @@ class GymWrapper(Wrapper):
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
-
-        # hack to fix: module 'numpy' has no attribute 'bool8'
-        try:
-            np.bool8
-        except AttributeError:
-            np.bool8 = np.bool
-
-        import gym
 
         self._seed = config.torch.key
         self._vectorized = False

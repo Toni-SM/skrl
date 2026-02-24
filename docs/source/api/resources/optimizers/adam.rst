@@ -1,63 +1,59 @@
-:tocdepth: 3
+:tocdepth: 4
 
 Adam
 ====
 
-An extension of the stochastic gradient descent algorithm that adaptively changes the learning rate for each neural network parameter.
+An extension of the Stochastic Gradient Descent (SGD) algorithm that adaptively changes the learning rate
+for each neural network parameter.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Usage
 -----
 
-.. note::
+The classes are not intended to be used directly by the user, but by agent implementations.
 
-    This class is the result of isolating the Optax optimizer that is mixed with the model parameters, as defined in the `Flax's TrainState <https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state>`_ class. It is not intended to be used directly by the user, but by agent implementations.
+* For JAX, the class is the result of isolating the Optax optimizer that is mixed with the model parameters, as defined
+  in the `Flax's TrainState <https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state>`_ class.
+* For Warp, the class is the result of reimplementing the optimizer to support CUDA graphs and gradient clipping.
 
-.. tabs::
+|
 
-    .. group-tab:: |_4| |jax| |_4|
+API
+---
 
-        .. code-block:: python
-            :emphasize-lines: 2, 5, 8
+|
 
-            # import the optimizer class
-            from skrl.resources.optimizers.jax import Adam
+JAX
+^^^
 
-            # instantiate the optimizer
-            optimizer = Adam(model=model, lr=1e-3)
+.. automodule:: skrl.resources.optimizers.jax.adam
+.. autosummary::
+    :nosignatures:
 
-            # step the optimizer
-            optimizer = optimizer.step(grad, model)
-
-    .. group-tab:: |_4| |warp| |_4|
-
-.. raw:: html
-
-    <br>
-
-API (JAX)
----------
+    Adam
 
 .. autoclass:: skrl.resources.optimizers.jax.adam.Adam
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
     .. automethod:: __new__
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.resources.optimizers.warp.adam
+.. autosummary::
+    :nosignatures:
+
+    Adam
 
 .. autoclass:: skrl.resources.optimizers.warp.adam.Adam
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
-
-    .. automethod:: __new__

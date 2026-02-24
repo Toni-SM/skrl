@@ -7,7 +7,8 @@ import gymnasium
 import jax
 import jax.numpy as jnp
 
-from skrl.envs.wrappers.jax import GymWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.gym_envs import GymWrapper
 
 
 def test_env(capsys: pytest.CaptureFixture):

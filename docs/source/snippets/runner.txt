@@ -95,7 +95,7 @@ memory:
   class: "RandomMemory"
   memory_size: -1  # -1: automatically determined value
 
-# PPO agent configuration (field names are from PPO_DEFAULT_CONFIG)
+# PPO agent configuration (field names are from PPO_CFG)
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html
 agent:
   class: "PPO"

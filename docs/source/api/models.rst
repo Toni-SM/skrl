@@ -1,4 +1,4 @@
-:tocdepth: 4
+:tocdepth: 5
 
 Models
 ======
@@ -14,11 +14,15 @@ Models
     Deterministic <models/deterministic>
     Shared model <models/shared_model>
 
-Models (or agent models) refer to a representation of the agent's policy, value function, etc. that the agent uses to make decisions. Agents can have one or more models, and their parameters are adjusted by the optimization algorithms.
+Models (or agent models) refer to a representation of the agent's policy, value function, etc. that the agent uses
+to make decisions. Agents can have one or more models, and their parameters are adjusted by the optimization algorithms.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented models
+------------------
+
+The following table lists the implemented models and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -56,214 +60,65 @@ Models (or agent models) refer to a representation of the agent's policy, value 
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\blacksquare`
 
-Base class
-----------
-
-.. note::
-
-    This is the base class for all models in this module and provides only basic functionality that is not tied to any specific implementation.
-    **It is not intended to be used directly**.
-
-.. raw:: html
-
-    <br>
-
-Mixin and inheritance
-^^^^^^^^^^^^^^^^^^^^^
-
-.. tabs::
-
-    .. tab:: Mixin
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-mixin-torch]
-                    :end-before: [end-mixin-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-mixin-jax]
-                    :end-before: [end-mixin-jax]
-
-    .. tab:: Model inheritance
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-model-torch]
-                    :end-before: [end-model-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-model-jax]
-                    :end-before: [end-model-jax]
-
-.. raw:: html
-
-    <br>
+|br| |hr|
 
 .. _models_base_class:
 
-API (PyTorch)
-^^^^^^^^^^^^^
+Base class
+----------
+
+Base class for models.
+
+API
+^^^
+
+|
+
+PyTorch
+"""""""
+
+.. automodule:: skrl.models.torch
+.. autosummary::
+    :nosignatures:
+
+    Model
 
 .. autoclass:: skrl.models.torch.Model
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-    .. py:property:: device
-        :type: torch.device
+|
 
-        Data allocation and computation device.
+JAX
+"""
 
-    .. py:property:: observation_space
-        :type: gymnasium.Space | None
+.. automodule:: skrl.models.jax
+.. autosummary::
+    :nosignatures:
 
-        Observation space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: state_space
-        :type: gymnasium.Space | None
-
-        State space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: action_space
-        :type: gymnasium.Space | None
-
-        Action space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: num_observations
-        :type: int
-
-        Number of elements in the observation space.
-
-    .. py:property:: num_states
-        :type: int
-
-        Number of elements in the state space.
-
-    .. py:property:: num_actions
-        :type: int
-
-        Number of elements in the action space.
-
-    .. py:property:: training
-        :type: bool
-
-        Whether this model is in training (true) or evaluation (false) mode.
-
-.. raw:: html
-
-    <br>
-
-API (JAX)
-^^^^^^^^^
+    Model
 
 .. autoclass:: skrl.models.jax.Model
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-    .. py:property:: device
-        :type: jax.Device
+|
 
-        Data allocation and computation device.
+Warp
+""""
 
-    .. py:property:: observation_space
-        :type: gymnasium.Space | None
+.. automodule:: skrl.models.warp
+.. autosummary::
+    :nosignatures:
 
-        Observation space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: state_space
-        :type: gymnasium.Space | None
-
-        State space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: action_space
-        :type: gymnasium.Space | None
-
-        Action space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: num_observations
-        :type: int
-
-        Number of elements in the observation space.
-
-    .. py:property:: num_states
-        :type: int
-
-        Number of elements in the state space.
-
-    .. py:property:: num_actions
-        :type: int
-
-        Number of elements in the action space.
-
-    .. py:property:: training
-        :type: bool
-
-        Whether this model is in training (true) or evaluation (false) mode.
-
-
-.. raw:: html
-
-    <br>
-
-API (Warp)
-^^^^^^^^^^
+    Model
 
 .. autoclass:: skrl.models.warp.Model
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
-
-    .. py:property:: device
-        :type: warp.context.Device
-
-        Data allocation and computation device.
-
-    .. py:property:: observation_space
-        :type: gymnasium.Space | None
-
-        Observation space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: state_space
-        :type: gymnasium.Space | None
-
-        State space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: action_space
-        :type: gymnasium.Space | None
-
-        Action space. It is a replica of the class constructor argument of the same name.
-
-    .. py:property:: num_observations
-        :type: int
-
-        Number of elements in the observation space.
-
-    .. py:property:: num_states
-        :type: int
-
-        Number of elements in the state space.
-
-    .. py:property:: num_actions
-        :type: int
-
-        Number of elements in the action space.
-
-    .. py:property:: training
-        :type: bool
-
-        Whether this model is in training (true) or evaluation (false) mode.

@@ -10,11 +10,15 @@ Optimizers
 
     Adam <optimizers/adam>
 
-Optimizers are algorithms that adjust the parameters of artificial neural networks to minimize the error or loss function during the training process.
+Optimizers are algorithms that adjust the parameters of artificial neural networks
+to minimize the error or loss function during the training process.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented optimizers
+----------------------
+
+The following table lists the implemented optimizers and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1

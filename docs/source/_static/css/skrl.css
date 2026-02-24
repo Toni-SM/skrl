@@ -10,3 +10,8 @@ tbody > tr > th.stub {
     font-weight: normal;
     text-align: left;
 }
+
+blockquote {
+    border: 0;
+    background: none;
+}

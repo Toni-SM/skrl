@@ -5,11 +5,12 @@ Model instantiators
 
 Utilities for quickly creating model instances.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented model instantiators
+-------------------------------
 
-.. TODO: add snippet
+The following table lists the implemented model instantiators and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -47,9 +48,7 @@ Utilities for quickly creating model instances.
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\blacksquare`
 
-.. raw:: html
-
-    <br>
+|
 
 Network definitions
 -------------------
@@ -59,7 +58,8 @@ For each container, the input, hidden layers and activation functions can be spe
 
 Implementation details:
 
-- Container names must be valid `Python identifiers <https://docs.python.org/3/reference/lexical_analysis.html#identifiers>`_ and unique.
+- Container names must be valid `Python identifiers <https://docs.python.org/3/reference/lexical_analysis.html#identifiers>`_
+  and unique within the model.
 - The network compute/forward is done by calling the containers in the order in which they are defined.
 - Containers use :py:class:`torch.nn.Sequential` in PyTorch, and :py:class:`flax.linen.Sequential` in JAX.
 - If a single activation function is specified (mapping or sequence), it will be applied after each layer
@@ -136,8 +136,8 @@ Certain operations could be specified on them.
 
 .. note::
 
-    If a token is used, a linear layer will be created with the last container in the list (as the number of input features)
-    and the value represented by the token (as the number of output features).
+    If a token is used, a linear layer will be created with the last container in the list
+    (as the number of input features) and the value represented by the token (as the number of output features).
 
 .. hint::
 
@@ -245,16 +245,18 @@ The following table lists the supported layers and transformations:
 linear
 """"""
 
-Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class:`flax.linen.Dense` in JAX)
+Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class:`flax.linen.Dense` in JAX).
 
 .. note::
 
-    The tokens ``NUM_OBSERVATIONS`` (number of elements in the observation space), ``NUM_STATES`` (number of elements in the state space),
-    ``NUM_ACTIONS`` (number of elements in the action space), and ``ONE`` (1) can be used as the layer's number of input/output features
+    The tokens ``NUM_OBSERVATIONS`` (number of elements in the observation space), ``NUM_STATES``
+    (number of elements in the state space), ``NUM_ACTIONS`` (number of elements in the action space),
+    and ``ONE`` (1) can be used as the layer's number of input/output features.
 
 .. note::
 
-    If the PyTorch's ``in_features`` parameter is not specified it will be inferred by using the :py:class:`torch.nn.LazyLinear` module
+    If the PyTorch's ``in_features`` parameter is not specified it will be inferred by using
+    the :py:class:`torch.nn.LazyLinear` module.
 
 .. list-table::
     :header-rows: 1
@@ -367,17 +369,20 @@ Apply a linear transformation (:py:class:`torch.nn.Linear` in PyTorch, :py:class
 conv2d
 """"""
 
-Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.linen.Conv` in JAX)
+Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.linen.Conv` in JAX).
 
 .. warning::
 
-    * PyTorch :py:class:`torch.nn.Conv2d` expects the input to be in the form NCHW (*N*: batch, *C*: channels, *H*: height, *W*: width).
-      A permutation operation may be necessary to modify the dimensions of a batch of images which are typically NHWC.
-    * JAX :py:class:`flax.linen.Conv` expects the input to be in the form NHWC (the typical dimensions of a batch of images).
+    * PyTorch :py:class:`torch.nn.Conv2d` expects the input to be in the form NCHW
+      (*N*: batch, *C*: channels, *H*: height, *W*: width). A permutation operation may be necessary to modify
+      the dimensions of a batch of images which are typically NHWC.
+    * JAX :py:class:`flax.linen.Conv` expects the input to be in the form NHWC
+      (the typical dimensions of a batch of images).
 
 .. note::
 
-    If the PyTorch's ``in_channels`` parameter is not specified it will be inferred by using the :py:class:`torch.nn.LazyConv2d` module
+    If the PyTorch's ``in_channels`` parameter is not specified it will be inferred by using
+    the :py:class:`torch.nn.LazyConv2d` module.
 
 .. list-table::
     :header-rows: 1
@@ -476,7 +481,8 @@ Apply a 2D convolution (:py:class:`torch.nn.Conv2d` in PyTorch, :py:class:`flax.
 flatten
 """""""
 
-Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorch, :py:obj:`jax.numpy.reshape` operation in JAX)
+Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorch,
+:py:obj:`jax.numpy.reshape` operation in JAX).
 
 .. list-table::
     :header-rows: 1
@@ -563,12 +569,27 @@ Flatten a contiguous range of dimensions (:py:class:`torch.nn.Flatten` in PyTorc
                     :start-after: [start-layer-flatten-dict-python]
                     :end-before: [end-layer-flatten-dict-python]
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.utils.model_instantiators.torch
+.. autosummary::
+    :nosignatures:
+
+    categorical_model
+    multicategorical_model
+    deterministic_model
+    gaussian_model
+    multivariate_gaussian_model
+    shared_model
+    tabular_model
 
 .. autofunction:: skrl.utils.model_instantiators.torch.categorical_model
 
@@ -584,12 +605,19 @@ API (PyTorch)
 
 .. autofunction:: skrl.utils.model_instantiators.torch.tabular_model
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.utils.model_instantiators.jax
+.. autosummary::
+    :nosignatures:
+
+    categorical_model
+    multicategorical_model
+    deterministic_model
+    gaussian_model
 
 .. autofunction:: skrl.utils.model_instantiators.jax.categorical_model
 
@@ -599,12 +627,18 @@ API (JAX)
 
 .. autofunction:: skrl.utils.model_instantiators.jax.gaussian_model
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (WARP)
-----------
+.. automodule:: skrl.utils.model_instantiators.warp
+.. autosummary::
+    :nosignatures:
+
+    deterministic_model
+    gaussian_model
+    shared_model
 
 .. autofunction:: skrl.utils.model_instantiators.warp.deterministic_model
 

@@ -5,9 +5,7 @@ Spaces
 
 Utilities to operate on Gymnasium `spaces <https://gymnasium.farama.org/api/spaces>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Overview
 --------
@@ -45,12 +43,28 @@ The following table provides a snapshot of the space sample conversion functions
       - :py:func:`~skrl.utils.spaces.torch.unflatten_tensorized_space`
       - Space (PyTorch / JAX)
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.utils.spaces.torch
+.. autosummary::
+    :nosignatures:
+
+    compute_space_limits
+    compute_space_size
+    convert_gym_space
+    flatten_tensorized_space
+    sample_space
+    tensorize_space
+    unflatten_tensorized_space
+    untensorize_space
 
 .. autofunction:: skrl.utils.spaces.torch.compute_space_limits
 
@@ -68,12 +82,23 @@ API (PyTorch)
 
 .. autofunction:: skrl.utils.spaces.torch.untensorize_space
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.utils.spaces.jax
+.. autosummary::
+    :nosignatures:
+
+    compute_space_limits
+    compute_space_size
+    convert_gym_space
+    flatten_tensorized_space
+    sample_space
+    tensorize_space
+    unflatten_tensorized_space
+    untensorize_space
 
 .. autofunction:: skrl.utils.spaces.jax.compute_space_limits
 
@@ -91,12 +116,23 @@ API (JAX)
 
 .. autofunction:: skrl.utils.spaces.jax.untensorize_space
 
-.. raw:: html
+|
 
-    <br>
+Warp
+^^^^
 
-API (Warp)
-----------
+.. automodule:: skrl.utils.spaces.warp
+.. autosummary::
+    :nosignatures:
+
+    compute_space_limits
+    compute_space_size
+    convert_gym_space
+    flatten_tensorized_space
+    sample_space
+    tensorize_space
+    unflatten_tensorized_space
+    untensorize_space
 
 .. autofunction:: skrl.utils.spaces.warp.compute_space_limits
 

@@ -6,16 +6,16 @@ Isaac Lab environments
     :align: center
     :alt: Isaac Lab environments
 
-.. raw:: html
+|br| |hr|
 
-    <br><br><hr>
+Overview
+--------
 
-Environments
-------------
+The repository https://github.com/isaac-sim/IsaacLab provides the example reinforcement learning environments for
+Isaac Lab (Orbit and Omniverse Isaac Gym unification).
 
-The repository https://github.com/isaac-sim/IsaacLab provides the example reinforcement learning environments for Isaac Lab (Orbit and Omniverse Isaac Gym unification).
-
-These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments or from its parameters (:literal:`task_name`, :literal:`num_envs`, :literal:`headless`, and :literal:`cli_args`).
+These environments can be easily loaded and configured by calling a single function provided with this library.
+Such function also makes it possible to configure the environment from the command line arguments or from its parameters.
 
 .. note::
 
@@ -23,14 +23,19 @@ These environments can be easily loaded and configured by calling a single funct
 
 .. note::
 
-    Isaac Lab environments implement a functionality to get their configuration from the command line. Setting the :literal:`headless` option from the trainer configuration will not work. In this case, it is necessary to set the load function's :literal:`headless` argument to True or to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
+    Isaac Lab environments implement a functionality to get their configuration from the command line.
+    Setting the :literal:`headless` option from the trainer configuration will not work.
+    In this case, it is necessary to set the load function's :literal:`headless` argument to True
+    or to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
-^^^^^
+-----
+
+The following snippets show how to load Isaac Lab environments:
+
+|
 
 .. tabs::
 
@@ -96,11 +101,28 @@ Usage
 
             isaaclab -p main.py --task Isaac-Cartpole-v0
 
-.. raw:: html
-
-    <br>
+|
 
 API
-^^^
+---
+
+|
+
+PyTorch
+^^^^^^^
 
 .. autofunction:: skrl.envs.loaders.torch.load_isaaclab_env
+
+|
+
+JAX
+^^^
+
+.. autofunction:: skrl.envs.loaders.jax.load_isaaclab_env
+
+|
+
+Warp
+^^^^
+
+.. autofunction:: skrl.envs.loaders.warp.load_isaaclab_env

@@ -1,4 +1,4 @@
-:tocdepth: 4
+:tocdepth: 5
 
 Trainers
 ========
@@ -10,11 +10,15 @@ Trainers
     Parallel <trainers/parallel>
     Step <trainers/step>
 
-Trainers are responsible for orchestrating and managing the training/evaluation of agents and their interactions with the environment.
+Trainers are responsible for orchestrating and managing the training/evaluation of agents
+and their interactions with the environment.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented trainers
+--------------------
+
+The following table lists the implemented trainers and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -36,46 +40,30 @@ Trainers are responsible for orchestrating and managing the training/evaluation 
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
+|br| |hr|
+
 Base class
 ----------
 
-.. note::
+Base class and configuration for trainer implementations.
 
-    This is the base class for all the other classes in this module.
-    It provides the basic functionality for the other classes.
-    **It is not intended to be used directly**.
+API
+^^^
 
-.. raw:: html
+|
 
-    <br>
+PyTorch
+"""""""
 
-Basic inheritance usage
-^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: skrl.trainers.torch
+.. autosummary::
+    :nosignatures:
 
-.. tabs::
-
-    .. group-tab:: |_4| |pytorch| |_4|
-
-        .. literalinclude:: ../snippets/trainer.py
-            :language: python
-            :start-after: [pytorch-start-base]
-            :end-before: [pytorch-end-base]
-
-    .. group-tab:: |_4| |jax| |_4|
-
-        .. literalinclude:: ../snippets/trainer.py
-            :language: python
-            :start-after: [jax-start-base]
-            :end-before: [jax-end-base]
-
-.. raw:: html
-
-    <br>
-
-API (PyTorch)
-^^^^^^^^^^^^^
+    TrainerCfg
+    Trainer
 
 .. autoclass:: skrl.trainers.torch.TrainerCfg
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -84,19 +72,22 @@ API (PyTorch)
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _setup_agents
     :members:
 
-    .. automethod:: __str__
+|
 
-.. raw:: html
+JAX
+"""
 
-    <br>
+.. automodule:: skrl.trainers.jax
+.. autosummary::
+    :nosignatures:
 
-API (JAX)
-^^^^^^^^^
+    TrainerCfg
+    Trainer
 
 .. autoclass:: skrl.trainers.jax.TrainerCfg
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -105,19 +96,22 @@ API (JAX)
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _setup_agents
     :members:
 
-    .. automethod:: __str__
+|
 
-.. raw:: html
+Warp
+""""
 
-    <br>
+.. automodule:: skrl.trainers.warp
+.. autosummary::
+    :nosignatures:
 
-API (Warp)
-^^^^^^^^^^
+    TrainerCfg
+    Trainer
 
 .. autoclass:: skrl.trainers.warp.TrainerCfg
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
@@ -126,7 +120,4 @@ API (Warp)
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _setup_agents
     :members:
-
-    .. automethod:: __str__

@@ -9,15 +9,14 @@ Utils and configurations
     Spaces <utils/spaces>
     Model instantiators <utils/model_instantiators>
     Runner <utils/runner>
+    TensorBoard SummaryWriter <utils/tensorboard>
     Distributed runs <utils/distributed>
     Memory and TensorBoard file post-processing <utils/postprocessing>
     Hugging Face integration <utils/huggingface>
 
 A set of utilities and configurations for managing an RL setup is provided as part of the library.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 .. list-table::
     :header-rows: 1
@@ -51,6 +50,10 @@ A set of utilities and configurations for managing an RL setup is provided as pa
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Runner <utils/runner>`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+    * - :doc:`TensorBoard SummaryWriter <utils/tensorboard>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`

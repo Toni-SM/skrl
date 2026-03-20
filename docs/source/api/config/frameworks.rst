@@ -3,21 +3,15 @@ ML frameworks configuration
 
 Configurations for behavior modification of Machine Learning (ML) frameworks.
 
-.. raw:: html
-
-    <br><hr>
-
-PyTorch
--------
-
-PyTorch specific configuration
-
-.. raw:: html
-
-    <br>
+|br| |hr|
 
 API
-^^^
+---
+
+|
+
+PyTorch
+^^^^^^^
 
 .. autofunction:: skrl.config.torch.parse_device
 
@@ -78,20 +72,9 @@ API
 
     Read-only attribute.
 
-.. raw:: html
-
-    <br>
+|
 
 JAX
----
-
-JAX specific configuration
-
-.. raw:: html
-
-    <br>
-
-API
 ^^^
 
 .. autofunction:: skrl.config.jax.parse_device
@@ -163,21 +146,10 @@ API
 
     Read-only attribute.
 
-.. raw:: html
-
-    <br>
+|
 
 Warp
-----
-
-Warp specific configuration
-
-.. raw:: html
-
-    <br>
-
-API
-^^^
+^^^^
 
 .. autofunction:: skrl.config.warp.parse_device
 

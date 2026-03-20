@@ -61,7 +61,7 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet warp-lang==1.11
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -113,7 +113,7 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet warp-lang==1.11
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -160,7 +160,7 @@ jobs:
       run: |
         python -m pip install --quiet --upgrade pip
         python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet warp-lang==1.8.1
+        python -m pip install --quiet warp-lang==1.11
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list

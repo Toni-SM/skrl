@@ -1,32 +1,34 @@
 Playground environments
 =======================
 
-.. image:: ../../_static/imgs/example_playground.png
-    :width: 100%
-    :align: center
-    :alt: Playground environments
+|br| |hr|
 
-.. raw:: html
-
-    <br><br><hr>
-
-Environments
-------------
+Overview
+--------
 
 The repository https://github.com/google-deepmind/mujoco_playground provides the MuJoCo Playground environments.
 
-These environments can be easily loaded and configured by calling a single function provided with this library. This function also makes it possible to configure the environment from the command line arguments or from its parameters (:literal:`task_name`, :literal:`num_envs`, among others).
+These environments can be easily loaded and configured by calling a single function provided with this library.
+Such function also makes it possible to configure the environment from the command line arguments or from its parameters.
 
 .. note::
 
     The command line arguments has priority over the function parameters.
 
-.. raw:: html
+    Run the following command to list all the available MuJoCo Playground environments:
 
-    <br>
+    .. code-block:: bash
+
+        python -c "import mujoco_playground; print(mujoco_playground.registry.ALL_ENVS)"
+
+|
 
 Usage
-^^^^^
+-----
+
+The following snippets show how to load MuJoCo Playground environments:
+
+|
 
 .. tabs::
 
@@ -90,13 +92,30 @@ Usage
 
         .. code-block::
 
-            python script.py --task CartpoleBalance
+            python script.py --task CartpoleBalance --num_envs 1024 --episode_length 300
 
-.. raw:: html
-
-    <br>
+|
 
 API
+---
+
+|
+
+PyTorch
+^^^^^^^
+
+.. autofunction:: skrl.envs.loaders.torch.load_playground_env
+
+|
+
+JAX
 ^^^
 
 .. autofunction:: skrl.envs.loaders.jax.load_playground_env
+
+|
+
+Warp
+^^^^
+
+.. autofunction:: skrl.envs.loaders.warp.load_playground_env

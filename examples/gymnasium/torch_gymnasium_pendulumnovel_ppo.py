@@ -20,7 +20,7 @@ from skrl.utils import set_seed
 
 # parse arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_envs", type=int, default=1, help="Number of environments")
+parser.add_argument("--num_envs", type=int, default=5, help="Number of environments")
 parser.add_argument("--headless", action="store_true", help="Run in headless mode (no rendering)")
 parser.add_argument("--seed", type=int, default=None, help="Random seed")
 parser.add_argument("--checkpoint", type=str, default=None, help="Load checkpoint from path")

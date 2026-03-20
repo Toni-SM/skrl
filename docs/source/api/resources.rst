@@ -11,11 +11,19 @@ Resources
 
 Resources groups a variety of components that may be used to improve the agents' performance.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Resources are grouped into four categories:
 
-Available resources are :doc:`noises <resources/noises>`, input :doc:`preprocessors <resources/preprocessors>`, learning rate :doc:`schedulers <resources/schedulers>` and :doc:`optimizers <resources/optimizers>` (this last one only for JAX).
+* :doc:`Noises <resources/noises>`
+* Input :doc:`preprocessors <resources/preprocessors>`
+* Learning rate :doc:`schedulers <resources/schedulers>`
+* :doc:`Optimizers <resources/optimizers>`
+
+Implemented resources
+---------------------
+
+The following table lists the implemented resources and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1

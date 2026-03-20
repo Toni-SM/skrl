@@ -19,6 +19,7 @@ def export_policy_as_jit(
     filename: str = "policy.pt",
     example_inputs: dict[str, torch.Tensor] | None = None,
     optimize: bool = True,
+    stochastic_evaluation: bool = False,
     device: str | torch.device = "cpu",
 ) -> None:
     """Export a policy to a TorchScript (JIT) file.
@@ -34,10 +35,17 @@ def export_policy_as_jit(
     :param filename: Output file name. Defaults to ``"policy.pt"``.
     :param example_inputs: Example inputs for tracing. If ``None``, dummy inputs with batch size 1 are used.
     :param optimize: Whether to optimize the traced model for inference. Defaults to ``True``.
+    :param stochastic_evaluation: Whether to use stochastic actions returned by ``act()`` during export.
+        If ``False``, mean actions are used when available to match deterministic evaluation.
     :param device: Device used for export. Defaults to ``"cpu"``.
     """
 
-    exporter = _TorchPolicyExporter(policy, observation_preprocessor, state_preprocessor)
+    exporter = _TorchPolicyExporter(
+        policy,
+        observation_preprocessor,
+        state_preprocessor,
+        stochastic_evaluation=stochastic_evaluation,
+    )
     os.makedirs(path, exist_ok=True)
     full_path = os.path.join(path, filename)
 
@@ -67,6 +75,7 @@ def export_policy_as_onnx(
     filename: str = "policy.onnx",
     example_inputs: dict[str, torch.Tensor] | None = None,
     optimize: bool = True,
+    stochastic_evaluation: bool = False,
     dynamo: bool = True,
     opset_version: int = 18,
     verbose: bool = False,
@@ -85,13 +94,20 @@ def export_policy_as_onnx(
     :param filename: Output file name. Defaults to ``"policy.onnx"``.
     :param example_inputs: Example inputs for export. If ``None``, dummy inputs with batch size 1 are used.
     :param optimize: Whether to optimize the exported model for inference. Defaults to ``True``.
+    :param stochastic_evaluation: Whether to use stochastic actions returned by ``act()`` during export.
+        If ``False``, mean actions are used when available to match deterministic evaluation.
     :param dynamo: Whether to use Torch Dynamo for export. Defaults to ``True``.
     :param opset_version: ONNX opset version to use. Defaults to ``18``.
     :param verbose: Whether to print the export graph summary.
     :param device: Device used for export. Defaults to ``"cpu"``.
     """
 
-    exporter = _TorchPolicyExporter(policy, observation_preprocessor, state_preprocessor)
+    exporter = _TorchPolicyExporter(
+        policy,
+        observation_preprocessor,
+        state_preprocessor,
+        stochastic_evaluation=stochastic_evaluation,
+    )
     os.makedirs(path, exist_ok=True)
     full_path = os.path.join(path, filename)
 
@@ -132,6 +148,7 @@ class _TorchPolicyExporter(torch.nn.Module):
     :param policy: A policy model to be wrapped.
     :param observation_preprocessor: Optional preprocessor applied to observations.
     :param state_preprocessor: Optional preprocessor applied to states.
+    :param stochastic_evaluation: Whether to keep stochastic actions from policy ``act()``.
     """
 
     def __init__(
@@ -139,6 +156,7 @@ class _TorchPolicyExporter(torch.nn.Module):
         policy: Model,
         observation_preprocessor: torch.nn.Module | None = None,
         state_preprocessor: torch.nn.Module | None = None,
+        stochastic_evaluation: bool = False,
     ) -> None:
         super().__init__()
 
@@ -147,6 +165,7 @@ class _TorchPolicyExporter(torch.nn.Module):
             observation_preprocessor if observation_preprocessor is not None else torch.nn.Identity()
         )
         self._state_preprocessor = state_preprocessor if state_preprocessor is not None else torch.nn.Identity()
+        self._stochastic_evaluation = stochastic_evaluation
 
         self._num_observations = getattr(self.policy, "num_observations", 0)
         self._num_states = getattr(self.policy, "num_states", 0)
@@ -159,11 +178,14 @@ class _TorchPolicyExporter(torch.nn.Module):
         :param states: Batch of agent states (or zeros if unused).
         :returns: Batch of actions produced by the policy.
         """
-        actions, _ = self.policy.act(
+        actions, outputs = self.policy.act(
             {
                 "observations": self._observation_preprocessor(observations),
                 "states": self._state_preprocessor(states),
             },
             role="policy",
         )
-        return actions
+
+        if self._stochastic_evaluation:
+            return actions
+        return outputs.get("mean_actions", actions)

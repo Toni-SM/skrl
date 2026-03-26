@@ -180,8 +180,8 @@ class Runner:
 
         # backward compatibility
         if "lambda" in cfg:
-            logger.warning("The 'lambda' field in the specified configuration is deprecated. Use 'lambda_' instead")
-            cfg["lambda_"] = cfg["lambda"]
+            logger.warning("The 'lambda' field in the specified configuration is deprecated. Use 'gae_lambda' instead")
+            cfg["gae_lambda"] = cfg["lambda"]
             del cfg["lambda"]
         if "clip_predicted_values" in cfg:
             logger.warning(

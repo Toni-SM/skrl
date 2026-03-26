@@ -403,7 +403,7 @@ class AMP(Agent):
             values=values,
             next_values=next_values,
             discount_factor=self.cfg.discount_factor,
-            lambda_coefficient=self.cfg.lambda_,
+            lambda_coefficient=self.cfg.gae_lambda,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))

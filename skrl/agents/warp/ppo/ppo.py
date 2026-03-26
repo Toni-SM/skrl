@@ -451,7 +451,7 @@ class PPO(Agent):
                 advantages,
                 last_values,
                 self.cfg.discount_factor,
-                self.cfg.lambda_,
+                self.cfg.gae_lambda,
                 values.shape[0],
             ],
             device=self.device,

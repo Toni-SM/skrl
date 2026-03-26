@@ -26,7 +26,7 @@ class AMP_CFG(AgentCfg):
     Range: ``[0.0, 1.0]``.
     """
 
-    lambda_: float = 0.95
+    gae_lambda: float = 0.95
     """TD(lambda) coefficient for computing Generalized Advantage Estimation (GAE)."""
 
     learning_rate: float | tuple[float, float, float] = 5e-5

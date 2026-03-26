@@ -13,7 +13,7 @@ def load_playground_env(
     action_repeat: int | None = None,
     full_reset: bool = False,
     randomization: bool = False,
-    vision: bool = False,
+    cfg_overrides: dict | None = None,
     show_cfg: bool = True,
     parser: argparse.ArgumentParser | None = None,
 ):
@@ -30,7 +30,6 @@ def load_playground_env(
     - ``--action_repeat``: Number of times to repeat the given action per step.
     - ``--full_reset``: Whether to perform a full reset of the environment on each step, rather than resetting to an initial cached state.
     - ``--randomization``: Whether to use randomization.
-    - ``--vision``: Whether to use vision-based environment.
 
     :param task_name: The name of the task.
         If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
@@ -50,8 +49,7 @@ def load_playground_env(
     :param randomization: Whether to use randomization.
         If the environment does not provide a randomization function, the randomization flag is ignored.
         Command line argument has priority over function parameter if both are specified.
-    :param vision: Whether to use vision-based environment.
-        Command line argument has priority over function parameter if both are specified.
+    :param cfg_overrides: Configuration overrides for the environment.
     :param show_cfg: Whether to print the configuration.
     :param parser: The argument parser to use. If not specified, a new argument parser will be created.
 
@@ -87,7 +85,6 @@ def load_playground_env(
         help="Whether to perform a full reset of the environment on each step, rather than resetting to an initial cached state",
     )
     parser.add_argument("--randomization", action="store_true", default=False, help="Whether to use randomization")
-    parser.add_argument("--vision", action="store_true", default=False, help="Whether to use vision-based environment")
 
     args, _ = parser.parse_known_args()
 
@@ -124,18 +121,14 @@ def load_playground_env(
     action_repeat = args.action_repeat or action_repeat or env_cfg.get("action_repeat", 1)
     # - full_reset
     full_reset = args.full_reset or full_reset
-    # - vision
-    vision = args.vision or vision
 
     # load environment
     env = wrapper.wrap_for_brax_training(
-        registry.load(task_name, config=env_cfg),
+        registry.load(task_name, config=env_cfg, config_overrides=cfg_overrides),
         episode_length=episode_length,
         action_repeat=action_repeat,
         randomization_fn=randomization_fn,
         full_reset=full_reset,
-        vision=vision,
-        num_vision_envs=num_envs,
     )
 
     # set number of environments
@@ -155,7 +148,6 @@ def load_playground_env(
         print(f"    action_repeat: {action_repeat}")
         print(f"    full_reset: {full_reset}")
         print(f"    randomization: {randomization} (function: {randomization_fn})")
-        print(f"    vision: {vision}\n")
 
     set_seed(args.seed)
     return env

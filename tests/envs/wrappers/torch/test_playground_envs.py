@@ -9,7 +9,7 @@ from skrl.envs.loaders.torch import load_playground_env
 from skrl.envs.wrappers.torch import wrap_env
 from skrl.envs.wrappers.torch.playground_envs import PlaygroundWrapper
 
-from ....utilities import is_running_on_github_actions
+from ....utilities import is_device_available, is_running_on_github_actions
 
 
 @pytest.mark.parametrize("task_name", ["CartpoleBalance", "LeapCubeReorient"])
@@ -34,7 +34,8 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
             pytest.skip(f"Unable to import MuJoCo Playground environment: {e}")
 
     # load and wrap the environment
-    original_env = load_playground_env(task_name=task_name, num_envs=num_envs)
+    cfg_overrides = None if is_device_available("cuda", backend="torch") else {"impl": "jax"}  # warp impl requires GPU
+    original_env = load_playground_env(task_name=task_name, num_envs=num_envs, cfg_overrides=cfg_overrides)
     env = wrap_env(original_env, "auto")
     assert isinstance(env, PlaygroundWrapper)
     env = wrap_env(original_env, "playground")

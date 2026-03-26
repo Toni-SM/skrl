@@ -97,7 +97,7 @@ cfg_agent.KEY = ...
 # instantiate the agent
 # (assuming a defined environment <env> and memory <memory>)
 # (assuming defined memories for motion <motion_dataset> and <reply_buffer>)
-# (assuming defined methods to collect motion <collect_reference_motions> and <collect_observation>)
+# (assuming defined method to collect reference motions <collect_reference_motions>)
 agent = AMP(
     models=models,
     memory=memory,  # only required during training
@@ -110,7 +110,6 @@ agent = AMP(
     motion_dataset=motion_dataset,
     reply_buffer=reply_buffer,
     collect_reference_motions=collect_reference_motions,
-    collect_observation=collect_observation,
 )
 # [torch-end-amp]
 

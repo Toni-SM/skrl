@@ -210,6 +210,7 @@ class MAPPO(MultiAgent):
         self._current_next_observations = {}
         self._current_next_states = {}
         self._current_log_prob = {}
+        self._current_values = {}
         self._rollout = 0
 
     def act(
@@ -233,6 +234,7 @@ class MAPPO(MultiAgent):
         actions = {}
         log_prob = {}
         outputs = {}
+        current_values = {}
 
         for uid in self.possible_agents:
             inputs = {
@@ -249,7 +251,13 @@ class MAPPO(MultiAgent):
                 actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
                 log_prob[uid] = outputs[uid]["log_prob"]
 
+                # compute values
+                if self.training:
+                    values, _ = self.values[uid].act(inputs, role="value")
+                    current_values[uid] = self._value_preprocessor[uid](values, inverse=True)
+
         self._current_log_prob = log_prob
+        self._current_values = current_values
         return actions, outputs
 
     def record_transition(
@@ -295,7 +303,7 @@ class MAPPO(MultiAgent):
             timesteps=timesteps,
         )
 
-        if self.memories:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -304,18 +312,9 @@ class MAPPO(MultiAgent):
                 if self.cfg.rewards_shaper is not None:
                     rewards[uid] = self.cfg.rewards_shaper(rewards[uid], timestep, timesteps)
 
-                # compute values
-                with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                    inputs = {
-                        "observations": self._observation_preprocessor[uid](observations[uid]),
-                        "states": self._state_preprocessor[uid](states[uid]),
-                    }
-                    values, _ = self.values[uid].act(inputs, role="value")
-                    values = self._value_preprocessor[uid](values, inverse=True)
-
                 # time-limit (truncation) bootstrapping
                 if self.cfg.time_limit_bootstrap[uid]:
-                    rewards[uid] += self.cfg.discount_factor[uid] * values * truncated[uid]
+                    rewards[uid] += self.cfg.discount_factor[uid] * self._current_values[uid] * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
@@ -325,7 +324,7 @@ class MAPPO(MultiAgent):
                     rewards=rewards[uid],
                     terminated=terminated[uid],
                     log_prob=self._current_log_prob[uid],
-                    values=values,
+                    values=self._current_values[uid],
                 )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -342,14 +341,15 @@ class MAPPO(MultiAgent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                for uid in self.possible_agents:
-                    self.update(timestep=timestep, timesteps=timesteps, uid=uid)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    for uid in self.possible_agents:
+                        self.update(timestep=timestep, timesteps=timesteps, uid=uid)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

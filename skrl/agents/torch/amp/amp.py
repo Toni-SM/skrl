@@ -77,7 +77,6 @@ class AMP(Agent):
         motion_dataset: Memory | None = None,
         reply_buffer: Memory | None = None,
         collect_reference_motions: Callable[[int], torch.Tensor] | None = None,
-        collect_observation: Callable[[], torch.Tensor] | None = None,
     ) -> None:
         """Adversarial Motion Priors (AMP).
 
@@ -98,7 +97,6 @@ class AMP(Agent):
         :param motion_dataset: Reference motion dataset (M).
         :param reply_buffer: Reply buffer for preventing discriminator overfitting (B).
         :param collect_reference_motions: Callable to collect reference motions.
-        :param collect_observation: Callable to collect AMP observations.
 
         :raises KeyError: If a configuration key is missing.
         """
@@ -117,7 +115,6 @@ class AMP(Agent):
         self.motion_dataset = motion_dataset
         self.reply_buffer = reply_buffer
         self.collect_reference_motions = collect_reference_motions
-        self.collect_observation = collect_observation
 
         # models
         self.policy = self.models.get("policy", None)
@@ -234,9 +231,8 @@ class AMP(Agent):
                 self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
 
         # create temporary variables needed for storage and computation
-        self._current_observations = None
-        self._current_states = None
         self._current_log_prob = None
+        self._current_values = None
         self._rollout = 0
 
     def act(
@@ -252,12 +248,6 @@ class AMP(Agent):
         :return: Agent output. The first component is the expected action/value returned by the agent.
             The second component is a dictionary containing extra output values according to the model.
         """
-        # use collected observations/states
-        if self._current_observations is not None:
-            observations = self._current_observations
-        if self._current_states is not None:
-            states = self._current_states
-
         inputs = {
             "observations": self._observation_preprocessor(observations),
             "states": self._state_preprocessor(states),
@@ -271,6 +261,11 @@ class AMP(Agent):
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = outputs["log_prob"]
+
+            # compute values
+            if self.training:
+                values, _ = self.value.act(inputs, role="value")
+                self._current_values = self._value_preprocessor(values, inverse=True)
 
         return actions, outputs
 
@@ -303,12 +298,6 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        # use collected observations/states
-        if self._current_observations is not None:
-            observations = self._current_observations
-        if self._current_states is not None:
-            states = self._current_states
-
         super().record_transition(
             observations=observations,
             states=states,
@@ -323,25 +312,16 @@ class AMP(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             amp_observations = infos["amp_obs"]
 
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                inputs = {
-                    "observations": self._observation_preprocessor(observations),
-                    "states": self._state_preprocessor(states),
-                }
-                values, _ = self.value.act(inputs, role="value")
-                values = self._value_preprocessor(values, inverse=True)
-
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * values * truncated
+                rewards += self.cfg.discount_factor * self._current_values * truncated
 
             # compute next values
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -351,10 +331,7 @@ class AMP(Agent):
                 }
                 next_values, _ = self.value.act(inputs, role="value")
                 next_values = self._value_preprocessor(next_values, inverse=True)
-                if "terminate" in infos:
-                    next_values *= infos["terminate"].view(-1, 1).logical_not()  # compatibility with IsaacGymEnvs
-                else:
-                    next_values *= terminated.view(-1, 1).logical_not()
+                next_values *= terminated.view(-1, 1).logical_not()
 
             self.memory.add_samples(
                 observations=observations,
@@ -363,7 +340,7 @@ class AMP(Agent):
                 rewards=rewards,
                 terminated=terminated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
                 amp_observations=amp_observations,
                 next_values=next_values,
             )
@@ -374,9 +351,7 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        # compatibility with IsaacGymEnvs
-        if self.collect_observation is not None:
-            self._current_observations = self.collect_observation()
+        pass
 
     def post_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called after the interaction with the environment.
@@ -384,13 +359,14 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

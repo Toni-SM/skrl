@@ -44,15 +44,6 @@ class CustomSingleAgentEnv(SingleAgentEnv):
     def fetch_amp_obs_demo(self, num_samples):
         return sample_space(self.amp_observation_space, batch_size=num_samples, backend="native", device=self.device)
 
-    def reset_done(self):
-        return (
-            {
-                "obs": sample_space(
-                    self.observation_space, batch_size=self.num_envs, backend="native", device=self.device
-                )
-            },
-        )
-
 
 @hypothesis.given(
     num_envs=st.integers(min_value=1, max_value=5),
@@ -281,7 +272,6 @@ def test_agent(
         motion_dataset=RandomMemory(memory_size=50, device=device),
         reply_buffer=RandomMemory(memory_size=100, device=device),
         collect_reference_motions=lambda num_samples: env.fetch_amp_obs_demo(num_samples),
-        collect_observation=lambda: env.reset_done()[0]["obs"],
     )
 
     # trainer

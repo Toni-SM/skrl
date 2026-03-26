@@ -217,6 +217,11 @@ class RPO(Agent):
             actions, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = outputs["log_prob"]
 
+            # compute values
+            if self.training:
+                values, _ = self.value.act(inputs, role="value")
+                self._current_values = self._value_preprocessor(values, inverse=True)
+
         return actions, outputs
 
     def record_transition(
@@ -262,7 +267,7 @@ class RPO(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -270,19 +275,9 @@ class RPO(Agent):
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                inputs = {
-                    "observations": self._observation_preprocessor(observations),
-                    "states": self._state_preprocessor(states),
-                    "alpha": self.cfg.alpha,
-                }
-                values, _ = self.value.act(inputs, role="value")
-                values = self._value_preprocessor(values, inverse=True)
-
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * values * truncated
+                rewards += self.cfg.discount_factor * self._current_values * truncated
 
             # storage transition in memory
             self.memory.add_samples(
@@ -292,7 +287,7 @@ class RPO(Agent):
                 rewards=rewards,
                 terminated=terminated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -309,13 +304,14 @@ class RPO(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

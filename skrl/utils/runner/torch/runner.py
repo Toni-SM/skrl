@@ -28,8 +28,10 @@ class Runner:
         :param verbose: Whether to print extra information about the setup.
         """
         self._env = env
-        self._cfg = cfg
         self._verbose = verbose
+
+        # check for configuration compatibility
+        self._cfg = self._check_cfg_compatibility(copy.deepcopy(cfg))
 
         # set random seed
         set_seed(self._cfg.get("seed", None))
@@ -68,6 +70,52 @@ class Runner:
         except Exception as e:
             logger.error(f"Loading yaml error: {e}")
             return {}
+
+    def _check_cfg_compatibility(self, cfg: dict) -> dict:
+        """Check for configuration compatibility.
+
+        :param cfg: Configuration dictionary to check for compatibility.
+
+        :return: Updated dictionary.
+        """
+        # rename 'lambda' to 'gae_lambda'
+        if "lambda" in cfg.get("agent", {}):
+            logger.warning("The 'lambda' field in the configuration is deprecated. Use 'gae_lambda' instead")
+            cfg["agent"]["gae_lambda"] = cfg["agent"]["lambda"]
+            del cfg["agent"]["lambda"]
+        # remove 'clip_predicted_values' redundant configuration by using 'value_clip'
+        if "clip_predicted_values" in cfg.get("agent", {}):
+            logger.warning(
+                "The 'clip_predicted_values' field in the configuration is deprecated. "
+                "Use a 'value_clip' value greater than 0 to clip the predicted values instead"
+            )
+            value_clip = cfg["agent"].get("value_clip", 0.2)
+            cfg["agent"]["value_clip"] = value_clip if cfg["agent"]["clip_predicted_values"] else 0.0
+            del cfg["agent"]["clip_predicted_values"]
+        # replace `state_preprocessor` by `observation_preprocessor` if the latter is not defined
+        if "state_preprocessor" in cfg.get("agent", {}):
+            if "observation_preprocessor" not in cfg.get("agent", {}):
+                logger.warning(
+                    "The 'state_preprocessor' field in the configuration has been replaced by 'observation_preprocessor'. "
+                    "If the 'state_preprocessor' definition is desired but the `observation_preprocessor` is not, "
+                    "define the last one to None (null) to avoid the automatic replacement"
+                )
+                cfg["agent"]["observation_preprocessor"] = cfg["agent"]["state_preprocessor"]
+                cfg["agent"]["observation_preprocessor_kwargs"] = cfg["agent"].get("state_preprocessor_kwargs")
+                del cfg["agent"]["state_preprocessor"]
+                if "state_preprocessor_kwargs" in cfg["agent"]:
+                    del cfg["agent"]["state_preprocessor_kwargs"]
+        # remove `shared_state_preprocessor` by using `state_preprocessor`
+        if "shared_state_preprocessor" in cfg.get("agent", {}):
+            logger.warning(
+                "The 'shared_state_preprocessor' field in the configuration is deprecated. Use 'state_preprocessor' instead"
+            )
+            cfg["agent"]["state_preprocessor"] = cfg["agent"]["shared_state_preprocessor"]
+            cfg["agent"]["state_preprocessor_kwargs"] = cfg["agent"].get("shared_state_preprocessor_kwargs")
+            del cfg["agent"]["shared_state_preprocessor"]
+            if "shared_state_preprocessor_kwargs" in cfg["agent"]:
+                del cfg["agent"]["shared_state_preprocessor_kwargs"]
+        return cfg
 
     def _component(self, name: str) -> Type:
         """Get skrl component (e.g.: agent, trainer, etc..) from string identifier.
@@ -187,19 +235,6 @@ class Runner:
             if scale is not None and scale != 1.0:
                 cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: rewards * scale
             del cfg["rewards_shaper_scale"]
-
-        # backward compatibility
-        if "lambda" in cfg:
-            logger.warning("The 'lambda' field in the specified configuration is deprecated. Use 'gae_lambda' instead")
-            cfg["gae_lambda"] = cfg["lambda"]
-            del cfg["lambda"]
-        if "clip_predicted_values" in cfg:
-            logger.warning(
-                "The 'clip_predicted_values' field in the specified configuration is deprecated. "
-                "Define a 'value_clip' value greater than 0 to clip the predicted values instead"
-            )
-            cfg["value_clip"] = cfg["value_clip"] if cfg["clip_predicted_values"] else 0.0
-            del cfg["clip_predicted_values"]
 
         return cfg
 

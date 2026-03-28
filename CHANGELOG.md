@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Refactor the library to differentiate between environment observations and states (also known as privileged observation)
 - Implement agent/multi-agent and trainer configurations using Python Data Classes
   - Unify the different learning rate settings under the `learning_rate` configuration
+  - Rename `lambda` to `gae_lambda`
   - Remove the `clip_predicted_values` redundant configuration by checking for `value_clip > 0`
   - Remove specific exploration noise settings (`initial_scale`, `final_scale` and `timesteps`)
     in favor of generic scheduling functions

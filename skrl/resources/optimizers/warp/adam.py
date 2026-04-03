@@ -5,9 +5,9 @@ from typing import Any
 import math
 
 import warp as wp
+from warp_nn.utils import ScopedCapture
 
 from skrl import config
-from skrl.utils.framework.warp import ScopedCapture
 
 
 tiled = wp.constant(config.warp.tiled)

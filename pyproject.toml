@@ -39,6 +39,7 @@ jax = [
 ]
 warp = [
   "warp-lang>=1.12",
+  "warp-nn>=0.1",
 ]
 all = [
   "torch>=1.11",
@@ -47,6 +48,7 @@ all = [
   "flax>=0.9.0",
   "optax",
   "warp-lang>=1.12",
+  "warp-nn>=0.1",
 ]
 tests = [
   "pytest",
@@ -104,6 +106,7 @@ known_framework = [
   "optax",
   "numpy",
   "warp",
+  "warp_nn",
 ]
 sections = [
   "FUTURE",

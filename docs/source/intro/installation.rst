@@ -30,6 +30,7 @@ Dependencies
         |br| `flax <https://flax.readthedocs.io>`_ ``>= 0.9.0``
         |br| `optax <https://optax.readthedocs.io>`_
       - `warp-lang <https://nvidia.github.io/warp>`_ ``>= 1.12``
+        |br| `warp-nn <https://nvidia.github.io/warp-nn>`_ ``>= 0.1``
 
 .. warning::
 

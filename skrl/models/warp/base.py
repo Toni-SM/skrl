@@ -6,11 +6,10 @@ from abc import ABC, abstractmethod
 import gymnasium
 
 import warp as wp
+import warp_nn.nn as nn
 
 from skrl import config, logger
 from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space, sample_space
-
-from . import nn
 
 
 @wp.kernel

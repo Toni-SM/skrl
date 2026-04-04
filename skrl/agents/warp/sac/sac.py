@@ -6,11 +6,11 @@ import gymnasium
 
 import numpy as np
 import warp as wp
+from warp_nn.optimizers import Adam
 
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.optimizers.warp import Adam
 from skrl.utils import ScopedTimer
 
 from .sac_cfg import SAC_CFG
@@ -341,9 +341,9 @@ class SAC(Agent):
         if self.training:
             if timestep >= self.cfg.learning_starts:
                 with ScopedTimer() as timer:
-                    self.enable_training_mode(True)
+                    self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)
-                    self.enable_training_mode(False)
+                    self.enable_models_training_mode(False)
                     self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints

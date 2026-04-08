@@ -6,11 +6,11 @@ from abc import ABC, abstractmethod
 import gymnasium
 
 import warp as wp
+import warp_nn.nn as nn
 
 from skrl import config, logger
+from skrl.utils.framework.warp import type_cast
 from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space, sample_space
-
-from . import nn
 
 
 @wp.kernel
@@ -40,8 +40,7 @@ class Model(nn.Module, ABC):
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
         super(Model, self).__init__()
-
-        self.device = config.warp.parse_device(device)
+        self.to(config.warp.parse_device(device))
 
         self.observation_space = observation_space
         self.state_space = state_space
@@ -81,6 +80,12 @@ class Model(nn.Module, ABC):
                     sample_space(self.action_space, backend="native", device=self.device)
                 ),
             }
+            if inputs["observations"] is not None:
+                inputs["observations"] = type_cast(inputs["observations"], wp.float32)
+            if inputs["states"] is not None:
+                inputs["states"] = type_cast(inputs["states"], wp.float32)
+            if inputs["taken_actions"] is not None:
+                inputs["taken_actions"] = type_cast(inputs["taken_actions"], wp.float32)
         # init parameters
         self.to(device=self.device)
         self.compute(inputs=inputs, role=role)

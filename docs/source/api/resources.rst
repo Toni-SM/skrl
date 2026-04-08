@@ -75,4 +75,4 @@ The following table lists the implemented resources and their support for differ
     * - :doc:`Adam <resources/optimizers/adam>`\ |_5| |_5| |_5| |_5| |_5| |_5| |_3|
       - .. centered:: :math:`\scriptscriptstyle \texttt{PyTorch}`
       - .. centered:: :math:`\blacksquare`
-      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\scriptscriptstyle \texttt{Warp-NN}`

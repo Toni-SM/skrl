@@ -180,6 +180,9 @@ def test_agent(
             roles=["policy", "value"],
         )
         models["value"] = models["policy"]
+    # instantiate models' state dict
+    for role, model in models.items():
+        model.init_state_dict(role=role)
 
     # memory
     memory = RandomMemory(memory_size=rollouts, num_envs=env.num_envs, device=env.device)

@@ -4,8 +4,7 @@ import gymnasium as gym
 import mani_skill.envs  # needed to register the ManiSkill environment entry points
 
 import warp as wp
-
-import skrl.models.warp.nn as nn
+import warp_nn.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger

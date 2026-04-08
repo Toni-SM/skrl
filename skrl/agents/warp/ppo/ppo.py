@@ -6,12 +6,12 @@ import gymnasium
 
 import numpy as np
 import warp as wp
+from warp_nn.optimizers import Adam
 
 import skrl.utils.framework.warp as warp_utils
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.optimizers.warp import Adam
 from skrl.resources.schedulers.warp import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
@@ -215,12 +215,18 @@ class PPO(Agent):
             self.learning_rate = self.cfg.learning_rate[0]
             # - optimizers
             if self.policy is self.value:
-                self.optimizer = Adam(self.policy.parameters(), lr=self.learning_rate, device=self.device)
+                self.optimizer = Adam(
+                    self.policy.parameters(),
+                    lr=self.learning_rate,
+                    device=self.device,
+                    max_norm=self.cfg.grad_norm_clip,
+                )
             else:
                 self.optimizer = Adam(
                     self.policy.parameters() + self.value.parameters(),
                     lr=self.learning_rate,
                     device=self.device,
+                    max_norm=self.cfg.grad_norm_clip,
                 )
             # self.checkpoint_modules["optimizer"] = self.optimizer
             # - learning rate schedulers
@@ -411,9 +417,9 @@ class PPO(Agent):
             self._rollout += 1
             if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
                 with ScopedTimer() as timer:
-                    self.enable_training_mode(True)
+                    self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)
-                    self.enable_training_mode(False)
+                    self.enable_models_training_mode(False)
                     self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
@@ -562,8 +568,6 @@ class PPO(Agent):
 
                 # optimization step
                 tape.backward(self._loss)
-                if self.cfg.grad_norm_clip > 0:
-                    self.optimizer.clip_by_total_norm(self.cfg.grad_norm_clip)
                 self.optimizer.step(lr=self.learning_rate if self.scheduler else None)
                 tape.zero()
 

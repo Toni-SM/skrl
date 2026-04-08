@@ -29,31 +29,44 @@ SKRL - Reinforcement Learning library (|version|)
     <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml">
         <img alt="tests-jax" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-jax.yml/badge.svg">
     </a>
+    <a href="https://github.com/Toni-SM/skrl/actions/workflows/tests-warp.yml">
+        <img alt="tests-warp" src="https://github.com/Toni-SM/skrl/actions/workflows/tests-warp.yml/badge.svg">
+    </a>
     <br><br>
 
-**skrl** is an open-source library for Reinforcement Learning written in Python (on top of `PyTorch <https://pytorch.org/>`_ and `JAX <https://jax.readthedocs.io>`_) and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation. In addition to supporting the OpenAI `Gym <https://www.gymlibrary.dev>`_ , Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_, Google `DeepMind <https://github.com/deepmind/dm_env>`_ and `Brax <https://github.com/google/brax>`_, among other environment interfaces, it allows loading and configuring NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ (as well as `Isaac Gym <https://developer.nvidia.com/isaac-gym>`_ and `Omniverse Isaac Gym <https://github.com/isaac-sim/OmniIsaacGymEnvs>`_) environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments), which may or may not share resources, in the same run.
+**skrl** is an open-source library for Reinforcement Learning written in Python
+(implemented in `PyTorch <https://pytorch.org/>`_, `JAX <https://jax.readthedocs.io>`_ and `NVIDIA Warp <https://nvidia.github.io/warp>`_)
+and designed with a focus on modularity, readability, simplicity and transparency of algorithm implementation.
+In addition to supporting
+OpenAI `Gym <https://www.gymlibrary.dev>`_ ,
+Farama `Gymnasium <https://gymnasium.farama.org>`_ and `PettingZoo <https://pettingzoo.farama.org>`_,
+`ManiSkill <https://maniskill.readthedocs.io/en/latest/index.html>`_,
+among other environment interfaces, it allows loading and configuring
+NVIDIA `Isaac Lab <https://isaac-sim.github.io/IsaacLab/index.html>`_ and
+`MuJoCo Playground <https://playground.mujoco.org>`_
+environments, enabling agents' simultaneous training by scopes (subsets of environments among all available environments),
+which may or may not share resources, in the same run.
 
 **Main features:**
-    * PyTorch (|_1| |pytorch| |_1|) and JAX (|_1| |jax| |_1|)
-    * Clean code
-    * Modularity and reusability
-    * Documented library, code and implementations
-    * Support for Gym/Gymnasium (single and vectorized), Google DeepMind and Brax, NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) environments, among others
-    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), Google Brax, and NVIDIA Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym)
+    * PyTorch (|_1| |pytorch| |_1|), JAX (|_1| |jax| |_1|) and Warp (|_1| |warp| |_1|).
+    * Clean code.
+    * Modularity and reusability.
+    * Documented library, code and implementations.
+    * Support for fundamental (``Box``, ``Discrete`` and ``MultiDiscrete``) and composite (``Dict`` and ``Tuple``) spaces.
+    * Support for Gym/Gymnasium (single and vectorized), ManiSkill, MuJoCo Playground, NVIDIA Isaac Lab environments, among others.
+    * Simultaneous learning by scopes in Gym/Gymnasium (vectorized), ManiSkill, MuJoCo Playground, and NVIDIA Isaac Lab environments.
 
-.. raw:: html
+|
 
-    <br>
+.. hint::
 
-.. warning::
-
-    **skrl** is under **active continuous development**. Make sure you always have the latest version. Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
+    **skrl** is under **active continuous development**. Make sure you always have the latest version.
+    |br| Visit the `develop <https://github.com/Toni-SM/skrl/tree/develop>`_ branch or its
+    `documentation <https://skrl.readthedocs.io/en/develop>`_ to access the latest updates to be released.
 
 | **GitHub repository:** https://github.com/Toni-SM/skrl
 | **Questions or discussions:** https://github.com/Toni-SM/skrl/discussions
-|
-
-**Citing skrl:** To cite this library (created at Mondragon Unibertsitatea) use the following reference to its article: `skrl: Modular and Flexible Library for Reinforcement Learning <http://jmlr.org/papers/v24/23-0112.html>`_.
+| **Paper:** `skrl: Modular and Flexible Library for Reinforcement Learning <http://jmlr.org/papers/v24/23-0112.html>`_.
 
 .. code-block:: bibtex
 
@@ -68,9 +81,7 @@ SKRL - Reinforcement Learning library (|version|)
       url     = {http://jmlr.org/papers/v24/23-0112.html}
     }
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 User guide
 ----------
@@ -85,9 +96,7 @@ To start using the library, visit the following links:
     intro/examples
     intro/data
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Library components (overview)
 -----------------------------
@@ -108,7 +117,10 @@ Library components (overview)
 Agents
 ^^^^^^
 
-    Definition of reinforcement learning algorithms that compute an optimal policy. All agents inherit from one and only one :doc:`base class <api/agents>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
+    Definition of reinforcement learning algorithms that compute an optimal policy.
+    All agents inherit from one, and only one, :doc:`base class <api/agents>`
+    (that defines a uniform interface and provides for common functionalities)
+    but which is not tied to the implementation details of the algorithms.
 
     * :doc:`Advantage Actor Critic <api/agents/a2c>` (**A2C**)
     * :doc:`Adversarial Motion Priors <api/agents/amp>` (**AMP**)
@@ -127,7 +139,10 @@ Agents
 Multi-agents
 ^^^^^^^^^^^^
 
-    Definition of reinforcement learning algorithms that compute an optimal policies. All agents (multi-agents) inherit from one and only one :doc:`base class <api/multi_agents>` (that defines a uniform interface and provides for common functionalities) but which is not tied to the implementation details of the algorithms
+    Definition of reinforcement learning algorithms that compute an optimal policies.
+    All agents (multi-agents) inherit from one, and only one, :doc:`base class <api/multi_agents>`
+    (that defines a uniform interface and provides for common functionalities)
+    but which is not tied to the implementation details of the algorithms.
 
     * :doc:`Independent Proximal Policy Optimization <api/multi_agents/ippo>` (**IPPO**)
     * :doc:`Multi-Agent Proximal Policy Optimization <api/multi_agents/mappo>` (**MAPPO**)
@@ -135,25 +150,35 @@ Multi-agents
 Environments
 ^^^^^^^^^^^^
 
-    Definition of the Isaac Gym (preview 2, 3 and 4), Omniverse Isaac Gym, and Isaac Lab environment loaders, and wrappers for Gym/Gymnasium, DeepMind, Brax, Isaac Lab (as well as Isaac Gym and Omniverse Isaac Gym) environments, among others
+    Definition of the Isaac Lab and Playground environment loaders, and wrappers for Gym/Gymnasium, Isaac Lab, ManiSkill,
+    PettingZoo, Playground environments, among others.
 
-    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **DeepMind**, **Brax**, **Isaac Lab** (as well as **Isaac Gym** and **Omniverse Isaac Gym**) environments, among others
-    * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **PettingZoo**, **Isaac Lab** environments, among others
+    * :doc:`Single-agent environment wrapping <api/envs/wrapping>` for **Gym/Gymnasium**, **Isaac Lab**, **ManiSkill**
+      and **Playground** environments, among others.
+    * :doc:`Multi-agent environment wrapping <api/envs/multi_agents_wrapping>` for **Isaac Lab** and **PettingZoo**
+      environments, among others.
     * Loading :doc:`Isaac Lab environments <api/envs/isaaclab>`
-    * Loading :doc:`Isaac Gym environments <api/envs/isaac_gym>`
-    * Loading :doc:`Omniverse Isaac Gym environments <api/envs/omniverse_isaac_gym>`
+    * Loading :doc:`Playground environments <api/envs/playground>`
 
 Memories
 ^^^^^^^^
 
-    Generic memory definitions. Such memories are not bound to any agent and can be used for any role such as rollout buffer or experience replay memory, for example. All memories inherit from a :doc:`base class <api/memories>` that defines a uniform interface and keeps track (in allocated tensors) of transitions with the environment or other defined data
+    Generic memory definitions. Such memories are not bound to any agent and can be used for any role
+    such as rollout buffer or experience replay memory, for example.
+    All memories inherit from a :doc:`base class <api/memories>` that defines a uniform interface and keeps track
+    (in allocated tensors) of transitions with the environment or other defined data.
 
     * :doc:`Random memory <api/memories/random>`
 
 Models
 ^^^^^^
 
-    Definition of helper mixins for the construction of tabular functions or function approximators using artificial neural networks. This library does not provide predefined policies but helper mixins to create discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables (tensors) or artificial neural networks. All models inherit from one :doc:`base class <api/models>` that defines a uniform interface and provides for common functionalities. In addition, it is possible to create :doc:`shared model <api/models/shared_model>` by combining the implemented definitions
+    Definition of helper mixins for the construction of tabular functions or function approximators using
+    artificial neural networks. This library does not provide predefined policies but helper mixins to create
+    discrete and continuous (stochastic or deterministic) policies in which the user only has to define the tables
+    (tensors) or artificial neural networks. All models inherit from one :doc:`base class <api/models>` that defines
+    a uniform interface and provides for common functionalities. In addition, it is possible to create
+    :doc:`shared model <api/models/shared_model>` by combining the implemented definitions.
 
     * :doc:`Tabular model <api/models/tabular>` (discrete domain)
     * :doc:`Categorical model <api/models/categorical>` (discrete domain)
@@ -165,7 +190,9 @@ Models
 Trainers
 ^^^^^^^^
 
-    Definition of the procedures responsible for managing the agent's training and interaction with the environment. All trainers inherit from a :doc:`base class <api/trainers>` that defines a uniform interface and provides for common functionalities
+    Definition of the procedures responsible for managing the agent's training and interaction with the environment.
+    All trainers inherit from a :doc:`base class <api/trainers>` that defines a uniform interface and provides
+    for common functionalities.
 
     * :doc:`Sequential trainer <api/trainers/sequential>`
     * :doc:`Parallel trainer <api/trainers/parallel>`
@@ -174,37 +201,38 @@ Trainers
 Resources
 ^^^^^^^^^
 
-    Definition of resources used by the agents during training and/or evaluation, such as exploration noises or learning rate schedulers
+    Definition of resources used by the agents during training and/or evaluation,
+    such as exploration noises or learning rate schedulers.
 
-    **Noises:** Definition of the noises used by the agents during the exploration stage. All noises inherit from a :doc:`base class <api/resources/noises>` that defines a uniform interface
+    **Noises:** Definition of the noises used by the agents during the exploration stage.
+    All noises inherit from a :doc:`base class <api/resources/noises>` that defines a uniform interface.
 
-        * :doc:`Gaussian <api/resources/noises/gaussian>` noise
-        * :doc:`Ornstein-Uhlenbeck <api/resources/noises/ornstein_uhlenbeck>` noise
+    * :doc:`Gaussian <api/resources/noises/gaussian>` noise
+    * :doc:`Ornstein-Uhlenbeck <api/resources/noises/ornstein_uhlenbeck>` noise
 
-    **Learning rate schedulers:** Definition of learning rate schedulers. All schedulers inherit from the PyTorch :literal:`_LRScheduler` class (see `how to adjust learning rate <https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate>`_ in the PyTorch documentation for more details)
+    **Learning rate schedulers:** Definition of learning rate schedulers.
 
-        * :doc:`KL Adaptive <api/resources/schedulers/kl_adaptive>`
+    * :doc:`KL Adaptive <api/resources/schedulers/kl_adaptive>`
 
-    **Preprocessors:** Definition of preprocessors
+    **Preprocessors:** Definition of preprocessors.
 
-        * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
+    * :doc:`Running standard scaler <api/resources/preprocessors/running_standard_scaler>`
 
-    **Optimizers:** Definition of optimizers
+    **Optimizers:** Definition of optimizers.
 
-        * :doc:`Adam <api/resources/optimizers/adam>`
+    * :doc:`Adam <api/resources/optimizers/adam>`
 
 Utils and configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Definition of utilities and configurations
+    Definition of utilities and configurations.
 
     * :doc:`ML frameworks <api/config/frameworks>` configuration
     * :doc:`Random seed <api/utils/seed>`
     * :doc:`Spaces <api/utils/spaces>`
     * :doc:`Model instantiators <api/utils/model_instantiators>`
     * :doc:`Runner <api/utils/runner>`
+    * :doc:`TensorBoard SummaryWriter <api/utils/tensorboard>`
     * :doc:`Distributed runs <api/utils/distributed>`
-    * Memory and Tensorboard :doc:`file post-processing <api/utils/postprocessing>`
+    * Memory and TensorBoard :doc:`file post-processing <api/utils/postprocessing>`
     * :doc:`Hugging Face integration <api/utils/huggingface>`
-    * :doc:`Isaac Gym utils <api/utils/isaacgym_utils>`
-    * :doc:`Omniverse Isaac Gym utils <api/utils/omniverse_isaacgym_utils>`

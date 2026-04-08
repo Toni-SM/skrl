@@ -20,10 +20,10 @@ Page not found
     <br>
     <div style="text-align: center; font-size: 1.75rem;">
         <p style="margin: 0;"><strong>404: Puzzle piece not found.</strong></p>
-        <p style="margin: 0;">Did you look under the sofa cushions?</p>
+        <p style="margin: 0;">Have you looked under the sofa cushions?</p>
     </div>
     <br>
     <br>
 
-Since version 1.0.0, the documentation structure has changed to improve content organization and to provide a better browsing experience.
-Navigate using the left sidebar or type in the search box to find what you are looking for.
+The documentation structure may change between mayor versions to improve content organization and to provide a better browsing experience.
+Use the left sidebar to navigate, or type what you are looking for into the search box.

@@ -1,20 +1,24 @@
+:tocdepth: 4
+
 Robust Policy Optimization (RPO)
 ================================
 
-RPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that adds a uniform random perturbation to a base parameterized distribution to help the agent maintain a certain level of stochasticity throughout the training process
+RPO is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm that adds a uniform random
+perturbation to a base parameterized distribution to help the agent maintain a certain level of stochasticity
+throughout the training process.
 
-Paper: `Robust Policy Optimization in Deep Reinforcement Learning <https://arxiv.org/abs/2212.07536>`_
+**Paper:** `Robust Policy Optimization in Deep Reinforcement Learning <https://arxiv.org/abs/2212.07536>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
 .. note::
 
-    This algorithm is built on top of the PPO algorithm and simply adds the :literal:`alpha` hyperparameter to the policy input dictionary. It is the responsibility of the user to make use of this hyper-parameter to modify the parameterized distribution.
+    This algorithm is built on top of the PPO algorithm and simply adds the :literal:`alpha` hyperparameter to the
+    policy input dictionary. It is the responsibility of the user to make use of this hyper-parameter to modify
+    the parameterized distribution.
 
     .. tabs::
 
@@ -59,9 +63,7 @@ Algorithm
                         :end-before: [jax-end-rpo-without-rpo]
 
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,9 +75,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -140,16 +140,15 @@ Learning algorithm
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`rpo_rnn.py`) to maintain the readability of the standard implementation (:literal:`rpo.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`rpo_rnn.py`) to maintain the readability of the standard implementation (:literal:`rpo.py`).
 
 .. tabs::
 
@@ -181,7 +180,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -189,31 +189,34 @@ Usage
                     :start-after: [torch-start-rpo-rnn]
                     :end-before: [torch-end-rpo-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/rpo/rpo.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``RPO_CFG``
+      - :py:class:`~skrl.agents.torch.rpo.RPO_CFG`
+      - :py:class:`~skrl.agents.jax.rpo.RPO_CFG`
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -229,14 +232,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 continuous stochastic and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 continuous stochastic and 1 deterministic function approximator.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -261,14 +264,12 @@ The implementation uses 1 continuous stochastic and 1 deterministic function app
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -277,55 +278,84 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - for Policy and Value
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.rpo.RPO_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.rpo
+.. autosummary::
+    :nosignatures:
+
+    RPO_CFG
+    RPO
+    RPO_RNN
+
+.. autoclass:: skrl.agents.torch.rpo.RPO_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.rpo.RPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.rpo.RPO_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.rpo
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.agents.jax.rpo.RPO_DEFAULT_CONFIG
+    RPO_CFG
+    RPO
+
+.. autoclass:: skrl.agents.jax.rpo.RPO_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.rpo.RPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

@@ -1,20 +1,19 @@
+:tocdepth: 4
+
 Soft Actor-Critic (SAC)
 =======================
 
-SAC is a **model-free**, **stochastic** **off-policy** **actor-critic** algorithm that uses double Q-learning (like TD3) and **entropy** regularization to maximize a trade-off between exploration and exploitation
+SAC is a **model-free**, **stochastic** **off-policy** **actor-critic** algorithm that uses double Q-learning (like TD3)
+and **entropy** regularization to maximize a trade-off between exploration and exploitation.
 
-Paper: `Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor <https://arxiv.org/abs/1801.01290>`_
+**Paper:** `Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor <https://arxiv.org/abs/1801.01290>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,9 +24,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`), entropy coefficient (:math:`\alpha`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -81,16 +78,15 @@ Learning algorithm
 |         step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`sac_rnn.py`) to maintain the readability of the standard implementation (:literal:`sac.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`sac_rnn.py`) to maintain the readability of the standard implementation (:literal:`sac.py`).
 
 .. tabs::
 
@@ -114,6 +110,14 @@ Usage
                     :start-after: [jax-start-sac]
                     :end-before: [jax-end-sac]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/agents_basic_usage.py
+                    :language: python
+                    :emphasize-lines: 2
+                    :start-after: [warp-start-sac]
+                    :end-before: [warp-end-sac]
+
     .. tab:: RNN implementation
 
         .. tabs::
@@ -122,7 +126,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -130,31 +135,34 @@ Usage
                     :start-after: [torch-start-sac-rnn]
                     :end-before: [torch-end-sac-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/sac/sac.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``SAC_CFG``
+      - :py:class:`~skrl.agents.torch.sac.SAC_CFG`
+      - :py:class:`~skrl.agents.jax.sac.SAC_CFG`
+      - :py:class:`~skrl.agents.warp.sac.SAC_CFG`
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -170,14 +178,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic and 4 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic and 4 deterministic function approximators.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -220,14 +228,12 @@ The implementation uses 1 stochastic and 4 deterministic function approximators.
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -236,55 +242,108 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.sac.SAC_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.sac
+.. autosummary::
+    :nosignatures:
+
+    SAC_CFG
+    SAC
+    SAC_RNN
+
+.. autoclass:: skrl.agents.torch.sac.SAC_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.sac.SAC
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.sac.SAC_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.sac
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.agents.jax.sac.SAC_DEFAULT_CONFIG
+    SAC_CFG
+    SAC
+
+.. autoclass:: skrl.agents.jax.sac.SAC_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.sac.SAC
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
+    :members:
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.agents.warp.sac
+.. autosummary::
+    :nosignatures:
+
+    SAC_CFG
+    SAC
+
+.. autoclass:: skrl.agents.warp.sac.SAC_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.agents.warp.sac.SAC
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:

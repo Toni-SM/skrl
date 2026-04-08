@@ -1,4 +1,6 @@
-from typing import Any, Literal, Optional, Sequence, Union
+from __future__ import annotations
+
+from typing import Any, Literal
 
 import gymnasium
 from gymnasium import spaces
@@ -9,21 +11,16 @@ import torch
 from skrl import config
 
 
-def convert_gym_space(
-    space: Optional["gym.Space"], *, squeeze_batch_dimension: bool = False
-) -> Optional[gymnasium.Space]:
+def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
     """Converts a gym space to a gymnasium space.
 
-    Args:
-        space: Gym space to convert to.
-        squeeze_batch_dimension: Whether to remove fundamental spaces' first dimension.
-            It currently affects ``Box`` space only.
+    :param space: Gym space to convert to.
+    :param squeeze_batch_dimension: Whether to remove fundamental spaces' first dimension.
+        It currently affects ``Box`` space only.
 
-    Returns:
-        Converted space, or ``None`` if the given space is ``None``.
+    :return: Converted space, or ``None`` if the given space is ``None``.
 
-    Raises:
-        ValueError: The given space is not supported.
+    :raises ValueError: The given space is not supported.
     """
     import gym
 
@@ -58,20 +55,18 @@ def convert_gym_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def tensorize_space(space: Optional[spaces.Space], x: Any, *, device: Optional[Union[str, torch.device]] = None) -> Any:
+def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | torch.device | None = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
 
-    Args:
-        space: Gymnasium space.
-        x: Sample/value of the given space to tensorize to.
-        device: Device on which a tensor/array is or will be allocated.
-            This parameter is used when the space value is not a PyTorch tensor (e.g.: NumPy array, number).
+    :param space: Gymnasium space.
+    :param x: Sample/value of the given space to tensorize to.
+    :param device: Device on which a tensor/array is or will be allocated.
+        This parameter is used when the space value is not a PyTorch tensor (e.g.: NumPy array, number).
 
-    Returns:
-        Sample/value space with items converted to tensors, or ``None`` if the given space or the sample/value is ``None``.
+    :return: Sample/value space with items converted to tensors,
+        or ``None`` if the given space or the sample/value is ``None``.
 
-    Raises:
-        ValueError: The given space or the sample/value type is not supported.
+    :raises ValueError: The given space or the sample/value type is not supported.
     """
     if space is None or x is None:
         return None
@@ -115,21 +110,18 @@ def tensorize_space(space: Optional[spaces.Space], x: Any, *, device: Optional[U
     raise ValueError(f"Unsupported space ({space})")
 
 
-def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
+def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimension: bool = True) -> Any:
     """Convert a tensorized space to a gymnasium space with expected sample/value item types.
 
-    Args:
-        space: Gymnasium space.
-        x: Tensorized space (sample/value space where items are tensors).
-        squeeze_batch_dimension: Whether to remove the batch dimension.
-            If True, only the sample/value with a batch dimension of size 1 will be affected.
+    :param space: Gymnasium space.
+    :param x: Tensorized space (sample/value space where items are tensors).
+    :param squeeze_batch_dimension: Whether to remove the batch dimension.
+        If True, only the sample/value with a batch dimension of size 1 will be affected.
 
-    Returns:
-        Sample/value space with expected item types,
-            or ``None`` if the given space or the tensorized sample/value is ``None``.
+    :return: Sample/value space with expected item types,
+        or ``None`` if the given space or the tensorized sample/value is ``None``.
 
-    Raises:
-        ValueError: The given space or the sample/value type is not supported.
+    :raises ValueError: The given space or the sample/value type is not supported.
     """
     if space is None or x is None:
         return None
@@ -184,18 +176,15 @@ def untensorize_space(space: Optional[spaces.Space], x: Any, *, squeeze_batch_di
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any) -> Optional[torch.Tensor]:
+def flatten_tensorized_space(x: Any) -> torch.Tensor | None:
     """Flatten a tensorized space.
 
-    Args:
-        x: Tensorized space sample/value.
+    :param x: Tensorized space sample/value.
 
-    Returns:
-        A tensor. The returned tensor will have shape (batch, space size),
-            or ``None`` if the given tensorized sample/value is ``None``.
+    :return: A tensor. The returned tensor will have shape (batch, space size),
+        or ``None`` if the given tensorized sample/value is ``None``.
 
-    Raises:
-        ValueError: The given sample/value type is not supported.
+    :raises ValueError: The given sample/value type is not supported.
     """
     if x is None:
         return None
@@ -212,20 +201,15 @@ def flatten_tensorized_space(x: Any) -> Optional[torch.Tensor]:
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 
-def unflatten_tensorized_space(
-    space: Optional[Union[spaces.Space, Sequence[int], int]], x: Optional[torch.Tensor]
-) -> Any:
+def unflatten_tensorized_space(space: spaces.Space | None, x: torch.Tensor | None) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
-    Args:
-        space: Gymnasium space.
-        x: A tensor with shape (batch, space size).
+    :param space: Gymnasium space.
+    :param x: A tensor with shape (batch, space size).
 
-    Returns:
-        Tensorized space value, or ``None`` if the given space or the tensor is ``None``.
+    :return: Tensorized space value, or ``None`` if the given space or the tensor is ``None``.
 
-    Raises:
-        ValueError: The given space is not supported.
+    :raises ValueError: The given space is not supported.
     """
     if space is None or x is None:
         return None
@@ -261,17 +245,15 @@ def unflatten_tensorized_space(
     raise ValueError(f"Unsupported space ({space})")
 
 
-def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]], *, occupied_size: bool = False) -> int:
+def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied_size: bool = False) -> int:
     """Get the size (number of elements) of a space.
 
-    Args:
-        space: Gymnasium space.
-        occupied_size: Whether the number of elements occupied by the space is returned.
-            It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
-            and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
+    :param space: Gymnasium space.
+    :param occupied_size: Whether the number of elements occupied by the space is returned.
+        It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
+        and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
 
-    Returns:
-        Size of the space (number of elements), or ``0`` if the given space is ``None``.
+    :return: Size of the space (number of elements), or ``0`` if the given space is ``None``.
     """
     if space is None:
         return 0
@@ -299,23 +281,104 @@ def compute_space_size(space: Optional[Union[spaces.Space, Sequence[int], int]],
     return gymnasium.spaces.flatdim(space)
 
 
+def compute_space_limits(
+    space: spaces.Space | None,
+    *,
+    occupied_size: bool = False,
+    device: str | torch.device | None = None,
+    none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
+) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+    """Get the low and high limits of a space.
+
+    .. note::
+
+        Only the :py:class:`~gymnasium.spaces.Box` space has low and high limits.
+        Other spaces are not bounded (low is ``-inf`` and high is ``inf``).
+
+    :param space: Gymnasium space.
+    :param occupied_size: Whether the limits are returned for the number of elements occupied by the space.
+        It only affects :py:class:`~gymnasium.spaces.Discrete` (occupied space is 1),
+        and :py:class:`~gymnasium.spaces.MultiDiscrete` (occupied space is the number of discrete spaces).
+    :param device: Device on which a tensor/array is or will be allocated.
+    :param none_if_unbounded: Whether to return ``None`` if the space is unbounded.
+        If ``"both"``, low and high limits will be ``None`` if the space is unbounded in both directions.
+        If ``"below"``, low limit will be ``None`` if the space is unbounded below.
+        If ``"above"``, high limit will be ``None`` if the space is unbounded above.
+        If ``"any"``, low or high limit will be ``None`` if the space is unbounded below or above, respectively.
+        If not specified, low and high limits will be defined using ``-inf`` and ``inf``,
+        respectively, when the space is unbounded.
+
+    :return: Low and high limits of the space, or ``None`` if the given space is ``None``
+        or unbounded (and ``none_if_unbounded`` is specified).
+    """
+
+    def _compute_limits(space: spaces.Space, *, low: np.ndarray, high: np.ndarray, index: int, occupied_size: bool):
+        # fundamental spaces
+        # - Box
+        if isinstance(space, spaces.Box):
+            size = compute_space_size(space, occupied_size=occupied_size)
+            low[index : index + size] = space.low.flatten()
+            high[index : index + size] = space.high.flatten()
+        # composite spaces
+        # - Tuple
+        elif isinstance(space, spaces.Tuple):
+            for s in space:
+                _compute_limits(s, low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(s, occupied_size=occupied_size)
+        # - Dict
+        elif isinstance(space, spaces.Dict):
+            for k in sorted(space.keys()):
+                _compute_limits(space[k], low=low, high=high, index=index, occupied_size=occupied_size)
+                index += compute_space_size(space[k], occupied_size=occupied_size)
+
+    if space is None:
+        return None, None
+    size = compute_space_size(space, occupied_size=occupied_size)
+    low = np.full((size,), -float("inf"), dtype=np.float32)
+    high = np.full((size,), float("inf"), dtype=np.float32)
+    _compute_limits(space, low=low, high=high, index=0, occupied_size=occupied_size)
+    # check for unbounded spaces
+    if none_if_unbounded == "both":
+        if (np.isinf(low) & np.isinf(high)).all():
+            low, high = None, None
+    elif none_if_unbounded == "below":
+        if np.isinf(low).all():
+            low = None
+    elif none_if_unbounded == "above":
+        if np.isinf(high).all():
+            high = None
+    elif none_if_unbounded == "any":
+        if np.isinf(low).all():
+            low = None
+        if np.isinf(high).all():
+            high = None
+    # convert to tensors
+    device = config.torch.parse_device(device)
+    if low is not None:
+        low = torch.tensor(low, device=device)
+    if high is not None:
+        high = torch.tensor(high, device=device)
+    return low, high
+
+
 def sample_space(
-    space: Optional[spaces.Space], *, batch_size: int = 1, backend: str = Literal["numpy", "native"], device=None
+    space: spaces.Space | None,
+    *,
+    batch_size: int = 1,
+    backend: Literal["numpy", "native"] = "numpy",
+    device: str | torch.device | None = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 
-    Args:
-        space: Gymnasium space.
-        batch_size: Size of the sampled batch.
-        backend: Whether backend will be used to construct the fundamental spaces.
-        device: Device on which a tensor/array is or will be allocated.
-            This parameter is used when the backend is ``"native"`` (PyTorch).
+    :param space: Gymnasium space.
+    :param batch_size: Size of the sampled batch.
+    :param backend: Whether backend will be used to construct the fundamental spaces.
+    :param device: Device on which a tensor/array is or will be allocated.
+        This parameter is used when the backend is ``"native"`` (PyTorch).
 
-    Returns:
-        Sample of the space, or ``None`` if the given space is ``None``.
+    :return: Sample of the space, or ``None`` if the given space is ``None``.
 
-    Raises:
-        ValueError: The given space or backend is not supported.
+    :raises ValueError: The given space or backend is not supported.
     """
     if space is None:
         return None

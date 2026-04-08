@@ -1,5 +1,9 @@
 import os
 import sys
+import inspect
+import logging
+import operator
+
 
 # skrl library
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -10,23 +14,25 @@ import skrl
 
 # project information
 project = "skrl"
-copyright = "2021-2024, Toni-SM"
+copyright = "2021-2026, Toni-SM"
 author = "Toni-SM"
 
 if skrl.__version__ != "unknown":
     release = version = skrl.__version__
 else:
-    release = version = "1.4.3"
+    release = version = "2.0.0"
 
 master_doc = "index"
 
 # general configuration
 extensions = [
+    "autodocsumm",
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.linkcode",
     "sphinx_tabs.tabs",
     "sphinx_copybutton",
     "notfound.extension",
@@ -35,14 +41,14 @@ extensions = [
 # generate links to the documentation of objects in external projects
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "gym": ("https://www.gymlibrary.dev/", None),
     "gymnasium": ("https://gymnasium.farama.org/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "torch": ("https://pytorch.org/docs/stable/", None),
-    "jax": ("https://jax.readthedocs.io/en/latest/", None),
+    "torch": ("https://docs.pytorch.org/docs/stable/", None),
+    "jax": ("https://docs.jax.dev/en/latest/", None),
     "flax": ("https://flax.readthedocs.io/en/latest/", None),
     "flax-linen": ("https://flax-linen.readthedocs.io/en/latest/", None),
     "optax": ("https://optax.readthedocs.io/en/latest/", None),
+    "warp": ("https://nvidia.github.io/warp/", None),
 }
 
 pygments_style = "tango"
@@ -71,12 +77,19 @@ rst_prolog = """
 .. |jax| image:: /_static/data/logo-jax.svg
     :width: 28
 
+.. |warp| image:: /_static/data/logo-warp.svg
+    :width: 25
+
 .. |pytorch| image:: /_static/data/logo-torch.svg
     :width: 16
 
 .. |br| raw:: html
 
             <br>
+
+.. |hr| raw:: html
+
+            <hr>
 
 """
 
@@ -114,20 +127,26 @@ epub_show_urls = "footnote"
 
 # autodoc ext
 autodoc_member_order = "groupwise"
-autoclass_content = "init"
+autodoc_default_options = {
+    "autosummary": True,
+}
 autodoc_mock_imports = [
+    "flax",
     "gym",
     "gymnasium",
-    "torch",
     "jax",
     "jaxlib",
-    "flax",
+    "mujoco",
     "optax",
-    "tensorboard",
-    "tqdm",
     "packaging",
-    "isaacgym",
+    "tensorboard",
+    "torch",
+    "tqdm",
+    "warp",
 ]
+autoclass_content = "init"
+autosummary_generate = True
+autosummary_generate_overwrite = False
 
 # copybutton ext
 copybutton_prompt_text = r">>> |\.\.\. "
@@ -144,7 +163,43 @@ notfound_context = {
 """,
 }
 
+
+# linkcode ext
+def linkcode_resolve(domain, info):
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+    if not info["fullname"]:
+        return None
+
+    try:
+        mod = sys.modules.get(info["module"])
+        obj = operator.attrgetter(info["fullname"])(mod)
+        if isinstance(obj, property):
+            obj = obj.fget
+        filename = inspect.getsourcefile(obj)
+        source, linenum = inspect.getsourcelines(obj)
+    except Exception:
+        return None
+
+    github_version = os.environ.get("GITHUB_REF_NAME") or os.environ.get("CI_COMMIT_REF_NAME") or "develop"
+    filename = os.path.relpath(filename, start=os.path.dirname(skrl.__file__))
+    lines = f"#L{linenum}-L{linenum + len(source)}" if linenum else ""
+
+    return f"https://github.com/Toni-SM/skrl/blob/{github_version}/skrl/{filename}{lines}"
+
+
 # suppress warning messages
 suppress_warnings = [
     "ref.python",  # more than one target found for cross-reference
 ]
+
+
+# hack to suppress 'WARNING: duplicate object description... use :no-index:'
+class DuplicateObjectDescriptionFilter(logging.Filter):
+    def filter(self, record):
+        return "duplicate object description" not in record.getMessage()
+
+
+logging.getLogger("sphinx.sphinx.domains.python").addFilter(DuplicateObjectDescriptionFilter())

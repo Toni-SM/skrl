@@ -1,17 +1,31 @@
 # [start-definition-torch]
 class CategoricalModel(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
-# [end-definition-torch]
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
+        # [end-definition-torch]
 
 
 # [start-definition-jax]
 class CategoricalModel(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
-# [end-definition-jax]
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
+        # [end-definition-jax]
+
 
 # =============================================================================
 
@@ -24,25 +38,36 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
-        self.net = nn.Sequential(nn.Linear(self.num_observations, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 32),
-                                 nn.ReLU(),
-                                 nn.Linear(32, self.num_actions))
+        self.net = nn.Sequential(
+            nn.Linear(self.num_observations, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, self.num_actions),
+        )
 
     def compute(self, inputs, role):
-        return self.net(inputs["states"]), {}
+        return self.net(inputs["observations"]), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = MLP(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 # [end-mlp-sequential-torch]
 
 # [start-mlp-functional-torch]
@@ -55,27 +80,36 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.fc1 = nn.Linear(self.num_observations, 64)
         self.fc2 = nn.Linear(64, 32)
         self.logits = nn.Linear(32, self.num_actions)
 
     def compute(self, inputs, role):
-        x = self.fc1(inputs["states"])
+        x = self.fc1(inputs["observations"])
         x = F.relu(x)
         x = self.fc2(x)
         x = F.relu(x)
         return self.logits(x), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = MLP(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 # [end-mlp-functional-torch]
 
 # [start-mlp-setup-jax]
@@ -86,9 +120,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     def setup(self):
         self.fc1 = nn.Dense(64)
@@ -96,7 +137,7 @@ class MLP(CategoricalMixin, Model):
         self.fc3 = nn.Dense(self.num_actions)
 
     def __call__(self, inputs, role):
-        x = self.fc1(inputs["states"])
+        x = self.fc1(inputs["observations"])
         x = nn.relu(x)
         x = self.fc2(x)
         x = nn.relu(x)
@@ -104,14 +145,17 @@ class MLP(CategoricalMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = MLP(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 
 # initialize model's state dict
-policy.init_state_dict("policy")
+policy.init_state_dict(role="policy")
 # [end-mlp-setup-jax]
 
 # [start-mlp-compact-jax]
@@ -122,13 +166,20 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class MLP(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = nn.Dense(64)(inputs["states"])
+        x = nn.Dense(64)(inputs["observations"])
         x = nn.relu(x)
         x = nn.Dense(32)(x)
         x = nn.relu(x)
@@ -136,14 +187,17 @@ class MLP(CategoricalMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = MLP(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = MLP(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 
 # initialize model's state dict
-policy.init_state_dict("policy")
+policy.init_state_dict(role="policy")
 # [end-mlp-compact-jax]
 
 # =============================================================================
@@ -157,37 +211,48 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
-        self.net = nn.Sequential(nn.Conv2d(3, 32, kernel_size=8, stride=4),
-                                 nn.ReLU(),
-                                 nn.Conv2d(32, 64, kernel_size=4, stride=2),
-                                 nn.ReLU(),
-                                 nn.Conv2d(64, 64, kernel_size=3, stride=1),
-                                 nn.ReLU(),
-                                 nn.Flatten(),
-                                 nn.Linear(1024, 512),
-                                 nn.ReLU(),
-                                 nn.Linear(512, 16),
-                                 nn.Tanh(),
-                                 nn.Linear(16, 64),
-                                 nn.Tanh(),
-                                 nn.Linear(64, 32),
-                                 nn.Tanh(),
-                                 nn.Linear(32, self.num_actions))
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 16),
+            nn.Tanh(),
+            nn.Linear(16, 64),
+            nn.Tanh(),
+            nn.Linear(64, 32),
+            nn.Tanh(),
+            nn.Linear(32, self.num_actions),
+        )
 
     def compute(self, inputs, role):
         # permute (samples, width * height * channels) -> (samples, channels, width, height)
-        return self.net(inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), {}
+        return self.net(inputs["observations"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)), {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = CNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 # [end-cnn-sequential-torch]
 
 # [start-cnn-functional-torch]
@@ -200,9 +265,15 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.conv1 = nn.Conv2d(3, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -215,7 +286,7 @@ class CNN(CategoricalMixin, Model):
 
     def compute(self, inputs, role):
         # permute (samples, width * height * channels) -> (samples, channels, width, height)
-        x = inputs["states"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)
+        x = inputs["observations"].view(-1, *self.observation_space.shape).permute(0, 3, 1, 2)
         x = self.conv1(x)
         x = F.relu(x)
         x = self.conv2(x)
@@ -235,11 +306,14 @@ class CNN(CategoricalMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = CNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 # [end-cnn-functional-torch]
 
 # [start-cnn-setup-jax]
@@ -250,9 +324,16 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     def setup(self):
         self.conv1 = nn.Conv(32, kernel_size=(8, 8), strides=(4, 4), padding="VALID")
@@ -265,7 +346,7 @@ class CNN(CategoricalMixin, Model):
         self.fc5 = nn.Dense(self.num_actions)
 
     def __call__(self, inputs, role):
-        x = inputs["states"].reshape((-1, *self.observation_space.shape))
+        x = inputs["observations"].reshape((-1, *self.observation_space.shape))
         x = self.conv1(x)
         x = nn.relu(x)
         x = self.conv2(x)
@@ -285,14 +366,17 @@ class CNN(CategoricalMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = CNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 
 # initialize model's state dict
-policy.init_state_dict("policy")
+policy.init_state_dict(role="policy")
 # [end-cnn-setup-jax]
 
 # [start-cnn-compact-jax]
@@ -303,13 +387,20 @@ from skrl.models.jax import Model, CategoricalMixin
 
 # define the model
 class CNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device=None, unnormalized_log_prob=True, **kwargs):
-        Model.__init__(self, observation_space, action_space, device, **kwargs)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(self, observation_space, state_space, action_space, device, unnormalized_log_prob=True, **kwargs):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+            **kwargs,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
     @nn.compact  # marks the given module method allowing inlined submodules
     def __call__(self, inputs, role):
-        x = inputs["states"].reshape((-1, *self.observation_space.shape))
+        x = inputs["observations"].reshape((-1, *self.observation_space.shape))
         x = nn.Conv(32, kernel_size=(8, 8), strides=(4, 4), padding="VALID")(x)
         x = nn.relu(x)
         x = nn.Conv(64, kernel_size=(4, 4), strides=(2, 2), padding="VALID")(x)
@@ -329,14 +420,17 @@ class CNN(CategoricalMixin, Model):
         return x, {}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = CNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True)
+# instantiate the model (given a wrapped environment: `env`)
+policy = CNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+)
 
 # initialize model's state dict
-policy.init_state_dict("policy")
+policy.init_state_dict(role="policy")
 # [end-cnn-compact-jax]
 
 # =============================================================================
@@ -350,54 +444,84 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class RNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hout
         self.sequence_length = sequence_length
 
-        self.rnn = nn.RNN(input_size=self.num_observations,
-                          hidden_size=self.hidden_size,
-                          num_layers=self.num_layers,
-                          batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.rnn = nn.RNN(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
-        self.net = nn.Sequential(nn.Linear(self.hidden_size, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 32),
-                                 nn.ReLU(),
-                                 nn.Linear(32, self.num_actions))
+        self.net = nn.Sequential(
+            nn.Linear(self.hidden_size, 64), nn.ReLU(), nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, self.num_actions)
+        )
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size)]}}  # hidden states (D ∗ num_layers, N, Hout)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states = inputs["rnn"][0]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
             # get the hidden states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, hidden_states = self.rnn(rnn_input[:,i0:i1,:], hidden_states)
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, hidden_states = self.rnn(rnn_input[:, i0:i1, :], hidden_states)
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_output = torch.cat(rnn_outputs, dim=1)
@@ -406,7 +530,7 @@ class RNN(CategoricalMixin, Model):
                 rnn_output, hidden_states = self.rnn(rnn_input, hidden_states)
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, hidden_states = self.rnn(rnn_input, hidden_states)
 
         # flatten the RNN output
@@ -415,15 +539,18 @@ class RNN(CategoricalMixin, Model):
         return self.net(rnn_output), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = RNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True,
-             num_envs=env.num_envs,
-             num_layers=1,
-             hidden_size=64,
-             sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = RNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-rnn-sequential-torch]
 
 # [start-rnn-functional-torch]
@@ -436,20 +563,38 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class RNN(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hout
         self.sequence_length = sequence_length
 
-        self.rnn = nn.RNN(input_size=self.num_observations,
-                          hidden_size=self.hidden_size,
-                          num_layers=self.num_layers,
-                          batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.rnn = nn.RNN(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -457,31 +602,45 @@ class RNN(CategoricalMixin, Model):
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size)]}}  # hidden states (D ∗ num_layers, N, Hout)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states = inputs["rnn"][0]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
             # get the hidden states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, hidden_states = self.rnn(rnn_input[:,i0:i1,:], hidden_states)
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, hidden_states = self.rnn(rnn_input[:, i0:i1, :], hidden_states)
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_output = torch.cat(rnn_outputs, dim=1)
@@ -490,7 +649,7 @@ class RNN(CategoricalMixin, Model):
                 rnn_output, hidden_states = self.rnn(rnn_input, hidden_states)
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, hidden_states = self.rnn(rnn_input, hidden_states)
 
         # flatten the RNN output
@@ -504,15 +663,18 @@ class RNN(CategoricalMixin, Model):
         return self.logits(x), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = RNN(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True,
-             num_envs=env.num_envs,
-             num_layers=1,
-             hidden_size=64,
-             sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = RNN(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-rnn-functional-torch]
 
 # =============================================================================
@@ -526,54 +688,84 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class GRU(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hout
         self.sequence_length = sequence_length
 
-        self.gru = nn.GRU(input_size=self.num_observations,
-                          hidden_size=self.hidden_size,
-                          num_layers=self.num_layers,
-                          batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.gru = nn.GRU(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
-        self.net = nn.Sequential(nn.Linear(self.hidden_size, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 32),
-                                 nn.ReLU(),
-                                 nn.Linear(32, self.num_actions))
+        self.net = nn.Sequential(
+            nn.Linear(self.hidden_size, 64), nn.ReLU(), nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, self.num_actions)
+        )
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size)]}}  # hidden states (D ∗ num_layers, N, Hout)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states = inputs["rnn"][0]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
             # get the hidden states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, hidden_states = self.gru(rnn_input[:,i0:i1,:], hidden_states)
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, hidden_states = self.gru(rnn_input[:, i0:i1, :], hidden_states)
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_output = torch.cat(rnn_outputs, dim=1)
@@ -582,7 +774,7 @@ class GRU(CategoricalMixin, Model):
                 rnn_output, hidden_states = self.gru(rnn_input, hidden_states)
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, hidden_states = self.gru(rnn_input, hidden_states)
 
         # flatten the RNN output
@@ -591,15 +783,18 @@ class GRU(CategoricalMixin, Model):
         return self.net(rnn_output), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = GRU(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True,
-             num_envs=env.num_envs,
-             num_layers=1,
-             hidden_size=64,
-             sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = GRU(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-gru-sequential-torch]
 
 # [start-gru-functional-torch]
@@ -612,20 +807,38 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class GRU(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hout
         self.sequence_length = sequence_length
 
-        self.gru = nn.GRU(input_size=self.num_observations,
-                          hidden_size=self.hidden_size,
-                          num_layers=self.num_layers,
-                          batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.gru = nn.GRU(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -633,31 +846,45 @@ class GRU(CategoricalMixin, Model):
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size)]}}  # hidden states (D ∗ num_layers, N, Hout)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size)  # hidden states (D ∗ num_layers, N, Hout)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states = inputs["rnn"][0]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
             # get the hidden states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, hidden_states = self.gru(rnn_input[:,i0:i1,:], hidden_states)
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, hidden_states = self.gru(rnn_input[:, i0:i1, :], hidden_states)
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_output = torch.cat(rnn_outputs, dim=1)
@@ -666,7 +893,7 @@ class GRU(CategoricalMixin, Model):
                 rnn_output, hidden_states = self.gru(rnn_input, hidden_states)
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, hidden_states = self.gru(rnn_input, hidden_states)
 
         # flatten the RNN output
@@ -680,15 +907,18 @@ class GRU(CategoricalMixin, Model):
         return self.logits(x), {"rnn": [hidden_states]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = GRU(observation_space=env.observation_space,
-             action_space=env.action_space,
-             device=env.device,
-             unnormalized_log_prob=True,
-             num_envs=env.num_envs,
-             num_layers=1,
-             hidden_size=64,
-             sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = GRU(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-gru-functional-torch]
 
 # =============================================================================
@@ -702,58 +932,92 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class LSTM(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hcell (Hout is Hcell because proj_size = 0)
         self.sequence_length = sequence_length
 
-        self.lstm = nn.LSTM(input_size=self.num_observations,
-                            hidden_size=self.hidden_size,
-                            num_layers=self.num_layers,
-                            batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.lstm = nn.LSTM(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
-        self.net = nn.Sequential(nn.Linear(self.hidden_size, 64),
-                                 nn.ReLU(),
-                                 nn.Linear(64, 32),
-                                 nn.ReLU(),
-                                 nn.Linear(32, self.num_actions))
+        self.net = nn.Sequential(
+            nn.Linear(self.hidden_size, 64), nn.ReLU(), nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, self.num_actions)
+        )
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size),    # hidden states (D ∗ num_layers, N, Hout)
-                                  (self.num_layers, self.num_envs, self.hidden_size)]}}  # cell states   (D ∗ num_layers, N, Hcell)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size),  # hidden states (D ∗ num_layers, N, Hout)
+                    (self.num_layers, self.num_envs, self.hidden_size),  # cell states  (D ∗ num_layers, N, Hcell)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states, cell_states = inputs["rnn"][0], inputs["rnn"][1]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
-            cell_states = cell_states.view(self.num_layers, -1, self.sequence_length, cell_states.shape[-1])  # (D * num_layers, N, L, Hcell)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
+            cell_states = cell_states.view(
+                self.num_layers, -1, self.sequence_length, cell_states.shape[-1]
+            )  # (D * num_layers, N, L, Hcell)
             # get the hidden/cell states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
-            cell_states = cell_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hcell)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
+            cell_states = cell_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hcell)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, (hidden_states, cell_states) = self.lstm(rnn_input[:,i0:i1,:], (hidden_states, cell_states))
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
-                    cell_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, (hidden_states, cell_states) = self.lstm(
+                        rnn_input[:, i0:i1, :], (hidden_states, cell_states)
+                    )
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
+                    cell_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_states = (hidden_states, cell_states)
@@ -763,7 +1027,7 @@ class LSTM(CategoricalMixin, Model):
                 rnn_output, rnn_states = self.lstm(rnn_input, (hidden_states, cell_states))
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, rnn_states = self.lstm(rnn_input, (hidden_states, cell_states))
 
         # flatten the RNN output
@@ -772,15 +1036,18 @@ class LSTM(CategoricalMixin, Model):
         return self.net(rnn_output), {"rnn": [rnn_states[0], rnn_states[1]]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = LSTM(observation_space=env.observation_space,
-              action_space=env.action_space,
-              device=env.device,
-              unnormalized_log_prob=True,
-              num_envs=env.num_envs,
-              num_layers=1,
-              hidden_size=64,
-              sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = LSTM(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-lstm-sequential-torch]
 
 # [start-lstm-functional-torch]
@@ -793,20 +1060,38 @@ from skrl.models.torch import Model, CategoricalMixin
 
 # define the model
 class LSTM(CategoricalMixin, Model):
-    def __init__(self, observation_space, action_space, device, unnormalized_log_prob=True,
-                 num_envs=1, num_layers=1, hidden_size=64, sequence_length=10):
-        Model.__init__(self, observation_space, action_space, device)
-        CategoricalMixin.__init__(self, unnormalized_log_prob)
+    def __init__(
+        self,
+        observation_space,
+        state_space,
+        action_space,
+        device,
+        unnormalized_log_prob=True,
+        num_envs=1,
+        num_layers=1,
+        hidden_size=64,
+        sequence_length=10,
+    ):
+        Model.__init__(
+            self,
+            observation_space=observation_space,
+            state_space=state_space,
+            action_space=action_space,
+            device=device,
+        )
+        CategoricalMixin.__init__(self, unnormalized_log_prob=unnormalized_log_prob)
 
         self.num_envs = num_envs
         self.num_layers = num_layers
         self.hidden_size = hidden_size  # Hcell (Hout is Hcell because proj_size = 0)
         self.sequence_length = sequence_length
 
-        self.lstm = nn.LSTM(input_size=self.num_observations,
-                            hidden_size=self.hidden_size,
-                            num_layers=self.num_layers,
-                            batch_first=True)  # batch_first -> (batch, sequence, features)
+        self.lstm = nn.LSTM(
+            input_size=self.num_observations,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
+            batch_first=True,  # (batch, sequence, features)
+        )
 
         self.fc1 = nn.Linear(self.hidden_size, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -814,35 +1099,53 @@ class LSTM(CategoricalMixin, Model):
 
     def get_specification(self):
         # batch size (N) is the number of envs during rollout
-        return {"rnn": {"sequence_length": self.sequence_length,
-                        "sizes": [(self.num_layers, self.num_envs, self.hidden_size),    # hidden states (D ∗ num_layers, N, Hout)
-                                  (self.num_layers, self.num_envs, self.hidden_size)]}}  # cell states   (D ∗ num_layers, N, Hcell)
+        return {
+            "rnn": {
+                "sequence_length": self.sequence_length,
+                "sizes": [
+                    (self.num_layers, self.num_envs, self.hidden_size),  # hidden states (D ∗ num_layers, N, Hout)
+                    (self.num_layers, self.num_envs, self.hidden_size),  # cell states  (D ∗ num_layers, N, Hcell)
+                ],
+            }
+        }
 
     def compute(self, inputs, role):
-        states = inputs["states"]
+        observations = inputs["observations"]
         terminated = inputs.get("terminated", None)
         hidden_states, cell_states = inputs["rnn"][0], inputs["rnn"][1]
 
         # training
         if self.training:
-            rnn_input = states.view(-1, self.sequence_length, states.shape[-1])  # (N, L, Hin): N=batch_size, L=sequence_length
-            hidden_states = hidden_states.view(self.num_layers, -1, self.sequence_length, hidden_states.shape[-1])  # (D * num_layers, N, L, Hout)
-            cell_states = cell_states.view(self.num_layers, -1, self.sequence_length, cell_states.shape[-1])  # (D * num_layers, N, L, Hcell)
+            rnn_input = observations.view(
+                -1, self.sequence_length, observations.shape[-1]
+            )  # (N, L, Hin): N=batch_size, L=sequence_length
+            hidden_states = hidden_states.view(
+                self.num_layers, -1, self.sequence_length, hidden_states.shape[-1]
+            )  # (D * num_layers, N, L, Hout)
+            cell_states = cell_states.view(
+                self.num_layers, -1, self.sequence_length, cell_states.shape[-1]
+            )  # (D * num_layers, N, L, Hcell)
             # get the hidden/cell states corresponding to the initial sequence
-            hidden_states = hidden_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hout)
-            cell_states = cell_states[:,:,0,:].contiguous()  # (D * num_layers, N, Hcell)
+            hidden_states = hidden_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hout)
+            cell_states = cell_states[:, :, 0, :].contiguous()  # (D * num_layers, N, Hcell)
 
             # reset the RNN state in the middle of a sequence
             if terminated is not None and torch.any(terminated):
                 rnn_outputs = []
                 terminated = terminated.view(-1, self.sequence_length)
-                indexes = [0] + (terminated[:,:-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist() + [self.sequence_length]
+                indexes = (
+                    [0]
+                    + (terminated[:, :-1].any(dim=0).nonzero(as_tuple=True)[0] + 1).tolist()
+                    + [self.sequence_length]
+                )
 
                 for i in range(len(indexes) - 1):
                     i0, i1 = indexes[i], indexes[i + 1]
-                    rnn_output, (hidden_states, cell_states) = self.lstm(rnn_input[:,i0:i1,:], (hidden_states, cell_states))
-                    hidden_states[:, (terminated[:,i1-1]), :] = 0
-                    cell_states[:, (terminated[:,i1-1]), :] = 0
+                    rnn_output, (hidden_states, cell_states) = self.lstm(
+                        rnn_input[:, i0:i1, :], (hidden_states, cell_states)
+                    )
+                    hidden_states[:, (terminated[:, i1 - 1]), :] = 0
+                    cell_states[:, (terminated[:, i1 - 1]), :] = 0
                     rnn_outputs.append(rnn_output)
 
                 rnn_states = (hidden_states, cell_states)
@@ -852,7 +1155,7 @@ class LSTM(CategoricalMixin, Model):
                 rnn_output, rnn_states = self.lstm(rnn_input, (hidden_states, cell_states))
         # rollout
         else:
-            rnn_input = states.view(-1, 1, states.shape[-1])  # (N, L, Hin): N=num_envs, L=1
+            rnn_input = observations.view(-1, 1, observations.shape[-1])  # (N, L, Hin): N=num_envs, L=1
             rnn_output, rnn_states = self.lstm(rnn_input, (hidden_states, cell_states))
 
         # flatten the RNN output
@@ -866,13 +1169,16 @@ class LSTM(CategoricalMixin, Model):
         return self.logits(x), {"rnn": [rnn_states[0], rnn_states[1]]}
 
 
-# instantiate the model (assumes there is a wrapped environment: env)
-policy = LSTM(observation_space=env.observation_space,
-              action_space=env.action_space,
-              device=env.device,
-              unnormalized_log_prob=True,
-              num_envs=env.num_envs,
-              num_layers=1,
-              hidden_size=64,
-              sequence_length=10)
+# instantiate the model (given a wrapped environment: `env`)
+policy = LSTM(
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+    unnormalized_log_prob=True,
+    num_envs=env.num_envs,
+    num_layers=1,
+    hidden_size=64,
+    sequence_length=10,
+)
 # [end-lstm-functional-torch]

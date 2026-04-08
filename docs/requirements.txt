@@ -1,8 +1,9 @@
-furo==2024.8.6
+furo==2025.9.25
 sphinx
 sphinx-tabs
 sphinx-autobuild
 sphinx-copybutton
 sphinx-notfound-page
+autodocsumm
 decorator
 numpy

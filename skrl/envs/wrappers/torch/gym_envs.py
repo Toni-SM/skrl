@@ -1,12 +1,24 @@
-from typing import Any, Tuple
+from __future__ import annotations
 
+from typing import Any
+
+
+# hack to fix: module 'numpy' has no attribute 'bool8'
+try:
+    import numpy as np
+
+    np.bool8
+except AttributeError:
+    np.bool8 = np.bool
+
+import gym
 import gymnasium
 from packaging import version
 
 import numpy as np
 import torch
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.torch.base import Wrapper
 from skrl.utils.spaces.torch import (
     convert_gym_space,
@@ -19,21 +31,13 @@ from skrl.utils.spaces.torch import (
 
 class GymWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """OpenAI Gym environment wrapper
+        """OpenAI Gym environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported OpenAI Gym environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
-        # hack to fix: module 'numpy' has no attribute 'bool8'
-        try:
-            np.bool8
-        except AttributeError:
-            np.bool8 = np.bool
-
-        import gym
-
+        self._seed = config.torch.key
         self._vectorized = False
         try:
             if isinstance(env, gym.vector.VectorEnv):
@@ -50,32 +54,32 @@ class GymWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_observation_space)
         return convert_gym_space(self._env.observation_space)
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         if self._vectorized:
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
 
-    def step(self, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        """Perform a step in the environment
+    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: torch.Tensor
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of torch.Tensor and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
         actions = untensorize_space(
             self.action_space,
             unflatten_tensorized_space(self.action_space, actions),
             squeeze_batch_dimension=not self._vectorized,
         )
+        if self._vectorized and isinstance(self.action_space, gymnasium.spaces.Discrete):
+            actions = actions.flatten()
 
         if self._deprecated_api:
             observation, reward, terminated, info = self._env.step(actions)
@@ -104,40 +108,55 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[torch.Tensor, Any]:
-        """Reset the environment
+    def state(self) -> torch.Tensor | None:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: torch.Tensor and any other info
+        :return: State.
+        """
+        try:
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        except:
+            return None
+
+    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
             if self._reset_once:
                 if self._deprecated_api:
+                    self._env.seed(self._seed)
                     observation = self._env.reset()
                     self._info = {}
                 else:
-                    observation, self._info = self._env.reset()
+                    observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
                     tensorize_space(self.observation_space, observation, device=self.device)
                 )
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
         if self._deprecated_api:
+            self._env.seed(self._seed)
             observation = self._env.reset()
             info = {}
         else:
-            observation, info = self._env.reset()
+            observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         if self._vectorized:
             return None
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

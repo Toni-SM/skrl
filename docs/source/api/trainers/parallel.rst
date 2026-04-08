@@ -1,11 +1,11 @@
+:tocdepth: 4
+
 Parallel trainer
 ================
 
 Train agents in parallel using multiple processes.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -22,20 +22,19 @@ Concept
     :class: only-dark
     :alt: Parallel trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Each process adds a GPU memory overhead (~1GB, although it can be much higher) due to PyTorch's CUDA kernels. See PyTorch `Issue #12873 <https://github.com/pytorch/pytorch/issues/12873>`_ for more details
+    Each process adds a GPU memory overhead (~1GB, although it can be much higher) due to PyTorch's CUDA kernels.
+    See PyTorch `Issue #12873 <https://github.com/pytorch/pytorch/issues/12873>`_ for more details.
 
 .. note::
 
-    At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented
+    At the moment, only simultaneous training and evaluation of agents with local memory (no memory sharing) is implemented.
 
 .. tabs::
 
@@ -46,26 +45,45 @@ Usage
             :start-after: [pytorch-start-parallel]
             :end-before: [pytorch-end-parallel]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/parallel.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``ParallelTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.parallel.ParallelTrainerCfg`
+      -
+      -
 
-    <br>
+|
 
-API (PyTorch)
--------------
+API
+---
 
-.. autoclass:: skrl.trainers.torch.parallel.PARALLEL_TRAINER_DEFAULT_CONFIG
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.trainers.torch.parallel
+.. autosummary::
+    :nosignatures:
+
+    ParallelTrainerCfg
+    ParallelTrainer
+
+.. autoclass:: skrl.trainers.torch.parallel.ParallelTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.trainers.torch.parallel.ParallelTrainer
     :undoc-members:

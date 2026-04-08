@@ -1,55 +1,3 @@
-# [pytorch-start-omniverse-isaacgym]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
-
-# load the environment
-env = load_omniverse_isaacgym_env(task_name="Cartpole")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-# [pytorch-end-omniverse-isaacgym]
-
-# [jax-start-omniverse-isaacgym]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
-
-# load the environment
-env = load_omniverse_isaacgym_env(task_name="Cartpole")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-# [jax-end-omniverse-isaacgym]
-
-
-# [pytorch-start-omniverse-isaacgym-mt]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_omniverse_isaacgym_env
-
-# load the multi-threaded environment
-env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-# [pytorch-end-omniverse-isaacgym-mt]
-
-
-# [jax-start-omniverse-isaacgym-mt]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_omniverse_isaacgym_env
-
-# load the multi-threaded environment
-env = load_omniverse_isaacgym_env(task_name="Cartpole", multi_threaded=True, timeout=30)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="omniverse-isaacgym")'
-# [jax-end-omniverse-isaacgym-mt]
-
-# =============================================================================
-
 # [pytorch-start-isaaclab]
 # import the environment wrapper and loader
 from skrl.envs.wrappers.torch import wrap_env
@@ -74,6 +22,19 @@ env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
 # [jax-end-isaaclab]
+
+
+# [warp-start-isaaclab]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.envs.loaders.warp import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Cartpole-Direct-v0")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab")'
+# [warp-end-isaaclab]
 
 
 # [pytorch-start-isaaclab-multi-agent]
@@ -103,124 +64,89 @@ env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
 
 # =============================================================================
 
-# [pytorch-start-isaacgym-preview4-make]
-import isaacgymenvs
-
-# import the environment wrapper
+# [pytorch-start-mani-skill]
+# import the environment wrapper, gymnasium and mani_skill
 from skrl.envs.wrappers.torch import wrap_env
-
-# create/load the environment using the easy-to-use API from NVIDIA
-env = isaacgymenvs.make(seed=0,
-                        task="Cartpole",
-                        num_envs=512,
-                        sim_device="cuda:0",
-                        rl_device="cuda:0",
-                        graphics_device_id=0,
-                        headless=False)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [pytorch-end-isaacgym-preview4-make]
-
-
-# [jax-start-isaacgym-preview4-make]
-import isaacgymenvs
-
-# import the environment wrapper
-from skrl.envs.wrappers.jax import wrap_env
-
-# create/load the environment using the easy-to-use API from NVIDIA
-env = isaacgymenvs.make(seed=0,
-                        task="Cartpole",
-                        num_envs=512,
-                        sim_device="cuda:0",
-                        rl_device="cuda:0",
-                        graphics_device_id=0,
-                        headless=False)
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [jax-end-isaacgym-preview4-make]
-
-
-# [pytorch-start-isaacgym-preview4]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_isaacgym_env_preview4
+import gymnasium as gym
+import mani_skill.envs  # needed to register the ManiSkill environment entry points
 
 # load the environment
-env = load_isaacgym_env_preview4(task_name="Cartpole")
+env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [pytorch-end-isaacgym-preview4]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
+# [pytorch-end-mani-skill]
 
 
-# [jax-start-isaacgym-preview4]
-# import the environment wrapper and loader
+# [jax-start-mani-skill]
+# import the environment wrapper, gymnasium and mani_skill
 from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_isaacgym_env_preview4
+import gymnasium as gym
+import mani_skill.envs  # needed to register the ManiSkill environment entry points
 
 # load the environment
-env = load_isaacgym_env_preview4(task_name="Cartpole")
+env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview4")'
-# [jax-end-isaacgym-preview4]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
+# [jax-end-mani-skill]
+
+
+# [warp-start-mani-skill]
+# import the environment wrapper, gymnasium and mani_skill
+from skrl.envs.wrappers.warp import wrap_env
+import gymnasium as gym
+import mani_skill.envs  # needed to register the ManiSkill environment entry points
+
+# load the environment
+env_kwargs = {"obs_mode": "state", "sim_backend": "physx_cuda", "control_mode": "pd_joint_delta_pos"}
+env = gym.make("PushCube", num_envs=1024, **env_kwargs)
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="mani-skill")'
+# [warp-end-mani-skill]
 
 # =============================================================================
 
-# [pytorch-start-isaacgym-preview3]
+# [pytorch-start-playground]
 # import the environment wrapper and loader
 from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_isaacgym_env_preview3
+from skrl.envs.loaders.torch import load_playground_env
 
 # load the environment
-env = load_isaacgym_env_preview3(task_name="Cartpole")
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
-# [pytorch-end-isaacgym-preview3]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'
+# [pytorch-end-playground]
 
 
-# [jax-start-isaacgym-preview3]
+# [jax-start-playground]
 # import the environment wrapper and loader
 from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_isaacgym_env_preview3
+from skrl.envs.loaders.jax import load_playground_env
 
 # load the environment
-env = load_isaacgym_env_preview3(task_name="Cartpole")
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview3")'
-# [jax-end-isaacgym-preview3]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'
+# [jax-end-playground]
 
-# =============================================================================
 
-# [pytorch-start-isaacgym-preview2]
+# [warp-start-playground]
 # import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_isaacgym_env_preview2
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.envs.loaders.warp import load_playground_env
 
 # load the environment
-env = load_isaacgym_env_preview2(task_name="Cartpole")
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
 
 # wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
-# [pytorch-end-isaacgym-preview2]
-
-
-# [jax-start-isaacgym-preview2]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_isaacgym_env_preview2
-
-# load the environment
-env = load_isaacgym_env_preview2(task_name="Cartpole")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaacgym-preview2")'
-# [jax-end-isaacgym-preview2]
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'
+# [warp-end-playground]
 
 # =============================================================================
 
@@ -230,7 +156,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -243,7 +169,7 @@ from skrl.envs.wrappers.jax import wrap_env
 import gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gym")'
@@ -283,7 +209,7 @@ from skrl.envs.wrappers.torch import wrap_env
 import gymnasium as gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
@@ -296,11 +222,24 @@ from skrl.envs.wrappers.jax import wrap_env
 import gymnasium as gym
 
 # load the environment
-env = gym.make('Pendulum-v1')
+env = gym.make("Pendulum-v1")
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-gymnasium]
+
+
+# [warp-start-gymnasium]
+# import the environment wrapper and gymnasium
+from skrl.envs.wrappers.warp import wrap_env
+import gymnasium as gym
+
+# load the environment
+env = gym.make("Pendulum-v1")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [warp-end-gymnasium]
 
 
 # [pytorch-start-gymnasium-vectorized]
@@ -328,6 +267,19 @@ env = gym.make_vec("Pendulum-v1", num_envs=10, vectorization_mode="async")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-gymnasium-vectorized]
 
+
+# [warp-start-gymnasium-vectorized]
+# import the environment wrapper and gymnasium
+from skrl.envs.wrappers.warp import wrap_env
+import gymnasium as gym
+
+# load a vectorized environment
+env = gym.make_vec("Pendulum-v1", num_envs=10, vectorization_mode="async")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [warp-end-gymnasium-vectorized]
+
 # =============================================================================
 
 # [pytorch-start-shimmy]
@@ -354,6 +306,19 @@ env = gym.make("ALE/Pong-v5")
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
 # [jax-end-shimmy]
+
+
+# [warp-start-shimmy]
+# import the environment wrapper and gymnasium
+from skrl.envs.wrappers.warp import wrap_env
+import gymnasium as gym
+
+# load the environment (API conversion)
+env = gym.make("ALE/Pong-v5")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="gymnasium")'
+# [warp-end-shimmy]
 
 
 # [pytorch-start-shimmy-multi-agent]
@@ -384,104 +349,6 @@ env = MeltingPotCompatibilityV0(substrate_name="prisoners_dilemma_in_the_matrix_
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="pettingzoo")'
 # [jax-end-shimmy-multi-agent]
-
-# =============================================================================
-
-# [pytorch-start-brax]
-# import the environment wrapper
-from skrl.envs.wrappers.torch import wrap_env
-import brax.envs
-
-# load the environment
-env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
-# [pytorch-end-brax]
-
-
-# [jax-start-brax]
-# import the environment wrapper
-from skrl.envs.wrappers.jax import wrap_env
-import brax.envs
-
-# load the environment
-env = brax.envs.create("inverted_pendulum", batch_size=4092, backend="spring")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="brax")'
-# [jax-end-brax]
-
-# =============================================================================
-
-# [pytorch-start-deepmind]
-# import the environment wrapper and the deepmind suite
-from skrl.envs.wrappers.torch import wrap_env
-from dm_control import suite
-
-# load the environment
-env = suite.load(domain_name="cartpole", task_name="swingup")
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="dm")'
-# [pytorch-end-deepmind]
-
-# =============================================================================
-
-# [pytorch-start-robosuite]
-# import the environment wrapper
-from skrl.envs.wrappers.torch import wrap_env
-
-# import the robosuite modules
-import robosuite
-from robosuite.controllers import load_controller_config
-
-# load the environment
-controller_config = load_controller_config(default_controller="OSC_POSE")
-env = robosuite.make("TwoArmLift",
-                     robots=["Sawyer", "Panda"],             # load a Sawyer robot and a Panda robot
-                     gripper_types="default",                # use default grippers per robot arm
-                     controller_configs=controller_config,   # each arm is controlled using OSC
-                     env_configuration="single-arm-opposed", # (two-arm envs only) arms face each other
-                     has_renderer=True,                      # on-screen rendering
-                     render_camera="frontview",              # visualize the "frontview" camera
-                     has_offscreen_renderer=False,           # no off-screen rendering
-                     control_freq=20,                        # 20 hz control for applied actions
-                     horizon=200,                            # each episode terminates after 200 steps
-                     use_object_obs=True,                    # provide object observations to agent
-                     use_camera_obs=False,                   # don't provide image observations to agent
-                     reward_shaping=True)                    # use a dense reward signal for learning
-
-# wrap the environment
-env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="robosuite")'
-# [pytorch-end-robosuite]
-
-# =============================================================================
-
-# [start-bidexhands-torch]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.torch import wrap_env
-from skrl.envs.loaders.torch import load_bidexhands_env
-
-# load the environment
-env = load_bidexhands_env(task_name="ShadowHandOver")
-
-# wrap the environment
-env = wrap_env(env, wrapper="bidexhands")
-# [end-bidexhands-torch]
-
-
-# [start-bidexhands-jax]
-# import the environment wrapper and loader
-from skrl.envs.wrappers.jax import wrap_env
-from skrl.envs.loaders.jax import load_bidexhands_env
-
-# load the environment
-env = load_bidexhands_env(task_name="ShadowHandOver")
-
-# wrap the environment
-env = wrap_env(env, wrapper="bidexhands")
-# [end-bidexhands-jax]
 
 # =============================================================================
 

@@ -1,3 +1,5 @@
+:tocdepth: 5
+
 Models
 ======
 
@@ -12,11 +14,15 @@ Models
     Deterministic <models/deterministic>
     Shared model <models/shared_model>
 
-Models (or agent models) refer to a representation of the agent's policy, value function, etc. that the agent uses to make decisions. Agents can have one or more models, and their parameters are adjusted by the optimization algorithms.
+Models (or agent models) refer to a representation of the agent's policy, value function, etc. that the agent uses
+to make decisions. Agents can have one or more models, and their parameters are adjusted by the optimization algorithms.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented models
+------------------
+
+The following table lists the implemented models and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -24,143 +30,95 @@ Models (or agent models) refer to a representation of the agent's policy, value 
     * - Models
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Tabular model <models/tabular>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Categorical model <models/categorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Multi-Categorical model <models/multicategorical>` (discrete domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Gaussian model <models/gaussian>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Multivariate Gaussian model <models/multivariate_gaussian>` (continuous domain)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - :doc:`Deterministic model <models/deterministic>` (continuous domain)
+      - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
     * - :doc:`Shared model <models/shared_model>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\blacksquare`
+
+|br| |hr|
+
+.. _models_base_class:
 
 Base class
 ----------
 
-.. note::
+Base class for models.
 
-    This is the base class for all models in this module and provides only basic functionality that is not tied to any specific implementation.
-    **It is not intended to be used directly**.
+API
+^^^
 
-.. raw:: html
+|
 
-    <br>
+PyTorch
+"""""""
 
-Mixin and inheritance
-^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: skrl.models.torch
+.. autosummary::
+    :nosignatures:
 
-.. tabs::
+    Model
 
-    .. tab:: Mixin
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-mixin-torch]
-                    :end-before: [end-mixin-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-mixin-jax]
-                    :end-before: [end-mixin-jax]
-
-    .. tab:: Model inheritance
-
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-model-torch]
-                    :end-before: [end-model-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/model_mixin.py
-                    :language: python
-                    :start-after: [start-model-jax]
-                    :end-before: [end-model-jax]
-
-.. raw:: html
-
-    <br>
-
-.. _models_base_class:
-
-API (PyTorch)
-^^^^^^^^^^^^^
-
-.. autoclass:: skrl.models.torch.base.Model
+.. autoclass:: skrl.models.torch.Model
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-    .. py:property:: device
+|
 
-        Device to be used for the computations
+JAX
+"""
 
-    .. py:property:: observation_space
+.. automodule:: skrl.models.jax
+.. autosummary::
+    :nosignatures:
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+    Model
 
-    .. py:property:: action_space
-
-        Action space. It is a replica of the class constructor parameter of the same name
-
-    .. py:property:: num_observations
-
-        Number of elements in the observation/state space
-
-    .. py:property:: num_actions
-
-        Number of elements in the action space
-
-.. raw:: html
-
-    <br>
-
-API (JAX)
-^^^^^^^^^
-
-.. autoclass:: skrl.models.jax.base.Model
+.. autoclass:: skrl.models.jax.Model
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
-    .. py:property:: device
+|
 
-        Device to be used for the computations
+Warp
+""""
 
-    .. py:property:: observation_space
+.. automodule:: skrl.models.warp
+.. autosummary::
+    :nosignatures:
 
-        Observation/state space. It is a replica of the class constructor parameter of the same name
+    Model
 
-    .. py:property:: action_space
-
-        Action space. It is a replica of the class constructor parameter of the same name
-
-    .. py:property:: num_observations
-
-        Number of elements in the observation/state space
-
-    .. py:property:: num_actions
-
-        Number of elements in the action space
+.. autoclass:: skrl.models.warp.Model
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:

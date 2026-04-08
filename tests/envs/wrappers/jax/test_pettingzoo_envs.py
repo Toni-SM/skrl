@@ -7,24 +7,19 @@ from pettingzoo.butterfly import pistonball_v6
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 
-from skrl import config
-from skrl.envs.wrappers.jax import PettingZooWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.pettingzoo_envs import PettingZooWrapper
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
-def test_env(capsys: pytest.CaptureFixture, backend: str):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_env(capsys: pytest.CaptureFixture):
     num_envs = 1
     num_agents = 20
     possible_agents = [f"piston_{i}" for i in range(num_agents)]
-    action = {
-        f"piston_{i}": jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
-        for i in range(num_agents)
-    }
+    action = {f"piston_{i}": jnp.ones((num_envs, 1)) for i in range(num_agents)}
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "pettingzoo"), PettingZooWrapper)
 
     # load wrap the environment
     original_env = pistonball_v6.parallel_env(n_pistons=num_agents, continuous=True, max_cycles=125)
@@ -58,30 +53,37 @@ def test_env(capsys: pytest.CaptureFixture, backend: str):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         assert isinstance(observation, Mapping)
+        assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for agent in possible_agents:
-            assert isinstance(observation[agent], Array) and observation[agent].shape == (
+            assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (
                 num_envs,
                 math.prod((457, 120, 3)),
             )
+            assert isinstance(state[agent], jax.Array) and state[agent].shape == (num_envs, math.prod((560, 880, 3)))
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
             assert isinstance(observation, Mapping)
+            assert isinstance(state, Mapping)
             assert isinstance(reward, Mapping)
             assert isinstance(terminated, Mapping)
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for agent in possible_agents:
-                assert isinstance(observation[agent], Array) and observation[agent].shape == (
+                assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (
                     num_envs,
                     math.prod((457, 120, 3)),
                 )
-                assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
-                assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
-                assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)
-            assert isinstance(state, Array) and state.shape == (num_envs, math.prod((560, 880, 3)))
+                assert isinstance(state[agent], jax.Array) and state[agent].shape == (
+                    num_envs,
+                    math.prod((560, 880, 3)),
+                )
+                assert isinstance(reward[agent], jax.Array) and reward[agent].shape == (num_envs, 1)
+                assert isinstance(terminated[agent], jax.Array) and terminated[agent].shape == (num_envs, 1)
+                assert isinstance(truncated[agent], jax.Array) and truncated[agent].shape == (num_envs, 1)
 
     env.close()

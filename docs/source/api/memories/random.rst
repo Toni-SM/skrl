@@ -1,11 +1,11 @@
+:tocdepth: 4
+
 Random memory
 =============
 
-Random sampling memory
+Random sampling memory.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Usage
 -----
@@ -16,7 +16,6 @@ Usage
 
         .. literalinclude:: ../../snippets/memories.py
             :language: python
-            :emphasize-lines: 2, 5
             :start-after: [start-random-torch]
             :end-before: [end-random-torch]
 
@@ -24,16 +23,31 @@ Usage
 
         .. literalinclude:: ../../snippets/memories.py
             :language: python
-            :emphasize-lines: 2, 5
             :start-after: [start-random-jax]
             :end-before: [end-random-jax]
 
-.. raw:: html
+    .. group-tab:: |_4| |warp| |_4|
 
-    <br>
+        .. literalinclude:: ../../snippets/memories.py
+            :language: python
+            :start-after: [start-random-warp]
+            :end-before: [end-random-warp]
 
-API (PyTorch)
--------------
+|
+
+API
+---
+
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.memories.torch.random
+.. autosummary::
+    :nosignatures:
+
+    RandomMemory
 
 .. autoclass:: skrl.memories.torch.random.RandomMemory
     :undoc-members:
@@ -43,14 +57,37 @@ API (PyTorch)
 
     .. automethod:: __len__
 
-.. raw:: html
+|
 
-    <br>
+Jax
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.memories.jax.random
+.. autosummary::
+    :nosignatures:
+
+    RandomMemory
 
 .. autoclass:: skrl.memories.jax.random.RandomMemory
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __len__
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.memories.warp.random
+.. autosummary::
+    :nosignatures:
+
+    RandomMemory
+
+.. autoclass:: skrl.memories.warp.random.RandomMemory
     :undoc-members:
     :show-inheritance:
     :inherited-members:

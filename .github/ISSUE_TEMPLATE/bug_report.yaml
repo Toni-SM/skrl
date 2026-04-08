@@ -1,11 +1,12 @@
 name: Bug report
 description: Submit a bug report
-labels: bug
+labels: need-triage
 body:
 - type: markdown
   attributes:
     value: |
-      **Your help in making skrl better is greatly appreciated!**
+      <br>
+      Your help in making skrl better is greatly appreciated!
 
       * Please ensure that:
         * The issue hasn't already been reported by using the [issue search](https://github.com/Toni-SM/skrl/search?q=is%3Aissue&type=issues).
@@ -30,6 +31,7 @@ body:
     description: The skrl version can be obtained with the command `pip show skrl`.
     options:
       - ---
+      - 2.0.0
       - 1.4.3
       - 1.4.2
       - 1.4.1
@@ -48,8 +50,12 @@ body:
 - type: input
   attributes:
     label: What ML framework/library version are you using?
-    description: The version can be obtained with the command `pip show torch` or `pip show jax jaxlib flax optax`.
-    placeholder: PyTorch version, JAX/jaxlib/Flax/Optax version, etc.
+    description: |
+      Versions can be retrieved using the following commands:
+      * PyTorch: `pip show torch`
+      * JAX: `pip show jax jaxlib flax optax`
+      * Warp: `pip show warp-lang`
+    placeholder: PyTorch, JAX/Flax/Optax, Warp versions
 - type: input
   attributes:
     label: Additional system information

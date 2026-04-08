@@ -3,21 +3,15 @@ ML frameworks configuration
 
 Configurations for behavior modification of Machine Learning (ML) frameworks.
 
-.. raw:: html
-
-    <br><hr>
-
-PyTorch
--------
-
-PyTorch specific configuration
-
-.. raw:: html
-
-    <br>
+|br| |hr|
 
 API
-^^^
+---
+
+|
+
+PyTorch
+^^^^^^^
 
 .. autofunction:: skrl.config.torch.parse_device
 
@@ -28,6 +22,12 @@ API
     Default device.
 
     The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment) if CUDA is available, ``cpu`` otherwise.
+
+.. py:data:: skrl.config.torch.key
+    :type: int
+    :value: 0
+
+    Pseudo-random number generator (PRNG) key.
 
 .. py:data:: skrl.config.torch.local_rank
     :type: int
@@ -72,20 +72,9 @@ API
 
     Read-only attribute.
 
-.. raw:: html
-
-    <br>
+|
 
 JAX
----
-
-JAX specific configuration
-
-.. raw:: html
-
-    <br>
-
-API
 ^^^
 
 .. autofunction:: skrl.config.jax.parse_device
@@ -98,15 +87,6 @@ API
 
     The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
     However, in a distributed environment, it is the device local to process with index ``JAX_RANK``.
-
-.. py:data:: skrl.config.jax.backend
-    :type: str
-    :value: "numpy"
-
-    Backend used by the different components to operate and generate arrays.
-
-    This configuration excludes models and optimizers.
-    Supported backend are: ``"numpy"`` and ``"jax"``.
 
 .. py:data:: skrl.config.jax.key
     :type: jax.Array
@@ -165,3 +145,24 @@ API
     This property is ``True`` when the JAX's distributed environment variable ``WORLD_SIZE > 1``.
 
     Read-only attribute.
+
+|
+
+Warp
+^^^^
+
+.. autofunction:: skrl.config.warp.parse_device
+
+.. py:data:: skrl.config.warp.device
+    :type: warp.context.Device
+    :value: "cuda:0" | "cpu"
+
+    Default device.
+
+    The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
+
+.. py:data:: skrl.config.warp.key
+    :type: int
+    :value: 0
+
+    Pseudo-random number generator (PRNG) key.

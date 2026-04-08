@@ -2,6 +2,54 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.0.0] - 2026-04-08
+
+Summary of the most relevant features:
+- RL algorithm implementations in NVIDIA Warp
+- Differentiate between environment observations and states (also known as privileged observation)
+- Support for MuJoCo Playground and ManiSkill environments
+
+### Added
+- Implement RL algorithms in NVIDIA Warp
+- Add loader and wrapper for MuJoCo Playground environments
+- Add wrapper for ManiSkill environments
+- Add Tabular model instantiator (epsilon-greedy variant)
+- Add `clip_mean_actions` parameter to Gaussian and Multivariate Gaussian models
+- Add `render_interval` option to trainers to specify the rendering interval for the environments
+- Add `compute_space_limits` space utility to get Gymnasium spaces' limits
+- Add `ScopedTimer` utils to measure code execution time
+- Add `SummaryWriter` implementation to log data to TensorBoard without relying on third-party libraries
+- Log agent inference and algorithm update, and environment steeping time to TensorBoard
+
+### Changed
+- Update minimum supported Python version to 3.10
+- Drop support for PyTorch versions prior to 1.11 (the previous supported version was 1.10)
+- Call observation/state preprocessors once when computing the actions during training
+
+### Changed (breaking changes)
+- Refactor the library to differentiate between environment observations and states (also known as privileged observation)
+- Implement agent/multi-agent and trainer configurations using Python Data Classes
+  - Unify the different learning rate settings under the `learning_rate` configuration
+  - Rename `lambda` to `gae_lambda`
+  - Remove the `clip_predicted_values` redundant configuration by checking for `value_clip > 0`
+  - Remove specific exploration noise settings (`initial_scale`, `final_scale` and `timesteps`)
+    in favor of generic scheduling functions
+- Update tabular model definition to operate in any number of parallel environments
+- Refactor multi-agent environment wrappers to support homogeneous and heterogeneous states spaces
+
+### Fixed
+- Add entropy loss to the policy loss for on-policy agents/mulit-agents in JAX
+- Fix time limits handling for termination and truncation signals
+- Fix the randomness of the environments by seeding right after initialization (on the first reset)
+
+### Removed
+- Remove NumPy backend for JAX implementation
+- Remove checkpoints/models migration support from other RL libraries
+- Remove support for Isaac Gym and Omniverse Isaac Gym environments (deprecated in favor of Isaac Lab)
+- Remove support for Brax and DeepMind environments (in favor of MuJoCo Playground environments)
+- Remove support for Bi-DexHands and robosuite environments
+- Remove Isaac Gym (web viewer, inverse kinematic) and Omniverse Isaac Gym (local environment instance, inverse kinematic) utils
+
 ## [1.4.3] - 2025-03-29
 ### Changed
 - Update the GitHub Actions workflows for testing and coverage
@@ -128,7 +176,7 @@ This release also announces the publication of the **skrl** paper in the Journal
 Machine Learning Research (JMLR): https://www.jmlr.org/papers/v24/23-0112.html
 
 Summary of the most relevant features:
-- JAX support
+- RL algorithm implementations in JAX
 - New documentation theme and structure
 - Multi-agent Reinforcement Learning (MARL)
 
@@ -153,7 +201,7 @@ Summary of the most relevant features:
 
 ## [1.0.0-rc.1] - 2023-07-25
 ### Added
-- JAX support (with Flax and Optax)
+- Implement RL algorithms in JAX (Flax/Optax)
 - RPO agent
 - IPPO and MAPPO multi-agent
 - Multi-agent base class

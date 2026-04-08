@@ -1,20 +1,20 @@
+:tocdepth: 4
+
 Twin-Delayed DDPG (TD3)
 =======================
 
-TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced by overestimation bias in actor-critic algorithms
+TD3 is a **model-free**, **deterministic** **off-policy** **actor-critic** algorithm (based on DDPG) that relies on
+double Q-learning, target policy smoothing and delayed policy updates to address the problems introduced
+by overestimation bias in actor-critic algorithms.
 
-Paper: `Addressing Function Approximation Error in Actor-Critic Methods <https://arxiv.org/abs/1802.09477>`_
+**Paper:** `Addressing Function Approximation Error in Actor-Critic Methods <https://arxiv.org/abs/1802.09477>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -24,9 +24,7 @@ Algorithm implementation
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Decision making
 """""""""""""""
@@ -38,9 +36,7 @@ Decision making
 | :math:`scale \leftarrow (1 - \text{timestep} \;/` :guilabel:`timesteps` :math:`) \; (` :guilabel:`initial_scale` :math:`-` :guilabel:`final_scale` :math:`) \;+` :guilabel:`final_scale`
 | :math:`a \leftarrow \text{clip}(a + noise * scale, {a}_{Low}, {a}_{High})`
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -90,16 +86,15 @@ Learning algorithm
 |         step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
 .. note::
 
-    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file (:literal:`td3_rnn.py`) to maintain the readability of the standard implementation (:literal:`td3.py`)
+    Support for recurrent neural networks (RNN, LSTM, GRU and any other variant) is implemented in a separate file
+    (:literal:`td3_rnn.py`) to maintain the readability of the standard implementation (:literal:`td3.py`).
 
 .. tabs::
 
@@ -131,7 +126,8 @@ Usage
 
                 .. note::
 
-                    When using recursive models it is necessary to override their :literal:`.get_specification()` method. Visit each model's documentation for more details
+                    When using recursive models it is necessary to override their :literal:`.get_specification()` method.
+                    Visit each model's documentation for more details.
 
                 .. literalinclude:: ../../snippets/agents_basic_usage.py
                     :language: python
@@ -139,31 +135,34 @@ Usage
                     :start-after: [torch-start-td3-rnn]
                     :end-before: [torch-end-td3-rnn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/td3/td3.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``TD3_CFG``
+      - :py:class:`~skrl.agents.torch.td3.TD3_CFG`
+      - :py:class:`~skrl.agents.jax.td3.TD3_CFG`
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -179,14 +178,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 6 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 6 deterministic function approximators.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -234,14 +233,12 @@ The implementation uses 6 deterministic function approximators. These function a
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -250,55 +247,84 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - RNN, LSTM, GRU and any other variant
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.td3.TD3_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.td3
+.. autosummary::
+    :nosignatures:
+
+    TD3_CFG
+    TD3
+    TD3_RNN
+
+.. autoclass:: skrl.agents.torch.td3.TD3_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.td3.TD3
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
 .. autoclass:: skrl.agents.torch.td3.TD3_RNN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.td3
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.agents.jax.td3.TD3_DEFAULT_CONFIG
+    TD3_CFG
+    TD3
+
+.. autoclass:: skrl.agents.jax.td3.TD3_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.td3.TD3
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

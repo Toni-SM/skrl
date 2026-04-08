@@ -1,6 +1,7 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from __future__ import annotations
 
-import copy
+from typing import Any
+
 import functools
 import gymnasium
 
@@ -13,78 +14,31 @@ from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
+from skrl.utils import ScopedTimer
+from skrl.utils.spaces.jax import compute_space_limits
 
-
-# fmt: off
-# [start-config-dict-jax]
-TD3_DEFAULT_CONFIG = {
-    "gradient_steps": 1,            # gradient steps
-    "batch_size": 64,               # training batch size
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
-
-    "actor_learning_rate": 1e-3,    # actor learning rate
-    "critic_learning_rate": 1e-3,   # critic learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler function (see optax.schedules)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
-
-    "exploration": {
-        "noise": None,              # exploration noise
-        "initial_scale": 1.0,       # initial scale for the noise
-        "final_scale": 1e-3,        # final scale for the noise
-        "timesteps": None,          # timesteps for the noise decay
-    },
-
-    "policy_delay": 2,                      # policy delay update with respect to critic update
-    "smooth_regularization_noise": None,    # smooth noise for regularization
-    "smooth_regularization_clip": 0.5,      # clip for smooth regularization
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-jax]
-# fmt: on
+from .td3_cfg import TD3_CFG
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _apply_exploration_noise(
-    actions: jax.Array, noises: jax.Array, clip_actions_min: jax.Array, clip_actions_max: jax.Array, scale: float
+    actions: jax.Array, noises: jax.Array, min_actions: jax.Array, max_actions: jax.Array, scale: float
 ) -> jax.Array:
     noises = noises.at[:].multiply(scale)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max), noises
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions), noises
 
 
 @jax.jit
 def _apply_smooth_regularization_noise(
     actions: jax.Array,
     noises: jax.Array,
-    clip_actions_min: jax.Array,
-    clip_actions_max: jax.Array,
+    min_actions: jax.Array,
+    max_actions: jax.Array,
     smooth_regularization_clip: float,
 ) -> jax.Array:
-    noises = jnp.clip(noises, a_min=-smooth_regularization_clip, a_max=smooth_regularization_clip)
-    return jnp.clip(actions + noises, a_min=clip_actions_min, a_max=clip_actions_max)
+    noises = jnp.clip(noises, min=-smooth_regularization_clip, max=smooth_regularization_clip)
+    return jnp.clip(actions + noises, min=min_actions, max=max_actions)
 
 
 @functools.partial(jax.jit, static_argnames=("critic_1_act", "critic_2_act"))
@@ -95,22 +49,18 @@ def _update_critic(
     critic_2_state_dict,
     target_q1_values: jax.Array,
     target_q2_values: jax.Array,
-    sampled_states: Union[np.ndarray, jax.Array],
-    sampled_actions: Union[np.ndarray, jax.Array],
-    sampled_rewards: Union[np.ndarray, jax.Array],
-    sampled_terminated: Union[np.ndarray, jax.Array],
-    sampled_truncated: Union[np.ndarray, jax.Array],
+    inputs: dict[str, jax.Array],
+    sampled_rewards: jax.Array,
+    sampled_terminated: jax.Array,
     discount_factor: float,
 ):
     # compute target values
     target_q_values = jnp.minimum(target_q1_values, target_q2_values)
-    target_values = (
-        sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated | sampled_truncated) * target_q_values
-    )
+    target_values = sampled_rewards + discount_factor * jnp.logical_not(sampled_terminated) * target_q_values
 
     # compute critic loss
     def _critic_loss(params, critic_act, role):
-        critic_values, _, _ = critic_act({"states": sampled_states, "taken_actions": sampled_actions}, role, params)
+        critic_values, _ = critic_act(inputs, role=role, params=params)
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
@@ -125,13 +75,11 @@ def _update_critic(
 
 
 @functools.partial(jax.jit, static_argnames=("policy_act", "critic_1_act"))
-def _update_policy(policy_act, critic_1_act, policy_state_dict, critic_1_state_dict, sampled_states):
+def _update_policy(policy_act, critic_1_act, policy_state_dict, critic_1_state_dict, inputs):
     # compute policy (actor) loss
     def _policy_loss(policy_params, critic_1_params):
-        actions, _, _ = policy_act({"states": sampled_states}, "policy", policy_params)
-        critic_values, _, _ = critic_1_act(
-            {"states": sampled_states, "taken_actions": actions}, "critic_1", critic_1_params
-        )
+        actions, _ = policy_act(inputs, role="policy", params=policy_params)
+        critic_values, _ = critic_1_act({**inputs, "taken_actions": actions}, role="critic_1", params=critic_1_params)
         return -critic_values.mean()
 
     policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(
@@ -144,45 +92,38 @@ def _update_policy(policy_act, critic_1_act, policy_state_dict, critic_1_state_d
 class TD3(Agent):
     def __init__(
         self,
-        models: Mapping[str, Model],
-        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        device: Optional[Union[str, jax.Device]] = None,
-        cfg: Optional[dict] = None,
+        *,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | jax.Device | None = None,
+        cfg: TD3_CFG | dict = {},
     ) -> None:
-        """Twin Delayed DDPG (TD3)
+        """Twin Delayed DDPG (TD3).
 
         https://arxiv.org/abs/1802.09477
 
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.jax.Model
-        :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and
-                       for the rest only the environment transitions will be added
-        :type memory: skrl.memory.jax.Memory, list of skrl.memory.jax.Memory or None
-        :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or jax.Device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        :param models: Agent's models.
+        :param memory: Memory to storage agent's data and environment transitions.
+        :param observation_space: Observation space.
+        :param state_space: State space.
+        :param action_space: Action space.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param cfg: Agent's configuration.
 
-        :raises KeyError: If the models dictionary is missing a required key
+        :raises KeyError: If a configuration key is missing.
         """
-        # _cfg = copy.deepcopy(TD3_DEFAULT_CONFIG)  # TODO: TypeError: cannot pickle 'jax.Device' object
-        _cfg = TD3_DEFAULT_CONFIG
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: TD3_CFG
         super().__init__(
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=TD3_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -211,113 +152,123 @@ class TD3(Agent):
             if self.critic_2 is not None:
                 self.critic_2.broadcast_parameters()
 
-        # configuration
-        self._gradient_steps = self.cfg["gradient_steps"]
-        self._batch_size = self.cfg["batch_size"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
-
-        self._actor_learning_rate = self.cfg["actor_learning_rate"]
-        self._critic_learning_rate = self.cfg["critic_learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._exploration_noise = self.cfg["exploration"]["noise"]
-        self._exploration_initial_scale = self.cfg["exploration"]["initial_scale"]
-        self._exploration_final_scale = self.cfg["exploration"]["final_scale"]
-        self._exploration_timesteps = self.cfg["exploration"]["timesteps"]
-
-        self._policy_delay = self.cfg["policy_delay"]
-        self._critic_update_counter = 0
-
-        self._smooth_regularization_noise = self.cfg["smooth_regularization_noise"]
-        self._smooth_regularization_clip = self.cfg["smooth_regularization_clip"]
-        if self._smooth_regularization_noise is None:
-            logger.warning("agents:TD3: No smooth regularization noise specified to reduce variance during training")
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
+        # set up noise
+        # - exploration noise
+        if self.cfg.exploration_noise is not None:
+            self._exploration_noise = self.cfg.exploration_noise(**self.cfg.exploration_noise_kwargs)
+        else:
+            logger.warning("agents:TD3: No exploration noise specified, training performance may be degraded")
+            self._exploration_noise = None
+        # - smooth regularization noise
+        if self.cfg.smooth_regularization_noise is not None:
+            self._smooth_regularization_noise = self.cfg.smooth_regularization_noise(
+                **self.cfg.smooth_regularization_noise_kwargs
+            )
+        else:
+            logger.warning("agents:TD3: No smooth regularization noise specified, training variance may be high")
+            self._smooth_regularization_noise = None
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            # schedulers
-            if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-                self.critic_scheduler = self._learning_rate_scheduler(**self.cfg["learning_rate_scheduler_kwargs"])
-            # optimizers
+            self.policy_learning_rate = self.cfg.learning_rate[0]
+            self.critic_learning_rate = self.cfg.learning_rate[1]
+            # - optimizers
             with jax.default_device(self.device):
                 self.policy_optimizer = Adam(
                     model=self.policy,
-                    lr=self._actor_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.policy_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[0],
                 )
                 self.critic_1_optimizer = Adam(
                     model=self.critic_1,
-                    lr=self._critic_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.critic_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[1],
                 )
                 self.critic_2_optimizer = Adam(
                     model=self.critic_2,
-                    lr=self._critic_learning_rate,
-                    grad_norm_clip=self._grad_norm_clip,
-                    scale=not self._learning_rate_scheduler,
+                    lr=self.critic_learning_rate,
+                    grad_norm_clip=self.cfg.grad_norm_clip,
+                    scale=not self.cfg.learning_rate_scheduler[1],
                 )
-
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_1_optimizer"] = self.critic_1_optimizer
             self.checkpoint_modules["critic_2_optimizer"] = self.critic_2_optimizer
+            # - learning rate schedulers
+            self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
+            self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
+            if self.policy_scheduler is not None:
+                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                    **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
+            if self.critic_scheduler is not None:
+                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                    **self.cfg.learning_rate_scheduler_kwargs[1]
+                )
 
         # set up target networks
         if self.target_policy is not None and self.target_critic_1 is not None and self.target_critic_2 is not None:
-            # freeze target networks with respect to optimizers (update via .update_parameters())
+            # - freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             self.target_critic_1.freeze_parameters(True)
             self.target_critic_2.freeze_parameters(True)
-
-            # update target networks (hard update)
+            # - update target networks (hard update)
             self.target_policy.update_parameters(self.policy, polyak=1)
             self.target_critic_1.update_parameters(self.critic_1, polyak=1)
             self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # set up preprocessors
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        # - observations
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
+        self.enable_models_training_mode(False)
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=jnp.float32)
-            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="next_observations", size=self.observation_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=jnp.float32)
+            self.memory.create_tensor(name="next_states", size=self.state_space, dtype=jnp.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=jnp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=jnp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=jnp.int8)
-            self.memory.create_tensor(name="truncated", size=1, dtype=jnp.int8)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
+            self._tensors_names = [
+                "observations",
+                "states",
+                "actions",
+                "rewards",
+                "next_observations",
+                "next_states",
+                "terminated",
+            ]
 
         # clip noise bounds
-        if self.action_space is not None:
-            if self._jax:
-                self.clip_actions_min = jnp.array(self.action_space.low, dtype=jnp.float32)
-                self.clip_actions_max = jnp.array(self.action_space.high, dtype=jnp.float32)
-            else:
-                self.clip_actions_min = np.array(self.action_space.low, dtype=np.float32)
-                self.clip_actions_max = np.array(self.action_space.high, dtype=np.float32)
+        self._min_actions, self._max_actions = compute_space_limits(
+            self.action_space, device=self.device, none_if_unbounded="any"
+        )
+
+        # create temporary variables needed for storage and computation
+        self._update_counter = 0
 
         # set up models for just-in-time compilation with XLA
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
@@ -329,204 +280,174 @@ class TD3(Agent):
             self.target_critic_1.apply = jax.jit(self.target_critic_1.apply, static_argnums=2)
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
-    def act(self, states: Union[np.ndarray, jax.Array], timestep: int, timesteps: int) -> Union[np.ndarray, jax.Array]:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
+    ) -> tuple[jax.Array, dict[str, Any]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: np.ndarray or jax.Array
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: np.ndarray or jax.Array
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
         # sample random actions
-        if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+        if timestep < self.cfg.random_timesteps:
+            return self.policy.random_act(inputs, role="policy")
 
         # sample deterministic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
-        if not self._jax:  # numpy backend
-            actions = jax.device_get(actions)
+        actions, outputs = self.policy.act(inputs, role="policy")
 
-        # add exloration noise
+        # add exploration noise
         if self._exploration_noise is not None:
-            # sample noises
             noises = self._exploration_noise.sample(actions.shape)
+            scale = self.cfg.exploration_scheduler(timestep, timesteps) if self.cfg.exploration_scheduler else 1.0
+            # modify actions
+            actions, noises = _apply_exploration_noise(actions, noises, self._min_actions, self._max_actions, scale)
+            self.track_data("Exploration / Exploration noise (max)", noises.max().item())
+            self.track_data("Exploration / Exploration noise (min)", noises.min().item())
+            self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
 
-            # define exploration timesteps
-            scale = self._exploration_final_scale
-            if self._exploration_timesteps is None:
-                self._exploration_timesteps = timesteps
-
-            # apply exploration noise
-            if timestep <= self._exploration_timesteps:
-                scale = (1 - timestep / self._exploration_timesteps) * (
-                    self._exploration_initial_scale - self._exploration_final_scale
-                ) + self._exploration_final_scale
-
-                # modify actions
-                if self._jax:
-                    actions, noises = _apply_exploration_noise(
-                        actions, noises, self.clip_actions_min, self.clip_actions_max, scale
-                    )
-                else:
-                    noises *= scale
-                    actions = np.clip(actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max)
-
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", noises.max().item())
-                self.track_data("Exploration / Exploration noise (min)", noises.min().item())
-                self.track_data("Exploration / Exploration noise (mean)", noises.mean().item())
-
-            else:
-                # record noises
-                self.track_data("Exploration / Exploration noise (max)", 0)
-                self.track_data("Exploration / Exploration noise (min)", 0)
-                self.track_data("Exploration / Exploration noise (mean)", 0)
-
-        return actions, None, outputs
+        return actions, outputs
 
     def record_transition(
         self,
-        states: Union[np.ndarray, jax.Array],
-        actions: Union[np.ndarray, jax.Array],
-        rewards: Union[np.ndarray, jax.Array],
-        next_states: Union[np.ndarray, jax.Array],
-        terminated: Union[np.ndarray, jax.Array],
-        truncated: Union[np.ndarray, jax.Array],
+        *,
+        observations: jax.Array,
+        states: jax.Array,
+        actions: jax.Array,
+        rewards: jax.Array,
+        next_observations: jax.Array,
+        next_states: jax.Array,
+        terminated: jax.Array,
+        truncated: jax.Array,
         infos: Any,
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: np.ndarray or jax.Array
-        :param actions: Actions taken by the agent
-        :type actions: np.ndarray or jax.Array
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: np.ndarray or jax.Array
-        :param next_states: Next observations/states of the environment
-        :type next_states: np.ndarray or jax.Array
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: np.ndarray or jax.Array
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: np.ndarray or jax.Array
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
+                next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
-            for memory in self.secondary_memories:
-                memory.add_samples(
-                    states=states,
-                    actions=actions,
-                    rewards=rewards,
-                    next_states=next_states,
-                    terminated=terminated,
-                    truncated=truncated,
-                )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+        if self.training:
+            if timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         # gradient steps
-        for gradient_step in range(self._gradient_steps):
+        for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory
             (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
+                sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
-            ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
-            sampled_states = self._state_preprocessor(sampled_states, train=True)
-            sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+            inputs = {
+                "observations": self._observation_preprocessor(sampled_observations, train=True),
+                "states": self._state_preprocessor(sampled_states, train=True),
+            }
+            next_inputs = {
+                "observations": self._observation_preprocessor(sampled_next_observations, train=True),
+                "states": self._state_preprocessor(sampled_next_states, train=True),
+            }
 
             # target policy smoothing
-            next_actions, _, _ = self.target_policy.act({"states": sampled_next_states}, role="target_policy")
+            next_actions, _ = self.target_policy.act(next_inputs, role="target_policy")
             if self._smooth_regularization_noise is not None:
                 noises = self._smooth_regularization_noise.sample(next_actions.shape)
-                if self._jax:
-                    next_actions = _apply_smooth_regularization_noise(
-                        next_actions,
-                        noises,
-                        self.clip_actions_min,
-                        self.clip_actions_max,
-                        self._smooth_regularization_clip,
-                    )
-                else:
-                    noises = np.clip(
-                        noises, a_min=-self._smooth_regularization_clip, a_max=self._smooth_regularization_clip
-                    )
-                    next_actions = np.clip(
-                        next_actions + noises, a_min=self.clip_actions_min, a_max=self.clip_actions_max
-                    )
+                next_actions = _apply_smooth_regularization_noise(
+                    next_actions,
+                    noises,
+                    self._min_actions,
+                    self._max_actions,
+                    self.cfg.smooth_regularization_clip,
+                )
 
             # compute target values
-            target_q1_values, _, _ = self.target_critic_1.act(
-                {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1"
+            target_q1_values, _ = self.target_critic_1.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_1"
             )
-            target_q2_values, _, _ = self.target_critic_2.act(
-                {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2"
+            target_q2_values, _ = self.target_critic_2.act(
+                {**next_inputs, "taken_actions": next_actions}, role="target_critic_2"
             )
 
             # compute critic loss
@@ -537,52 +458,53 @@ class TD3(Agent):
                 self.critic_2.state_dict,
                 target_q1_values,
                 target_q2_values,
-                sampled_states,
-                sampled_actions,
+                {**inputs, "taken_actions": sampled_actions},
                 sampled_rewards,
                 sampled_terminated,
-                sampled_truncated,
-                self._discount_factor,
+                self.cfg.discount_factor,
             )
 
             # optimization step (critic)
             if config.jax.is_distributed:
                 grad = self.critic_1.reduce_parameters(grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad, self.critic_1, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad, self.critic_2, self._critic_learning_rate if self._learning_rate_scheduler else None
+                grad=grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
 
             # delayed update
-            self._critic_update_counter += 1
-            if not self._critic_update_counter % self._policy_delay:
+            self._update_counter += 1
+            if not self._update_counter % self.cfg.policy_delay:
 
                 # compute policy (actor) loss
                 grad, policy_loss = _update_policy(
-                    self.policy.act, self.critic_1.act, self.policy.state_dict, self.critic_1.state_dict, sampled_states
+                    self.policy.act, self.critic_1.act, self.policy.state_dict, self.critic_1.state_dict, inputs
                 )
 
                 # optimization step (policy)
                 if config.jax.is_distributed:
                     grad = self.policy.reduce_parameters(grad)
                 self.policy_optimizer = self.policy_optimizer.step(
-                    grad, self.policy, self._actor_learning_rate if self._learning_rate_scheduler else None
+                    grad=grad,
+                    model=self.policy,
+                    lr=self.policy_learning_rate if self.policy_scheduler else None,
                 )
 
                 # update target networks
-                self.target_policy.update_parameters(self.policy, polyak=self._polyak)
-                self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
-                self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
+                self.target_policy.update_parameters(self.policy, polyak=self.cfg.polyak)
+                self.target_critic_1.update_parameters(self.critic_1, polyak=self.cfg.polyak)
+                self.target_critic_2.update_parameters(self.critic_2, polyak=self.cfg.polyak)
 
             # update learning rate
-            if self._learning_rate_scheduler:
-                self._actor_learning_rate *= self.policy_scheduler(timestep)
-                self._critic_learning_rate *= self.critic_scheduler(timestep)
+            if self.policy_scheduler:
+                self.policy_learning_rate *= self.policy_scheduler(timestep)
+            if self.critic_scheduler:
+                self.critic_learning_rate *= self.critic_scheduler(timestep)
 
             # record data
-            if not self._critic_update_counter % self._policy_delay:
+            if not self._update_counter % self.cfg.policy_delay:
                 self.track_data("Loss / Policy loss", policy_loss.item())
             self.track_data("Loss / Critic loss", critic_loss.item())
 
@@ -598,6 +520,7 @@ class TD3(Agent):
             self.track_data("Target / Target (min)", target_values.min().item())
             self.track_data("Target / Target (mean)", target_values.mean().item())
 
-            if self._learning_rate_scheduler:
-                self.track_data("Learning / Policy learning rate", self._actor_learning_rate)
-                self.track_data("Learning / Critic learning rate", self._critic_learning_rate)
+            if self.policy_scheduler:
+                self.track_data("Learning / Policy learning rate", self.policy_learning_rate)
+            if self.critic_scheduler:
+                self.track_data("Learning / Critic learning rate", self.critic_learning_rate)

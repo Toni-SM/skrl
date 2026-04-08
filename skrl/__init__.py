@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 import logging
 import os
@@ -51,6 +51,7 @@ class _Config(object):
         class PyTorch(object):
             def __init__(self) -> None:
                 """PyTorch configuration."""
+                self._key = 0
                 # torch.distributed config
                 self._local_rank = int(os.getenv("LOCAL_RANK", "0"))
                 self._rank = int(os.getenv("RANK", "0"))
@@ -70,13 +71,13 @@ class _Config(object):
                     torch.cuda.set_device(self._local_rank)
 
             @staticmethod
-            def parse_device(device: Union[str, "torch.device", None], validate: bool = True) -> "torch.device":
+            def parse_device(device: str | "torch.device" | None, validate: bool = True) -> "torch.device":
                 """Parse the input device and return a :py:class:`~torch.device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
-                               the default available device will be returned instead.
+                    the default available device will be returned instead.
                 :param validate: Whether to check that the specified device is valid. Since PyTorch does not check if
-                                 the specified device index is valid, a tensor is created for the verification.
+                    the specified device index is valid, a tensor is created for the verification.
 
                 :return: PyTorch device.
                 """
@@ -114,8 +115,17 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: Union[str, "torch.device"]) -> None:
+            def device(self, device: str | "torch.device") -> None:
                 self._device = device
+
+            @property
+            def key(self) -> int:
+                """Pseudo-random number generator (PRNG) key."""
+                return self._key
+
+            @key.setter
+            def key(self, value: int) -> None:
+                self._key = value
 
             @property
             def local_rank(self) -> int:
@@ -160,7 +170,6 @@ class _Config(object):
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration."""
-                self._backend = "numpy"
                 self._key = np.array([0, 0], dtype=np.uint32)
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
                 # JAX doesn't automatically start multiple processes from a single program invocation
@@ -196,7 +205,7 @@ class _Config(object):
                         logger.warning(f"Failed to get the device local to process with index/rank {self._rank}: {e}")
 
             @staticmethod
-            def parse_device(device: Union[str, "jax.Device", None]) -> "jax.Device":
+            def parse_device(device: str | "jax.Device" | None) -> "jax.Device":
                 """Parse the input device and return a :py:class:`~jax.Device` instance.
 
                 .. hint::
@@ -208,7 +217,7 @@ class _Config(object):
                     This method returns (forces to use) the device local to process in a distributed environment.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
-                               the default available device will be returned instead.
+                    the default available device will be returned instead.
 
                 :return: JAX Device.
                 """
@@ -244,27 +253,12 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: Union[str, "jax.Device"]) -> None:
+            def device(self, device: str | "jax.Device") -> None:
                 self._device = device
                 if not isinstance(self._key, np.ndarray):
                     import jax
 
                     self._key = np.asarray(jax.device_get(self._key))
-
-            @property
-            def backend(self) -> str:
-                """Backend used by the different components to operate and generate arrays.
-
-                This configuration excludes models and optimizers.
-                Supported backend are: ``"numpy"`` and ``"jax"``.
-                """
-                return self._backend
-
-            @backend.setter
-            def backend(self, value: str) -> None:
-                if value not in ["numpy", "jax"]:
-                    raise ValueError("Invalid jax backend. Supported values are: numpy, jax")
-                self._backend = value
 
             @property
             def key(self) -> "jax.Array":
@@ -283,7 +277,7 @@ class _Config(object):
                 return self._key
 
             @key.setter
-            def key(self, value: Union[int, np.ndarray, "jax.Array"]) -> None:
+            def key(self, value: int | np.ndarray | "jax.Array") -> None:
                 if isinstance(value, (int, float)):
                     value = np.array([0, value], dtype=np.uint32)
                 self._key = value
@@ -339,7 +333,69 @@ class _Config(object):
                 """
                 return self._is_distributed
 
+        class Warp(object):
+            def __init__(self) -> None:
+                """Warp configuration."""
+                self._key = 0
+                # device
+                self._device = "cuda:0"
+                # kernel-related config
+                self.tiled = True
+                self.block_dim = 128
+                self.tile_dim_0 = 32
+                self.tile_dim_1 = 32
+                self.tile_dim_2 = 32
+
+                # init Warp (don't import if it hasn't been imported)
+                if "warp" in sys.modules:
+                    import warp as wp
+
+                    wp.init()
+
+            @staticmethod
+            def parse_device(device: str | "warp.context.Device" | None) -> "warp.context.Device":
+                """Parse the input device and return a :py:class:`~warp.context.Device` instance.
+
+                :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
+                    the default available device will be returned instead.
+
+                :return: Warp Device.
+                """
+                import warp as wp
+
+                if isinstance(device, wp.context.Device):
+                    return device
+                elif isinstance(device, str):
+                    try:
+                        return wp.get_device(device)
+                    except ValueError as e:
+                        logger.warning(f"Invalid device specification ({device}): {e}")
+                return wp.get_device()
+
+            @property
+            def device(self) -> "warp.context.Device":
+                """Default device.
+
+                The default device, unless specified, is ``cuda`` if CUDA is available, ``cpu`` otherwise.
+                """
+                self._device = self.parse_device(self._device)
+                return self._device
+
+            @device.setter
+            def device(self, device: str | "warp.context.Device") -> None:
+                self._device = device
+
+            @property
+            def key(self) -> int:
+                """Pseudo-random number generator (PRNG) key."""
+                return self._key
+
+            @key.setter
+            def key(self, value: int) -> None:
+                self._key = value
+
         self.jax = JAX()
+        self.warp = Warp()
         self.torch = PyTorch()
 
 

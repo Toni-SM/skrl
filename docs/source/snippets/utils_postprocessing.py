@@ -5,18 +5,18 @@ from skrl.utils import postprocessing
 # assuming there is a directory called "memories" with Torch files in it
 memory_iterator = postprocessing.MemoryFileIterator("memories/*.pt")
 for filename, data in memory_iterator:
-    filename    # str: basename of the current file
-    data    # dict: keys are the names of the memory tensors in the file.
-            # Tensor shapes are (memory size, number of envs, specific content size)
+    filename: str  # basename of the current file
+    data: dict  # keys: tensor names, values: tensors with shape (memory_size, num_envs, data_size)
 
     # example of simple usage:
     # print the filenames of all memories and their tensor shapes
     print("\nfilename:", filename)
-    print("  |-- states:", data['states'].shape)
-    print("  |-- actions:", data['actions'].shape)
-    print("  |-- rewards:", data['rewards'].shape)
-    print("  |-- next_states:", data['next_states'].shape)
-    print("  |-- dones:", data['dones'].shape)
+    print("  |-- observations:", data["observations"].shape)
+    print("  |-- actions:", data["actions"].shape)
+    print("  |-- rewards:", data["rewards"].shape)
+    print("  |-- next_observations:", data["next_observations"].shape)
+    print("  |-- terminated:", data["terminated"].shape)
+    print("  |-- truncated:", data["truncated"].shape)
 # [end-memory_file_iterator-torch]
 
 
@@ -27,18 +27,18 @@ from skrl.utils import postprocessing
 # assuming there is a directory called "memories" with NumPy files in it
 memory_iterator = postprocessing.MemoryFileIterator("memories/*.npz")
 for filename, data in memory_iterator:
-    filename    # str: basename of the current file
-    data    # dict: keys are the names of the memory arrays in the file.
-            # Array shapes are (memory size, number of envs, specific content size)
+    filename: str  # basename of the current file
+    data: dict  # keys: array names, values: arrays with shape (memory_size, num_envs, data_size)
 
     # example of simple usage:
     # print the filenames of all memories and their array shapes
     print("\nfilename:", filename)
-    print("  |-- states:", data['states'].shape)
-    print("  |-- actions:", data['actions'].shape)
-    print("  |-- rewards:", data['rewards'].shape)
-    print("  |-- next_states:", data['next_states'].shape)
-    print("  |-- dones:", data['dones'].shape)
+    print("  |-- observations:", data["observations"].shape)
+    print("  |-- actions:", data["actions"].shape)
+    print("  |-- rewards:", data["rewards"].shape)
+    print("  |-- next_observations:", data["next_observations"].shape)
+    print("  |-- terminated:", data["terminated"].shape)
+    print("  |-- truncated:", data["truncated"].shape)
 # [end-memory_file_iterator-numpy]
 
 
@@ -49,19 +49,18 @@ from skrl.utils import postprocessing
 # assuming there is a directory called "memories" with CSV files in it
 memory_iterator = postprocessing.MemoryFileIterator("memories/*.csv")
 for filename, data in memory_iterator:
-    filename    # str: basename of the current file
-    data    # dict: keys are the names of the memory list of lists extracted from the file.
-            # List lengths are (memory size * number of envs) and
-            # sublist lengths are (specific content size)
+    filename: str  # basename of the current file
+    data: dict  # keys: list names, values: lists with length (memory_size * num_envs) of sub-lists with length (data_size)
 
     # example of simple usage:
     # print the filenames of all memories and their list lengths
     print("\nfilename:", filename)
-    print("  |-- states:", len(data['states']))
-    print("  |-- actions:", len(data['actions']))
-    print("  |-- rewards:", len(data['rewards']))
-    print("  |-- next_states:", len(data['next_states']))
-    print("  |-- dones:", len(data['dones']))
+    print("  |-- observations:", data["observations"].shape)
+    print("  |-- actions:", data["actions"].shape)
+    print("  |-- rewards:", data["rewards"].shape)
+    print("  |-- next_observations:", data["next_observations"].shape)
+    print("  |-- terminated:", data["terminated"].shape)
+    print("  |-- truncated:", data["truncated"].shape)
 # [end-memory_file_iterator-csv]
 
 
@@ -69,12 +68,13 @@ for filename, data in memory_iterator:
 from skrl.utils import postprocessing
 
 
-# assuming there is a directory called "runs" with experiments and Tensorboard files in it
-tensorboard_iterator = postprocessing.TensorboardFileIterator("runs/*/events.out.tfevents.*", \
-    tags=["Reward / Total reward (mean)"])
+# assuming there is a directory called "runs" with experiments and TensorBoard files in it
+tensorboard_iterator = postprocessing.TensorboardFileIterator(
+    "runs/*/events.out.tfevents.*", tags=["Reward / Total reward (mean)"]
+)
 for dirname, data in tensorboard_iterator:
-    dirname    # str: path of the directory (experiment name) containing the Tensorboard file
-    data    # dict: keys are the tags, values are lists of [step, value] pairs
+    dirname: str  # path of the directory (experiment name) containing the TensorBoard file
+    data: dict  # keys: tags, values: lists of [step, value] pairs
 
     # example of simple usage:
     # print the directory name and the value length for the "Reward / Total reward (mean)" tag

@@ -1,6 +1,7 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from __future__ import annotations
 
-import copy
+from typing import Any
+
 import itertools
 import gymnasium
 from packaging import version
@@ -14,96 +15,46 @@ from skrl import config, logger
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-SAC_DEFAULT_CONFIG = {
-    "gradient_steps": 1,            # gradient steps
-    "batch_size": 64,               # training batch size
-
-    "discount_factor": 0.99,        # discount factor (gamma)
-    "polyak": 0.005,                # soft update hyperparameter (tau)
-
-    "actor_learning_rate": 1e-3,    # actor learning rate
-    "critic_learning_rate": 1e-3,   # critic learning rate
-    "learning_rate_scheduler": None,        # learning rate scheduler class (see torch.optim.lr_scheduler)
-    "learning_rate_scheduler_kwargs": {},   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
-
-    "state_preprocessor": None,             # state preprocessor class (see skrl.resources.preprocessors)
-    "state_preprocessor_kwargs": {},        # state preprocessor's kwargs (e.g. {"size": env.observation_space})
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "grad_norm_clip": 0,            # clipping coefficient for the norm of the gradients
-
-    "learn_entropy": True,          # learn entropy
-    "entropy_learning_rate": 1e-3,  # entropy learning rate
-    "initial_entropy_value": 0.2,   # initial entropy value
-    "target_entropy": None,         # target entropy
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "mixed_precision": False,       # enable automatic mixed precision for higher performance
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .sac_cfg import SAC_CFG
 
 
 class SAC(Agent):
     def __init__(
         self,
-        models: Mapping[str, Model],
-        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[dict] = None,
+        *,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | torch.device | None = None,
+        cfg: SAC_CFG | dict = {},
     ) -> None:
-        """Soft Actor-Critic (SAC)
+        """Soft Actor-Critic (SAC).
 
         https://arxiv.org/abs/1801.01290
 
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and
-                       for the rest only the environment transitions will be added
-        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        :param models: Agent's models.
+        :param memory: Memory to storage agent's data and environment transitions.
+        :param observation_space: Observation space.
+        :param state_space: State space.
+        :param action_space: Action space.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param cfg: Agent's configuration.
 
-        :raises KeyError: If the models dictionary is missing a required key
+        :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(SAC_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: SAC_CFG
         super().__init__(
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=SAC_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -130,51 +81,17 @@ class SAC(Agent):
             if self.critic_2 is not None:
                 self.critic_2.broadcast_parameters()
 
-        if self.target_critic_1 is not None and self.target_critic_2 is not None:
-            # freeze target networks with respect to optimizers (update via .update_parameters())
-            self.target_critic_1.freeze_parameters(True)
-            self.target_critic_2.freeze_parameters(True)
-
-            # update target networks (hard update)
-            self.target_critic_1.update_parameters(self.critic_1, polyak=1)
-            self.target_critic_2.update_parameters(self.critic_2, polyak=1)
-
-        # configuration
-        self._gradient_steps = self.cfg["gradient_steps"]
-        self._batch_size = self.cfg["batch_size"]
-
-        self._discount_factor = self.cfg["discount_factor"]
-        self._polyak = self.cfg["polyak"]
-
-        self._actor_learning_rate = self.cfg["actor_learning_rate"]
-        self._critic_learning_rate = self.cfg["critic_learning_rate"]
-        self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
-
-        self._state_preprocessor = self.cfg["state_preprocessor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._grad_norm_clip = self.cfg["grad_norm_clip"]
-
-        self._entropy_learning_rate = self.cfg["entropy_learning_rate"]
-        self._learn_entropy = self.cfg["learn_entropy"]
-        self._entropy_coefficient = self.cfg["initial_entropy_value"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-
-        self._mixed_precision = self.cfg["mixed_precision"]
-
         # set up automatic mixed precision
-        self._device_type = torch.device(device).type
+        self._device_type = torch.device(self.device).type
         if version.parse(torch.__version__) >= version.parse("2.4"):
-            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self._mixed_precision)
+            self.scaler = torch.amp.GradScaler(device=self._device_type, enabled=self.cfg.mixed_precision)
         else:
-            self.scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision)
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.mixed_precision)
 
         # entropy
-        if self._learn_entropy:
-            self._target_entropy = self.cfg["target_entropy"]
+        self._entropy_coefficient = self.cfg.initial_entropy_value
+        if self.cfg.learn_entropy:
+            self._target_entropy = self.cfg.target_entropy
             if self._target_entropy is None:
                 if issubclass(type(self.action_space), gymnasium.spaces.Box):
                     self._target_entropy = -np.prod(self.action_space.shape).astype(np.float32)
@@ -186,79 +103,120 @@ class SAC(Agent):
             self.log_entropy_coefficient = torch.log(
                 torch.ones(1, device=self.device) * self._entropy_coefficient
             ).requires_grad_(True)
-            self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self._entropy_learning_rate)
+            self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self.cfg.learning_rate[2])
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
-            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._actor_learning_rate)
+            # - optimizers
+            self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.cfg.learning_rate[0])
             self.critic_optimizer = torch.optim.Adam(
-                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self._critic_learning_rate
+                itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), lr=self.cfg.learning_rate[1]
             )
-            if self._learning_rate_scheduler is not None:
-                self.policy_scheduler = self._learning_rate_scheduler(
-                    self.policy_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-                self.critic_scheduler = self._learning_rate_scheduler(
-                    self.critic_optimizer, **self.cfg["learning_rate_scheduler_kwargs"]
-                )
-
             self.checkpoint_modules["policy_optimizer"] = self.policy_optimizer
             self.checkpoint_modules["critic_optimizer"] = self.critic_optimizer
+            # - learning rate schedulers
+            self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
+            self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
+            if self.policy_scheduler is not None:
+                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                    self.policy_optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
+                )
+            if self.critic_scheduler is not None:
+                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                    self.critic_optimizer, **self.cfg.learning_rate_scheduler_kwargs[1]
+                )
+
+        # set up target networks
+        if self.target_critic_1 is not None and self.target_critic_2 is not None:
+            # - freeze target networks with respect to optimizers (update via .update_parameters())
+            self.target_critic_1.freeze_parameters(True)
+            self.target_critic_2.freeze_parameters(True)
+            # - update target networks (hard update)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=1)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=1)
 
         # set up preprocessors
-        if self._state_preprocessor:
-            self._state_preprocessor = self._state_preprocessor(**self.cfg["state_preprocessor_kwargs"])
+        # - observations
+        if self.cfg.observation_preprocessor:
+            self._observation_preprocessor = self.cfg.observation_preprocessor(
+                **self.cfg.observation_preprocessor_kwargs
+            )
+            self.checkpoint_modules["observation_preprocessor"] = self._observation_preprocessor
+        else:
+            self._observation_preprocessor = self._empty_preprocessor
+        # - states
+        if self.cfg.state_preprocessor:
+            self._state_preprocessor = self.cfg.state_preprocessor(**self.cfg.state_preprocessor_kwargs)
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
+        """Initialize the agent.
+
+        :param trainer_cfg: Trainer configuration.
+        """
         super().init(trainer_cfg=trainer_cfg)
-        self.set_mode("eval")
+        self.enable_models_training_mode(False)
 
         # create tensors in memory
         if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="observations", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_observations", size=self.observation_space, dtype=torch.float32)
+            self.memory.create_tensor(name="states", size=self.state_space, dtype=torch.float32)
+            self.memory.create_tensor(name="next_states", size=self.state_space, dtype=torch.float32)
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
 
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "truncated"]
+            self._tensors_names = [
+                "observations",
+                "states",
+                "actions",
+                "rewards",
+                "next_observations",
+                "next_states",
+                "terminated",
+            ]
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
+    def act(
+        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
 
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
 
-        :return: Actions
-        :rtype: torch.Tensor
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
         """
+        inputs = {
+            "observations": self._observation_preprocessor(observations),
+            "states": self._state_preprocessor(states),
+        }
         # sample random actions
         # TODO, check for stochasticity
-        if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
+        if timestep < self.cfg.random_timesteps:
+            return self.policy.random_act(inputs, role="policy")
 
         # sample stochastic actions
-        with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
-            actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
+            actions, outputs = self.policy.act(inputs, role="policy")
 
-        return actions, None, outputs
+        return actions, outputs
 
     def record_transition(
         self,
+        *,
+        observations: torch.Tensor,
         states: torch.Tensor,
         actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -266,135 +224,127 @@ class SAC(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             # reward shaping
-            if self._rewards_shaper is not None:
-                rewards = self._rewards_shaper(rewards, timestep, timesteps)
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # storage transition in memory
             self.memory.add_samples(
+                observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
+                next_observations=next_observations,
                 next_states=next_states,
                 terminated=terminated,
-                truncated=truncated,
             )
-            for memory in self.secondary_memories:
-                memory.add_samples(
-                    states=states,
-                    actions=actions,
-                    rewards=rewards,
-                    next_states=next_states,
-                    terminated=terminated,
-                    truncated=truncated,
-                )
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+        if self.training:
+            if timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
 
         # gradient steps
-        for gradient_step in range(self._gradient_steps):
+        for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory
             (
+                sampled_observations,
                 sampled_states,
                 sampled_actions,
                 sampled_rewards,
+                sampled_next_observations,
                 sampled_next_states,
                 sampled_terminated,
-                sampled_truncated,
-            ) = self.memory.sample(names=self._tensors_names, batch_size=self._batch_size)[0]
+            ) = self.memory.sample(names=self._tensors_names, batch_size=self.cfg.batch_size)[0]
 
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
+                inputs = {
+                    "observations": self._observation_preprocessor(sampled_observations, train=True),
+                    "states": self._state_preprocessor(sampled_states, train=True),
+                }
+                next_inputs = {
+                    "observations": self._observation_preprocessor(sampled_next_observations, train=True),
+                    "states": self._state_preprocessor(sampled_next_states, train=True),
+                }
 
-                sampled_states = self._state_preprocessor(sampled_states, train=True)
-                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
-
-                # compute target values
                 with torch.no_grad():
-                    next_actions, next_log_prob, _ = self.policy.act({"states": sampled_next_states}, role="policy")
+                    # compute target values
+                    next_actions, outputs = self.policy.act(next_inputs, role="policy")
+                    next_log_prob = outputs["log_prob"]
 
-                    target_q1_values, _, _ = self.target_critic_1.act(
-                        {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_1"
+                    target_q1_values, _ = self.target_critic_1.act(
+                        {**next_inputs, "taken_actions": next_actions}, role="target_critic_1"
                     )
-                    target_q2_values, _, _ = self.target_critic_2.act(
-                        {"states": sampled_next_states, "taken_actions": next_actions}, role="target_critic_2"
+                    target_q2_values, _ = self.target_critic_2.act(
+                        {**next_inputs, "taken_actions": next_actions}, role="target_critic_2"
                     )
                     target_q_values = (
                         torch.min(target_q1_values, target_q2_values) - self._entropy_coefficient * next_log_prob
                     )
                     target_values = (
-                        sampled_rewards
-                        + self._discount_factor
-                        * (sampled_terminated | sampled_truncated).logical_not()
-                        * target_q_values
+                        sampled_rewards + self.cfg.discount_factor * sampled_terminated.logical_not() * target_q_values
                     )
 
                 # compute critic loss
-                critic_1_values, _, _ = self.critic_1.act(
-                    {"states": sampled_states, "taken_actions": sampled_actions}, role="critic_1"
-                )
-                critic_2_values, _, _ = self.critic_2.act(
-                    {"states": sampled_states, "taken_actions": sampled_actions}, role="critic_2"
-                )
+                critic_1_values, _ = self.critic_1.act({**inputs, "taken_actions": sampled_actions}, role="critic_1")
+                critic_2_values, _ = self.critic_2.act({**inputs, "taken_actions": sampled_actions}, role="critic_2")
 
                 critic_loss = (
                     F.mse_loss(critic_1_values, target_values) + F.mse_loss(critic_2_values, target_values)
@@ -408,23 +358,20 @@ class SAC(Agent):
                 self.critic_1.reduce_parameters()
                 self.critic_2.reduce_parameters()
 
-            if self._grad_norm_clip > 0:
+            if self.cfg.grad_norm_clip > 0:
                 self.scaler.unscale_(self.critic_optimizer)
                 nn.utils.clip_grad_norm_(
-                    itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self._grad_norm_clip
+                    itertools.chain(self.critic_1.parameters(), self.critic_2.parameters()), self.cfg.grad_norm_clip
                 )
 
             self.scaler.step(self.critic_optimizer)
 
-            with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 # compute policy (actor) loss
-                actions, log_prob, _ = self.policy.act({"states": sampled_states}, role="policy")
-                critic_1_values, _, _ = self.critic_1.act(
-                    {"states": sampled_states, "taken_actions": actions}, role="critic_1"
-                )
-                critic_2_values, _, _ = self.critic_2.act(
-                    {"states": sampled_states, "taken_actions": actions}, role="critic_2"
-                )
+                actions, outputs = self.policy.act(inputs, role="policy")
+                log_prob = outputs["log_prob"]
+                critic_1_values, _ = self.critic_1.act({**inputs, "taken_actions": actions}, role="critic_1")
+                critic_2_values, _ = self.critic_2.act({**inputs, "taken_actions": actions}, role="critic_2")
 
                 policy_loss = (
                     self._entropy_coefficient * log_prob - torch.min(critic_1_values, critic_2_values)
@@ -437,15 +384,15 @@ class SAC(Agent):
             if config.torch.is_distributed:
                 self.policy.reduce_parameters()
 
-            if self._grad_norm_clip > 0:
+            if self.cfg.grad_norm_clip > 0:
                 self.scaler.unscale_(self.policy_optimizer)
-                nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+                nn.utils.clip_grad_norm_(self.policy.parameters(), self.cfg.grad_norm_clip)
 
             self.scaler.step(self.policy_optimizer)
 
             # entropy learning
-            if self._learn_entropy:
-                with torch.autocast(device_type=self._device_type, enabled=self._mixed_precision):
+            if self.cfg.learn_entropy:
+                with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                     # compute entropy loss
                     entropy_loss = -(self.log_entropy_coefficient * (log_prob + self._target_entropy).detach()).mean()
 
@@ -460,12 +407,13 @@ class SAC(Agent):
             self.scaler.update()  # called once, after optimizers have been stepped
 
             # update target networks
-            self.target_critic_1.update_parameters(self.critic_1, polyak=self._polyak)
-            self.target_critic_2.update_parameters(self.critic_2, polyak=self._polyak)
+            self.target_critic_1.update_parameters(self.critic_1, polyak=self.cfg.polyak)
+            self.target_critic_2.update_parameters(self.critic_2, polyak=self.cfg.polyak)
 
             # update learning rate
-            if self._learning_rate_scheduler:
+            if self.policy_scheduler:
                 self.policy_scheduler.step()
+            if self.critic_scheduler:
                 self.critic_scheduler.step()
 
             # record data
@@ -485,10 +433,11 @@ class SAC(Agent):
                 self.track_data("Target / Target (min)", torch.min(target_values).item())
                 self.track_data("Target / Target (mean)", torch.mean(target_values).item())
 
-                if self._learn_entropy:
+                if self.cfg.learn_entropy:
                     self.track_data("Loss / Entropy loss", entropy_loss.item())
                     self.track_data("Coefficient / Entropy coefficient", self._entropy_coefficient.item())
 
-                if self._learning_rate_scheduler:
+                if self.policy_scheduler:
                     self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+                if self.critic_scheduler:
                     self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])

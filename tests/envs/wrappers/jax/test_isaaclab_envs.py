@@ -8,8 +8,8 @@ import jax.numpy as jnp
 import numpy as np
 import torch
 
-from skrl import config
-from skrl.envs.wrappers.jax import IsaacLabMultiAgentWrapper, IsaacLabWrapper, wrap_env
+from skrl.envs.wrappers.jax import wrap_env
+from skrl.envs.wrappers.jax.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
 
 
 class IsaacLabEnv(gym.Env):
@@ -23,7 +23,7 @@ class IsaacLabEnv(gym.Env):
 
         self._configure_gym_env_spaces()
 
-    # https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab/omni/isaac/lab/envs/direct_rl_env.py
+    # https://github.com/isaac-sim/IsaacLab/blob/main/source/isaaclab/isaaclab/envs/direct_rl_env.py
     def _configure_gym_env_spaces(self):
         # set up spaces
         self.single_observation_space = gym.spaces.Dict()
@@ -37,12 +37,15 @@ class IsaacLabEnv(gym.Env):
         self.action_space = gym.vector.utils.batch_space(self.single_action_space, self.num_envs)
 
         # optional state space for asymmetric actor-critic architectures
+        self.state_space = None
         if self.num_states > 0:
             self.single_observation_space["critic"] = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(self.num_states,))
             self.state_space = gym.vector.utils.batch_space(self.single_observation_space["critic"], self.num_envs)
 
     def reset(self, seed=None, options=None):
         observations = {"policy": torch.ones((self.num_envs, self.num_observations), device=self.device)}
+        if self.num_states > 0:
+            observations["critic"] = torch.ones((self.num_envs, self.num_states), device=self.device)
         return observations, self.extras
 
     def step(self, action):
@@ -53,6 +56,10 @@ class IsaacLabEnv(gym.Env):
         rewards = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
         terminated = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
         truncated = torch.zeros_like(terminated)
+        if self.num_states > 0:
+            observations["critic"] = torch.ones(
+                (self.num_envs, self.num_states), device=self.device, dtype=torch.float32
+            )
         return observations, rewards, terminated, truncated, self.extras
 
     def render(self, recompute=False):
@@ -75,7 +82,7 @@ class IsaacLabMultiAgentEnv:
 
         self._configure_env_spaces()
 
-    # https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab/omni/isaac/lab/envs/direct_marl_env.py
+    # https://github.com/isaac-sim/IsaacLab/blob/main/source/isaaclab/isaaclab/envs/direct_marl_env.py
     def _configure_env_spaces(self):
         # set up observation and action spaces
         self.observation_spaces = {
@@ -133,14 +140,13 @@ class IsaacLabMultiAgentEnv:
         pass
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
-    action = jnp.ones((num_envs, 1)) if backend == "jax" else np.ones((num_envs, 1))
+    action = jnp.ones((num_envs, 1))
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "isaaclab-single-agent"), IsaacLabWrapper)
 
     # load wrap the environment
     original_env = IsaacLabEnv(num_states)
@@ -153,7 +159,7 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
     if num_states:
         assert isinstance(env.state_space, gym.Space) and env.state_space.shape == (num_states,)
     else:
-        assert env.state_space is None or env.state_space.shape == (num_states,)
+        assert env.state_space is None
     assert isinstance(env.observation_space, gym.Space) and env.observation_space.shape == (4,)
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
@@ -165,34 +171,41 @@ def test_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
         observation, info = env.reset()  # edge case: parallel environments are autoreset
-        assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
+        state = env.state()
+        assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
         assert isinstance(info, Mapping)
+        if num_states:
+            assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
+        else:
+            assert state is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
+            state = env.state()
             env.render()
-            assert isinstance(observation, Array) and observation.shape == (num_envs, 4)
-            assert isinstance(reward, Array) and reward.shape == (num_envs, 1)
-            assert isinstance(terminated, Array) and terminated.shape == (num_envs, 1)
-            assert isinstance(truncated, Array) and truncated.shape == (num_envs, 1)
+            assert isinstance(observation, jax.Array) and observation.shape == (num_envs, 4)
+            assert isinstance(reward, jax.Array) and reward.shape == (num_envs, 1)
+            assert isinstance(terminated, jax.Array) and terminated.shape == (num_envs, 1)
+            assert isinstance(truncated, jax.Array) and truncated.shape == (num_envs, 1)
             assert isinstance(info, Mapping)
+            if num_states:
+                assert isinstance(state, jax.Array) and state.shape == (num_envs, num_states)
+            else:
+                assert state is None
 
     env.close()
 
 
-@pytest.mark.parametrize("backend", ["jax", "numpy"])
 @pytest.mark.parametrize("num_states", [0, 5])
-def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states: int):
-    config.jax.backend = backend
-    Array = jax.Array if backend == "jax" else np.ndarray
-
+def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
     num_envs = 10
     num_agents = 3
     possible_agents = [f"agent_{i}" for i in range(num_agents)]
-    action = {
-        f"agent_{i}": jnp.ones((num_envs, i + 10)) if backend == "jax" else np.ones((num_envs, i + 10))
-        for i in range(num_agents)
-    }
+    action = {f"agent_{i}": jnp.ones((num_envs, i + 10)) for i in range(num_agents)}
+
+    # check wrapper definition
+    assert isinstance(wrap_env(None, "isaaclab-multi-agent"), IsaacLabMultiAgentWrapper)
 
     # load wrap the environment
     original_env = IsaacLabMultiAgentEnv(num_states)
@@ -220,27 +233,36 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, backend: str, num_states
     # check methods
     for _ in range(2):
         observation, info = env.reset()
+        state = env.state()
+        observation, info = env.reset()  # edge case: parallel environments are autoreset
+        state = env.state()
         assert isinstance(observation, Mapping)
+        assert isinstance(state, Mapping)
         assert isinstance(info, Mapping)
         for i, agent in enumerate(possible_agents):
-            assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
+            assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (num_envs, i + 20)
+            if num_states:
+                assert isinstance(state[agent], jax.Array) and state[agent].shape == (num_envs, num_states)
+            else:
+                assert state[agent] is None
         for _ in range(3):
             observation, reward, terminated, truncated, info = env.step(action)
             state = env.state()
             env.render()
             assert isinstance(observation, Mapping)
+            assert isinstance(state, Mapping)
             assert isinstance(reward, Mapping)
             assert isinstance(terminated, Mapping)
             assert isinstance(truncated, Mapping)
             assert isinstance(info, Mapping)
             for i, agent in enumerate(possible_agents):
-                assert isinstance(observation[agent], Array) and observation[agent].shape == (num_envs, i + 20)
-                assert isinstance(reward[agent], Array) and reward[agent].shape == (num_envs, 1)
-                assert isinstance(terminated[agent], Array) and terminated[agent].shape == (num_envs, 1)
-                assert isinstance(truncated[agent], Array) and truncated[agent].shape == (num_envs, 1)
-            if num_states:
-                assert isinstance(state, Array) and state.shape == (num_envs, num_states)
-            else:
-                assert state is None
+                assert isinstance(observation[agent], jax.Array) and observation[agent].shape == (num_envs, i + 20)
+                if num_states:
+                    assert isinstance(state[agent], jax.Array) and state[agent].shape == (num_envs, num_states)
+                else:
+                    assert state[agent] is None
+                assert isinstance(reward[agent], jax.Array) and reward[agent].shape == (num_envs, 1)
+                assert isinstance(terminated[agent], jax.Array) and terminated[agent].shape == (num_envs, 1)
+                assert isinstance(truncated[agent], jax.Array) and truncated[agent].shape == (num_envs, 1)
 
     env.close()

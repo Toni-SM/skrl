@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
+import re
+
+from skrl import logger
+from skrl.envs.wrappers.warp.base import MultiAgentEnvWrapper, Wrapper
+
+
+__all__ = ["wrap_env", "Wrapper", "MultiAgentEnvWrapper"]
+
+
+def wrap_env(
+    env: Any,
+    wrapper: Literal[
+        "auto",
+        "gym",
+        "gymnasium",
+        "isaaclab",
+        "isaaclab-single-agent",
+        "isaaclab-multi-agent",
+        "mani-skill",
+        "pettingzoo",
+        "playground",
+    ] = "auto",
+    verbose: bool = True,
+) -> Wrapper | MultiAgentEnvWrapper:
+    """Wrap an environment to use a common interface.
+
+    Example::
+
+        >>> from skrl.envs.wrappers.warp import wrap_env
+        >>>
+        >>> # assuming that there is an environment called "env"
+        >>> env = wrap_env(env)
+
+    :param env: The environment instance to be wrapped.
+    :param wrapper: The type of wrapper to use.
+        If ``"auto"``, the wrapper will be automatically selected based on the environment class.
+        The supported wrappers are described in the following table:
+
+        .. list-table:: Single-agent environments |br|
+            :header-rows: 1
+
+            * - Environment
+              - Wrapper tag
+            * - OpenAI Gym
+              - ``"gym"``
+            * - Gymnasium
+              - ``"gymnasium"``
+            * - Isaac Lab
+              - ``"isaaclab"`` (``"isaaclab-single-agent"``)
+            * - ManiSkill
+              - ``"mani-skill"``
+            * - MuJoCo Playground
+              - ``"playground"``
+
+        .. list-table:: Multi-agent environments |br|
+            :header-rows: 1
+
+            * - Environment
+              - Wrapper tag
+            * - PettingZoo
+              - ``"pettingzoo"``
+            * - Isaac Lab
+              - ``"isaaclab"`` (``"isaaclab-multi-agent"``)
+    :param verbose: Whether to print verbose information about the environment and the wrapper.
+
+    :return: Wrapped environment instance.
+
+    :raises ValueError: Unknown wrapper type.
+    """
+
+    def _get_wrapper_name(env, verbose):
+        def _in(values, container):
+            if type(values) == str:
+                values = [values]
+            for item in container:
+                for value in values:
+                    if value in item or re.match(value, item):
+                        return True
+            return False
+
+        base_classes = [str(base).replace("<class '", "").replace("'>", "") for base in env.__class__.__bases__]
+        try:
+            base_classes += [
+                str(base).replace("<class '", "").replace("'>", "") for base in env.unwrapped.__class__.__bases__
+            ]
+        except:
+            pass
+        base_classes = sorted(list(set(base_classes)))
+        if verbose:
+            logger.info(f"Environment wrapper: 'auto' (class: {', '.join(base_classes)})")
+
+        if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
+            return "isaaclab-*"
+        elif _in("mujoco_playground..*", base_classes):
+            return "playground"
+        elif _in("mani_skill.envs..*", base_classes):
+            return "mani-skill"
+        elif _in("pettingzoo.utils.env", base_classes) or _in("pettingzoo.utils.wrappers", base_classes):
+            return "pettingzoo"
+        elif _in("gymnasium..*", base_classes):
+            return "gymnasium"
+        elif _in("gym..*", base_classes):
+            return "gym"
+        return base_classes
+
+    if wrapper == "auto":
+        wrapper = _get_wrapper_name(env, verbose)
+
+    if wrapper == "gym":
+        if verbose:
+            logger.info("Environment wrapper: Gym")
+        return GymWrapper(env)
+    elif wrapper == "gymnasium":
+        if verbose:
+            logger.info("Environment wrapper: Gymnasium")
+        from skrl.envs.wrappers.warp.gymnasium_envs import GymnasiumWrapper
+
+        return GymnasiumWrapper(env)
+    elif wrapper == "pettingzoo":
+        if verbose:
+            logger.info("Environment wrapper: PettingZoo")
+        return PettingZooWrapper(env)
+    elif wrapper == "mani-skill":
+        if verbose:
+            logger.info("Environment wrapper: ManiSkill")
+        from skrl.envs.wrappers.warp.mani_skill_envs import ManiSkillWrapper
+
+        return ManiSkillWrapper(env)
+    elif wrapper == "playground":
+        if verbose:
+            logger.info("Environment wrapper: MuJoCo Playground")
+        from skrl.envs.wrappers.warp.playground_envs import PlaygroundWrapper
+
+        return PlaygroundWrapper(env)
+    elif type(wrapper) is str and wrapper.startswith("isaaclab"):
+        from skrl.envs.wrappers.warp.isaaclab_envs import IsaacLabMultiAgentWrapper, IsaacLabWrapper
+
+        # use specified wrapper
+        if wrapper == "isaaclab-single-agent":
+            env_type = "single-agent"
+            env_wrapper = IsaacLabWrapper
+        elif wrapper == "isaaclab-multi-agent":
+            env_type = "multi-agent"
+            env_wrapper = IsaacLabMultiAgentWrapper
+        # detect the wrapper
+        else:
+            env_type = "single-agent"
+            env_wrapper = IsaacLabWrapper
+            if hasattr(env.unwrapped, "possible_agents"):
+                env_type = "multi-agent"
+                env_wrapper = IsaacLabMultiAgentWrapper
+        # wrap the environment
+        if verbose:
+            logger.info(f"Environment wrapper: Isaac Lab ({env_type})")
+        return env_wrapper(env)
+    else:
+        raise ValueError(f"Unknown wrapper type: {wrapper}")

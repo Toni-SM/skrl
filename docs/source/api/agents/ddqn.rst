@@ -1,20 +1,19 @@
+:tocdepth: 4
+
 Double Deep Q-Network (DDQN)
 ============================
 
-DDQN is a **model-free**, **off-policy** algorithm that relies on double Q-learning to avoid the overestimation of action-values introduced by DQN
+DDQN is a **model-free**, **off-policy** algorithm that relies on double Q-learning to avoid
+the overestimation of action-values introduced by DQN.
 
-Paper: `Deep Reinforcement Learning with Double Q-Learning <https://ojs.aaai.org/index.php/AAAI/article/view/10295>`_
+**Paper:** `Deep Reinforcement Learning with Double Q-Learning <https://ojs.aaai.org/index.php/AAAI/article/view/10295>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -24,9 +23,7 @@ Algorithm implementation
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Decision making
 """""""""""""""
@@ -36,9 +33,7 @@ Decision making
 | :math:`\epsilon \leftarrow \epsilon_{_{final}} + (\epsilon_{_{initial}} - \epsilon_{_{final}}) \; e^{-1 \; \frac{\text{timestep}}{\epsilon_{_{timesteps}}}}`
 | :math:`a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q_\phi(s) & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -65,9 +60,7 @@ Learning algorithm
 |     **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |         step :math:`\text{scheduler}_\phi (\text{optimizer}_\phi)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -94,31 +87,34 @@ Usage
                     :start-after: [jax-start-ddqn]
                     :end-before: [jax-end-ddqn]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/dqn/ddqn.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``DDQN_CFG``
+      - :py:class:`~skrl.agents.torch.ddqn.DDQN_CFG`
+      - :py:class:`~skrl.agents.jax.ddqn.DDQN_CFG`
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -134,14 +130,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 2 deterministic function approximators.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -165,14 +161,12 @@ The implementation uses 2 deterministic function approximators. These function a
       - action
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -181,49 +175,77 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.dqn.DDQN_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
 
-.. autoclass:: skrl.agents.torch.dqn.DDQN
+.. automodule:: skrl.agents.torch.ddqn
+.. autosummary::
+    :nosignatures:
+
+    DDQN_CFG
+    DDQN
+
+.. autoclass:: skrl.agents.torch.ddqn.DDQN_CFG
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
-
-    <br>
-
-API (JAX)
----------
-
-.. autoclass:: skrl.agents.jax.dqn.DDQN_DEFAULT_CONFIG
-
-.. autoclass:: skrl.agents.jax.dqn.DDQN
+.. autoclass:: skrl.agents.torch.ddqn.DDQN
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
+    :members:
+
+|
+
+JAX
+^^^
+
+.. automodule:: skrl.agents.jax.ddqn
+.. autosummary::
+    :nosignatures:
+
+    DDQN_CFG
+    DDQN
+
+.. autoclass:: skrl.agents.jax.ddqn.DDQN_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.agents.jax.ddqn.DDQN
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:

@@ -1,18 +1,16 @@
+:tocdepth: 4
+
 KL Adaptive
 ===========
 
 Adjust the learning rate according to the value of the Kullback-Leibler (KL) divergence.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -24,58 +22,85 @@ The learning rate (:math:`\eta`) at each step is modified as follows:
 | **IF** :math:`\; KL <` :guilabel:`kl_threshold` :math:`/` :guilabel:`kl_factor` **THEN**
 |     :math:`\eta_{t + 1} = \min(` :guilabel:`lr_factor` :math:`\eta_t,` :guilabel:`max_lr` :math:`)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
-The learning rate scheduler usage is defined in each agent's configuration dictionary. The scheduler class is set under the :literal:`"learning_rate_scheduler"` key and its arguments are set under the :literal:`"learning_rate_scheduler_kwargs"` key as a keyword argument dictionary, without specifying the optimizer (first argument). The following examples show how to set the scheduler for an agent:
+The learning rate scheduler usage is defined in each agent's configuration.
+The scheduler class is set under the :literal:`learning_rate_scheduler` key and its arguments are set under
+the :literal:`learning_rate_scheduler_kwargs` key, as a Python dictionary, without specifying the optimizer instance.
 
 .. tabs::
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. code-block:: python
-            :emphasize-lines: 2, 5-6
-
-            # import the scheduler class
-            from skrl.resources.schedulers.torch import KLAdaptiveLR
-
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["learning_rate_scheduler"] = KLAdaptiveLR
-            cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
+        .. literalinclude:: ../../../snippets/schedulers.py
+            :language: python
+            :emphasize-lines: 2, 6-7
+            :start-after: [start-scheduler-kl-adaptive-torch]
+            :end-before: [end-scheduler-kl-adaptive-torch]
 
     .. group-tab:: |_4| |jax| |_4|
 
-        .. code-block:: python
-            :emphasize-lines: 2, 5-6
+        .. literalinclude:: ../../../snippets/schedulers.py
+            :language: python
+            :emphasize-lines: 2, 6-7
+            :start-after: [start-scheduler-kl-adaptive-jax]
+            :end-before: [end-scheduler-kl-adaptive-jax]
 
-            # import the scheduler class
-            from skrl.resources.schedulers.jax import KLAdaptiveLR  # or kl_adaptive (Optax style)
+    .. group-tab:: |_4| |warp| |_4|
 
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["learning_rate_scheduler"] = KLAdaptiveLR
-            cfg["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.01}
+        .. literalinclude:: ../../../snippets/schedulers.py
+            :language: python
+            :emphasize-lines: 2, 6-7
+            :start-after: [start-scheduler-kl-adaptive-warp]
+            :end-before: [end-scheduler-kl-adaptive-warp]
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.resources.schedulers.torch.kl_adaptive
+.. autosummary::
+    :nosignatures:
+
+    KLAdaptiveLR
 
 .. autoclass:: skrl.resources.schedulers.torch.kl_adaptive.KLAdaptiveLR
+    :undoc-members:
     :show-inheritance:
     :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.resources.schedulers.jax.kl_adaptive
+.. autosummary::
+    :nosignatures:
+
+    KLAdaptiveLR
 
 .. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.resources.schedulers.warp.kl_adaptive
+.. autosummary::
+    :nosignatures:
+
+    KLAdaptiveLR
+
+.. autofunction:: skrl.resources.schedulers.warp.kl_adaptive.KLAdaptiveLR

@@ -1,13 +1,15 @@
+:tocdepth: 4
+
 Multi-Agent Proximal Policy Optimization (MAPPO)
 ================================================
 
-MAPPO is a **model-free**, **stochastic** **on-policy** **policy gradient** CTDE (centralized training, decentralized execution) **multi-agent** algorithm that uses a centralized value function to estimate a single value that is used to guide the policy updates of all agents, improving coordination and cooperation between them
+MAPPO is a **model-free**, **stochastic** **on-policy** **policy gradient** CTDE (centralized training,
+decentralized execution) **multi-agent** algorithm that uses a centralized value function to estimate a single value
+that is used to guide the policy updates of all agents, improving coordination and cooperation between them.
 
-Paper: `The Surprising Effectiveness of PPO in Cooperative, Multi-Agent Games <https://arxiv.org/abs/2103.01955>`_
+**Paper:** `The Surprising Effectiveness of PPO in Cooperative, Multi-Agent Games <https://arxiv.org/abs/2103.01955>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
@@ -21,9 +23,7 @@ Algorithm
 |         :math:`\bullet \;` Compute the value loss :math:`L_{V_\phi}` as the mean squared error (MSE) between the predicted values :math:`V_{_{predicted}}` and the estimated returns :math:`R`
 |         :math:`\bullet \;` Optimize the total loss :math:`L = L^{clip}_{\pi_\theta} - c_1 \, L_{V_\phi} + c_2 \, {L}_{entropy}`
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -36,9 +36,7 @@ Algorithm implementation
 |   - log probabilities (:math:`logp`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -104,9 +102,7 @@ Learning algorithm
 |         **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |             step :math:`\text{scheduler}_{\theta, \phi} (\text{optimizer}_{\theta, \phi})`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -133,40 +129,34 @@ Usage
                     :start-after: [start-mappo-jax]
                     :end-before: [end-mappo-jax]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
+.. list-table::
+    :header-rows: 1
 
-    The specification of a single value is automatically extended to all involved agents, unless the configuration of each individual agent is specified using a dictionary. For example:
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``MAPPO_CFG``
+      - :py:class:`~skrl.multi_agents.torch.mappo.MAPPO_CFG`
+      - :py:class:`~skrl.multi_agents.jax.mappo.MAPPO_CFG`
+      -
 
-    .. code-block:: python
-
-        # specify a configuration value for each agent (agent names depend on environment)
-        cfg["discount_factor"] = {"agent_0": 0.99, "agent_1": 0.995, "agent_2": 0.985}
-
-.. literalinclude:: ../../../../skrl/multi_agents/torch/mappo/mappo.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
-
-.. raw:: html
-
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -182,14 +172,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic (discrete or continuous) and 1 deterministic function approximator.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -216,14 +206,12 @@ The implementation uses 1 stochastic (discrete or continuous) and 1 deterministi
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -232,49 +220,77 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - for Policy and Value
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.multi_agents.torch.mappo.MAPPO_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.multi_agents.torch.mappo
+.. autosummary::
+    :nosignatures:
+
+    MAPPO_CFG
+    MAPPO
+
+.. autoclass:: skrl.multi_agents.torch.mappo.MAPPO_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.multi_agents.torch.mappo.MAPPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.multi_agents.jax.mappo
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.multi_agents.jax.mappo.MAPPO_DEFAULT_CONFIG
+    MAPPO_CFG
+    MAPPO
+
+.. autoclass:: skrl.multi_agents.jax.mappo.MAPPO_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.multi_agents.jax.mappo.MAPPO
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

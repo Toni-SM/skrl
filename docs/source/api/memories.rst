@@ -1,3 +1,5 @@
+:tocdepth: 5
+
 Memories
 ========
 
@@ -6,11 +8,15 @@ Memories
 
     Random <memories/random>
 
-Memories are storage components that allow agents to collect and use/reuse current or past experiences of their interaction with the environment or other types of information.
+Memories are storage components that allow agents to collect and use/reuse current or past experiences of their
+interaction with the environment or other types of information.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented memories
+--------------------
+
+The following table lists the implemented memories and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -18,66 +24,75 @@ Memories are storage components that allow agents to collect and use/reuse curre
     * - Memories
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Random memory <memories/random>`
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\blacksquare`
+
+|br| |hr|
 
 Base class
 ----------
 
-.. note::
+Base class for memories.
 
-    This is the base class for all the other classes in this module.
-    It provides the basic functionality for the other classes.
-    **It is not intended to be used directly**.
+API
+^^^
 
-.. raw:: html
+|
 
-    <br>
+PyTorch
+"""""""
 
-Basic inheritance usage
-^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: skrl.memories.torch
+.. autosummary::
+    :nosignatures:
 
-.. tabs::
+    Memory
 
-    .. group-tab:: |_4| |pytorch| |_4|
-
-        .. literalinclude:: ../snippets/memories.py
-            :language: python
-            :start-after: [start-base-class-torch]
-            :end-before: [end-base-class-torch]
-
-    .. group-tab:: |_4| |jax| |_4|
-
-        .. literalinclude:: ../snippets/memories.py
-            :language: python
-            :start-after: [start-base-class-jax]
-            :end-before: [end-base-class-jax]
-
-.. raw:: html
-
-    <br>
-
-API (PyTorch)
-^^^^^^^^^^^^^
-
-.. autoclass:: skrl.memories.torch.base.Memory
+.. autoclass:: skrl.memories.torch.Memory
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
 
     .. automethod:: __len__
 
-.. raw:: html
+|
 
-    <br>
+JAX
+"""
 
-API (JAX)
-^^^^^^^^^
+.. automodule:: skrl.memories.jax
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.memories.jax.base.Memory
+    Memory
+
+.. autoclass:: skrl.memories.jax.Memory
     :undoc-members:
     :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __len__
+
+|
+
+Warp
+""""
+
+.. automodule:: skrl.memories.warp
+.. autosummary::
+    :nosignatures:
+
+    Memory
+
+.. autoclass:: skrl.memories.warp.Memory
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:
 
     .. automethod:: __len__

@@ -1,11 +1,11 @@
+:tocdepth: 4
+
 Step trainer
 ============
 
 Train agents controlling the training/evaluation loop step-by-step.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -22,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Step-by-step trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -45,26 +43,45 @@ Usage
             :start-after: [jax-start-step]
             :end-before: [jax-end-step]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/step.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``StepTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.step.StepTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.step.StepTrainerCfg`
+      -
 
-    <br>
+|
 
-API (PyTorch)
--------------
+API
+---
 
-.. autoclass:: skrl.trainers.torch.step.STEP_TRAINER_DEFAULT_CONFIG
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.trainers.torch.step
+.. autosummary::
+    :nosignatures:
+
+    StepTrainerCfg
+    StepTrainer
+
+.. autoclass:: skrl.trainers.torch.step.StepTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.trainers.torch.step.StepTrainer
     :undoc-members:
@@ -72,14 +89,23 @@ API (PyTorch)
     :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.trainers.jax.step
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.trainers.jax.step.STEP_TRAINER_DEFAULT_CONFIG
+    StepTrainerCfg
+    StepTrainer
+
+.. autoclass:: skrl.trainers.jax.step.StepTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.trainers.jax.step.StepTrainer
     :undoc-members:

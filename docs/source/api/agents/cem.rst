@@ -1,16 +1,14 @@
+:tocdepth: 4
+
 Cross-Entropy Method (CEM)
 ==========================
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -20,9 +18,7 @@ Algorithm implementation
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 |   - loss (:math:`L`)
 
-.. raw:: html
-
-    <br>
+|
 
 Decision making
 """""""""""""""
@@ -31,9 +27,7 @@ Decision making
 | :literal:`act(...)`
 | :math:`a \leftarrow \pi_\theta(s)`
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -60,9 +54,7 @@ Learning algorithm
 | **IF** there is a :guilabel:`learning_rate_scheduler` **THEN**
 |     step :math:`\text{scheduler}_\theta (\text{optimizer}_\theta)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -89,31 +81,34 @@ Usage
                     :start-after: [jax-start-cem]
                     :end-before: [jax-end-cem]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/cem/cem.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``CEM_CFG``
+      - :py:class:`~skrl.agents.torch.cem.CEM_CFG`
+      - :py:class:`~skrl.agents.jax.cem.CEM_CFG`
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -129,14 +124,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 discrete function approximator. This function approximator (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 discrete function approximator.
+This function approximator (model) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -155,14 +150,12 @@ The implementation uses 1 discrete function approximator. This function approxim
       - :ref:`Categorical <models_categorical>` /
         |br| :ref:`Multi-Categorical <models_multicategorical>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -171,45 +164,72 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - RNN support
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Distributed
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.cem.CEM_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.cem
+.. autosummary::
+    :nosignatures:
+
+    CEM_CFG
+    CEM
+
+.. autoclass:: skrl.agents.torch.cem.CEM_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.cem.CEM
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.agents.jax.cem
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.agents.jax.cem.CEM_DEFAULT_CONFIG
+    CEM_CFG
+    CEM
+
+.. autoclass:: skrl.agents.jax.cem.CEM_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.jax.cem.CEM
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

@@ -1,18 +1,16 @@
+:tocdepth: 4
+
 Running standard scaler
 =======================
 
 Standardize input features by removing the mean and scaling to unit variance.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -42,68 +40,101 @@ Algorithm implementation
 | :math:`\sigma^2_t \leftarrow \dfrac{M2}{n_T}`
 | :math:`n_t \leftarrow n_T`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
 
-The preprocessors usage is defined in each agent's configuration dictionary.
+The preprocessor usage is defined in each agent's configuration.
+The preprocessor class is set under the :literal:`"<type>_preprocessor"` key and its arguments are set under
+the :literal:`"<type>_preprocessor_kwargs"` key, as a Python dictionary.
 
-The preprocessor class is set under the :literal:`"<variable>_preprocessor"` key and its arguments are set under the :literal:`"<variable>_preprocessor_kwargs"` key as a keyword argument dictionary. The following examples show how to set the preprocessors for an agent:
+The following examples show how to set the preprocessors for an agent:
 
 .. tabs::
 
     .. group-tab:: |_4| |pytorch| |_4|
 
-        .. code-block:: python
-            :emphasize-lines: 2, 5-8
-
-            # import the preprocessor class
-            from skrl.resources.preprocessors.torch import RunningStandardScaler
-
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["state_preprocessor"] = RunningStandardScaler
-            cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
-            cfg["value_preprocessor"] = RunningStandardScaler
-            cfg["value_preprocessor_kwargs"] = {"size": 1, "device": device}
+        .. literalinclude:: ../../../snippets/preprocessors.py
+            :language: python
+            :emphasize-lines: 2, 6-11
+            :start-after: [start-running-standard-scaler-torch]
+            :end-before: [end-running-standard-scaler-torch]
 
     .. group-tab:: |_4| |jax| |_4|
 
-        .. code-block:: python
-            :emphasize-lines: 2, 5-8
+        .. literalinclude:: ../../../snippets/preprocessors.py
+            :language: python
+            :emphasize-lines: 2, 6-11
+            :start-after: [start-running-standard-scaler-jax]
+            :end-before: [end-running-standard-scaler-jax]
 
-            # import the preprocessor class
-            from skrl.resources.preprocessors.jax import RunningStandardScaler
+    .. group-tab:: |_4| |warp| |_4|
 
-            cfg = DEFAULT_CONFIG.copy()
-            cfg["state_preprocessor"] = RunningStandardScaler
-            cfg["state_preprocessor_kwargs"] = {"size": env.observation_space}
-            cfg["value_preprocessor"] = RunningStandardScaler
-            cfg["value_preprocessor_kwargs"] = {"size": 1}
+        .. literalinclude:: ../../../snippets/preprocessors.py
+            :language: python
+            :emphasize-lines: 2, 6-11
+            :start-after: [start-running-standard-scaler-warp]
+            :end-before: [end-running-standard-scaler-warp]
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.resources.preprocessors.torch.running_standard_scaler
+.. autosummary::
+    :nosignatures:
+
+    RunningStandardScaler
 
 .. autoclass:: skrl.resources.preprocessors.torch.running_standard_scaler.RunningStandardScaler
-    :private-members: _parallel_variance
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:
 
-.. raw:: html
+    .. automethod:: __call__
 
-    <br>
+|
 
-API (JAX)
----------
+JAX
+^^^
+
+.. automodule:: skrl.resources.preprocessors.jax.running_standard_scaler
+.. autosummary::
+    :nosignatures:
+
+    RunningStandardScaler
 
 .. autoclass:: skrl.resources.preprocessors.jax.running_standard_scaler.RunningStandardScaler
     :undoc-members:
-    :private-members: _parallel_variance
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+    .. automethod:: __call__
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.resources.preprocessors.warp.running_standard_scaler
+.. autosummary::
+    :nosignatures:
+
+    RunningStandardScaler
+
+.. autoclass:: skrl.resources.preprocessors.warp.running_standard_scaler.RunningStandardScaler
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:
 
     .. automethod:: __call__

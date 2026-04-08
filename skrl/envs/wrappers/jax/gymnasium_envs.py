@@ -1,11 +1,13 @@
-from typing import Any, Tuple, Union
+from __future__ import annotations
+
+from typing import Any
 
 import gymnasium
 
 import jax
 import numpy as np
 
-from skrl import logger
+from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
 from skrl.utils.spaces.jax import (
     flatten_tensorized_space,
@@ -17,13 +19,13 @@ from skrl.utils.spaces.jax import (
 
 class GymnasiumWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
-        """Gymnasium environment wrapper
+        """Gymnasium environment wrapper.
 
-        :param env: The environment to wrap
-        :type env: Any supported Gymnasium environment
+        :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
+        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._vectorized = False
         try:
             self._vectorized = self._vectorized or isinstance(env, gymnasium.vector.VectorEnv)
@@ -40,56 +42,40 @@ class GymnasiumWrapper(Wrapper):
 
     @property
     def observation_space(self) -> gymnasium.Space:
-        """Observation space"""
+        """Observation space."""
         if self._vectorized:
             return self._env.single_observation_space
         return self._env.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
-        """Action space"""
+        """Action space."""
         if self._vectorized:
             return self._env.single_action_space
         return self._env.action_space
 
-    def step(self, actions: Union[np.ndarray, jax.Array]) -> Tuple[
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Union[np.ndarray, jax.Array],
-        Any,
-    ]:
-        """Perform a step in the environment
+    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+        """Perform a step in the environment.
 
-        :param actions: The actions to perform
-        :type actions: np.ndarray or jax.Array
+        :param actions: The actions to perform.
 
-        :return: Observation, reward, terminated, truncated, info
-        :rtype: tuple of np.ndarray or jax.Array and any other info
+        :return: Observation, reward, terminated, truncated, info.
         """
-        if self._jax or isinstance(actions, jax.Array):
-            actions = np.asarray(jax.device_get(actions))
         actions = untensorize_space(
             self.action_space,
-            unflatten_tensorized_space(self.action_space, actions),
+            unflatten_tensorized_space(self.action_space, np.asarray(jax.device_get(actions))),
             squeeze_batch_dimension=not self._vectorized,
         )
+        if self._vectorized and isinstance(self.action_space, gymnasium.spaces.Discrete):
+            actions = actions.flatten()
 
         observation, reward, terminated, truncated, info = self._env.step(actions)
 
         # convert response to numpy or jax
-        observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
-        )
-        reward = np.array(reward, dtype=np.float32).reshape(self.num_envs, -1)
-        terminated = np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1)
-        truncated = np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1)
-        if self._jax:
-            observation = jax.device_put(observation, device=self.device)
-            reward = jax.device_put(reward, device=self.device)
-            terminated = jax.device_put(terminated, device=self.device)
-            truncated = jax.device_put(truncated, device=self.device)
-
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        reward = jax.device_put(np.array(reward, dtype=np.float32).reshape(self.num_envs, -1), device=self.device)
+        terminated = jax.device_put(np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
+        truncated = jax.device_put(np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
         # save observation and info for vectorized envs
         if self._vectorized:
             self._observation = observation
@@ -97,40 +83,45 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def reset(self) -> Tuple[Union[np.ndarray, jax.Array], Any]:
-        """Reset the environment
+    def state(self) -> jax.Array | None:
+        """Get the environment state.
 
-        :return: Observation, info
-        :rtype: np.ndarray or jax.Array and any other info
+        :return: State.
+        """
+        try:
+            return flatten_tensorized_space(
+                tensorize_space(self.state_space, self._unwrapped.state(), device=self.device)
+            )
+        except:
+            return None
+
+    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+        """Reset the environment.
+
+        :return: Observation, info.
         """
         # handle vectorized environments (vector environments are autoreset)
         if self._vectorized:
             if self._reset_once:
-                observation, self._info = self._env.reset()
+                observation, self._info = self._env.reset(seed=self._seed)
                 self._observation = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
+                    tensorize_space(self.observation_space, observation, device=self.device)
                 )
-                if self._jax:
-                    self._observation = jax.device_put(self._observation, device=self.device)
                 self._reset_once = False
+                self._seed = None
             return self._observation, self._info
 
-        observation, info = self._env.reset()
-
-        # convert response to numpy or jax
-        observation = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, device=self.device, _jax=False), _jax=False
-        )
-        if self._jax:
-            observation = jax.device_put(observation, device=self.device)
+        observation, info = self._env.reset(seed=self._seed)
+        observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))
+        self._seed = None
         return observation, info
 
     def render(self, *args, **kwargs) -> Any:
-        """Render the environment"""
+        """Render the environment."""
         if self._vectorized:
             return self._env.call("render", *args, **kwargs)
         return self._env.render(*args, **kwargs)
 
     def close(self) -> None:
-        """Close the environment"""
+        """Close the environment."""
         self._env.close()

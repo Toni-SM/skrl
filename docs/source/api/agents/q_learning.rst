@@ -1,20 +1,19 @@
+:tocdepth: 4
+
 Q-learning
 ==========
 
-Q-learning is a **model-free** **off-policy** algorithm that uses a **tabular** Q-function to handle **discrete** observations and action spaces
+Q-learning is a **model-free** **off-policy** algorithm that uses a **tabular** Q-function to handle **discrete**
+observations and action spaces.
 
-Paper: `Learning from delayed rewards <https://www.academia.edu/3294050/Learning_from_delayed_rewards>`_
+**Paper:** `Learning from delayed rewards <https://www.academia.edu/3294050/Learning_from_delayed_rewards>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,9 +22,7 @@ Algorithm implementation
 |   - action-value function (:math:`Q`)
 |   - states (:math:`s`), actions (:math:`a`), rewards (:math:`r`), next states (:math:`s'`), terminated (:math:`d_{_{end}}`), truncated (:math:`d_{_{timeout}}`)
 
-.. raw:: html
-
-    <br>
+|
 
 Decision making
 """""""""""""""
@@ -34,9 +31,7 @@ Decision making
 | :literal:`act(...)`
 | :math:`a \leftarrow \pi_{Q[s,a]}(s) \qquad` where :math:`\; a \leftarrow \begin{cases} a \in_R A & x < \epsilon \\ \underset{a}{\arg\max} \; Q[s] & x \geq \epsilon \end{cases} \qquad` for :math:`\; x \leftarrow U(0,1)`
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -48,9 +43,7 @@ Learning algorithm
 | :green:`# update Q-table`
 | :math:`Q[s,a] \leftarrow Q[s,a] \;+` :guilabel:`learning_rate` :math:`(r \;+` :guilabel:`discount_factor` :math:`\neg (d_{_{end}} \lor d_{_{timeout}}) \; Q[s',a'] - Q[s,a])`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -69,31 +62,34 @@ Usage
                     :start-after: [torch-start-q-learning]
                     :end-before: [torch-end-q-learning]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/q_learning/q_learning.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``Q_LEARNING_CFG``
+      - :py:class:`~skrl.agents.torch.q_learning.Q_LEARNING_CFG`
+      -
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: Observation
       - .. centered:: Action
     * - Discrete
@@ -109,14 +105,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 table. This table (model) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 table.
+This table (model) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -134,17 +130,31 @@ The implementation uses 1 table. This table (model) must be collected in a dicti
       - action
       - :ref:`Tabular <models_tabular>`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.q_learning.Q_LEARNING_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.q_learning
+.. autosummary::
+    :nosignatures:
+
+    Q_LEARNING_CFG
+    Q_LEARNING
+
+.. autoclass:: skrl.agents.torch.q_learning.Q_LEARNING_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.q_learning.Q_LEARNING
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

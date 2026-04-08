@@ -1,11 +1,11 @@
+:tocdepth: 4
+
 Sequential trainer
 ==================
 
 Train agents sequentially (i.e., one after the other in each interaction with the environment).
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Concept
 -------
@@ -22,9 +22,7 @@ Concept
     :class: only-dark
     :alt: Sequential trainer
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -45,26 +43,52 @@ Usage
             :start-after: [jax-start-sequential]
             :end-before: [jax-end-sequential]
 
-.. raw:: html
+    .. group-tab:: |_4| |warp| |_4|
 
-    <br>
+        .. literalinclude:: ../../snippets/trainer.py
+            :language: python
+            :start-after: [warp-start-sequential]
+            :end-before: [warp-end-sequential]
+
+|
 
 Configuration
 -------------
 
-.. literalinclude:: ../../../../skrl/trainers/torch/sequential.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``SequentialTrainerCfg``
+      - :py:class:`~skrl.trainers.torch.sequential.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.jax.sequential.SequentialTrainerCfg`
+      - :py:class:`~skrl.trainers.warp.sequential.SequentialTrainerCfg`
 
-    <br>
+|
 
-API (PyTorch)
--------------
+API
+---
 
-.. autoclass:: skrl.trainers.torch.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.trainers.torch.sequential
+.. autosummary::
+    :nosignatures:
+
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.torch.sequential.SequentialTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.trainers.torch.sequential.SequentialTrainer
     :undoc-members:
@@ -72,16 +96,49 @@ API (PyTorch)
     :inherited-members:
     :members:
 
-.. raw:: html
+|
 
-    <br>
+JAX
+^^^
 
-API (JAX)
----------
+.. automodule:: skrl.trainers.jax.sequential
+.. autosummary::
+    :nosignatures:
 
-.. autoclass:: skrl.trainers.jax.sequential.SEQUENTIAL_TRAINER_DEFAULT_CONFIG
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.jax.sequential.SequentialTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.trainers.jax.sequential.SequentialTrainer
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.trainers.warp.sequential
+.. autosummary::
+    :nosignatures:
+
+    SequentialTrainerCfg
+    SequentialTrainer
+
+.. autoclass:: skrl.trainers.warp.sequential.SequentialTrainerCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.trainers.warp.sequential.SequentialTrainer
     :undoc-members:
     :show-inheritance:
     :inherited-members:

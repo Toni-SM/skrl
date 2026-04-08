@@ -1,20 +1,20 @@
+:tocdepth: 4
+
 Adversarial Motion Priors (AMP)
 ===============================
 
-AMP is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm (trained using a combination of GAIL and PPO) for adversarial learning of physics-based character animation. It enables characters to imitate diverse behaviors from large unstructured datasets, without the need for motion planners or other mechanisms for clip selection
+AMP is a **model-free**, **stochastic** **on-policy** **policy gradient** algorithm (trained using a combination of GAIL and PPO)
+for adversarial learning of physics-based character animation. It enables characters to imitate diverse behaviors from
+large unstructured datasets, without the need for motion planners or other mechanisms for clip selection.
 
-Paper: `AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control <https://arxiv.org/abs/2104.02180>`_
+**Paper:** `AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control <https://arxiv.org/abs/2104.02180>`_.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Algorithm
 ---------
 
-.. raw:: html
-
-    <br>
+|
 
 Algorithm implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -28,9 +28,7 @@ Algorithm implementation
 |   - reference motion dataset (:math:`M`), AMP replay buffer (:math:`B`)
 |   - AMP states (:math:`s_{_{AMP}}`), reference motion states (:math:`s_{_{AMP}}^{^M}`), AMP states from replay buffer (:math:`s_{_{AMP}}^{^B}`)
 
-.. raw:: html
-
-    <br>
+|
 
 Learning algorithm
 """"""""""""""""""
@@ -109,9 +107,7 @@ Learning algorithm
 | :green:`# update AMP repaly buffer`
 | :math:`s_{_{AMP}} \rightarrow\;` :math:`\text{append}(B)`
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -130,31 +126,34 @@ Usage
                     :start-after: [torch-start-amp]
                     :end-before: [torch-end-amp]
 
-.. raw:: html
-
-    <br>
+|
 
 Configuration and hyperparameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../skrl/agents/torch/amp/amp.py
-    :language: python
-    :start-after: [start-config-dict-torch]
-    :end-before: [end-config-dict-torch]
+.. list-table::
+    :header-rows: 1
 
-.. raw:: html
+    * - Dataclass
+      - .. centered:: |_4| |pytorch| |_4|
+      - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
+    * - ``AMP_CFG``
+      - :py:class:`~skrl.agents.torch.amp.AMP_CFG`
+      -
+      -
 
-    <br>
+|
 
 Spaces
 ^^^^^^
 
-The implementation supports the following `Gym spaces <https://www.gymlibrary.dev/api/spaces>`_ / `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_
+The implementation supports the following `Gymnasium spaces <https://gymnasium.farama.org/api/spaces>`_:
 
 .. list-table::
     :header-rows: 1
 
-    * - Gym/Gymnasium spaces
+    * - Gymnasium spaces
       - .. centered:: AMP observation
       - .. centered:: Observation
       - .. centered:: Action
@@ -175,14 +174,14 @@ The implementation supports the following `Gym spaces <https://www.gymlibrary.de
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
 
-.. raw:: html
-
-    <br>
+|
 
 Models
 ^^^^^^
 
-The implementation uses 1 stochastic (continuous) and 2 deterministic function approximators. These function approximators (models) must be collected in a dictionary and passed to the constructor of the class under the argument :literal:`models`
+The implementation uses 1 stochastic (continuous) and 2 deterministic function approximators.
+These function approximators (models) must be collected in a dictionary and passed to the constructor of the class
+under the argument :literal:`models`.
 
 .. list-table::
     :header-rows: 1
@@ -213,14 +212,12 @@ The implementation uses 1 stochastic (continuous) and 2 deterministic function a
       - 1
       - :ref:`Deterministic <models_deterministic>`
 
-.. raw:: html
-
-    <br>
+|
 
 Features
 ^^^^^^^^
 
-Support for advanced features is described in the next table
+Support for advanced features is described in the following table:
 
 .. list-table::
     :header-rows: 1
@@ -229,34 +226,53 @@ Support for advanced features is described in the next table
       - Support and remarks
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - Shared model
       - \-
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - RNN support
       - \-
       - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
     * - Mixed precision
       - Automatic mixed precision
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - Distributed
       - Single Program Multi Data (SPMD) multi-GPU
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\square`
+      - .. centered:: :math:`\square`
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
 
-.. autoclass:: skrl.agents.torch.amp.AMP_DEFAULT_CONFIG
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.agents.torch.amp
+.. autosummary::
+    :nosignatures:
+
+    AMP_CFG
+    AMP
+
+.. autoclass:: skrl.agents.torch.amp.AMP_CFG
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
 
 .. autoclass:: skrl.agents.torch.amp.AMP
     :undoc-members:
     :show-inheritance:
-    :private-members: _update
+    :inherited-members:
     :members:

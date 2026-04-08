@@ -1,3 +1,5 @@
+:tocdepth: 4
+
 .. _models_deterministic:
 
 Deterministic model
@@ -5,21 +7,17 @@ Deterministic model
 
 Deterministic models run **continuous-domain deterministic** policies.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
-
-skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the creation of these types of models, allowing users to have full control over the function approximator definitions and architectures. Note that the use of this mixin must comply with the following rules:
+*skrl* provides a Python mixin (:literal:`DeterministicMixin`) to assist in the creation of these types of models,
+allowing users to have full control over the function approximator definitions and architectures.
+Note that the use of this mixin must comply with the following rules:
 
 * The definition of multiple inheritance must always include the :ref:`Model <models_base_class>` base class at the end.
 
 * The :ref:`Model <models_base_class>` base class constructor must be invoked before the mixins constructor.
 
-.. warning::
-
-    For models in JAX/Flax it is imperative to define all parameters (except ``observation_space``, ``action_space`` and ``device``) with default values to avoid errors (``TypeError: __init__() missing N required positional argument``) during initialization.
-
-    In addition, it is necessary to initialize the model's ``state_dict`` (via the ``init_state_dict`` method) after its instantiation to avoid errors (``AttributeError: object has no attribute "state_dict". If "state_dict" is defined in '.setup()', remember these fields are only accessible from inside 'init' or 'apply'``) during its use.
+.. include:: common-jax.rst
 
 .. tabs::
 
@@ -27,7 +25,6 @@ skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the cr
 
         .. literalinclude:: ../../snippets/deterministic_model.py
             :language: python
-            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-torch]
             :end-before: [end-definition-torch]
 
@@ -35,13 +32,17 @@ skrl provides a Python mixin (:literal:`DeterministicMixin`) to assist in the cr
 
         .. literalinclude:: ../../snippets/deterministic_model.py
             :language: python
-            :emphasize-lines: 1, 3-4
             :start-after: [start-definition-jax]
             :end-before: [end-definition-jax]
 
-.. raw:: html
+    .. group-tab:: |_4| |warp| |_4|
 
-    <br>
+        .. literalinclude:: ../../snippets/deterministic_model.py
+            :language: python
+            :start-after: [start-definition-warp]
+            :end-before: [end-definition-warp]
+
+|
 
 Concept
 -------
@@ -58,9 +59,7 @@ Concept
     :class: only-dark
     :alt: Deterministic model
 
-.. raw:: html
-
-    <br>
+|
 
 Usage
 -----
@@ -85,9 +84,7 @@ Usage
             :align: center
             :class: only-dark
 
-        .. raw:: html
-
-            <br>
+        |
 
         .. tabs::
 
@@ -127,6 +124,17 @@ Usage
                             :start-after: [start-mlp-compact-jax]
                             :end-before: [end-mlp-compact-jax]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. tabs::
+
+                    .. group-tab:: nn.Sequential
+
+                        .. literalinclude:: ../../snippets/deterministic_model.py
+                            :language: python
+                            :start-after: [start-mlp-sequential-warp]
+                            :end-before: [end-mlp-sequential-warp]
+
     .. tab:: CNN
 
         .. image:: ../../_static/imgs/model_deterministic_cnn-light.svg
@@ -139,9 +147,7 @@ Usage
             :align: center
             :class: only-dark
 
-        .. raw:: html
-
-            <br>
+        |
 
         .. tabs::
 
@@ -204,26 +210,11 @@ Usage
                 H_{out} ={} & \text{hidden_size}
             \end{aligned}
 
-        .. raw:: html
+        |hr|
 
-            <hr>
+        .. include:: common-rnn.rst
 
-        The following points are relevant in the definition of recurrent models:
-
-        * The ``.get_specification()`` method must be overwritten to return, under a dictionary key ``"rnn"``, a sub-dictionary that includes the sequence length (under key ``"sequence_length"``) as a number and a list of the dimensions (under key ``"sizes"``) of each initial hidden state
-
-        * The ``.compute()`` method's ``inputs`` parameter will have, at least, the following items in the dictionary:
-
-            * ``"states"``: state of the environment used to make the decision
-            * ``"taken_actions"``: actions taken by the policy for the given states, if applicable
-            * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
-            * ``"rnn"``: list of initial hidden states ordered according to the model specification
-
-        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
-
-        .. raw:: html
-
-            <br>
+        |
 
         .. tabs::
 
@@ -268,26 +259,11 @@ Usage
                 H_{out} ={} & \text{hidden_size}
             \end{aligned}
 
-        .. raw:: html
+        |hr|
 
-            <hr>
+        .. include:: common-rnn.rst
 
-        The following points are relevant in the definition of recurrent models:
-
-        * The ``.get_specification()`` method must be overwritten to return, under a dictionary key ``"rnn"``, a sub-dictionary that includes the sequence length (under key ``"sequence_length"``) as a number and a list of the dimensions (under key ``"sizes"``) of each initial hidden state
-
-        * The ``.compute()`` method's ``inputs`` parameter will have, at least, the following items in the dictionary:
-
-            * ``"states"``: state of the environment used to make the decision
-            * ``"taken_actions"``: actions taken by the policy for the given states, if applicable
-            * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
-            * ``"rnn"``: list of initial hidden states ordered according to the model specification
-
-        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden state
-
-        .. raw:: html
-
-            <br>
+        |
 
         .. tabs::
 
@@ -333,26 +309,11 @@ Usage
                 H_{out} ={} & \text{proj_size if } \text{proj_size}>0 \text{ otherwise hidden_size} \\
             \end{aligned}
 
-        .. raw:: html
+        |hr|
 
-            <hr>
+        .. include:: common-rnn.rst
 
-        The following points are relevant in the definition of recurrent models:
-
-        * The ``.get_specification()`` method must be overwritten to return, under a dictionary key ``"rnn"``, a sub-dictionary that includes the sequence length (under key ``"sequence_length"``) as a number and a list of the dimensions (under key ``"sizes"``) of each initial hidden/cell states
-
-        * The ``.compute()`` method's ``inputs`` parameter will have, at least, the following items in the dictionary:
-
-            * ``"states"``: state of the environment used to make the decision
-            * ``"taken_actions"``: actions taken by the policy for the given states, if applicable
-            * ``"terminated"``: episode termination status for sampled environment transitions. This key is only defined during the training process
-            * ``"rnn"``: list of initial hidden/cell states ordered according to the model specification
-
-        * The ``.compute()`` method must include, under the ``"rnn"`` key of the returned dictionary, a list of each final hidden/cell states
-
-        .. raw:: html
-
-            <br>
+        |
 
         .. tabs::
 
@@ -374,24 +335,56 @@ Usage
                             :start-after: [start-lstm-functional-torch]
                             :end-before: [end-lstm-functional-torch]
 
-.. raw:: html
+|
 
-    <br>
+API
+---
 
-API (PyTorch)
--------------
+|
+
+PyTorch
+^^^^^^^
+
+.. automodule:: skrl.models.torch.deterministic
+.. autosummary::
+    :nosignatures:
+
+    DeterministicMixin
 
 .. autoclass:: skrl.models.torch.deterministic.DeterministicMixin
+    :undoc-members:
     :show-inheritance:
+    :inherited-members:
     :members:
+|
 
-.. raw:: html
+JAX
+^^^
 
-    <br>
+.. automodule:: skrl.models.jax.deterministic
+.. autosummary::
+    :nosignatures:
 
-API (JAX)
----------
+    DeterministicMixin
 
 .. autoclass:: skrl.models.jax.deterministic.DeterministicMixin
+    :undoc-members:
     :show-inheritance:
+    :inherited-members:
+    :members:
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.models.warp.deterministic
+.. autosummary::
+    :nosignatures:
+
+    DeterministicMixin
+
+.. autoclass:: skrl.models.warp.deterministic.DeterministicMixin
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
     :members:

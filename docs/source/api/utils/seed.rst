@@ -1,18 +1,16 @@
+:tocdepth: 4
+
 Random seed
 ===========
 
 Utilities for seeding the random number generators.
 
-.. raw:: html
-
-    <br><hr>
+|br| |hr|
 
 Seed the random number generators
 ---------------------------------
 
-.. raw:: html
-
-    <br>
+|
 
 API
 ^^^

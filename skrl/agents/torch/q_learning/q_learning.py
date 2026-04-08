@@ -1,6 +1,7 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from __future__ import annotations
 
-import copy
+from typing import Any
+
 import gymnasium
 
 import torch
@@ -8,77 +9,46 @@ import torch
 from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils import ScopedTimer
 
-
-# fmt: off
-# [start-config-dict-torch]
-Q_LEARNING_DEFAULT_CONFIG = {
-    "discount_factor": 0.99,        # discount factor (gamma)
-
-    "random_timesteps": 0,          # random exploration steps
-    "learning_starts": 0,           # learning starts after this many steps
-
-    "learning_rate": 0.5,           # learning rate (alpha)
-
-    "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
-
-    "experiment": {
-        "directory": "",            # experiment's parent directory
-        "experiment_name": "",      # experiment name
-        "write_interval": "auto",   # TensorBoard writing interval (timesteps)
-
-        "checkpoint_interval": "auto",      # interval for checkpoints (timesteps)
-        "store_separately": False,          # whether to store checkpoints separately
-
-        "wandb": False,             # whether to use Weights & Biases
-        "wandb_kwargs": {}          # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
-    }
-}
-# [end-config-dict-torch]
-# fmt: on
+from .q_learning_cfg import Q_LEARNING_CFG
 
 
 class Q_LEARNING(Agent):
     def __init__(
         self,
-        models: Mapping[str, Model],
-        memory: Optional[Union[Memory, Tuple[Memory]]] = None,
-        observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[dict] = None,
+        *,
+        models: dict[str, Model],
+        memory: Memory | None = None,
+        observation_space: gymnasium.Space | None = None,
+        state_space: gymnasium.Space | None = None,
+        action_space: gymnasium.Space | None = None,
+        device: str | torch.device | None = None,
+        cfg: Q_LEARNING_CFG | dict = {},
     ) -> None:
-        """Q-learning
+        """Q-learning.
 
         https://www.academia.edu/3294050/Learning_from_delayed_rewards
 
-        :param models: Models used by the agent
-        :type models: dictionary of skrl.models.torch.Model
-        :param memory: Memory to storage the transitions.
-                       If it is a tuple, the first element will be used for training and
-                       for the rest only the environment transitions will be added
-        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
-        :param observation_space: Observation/state space or shape (default: ``None``)
-        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param action_space: Action space or shape (default: ``None``)
-        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
-        :param device: Device on which a tensor/array is or will be allocated (default: ``None``).
-                       If None, the device will be either ``"cuda"`` if available or ``"cpu"``
-        :type device: str or torch.device, optional
-        :param cfg: Configuration dictionary
-        :type cfg: dict
+        :param models: Agent's models.
+        :param memory: Memory to storage agent's data and environment transitions.
+        :param observation_space: Observation space.
+        :param state_space: State space.
+        :param action_space: Action space.
+        :param device: Data allocation and computation device. If not specified, the default device will be used.
+        :param cfg: Agent's configuration.
 
-        :raises KeyError: If the models dictionary is missing a required key
+        :raises KeyError: If a configuration key is missing.
         """
-        _cfg = copy.deepcopy(Q_LEARNING_DEFAULT_CONFIG)
-        _cfg.update(cfg if cfg is not None else {})
+        self.cfg: Q_LEARNING_CFG
         super().__init__(
             models=models,
             memory=memory,
             observation_space=observation_space,
+            state_space=state_space,
             action_space=action_space,
             device=device,
-            cfg=_cfg,
+            cfg=Q_LEARNING_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
         # models
@@ -87,52 +57,50 @@ class Q_LEARNING(Agent):
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
 
-        # configuration
-        self._discount_factor = self.cfg["discount_factor"]
-
-        self._random_timesteps = self.cfg["random_timesteps"]
-        self._learning_starts = self.cfg["learning_starts"]
-
-        self._learning_rate = self.cfg["learning_rate"]
-
-        self._rewards_shaper = self.cfg["rewards_shaper"]
-
         # create temporary variables needed for storage and computation
-        self._current_states = None
+        self._current_observations = None
         self._current_actions = None
         self._current_rewards = None
-        self._current_next_states = None
-        self._current_dones = None
+        self._current_next_observations = None
+        self._current_terminated = None
 
-    def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
-        """Initialize the agent"""
-        super().init(trainer_cfg=trainer_cfg)
+    def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
+        """Initialize the agent.
 
-    def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
-        """Process the environment's states to make a decision (actions) using the main policy
-
-        :param states: Environment's states
-        :type states: torch.Tensor
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
-
-        :return: Actions
-        :rtype: torch.Tensor
+        :param trainer_cfg: Trainer configuration.
         """
-        # sample random actions
-        if timestep < self._random_timesteps:
-            return self.policy.random_act({"states": states}, role="policy")
+        super().init(trainer_cfg=trainer_cfg)
+        self.enable_models_training_mode(False)
 
-        # sample actions from policy
-        return self.policy.act({"states": states}, role="policy")
+    def act(
+        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Process the environment's observations/states to make a decision (actions) using the main policy.
+
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
+
+        :return: Agent output. The first component is the expected action/value returned by the agent.
+            The second component is a dictionary containing extra output values according to the model.
+        """
+        inputs = {"observations": observations, "states": states}
+        # sample random actions
+        if timestep < self.cfg.random_timesteps:
+            return self.policy.random_act(inputs, role="policy")
+
+        # sample actions
+        return self.policy.act(inputs, role="policy")
 
     def record_transition(
         self,
+        *,
+        observations: torch.Tensor,
         states: torch.Tensor,
         actions: torch.Tensor,
         rewards: torch.Tensor,
+        next_observations: torch.Tensor,
         next_states: torch.Tensor,
         terminated: torch.Tensor,
         truncated: torch.Tensor,
@@ -140,103 +108,86 @@ class Q_LEARNING(Agent):
         timestep: int,
         timesteps: int,
     ) -> None:
-        """Record an environment transition in memory
+        """Record an environment transition in memory.
 
-        :param states: Observations/states of the environment used to make the decision
-        :type states: torch.Tensor
-        :param actions: Actions taken by the agent
-        :type actions: torch.Tensor
-        :param rewards: Instant rewards achieved by the current actions
-        :type rewards: torch.Tensor
-        :param next_states: Next observations/states of the environment
-        :type next_states: torch.Tensor
-        :param terminated: Signals to indicate that episodes have terminated
-        :type terminated: torch.Tensor
-        :param truncated: Signals to indicate that episodes have been truncated
-        :type truncated: torch.Tensor
-        :param infos: Additional information about the environment
-        :type infos: Any type supported by the environment
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param observations: Environment observations.
+        :param states: Environment states.
+        :param actions: Actions taken by the agent.
+        :param rewards: Instant rewards achieved by the current actions.
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param terminated: Signals that indicate episodes have terminated.
+        :param truncated: Signals that indicate episodes have been truncated.
+        :param infos: Additional information about the environment.
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         super().record_transition(
-            states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps
+            observations=observations,
+            states=states,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            next_states=next_states,
+            terminated=terminated,
+            truncated=truncated,
+            infos=infos,
+            timestep=timestep,
+            timesteps=timesteps,
         )
 
-        # reward shaping
-        if self._rewards_shaper is not None:
-            rewards = self._rewards_shaper(rewards, timestep, timesteps)
+        if self.training:
+            # reward shaping
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-        self._current_states = states
-        self._current_actions = actions
-        self._current_rewards = rewards
-        self._current_next_states = next_states
-        self._current_dones = terminated + truncated
+            self._current_observations = observations
+            self._current_actions = actions
+            self._current_rewards = rewards
+            self._current_next_observations = next_observations
+            self._current_terminated = terminated
 
-        if self.memory is not None:
-            self.memory.add_samples(
-                states=states,
-                actions=actions,
-                rewards=rewards,
-                next_states=next_states,
-                terminated=terminated,
-                truncated=truncated,
-            )
-            for memory in self.secondary_memories:
-                memory.add_samples(
-                    states=states,
-                    actions=actions,
-                    rewards=rewards,
-                    next_states=next_states,
-                    terminated=terminated,
-                    truncated=truncated,
-                )
+    def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called before the interaction with the environment.
 
-    def pre_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called before the interaction with the environment
-
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
         pass
 
-    def post_interaction(self, timestep: int, timesteps: int) -> None:
-        """Callback called after the interaction with the environment
+    def post_interaction(self, *, timestep: int, timesteps: int) -> None:
+        """Method called after the interaction with the environment.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
-        if timestep >= self._learning_starts:
-            self._update(timestep, timesteps)
+        if self.training:
+            if timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
-        super().post_interaction(timestep, timesteps)
+        super().post_interaction(timestep=timestep, timesteps=timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
-        """Algorithm's main update step
+    def update(self, *, timestep: int, timesteps: int) -> None:
+        """Algorithm's main update step.
 
-        :param timestep: Current timestep
-        :type timestep: int
-        :param timesteps: Number of timesteps
-        :type timesteps: int
+        :param timestep: Current timestep.
+        :param timesteps: Number of timesteps.
         """
-        q_table = self.policy.table()
-        env_ids = torch.arange(self._current_rewards.shape[0]).view(-1, 1)
+        q_table = next(iter(self.policy.tables().values()))
 
         # compute next actions
-        next_actions = torch.argmax(q_table[env_ids, self._current_next_states], dim=-1, keepdim=True).view(-1, 1)
+        next_actions = torch.argmax(q_table[self._current_next_observations], dim=-1, keepdim=False)
 
         # update Q-table
-        q_table[env_ids, self._current_states, self._current_actions] += self._learning_rate * (
+        q_table[self._current_observations, self._current_actions] += self.cfg.learning_rate * (
             self._current_rewards
-            + self._discount_factor
-            * self._current_dones.logical_not()
-            * q_table[env_ids, self._current_next_states, next_actions]
-            - q_table[env_ids, self._current_states, self._current_actions]
+            + self.cfg.discount_factor
+            * self._current_terminated.logical_not()
+            * q_table[self._current_next_observations, next_actions]
+            - q_table[self._current_observations, self._current_actions]
         )

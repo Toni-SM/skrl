@@ -1,3 +1,5 @@
+:tocdepth: 5
+
 Multi-agents
 ============
 
@@ -7,11 +9,16 @@ Multi-agents
     IPPO <multi_agents/ippo>
     MAPPO <multi_agents/mappo>
 
-Multi-agents are autonomous entities that interact with the environment to learn and improve their behavior. Multi-agents' goal is to learn optimal policies, which are correspondence between states and actions that maximize the cumulative reward received from the environment over time.
+Multi-agents are autonomous entities that interact with the environment to learn and improve their behavior.
+Multi-agents' goal is to learn optimal policies, which are correspondence between states and actions that maximize
+the cumulative reward received from the environment over time.
 
-.. raw:: html
+|br| |hr|
 
-    <br><hr>
+Implemented multi-agents
+------------------------
+
+The following table lists the implemented multi-agents and their support for different frameworks.
 
 .. list-table::
     :header-rows: 1
@@ -19,76 +26,84 @@ Multi-agents are autonomous entities that interact with the environment to learn
     * - Multi-agents
       - .. centered:: |_4| |pytorch| |_4|
       - .. centered:: |_4| |jax| |_4|
+      - .. centered:: |_4| |warp| |_4|
     * - :doc:`Independent Proximal Policy Optimization <multi_agents/ippo>` (**IPPO**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
     * - :doc:`Multi-Agent Proximal Policy Optimization <multi_agents/mappo>` (**MAPPO**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
 
-Base class
-----------
+|br| |hr|
 
-.. note::
+Base class / configuration
+--------------------------
 
-    This is the base class for all multi-agents and provides only basic functionality that is not tied to any implementation of the optimization algorithms.
-    **It is not intended to be used directly**.
+Base class and configuration for multi-agent implementations.
 
-.. raw:: html
+API
+^^^
 
-    <br>
+|
 
-Basic inheritance usage
-^^^^^^^^^^^^^^^^^^^^^^^
+PyTorch
+"""""""
 
-.. tabs::
+.. automodule:: skrl.multi_agents.torch
+.. autosummary::
+    :nosignatures:
 
-    .. tab:: Inheritance
+    MultiAgentCfg
+    ExperimentCfg
+    MultiAgent
 
-        .. tabs::
-
-            .. group-tab:: |_4| |pytorch| |_4|
-
-                .. literalinclude:: ../snippets/multi_agent.py
-                    :language: python
-                    :start-after: [start-multi-agent-base-class-torch]
-                    :end-before: [end-multi-agent-base-class-torch]
-
-            .. group-tab:: |_4| |jax| |_4|
-
-                .. literalinclude:: ../snippets/multi_agent.py
-                    :language: python
-                    :start-after: [start-multi-agent-base-class-jax]
-                    :end-before: [end-multi-agent-base-class-jax]
-
-.. raw:: html
-
-    <br>
-
-API (PyTorch)
-^^^^^^^^^^^^^
-
-.. autoclass:: skrl.multi_agents.torch.base.MultiAgent
+.. autoclass:: skrl.multi_agents.torch.MultiAgentCfg
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _update, _empty_preprocessor, _get_internal_value, _as_dict
     :members:
 
-    .. automethod:: __str__
-
-.. raw:: html
-
-    <br>
-
-API (JAX)
-^^^^^^^^^
-
-.. autoclass:: skrl.multi_agents.jax.base.MultiAgent
+.. autoclass:: skrl.multi_agents.torch.ExperimentCfg
     :undoc-members:
     :show-inheritance:
     :inherited-members:
-    :private-members: _update, _empty_preprocessor, _get_internal_value, _as_dict
     :members:
 
-    .. automethod:: __str__
+.. autoclass:: skrl.multi_agents.torch.MultiAgent
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+|
+
+JAX
+"""
+
+.. automodule:: skrl.multi_agents.jax
+.. autosummary::
+    :nosignatures:
+
+    MultiAgentCfg
+    ExperimentCfg
+    MultiAgent
+
+.. autoclass:: skrl.multi_agents.jax.MultiAgentCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.multi_agents.jax.ExperimentCfg
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.multi_agents.jax.MultiAgent
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:

@@ -2,7 +2,13 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-04-08
+
+Summary of the most relevant features:
+- RL algorithm implementations in NVIDIA Warp
+- Differentiate between environment observations and states (also known as privileged observation)
+- Support for MuJoCo Playground and ManiSkill environments
+
 ### Added
 - Implement RL algorithms in NVIDIA Warp
 - Add loader and wrapper for MuJoCo Playground environments

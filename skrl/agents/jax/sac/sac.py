@@ -46,14 +46,21 @@ def _update_critic(
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
-    (critic_1_loss, critic_1_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
+    (critic_1_loss, critic_1_values), critic_1_grad = jax.value_and_grad(_critic_loss, has_aux=True)(
         critic_1_state_dict.params, critic_1_act, "critic_1"
     )
-    (critic_2_loss, critic_2_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
+    (critic_2_loss, critic_2_values), critic_2_grad = jax.value_and_grad(_critic_loss, has_aux=True)(
         critic_2_state_dict.params, critic_2_act, "critic_2"
     )
 
-    return grad, (critic_1_loss + critic_2_loss) / 2, critic_1_values, critic_2_values, target_values
+    return (
+        critic_1_grad,
+        critic_2_grad,
+        (critic_1_loss + critic_2_loss) / 2,
+        critic_1_values,
+        critic_2_values,
+        target_values,
+    )
 
 
 @functools.partial(jax.jit, static_argnames=("policy_act", "critic_1_act", "critic_2_act"))
@@ -438,7 +445,7 @@ class SAC(Agent):
             )
 
             # compute critic loss
-            grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(
+            critic_1_grad, critic_2_grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(
                 self.critic_1.act,
                 self.critic_1.state_dict,
                 self.critic_2.act,
@@ -455,16 +462,17 @@ class SAC(Agent):
 
             # optimization step (critic)
             if config.jax.is_distributed:
-                grad = self.critic_1.reduce_parameters(grad)
+                critic_1_grad = self.critic_1.reduce_parameters(critic_1_grad)
+                critic_2_grad = self.critic_2.reduce_parameters(critic_2_grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad=grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
+                grad=critic_1_grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad=grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
+                grad=critic_2_grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
 
             # compute policy (actor) loss
-            grad, policy_loss, log_prob = _update_policy(
+            policy_grad, policy_loss, log_prob = _update_policy(
                 self.policy.act,
                 self.critic_1.act,
                 self.critic_2.act,
@@ -477,20 +485,22 @@ class SAC(Agent):
 
             # optimization step (policy)
             if config.jax.is_distributed:
-                grad = self.policy.reduce_parameters(grad)
+                policy_grad = self.policy.reduce_parameters(policy_grad)
             self.policy_optimizer = self.policy_optimizer.step(
-                grad=grad, model=self.policy, lr=self.policy_learning_rate if self.policy_scheduler else None
+                grad=policy_grad, model=self.policy, lr=self.policy_learning_rate if self.policy_scheduler else None
             )
 
             # entropy learning
             if self.cfg.learn_entropy:
                 # compute entropy loss
-                grad, entropy_loss = _update_entropy(
+                entropy_grad, entropy_loss = _update_entropy(
                     self.log_entropy_coefficient.state_dict, self._target_entropy, log_prob
                 )
 
                 # optimization step (entropy)
-                self.entropy_optimizer = self.entropy_optimizer.step(grad=grad, model=self.log_entropy_coefficient)
+                self.entropy_optimizer = self.entropy_optimizer.step(
+                    grad=entropy_grad, model=self.log_entropy_coefficient
+                )
 
                 # compute entropy coefficient
                 self._entropy_coefficient = jnp.exp(self.log_entropy_coefficient.value)

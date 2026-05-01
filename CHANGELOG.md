@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.1.0] - Unreleased
+### Changed
+- Sample data from memory with per-epoch mini-batch shuffling in on-policy implementations
+- Sum-reduce policy entropy to prevent collapse into near-deterministic "stand still" behavior
+
 ## [2.0.0] - 2026-04-08
 
 Summary of the most relevant features:

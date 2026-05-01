@@ -102,9 +102,7 @@ class MultiCategoricalMixin:
         :return: Entropy of the model.
         """
         if self._mc_distributions:
-            entropy = torch.stack(
-                [distribution.entropy().to(self.device) for distribution in self._mc_distributions], dim=-1
-            )
+            entropy = torch.stack([distribution.entropy() for distribution in self._mc_distributions], dim=-1)
             if self._mc_reduction is not None:
                 return self._mc_reduction(entropy, dim=-1).unsqueeze(-1)
             return entropy

@@ -458,7 +458,7 @@ class TRPO(Agent):
 
         # sample all from memory
         sampled_observations, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages = (
-            self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1)[0]
+            self.memory.sample(names=self._tensors_names_policy, batch_size=len(self.memory), mini_batches=1)[0]
         )
 
         sampled_observations = self._observation_preprocessor(sampled_observations, train=True)
@@ -537,16 +537,15 @@ class TRPO(Agent):
         if config.torch.is_distributed:
             self.policy.reduce_parameters()
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self.cfg.mini_batches)
-
         cumulative_value_loss = 0
 
         # learning epochs
         for epoch in range(self.cfg.learning_epochs):
 
             # mini-batches loop
-            for sampled_observations, sampled_states, sampled_returns in sampled_batches:
+            for sampled_observations, sampled_states, sampled_returns in self.memory.sample(
+                names=self._tensors_names_value, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+            ):
 
                 inputs = {
                     "observations": self._observation_preprocessor(sampled_observations, train=not epoch),

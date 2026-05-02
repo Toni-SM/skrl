@@ -410,24 +410,6 @@ class AMP(Agent):
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-        sampled_motion_batches = self.motion_dataset.sample(
-            names=["observations"],
-            batch_size=self.memory.memory_size * self.memory.num_envs,
-            mini_batches=self.cfg.mini_batches,
-        )
-        if len(self.reply_buffer):
-            sampled_replay_batches = self.reply_buffer.sample(
-                names=["observations"],
-                batch_size=self.memory.memory_size * self.memory.num_envs,
-                mini_batches=self.cfg.mini_batches,
-            )
-        else:
-            sampled_replay_batches = [
-                [batches[self._tensors_names.index("amp_observations")]] for batches in sampled_batches
-            ]
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -436,6 +418,26 @@ class AMP(Agent):
         # learning epochs
         for epoch in range(self.cfg.learning_epochs):
             kl_divergences = []
+
+            # sample mini-batches from memory
+            sampled_batches = self.memory.sample(
+                names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+            )
+            sampled_motion_batches = self.motion_dataset.sample(
+                names=["observations"],
+                batch_size=self.memory.memory_size * self.memory.num_envs,
+                mini_batches=self.cfg.mini_batches,
+            )
+            if len(self.reply_buffer):
+                sampled_replay_batches = self.reply_buffer.sample(
+                    names=["observations"],
+                    batch_size=self.memory.memory_size * self.memory.num_envs,
+                    mini_batches=self.cfg.mini_batches,
+                )
+            else:
+                sampled_replay_batches = [
+                    [batches[self._tensors_names.index("amp_observations")]] for batches in sampled_batches
+                ]
 
             # mini-batches loop
             for batch_index, (

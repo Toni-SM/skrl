@@ -347,9 +347,6 @@ class A2C(Agent):
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -364,7 +361,9 @@ class A2C(Agent):
             sampled_log_prob,
             sampled_returns,
             sampled_advantages,
-        ) in sampled_batches:
+        ) in self.memory.sample(
+            names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+        ):
 
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 inputs = {
@@ -437,11 +436,11 @@ class A2C(Agent):
                 self.scheduler.step()
 
         # record data
-        self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
-        self.track_data("Loss / Value loss", cumulative_value_loss / len(sampled_batches))
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / self.cfg.mini_batches)
+        self.track_data("Loss / Value loss", cumulative_value_loss / self.cfg.mini_batches)
 
         if self.cfg.entropy_loss_scale:
-            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
+            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / self.cfg.mini_batches)
 
         self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
 

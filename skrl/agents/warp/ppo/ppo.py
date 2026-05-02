@@ -476,9 +476,6 @@ class PPO(Agent):
         self._value_preprocessor(values, train=True, inplace=True)
         self._value_preprocessor(returns, train=True, inplace=True)
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -496,7 +493,9 @@ class PPO(Agent):
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
-            ) in sampled_batches:
+            ) in self.memory.sample(
+                names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+            ):
 
                 inputs = {
                     "observations": (

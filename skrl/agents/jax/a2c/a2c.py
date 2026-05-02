@@ -400,9 +400,6 @@ class A2C(Agent):
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -417,7 +414,9 @@ class A2C(Agent):
             sampled_log_prob,
             sampled_returns,
             sampled_advantages,
-        ) in sampled_batches:
+        ) in self.memory.sample(
+            names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+        ):
 
             inputs = {
                 "observations": self._observation_preprocessor(sampled_observations, train=True),
@@ -482,11 +481,11 @@ class A2C(Agent):
                 self.value_learning_rate *= self.value_scheduler(timestep)
 
         # record data
-        self.track_data("Loss / Policy loss", cumulative_policy_loss / len(sampled_batches))
-        self.track_data("Loss / Value loss", cumulative_value_loss / len(sampled_batches))
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / self.cfg.mini_batches)
+        self.track_data("Loss / Value loss", cumulative_value_loss / self.cfg.mini_batches)
 
         if self.cfg.entropy_loss_scale:
-            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / len(sampled_batches))
+            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / self.cfg.mini_batches)
 
         self.track_data("Policy / Standard deviation", stddev.mean().item())
 

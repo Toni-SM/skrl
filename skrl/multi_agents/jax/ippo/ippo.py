@@ -453,9 +453,6 @@ class IPPO(MultiAgent):
         memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
         memory.set_tensor_by_name("advantages", advantages)
 
-        # sample mini-batches from memory
-        sampled_batches = memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches[uid])
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -473,7 +470,9 @@ class IPPO(MultiAgent):
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
-            ) in sampled_batches:
+            ) in memory.sample(
+                names=self._tensors_names, batch_size=len(memory), mini_batches=self.cfg.mini_batches[uid]
+            ):
 
                 inputs = {
                     "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),

@@ -115,6 +115,8 @@ def test_categorical_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 1)
+            entropy = model.get_entropy(output[1]["stddev"])
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -140,6 +142,8 @@ def test_multicategorical_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy(output[1]["stddev"])
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -195,3 +199,5 @@ def test_gaussian_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy(output[1]["stddev"])
+            assert entropy.shape == (1,)  # TODO: should be (10, 1)

@@ -25,6 +25,7 @@ def compute_gae(
     *,
     rewards: torch.Tensor,
     terminated: torch.Tensor,
+    truncated: torch.Tensor,
     values: torch.Tensor,
     next_values: torch.Tensor,
     discount_factor: float = 0.99,
@@ -34,6 +35,7 @@ def compute_gae(
 
     :param rewards: Rewards obtained by the agent.
     :param terminated: Signals to indicate that episodes have ended.
+    :param truncated: Signals to indicate that episodes have been truncated.
     :param values: Values obtained by the agent.
     :param next_values: Next values obtained by the agent.
     :param discount_factor: Discount factor.
@@ -43,15 +45,13 @@ def compute_gae(
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_terminated = terminated.logical_not()
+    not_done = (terminated | truncated).logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
         advantage = (
-            rewards[i]
-            - values[i]
-            + discount_factor * (next_values[i] + lambda_coefficient * not_terminated[i] * advantage)
+            rewards[i] - values[i] + discount_factor * (next_values[i] + lambda_coefficient * not_done[i] * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -203,6 +203,7 @@ class AMP(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -339,6 +340,7 @@ class AMP(Agent):
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
+                truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=self._current_values,
                 amp_observations=amp_observations,
@@ -400,6 +402,7 @@ class AMP(Agent):
         returns, advantages = compute_gae(
             rewards=combined_rewards,
             terminated=self.memory.get_tensor_by_name("terminated"),
+            truncated=self.memory.get_tensor_by_name("truncated"),
             values=values,
             next_values=next_values,
             discount_factor=self.cfg.discount_factor,

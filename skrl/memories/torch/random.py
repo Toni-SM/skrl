@@ -17,7 +17,7 @@ class RandomMemory(Memory):
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
-        replacement: bool = True,
+        replacement: bool = False,
     ) -> None:
         """Random sampling memory (sample a batch from memory randomly).
 

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Improving the robustness and learning capabilities of on-policy algorithms:
   - Sample data from memory using per-epoch mini-batch shuffling
   - Sum-reduce policy entropy to prevent collapse into near-deterministic stand still behavior
+- Set the random memory `replacement` argument to false by default
 
 ## [2.0.0] - 2026-04-08
 

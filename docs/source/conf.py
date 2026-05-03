@@ -20,7 +20,7 @@ author = "Toni-SM"
 if skrl.__version__ != "unknown":
     release = version = skrl.__version__
 else:
-    release = version = "2.0.0"
+    release = version = "2.1.0"
 
 master_doc = "index"
 

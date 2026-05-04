@@ -29,6 +29,7 @@ def compute_gae(
     last_values: torch.Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
+    time_limit_bootstrap: bool = False,
 ) -> torch.Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
@@ -39,13 +40,17 @@ def compute_gae(
     :param last_values: Last values obtained by the agent.
     :param discount_factor: Discount factor.
     :param lambda_coefficient: Lambda coefficient.
+    :param time_limit_bootstrap: Whether to use time-limit (truncation) bootstrapping.
 
     :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_done = (terminated | truncated).logical_not()
     memory_size = rewards.shape[0]
+    if time_limit_bootstrap:
+        not_done = (terminated | truncated).logical_not()
+    else:
+        not_done = terminated.logical_not()
 
     # advantages computation
     for i in reversed(range(memory_size)):
@@ -277,8 +282,16 @@ class PPO(Agent):
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # time-limit (truncation) bootstrapping
-            if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * self._current_values * truncated
+            if self.cfg.time_limit_bootstrap and truncated.any():
+                with torch.no_grad():
+                    inputs = {
+                        "observations": self._observation_preprocessor(next_observations),
+                        "states": self._state_preprocessor(next_states),
+                    }
+                    next_values, _ = self.value.act(inputs, role="value")
+                    next_values = self._value_preprocessor(next_values, inverse=True)
+
+                rewards += self.cfg.discount_factor * next_values * truncated
 
             # storage transition in memory
             self.memory.add_samples(
@@ -344,6 +357,7 @@ class PPO(Agent):
             last_values=last_values,
             discount_factor=self.cfg.discount_factor,
             lambda_coefficient=self.cfg.gae_lambda,
+            time_limit_bootstrap=self.cfg.time_limit_bootstrap,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))

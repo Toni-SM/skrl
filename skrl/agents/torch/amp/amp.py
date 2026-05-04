@@ -27,9 +27,10 @@ def compute_gae(
     terminated: torch.Tensor,
     truncated: torch.Tensor,
     values: torch.Tensor,
-    next_values: torch.Tensor,
+    last_values: torch.Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
+    time_limit_bootstrap: bool = False,
 ) -> torch.Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
@@ -37,21 +38,23 @@ def compute_gae(
     :param terminated: Signals to indicate that episodes have ended.
     :param truncated: Signals to indicate that episodes have been truncated.
     :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
+    :param last_values: Last values obtained by the agent.
     :param discount_factor: Discount factor.
     :param lambda_coefficient: Lambda coefficient.
+    :param time_limit_bootstrap: Whether to use time-limit (truncation) bootstrapping.
 
     :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_done = (terminated | truncated).logical_not()
+    not_done = ((terminated | truncated) if time_limit_bootstrap else terminated).logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
         advantage = (
-            rewards[i] - values[i] + discount_factor * (next_values[i] + lambda_coefficient * not_done[i] * advantage)
+            rewards[i] - values[i] + discount_factor * not_done[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -209,7 +212,6 @@ class AMP(Agent):
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="amp_observations", size=self.amp_observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_values", size=1, dtype=torch.float32)
 
         self._tensors_names = [
             "observations",
@@ -232,6 +234,8 @@ class AMP(Agent):
                 self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
 
         # create temporary variables needed for storage and computation
+        self._current_next_observations = None
+        self._current_next_states = None
         self._current_log_prob = None
         self._current_values = None
         self._rollout = 0
@@ -314,6 +318,8 @@ class AMP(Agent):
         )
 
         if self.training:
+            self._current_next_observations = next_observations
+            self._current_next_states = next_states
             amp_observations = infos["amp_obs"]
 
             # reward shaping
@@ -321,19 +327,18 @@ class AMP(Agent):
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
             # time-limit (truncation) bootstrapping
-            if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * self._current_values * truncated
+            if self.cfg.time_limit_bootstrap and truncated.any():
+                with torch.no_grad():
+                    inputs = {
+                        "observations": self._observation_preprocessor(next_observations),
+                        "states": self._state_preprocessor(next_states),
+                    }
+                    next_values, _ = self.value.act(inputs, role="value")
+                    next_values = self._value_preprocessor(next_values, inverse=True)
 
-            # compute next values
-            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                inputs = {
-                    "observations": self._observation_preprocessor(next_observations),
-                    "states": self._state_preprocessor(next_states),
-                }
-                next_values, _ = self.value.act(inputs, role="value")
-                next_values = self._value_preprocessor(next_values, inverse=True)
-                next_values *= terminated.view(-1, 1).logical_not()
+                rewards += self.cfg.discount_factor * next_values * truncated
 
+            # storage transition in memory
             self.memory.add_samples(
                 observations=observations,
                 states=states,
@@ -344,7 +349,6 @@ class AMP(Agent):
                 log_prob=self._current_log_prob,
                 values=self._current_values,
                 amp_observations=amp_observations,
-                next_values=next_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -397,16 +401,26 @@ class AMP(Agent):
         combined_rewards = self.cfg.task_reward_scale * rewards + self.cfg.style_reward_scale * style_reward
 
         # compute returns and advantages
+        with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
+            inputs = {
+                "observations": self._observation_preprocessor(self._current_next_observations),
+                "states": self._state_preprocessor(self._current_next_states),
+            }
+            self.value.enable_training_mode(False)
+            last_values, _ = self.value.act(inputs, role="value")
+            self.value.enable_training_mode(True)
+            last_values = self._value_preprocessor(last_values, inverse=True)
+
         values = self.memory.get_tensor_by_name("values")
-        next_values = self.memory.get_tensor_by_name("next_values")
         returns, advantages = compute_gae(
             rewards=combined_rewards,
             terminated=self.memory.get_tensor_by_name("terminated"),
             truncated=self.memory.get_tensor_by_name("truncated"),
             values=values,
-            next_values=next_values,
+            last_values=last_values,
             discount_factor=self.cfg.discount_factor,
             lambda_coefficient=self.cfg.gae_lambda,
+            time_limit_bootstrap=self.cfg.time_limit_bootstrap,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))

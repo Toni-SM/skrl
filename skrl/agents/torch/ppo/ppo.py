@@ -26,7 +26,7 @@ def compute_gae(
     terminated: torch.Tensor,
     truncated: torch.Tensor,
     values: torch.Tensor,
-    next_values: torch.Tensor,
+    last_values: torch.Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
 ) -> torch.Tensor:
@@ -36,7 +36,7 @@ def compute_gae(
     :param terminated: Signals to indicate that episodes have ended.
     :param truncated: Signals to indicate that episodes have been truncated.
     :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
+    :param last_values: Last values obtained by the agent.
     :param discount_factor: Discount factor.
     :param lambda_coefficient: Lambda coefficient.
 
@@ -49,7 +49,7 @@ def compute_gae(
 
     # advantages computation
     for i in reversed(range(memory_size)):
-        next_values = values[i + 1] if i < memory_size - 1 else next_values
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
         advantage = (
             rewards[i] - values[i] + discount_factor * not_done[i] * (next_values + lambda_coefficient * advantage)
         )
@@ -341,7 +341,7 @@ class PPO(Agent):
             terminated=self.memory.get_tensor_by_name("terminated"),
             truncated=self.memory.get_tensor_by_name("truncated"),
             values=values,
-            next_values=last_values,
+            last_values=last_values,
             discount_factor=self.cfg.discount_factor,
             lambda_coefficient=self.cfg.gae_lambda,
         )

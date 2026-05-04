@@ -46,11 +46,8 @@ def compute_gae(
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
+    not_done = ((terminated | truncated) if time_limit_bootstrap else terminated).logical_not()
     memory_size = rewards.shape[0]
-    if time_limit_bootstrap:
-        not_done = (terminated | truncated).logical_not()
-    else:
-        not_done = terminated.logical_not()
 
     # advantages computation
     for i in reversed(range(memory_size)):

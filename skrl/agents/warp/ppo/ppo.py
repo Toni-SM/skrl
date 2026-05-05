@@ -33,44 +33,48 @@ def enable_grad(obj, *, enabled: bool):
 @wp.kernel(enable_backward=False)
 def _time_limit_bootstrap(
     rewards: wp.array2d(dtype=float),
-    values: wp.array2d(dtype=float),
+    next_values: wp.array2d(dtype=float),
     truncated: wp.array2d(dtype=wp.int8),
     discount_factor: float,
 ):
     i = wp.tid()
-    rewards[i, 0] = rewards[i, 0] + discount_factor * values[i, 0] * wp.float32(truncated[i, 0])
+    rewards[i, 0] = rewards[i, 0] + discount_factor * next_values[i, 0] * wp.float32(truncated[i, 0])
 
 
 @wp.kernel(enable_backward=False)
 def _compute_gae(
     rewards: wp.array3d(dtype=float),
     terminated: wp.array3d(dtype=wp.int8),
+    truncated: wp.array3d(dtype=wp.int8),
     values: wp.array3d(dtype=float),
     returns: wp.array3d(dtype=float),
     advantages: wp.array3d(dtype=float),
     last_values: wp.array2d(dtype=float),
     discount_factor: float,
     lambda_coefficient: float,
+    time_limit_bootstrap: int,
     memory_size: int,
 ):
     j = wp.tid()  # number of environments
     advantage = float(0.0)
+    not_done = float(0.0)
+
     for i in reversed(range(memory_size)):
+        if time_limit_bootstrap:
+            not_done = wp.float(wp.unot(wp.add(terminated[i, j, 0], truncated[i, j, 0])))
+        else:
+            not_done = wp.float(wp.unot(terminated[i, j, 0]))
         if i < memory_size - 1:
             advantage = (
                 rewards[i, j, 0]
                 - values[i, j, 0]
-                + discount_factor
-                * wp.float(wp.unot(terminated[i, j, 0]))
-                * (values[i + 1, j, 0] + lambda_coefficient * advantage)
+                + discount_factor * not_done * (values[i + 1, j, 0] + lambda_coefficient * advantage)
             )
         else:
             advantage = (
                 rewards[i, j, 0]
                 - values[i, j, 0]
-                + discount_factor
-                * wp.float(wp.unot(terminated[i, j, 0]))
-                * (last_values[j, 0] + lambda_coefficient * advantage)
+                + discount_factor * not_done * (last_values[j, 0] + lambda_coefficient * advantage)
             )
         advantages[i, j, 0] = advantage
         returns[i, j, 0] = values[i, j, 0] + advantage
@@ -281,6 +285,7 @@ class PPO(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=wp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=wp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=wp.int8)
             self.memory.create_tensor(name="log_prob", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="values", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=wp.float32)
@@ -381,10 +386,17 @@ class PPO(Agent):
 
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
+                inputs = {
+                    "observations": self._observation_preprocessor(next_observations),
+                    "states": self._state_preprocessor(next_states),
+                }
+                next_values, _ = self.value.act(inputs, role="value")
+                next_values = self._value_preprocessor(next_values, inverse=True, inplace=True)
+
                 wp.launch(
                     _time_limit_bootstrap,
                     dim=rewards.shape[0],
-                    inputs=[rewards, self._current_values, truncated, self.cfg.discount_factor],
+                    inputs=[rewards, next_values, truncated, self.cfg.discount_factor],
                     device=self.device,
                 )
 
@@ -395,6 +407,7 @@ class PPO(Agent):
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
+                truncated=truncated,
                 log_prob=self._current_log_prob,
                 values=self._current_values,
             )
@@ -452,12 +465,14 @@ class PPO(Agent):
             inputs=[
                 self.memory.get_tensor_by_name("rewards"),
                 self.memory.get_tensor_by_name("terminated"),
+                self.memory.get_tensor_by_name("truncated"),
                 values,
                 returns,
                 advantages,
                 last_values,
                 self.cfg.discount_factor,
                 self.cfg.gae_lambda,
+                int(self.cfg.time_limit_bootstrap),
                 values.shape[0],
             ],
             device=self.device,
@@ -554,7 +569,11 @@ class PPO(Agent):
                     wp.launch(
                         _loss,
                         dim=1,
-                        inputs=[self._policy_loss, self._value_loss, self._entropy_loss],
+                        inputs=[
+                            self._policy_loss,
+                            self._value_loss,
+                            self._entropy_loss if self.cfg.entropy_loss_scale else None,
+                        ],
                         outputs=[self._loss],
                         device=self.device,
                     )

@@ -14,7 +14,7 @@ def _sample(dst: wp.array2d(dtype=float), mean: float, std: float, key: int):
 
 
 class GaussianNoise(Noise):
-    def __init__(self, *, mean: float, std: float, device: str | wp.context.Device | None = None) -> None:
+    def __init__(self, *, mean: float, std: float, device: str | wp.Device | None = None) -> None:
         """Gaussian noise.
 
         :param mean: Mean of the normal distribution.

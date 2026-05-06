@@ -21,7 +21,7 @@ def deterministic_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | wp.context.Device | None = None,
+    device: str | wp.Device | None = None,
     clip_actions: bool = False,
     network: list[dict[str, Any]] = [],
     output: str | list[str] = "",

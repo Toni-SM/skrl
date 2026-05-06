@@ -163,7 +163,7 @@ def test_env(capsys: pytest.CaptureFixture, num_states: int):
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (1,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
-    assert isinstance(env.device, wp.context.Device)
+    assert isinstance(env.device, wp.Device)
     # check internal properties
     assert env._env is original_env
     assert env._unwrapped is original_env.unwrapped
@@ -227,7 +227,7 @@ def test_multi_agent_env(capsys: pytest.CaptureFixture, num_states: int):
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == num_agents
     assert isinstance(env.max_num_agents, int) and env.max_num_agents == num_agents
-    assert isinstance(env.device, wp.context.Device)
+    assert isinstance(env.device, wp.Device)
     # check internal properties
     assert env._env is original_env
     assert env._unwrapped is original_env.unwrapped

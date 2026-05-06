@@ -118,7 +118,7 @@ class RunningStandardScaler:
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 

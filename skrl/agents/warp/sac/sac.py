@@ -92,7 +92,7 @@ class SAC(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
         cfg: SAC_CFG | dict = {},
     ) -> None:
         """Soft Actor-Critic (SAC).

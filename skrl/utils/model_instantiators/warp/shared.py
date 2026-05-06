@@ -21,7 +21,7 @@ def shared_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | wp.context.Device | None = None,
+    device: str | wp.Device | None = None,
     structure: list[str] = ["GaussianMixin", "DeterministicMixin"],
     roles: list[str] = [],
     parameters: list[dict[str, Any]] = [],

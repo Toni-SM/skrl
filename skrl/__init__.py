@@ -363,7 +363,7 @@ class _Config(object):
                 """
                 import warp as wp
 
-                if isinstance(device, wp.context.Device):
+                if isinstance(device, wp.Device):
                     return device
                 elif isinstance(device, str):
                     try:

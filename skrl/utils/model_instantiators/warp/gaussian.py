@@ -21,7 +21,7 @@ def gaussian_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | wp.context.Device | None = None,
+    device: str | wp.Device | None = None,
     clip_actions: bool = False,
     clip_mean_actions: bool = False,
     clip_log_std: bool = True,

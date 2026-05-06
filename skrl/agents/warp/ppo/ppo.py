@@ -178,7 +178,7 @@ class PPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
         cfg: PPO_CFG | dict = {},
     ) -> None:
         """Proximal Policy Optimization (PPO).

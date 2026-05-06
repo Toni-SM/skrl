@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Sum-reduce policy entropy to prevent collapse into near-deterministic stand still behavior
 - Set the random memory `replacement` argument to false by default
 
+### Fixed
+- Fix time limits handling of truncation signals in on-policy agents/multi-agents
+
 ## [2.0.0] - 2026-04-08
 
 Summary of the most relevant features:

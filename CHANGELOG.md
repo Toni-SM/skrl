@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Fix time limits handling of truncation signals in on-policy agents/multi-agents
+- Fix the indexing of finished episodes for cumulative rewards and timestep tracking
 
 ## [2.0.0] - 2026-04-08
 

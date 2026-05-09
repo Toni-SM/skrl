@@ -354,8 +354,8 @@ class Agent(ABC):
             if finished_episodes.size:
 
                 # storage cumulative rewards and timesteps
-                self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+                self._track_rewards.extend(self._cumulative_rewards[finished_episodes].tolist())
+                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].tolist())
 
                 # reset the cumulative rewards and timesteps
                 self._cumulative_rewards[finished_episodes] = 0

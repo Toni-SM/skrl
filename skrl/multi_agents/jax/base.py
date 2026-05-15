@@ -402,8 +402,8 @@ class MultiAgent(ABC):
         """
         if self.write_interval > 0:
             _rewards = sum(rewards.values())
-            _terminated = next(iter(terminated.values()))
-            _truncated = next(iter(truncated.values()))
+            _terminated = np.stack([jax.device_get(v) for v in terminated.values()]).any(axis=0)
+            _truncated = np.stack([jax.device_get(v) for v in truncated.values()]).any(axis=0)
 
             # compute the cumulative sum of the rewards and timesteps
             if self._cumulative_rewards is None:

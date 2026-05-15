@@ -403,10 +403,11 @@ class MultiAgent(ABC):
             self._cumulative_rewards.add_(_rewards)
             self._cumulative_timesteps.add_(1)
 
-            # check ended episodes
-            finished_episodes = (next(iter(terminated.values())) + next(iter(truncated.values()))).nonzero(
-                as_tuple=True
-            )[0]
+            # check ended episodes (any agent done counts as episode end)
+            finished_episodes = (
+                torch.stack(list(terminated.values())).any(dim=0)
+                | torch.stack(list(truncated.values())).any(dim=0)
+            ).nonzero(as_tuple=True)[0]
             if finished_episodes.numel():
 
                 # storage cumulative rewards and timesteps

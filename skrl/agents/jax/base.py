@@ -376,29 +376,28 @@ class Agent(ABC):
             if finished_episodes.size:
 
                 # storage cumulative rewards and timesteps
-                self._track_rewards.extend(self._cumulative_rewards[finished_episodes].tolist())
-                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].tolist())
+                episode_rewards = self._cumulative_rewards[finished_episodes].tolist()
+                episode_timesteps = self._cumulative_timesteps[finished_episodes].tolist()
+                self._track_rewards.extend(episode_rewards)
+                self._track_timesteps.extend(episode_timesteps)
 
                 # reset the cumulative rewards and timesteps
                 self._cumulative_rewards[finished_episodes] = 0
                 self._cumulative_timesteps[finished_episodes] = 0
 
+                # record per-episode data only when episodes actually finish
+                self.tracking_data["Reward / Total reward (max)"].extend(episode_rewards)
+                self.tracking_data["Reward / Total reward (min)"].extend(episode_rewards)
+                self.tracking_data["Reward / Total reward (mean)"].extend(episode_rewards)
+
+                self.tracking_data["Episode / Total timesteps (max)"].extend(episode_timesteps)
+                self.tracking_data["Episode / Total timesteps (min)"].extend(episode_timesteps)
+                self.tracking_data["Episode / Total timesteps (mean)"].extend(episode_timesteps)
+
             # record data
             self.tracking_data["Reward / Instantaneous reward (max)"].append(np.max(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (min)"].append(np.min(rewards).item())
             self.tracking_data["Reward / Instantaneous reward (mean)"].append(np.mean(rewards).item())
-
-            if len(self._track_rewards):
-                track_rewards = np.array(self._track_rewards)
-                track_timesteps = np.array(self._track_timesteps)
-
-                self.tracking_data["Reward / Total reward (max)"].append(np.max(track_rewards))
-                self.tracking_data["Reward / Total reward (min)"].append(np.min(track_rewards))
-                self.tracking_data["Reward / Total reward (mean)"].append(np.mean(track_rewards))
-
-                self.tracking_data["Episode / Total timesteps (max)"].append(np.max(track_timesteps))
-                self.tracking_data["Episode / Total timesteps (min)"].append(np.min(track_timesteps))
-                self.tracking_data["Episode / Total timesteps (mean)"].append(np.mean(track_timesteps))
 
     def enable_training_mode(self, enabled: bool = True, *, apply_to_models: bool = False) -> None:
         """Set the training mode of the agent: enabled (training) or disabled (evaluation).

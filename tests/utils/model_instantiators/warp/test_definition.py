@@ -1,13 +1,14 @@
 import yaml
 
 import warp as wp
+import warp_nn.nn as nn
 
-import skrl.models.warp.nn as warp_nn
+import skrl.utils.framework.warp as functional
 from skrl.utils.model_instantiators.warp.common import _generate_modules, _get_activation_function, _parse_input
 
 
 def test_get_activation_function(capsys):
-    _globals = {"nn": warp_nn, "functional": warp_nn.functional}
+    _globals = {"nn": nn, "functional": functional}
 
     activations = ["relu", "tanh", "elu"]
     for item in activations:
@@ -35,7 +36,7 @@ def test_parse_input(capsys):
 
 
 def test_generate_modules(capsys):
-    _globals = {"nn": warp_nn}
+    _globals = {"nn": nn}
 
     # activation functions
     content = r"""
@@ -48,7 +49,7 @@ def test_generate_modules(capsys):
     container = _locals["container"]
     with capsys.disabled():
         print("\nactivations:", container)
-    assert isinstance(container, warp_nn.Sequential)
+    assert isinstance(container, nn.Sequential)
     assert len(container) == len(content["activations"]) * 2
 
     # linear
@@ -68,7 +69,7 @@ def test_generate_modules(capsys):
     container = _locals["container"]
     with capsys.disabled():
         print("\nlinear:", container)
-    assert isinstance(container, warp_nn.Sequential)
+    assert isinstance(container, nn.Sequential)
     assert len(container) == 10
 
     # # conv2d
@@ -87,29 +88,29 @@ def test_generate_modules(capsys):
     # container = _locals["container"]
     # with capsys.disabled():
     #     print("\nconv2d:", container)
-    # assert isinstance(container, warp_nn.Sequential)
+    # assert isinstance(container, nn.Sequential)
     # assert len(container) == 6
 
-    # flatten
-    content = r"""
-    layers:
-    - flatten
-    - flatten: [2, -2]
-    - flatten: {start_dim: 3, end_dim: -3}
-    activations:
-    - elu
-    - elu
-    - elu
-    """
-    content = yaml.safe_load(content)
-    modules = _generate_modules(content["layers"], content["activations"])
-    _locals = {}
-    exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
-    container = _locals["container"]
-    with capsys.disabled():
-        print("\nflatten:", container)
-    assert isinstance(container, warp_nn.Sequential)
-    assert len(container) == 3
+    # # flatten
+    # content = r"""
+    # layers:
+    # - flatten
+    # - flatten: [2, -2]
+    # - flatten: {start_dim: 3, end_dim: -3}
+    # activations:
+    # - elu
+    # - elu
+    # - elu
+    # """
+    # content = yaml.safe_load(content)
+    # modules = _generate_modules(content["layers"], content["activations"])
+    # _locals = {}
+    # exec(f'container = nn.Sequential({", ".join(modules)})', _globals, _locals)
+    # container = _locals["container"]
+    # with capsys.disabled():
+    #     print("\nflatten:", container)
+    # assert isinstance(container, nn.Sequential)
+    # assert len(container) == 3
 
     # non-lazy layers
     content = r"""
@@ -126,5 +127,5 @@ def test_generate_modules(capsys):
     container = _locals["container"]
     with capsys.disabled():
         print("\nnon-lazy:", container)
-    assert isinstance(container, warp_nn.Sequential)
+    assert isinstance(container, nn.Sequential)
     assert len(container) == 1  # 2

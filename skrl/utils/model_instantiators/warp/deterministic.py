@@ -6,8 +6,8 @@ import textwrap
 import gymnasium
 
 import warp as wp
+import warp_nn.nn as nn  # noqa
 
-import skrl.models.warp.nn as nn  # noqa
 import skrl.utils.framework.warp as warp_utils  # noqa
 from skrl.models.warp import DeterministicMixin  # noqa
 from skrl.models.warp import Model
@@ -21,7 +21,7 @@ def deterministic_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | wp.context.Device | None = None,
+    device: str | wp.Device | None = None,
     clip_actions: bool = False,
     network: list[dict[str, Any]] = [],
     output: str | list[str] = "",

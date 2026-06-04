@@ -4,8 +4,7 @@ import gymnasium as gym
 import mani_skill.envs  # needed to register the ManiSkill environment entry points
 
 import warp as wp
-
-import skrl.models.warp.nn as nn
+import warp_nn.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger
@@ -128,7 +127,7 @@ cfg.rollouts = 20  # memory_size
 cfg.learning_epochs = 8
 cfg.mini_batches = 32
 cfg.discount_factor = 0.8
-cfg.lambda_ = 0.9
+cfg.gae_lambda = 0.9
 cfg.learning_rate = 3e-4
 cfg.learning_rate_scheduler = KLAdaptiveLR
 cfg.learning_rate_scheduler_kwargs = {"kl_threshold": 0.008}

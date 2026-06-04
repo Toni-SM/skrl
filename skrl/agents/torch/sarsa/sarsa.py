@@ -138,17 +138,18 @@ class SARSA(Agent):
             timesteps=timesteps,
         )
 
-        # reward shaping
-        if self.cfg.rewards_shaper is not None:
-            rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
+        if self.training:
+            # reward shaping
+            if self.cfg.rewards_shaper is not None:
+                rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-        self._current_observations = observations
-        self._current_states = states
-        self._current_actions = actions
-        self._current_rewards = rewards
-        self._current_next_observations = next_observations
-        self._current_next_states = next_states
-        self._current_terminated = terminated
+            self._current_observations = observations
+            self._current_states = states
+            self._current_actions = actions
+            self._current_rewards = rewards
+            self._current_next_observations = next_observations
+            self._current_next_states = next_states
+            self._current_terminated = terminated
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -164,12 +165,13 @@ class SARSA(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        if timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            if timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

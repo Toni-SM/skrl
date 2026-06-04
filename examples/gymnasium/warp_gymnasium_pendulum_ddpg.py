@@ -2,7 +2,7 @@ import argparse
 import os
 import gymnasium as gym
 
-import skrl.models.warp.nn as nn
+import warp_nn.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger

@@ -6,11 +6,11 @@ import gymnasium
 
 import numpy as np
 import warp as wp
+from warp_nn.optimizers import Adam
 
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.optimizers.warp import Adam
 from skrl.utils import ScopedTimer
 
 from .sac_cfg import SAC_CFG
@@ -92,7 +92,7 @@ class SAC(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
         cfg: SAC_CFG | dict = {},
     ) -> None:
         """Soft Actor-Critic (SAC).
@@ -308,7 +308,7 @@ class SAC(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
@@ -338,12 +338,13 @@ class SAC(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        if timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            if timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

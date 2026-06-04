@@ -353,8 +353,8 @@ class _Config(object):
                     wp.init()
 
             @staticmethod
-            def parse_device(device: str | "warp.context.Device" | None) -> "warp.context.Device":
-                """Parse the input device and return a :py:class:`~warp.context.Device` instance.
+            def parse_device(device: str | "warp.Device" | None) -> "warp.Device":
+                """Parse the input device and return a :py:class:`~warp.Device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
                     the default available device will be returned instead.
@@ -363,7 +363,7 @@ class _Config(object):
                 """
                 import warp as wp
 
-                if isinstance(device, wp.context.Device):
+                if isinstance(device, wp.Device):
                     return device
                 elif isinstance(device, str):
                     try:
@@ -373,7 +373,7 @@ class _Config(object):
                 return wp.get_device()
 
             @property
-            def device(self) -> "warp.context.Device":
+            def device(self) -> "warp.Device":
                 """Default device.
 
                 The default device, unless specified, is ``cuda`` if CUDA is available, ``cpu`` otherwise.
@@ -382,7 +382,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: str | "warp.context.Device") -> None:
+            def device(self, device: str | "warp.Device") -> None:
                 self._device = device
 
             @property

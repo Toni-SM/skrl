@@ -9,7 +9,7 @@ def load_playground_env(
     action_repeat: int | None = None,
     full_reset: bool = False,
     randomization: bool = False,
-    vision: bool = False,
+    cfg_overrides: dict | None = None,
     show_cfg: bool = True,
     parser: argparse.ArgumentParser | None = None,
 ):
@@ -26,7 +26,6 @@ def load_playground_env(
     - ``--action_repeat``: Number of times to repeat the given action per step.
     - ``--full_reset``: Whether to perform a full reset of the environment on each step, rather than resetting to an initial cached state.
     - ``--randomization``: Whether to use randomization.
-    - ``--vision``: Whether to use vision-based environment.
 
     :param task_name: The name of the task.
         If not specified, the task name is taken from the command line argument (``--task TASK_NAME``).
@@ -46,8 +45,7 @@ def load_playground_env(
     :param randomization: Whether to use randomization.
         If the environment does not provide a randomization function, the randomization flag is ignored.
         Command line argument has priority over function parameter if both are specified.
-    :param vision: Whether to use vision-based environment.
-        Command line argument has priority over function parameter if both are specified.
+    :param cfg_overrides: Configuration overrides for the environment.
     :param show_cfg: Whether to print the configuration.
     :param parser: The argument parser to use. If not specified, a new argument parser will be created.
 
@@ -69,7 +67,7 @@ def load_playground_env(
         action_repeat=action_repeat,
         full_reset=full_reset,
         randomization=randomization,
-        vision=vision,
+        cfg_overrides=cfg_overrides,
         show_cfg=show_cfg,
         parser=parser,
     )

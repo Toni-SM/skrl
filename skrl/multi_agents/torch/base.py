@@ -405,13 +405,13 @@ class MultiAgent(ABC):
 
             # check ended episodes
             finished_episodes = (next(iter(terminated.values())) + next(iter(truncated.values()))).nonzero(
-                as_tuple=False
-            )
+                as_tuple=True
+            )[0]
             if finished_episodes.numel():
 
                 # storage cumulative rewards and timesteps
-                self._track_rewards.extend(self._cumulative_rewards[finished_episodes][:, 0].reshape(-1).tolist())
-                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes][:, 0].reshape(-1).tolist())
+                self._track_rewards.extend(self._cumulative_rewards[finished_episodes].tolist())
+                self._track_timesteps.extend(self._cumulative_timesteps[finished_episodes].tolist())
 
                 # reset the cumulative rewards and timesteps
                 self._cumulative_rewards[finished_episodes] = 0

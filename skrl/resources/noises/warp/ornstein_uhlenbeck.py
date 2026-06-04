@@ -32,7 +32,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 

@@ -85,7 +85,7 @@ class Wrapper(ABC):
         pass
 
     @property
-    def device(self) -> wp.context.Device:
+    def device(self) -> wp.Device:
         """The device used by the environment.
 
         If the wrapped environment does not have the ``device`` property, the value of this property

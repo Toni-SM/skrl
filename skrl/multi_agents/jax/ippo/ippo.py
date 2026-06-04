@@ -21,27 +21,27 @@ from .ippo_cfg import IPPO_CFG
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
-@jax.jit
+@functools.partial(jax.jit, static_argnames=("time_limit_bootstrap",))
 def _compute_gae(
     rewards: jax.Array,
     terminated: jax.Array,
+    truncated: jax.Array,
     values: jax.Array,
-    next_values: jax.Array,
+    last_values: jax.Array,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
+    time_limit_bootstrap: bool = False,
 ) -> jax.Array:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
-    not_terminated = jnp.logical_not(terminated)
+    not_done = jnp.logical_not(jnp.logical_or(terminated, truncated) if time_limit_bootstrap else terminated)
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
-        next_values = values[i + 1] if i < memory_size - 1 else next_values
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
         advantage = (
-            rewards[i]
-            - values[i]
-            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i] - values[i] + discount_factor * not_done[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages = advantages.at[i].set(advantage)
     # returns computation
@@ -263,6 +263,7 @@ class IPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=jnp.int8)
+                self.memories[uid].create_tensor(name="truncated", size=1, dtype=jnp.int8)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=jnp.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=jnp.float32)
@@ -274,6 +275,7 @@ class IPPO(MultiAgent):
         self._current_next_observations = {}
         self._current_next_states = {}
         self._current_log_prob = {}
+        self._current_values = {}
         self._rollout = 0
 
         # set up models for just-in-time compilation with XLA
@@ -298,6 +300,7 @@ class IPPO(MultiAgent):
         actions = {}
         log_prob = {}
         outputs = {}
+        current_values = {}
 
         for uid in self.possible_agents:
             inputs = {
@@ -313,7 +316,13 @@ class IPPO(MultiAgent):
             actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
             log_prob[uid] = outputs[uid]["log_prob"]
 
+            # compute values
+            if self.training:
+                values, _ = self.values[uid].act(inputs, role="value")
+                current_values[uid] = self._value_preprocessor[uid](values, inverse=True)
+
         self._current_log_prob = log_prob
+        self._current_values = current_values
         return actions, outputs
 
     def record_transition(
@@ -359,7 +368,7 @@ class IPPO(MultiAgent):
             timesteps=timesteps,
         )
 
-        if self.memories:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -368,17 +377,16 @@ class IPPO(MultiAgent):
                 if self.cfg.rewards_shaper is not None:
                     rewards[uid] = self.cfg.rewards_shaper(rewards[uid], timestep, timesteps)
 
-                # compute values
-                inputs = {
-                    "observations": self._observation_preprocessor[uid](observations[uid]),
-                    "states": self._state_preprocessor[uid](states[uid]),
-                }
-                values, _ = self.values[uid].act(inputs, role="value")
-                values = self._value_preprocessor[uid](values, inverse=True)
-
                 # time-limit (truncation) bootstrapping
-                if self.cfg.time_limit_bootstrap[uid]:
-                    rewards[uid] += self.cfg.discount_factor[uid] * values * truncated[uid]
+                if self.cfg.time_limit_bootstrap[uid] and truncated[uid].any():
+                    inputs = {
+                        "observations": self._observation_preprocessor[uid](next_observations[uid]),
+                        "states": self._state_preprocessor[uid](next_states[uid]),
+                    }
+                    next_values, _ = self.values[uid].act(inputs, role="value")
+                    next_values = self._value_preprocessor[uid](next_values, inverse=True)
+
+                    rewards[uid] += self.cfg.discount_factor[uid] * next_values * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
@@ -387,8 +395,9 @@ class IPPO(MultiAgent):
                     actions=actions[uid],
                     rewards=rewards[uid],
                     terminated=terminated[uid],
+                    truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
-                    values=values,
+                    values=self._current_values[uid],
                 )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -405,14 +414,15 @@ class IPPO(MultiAgent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                for uid in self.possible_agents:
-                    self.update(timestep=timestep, timesteps=timesteps, uid=uid)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    for uid in self.possible_agents:
+                        self.update(timestep=timestep, timesteps=timesteps, uid=uid)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -442,18 +452,17 @@ class IPPO(MultiAgent):
         returns, advantages = _compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
             terminated=memory.get_tensor_by_name("terminated"),
+            truncated=memory.get_tensor_by_name("truncated"),
             values=values,
-            next_values=last_values,
+            last_values=last_values,
             discount_factor=self.cfg.discount_factor[uid],
-            lambda_coefficient=self.cfg.lambda_[uid],
+            lambda_coefficient=self.cfg.gae_lambda[uid],
+            time_limit_bootstrap=self.cfg.time_limit_bootstrap[uid],
         )
 
         memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
         memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
         memory.set_tensor_by_name("advantages", advantages)
-
-        # sample mini-batches from memory
-        sampled_batches = memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches[uid])
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -472,7 +481,9 @@ class IPPO(MultiAgent):
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
-            ) in sampled_batches:
+            ) in memory.sample(
+                names=self._tensors_names, batch_size=len(memory), mini_batches=self.cfg.mini_batches[uid]
+            ):
 
                 inputs = {
                     "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),

@@ -25,33 +25,36 @@ def compute_gae(
     *,
     rewards: torch.Tensor,
     terminated: torch.Tensor,
+    truncated: torch.Tensor,
     values: torch.Tensor,
-    next_values: torch.Tensor,
+    last_values: torch.Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
+    time_limit_bootstrap: bool = False,
 ) -> torch.Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
     :param terminated: Signals to indicate that episodes have ended.
+    :param truncated: Signals to indicate that episodes have been truncated.
     :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
+    :param last_values: Last values obtained by the agent.
     :param discount_factor: Discount factor.
     :param lambda_coefficient: Lambda coefficient.
+    :param time_limit_bootstrap: Whether to use time-limit (truncation) bootstrapping.
 
     :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_terminated = terminated.logical_not()
+    not_done = ((terminated | truncated) if time_limit_bootstrap else terminated).logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
         advantage = (
-            rewards[i]
-            - values[i]
-            + discount_factor * (next_values[i] + lambda_coefficient * not_terminated[i] * advantage)
+            rewards[i] - values[i] + discount_factor * not_done[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -77,7 +80,6 @@ class AMP(Agent):
         motion_dataset: Memory | None = None,
         reply_buffer: Memory | None = None,
         collect_reference_motions: Callable[[int], torch.Tensor] | None = None,
-        collect_observation: Callable[[], torch.Tensor] | None = None,
     ) -> None:
         """Adversarial Motion Priors (AMP).
 
@@ -98,7 +100,6 @@ class AMP(Agent):
         :param motion_dataset: Reference motion dataset (M).
         :param reply_buffer: Reply buffer for preventing discriminator overfitting (B).
         :param collect_reference_motions: Callable to collect reference motions.
-        :param collect_observation: Callable to collect AMP observations.
 
         :raises KeyError: If a configuration key is missing.
         """
@@ -117,7 +118,6 @@ class AMP(Agent):
         self.motion_dataset = motion_dataset
         self.reply_buffer = reply_buffer
         self.collect_reference_motions = collect_reference_motions
-        self.collect_observation = collect_observation
 
         # models
         self.policy = self.models.get("policy", None)
@@ -206,12 +206,12 @@ class AMP(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+            self.memory.create_tensor(name="truncated", size=1, dtype=torch.bool)
             self.memory.create_tensor(name="log_prob", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="values", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="advantages", size=1, dtype=torch.float32)
             self.memory.create_tensor(name="amp_observations", size=self.amp_observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_values", size=1, dtype=torch.float32)
 
         self._tensors_names = [
             "observations",
@@ -234,9 +234,10 @@ class AMP(Agent):
                 self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
 
         # create temporary variables needed for storage and computation
-        self._current_observations = None
-        self._current_states = None
+        self._current_next_observations = None
+        self._current_next_states = None
         self._current_log_prob = None
+        self._current_values = None
         self._rollout = 0
 
     def act(
@@ -252,12 +253,6 @@ class AMP(Agent):
         :return: Agent output. The first component is the expected action/value returned by the agent.
             The second component is a dictionary containing extra output values according to the model.
         """
-        # use collected observations/states
-        if self._current_observations is not None:
-            observations = self._current_observations
-        if self._current_states is not None:
-            states = self._current_states
-
         inputs = {
             "observations": self._observation_preprocessor(observations),
             "states": self._state_preprocessor(states),
@@ -271,6 +266,11 @@ class AMP(Agent):
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
             self._current_log_prob = outputs["log_prob"]
+
+            # compute values
+            if self.training:
+                values, _ = self.value.act(inputs, role="value")
+                self._current_values = self._value_preprocessor(values, inverse=True)
 
         return actions, outputs
 
@@ -303,12 +303,6 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        # use collected observations/states
-        if self._current_observations is not None:
-            observations = self._current_observations
-        if self._current_states is not None:
-            states = self._current_states
-
         super().record_transition(
             observations=observations,
             states=states,
@@ -323,49 +317,38 @@ class AMP(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
+            self._current_next_observations = next_observations
+            self._current_next_states = next_states
             amp_observations = infos["amp_obs"]
 
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                inputs = {
-                    "observations": self._observation_preprocessor(observations),
-                    "states": self._state_preprocessor(states),
-                }
-                values, _ = self.value.act(inputs, role="value")
-                values = self._value_preprocessor(values, inverse=True)
-
             # time-limit (truncation) bootstrapping
-            if self.cfg.time_limit_bootstrap:
-                rewards += self.cfg.discount_factor * values * truncated
+            if self.cfg.time_limit_bootstrap and truncated.any():
+                with torch.no_grad():
+                    inputs = {
+                        "observations": self._observation_preprocessor(next_observations),
+                        "states": self._state_preprocessor(next_states),
+                    }
+                    next_values, _ = self.value.act(inputs, role="value")
+                    next_values = self._value_preprocessor(next_values, inverse=True)
 
-            # compute next values
-            with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                inputs = {
-                    "observations": self._observation_preprocessor(next_observations),
-                    "states": self._state_preprocessor(next_states),
-                }
-                next_values, _ = self.value.act(inputs, role="value")
-                next_values = self._value_preprocessor(next_values, inverse=True)
-                if "terminate" in infos:
-                    next_values *= infos["terminate"].view(-1, 1).logical_not()  # compatibility with IsaacGymEnvs
-                else:
-                    next_values *= terminated.view(-1, 1).logical_not()
+                rewards += self.cfg.discount_factor * next_values * truncated
 
+            # storage transition in memory
             self.memory.add_samples(
                 observations=observations,
                 states=states,
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
+                truncated=truncated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
                 amp_observations=amp_observations,
-                next_values=next_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -374,9 +357,7 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        # compatibility with IsaacGymEnvs
-        if self.collect_observation is not None:
-            self._current_observations = self.collect_observation()
+        pass
 
     def post_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called after the interaction with the environment.
@@ -384,13 +365,14 @@ class AMP(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -419,38 +401,31 @@ class AMP(Agent):
         combined_rewards = self.cfg.task_reward_scale * rewards + self.cfg.style_reward_scale * style_reward
 
         # compute returns and advantages
+        with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
+            inputs = {
+                "observations": self._observation_preprocessor(self._current_next_observations),
+                "states": self._state_preprocessor(self._current_next_states),
+            }
+            self.value.enable_training_mode(False)
+            last_values, _ = self.value.act(inputs, role="value")
+            self.value.enable_training_mode(True)
+            last_values = self._value_preprocessor(last_values, inverse=True)
+
         values = self.memory.get_tensor_by_name("values")
-        next_values = self.memory.get_tensor_by_name("next_values")
         returns, advantages = compute_gae(
             rewards=combined_rewards,
             terminated=self.memory.get_tensor_by_name("terminated"),
+            truncated=self.memory.get_tensor_by_name("truncated"),
             values=values,
-            next_values=next_values,
+            last_values=last_values,
             discount_factor=self.cfg.discount_factor,
-            lambda_coefficient=self.cfg.lambda_,
+            lambda_coefficient=self.cfg.gae_lambda,
+            time_limit_bootstrap=self.cfg.time_limit_bootstrap,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
         self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
         self.memory.set_tensor_by_name("advantages", advantages)
-
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-        sampled_motion_batches = self.motion_dataset.sample(
-            names=["observations"],
-            batch_size=self.memory.memory_size * self.memory.num_envs,
-            mini_batches=self.cfg.mini_batches,
-        )
-        if len(self.reply_buffer):
-            sampled_replay_batches = self.reply_buffer.sample(
-                names=["observations"],
-                batch_size=self.memory.memory_size * self.memory.num_envs,
-                mini_batches=self.cfg.mini_batches,
-            )
-        else:
-            sampled_replay_batches = [
-                [batches[self._tensors_names.index("amp_observations")]] for batches in sampled_batches
-            ]
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -460,6 +435,26 @@ class AMP(Agent):
         # learning epochs
         for epoch in range(self.cfg.learning_epochs):
             kl_divergences = []
+
+            # sample mini-batches from memory
+            sampled_batches = self.memory.sample(
+                names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+            )
+            sampled_motion_batches = self.motion_dataset.sample(
+                names=["observations"],
+                batch_size=self.memory.memory_size * self.memory.num_envs,
+                mini_batches=self.cfg.mini_batches,
+            )
+            if len(self.reply_buffer):
+                sampled_replay_batches = self.reply_buffer.sample(
+                    names=["observations"],
+                    batch_size=self.memory.memory_size * self.memory.num_envs,
+                    mini_batches=self.cfg.mini_batches,
+                )
+            else:
+                sampled_replay_batches = [
+                    [batches[self._tensors_names.index("amp_observations")]] for batches in sampled_batches
+                ]
 
             # mini-batches loop
             for batch_index, (

@@ -40,7 +40,7 @@ def _entropy(logits):
     logits = logits - jax.scipy.special.logsumexp(logits, axis=-1, keepdims=True)
     logits = logits.clip(min=jnp.finfo(logits.dtype).min)
     p_log_p = logits * jax.nn.softmax(logits)
-    return -p_log_p.sum(-1)
+    return -p_log_p.sum(-1, keepdims=True)
 
 
 class MultiCategoricalMixin:

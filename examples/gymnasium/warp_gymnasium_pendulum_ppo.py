@@ -3,8 +3,7 @@ import os
 import gymnasium as gym
 
 import warp as wp
-
-import skrl.models.warp.nn as nn
+import warp_nn.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger
@@ -129,7 +128,7 @@ cfg.rollouts = 1024  # memory_size
 cfg.learning_epochs = 10
 cfg.mini_batches = 32
 cfg.discount_factor = 0.9
-cfg.lambda_ = 0.95
+cfg.gae_lambda = 0.95
 cfg.learning_rate = 1e-3
 cfg.learning_rate_scheduler = KLAdaptiveLR
 cfg.learning_rate_scheduler_kwargs = {"kl_threshold": 0.008}

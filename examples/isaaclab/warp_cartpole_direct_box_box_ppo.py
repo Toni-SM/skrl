@@ -2,8 +2,7 @@ import argparse
 import os
 
 import warp as wp
-
-import skrl.models.warp.nn as nn
+import warp_nn.nn as nn
 
 # import the skrl components to build the RL system
 from skrl import logger
@@ -120,7 +119,7 @@ cfg.rollouts = 32  # memory_size
 cfg.learning_epochs = 8
 cfg.mini_batches = 8
 cfg.discount_factor = 0.99
-cfg.lambda_ = 0.95
+cfg.gae_lambda = 0.95
 cfg.learning_rate = 5e-4
 cfg.learning_rate_scheduler = KLAdaptiveLR
 cfg.learning_rate_scheduler_kwargs = {"kl_threshold": 0.008}

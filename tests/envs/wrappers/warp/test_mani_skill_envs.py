@@ -45,7 +45,7 @@ def test_env(capsys: pytest.CaptureFixture):
     assert isinstance(env.action_space, gymnasium.Space) and env.action_space.shape == (8,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
-    assert isinstance(env.device, wp.context.Device)
+    assert isinstance(env.device, wp.Device)
     # check internal properties
     assert env._env is original_env
     assert env._unwrapped is original_env.unwrapped

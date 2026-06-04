@@ -62,7 +62,7 @@ def _gaussian(
 
 @jax.jit
 def _entropy(scale):
-    return HALF_LOG_2_PI_PLUS + jnp.log(scale)
+    return (HALF_LOG_2_PI_PLUS + jnp.log(scale)).sum(axis=-1, keepdims=True)
 
 
 class GaussianMixin:

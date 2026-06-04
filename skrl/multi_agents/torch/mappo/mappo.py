@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import copy
 import itertools
 import gymnasium
 from packaging import version
@@ -25,34 +24,36 @@ def compute_gae(
     *,
     rewards: torch.Tensor,
     terminated: torch.Tensor,
+    truncated: torch.Tensor,
     values: torch.Tensor,
-    next_values: torch.Tensor,
+    last_values: torch.Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
+    time_limit_bootstrap: bool = False,
 ) -> torch.Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
     :param terminated: Signals to indicate that episodes have ended.
+    :param truncated: Signals to indicate that episodes have been truncated.
     :param values: Values obtained by the agent.
-    :param next_values: Next values obtained by the agent.
+    :param last_values: Last values obtained by the agent.
     :param discount_factor: Discount factor.
     :param lambda_coefficient: Lambda coefficient.
+    :param time_limit_bootstrap: Whether to use time-limit (truncation) bootstrapping.
 
     :return: Generalized Advantage Estimator.
     """
     advantage = 0
     advantages = torch.zeros_like(rewards)
-    not_terminated = terminated.logical_not()
+    not_done = ((terminated | truncated) if time_limit_bootstrap else terminated).logical_not()
     memory_size = rewards.shape[0]
 
     # advantages computation
     for i in reversed(range(memory_size)):
-        next_values = values[i + 1] if i < memory_size - 1 else next_values
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
         advantage = (
-            rewards[i]
-            - values[i]
-            + discount_factor * not_terminated[i] * (next_values + lambda_coefficient * advantage)
+            rewards[i] - values[i] + discount_factor * not_done[i] * (next_values + lambda_coefficient * advantage)
         )
         advantages[i] = advantage
     # returns computation
@@ -199,6 +200,7 @@ class MAPPO(MultiAgent):
                 self.memories[uid].create_tensor(name="actions", size=self.action_spaces[uid], dtype=torch.float32)
                 self.memories[uid].create_tensor(name="rewards", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memories[uid].create_tensor(name="truncated", size=1, dtype=torch.bool)
                 self.memories[uid].create_tensor(name="log_prob", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="values", size=1, dtype=torch.float32)
                 self.memories[uid].create_tensor(name="returns", size=1, dtype=torch.float32)
@@ -210,6 +212,7 @@ class MAPPO(MultiAgent):
         self._current_next_observations = {}
         self._current_next_states = {}
         self._current_log_prob = {}
+        self._current_values = {}
         self._rollout = 0
 
     def act(
@@ -233,6 +236,7 @@ class MAPPO(MultiAgent):
         actions = {}
         log_prob = {}
         outputs = {}
+        current_values = {}
 
         for uid in self.possible_agents:
             inputs = {
@@ -249,7 +253,13 @@ class MAPPO(MultiAgent):
                 actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
                 log_prob[uid] = outputs[uid]["log_prob"]
 
+                # compute values
+                if self.training:
+                    values, _ = self.values[uid].act(inputs, role="value")
+                    current_values[uid] = self._value_preprocessor[uid](values, inverse=True)
+
         self._current_log_prob = log_prob
+        self._current_values = current_values
         return actions, outputs
 
     def record_transition(
@@ -295,7 +305,7 @@ class MAPPO(MultiAgent):
             timesteps=timesteps,
         )
 
-        if self.memories:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -304,18 +314,17 @@ class MAPPO(MultiAgent):
                 if self.cfg.rewards_shaper is not None:
                     rewards[uid] = self.cfg.rewards_shaper(rewards[uid], timestep, timesteps)
 
-                # compute values
-                with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                    inputs = {
-                        "observations": self._observation_preprocessor[uid](observations[uid]),
-                        "states": self._state_preprocessor[uid](states[uid]),
-                    }
-                    values, _ = self.values[uid].act(inputs, role="value")
-                    values = self._value_preprocessor[uid](values, inverse=True)
-
                 # time-limit (truncation) bootstrapping
-                if self.cfg.time_limit_bootstrap[uid]:
-                    rewards[uid] += self.cfg.discount_factor[uid] * values * truncated[uid]
+                if self.cfg.time_limit_bootstrap[uid] and truncated[uid].any():
+                    with torch.no_grad():
+                        inputs = {
+                            "observations": self._observation_preprocessor[uid](next_observations[uid]),
+                            "states": self._state_preprocessor[uid](next_states[uid]),
+                        }
+                        next_values, _ = self.values[uid].act(inputs, role="value")
+                        next_values = self._value_preprocessor[uid](next_values, inverse=True)
+
+                    rewards[uid] += self.cfg.discount_factor[uid] * next_values * truncated[uid]
 
                 # storage transition in memory
                 self.memories[uid].add_samples(
@@ -324,8 +333,9 @@ class MAPPO(MultiAgent):
                     actions=actions[uid],
                     rewards=rewards[uid],
                     terminated=terminated[uid],
+                    truncated=truncated[uid],
                     log_prob=self._current_log_prob[uid],
-                    values=values,
+                    values=self._current_values[uid],
                 )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -342,14 +352,15 @@ class MAPPO(MultiAgent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                for uid in self.possible_agents:
-                    self.update(timestep=timestep, timesteps=timesteps, uid=uid)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    for uid in self.possible_agents:
+                        self.update(timestep=timestep, timesteps=timesteps, uid=uid)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -380,18 +391,17 @@ class MAPPO(MultiAgent):
         returns, advantages = compute_gae(
             rewards=memory.get_tensor_by_name("rewards"),
             terminated=memory.get_tensor_by_name("terminated"),
+            truncated=memory.get_tensor_by_name("truncated"),
             values=values,
-            next_values=last_values,
+            last_values=last_values,
             discount_factor=self.cfg.discount_factor[uid],
-            lambda_coefficient=self.cfg.lambda_[uid],
+            lambda_coefficient=self.cfg.gae_lambda[uid],
+            time_limit_bootstrap=self.cfg.time_limit_bootstrap[uid],
         )
 
         memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
         memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
         memory.set_tensor_by_name("advantages", advantages)
-
-        # sample mini-batches from memory
-        sampled_batches = memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches[uid])
 
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
@@ -410,7 +420,9 @@ class MAPPO(MultiAgent):
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
-            ) in sampled_batches:
+            ) in memory.sample(
+                names=self._tensors_names, batch_size=len(memory), mini_batches=self.cfg.mini_batches[uid]
+            ):
 
                 with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                     inputs = {

@@ -185,11 +185,11 @@ class CEM(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
-
+        if self.training:
             # reward shaping
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
+
             self.memory.add_samples(
                 observations=observations,
                 states=states,
@@ -197,17 +197,17 @@ class CEM(Agent):
                 rewards=rewards,
             )
 
-        # track episodes internally
-        if self._rollout:
-            indexes = torch.nonzero(terminated + truncated)
-            if indexes.numel():
-                for i in indexes[:, 0]:
-                    try:
-                        self._episode_tracking[i.item()].append(self._rollout + 1)
-                    except IndexError:
-                        logger.warning(f"IndexError: {i.item()}")
-        else:
-            self._episode_tracking = [[0] for _ in range(rewards.size(-1))]
+            # track episodes internally
+            if self._rollout:
+                indexes = torch.nonzero(terminated + truncated)
+                if indexes.numel():
+                    for i in indexes[:, 0]:
+                        try:
+                            self._episode_tracking[i.item()].append(self._rollout + 1)
+                        except IndexError:
+                            logger.warning(f"IndexError: {i.item()}")
+            else:
+                self._episode_tracking = [[0] for _ in range(rewards.size(-1))]
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -223,14 +223,15 @@ class CEM(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            self._rollout = 0
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                self._rollout = 0
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)

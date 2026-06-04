@@ -90,7 +90,7 @@ def _gaussian(
 @wp.kernel
 def _entropy(stddev: wp.array1d(dtype=float), entropy: wp.array1d(dtype=float)):
     i = wp.tid()
-    entropy[i] = HALF_LOG_2_PI_PLUS + wp.log(stddev[i])
+    wp.atomic_add(entropy, 0, HALF_LOG_2_PI_PLUS + wp.log(stddev[i]))
 
 
 class GaussianMixin:
@@ -206,7 +206,7 @@ class GaussianMixin:
 
         :return: Entropy of the model.
         """
-        entropy = wp.empty(shape=stddev.shape, dtype=wp.float32, device=self.device, requires_grad=True)
+        entropy = wp.empty(shape=(1,), dtype=wp.float32, device=self.device, requires_grad=True)
         wp.launch(
             _entropy,
             dim=stddev.shape,

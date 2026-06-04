@@ -311,7 +311,7 @@ class A2C_RNN(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -388,13 +388,14 @@ class A2C_RNN(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_models_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_models_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -424,7 +425,7 @@ class A2C_RNN(Agent):
             values=values,
             next_values=last_values,
             discount_factor=self.cfg.discount_factor,
-            lambda_coefficient=self.cfg.lambda_,
+            lambda_coefficient=self.cfg.gae_lambda,
         )
 
         self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))

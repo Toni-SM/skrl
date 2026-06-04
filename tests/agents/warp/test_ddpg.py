@@ -140,6 +140,9 @@ def test_agent(
         network=network["critic"],
         output="ONE",
     )
+    # instantiate models' state dict
+    for role, model in models.items():
+        model.init_state_dict(role=role)
 
     # memory
     memory = RandomMemory(memory_size=50, num_envs=env.num_envs, device=env.device)

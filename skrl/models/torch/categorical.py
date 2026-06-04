@@ -65,7 +65,7 @@ class CategoricalMixin:
         """
         if self._c_distribution is None:
             return torch.tensor(0.0, device=self.device)
-        return self._c_distribution.entropy().to(self.device)
+        return self._c_distribution.entropy().unsqueeze(-1)
 
     def distribution(self, *, role: str = "") -> torch.distributions.Categorical:
         """Get the current distribution of the model.

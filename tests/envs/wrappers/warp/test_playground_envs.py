@@ -9,7 +9,7 @@ from skrl.envs.loaders.warp import load_playground_env
 from skrl.envs.wrappers.warp import wrap_env
 from skrl.envs.wrappers.warp.playground_envs import PlaygroundWrapper
 
-from ....utilities import is_running_on_github_actions
+from ....utilities import is_device_available, is_running_on_github_actions
 
 
 @pytest.mark.parametrize("task_name", ["CartpoleBalance", "LeapCubeReorient"])
@@ -34,7 +34,8 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
             pytest.skip(f"Unable to import MuJoCo Playground environment: {e}")
 
     # load and wrap the environment
-    original_env = load_playground_env(task_name=task_name, num_envs=num_envs)
+    cfg_overrides = None if is_device_available("cuda", backend="warp") else {"impl": "jax"}  # warp impl requires GPU
+    original_env = load_playground_env(task_name=task_name, num_envs=num_envs, cfg_overrides=cfg_overrides)
     env = wrap_env(original_env, "auto")
     assert isinstance(env, PlaygroundWrapper)
     env = wrap_env(original_env, "playground")
@@ -49,7 +50,7 @@ def test_env(capsys: pytest.CaptureFixture, task_name: str):
     assert isinstance(env.action_space, gym.Space) and env.action_space.shape == (num_actions,)
     assert isinstance(env.num_envs, int) and env.num_envs == num_envs
     assert isinstance(env.num_agents, int) and env.num_agents == 1
-    assert isinstance(env.device, wp.context.Device)
+    assert isinstance(env.device, wp.Device)
     # check internal properties
     assert env._env is original_env
     assert env._unwrapped is original_env.unwrapped

@@ -119,7 +119,7 @@ class GaussianMixin:
         """
         if self._g_distribution is None:
             return torch.tensor(0.0, device=self.device)
-        return self._g_distribution.entropy().to(self.device)
+        return self._g_distribution.entropy().sum(dim=-1).unsqueeze(-1)
 
     def distribution(self, *, role: str = "") -> torch.distributions.Normal:
         """Get the current distribution of the model.

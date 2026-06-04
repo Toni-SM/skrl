@@ -26,7 +26,7 @@ class TRPO_CFG(AgentCfg):
     Range: ``[0.0, 1.0]``.
     """
 
-    lambda_: float = 0.95
+    gae_lambda: float = 0.95
     """TD(lambda) coefficient for computing Generalized Advantage Estimation (GAE)."""
 
     learning_rate: float = 1e-3

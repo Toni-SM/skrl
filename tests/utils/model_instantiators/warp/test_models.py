@@ -111,6 +111,7 @@ def test_deterministic_model(capsys, device):
                 network=yaml.safe_load(network_spec.replace("PLACEHOLDER", token))["network"],
                 output="ACTIONS",
             )
+            model.init_state_dict()
             model.to(device=config.warp.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
@@ -141,11 +142,14 @@ def test_gaussian_model(capsys, device):
                 network=yaml.safe_load(network_spec.replace("PLACEHOLDER", token))["network"],
                 output="ACTIONS",
             )
+            model.init_state_dict()
             model.to(device=config.warp.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy(output[1]["stddev"])
+            assert entropy.shape == (1,)  # TODO: should be (10, 1)
 
 
 @pytest.mark.parametrize("single_forward_pass", [True, False])
@@ -184,11 +188,14 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
                 ],
                 single_forward_pass=single_forward_pass,
             )
+            model.init_state_dict()
             model.to(device=config.warp.parse_device(device))
 
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy(output[1]["stddev"])
+            assert entropy.shape == (1,)  # TODO: should be (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)

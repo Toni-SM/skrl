@@ -6,12 +6,12 @@ import gymnasium
 
 import numpy as np
 import warp as wp
+from warp_nn.optimizers import Adam
 
 import skrl.utils.framework.warp as warp_utils
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.optimizers.warp import Adam
 from skrl.resources.schedulers.warp import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 
@@ -33,44 +33,48 @@ def enable_grad(obj, *, enabled: bool):
 @wp.kernel(enable_backward=False)
 def _time_limit_bootstrap(
     rewards: wp.array2d(dtype=float),
-    values: wp.array2d(dtype=float),
+    next_values: wp.array2d(dtype=float),
     truncated: wp.array2d(dtype=wp.int8),
     discount_factor: float,
 ):
     i = wp.tid()
-    rewards[i, 0] = rewards[i, 0] + discount_factor * values[i, 0] * wp.float32(truncated[i, 0])
+    rewards[i, 0] = rewards[i, 0] + discount_factor * next_values[i, 0] * wp.float32(truncated[i, 0])
 
 
 @wp.kernel(enable_backward=False)
 def _compute_gae(
     rewards: wp.array3d(dtype=float),
     terminated: wp.array3d(dtype=wp.int8),
+    truncated: wp.array3d(dtype=wp.int8),
     values: wp.array3d(dtype=float),
     returns: wp.array3d(dtype=float),
     advantages: wp.array3d(dtype=float),
     last_values: wp.array2d(dtype=float),
     discount_factor: float,
     lambda_coefficient: float,
+    time_limit_bootstrap: int,
     memory_size: int,
 ):
     j = wp.tid()  # number of environments
     advantage = float(0.0)
+    not_done = float(0.0)
+
     for i in reversed(range(memory_size)):
+        if time_limit_bootstrap:
+            not_done = wp.float(wp.unot(wp.add(terminated[i, j, 0], truncated[i, j, 0])))
+        else:
+            not_done = wp.float(wp.unot(terminated[i, j, 0]))
         if i < memory_size - 1:
             advantage = (
                 rewards[i, j, 0]
                 - values[i, j, 0]
-                + discount_factor
-                * wp.float(wp.unot(terminated[i, j, 0]))
-                * (values[i + 1, j, 0] + lambda_coefficient * advantage)
+                + discount_factor * not_done * (values[i + 1, j, 0] + lambda_coefficient * advantage)
             )
         else:
             advantage = (
                 rewards[i, j, 0]
                 - values[i, j, 0]
-                + discount_factor
-                * wp.float(wp.unot(terminated[i, j, 0]))
-                * (last_values[j, 0] + lambda_coefficient * advantage)
+                + discount_factor * not_done * (last_values[j, 0] + lambda_coefficient * advantage)
             )
         advantages[i, j, 0] = advantage
         returns[i, j, 0] = values[i, j, 0] + advantage
@@ -174,7 +178,7 @@ class PPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
         cfg: PPO_CFG | dict = {},
     ) -> None:
         """Proximal Policy Optimization (PPO).
@@ -215,12 +219,18 @@ class PPO(Agent):
             self.learning_rate = self.cfg.learning_rate[0]
             # - optimizers
             if self.policy is self.value:
-                self.optimizer = Adam(self.policy.parameters(), lr=self.learning_rate, device=self.device)
+                self.optimizer = Adam(
+                    self.policy.parameters(),
+                    lr=self.learning_rate,
+                    device=self.device,
+                    max_norm=self.cfg.grad_norm_clip,
+                )
             else:
                 self.optimizer = Adam(
                     self.policy.parameters() + self.value.parameters(),
                     lr=self.learning_rate,
                     device=self.device,
+                    max_norm=self.cfg.grad_norm_clip,
                 )
             # self.checkpoint_modules["optimizer"] = self.optimizer
             # - learning rate schedulers
@@ -275,6 +285,7 @@ class PPO(Agent):
             self.memory.create_tensor(name="actions", size=self.action_space, dtype=wp.float32)
             self.memory.create_tensor(name="rewards", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="terminated", size=1, dtype=wp.int8)
+            self.memory.create_tensor(name="truncated", size=1, dtype=wp.int8)
             self.memory.create_tensor(name="log_prob", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="values", size=1, dtype=wp.float32)
             self.memory.create_tensor(name="returns", size=1, dtype=wp.float32)
@@ -286,6 +297,7 @@ class PPO(Agent):
         self._current_next_observations = None
         self._current_next_states = None
         self._current_log_prob = None
+        self._current_values = None
         self._rollout = 0
 
     def act(
@@ -313,6 +325,11 @@ class PPO(Agent):
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = outputs["log_prob"]
+
+        # compute values
+        if self.training:
+            values, _ = self.value.act(inputs, role="value")
+            self._current_values = self._value_preprocessor(values, inverse=True, inplace=True)
 
         return actions, outputs
 
@@ -359,7 +376,7 @@ class PPO(Agent):
             timesteps=timesteps,
         )
 
-        if self.memory is not None:
+        if self.training:
             self._current_next_observations = next_observations
             self._current_next_states = next_states
 
@@ -367,20 +384,19 @@ class PPO(Agent):
             if self.cfg.rewards_shaper is not None:
                 rewards = self.cfg.rewards_shaper(rewards, timestep, timesteps)
 
-            # compute values
-            inputs = {
-                "observations": self._observation_preprocessor(observations),
-                "states": self._state_preprocessor(states),
-            }
-            values, _ = self.value.act(inputs, role="value")
-            values = self._value_preprocessor(values, inverse=True, inplace=True)
-
             # time-limit (truncation) bootstrapping
             if self.cfg.time_limit_bootstrap:
+                inputs = {
+                    "observations": self._observation_preprocessor(next_observations),
+                    "states": self._state_preprocessor(next_states),
+                }
+                next_values, _ = self.value.act(inputs, role="value")
+                next_values = self._value_preprocessor(next_values, inverse=True, inplace=True)
+
                 wp.launch(
                     _time_limit_bootstrap,
                     dim=rewards.shape[0],
-                    inputs=[rewards, values, truncated, self.cfg.discount_factor],
+                    inputs=[rewards, next_values, truncated, self.cfg.discount_factor],
                     device=self.device,
                 )
 
@@ -391,8 +407,9 @@ class PPO(Agent):
                 actions=actions,
                 rewards=rewards,
                 terminated=terminated,
+                truncated=truncated,
                 log_prob=self._current_log_prob,
-                values=values,
+                values=self._current_values,
             )
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
@@ -409,13 +426,14 @@ class PPO(Agent):
         :param timestep: Current timestep.
         :param timesteps: Number of timesteps.
         """
-        self._rollout += 1
-        if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
-            with ScopedTimer() as timer:
-                self.enable_training_mode(True)
-                self.update(timestep=timestep, timesteps=timesteps)
-                self.enable_training_mode(False)
-                self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
+        if self.training:
+            self._rollout += 1
+            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+                with ScopedTimer() as timer:
+                    self.enable_models_training_mode(True)
+                    self.update(timestep=timestep, timesteps=timesteps)
+                    self.enable_models_training_mode(False)
+                    self.track_data("Stats / Algorithm update time (ms)", timer.elapsed_time_ms)
 
         # write tracking data and checkpoints
         super().post_interaction(timestep=timestep, timesteps=timesteps)
@@ -447,12 +465,14 @@ class PPO(Agent):
             inputs=[
                 self.memory.get_tensor_by_name("rewards"),
                 self.memory.get_tensor_by_name("terminated"),
+                self.memory.get_tensor_by_name("truncated"),
                 values,
                 returns,
                 advantages,
                 last_values,
                 self.cfg.discount_factor,
-                self.cfg.lambda_,
+                self.cfg.gae_lambda,
+                int(self.cfg.time_limit_bootstrap),
                 values.shape[0],
             ],
             device=self.device,
@@ -471,9 +491,6 @@ class PPO(Agent):
         self._value_preprocessor(values, train=True, inplace=True)
         self._value_preprocessor(returns, train=True, inplace=True)
 
-        # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self.cfg.mini_batches)
-
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -491,7 +508,9 @@ class PPO(Agent):
                 sampled_values,
                 sampled_returns,
                 sampled_advantages,
-            ) in sampled_batches:
+            ) in self.memory.sample(
+                names=self._tensors_names, batch_size=len(self.memory), mini_batches=self.cfg.mini_batches
+            ):
 
                 inputs = {
                     "observations": (
@@ -550,7 +569,11 @@ class PPO(Agent):
                     wp.launch(
                         _loss,
                         dim=1,
-                        inputs=[self._policy_loss, self._value_loss, self._entropy_loss],
+                        inputs=[
+                            self._policy_loss,
+                            self._value_loss,
+                            self._entropy_loss if self.cfg.entropy_loss_scale else None,
+                        ],
                         outputs=[self._loss],
                         device=self.device,
                     )
@@ -563,8 +586,6 @@ class PPO(Agent):
 
                 # optimization step
                 tape.backward(self._loss)
-                if self.cfg.grad_norm_clip > 0:
-                    self.optimizer.clip_by_total_norm(self.cfg.grad_norm_clip)
                 self.optimizer.step(lr=self.learning_rate if self.scheduler else None)
                 tape.zero()
 

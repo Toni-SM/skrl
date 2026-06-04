@@ -15,7 +15,6 @@ The classes are not intended to be used directly by the user, but by agent imple
 
 * For JAX, the class is the result of isolating the Optax optimizer that is mixed with the model parameters, as defined
   in the `Flax's TrainState <https://flax.readthedocs.io/en/latest/api_reference/flax.training.html#train-state>`_ class.
-* For Warp, the class is the result of reimplementing the optimizer to support CUDA graphs and gradient clipping.
 
 |
 
@@ -40,20 +39,3 @@ JAX
     :members:
 
     .. automethod:: __new__
-
-|
-
-Warp
-^^^^
-
-.. automodule:: skrl.resources.optimizers.warp.adam
-.. autosummary::
-    :nosignatures:
-
-    Adam
-
-.. autoclass:: skrl.resources.optimizers.warp.adam.Adam
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
-    :members:

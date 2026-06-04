@@ -121,6 +121,8 @@ def test_categorical_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 1)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -146,6 +148,8 @@ def test_multicategorical_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -201,6 +205,8 @@ def test_gaussian_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
@@ -231,6 +237,8 @@ def test_multivariate_gaussian_model(capsys, device):
             output = model.act(_sample_inputs(token, input_space, device))
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
 
 
 @pytest.mark.parametrize("single_forward_pass", [True, False])
@@ -274,6 +282,8 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
@@ -320,6 +330,8 @@ def test_shared_multivariate_gaussian_deterministic_model(capsys, device, single
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
@@ -361,6 +373,8 @@ def test_shared_categorical_deterministic_model(capsys, device, single_forward_p
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
@@ -402,6 +416,8 @@ def test_shared_multicategorical_deterministic_model(capsys, device, single_forw
             output = model.act(_sample_inputs(token, input_space, device), role="role_0")
             assert len(output) == 2
             assert output[0].shape == (10, 2)
+            entropy = model.get_entropy()
+            assert entropy.shape == (10, 1)
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)

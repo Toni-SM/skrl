@@ -6,8 +6,8 @@ import ast
 from gymnasium import spaces
 
 import warp as wp
+import warp_nn.nn as nn  # noqa
 
-import skrl.models.warp.nn as nn
 from skrl.utils.framework.warp import concatenate
 
 

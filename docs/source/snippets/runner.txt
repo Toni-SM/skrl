@@ -106,7 +106,7 @@ agent:
   learning_epochs: 8
   mini_batches: 8
   discount_factor: 0.99
-  lambda_: 0.95
+  gae_lambda: 0.95
   learning_rate: 5.0e-04
   learning_rate_scheduler: KLAdaptiveLR
   learning_rate_scheduler_kwargs:

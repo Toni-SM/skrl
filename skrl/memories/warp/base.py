@@ -23,7 +23,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | wp.context.Device | None = None,
+        device: str | wp.Device | None = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

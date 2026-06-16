@@ -135,6 +135,10 @@ class Agent(ABC):
         self.checkpoint_modules = {}
         self.checkpoint_interval = self.cfg.experiment.checkpoint_interval
         self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
+        # optional, arbitrary metadata carried verbatim in grouped checkpoints. Set this attribute
+        # (e.g. ``agent.checkpoint_metadata = {...}``) before saving to record run information (git
+        # revision, environment id, notes) that travels with the policy; restored by ``load``.
+        self.checkpoint_metadata: dict[str, Any] = {}
 
         # experiment directory
         directory = (
@@ -286,6 +290,8 @@ class Agent(ABC):
         # whole agent
         else:
             modules = {name: self._get_internal_value(module) for name, module in self.checkpoint_modules.items()}
+            if self.checkpoint_metadata:
+                modules["__metadata__"] = self.checkpoint_metadata
             torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pt"))
 
         # best modules
@@ -300,6 +306,8 @@ class Agent(ABC):
             # whole agent
             else:
                 modules = {name: self.checkpoint_best_modules["modules"][name] for name in self.checkpoint_modules}
+                if self.checkpoint_metadata:
+                    modules["__metadata__"] = self.checkpoint_metadata
                 torch.save(modules, os.path.join(self.experiment_dir, "checkpoints", "best_agent.pt"))
             self.checkpoint_best_modules["saved"] = True
 
@@ -419,6 +427,8 @@ class Agent(ABC):
         :param path: Path to save the agent to.
         """
         modules = {name: self._get_internal_value(module) for name, module in self.checkpoint_modules.items()}
+        if self.checkpoint_metadata:
+            modules["__metadata__"] = self.checkpoint_metadata
         torch.save(modules, path)
 
     def load(self, path: str) -> None:
@@ -435,7 +445,12 @@ class Agent(ABC):
         else:
             modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
+            # restore optional opaque metadata carried alongside the modules (see save / ExperimentCfg)
+            if "__metadata__" in modules:
+                self.checkpoint_metadata = modules["__metadata__"]
             for name, data in modules.items():
+                if name == "__metadata__":
+                    continue
                 module = self.checkpoint_modules.get(name, None)
                 if module is not None:
                     if hasattr(module, "load_state_dict"):

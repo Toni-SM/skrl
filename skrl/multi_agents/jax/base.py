@@ -402,8 +402,6 @@ class MultiAgent(ABC):
         """
         if self.write_interval > 0:
             _rewards = sum(rewards.values())
-            _terminated = next(iter(terminated.values()))
-            _truncated = next(iter(truncated.values()))
 
             # compute the cumulative sum of the rewards and timesteps
             if self._cumulative_rewards is None:
@@ -412,8 +410,8 @@ class MultiAgent(ABC):
 
             # TODO: find a better way to avoid https://jax.readthedocs.io/en/latest/errors.html#jax.errors.ConcretizationTypeError
             _rewards = jax.device_get(_rewards)
-            _terminated = jax.device_get(_terminated)
-            _truncated = jax.device_get(_truncated)
+            _terminated = np.stack(jax.device_get(list(terminated.values()))).any(axis=0)
+            _truncated = np.stack(jax.device_get(list(truncated.values()))).any(axis=0)
 
             self._cumulative_rewards += _rewards
             self._cumulative_timesteps += 1

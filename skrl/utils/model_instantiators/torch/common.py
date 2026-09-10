@@ -111,10 +111,11 @@ def _parse_output(source: str | list[str]) -> tuple[str | list[str], list[str], 
                 if node.func.id == "concatenate":
                     node.func = ast.Attribute(value=ast.Name("torch"), attr="cat")
                     node.keywords = [ast.keyword(arg="dim", value=ast.Constant(value=1))]
-                # activation functions
-                activation = _get_activation_function(node.func.id, as_module=False)
-                if activation:
-                    node.func = ast.Attribute(value=ast.Name("nn"), attr=activation)
+                else:
+                    # activation functions
+                    activation = _get_activation_function(node.func.id, as_module=False)
+                    if activation:
+                        node.func = ast.Attribute(value=ast.Name("nn"), attr=activation)
             return node
 
     size = get_num_units("ACTIONS")

@@ -60,8 +60,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.11
+        python -m pip install --quiet "numpy<2.0" torch==1.11
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -121,8 +120,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.11
+        python -m pip install --quiet "numpy<2.0" torch==1.11
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -177,8 +175,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0"  # 1.19.3
-        python -m pip install --quiet torch==1.11
+        python -m pip install --quiet "numpy<2.0" torch==1.11
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -238,8 +235,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet numpy
-        python -m pip install --quiet torch
+        python -m pip install --quiet numpy torch
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -303,8 +299,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet numpy
-        python -m pip install --quiet torch
+        python -m pip install --quiet numpy torch
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -364,8 +359,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet numpy
-        python -m pip install --quiet torch
+        python -m pip install --quiet numpy torch
         python -m pip install --quiet -e .[torch]
         python -m pip install --quiet -e .[tests]
         python -m pip list

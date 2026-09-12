@@ -34,10 +34,10 @@ def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: boo
         return spaces.Box(low=space.low, high=space.high, shape=space.shape, dtype=space.dtype)
     # - Discrete
     elif isinstance(space, gym.spaces.Discrete):
-        return spaces.Discrete(n=space.n)
+        return spaces.Discrete(n=space.n, start=getattr(space, "start", 0))
     # - MultiDiscrete
     elif isinstance(space, gym.spaces.MultiDiscrete):
-        return spaces.MultiDiscrete(nvec=space.nvec)
+        return spaces.MultiDiscrete(nvec=space.nvec, dtype=space.dtype)
     # composite spaces
     # - Tuple
     elif isinstance(space, gym.spaces.Tuple):

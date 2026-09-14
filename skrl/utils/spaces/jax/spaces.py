@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.spaces import _sample_space
 
 
 def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
@@ -387,7 +388,7 @@ def sample_space(
     # fundamental spaces
     # - Box
     if isinstance(space, spaces.Box):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_space(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.shape)
         elif backend == "native":
@@ -396,7 +397,7 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_space(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, -1)
         elif backend == "native":
@@ -405,7 +406,7 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_space(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.nvec.shape)
         elif backend == "native":

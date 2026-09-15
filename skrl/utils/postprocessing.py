@@ -114,7 +114,7 @@ class MemoryFileIterator:
                 for name, index in zip(names, indexes):
                     data[name].append(
                         [
-                            float(item) if item not in ["True", "False"] else bool(item)
+                            float(item) if item not in ["True", "False"] else item == "True"
                             for item in row[index[0] : index[1]]
                         ]
                     )

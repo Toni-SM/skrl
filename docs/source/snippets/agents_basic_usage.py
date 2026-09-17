@@ -311,6 +311,36 @@ agent = DDQN(
 
 # =============================================================================
 
+# [torch-start-distillation]
+# import the agent and its default configuration
+from skrl.agents.torch.distillation import DISTILLATION_CFG, Distillation
+
+# instantiate the agent's models
+models = {}
+models["policy"] = ...  # the student: it acts in the environment and is the only model optimized
+models["teacher"] = ...  # the frozen (typically privileged) model to imitate
+
+# adjust some configuration if necessary
+cfg_agent = DISTILLATION_CFG()
+cfg_agent.KEY = ...
+# load the teacher's parameters, e.g. from a checkpoint written by a PPO run
+cfg_agent.teacher_checkpoint = "runs/ppo_teacher/checkpoints/agent_48000.pt"
+
+# instantiate the agent
+# (assuming a defined environment <env> and memory <memory>)
+agent = Distillation(
+    models=models,
+    memory=memory,  # only required during training
+    cfg=cfg_agent,
+    observation_space=env.observation_space,
+    state_space=env.state_space,
+    action_space=env.action_space,
+    device=env.device,
+)
+# [torch-end-distillation]
+
+# =============================================================================
+
 # [torch-start-dqn]
 # import the agent and its default configuration
 from skrl.agents.torch.dqn import DQN, DQN_CFG

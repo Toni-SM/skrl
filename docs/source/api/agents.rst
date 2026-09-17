@@ -11,6 +11,7 @@ Agents
     CEM <agents/cem>
     DDPG <agents/ddpg>
     DDQN <agents/ddqn>
+    Distillation <agents/distillation>
     DQN <agents/dqn>
     PPO <agents/ppo>
     Q-learning <agents/q_learning>
@@ -57,6 +58,10 @@ The following table lists the implemented single-agents and their support for di
     * - :doc:`Double Deep Q-Network <agents/ddqn>` (**DDQN**)
       - .. centered:: :math:`\blacksquare`
       - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
+    * - :doc:`Teacher-Student Distillation <agents/distillation>` (**Distillation**)
+      - .. centered:: :math:`\blacksquare`
+      - .. centered:: :math:`\square`
       - .. centered:: :math:`\square`
     * - :doc:`Deep Q-Network <agents/dqn>` (**DQN**)
       - .. centered:: :math:`\blacksquare`

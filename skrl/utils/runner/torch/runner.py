@@ -127,6 +127,7 @@ class Runner:
         from skrl.agents.torch.cem import CEM, CEM_CFG
         from skrl.agents.torch.ddpg import DDPG, DDPG_CFG
         from skrl.agents.torch.ddqn import DDQN, DDQN_CFG
+        from skrl.agents.torch.distillation import DISTILLATION_CFG, Distillation
         from skrl.agents.torch.dqn import DQN, DQN_CFG
         from skrl.agents.torch.ppo import PPO, PPO_CFG
         from skrl.agents.torch.rpo import RPO, RPO_CFG
@@ -167,6 +168,8 @@ class Runner:
             "ddpg_cfg": DDPG_CFG,
             "ddqn": DDQN,
             "ddqn_cfg": DDQN_CFG,
+            "distillation": Distillation,
+            "distillation_cfg": DISTILLATION_CFG,
             "dqn": DQN,
             "dqn_cfg": DQN_CFG,
             "ppo": PPO,
@@ -463,7 +466,7 @@ class Runner:
                 "reply_buffer": reply_buffer,
                 "collect_reference_motions": lambda num_samples: env.collect_reference_motions(num_samples),
             }
-        elif agent_class in ["a2c", "cem", "ddpg", "ddqn", "dqn", "ppo", "rpo", "sac", "td3", "trpo"]:
+        elif agent_class in ["a2c", "cem", "ddpg", "ddqn", "distillation", "dqn", "ppo", "rpo", "sac", "td3", "trpo"]:
             agent_id = possible_agents[0]
             agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
             agent_cfg.get("observation_preprocessor_kwargs", {}).update(

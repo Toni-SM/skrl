@@ -29,8 +29,8 @@ Dependencies
       - `jax <https://jax.readthedocs.io>`_ / `jaxlib <https://jax.readthedocs.io>`_ ``>= 0.4.31``
         |br| `flax <https://flax.readthedocs.io>`_ ``>= 0.9.0``
         |br| `optax <https://optax.readthedocs.io>`_
-      - `warp-lang <https://nvidia.github.io/warp>`_ ``>= 1.12``
-        |br| `warp-nn <https://nvidia.github.io/warp-nn>`_ ``>= 0.1``
+      - `warp-lang <https://nvidia.github.io/warp>`_ ``>= 1.15``
+        |br| `warp-nn <https://nvidia.github.io/warp-nn>`_ ``>= 0.4``
 
 .. warning::
 

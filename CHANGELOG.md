@@ -2,6 +2,13 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Fixed
+- Fix Warp PPO agent's update not preprocessing sampled observations/states after the first learning epoch
+- Fix Warp Gaussian model sampling actions with twice the standard deviation
+- Fix Warp Gaussian model's wrong (and non-deterministic) log standard deviation gradients
+- Fix Warp Gaussian model's log-probability shape when `reduction="none"`
+
 ## [2.1.0] - 2026-05-10
 ### Changed
 - Improving the robustness and learning capabilities of on-policy algorithms:

@@ -513,14 +513,8 @@ class PPO(Agent):
             ):
 
                 inputs = {
-                    "observations": (
-                        sampled_observations
-                        if epoch
-                        else self._observation_preprocessor(sampled_observations, train=True, inplace=True)
-                    ),
-                    "states": (
-                        sampled_states if epoch else self._state_preprocessor(sampled_states, train=True, inplace=True)
-                    ),
+                    "observations": self._observation_preprocessor(sampled_observations, train=not epoch),
+                    "states": self._state_preprocessor(sampled_states, train=not epoch),
                 }
 
                 # compute loss

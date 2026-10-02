@@ -67,6 +67,7 @@ seed: 42
 # https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html
 models:
   separate: False
+  single_forward_pass: True  # shared models only (separate: False)
   policy:  # see gaussian_model parameters
     class: GaussianMixin
     clip_actions: False
@@ -142,3 +143,45 @@ trainer:
   timesteps: 4800
   environment_info: log
 # [end-cfg-yaml]
+
+# =============================================================================
+
+# [start-cfg-multi-agent-yaml]
+models:
+  separate: True
+  policy:  # policy of all the agents (except agent_1)
+    class: GaussianMixin
+    network:
+      - name: net
+        input: OBSERVATIONS
+        layers: [64, 64]
+        activations: elu
+    output: ACTIONS
+  value:  # value of all the agents
+    class: DeterministicMixin
+    network:
+      - name: net
+        input: STATES
+        layers: [64, 64]
+        activations: elu
+    output: ONE
+  agent_1:  # agent-specific models (override, by role, the models defined for all the agents)
+    policy:
+      class: CategoricalMixin
+      network:
+        - name: net
+          input: OBSERVATIONS
+          layers: [32, 32]
+          activations: elu
+      output: ACTIONS
+
+agent:
+  class: MAPPO
+  learning_rate:  # agent-specific values
+    agent_0: 1.0e-03
+    agent_1: 5.0e-04
+  observation_preprocessor:  # agent-specific names
+    agent_0: RunningStandardScaler
+    agent_1: null
+  state_preprocessor: RunningStandardScaler  # same value for all the agents
+# [end-cfg-multi-agent-yaml]

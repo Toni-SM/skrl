@@ -170,16 +170,24 @@ class Runner:
             "smooth_regularization_noise",
         ]
 
+        def evaluate(value):
+            # names can be defined per model (list) or per agent (dict)
+            if isinstance(value, str):
+                return eval(value)
+            if isinstance(value, (list, tuple)):
+                return type(value)(evaluate(item) for item in value)
+            if isinstance(value, dict):
+                return {key: evaluate(item) for key, item in value.items()}
+            return value
+
         def update_dict(d):
             for key, value in d.items():
-                if isinstance(value, dict):
+                if key in _direct_eval:
+                    d[key] = evaluate(value)
+                elif isinstance(value, dict):
                     update_dict(value)
-                else:
-                    if key in _direct_eval:
-                        if isinstance(value, str):
-                            d[key] = eval(value)
-                    elif key.endswith("_kwargs"):
-                        d[key] = value if value is not None else {}
+                elif key.endswith("_kwargs"):
+                    d[key] = value if value is not None else {}
             return d
 
         cfg = update_dict(copy.deepcopy(cfg))
@@ -187,7 +195,7 @@ class Runner:
             del cfg["class"]
 
         # materialize exploration scheduler
-        if "exploration_scheduler" in cfg:
+        if isinstance(cfg.get("exploration_scheduler"), str):
             cfg["exploration_scheduler"] = eval(f"lambda timestep, timesteps: {cfg['exploration_scheduler']}")
         # materialize rewards shaper
         if isinstance(cfg.get("rewards_shaper"), str):
@@ -241,6 +249,8 @@ class Runner:
                 logger.warning(
                     "The 'models.separate' field is not defined in the specified configuration. Falling back to True by default"
                 )
+            # get shared models' single forward-pass configuration and remove 'single_forward_pass' key
+            single_forward_pass = models_cfg.pop("single_forward_pass", True)
             # non-shared models
             if separate:
                 for role in models_cfg:
@@ -316,6 +326,7 @@ class Runner:
                         structure=structure,
                         roles=roles,
                         parameters=parameters,
+                        single_forward_pass=single_forward_pass,
                         return_source=True,
                     )
                     print("==================================================")
@@ -332,6 +343,7 @@ class Runner:
                     structure=structure,
                     roles=roles,
                     parameters=parameters,
+                    single_forward_pass=single_forward_pass,
                 )
                 models[agent_id][roles[1]] = models[agent_id][roles[0]]
 

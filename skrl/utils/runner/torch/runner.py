@@ -71,6 +71,43 @@ class Runner:
             logger.error(f"Loading yaml error: {e}")
             return {}
 
+    @staticmethod
+    def _parse_multi_agent_models_cfg(models_cfg: dict, agent_id: str, possible_agents: list[str]) -> dict:
+        """Get the models configuration of an agent (multi-agent).
+
+        Models can be defined for all the agents (``models.<role>``) or for a specific agent
+        (``models.<agent_id>.<role>``). Agent-specific models override (by role) the models defined for all
+        the agents, and can also override the ``separate`` and ``single_forward_pass`` fields.
+
+        :param models_cfg: Models configuration (``models`` field).
+        :param agent_id: Agent id.
+        :param possible_agents: Agent ids.
+
+        :return: Models configuration of the agent.
+        """
+        common = {key: value for key, value in models_cfg.items() if key not in possible_agents}
+        return {**common, **models_cfg.get(agent_id, {})}
+
+    @staticmethod
+    def _parse_multi_agent_kwargs(kwargs: dict, possible_agents: list[str], extra: dict[str, dict]) -> dict[str, dict]:
+        """Get the agent-specific keyword arguments of a multi-agent setting, updated with extra ones.
+
+        :param kwargs: Keyword arguments defined for all the agents, or per agent (if all agent ids are keys).
+        :param possible_agents: Agent ids.
+        :param extra: Extra keyword arguments by agent id.
+
+        :raises ValueError: If the keyword arguments are defined for some agents only.
+
+        :return: Keyword arguments by agent id.
+        """
+        if set(kwargs) & set(possible_agents) and not set(kwargs) >= set(possible_agents):
+            raise ValueError(f"Specified keys ({set(kwargs)}) do not match possible agents ({set(possible_agents)})")
+        per_agent = set(kwargs) >= set(possible_agents)
+        return {
+            agent_id: {**((kwargs[agent_id] or {}) if per_agent else kwargs), **extra[agent_id]}
+            for agent_id in possible_agents
+        }
+
     def _check_cfg_compatibility(self, cfg: dict) -> dict:
         """Check for configuration compatibility.
 
@@ -213,16 +250,24 @@ class Runner:
             "smooth_regularization_noise",
         ]
 
+        def evaluate(value):
+            # names can be defined per model (list) or per agent (dict)
+            if isinstance(value, str):
+                return eval(value)
+            if isinstance(value, (list, tuple)):
+                return type(value)(evaluate(item) for item in value)
+            if isinstance(value, dict):
+                return {key: evaluate(item) for key, item in value.items()}
+            return value
+
         def update_dict(d):
             for key, value in d.items():
-                if isinstance(value, dict):
+                if key in _direct_eval:
+                    d[key] = evaluate(value)
+                elif isinstance(value, dict):
                     update_dict(value)
-                else:
-                    if key in _direct_eval:
-                        if isinstance(value, str):
-                            d[key] = eval(value)
-                    elif key.endswith("_kwargs"):
-                        d[key] = value if value is not None else {}
+                elif key.endswith("_kwargs"):
+                    d[key] = value if value is not None else {}
             return d
 
         cfg = update_dict(copy.deepcopy(cfg))
@@ -230,7 +275,7 @@ class Runner:
             del cfg["class"]
 
         # materialize exploration scheduler
-        if "exploration_scheduler" in cfg:
+        if isinstance(cfg.get("exploration_scheduler"), str):
             cfg["exploration_scheduler"] = eval(f"lambda timestep, timesteps: {cfg['exploration_scheduler']}")
         # materialize rewards shaper
         if isinstance(cfg.get("rewards_shaper"), str):
@@ -275,6 +320,8 @@ class Runner:
             models_cfg = _cfg.get("models")
             if not models_cfg:
                 raise ValueError("The 'models' field is not defined in the specified configuration")
+            if multi_agent:
+                models_cfg = self._parse_multi_agent_models_cfg(models_cfg, agent_id, possible_agents)
             # get separate (non-shared) configuration and remove 'separate' key
             try:
                 separate = models_cfg["separate"]
@@ -284,6 +331,8 @@ class Runner:
                 logger.warning(
                     "The 'models.separate' field is not defined in the specified configuration. Falling back to True by default"
                 )
+            # get shared models' single forward-pass configuration and remove 'single_forward_pass' key
+            single_forward_pass = models_cfg.pop("single_forward_pass", True)
             # non-shared models
             if separate:
                 for role in models_cfg:
@@ -359,6 +408,7 @@ class Runner:
                         structure=structure,
                         roles=roles,
                         parameters=parameters,
+                        single_forward_pass=single_forward_pass,
                         return_source=True,
                     )
                     print("==================================================")
@@ -375,6 +425,7 @@ class Runner:
                     structure=structure,
                     roles=roles,
                     parameters=parameters,
+                    single_forward_pass=single_forward_pass,
                 )
                 models[agent_id][roles[1]] = models[agent_id][roles[0]]
 
@@ -492,13 +543,16 @@ class Runner:
         # multi-agent configuration and instantiation
         elif agent_class in ["ippo", "mappo"]:
             agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
-            agent_cfg.get("observation_preprocessor_kwargs", {}).update(
-                {agent_id: {"size": observation_spaces[agent_id], "device": device} for agent_id in possible_agents}
-            )
-            agent_cfg.get("state_preprocessor_kwargs", {}).update(
-                {agent_id: {"size": state_spaces[agent_id], "device": device} for agent_id in possible_agents}
-            )
-            agent_cfg.get("value_preprocessor_kwargs", {}).update({"size": 1, "device": device})
+            for name, sizes in [
+                ("observation_preprocessor_kwargs", observation_spaces),
+                ("state_preprocessor_kwargs", state_spaces),
+                ("value_preprocessor_kwargs", {agent_id: 1 for agent_id in possible_agents}),
+            ]:
+                agent_cfg[name] = self._parse_multi_agent_kwargs(
+                    agent_cfg.get(name, {}),
+                    possible_agents,
+                    {agent_id: {"size": sizes[agent_id], "device": device} for agent_id in possible_agents},
+                )
             agent_kwargs = {
                 "models": models,
                 "memories": memories,

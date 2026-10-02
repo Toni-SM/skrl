@@ -79,6 +79,25 @@ Usage
 
 |
 
+Multi-agent configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multi-agent configurations (e.g.: IPPO, MAPPO) have the same structure as single-agent ones.
+The components are instantiated for each agent, and the following agent-specific definitions are supported:
+
+* **Models**: models defined under an agent id (``models.<agent_id>.<role>``) override (by role), for that agent,
+  the models defined for all the agents (``models.<role>``). They can also override the ``separate``
+  and ``single_forward_pass`` fields.
+* **Agent settings**: values can be defined as mappings by agent id (all agents must be defined),
+  including the names evaluated by the runner (e.g.: preprocessors).
+
+.. literalinclude:: ../../snippets/runner.txt
+    :language: yaml
+    :start-after: [start-cfg-multi-agent-yaml]
+    :end-before: [end-cfg-multi-agent-yaml]
+
+|
+
 API
 ---
 

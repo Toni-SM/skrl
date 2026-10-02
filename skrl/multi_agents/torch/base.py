@@ -77,7 +77,7 @@ class MultiAgentCfg(ABC):
 
     def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
         """Expand the configuration."""
-        immutable += ["experiment"]
+        immutable = [*immutable, "experiment"]
         for field in dataclasses.fields(self):
             if field.name in immutable:
                 continue
@@ -85,7 +85,8 @@ class MultiAgentCfg(ABC):
             if isinstance(value, dict):
                 if set(value) >= set(possible_agents):
                     continue
-                elif set(value) < set(possible_agents):
+                # empty mappings (e.g.: undefined keyword arguments) are common to all the agents
+                elif value and set(value) < set(possible_agents):
                     raise ValueError(
                         f"Specified keys ({set(value)}) do not match possible agents ({set(possible_agents)})"
                     )

@@ -190,10 +190,16 @@ class Runner:
         if "exploration_scheduler" in cfg:
             cfg["exploration_scheduler"] = eval(f"lambda timestep, timesteps: {cfg['exploration_scheduler']}")
         # materialize rewards shaper
+        if isinstance(cfg.get("rewards_shaper"), str):
+            cfg["rewards_shaper"] = eval(f"lambda rewards, timestep, timesteps: {cfg['rewards_shaper']}")
+        # backward compatibility: 'rewards_shaper_scale' (ignored if 'rewards_shaper' is defined)
         if "rewards_shaper_scale" in cfg:
             scale = cfg["rewards_shaper_scale"]
             if scale is not None and scale != 1.0:
-                cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: scalar_mul(rewards, scale)
+                if cfg.get("rewards_shaper") is None:
+                    cfg["rewards_shaper"] = lambda rewards, *args, **kwargs: scalar_mul(rewards, scale)
+                else:
+                    logger.warning("Both 'rewards_shaper' and 'rewards_shaper_scale' are defined. Ignoring the scale")
             del cfg["rewards_shaper_scale"]
 
         return cfg

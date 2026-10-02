@@ -12,7 +12,7 @@ class KLAdaptiveLR(_LRScheduler):
         optimizer: torch.optim.Optimizer,
         *,
         kl_threshold: float = 0.008,
-        min_lr: float = 1e-6,
+        min_lr: float = 1e-5,
         max_lr: float = 1e-2,
         kl_factor: float = 2,
         lr_factor: float = 1.5,

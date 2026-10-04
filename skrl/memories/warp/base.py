@@ -318,10 +318,30 @@ class Memory(ABC):
             ]
         # default order
         if mini_batches > 1:
-            batch_size = (self.memory_size * self.num_envs) // mini_batches
-            batches = [(batch_size * i, batch_size * (i + 1)) for i in range(mini_batches)]
+            batch_size, remainder = divmod(self.memory_size * self.num_envs, mini_batches)
+            batches = []
+            start = 0
+            for i in range(mini_batches):
+                end = start + batch_size + (i < remainder)
+                batches.append((start, end))
+                start = end
             return [
-                [self.tensors_view[name][batch[0] : batch[1]] if name in self.tensors else None for name in names]
+                [
+                    (
+                        None
+                        if name not in self.tensors
+                        else (
+                            self.tensors_view[name][batch[0] : batch[1]]
+                            if batch[0] < batch[1]
+                            else wp.empty(
+                                (0, *self.tensors_view[name].shape[1:]),
+                                dtype=self.tensors_view[name].dtype,
+                                device=self.device,
+                            )
+                        )
+                    )
+                    for name in names
+                ]
                 for batch in batches
             ]
         return [[self.tensors_view[name] if name in self.tensors else None for name in names]]

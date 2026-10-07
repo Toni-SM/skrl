@@ -100,12 +100,14 @@ class SAC(Agent):
                 else:
                     self._target_entropy = 0
 
-            self.log_entropy_coefficient = torch.log(
-                torch.ones(1, device=self.device) * self._entropy_coefficient
-            ).requires_grad_(True)
+            self._entropy_coefficient_module = torch.nn.ParameterDict(
+                {"value": torch.log(torch.ones(1, device=self.device) * self._entropy_coefficient)}
+            )
+            self.log_entropy_coefficient = self._entropy_coefficient_module["value"]
             self.entropy_optimizer = torch.optim.Adam([self.log_entropy_coefficient], lr=self.cfg.learning_rate[2])
 
             self.checkpoint_modules["entropy_optimizer"] = self.entropy_optimizer
+            self.checkpoint_modules["log_entropy_coefficient"] = self._entropy_coefficient_module
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
@@ -152,6 +154,15 @@ class SAC(Agent):
             self.checkpoint_modules["state_preprocessor"] = self._state_preprocessor
         else:
             self._state_preprocessor = self._empty_preprocessor
+
+    def load(self, path: str) -> None:
+        """Load models, optimizer state and the learned entropy coefficient.
+
+        :param path: Path to the saved checkpoint.
+        """
+        super().load(path)
+        if self.cfg.learn_entropy:
+            self._entropy_coefficient = self.log_entropy_coefficient.detach().exp()
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.

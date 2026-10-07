@@ -21,14 +21,14 @@ def _copyto(dst, src):
 def _parallel_variance(
     running_mean: jax.Array, running_variance: jax.Array, current_count: jax.Array, array: jax.Array
 ) -> tuple[jax.Array, jax.Array, jax.Array]:
-    # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
+    # M2 uses count * population variance for the parallel moment merge.
     if array.ndim == 3:
         input_mean = jnp.mean(array, axis=(0, 1))
-        input_var = jnp.var(array, axis=(0, 1), ddof=1)
+        input_var = jnp.var(array, axis=(0, 1), ddof=0)
         input_count = array.shape[0] * array.shape[1]
     else:
         input_mean = jnp.mean(array, axis=0)
-        input_var = jnp.var(array, axis=0, ddof=1)
+        input_var = jnp.var(array, axis=0, ddof=0)
         input_count = array.shape[0]
 
     delta = input_mean - running_mean

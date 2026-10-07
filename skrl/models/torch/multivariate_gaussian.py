@@ -76,8 +76,8 @@ class MultivariateGaussianMixin:
             outputs["log_std"] = log_std
 
         # distribution
-        covariance = torch.diag(log_std.exp() * log_std.exp())
-        self._mg_distribution = MultivariateNormal(mean_actions, scale_tril=covariance)
+        scale_tril = torch.diag_embed(log_std.exp())
+        self._mg_distribution = MultivariateNormal(mean_actions, scale_tril=scale_tril)
 
         # sample using the reparameterization trick
         actions = self._mg_distribution.rsample()

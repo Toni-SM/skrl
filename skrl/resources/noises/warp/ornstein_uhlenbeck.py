@@ -19,7 +19,7 @@ def _sample(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    state[i, j] = state[i, j] * theta + sigma * (2.0 * wp.randn(subkey) * std + mean)
+    state[i, j] = state[i, j] * (1.0 - theta) + sigma * (2.0 * wp.randn(subkey) * std + mean)
     dst[i, j] = base_scale * state[i, j]
 
 
@@ -36,7 +36,7 @@ class OrnsteinUhlenbeckNoise(Noise):
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state.
+        :param theta: Mean-reversion rate per sample. The retained state is multiplied by ``1 - theta``.
         :param sigma: Factor to apply to the normal distribution.
         :param base_scale: Factor to apply to returned noise.
         :param mean: Mean of the normal distribution.

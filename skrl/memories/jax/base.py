@@ -170,16 +170,19 @@ class Memory(ABC):
                 raise ValueError("Only sequences of integers are supported as `size` when `keep_dimensions` is enabled")
         else:
             size = compute_space_size(size, occupied_size=True)
+        data_shape = tuple(size) if keep_dimensions else (size,)
         # check dtype and size if the tensor exists already
         if name in self.tensors:
             tensor = self.tensors[name]
-            if tensor.shape[-1] != size:
-                raise ValueError(f"Tensor size ({size}) doesn't match the existing one ({tensor.shape[-1]}): '{name}'")
+            if tensor.shape[2:] != data_shape:
+                raise ValueError(
+                    f"Tensor size ({data_shape}) doesn't match the existing one ({tensor.shape[2:]}): '{name}'"
+                )
             if dtype is not None and tensor.dtype != dtype:
                 raise ValueError(f"Tensor dtype ({dtype}) doesn't match the existing one ({tensor.dtype}): '{name}'")
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
-        shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
+        shape = (self.memory_size, self.num_envs, *data_shape)
         setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")

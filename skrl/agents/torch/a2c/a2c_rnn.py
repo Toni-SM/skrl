@@ -253,11 +253,6 @@ class A2C_RNN(Agent):
         }
         inputs.update({"rnn": self._rnn_initial_states["policy"]} if self._rnn else {})
 
-        # sample random actions
-        # TODO: check for stochasticity
-        if timestep < self.cfg.random_timesteps:
-            return self.policy.random_act(inputs, role="policy")
-
         # sample stochastic actions
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
@@ -390,7 +385,7 @@ class A2C_RNN(Agent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)

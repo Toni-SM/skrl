@@ -308,11 +308,6 @@ class MAPPO(MultiAgent):
                 "observations": self._observation_preprocessor[uid](observations[uid]),
                 "states": self._state_preprocessor[uid](states[uid]),
             }
-            # sample random actions
-            # TODO, check for stochasticity
-            if timestep < self.cfg.random_timesteps:
-                actions[uid], outputs[uid] = self.policies[uid].random_act(inputs, role="policy")
-
             # sample stochastic actions
             actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
             log_prob[uid] = outputs[uid]["log_prob"]
@@ -417,7 +412,7 @@ class MAPPO(MultiAgent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     for uid in self.possible_agents:

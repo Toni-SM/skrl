@@ -95,12 +95,6 @@ class PPO_CFG(AgentCfg):
     See :ref:`preprocessors` for more details.
     """
 
-    random_timesteps: int = 0
-    """Number of random exploration (sampling random actions) steps to perform before sampling actions from the policy."""
-
-    learning_starts: int = 0
-    """Number of steps to perform before calling the algorithm update function."""
-
     grad_norm_clip: float = 0.5
     """Clipping coefficient for the gradients by their global norm.
 

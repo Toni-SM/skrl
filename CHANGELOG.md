@@ -8,8 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix Warp Gaussian model sampling actions with twice the standard deviation
 - Fix Warp Gaussian model's wrong (and non-deterministic) log standard deviation gradients
 - Fix Warp Gaussian model's log-probability shape when `reduction="none"`
-- Fix PyTorch multivariate Gaussian model using the variance (instead of the standard deviation) as the Cholesky
-  factor of the covariance matrix (`scale_tril`), and failing with per-observation (batched) log standard deviations
+- Fix PyTorch multivariate Gaussian model using the variance instead of the standard deviation as covariance factor
 
 ## [2.1.0] - 2026-05-10
 ### Changed

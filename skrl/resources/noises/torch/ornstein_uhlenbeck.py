@@ -23,7 +23,7 @@ class OrnsteinUhlenbeckNoise(Noise):
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state.
+        :param theta: Mean-reversion rate. The internal state is scaled by ``1 - theta`` on each sample.
         :param sigma: Factor to apply to the normal distribution.
         :param base_scale: Factor to apply to returned noise.
         :param mean: Mean of the normal distribution.

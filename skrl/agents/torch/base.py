@@ -11,6 +11,11 @@ from abc import ABC, abstractmethod
 import gymnasium
 from packaging import version
 
+try:
+    import wandb
+except ImportError:  # pragma: no cover
+    wandb = None
+
 import numpy as np
 import torch
 
@@ -204,6 +209,12 @@ class Agent(ABC):
 
         # setup Weights & Biases
         if self.cfg.experiment.wandb:
+            if wandb is None:
+                raise RuntimeError(
+                    "Weights & Biases is enabled in the agent configuration "
+                    "but the `wandb` package is not installed. Install it with "
+                    "`pip install wandb` or set `cfg.experiment.wandb = False`."
+                )
             # save experiment configuration
             try:
                 models_cfg = {k: v.net._modules for (k, v) in self.models.items()}
@@ -216,9 +227,6 @@ class Agent(ABC):
             wandb_kwargs.setdefault("sync_tensorboard", True)
             wandb_kwargs.setdefault("config", {})
             wandb_kwargs["config"].update(wandb_config)
-            # init Weights & Biases
-            import wandb
-
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
@@ -252,6 +260,8 @@ class Agent(ABC):
         :param timesteps: Number of timesteps.
         """
         for k, v in self.tracking_data.items():
+            if self.cfg.experiment.wandb and wandb.run is not None:
+                wandb.log({k: float(np.mean(v))}, step=timestep)
             if k.endswith("(min)"):
                 self.writer.add_scalar(tag=k, value=np.min(v), timestep=timestep)
             elif k.endswith("(max)"):

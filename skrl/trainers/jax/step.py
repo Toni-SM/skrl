@@ -166,7 +166,7 @@ class StepTrainer(Trainer):
         else:
             # check condition to reset
             # - multi-agent
-            if self.env.num_agents > 1:
+            if isinstance(self.env, MultiAgentEnvWrapper):
                 should_reset = not self.env.agents
             # - single-agent
             else:
@@ -284,7 +284,7 @@ class StepTrainer(Trainer):
         else:
             # check condition to reset
             # - multi-agent
-            if self.env.num_agents > 1:
+            if isinstance(self.env, MultiAgentEnvWrapper):
                 should_reset = not self.env.agents
             # - single-agent
             else:

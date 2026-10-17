@@ -320,11 +320,6 @@ class TRPO(Agent):
             "observations": self._observation_preprocessor(observations),
             "states": self._state_preprocessor(states),
         }
-        # sample random actions
-        # TODO: check for stochasticity
-        if timestep < self.cfg.random_timesteps:
-            return self.policy.random_act(inputs, role="policy")
-
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = outputs["log_prob"]
@@ -427,7 +422,7 @@ class TRPO(Agent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)

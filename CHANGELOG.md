@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix sequential trainer's single-environment multi-agent reset when agents finish/leave the episode
 - Fix JAX and Warp Ornstein-Uhlenbeck noise's mean reversion (state scaled by `theta` instead of `1 - theta`)
   and innovations sampled with twice the standard deviation
+- Fix JAX and Warp Gaussian noise sampling with twice the standard deviation
 
 ### Removed (breaking changes)
 - Remove the `random_timesteps` and `learning_starts` configuration fields from on-policy agents/multi-agents

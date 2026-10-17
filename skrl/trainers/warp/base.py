@@ -9,7 +9,7 @@ import tqdm
 
 from skrl import logger
 from skrl.agents.warp import Agent
-from skrl.envs.wrappers.warp import Wrapper
+from skrl.envs.wrappers.warp import MultiAgentEnvWrapper, Wrapper
 from skrl.utils import ScopedTimer
 
 
@@ -244,7 +244,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if hasattr(self.env, "possible_agents"):
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:
@@ -335,7 +335,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if hasattr(self.env, "possible_agents"):
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:

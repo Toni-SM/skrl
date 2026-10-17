@@ -247,7 +247,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if hasattr(self.env, "possible_agents"):
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:
@@ -335,7 +335,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if hasattr(self.env, "possible_agents"):
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:

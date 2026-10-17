@@ -222,11 +222,19 @@ class MultiAgentEnv:
         self.possible_agents = sorted(self.observation_spaces.keys())
         self.agents = self.possible_agents
         if self._ml_framework == "torch":
+            from skrl.envs.wrappers.torch import MultiAgentEnvWrapper
+
             self.device = config.torch.parse_device(device)
         elif self._ml_framework == "jax":
+            from skrl.envs.wrappers.jax import MultiAgentEnvWrapper
+
             self.device = config.jax.parse_device(device)
         elif self._ml_framework == "warp":
+            from skrl.envs.wrappers.warp import MultiAgentEnvWrapper
+
             self.device = config.warp.parse_device(device)
+        # register as a virtual subclass of the multi-agent wrapper (e.g.: for trainers' `isinstance` checks)
+        MultiAgentEnvWrapper.register(MultiAgentEnv)
 
     def _tensorize(self, x, dtype):
         if self._ml_framework == "torch":

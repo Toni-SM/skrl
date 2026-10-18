@@ -3,7 +3,7 @@
 from skrl.envs.loaders.torch import load_isaaclab_env
 
 # load environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole", physics="newton_mjwarp")
 # [end-isaaclab-envs-parameters-torch]
 
 
@@ -12,7 +12,7 @@ env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 from skrl.envs.loaders.jax import load_isaaclab_env
 
 # load environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole", physics="newton_mjwarp")
 # [end-isaaclab-envs-parameters-jax]
 
 
@@ -21,7 +21,7 @@ env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
 from skrl.envs.loaders.warp import load_isaaclab_env
 
 # load environment
-env = load_isaaclab_env(task_name="Isaac-Cartpole-v0")
+env = load_isaaclab_env(task_name="Isaac-Cartpole", physics="newton_mjwarp")
 # [end-isaaclab-envs-parameters-warp]
 
 

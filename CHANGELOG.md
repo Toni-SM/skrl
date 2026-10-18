@@ -3,6 +3,9 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+### Changed (breaking changes)
+- Update the Isaac Lab environment loader to Isaac Lab 3. Older versions of Isaac Lab are not supported
+
 ### Fixed
 - Fix Warp PPO agent's update not preprocessing sampled observations/states after the first learning epoch
 - Fix Warp Gaussian model sampling actions with twice the standard deviation

@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix JAX and Warp Gaussian noise sampling with twice the standard deviation
 - Fix PyTorch multivariate Gaussian model using the variance instead of the standard deviation as covariance factor
 - Fix PyTorch TRPO agent's KL divergence using the wrong sign for the log standard deviation term
+- Fix Gym space conversion dropping the `start` of `Discrete` spaces and the `dtype` of `MultiDiscrete` spaces
 
 ### Removed (breaking changes)
 - Remove the `random_timesteps` and `learning_starts` configuration fields from on-policy agents/multi-agents

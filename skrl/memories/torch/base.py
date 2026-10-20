@@ -403,11 +403,15 @@ class Memory(ABC):
             data = torch.load(path)
             for name in self.get_tensor_names():
                 setattr(self, f"_tensor_{name}", data[name])
+                self.tensors[name] = getattr(self, f"_tensor_{name}")
+                self.tensors_view[name] = self.tensors[name].view(-1, *self.tensors[name].shape[2:])
         # numpy
         elif path.endswith(".npz"):
             data = np.load(path)
             for name in data:
                 setattr(self, f"_tensor_{name}", torch.tensor(data[name]))
+                self.tensors[name] = getattr(self, f"_tensor_{name}")
+                self.tensors_view[name] = self.tensors[name].view(-1, *self.tensors[name].shape[2:])
         # comma-separated values
         elif path.endswith(".csv"):
             raise NotImplementedError("Loading from csv is not supported yet")

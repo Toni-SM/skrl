@@ -190,8 +190,8 @@ def kl_divergence(
         logstd_2 = outputs["log_std"]
 
     kl = (
-        logstd_1
-        - logstd_2
+        logstd_2
+        - logstd_1
         + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp())
         - 0.5
     )

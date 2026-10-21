@@ -184,11 +184,11 @@ class Memory(ABC):
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
         self.tensors_view[name] = self.tensors[name].reshape((-1, *shape[2:]))
-        # fill (float) tensors with NaN. This is useful for early misuse detection.
-        for name, tensor in self.tensors.items():
-            if tensor.dtype == np.float32 or tensor.dtype == np.float64:
-                with jax.default_device(self.device):
-                    self.tensors[name] = _copyto(self.tensors[name], float("nan"))
+        # fill the new (float) tensor with NaN. This is useful for early misuse detection.
+        tensor = self.tensors[name]
+        if tensor.dtype == np.float32 or tensor.dtype == np.float64:
+            with jax.default_device(self.device):
+                self.tensors[name] = _copyto(tensor, float("nan"))
         # check views
         self._views = False  # TODO: check if views are available
         return True

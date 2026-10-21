@@ -116,6 +116,15 @@ class Runner:
             del cfg["agent"]["shared_state_preprocessor"]
             if "shared_state_preprocessor_kwargs" in cfg["agent"]:
                 del cfg["agent"]["shared_state_preprocessor_kwargs"]
+        # remove 'random_timesteps' and 'learning_starts' unsupported configuration from on-policy agents
+        if cfg.get("agent", {}).get("class", "").lower() in ["a2c", "amp", "ppo", "rpo", "trpo", "ippo", "mappo"]:
+            for name in ["random_timesteps", "learning_starts"]:
+                if name in cfg["agent"]:
+                    logger.warning(
+                        f"The '{name}' field in the configuration is not supported by on-policy agents. "
+                        "It will be ignored (remove it from the configuration to suppress this warning)"
+                    )
+                    del cfg["agent"][name]
         return cfg
 
     def _component(self, name: str) -> Type:

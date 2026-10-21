@@ -1,7 +1,7 @@
 [project]
 name = "skrl"
-version = "2.1.0"
-description = "Modular and flexible library for reinforcement learning on PyTorch and JAX"
+version = "2.1.1"
+description = "Modular and flexible library for reinforcement learning on PyTorch, JAX and NVIDIA Warp"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT License"}
@@ -38,8 +38,8 @@ jax = [
   "optax",
 ]
 warp = [
-  "warp-lang>=1.12",
-  "warp-nn>=0.1",
+  "warp-lang>=1.15",
+  "warp-nn>=0.4.1",
 ]
 all = [
   "torch>=1.11",
@@ -47,8 +47,8 @@ all = [
   "jaxlib>=0.4.31",
   "flax>=0.9.0",
   "optax",
-  "warp-lang>=1.12",
-  "warp-nn>=0.1",
+  "warp-lang>=1.15",
+  "warp-nn>=0.4.1",
 ]
 tests = [
   "pytest",

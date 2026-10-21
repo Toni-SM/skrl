@@ -190,8 +190,8 @@ def kl_divergence(
         logstd_2 = outputs["log_std"]
 
     kl = (
-        logstd_1
-        - logstd_2
+        logstd_2
+        - logstd_1
         + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp())
         - 0.5
     )
@@ -379,11 +379,6 @@ class TRPO_RNN(Agent):
         }
         inputs.update({"rnn": self._rnn_initial_states["policy"]} if self._rnn else {})
 
-        # sample random actions
-        # TODO: check for stochasticity
-        if timestep < self.cfg.random_timesteps:
-            return self.policy.random_act(inputs, role="policy")
-
         # sample stochastic actions
         actions, outputs = self.policy.act(inputs, role="policy")
         self._current_log_prob = outputs["log_prob"]
@@ -514,7 +509,7 @@ class TRPO_RNN(Agent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)

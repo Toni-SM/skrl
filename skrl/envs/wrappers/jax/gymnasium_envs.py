@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
+
+# hack to fix: module 'numpy' has no attribute 'bool8'
+try:
+    import numpy as np
+
+    np.bool8
+except AttributeError:
+    np.bool8 = np.bool
+
 import gymnasium
 
 import jax

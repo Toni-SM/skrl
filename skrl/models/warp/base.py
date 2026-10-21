@@ -49,8 +49,6 @@ class Model(nn.Module, ABC):
         self.num_states = compute_space_size(state_space)
         self.num_actions = compute_space_size(action_space)
 
-        self.training = False
-
     def init_state_dict(self, inputs: dict[str, Any] = {}, *, role: str = "") -> None:
         """Initialize lazy modules' parameters.
 
@@ -280,7 +278,7 @@ class Model(nn.Module, ABC):
         :param enabled: True to enable the training mode, False to enable the evaluation mode.
             See :py:meth:`torch.nn.Module.train` for more details.
         """
-        self.training = enabled
+        self.train(enabled)
 
     def save(self, path: str, *, state_dict: dict[str, Any] | None = None) -> None:
         """Save the model to the specified path.

@@ -99,12 +99,6 @@ class MAPPO_CFG(MultiAgentCfg):
     See :ref:`preprocessors` for more details.
     """
 
-    random_timesteps: int = 0
-    """Number of random exploration (sampling random actions) steps to perform before sampling actions from the policy."""
-
-    learning_starts: int = 0
-    """Number of steps to perform before calling the algorithm update function."""
-
     grad_norm_clip: float | dict[str, float] = 0.5
     """Clipping coefficient for the gradients by their global norm.
 
@@ -142,7 +136,7 @@ class MAPPO_CFG(MultiAgentCfg):
         """Expand the configuration."""
         super().expand(
             possible_agents=possible_agents,
-            immutable=["learning_starts", "mixed_precision", "random_timesteps", "rewards_shaper", "rollouts"],
+            immutable=["mixed_precision", "rewards_shaper", "rollouts"],
         )
         for uid in possible_agents:
             # learning rate

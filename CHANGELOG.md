@@ -2,6 +2,23 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.1.1] - 2026-10-20
+### Changed (breaking changes)
+- Update the Isaac Lab environment loader to Isaac Lab 3. Older versions of Isaac Lab are not supported
+
+### Fixed
+- Fix Warp PPO agent's update not preprocessing sampled observations/states after the first learning epoch
+- Fix Warp Gaussian model sampling and log standard deviation gradients
+- Fix sequential trainer's single-environment multi-agent reset when agents finish/leave the episode
+- Fix JAX and Warp Ornstein-Uhlenbeck noise's mean reversion and innovations sampled with twice the standard deviation
+- Fix JAX and Warp Gaussian noise sampling with twice the standard deviation
+- Fix PyTorch multivariate Gaussian model using the variance instead of the standard deviation as covariance factor
+- Fix PyTorch TRPO agent's KL divergence using the wrong sign for the log standard deviation term
+- Fix Gym space conversion dropping the `start` of `Discrete` spaces and the `dtype` of `MultiDiscrete` spaces
+
+### Removed (breaking changes)
+- Remove the `random_timesteps` and `learning_starts` configuration fields from on-policy agents/multi-agents
+
 ## [2.1.0] - 2026-05-10
 ### Changed
 - Improving the robustness and learning capabilities of on-policy algorithms:

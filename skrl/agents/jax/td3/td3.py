@@ -64,14 +64,21 @@ def _update_critic(
         critic_loss = ((critic_values - target_values) ** 2).mean()
         return critic_loss, critic_values
 
-    (critic_1_loss, critic_1_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
+    (critic_1_loss, critic_1_values), critic_1_grad = jax.value_and_grad(_critic_loss, has_aux=True)(
         critic_1_state_dict.params, critic_1_act, "critic_1"
     )
-    (critic_2_loss, critic_2_values), grad = jax.value_and_grad(_critic_loss, has_aux=True)(
+    (critic_2_loss, critic_2_values), critic_2_grad = jax.value_and_grad(_critic_loss, has_aux=True)(
         critic_2_state_dict.params, critic_2_act, "critic_2"
     )
 
-    return grad, critic_1_loss + critic_2_loss, critic_1_values, critic_2_values, target_values
+    return (
+        critic_1_grad,
+        critic_2_grad,
+        critic_1_loss + critic_2_loss,
+        critic_1_values,
+        critic_2_values,
+        target_values,
+    )
 
 
 @functools.partial(jax.jit, static_argnames=("policy_act", "critic_1_act"))
@@ -451,7 +458,7 @@ class TD3(Agent):
             )
 
             # compute critic loss
-            grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(
+            critic_1_grad, critic_2_grad, critic_loss, critic_1_values, critic_2_values, target_values = _update_critic(
                 self.critic_1.act,
                 self.critic_1.state_dict,
                 self.critic_2.act,
@@ -466,12 +473,13 @@ class TD3(Agent):
 
             # optimization step (critic)
             if config.jax.is_distributed:
-                grad = self.critic_1.reduce_parameters(grad)
+                critic_1_grad = self.critic_1.reduce_parameters(critic_1_grad)
+                critic_2_grad = self.critic_2.reduce_parameters(critic_2_grad)
             self.critic_1_optimizer = self.critic_1_optimizer.step(
-                grad=grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
+                grad=critic_1_grad, model=self.critic_1, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
             self.critic_2_optimizer = self.critic_2_optimizer.step(
-                grad=grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
+                grad=critic_2_grad, model=self.critic_2, lr=self.critic_learning_rate if self.critic_scheduler else None
             )
 
             # delayed update

@@ -14,7 +14,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
 from skrl.utils import ScopedTimer
-from skrl.utils.spaces.torch import compute_joint_action_space, compute_space_limits, compute_space_size
+from skrl.utils.spaces.torch import compute_joint_space, compute_space_limits, compute_space_size
 
 from .maddpg_cfg import MADDPG_CFG
 
@@ -68,12 +68,12 @@ class MADDPG(MultiAgent):
         https://arxiv.org/abs/1706.02275
 
         The critic is centralized: it takes the states and the joint action of all the agents (the agents' actions
-        concatenated in the order of the possible agents), so it must be built with the joint action space
-        (see :py:func:`~skrl.utils.spaces.torch.compute_joint_action_space`). The critic can be either shared by all
-        the agents (the same model instances are given to every agent) or specific to each agent (distinct instances
-        are given to every agent). A shared critic is trained on the team reward (mean of the agents' rewards).
-        The agents' policies are updated simultaneously (the update order is irrelevant): each policy update takes
-        into account the sampled (buffer) actions of the other agents, rather than their updated actions.
+        concatenated in the order of the possible agents), so it must be built with the joint action space (see
+        :py:func:`~skrl.utils.spaces.torch.compute_joint_space`, ``"concatenate"`` mode). The critic can be either
+        shared by all the agents (the same model instances are given to every agent) or specific to each agent (distinct
+        instances are given to every agent). A shared critic is trained on the team reward (mean of the agents'
+        rewards). The agents' policies are updated simultaneously (the update order is irrelevant): each policy update
+        takes into account the sampled (buffer) actions of the other agents, rather than their updated actions.
 
         :param possible_agents: Name of all possible agents the environment could generate.
         :param models: Agents' models.
@@ -158,14 +158,16 @@ class MADDPG(MultiAgent):
         # the critics take the joint action of all the agents
         critics = [*self.critics.values(), *self.target_critics.values()]
         if self.action_spaces and any(critic is not None for critic in critics):
-            joint_action_space = compute_joint_action_space([self.action_spaces[uid] for uid in self.possible_agents])
+            joint_action_space = compute_joint_space(
+                [self.action_spaces[uid] for uid in self.possible_agents], mode="concatenate"
+            )
             num_joint_actions = compute_space_size(joint_action_space)
             for uid in self.possible_agents:
                 for role, model in [("critic", self.critics[uid]), ("target_critic", self.target_critics[uid])]:
                     if model is not None and model.num_actions != num_joint_actions:
                         raise ValueError(
                             f"The '{role}' model of agent '{uid}' must be built with the joint action space of all "
-                            f"the agents (see skrl.utils.spaces.torch.compute_joint_action_space): expected "
+                            f"the agents (see skrl.utils.spaces.torch.compute_joint_space): expected "
                             f"{num_joint_actions} actions, got {model.num_actions}"
                         )
 

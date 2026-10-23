@@ -15,7 +15,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
 from skrl.utils import ScopedTimer
-from skrl.utils.spaces.torch import compute_joint_action_space, compute_space_limits, compute_space_size
+from skrl.utils.spaces.torch import compute_joint_space, compute_space_limits, compute_space_size
 
 from .hatd3_cfg import HATD3_CFG
 
@@ -68,14 +68,14 @@ class HATD3(MultiAgent):
 
         https://jmlr.org/papers/v25/23-0488.html
 
-        The critics (twin Q-networks) are centralized: they take the states and the joint action of all the agents
-        (the agents' actions concatenated in the order of the possible agents), so they must be built with the joint
-        action space (see :py:func:`~skrl.utils.spaces.torch.compute_joint_action_space`). The critics can be either
-        shared by all the agents (the same model instances are given to every agent) or specific to each agent
+        The critics (twin Q-networks) are centralized: they take the states and the joint action of all the agents (the
+        agents' actions concatenated in the order of the possible agents), so they must be built with the joint action
+        space (see :py:func:`~skrl.utils.spaces.torch.compute_joint_space`, ``"concatenate"`` mode). The critics can be
+        either shared by all the agents (the same model instances are given to every agent) or specific to each agent
         (distinct instances are given to every agent). A shared critic is trained on the team reward (mean of the
-        agents' rewards). The target actions are smoothed with a per-agent noise (target policy smoothing).
-        The agents' policies are updated sequentially (one agent after the other) every ``policy_delay`` critic
-        updates, and each policy update takes into account the updated actions of the agents updated before it.
+        agents' rewards). The target actions are smoothed with a per-agent noise (target policy smoothing). The agents'
+        policies are updated sequentially (one agent after the other) every ``policy_delay`` critic updates, and each
+        policy update takes into account the updated actions of the agents updated before it.
 
         :param possible_agents: Name of all possible agents the environment could generate.
         :param models: Agents' models.
@@ -171,14 +171,16 @@ class HATD3(MultiAgent):
         if self.action_spaces and any(
             model is not None for models in critic_models.values() for model in models.values()
         ):
-            joint_action_space = compute_joint_action_space([self.action_spaces[uid] for uid in self.possible_agents])
+            joint_action_space = compute_joint_space(
+                [self.action_spaces[uid] for uid in self.possible_agents], mode="concatenate"
+            )
             num_joint_actions = compute_space_size(joint_action_space)
             for role, models in critic_models.items():
                 for uid in self.possible_agents:
                     if models[uid] is not None and models[uid].num_actions != num_joint_actions:
                         raise ValueError(
                             f"The '{role}' model of agent '{uid}' must be built with the joint action space of all "
-                            f"the agents (see skrl.utils.spaces.torch.compute_joint_action_space): expected "
+                            f"the agents (see skrl.utils.spaces.torch.compute_joint_space): expected "
                             f"{num_joint_actions} actions, got {models[uid].num_actions}"
                         )
 

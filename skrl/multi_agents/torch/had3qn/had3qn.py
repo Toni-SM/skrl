@@ -13,7 +13,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
 from skrl.utils import ScopedTimer
-from skrl.utils.spaces.torch import compute_joint_action_space, compute_space_size
+from skrl.utils.spaces.torch import compute_joint_space, compute_space_size
 
 from .had3qn_cfg import HAD3QN_CFG
 
@@ -108,10 +108,10 @@ class HAD3QN(MultiAgent):
         Each agent has a Q-network that takes its own observations and outputs a value for each of its (discrete)
         actions. The critic is centralized and shared by all the agents (the same model instance is given to every
         agent): it takes the states and outputs a value for each joint action of all the agents, so it must be built
-        with the joint action space (see :py:func:`~skrl.utils.spaces.torch.compute_joint_action_space`), whose size
-        is the product of the agents' numbers of actions. The critic is trained on the team reward (mean of the agents'
-        rewards). The agents' Q-networks are updated sequentially (one agent after the other), and each one is
-        regressed towards the critic's value of the joint action, in which the agents updated before it take the best
+        with the joint action space (see :py:func:`~skrl.utils.spaces.torch.compute_joint_space`, ``"product"`` mode),
+        whose size is the product of the agents' numbers of actions. The critic is trained on the team reward (mean of
+        the agents' rewards). The agents' Q-networks are updated sequentially (one agent after the other), and each one
+        is regressed towards the critic's value of the joint action, in which the agents updated before it take the best
         actions according to the critic.
 
         :param possible_agents: Name of all possible agents the environment could generate.
@@ -206,13 +206,15 @@ class HAD3QN(MultiAgent):
 
         # the critic outputs a value for each joint action of all the agents
         if self.action_spaces:
-            joint_action_space = compute_joint_action_space([self.action_spaces[uid] for uid in self.possible_agents])
+            joint_action_space = compute_joint_space(
+                [self.action_spaces[uid] for uid in self.possible_agents], mode="product"
+            )
             num_joint_actions = compute_space_size(joint_action_space)
             for role, model in [("critic", self.critic), ("target_critic", self.target_critic)]:
                 if model is not None and model.num_actions != num_joint_actions:
                     raise ValueError(
                         f"The '{role}' model must be built with the joint action space of all the agents "
-                        f"(see skrl.utils.spaces.torch.compute_joint_action_space): expected {num_joint_actions} "
+                        f"(see skrl.utils.spaces.torch.compute_joint_space): expected {num_joint_actions} "
                         f"actions (the product of the agents' numbers of actions), got {model.num_actions}"
                     )
 

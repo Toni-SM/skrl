@@ -254,7 +254,7 @@ def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied
             return 1
         # - MultiDiscrete
         elif isinstance(space, spaces.MultiDiscrete):
-            return space.nvec.shape[0]
+            return space.nvec.size
         # composite spaces
         # - Tuple
         elif isinstance(space, spaces.Tuple):

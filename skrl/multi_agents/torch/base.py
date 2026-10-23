@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 import collections
 import copy
@@ -212,6 +212,91 @@ class MultiAgent(ABC):
         :return: Module/variable state/value.
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
+
+    def _resolve_shared_models(self, roles: Sequence[str]) -> bool:
+        """Resolve whether the models of the given roles are shared by all the agents or are specific to each agent.
+
+        A role is shared if all the agents hold the same model instance, and it is specific to each agent
+        if every agent holds a distinct instance. Roles for which no agent has a model are ignored.
+        A single-agent setup is considered to be shared.
+
+        :param roles: Name of the model roles (e.g.: ``"critic"``) that must all be shared or all be specific.
+
+        :return: True if the models are shared by all the agents. False if each agent has its own models,
+            or if there are no models for any of the given roles.
+
+        :raises ValueError: If the models are partially shared (or missing for only some of the agents),
+            or if some roles are shared while others are specific to each agent.
+        """
+        shared = {}
+        for role in roles:
+            instances = [self.models[uid].get(role) for uid in self.possible_agents]
+            if all(instance is None for instance in instances):
+                continue
+            if any(instance is None for instance in instances):
+                missing = [uid for uid, instance in zip(self.possible_agents, instances) if instance is None]
+                raise ValueError(f"Model '{role}' is not defined for the agents {missing}, but it is for the others")
+            num_instances = len({id(instance) for instance in instances})
+            if num_instances not in (1, len(instances)):
+                raise ValueError(
+                    f"Model '{role}' must be either the same instance for all the agents or a distinct instance "
+                    f"for each of them, got {num_instances} distinct instances for {len(instances)} agents"
+                )
+            shared[role] = num_instances == 1
+        if len(set(shared.values())) > 1:
+            raise ValueError(
+                f"Models must be either all shared or all specific to each agent, got: {shared} (True: shared)"
+            )
+        return any(shared.values())
+
+    def _check_shared_settings(
+        self, names: Sequence[str], *, index: int | None = None, note: str | None = None
+    ) -> None:
+        """Check that the given configuration fields have the same value for all the agents.
+
+        This is required for the settings of a model (e.g.: critic) that is shared by all the agents.
+
+        :param names: Name of the (expanded) configuration fields to check.
+        :param index: If specified, only the element at this index of each field is compared
+            (e.g.: the learning rate of a given model when the field is a sequence of learning rates).
+        :param note: Additional explanation appended to the error message.
+
+        :raises ValueError: If the value of any field differs between agents.
+        """
+        first_uid, *other_uids = self.possible_agents
+        for name in names:
+            values = {uid: getattr(self.cfg, name)[uid] for uid in self.possible_agents}
+            label = name
+            if index is not None:
+                values = {uid: value[index] for uid, value in values.items()}
+                label = f"{name}[{index}]"
+            for uid in other_uids:
+                if values[uid] != values[first_uid]:
+                    raise ValueError(
+                        f"Configuration '{label}' must have the same value for all the agents when the model is "
+                        f"shared, got {values[first_uid]!r} ('{first_uid}') and {values[uid]!r} ('{uid}')"
+                        + (f". {note}" if note else "")
+                    )
+
+    @staticmethod
+    def _check_distinct_instances(name: str, instances: dict[str, Any]) -> None:
+        """Check that each agent has its own instance (e.g.: of a policy or memory), not shared with other agents.
+
+        :param name: Name of the instances, used in the error message (e.g.: ``"Model 'policy'"``).
+        :param instances: Instances keyed by agent name. Missing (None) instances are ignored.
+
+        :raises ValueError: If the same instance is given to two or more agents.
+        """
+        owners = {}
+        for uid, instance in instances.items():
+            if instance is None:
+                continue
+            if id(instance) in owners:
+                raise ValueError(
+                    f"{name} must be a distinct instance for each agent, "
+                    f"but agents '{owners[id(instance)]}' and '{uid}' have the same instance"
+                )
+            owners[id(instance)] = uid
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.

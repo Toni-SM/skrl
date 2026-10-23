@@ -220,7 +220,7 @@ class RunningStandardScaler:
             wp.launch(
                 _var_2d_axis_0 if ndim == 2 else _var_3d_axis_0_1,
                 dim=x.shape,
-                inputs=[x, self._cached_mean, n - 1],  # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
+                inputs=[x, self._cached_mean, n],  # Population variance gives M2 = n * variance.
                 outputs=[self._cached_variance],
                 device=self.device,
             )

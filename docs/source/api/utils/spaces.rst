@@ -57,6 +57,7 @@ PyTorch
 .. autosummary::
     :nosignatures:
 
+    compute_joint_space
     compute_space_limits
     compute_space_size
     convert_gym_space
@@ -65,6 +66,8 @@ PyTorch
     tensorize_space
     unflatten_tensorized_space
     untensorize_space
+
+.. autofunction:: skrl.utils.spaces.torch.compute_joint_space
 
 .. autofunction:: skrl.utils.spaces.torch.compute_space_limits
 
@@ -91,6 +94,7 @@ JAX
 .. autosummary::
     :nosignatures:
 
+    compute_joint_space
     compute_space_limits
     compute_space_size
     convert_gym_space
@@ -99,6 +103,8 @@ JAX
     tensorize_space
     unflatten_tensorized_space
     untensorize_space
+
+.. autofunction:: skrl.utils.spaces.jax.compute_joint_space
 
 .. autofunction:: skrl.utils.spaces.jax.compute_space_limits
 
@@ -125,6 +131,7 @@ Warp
 .. autosummary::
     :nosignatures:
 
+    compute_joint_space
     compute_space_limits
     compute_space_size
     convert_gym_space
@@ -133,6 +140,8 @@ Warp
     tensorize_space
     unflatten_tensorized_space
     untensorize_space
+
+.. autofunction:: skrl.utils.spaces.warp.compute_joint_space
 
 .. autofunction:: skrl.utils.spaces.warp.compute_space_limits
 

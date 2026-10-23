@@ -143,6 +143,7 @@ autodoc_mock_imports = [
     "torch",
     "tqdm",
     "warp",
+    "warp_nn",
 ]
 autoclass_content = "init"
 autosummary_generate = True

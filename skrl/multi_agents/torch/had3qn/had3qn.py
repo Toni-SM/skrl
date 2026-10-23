@@ -49,7 +49,7 @@ def sample_joint_batch(
     return batch
 
 
-def indiv_to_joint(actions: Sequence[torch.Tensor], action_dims: Sequence[int]) -> torch.Tensor:
+def individual_to_joint_actions(actions: Sequence[torch.Tensor], num_actions: Sequence[int]) -> torch.Tensor:
     """Map the agents' individual discrete actions to the joint action index.
 
     The joint action index is ``sum_i a_i * prod_{j < i} n_j`` (little-endian mixed radix), where ``a_i`` is
@@ -57,35 +57,35 @@ def indiv_to_joint(actions: Sequence[torch.Tensor], action_dims: Sequence[int]) 
     For example, for 2 agents with ``[4, 3]`` actions, the individual actions ``[1, 2]`` map to ``1 + 4 * 2 = 9``.
 
     :param actions: Agents' individual actions (shape ``(batch_size, 1)``), in the order of the possible agents.
-    :param action_dims: Agents' number of actions, in the order of the possible agents.
+    :param num_actions: Agents' number of actions, in the order of the possible agents.
 
     :return: Joint action indexes (``torch.long``) with shape ``(batch_size, 1)``.
     """
     joint_actions = torch.zeros_like(actions[0], dtype=torch.long)
     stride = 1
-    for action, dim in zip(actions, action_dims):
+    for action, n in zip(actions, num_actions):
         joint_actions = joint_actions + stride * action.long()
-        stride *= dim
+        stride *= n
     return joint_actions
 
 
-def get_joint_indexes(actions: Sequence[torch.Tensor], action_dims: Sequence[int], index: int) -> torch.Tensor:
+def get_joint_action_indexes(actions: Sequence[torch.Tensor], num_actions: Sequence[int], index: int) -> torch.Tensor:
     """Get the joint action indexes in which an agent takes each of its actions while the other agents stay fixed.
 
     :param actions: Agents' individual actions (shape ``(batch_size, 1)``), in the order of the possible agents.
-    :param action_dims: Agents' number of actions, in the order of the possible agents.
+    :param num_actions: Agents' number of actions, in the order of the possible agents.
     :param index: Index (position in the order of the possible agents) of the agent whose actions are enumerated.
 
-    :return: Joint action indexes (``torch.long``) with shape ``(batch_size, action_dims[index])``.
+    :return: Joint action indexes (``torch.long``) with shape ``(batch_size, num_actions[index])``.
         The column ``j`` holds the joint action index when the agent takes the action ``j``.
     """
-    others = list(actions)
-    others[index] = torch.zeros_like(actions[index])
+    other_actions = list(actions)
+    other_actions[index] = torch.zeros_like(actions[index])
     stride = 1
-    for dim in action_dims[:index]:
-        stride *= dim
-    own_actions = torch.arange(action_dims[index], dtype=torch.long, device=actions[index].device)
-    return indiv_to_joint(others, action_dims) + stride * own_actions
+    for n in num_actions[:index]:
+        stride *= n
+    own_actions = torch.arange(num_actions[index], dtype=torch.long, device=actions[index].device)
+    return individual_to_joint_actions(other_actions, num_actions) + stride * own_actions
 
 
 class HAD3QN(MultiAgent):
@@ -153,7 +153,7 @@ class HAD3QN(MultiAgent):
         self._check_distinct_instances("Model 'target_q_network'", self.target_q_networks)
 
         # the agents' actions are discrete: the number of actions of each agent (in the order of the possible agents)
-        self._action_dims = None
+        self._num_actions = None
         if self.action_spaces:
             for uid in self.possible_agents:
                 space = self.action_spaces[uid]
@@ -161,7 +161,7 @@ class HAD3QN(MultiAgent):
                     raise ValueError(
                         f"HAD3QN only supports Discrete action spaces (with start equal to 0), got {space} ('{uid}')"
                     )
-            self._action_dims = [int(self.action_spaces[uid].n) for uid in self.possible_agents]
+            self._num_actions = [int(self.action_spaces[uid].n) for uid in self.possible_agents]
 
         # critic: shared by all the agents (it is owned by the first agent)
         first_uid = self.possible_agents[0]
@@ -550,7 +550,7 @@ class HAD3QN(MultiAgent):
                     ]
                     next_q_values, _ = self.target_critic.act(next_critic_inputs, role="target_critic")
                     next_q_values = torch.gather(
-                        next_q_values, dim=1, index=indiv_to_joint(next_actions, self._action_dims)
+                        next_q_values, dim=1, index=individual_to_joint_actions(next_actions, self._num_actions)
                     )
                     target_values = (
                         rewards + self.cfg.discount_factor[first_uid] * terminated.logical_not() * next_q_values
@@ -560,7 +560,7 @@ class HAD3QN(MultiAgent):
                 critic_values = torch.gather(
                     self.critic.act(critic_inputs, role="critic")[0],
                     dim=1,
-                    index=indiv_to_joint(sampled_actions, self._action_dims),
+                    index=individual_to_joint_actions(sampled_actions, self._num_actions),
                 )
 
                 critic_loss = F.mse_loss(critic_values, target_values)
@@ -613,7 +613,7 @@ class HAD3QN(MultiAgent):
                         q_network.act(inputs[uid], role="q_network")[0], dim=1, index=actions[index]
                     )
                     critic_values = torch.gather(
-                        all_critic_values, dim=1, index=indiv_to_joint(actions, self._action_dims)
+                        all_critic_values, dim=1, index=individual_to_joint_actions(actions, self._num_actions)
                     )
 
                     q_network_loss = F.mse_loss(q_values, critic_values)
@@ -630,7 +630,7 @@ class HAD3QN(MultiAgent):
                 # replace the agent's action with the best action according to the critic, the other agents' actions
                 # being fixed (for the next agents)
                 with torch.no_grad():
-                    joint_indexes = get_joint_indexes(actions, self._action_dims, index)
+                    joint_indexes = get_joint_action_indexes(actions, self._num_actions, index)
                     actions[index] = torch.argmax(
                         torch.gather(all_critic_values, dim=1, index=joint_indexes), dim=-1, keepdim=True
                     )

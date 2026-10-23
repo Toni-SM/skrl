@@ -487,7 +487,7 @@ def compute_joint_space(
     # product
     if mode == "product":
 
-        def _num_values(space: gymnasium.Space) -> int:
+        def _num_discrete_values(space: gymnasium.Space) -> int:
             # - Discrete
             if isinstance(space, spaces.Discrete):
                 return int(space.n)
@@ -496,11 +496,11 @@ def compute_joint_space(
                 return math.prod(int(n) for n in space.nvec.flatten())
             # - Tuple
             elif isinstance(space, spaces.Tuple):
-                return math.prod(_num_values(s) for s in space)
+                return math.prod(_num_discrete_values(s) for s in space)
             # - Dict
             elif isinstance(space, spaces.Dict):
-                return math.prod(_num_values(s) for s in space.values())
+                return math.prod(_num_discrete_values(s) for s in space.values())
             raise ValueError(f"The joint space ('product' mode) is only supported for discrete spaces, got: {space}")
 
-        return spaces.Discrete(math.prod(_num_values(space) for space in input_spaces))
+        return spaces.Discrete(math.prod(_num_discrete_values(space) for space in input_spaces))
     raise ValueError(f"Unsupported joint space mode: {mode}. Supported modes: 'concatenate', 'product'")

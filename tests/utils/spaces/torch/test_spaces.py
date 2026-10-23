@@ -1,5 +1,6 @@
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import gym
 import gymnasium
@@ -8,6 +9,7 @@ import numpy as np
 import torch
 
 from skrl.utils.spaces.torch import (
+    compute_joint_space,
     compute_space_limits,
     compute_space_size,
     convert_gym_space,
@@ -138,6 +140,81 @@ def test_compute_space_limits(capsys):
     assert np.isinf(low.cpu().numpy()).all() and high is None
     low, high = compute_space_limits(space, none_if_unbounded="any")
     assert low is None and high is None
+
+
+def test_compute_joint_space(capsys):
+    # concatenate: Box spaces
+    space = compute_joint_space(
+        [gymnasium.spaces.Box(low=-1, high=1, shape=(2, 2)), gymnasium.spaces.Box(low=-2, high=2, shape=(1,))],
+        mode="concatenate",
+    )
+    assert isinstance(space, gymnasium.spaces.Box) and space.shape == (5,) and space.dtype == np.float32
+    assert (space.low == np.array([-1, -1, -1, -1, -2])).all() and (space.high == np.array([1, 1, 1, 1, 2])).all()
+
+    # concatenate: Discrete and MultiDiscrete spaces
+    space = compute_joint_space(
+        [
+            gymnasium.spaces.Discrete(n=4),
+            gymnasium.spaces.Discrete(n=3, start=-1),
+            gymnasium.spaces.MultiDiscrete(nvec=[[2, 5]], start=[[1, 0]]),
+        ],
+        mode="concatenate",
+    )
+    assert isinstance(space, gymnasium.spaces.MultiDiscrete)
+    assert (space.nvec == np.array([4, 3, 2, 5])).all() and (space.start == np.array([0, -1, 1, 0])).all()
+    space = compute_joint_space(
+        [gymnasium.spaces.Discrete(n=4), gymnasium.spaces.MultiDiscrete(nvec=[2, 3])], mode="concatenate"
+    )
+    assert space == gymnasium.spaces.MultiDiscrete(nvec=[4, 2, 3])
+
+    # concatenate: mixed and composite spaces
+    for spaces in [
+        [gymnasium.spaces.Box(low=-1, high=1, shape=(2,)), gymnasium.spaces.Discrete(n=3)],
+        [
+            gymnasium.spaces.Box(low=-1, high=1, shape=(2,)),
+            gymnasium.spaces.Tuple((gymnasium.spaces.Discrete(n=2), gymnasium.spaces.Box(low=0, high=1, shape=(1,)))),
+        ],
+        [
+            gymnasium.spaces.Dict(
+                {"a": gymnasium.spaces.Box(low=-1, high=1, shape=(2,)), "b": gymnasium.spaces.Discrete(n=3)}
+            ),
+            gymnasium.spaces.Dict({"a": gymnasium.spaces.Box(low=-1, high=1, shape=(1,))}),
+        ],
+    ]:
+        assert compute_joint_space(spaces, mode="concatenate") == gymnasium.spaces.Tuple(spaces)
+
+    # product
+    space = compute_joint_space([gymnasium.spaces.Discrete(n=4), gymnasium.spaces.Discrete(n=3)], mode="product")
+    assert space == gymnasium.spaces.Discrete(n=12)
+    space = compute_joint_space(
+        [
+            gymnasium.spaces.Discrete(n=4, start=2),
+            gymnasium.spaces.MultiDiscrete(nvec=[[2, 3], [4, 5]]),
+            gymnasium.spaces.Tuple(
+                (
+                    gymnasium.spaces.Discrete(n=2),
+                    gymnasium.spaces.Dict(
+                        {
+                            "a": gymnasium.spaces.Discrete(n=3),
+                            "b": gymnasium.spaces.Tuple((gymnasium.spaces.Discrete(n=7),)),
+                        }
+                    ),
+                )
+            ),
+        ],
+        mode="product",
+    )
+    assert space == gymnasium.spaces.Discrete(n=4 * 2 * 3 * 4 * 5 * 2 * 3 * 7)
+
+    # unsupported
+    for spaces, mode in [
+        ([], "concatenate"),
+        ([], "product"),
+        ([gymnasium.spaces.Box(low=-1, high=1, shape=(2,)), gymnasium.spaces.Discrete(n=3)], "product"),
+        ([gymnasium.spaces.Discrete(n=3)], "unknown"),
+    ]:
+        with pytest.raises(ValueError):
+            compute_joint_space(spaces, mode=mode)
 
 
 @hypothesis.given(space=gymnasium_space_stategy())

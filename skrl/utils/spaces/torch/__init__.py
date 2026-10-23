@@ -1,4 +1,5 @@
 from skrl.utils.spaces.torch.spaces import (
+    compute_joint_space,
     compute_space_limits,
     compute_space_size,
     convert_gym_space,

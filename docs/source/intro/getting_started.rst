@@ -300,8 +300,17 @@ Refer to each agent documentation for more information about the models and spac
 
     .. group-tab:: Multi-agents
 
+        * :doc:`Heterogeneous-Agent Advantage Actor-Critic <../api/multi_agents/haa2c>` (**HAA2C**)
+        * :doc:`Heterogeneous-Agent Dueling Double Deep Q-Network <../api/multi_agents/had3qn>` (**HAD3QN**)
+        * :doc:`Heterogeneous-Agent Deep Deterministic Policy Gradient <../api/multi_agents/haddpg>` (**HADDPG**)
+        * :doc:`Heterogeneous-Agent Proximal Policy Optimization <../api/multi_agents/happo>` (**HAPPO**)
+        * :doc:`Heterogeneous-Agent Soft Actor-Critic <../api/multi_agents/hasac>` (**HASAC**)
+        * :doc:`Heterogeneous-Agent Twin-Delayed DDPG <../api/multi_agents/hatd3>` (**HATD3**)
+        * :doc:`Heterogeneous-Agent Trust Region Policy Optimization <../api/multi_agents/hatrpo>` (**HATRPO**)
         * :doc:`Independent Proximal Policy Optimization <../api/multi_agents/ippo>` (**IPPO**)
+        * :doc:`Multi-Agent Deep Deterministic Policy Gradient <../api/multi_agents/maddpg>` (**MADDPG**)
         * :doc:`Multi-Agent Proximal Policy Optimization <../api/multi_agents/mappo>` (**MAPPO**)
+        * :doc:`Multi-Agent Twin-Delayed DDPG <../api/multi_agents/matd3>` (**MATD3**)
 
 Agents generally expect, as arguments, the following components: ``models`` and ``memory``, as well as the following
 variables: observation, state and action spaces, the device where their logic is executed, and a configuration with

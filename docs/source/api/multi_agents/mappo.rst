@@ -52,7 +52,7 @@ Learning algorithm
 |             :math:`V_i' = V_{i+1}`
 |         **ELSE**
 |             :math:`V_i' \leftarrow V_{_{last}}'`
-|         :math:`adv \leftarrow r_i - V_i \, +` :guilabel:`discount_factor` :math:`\neg d_i \; (V_i' \, -` :guilabel:`lambda` :math:`adv)`
+|         :math:`adv \leftarrow r_i - V_i \, +` :guilabel:`discount_factor` :math:`\neg d_i \; (V_i' \, +` :guilabel:`lambda` :math:`adv)`
 |         :math:`A_i \leftarrow adv`
 |     :green:`# returns computation`
 |     :math:`R \leftarrow A + V`
@@ -90,9 +90,12 @@ Learning algorithm
 |             :math:`L^{clip}_{\pi_\theta} \leftarrow - \frac{1}{N} \sum_{i=1}^N \min(L_{_{surrogate}}, L_{_{clipped\,surrogate}})`
 |             :green:`# compute value loss`
 |             :math:`V_{_{predicted}} \leftarrow V_\phi(s_{_{shared}})`
-|             **IF** :guilabel:`clip_predicted_values` is enabled **THEN**
+|             **IF** :guilabel:`value_clip` :math:`> 0` **THEN**
 |                 :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
-|             :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
+|             **IF** :guilabel:`value_loss_type` is ``"huber"`` **THEN**
+|                 :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N \text{Huber}_\delta(R - V_{_{predicted}}) \qquad` with :math:`\delta` as :guilabel:`huber_delta`
+|             **ELSE**
+|                 :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
 |             :green:`# optimization step`
 |             reset :math:`\text{optimizer}_{\theta, \phi}`
 |             :math:`\nabla_{\theta, \, \phi} (L^{clip}_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`

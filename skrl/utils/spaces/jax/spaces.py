@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
+import math
 import gymnasium
 from gymnasium import spaces
 
@@ -420,3 +421,87 @@ def sample_space(
     elif isinstance(space, spaces.Dict):
         return {k: sample_space(s, batch_size=batch_size, backend=backend, device=device) for k, s in space.items()}
     raise ValueError(f"Unsupported space ({space})")
+
+
+def compute_joint_space(
+    input_spaces: Sequence[gymnasium.Space], *, mode: Literal["concatenate", "product"]
+) -> gymnasium.Space:
+    """Compute the joint space of several spaces (e.g.: the joint action space of several agents).
+
+    The ``mode`` defines how the spaces are combined:
+
+    * ``"concatenate"``: A joint sample is the concatenation of the samples of the given spaces, in the given order
+      (e.g.: the joint action used as input by a centralized critic).
+
+      * If all the spaces are :py:class:`~gymnasium.spaces.Box`, the result is a ``Box`` (``float32``)
+        whose limits are the concatenation of the flattened limits of the given spaces.
+      * If all the spaces are :py:class:`~gymnasium.spaces.Discrete` or :py:class:`~gymnasium.spaces.MultiDiscrete`,
+        the result is a ``MultiDiscrete`` whose number of values (and start) per dimension are the concatenation
+        of the flattened ones of the given spaces.
+      * Otherwise (e.g.: mixed or composite spaces), the result is a :py:class:`~gymnasium.spaces.Tuple`
+        of the given spaces.
+
+    * ``"product"``: A joint sample is the index of the combination of the samples of the given spaces
+      (e.g.: the joint action for which a centralized critic outputs a value). All the spaces must be discrete:
+      :py:class:`~gymnasium.spaces.Discrete`, :py:class:`~gymnasium.spaces.MultiDiscrete`, or composite spaces
+      (:py:class:`~gymnasium.spaces.Tuple` and :py:class:`~gymnasium.spaces.Dict`) of them. The result is a
+      ``Discrete`` (with ``start`` equal to ``0``) whose size is the product of the number of values of every
+      discrete dimension ``n_i``, in the given order (``Tuple`` spaces are flattened in their order and ``Dict`` spaces
+      in the sorted order of their keys, as in :py:func:`flatten_tensorized_space`).
+      The joint index is ``sum_i (a_i - start_i) * prod_{j < i} n_j`` (little-endian mixed radix).
+
+    :param input_spaces: Spaces to combine (e.g.: the action spaces of the agents).
+    :param mode: How the spaces are combined: ``"concatenate"`` or ``"product"``.
+
+    :return: Joint space.
+
+    :raises ValueError: The given sequence is empty, the mode is not supported,
+        or (``"product"`` mode) the given spaces contain non-discrete spaces.
+    """
+    if not input_spaces:
+        raise ValueError("At least one space is required to compute the joint space")
+    # concatenation
+    if mode == "concatenate":
+        # - Box
+        if all(isinstance(space, spaces.Box) for space in input_spaces):
+            return spaces.Box(
+                low=np.concatenate([space.low.flatten() for space in input_spaces]).astype(np.float32),
+                high=np.concatenate([space.high.flatten() for space in input_spaces]).astype(np.float32),
+                dtype=np.float32,
+            )
+        # - Discrete and MultiDiscrete
+        if all(isinstance(space, (spaces.Discrete, spaces.MultiDiscrete)) for space in input_spaces):
+            nvecs = [
+                np.asarray(space.n if isinstance(space, spaces.Discrete) else space.nvec) for space in input_spaces
+            ]
+            # MultiDiscrete's start is only available for gymnasium >= 1.0
+            starts = [
+                np.broadcast_to(getattr(space, "start", 0), nvec.shape) for space, nvec in zip(input_spaces, nvecs)
+            ]
+            nvec = np.concatenate([nvec.flatten() for nvec in nvecs])
+            start = np.concatenate([start.flatten() for start in starts])
+            if np.any(start):
+                return spaces.MultiDiscrete(nvec=nvec, start=start)
+            return spaces.MultiDiscrete(nvec=nvec)
+        # - mixed or composite (Tuple and Dict) spaces: the given spaces are kept as they are
+        return spaces.Tuple(input_spaces)
+    # product
+    if mode == "product":
+
+        def _num_discrete_values(space: gymnasium.Space) -> int:
+            # - Discrete
+            if isinstance(space, spaces.Discrete):
+                return int(space.n)
+            # - MultiDiscrete
+            elif isinstance(space, spaces.MultiDiscrete):
+                return math.prod(int(n) for n in space.nvec.flatten())
+            # - Tuple
+            elif isinstance(space, spaces.Tuple):
+                return math.prod(_num_discrete_values(s) for s in space)
+            # - Dict
+            elif isinstance(space, spaces.Dict):
+                return math.prod(_num_discrete_values(s) for s in space.values())
+            raise ValueError(f"The joint space ('product' mode) is only supported for discrete spaces, got: {space}")
+
+        return spaces.Discrete(math.prod(_num_discrete_values(space) for space in input_spaces))
+    raise ValueError(f"Unsupported joint space mode: {mode}. Supported modes: 'concatenate', 'product'")

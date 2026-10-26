@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 import collections
 import copy
@@ -17,6 +17,7 @@ import torch
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -76,8 +77,19 @@ class MultiAgentCfg(ABC):
         return True
 
     def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
-        """Expand the configuration."""
-        immutable += ["experiment"]
+        """Expand the configuration.
+
+        Each field (except the immutable ones) is converted to a dictionary mapping each possible agent to its value.
+        A dictionary whose keys include all the possible agents is considered to be already expanded,
+        while a dictionary whose keys do not include any possible agent (e.g.: empty or keyword arguments)
+        is considered to be a single value to be shared by all the agents.
+
+        :param possible_agents: Name of all possible agents the environment could generate.
+        :param immutable: Name of the fields that must not be expanded.
+
+        :raises ValueError: If a dictionary specifies values for only some of the possible agents.
+        """
+        immutable = [*immutable, "experiment"]
         for field in dataclasses.fields(self):
             if field.name in immutable:
                 continue
@@ -85,7 +97,7 @@ class MultiAgentCfg(ABC):
             if isinstance(value, dict):
                 if set(value) >= set(possible_agents):
                     continue
-                elif set(value) < set(possible_agents):
+                elif set(value) & set(possible_agents):
                     raise ValueError(
                         f"Specified keys ({set(value)}) do not match possible agents ({set(possible_agents)})"
                     )
@@ -201,6 +213,91 @@ class MultiAgent(ABC):
         :return: Module/variable state/value.
         """
         return _module.state_dict() if hasattr(_module, "state_dict") else _module
+
+    def _resolve_shared_models(self, roles: Sequence[str]) -> bool:
+        """Resolve whether the models of the given roles are shared by all the agents or are specific to each agent.
+
+        A role is shared if all the agents hold the same model instance, and it is specific to each agent
+        if every agent holds a distinct instance. Roles for which no agent has a model are ignored.
+        A single-agent setup is considered to be shared.
+
+        :param roles: Name of the model roles (e.g.: ``"critic"``) that must all be shared or all be specific.
+
+        :return: True if the models are shared by all the agents. False if each agent has its own models,
+            or if there are no models for any of the given roles.
+
+        :raises ValueError: If the models are partially shared (or missing for only some of the agents),
+            or if some roles are shared while others are specific to each agent.
+        """
+        shared = {}
+        for role in roles:
+            instances = [self.models[uid].get(role) for uid in self.possible_agents]
+            if all(instance is None for instance in instances):
+                continue
+            if any(instance is None for instance in instances):
+                missing = [uid for uid, instance in zip(self.possible_agents, instances) if instance is None]
+                raise ValueError(f"Model '{role}' is not defined for the agents {missing}, but it is for the others")
+            num_instances = len({id(instance) for instance in instances})
+            if num_instances not in (1, len(instances)):
+                raise ValueError(
+                    f"Model '{role}' must be either the same instance for all the agents or a distinct instance "
+                    f"for each of them, got {num_instances} distinct instances for {len(instances)} agents"
+                )
+            shared[role] = num_instances == 1
+        if len(set(shared.values())) > 1:
+            raise ValueError(
+                f"Models must be either all shared or all specific to each agent, got: {shared} (True: shared)"
+            )
+        return any(shared.values())
+
+    def _check_shared_settings(
+        self, names: Sequence[str], *, index: int | None = None, note: str | None = None
+    ) -> None:
+        """Check that the given configuration fields have the same value for all the agents.
+
+        This is required for the settings of a model (e.g.: critic) that is shared by all the agents.
+
+        :param names: Name of the (expanded) configuration fields to check.
+        :param index: If specified, only the element at this index of each field is compared
+            (e.g.: the learning rate of a given model when the field is a sequence of learning rates).
+        :param note: Additional explanation appended to the error message.
+
+        :raises ValueError: If the value of any field differs between agents.
+        """
+        first_uid, *other_uids = self.possible_agents
+        for name in names:
+            values = {uid: getattr(self.cfg, name)[uid] for uid in self.possible_agents}
+            label = name
+            if index is not None:
+                values = {uid: value[index] for uid, value in values.items()}
+                label = f"{name}[{index}]"
+            for uid in other_uids:
+                if values[uid] != values[first_uid]:
+                    raise ValueError(
+                        f"Configuration '{label}' must have the same value for all the agents when the model is "
+                        f"shared, got {values[first_uid]!r} ('{first_uid}') and {values[uid]!r} ('{uid}')"
+                        + (f". {note}" if note else "")
+                    )
+
+    @staticmethod
+    def _check_distinct_instances(name: str, instances: dict[str, Any]) -> None:
+        """Check that each agent has its own instance (e.g.: of a policy or memory), not shared with other agents.
+
+        :param name: Name of the instances, used in the error message (e.g.: ``"Model 'policy'"``).
+        :param instances: Instances keyed by agent name. Missing (None) instances are ignored.
+
+        :raises ValueError: If the same instance is given to two or more agents.
+        """
+        owners = {}
+        for uid, instance in instances.items():
+            if instance is None:
+                continue
+            if id(instance) in owners:
+                raise ValueError(
+                    f"{name} must be a distinct instance for each agent, "
+                    f"but agents '{owners[id(instance)]}' and '{uid}' have the same instance"
+                )
+            owners[id(instance)] = uid
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         """Initialize the agent.
@@ -356,6 +453,51 @@ class MultiAgent(ABC):
             The second component is a dictionary containing extra output values according to the model.
         """
         pass
+
+    def _get_final_observations_and_states(
+        self,
+        next_observations: dict[str, torch.Tensor],
+        next_states: dict[str, torch.Tensor | None],
+        infos: Any,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+        """Get the next observations and states with which the transitions ended (e.g.: to bootstrap from them).
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. If the environment provides the
+        next observations/states with which the transitions ended under the ``"final_observations"`` (a dictionary
+        mapping each agent to its batched observations) and ``"final_states"`` (the batched environment states)
+        keys of the infos, they are returned instead (converted to tensors and flattened). The observations of the
+        agents not listed in ``"final_observations"`` are not replaced.
+
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param infos: Additional information about the environment.
+
+        :return: Next observations and states with which the transitions ended.
+        """
+        if not isinstance(infos, collections.abc.Mapping):
+            return next_observations, next_states
+        final_observations = infos.get("final_observations")
+        if final_observations is not None and self.observation_spaces is not None:
+            next_observations = {
+                uid: (
+                    flatten_tensorized_space(
+                        tensorize_space(self.observation_spaces[uid], final_observations[uid], device=self.device)
+                    ).to(self.device)
+                    if uid in final_observations
+                    else next_observations[uid]
+                )
+                for uid in self.possible_agents
+            }
+        final_states = infos.get("final_states")
+        if final_states is not None and self.state_spaces is not None:
+            next_states = {
+                uid: flatten_tensorized_space(
+                    tensorize_space(self.state_spaces[uid], final_states, device=self.device)
+                ).to(self.device)
+                for uid in self.possible_agents
+            }
+        return next_observations, next_states
 
     def record_transition(
         self,

@@ -84,23 +84,29 @@ def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | jax.Dev
     # - Discrete
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, jax.Array):
-            return x.reshape(-1, 1)
+            x = x.reshape(-1, 1)
         elif isinstance(x, np.ndarray):
-            return jax.device_put(x.reshape(-1, 1), device=device)
+            x = jax.device_put(x.reshape(-1, 1), device=device)
         elif isinstance(x, np.number) or type(x) in [int, float]:
-            return jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
+            x = jnp.array([x], device=device, dtype=jnp.int32).reshape(-1, 1)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        # shift values from [start, start + n) to [0, n)
+        return x - int(space.start) if space.start else x
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, jax.Array):
-            return x.reshape(-1, *space.shape)
+            x = x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
-            return jax.device_put(x.reshape(-1, *space.shape), device=device)
+            x = jax.device_put(x.reshape(-1, *space.shape), device=device)
         elif type(x) in [list, tuple]:
-            return jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
+            x = jnp.array(x, device=device, dtype=jnp.int32).reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        # shift values from [start, start + nvec) to [0, nvec)
+        if space.start.any():
+            return x - jnp.asarray(space.start, dtype=x.dtype)
+        return x
     # composite spaces
     # - Tuple
     elif isinstance(space, spaces.Tuple):
@@ -143,26 +149,31 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, jax.Array):
             array = np.asarray(jax.device_get(x), dtype=space.dtype)
-            if squeeze_batch_dimension and array.shape[0] == 1:
-                return array.item()
-            return array.reshape(-1, 1)
         elif isinstance(x, np.ndarray):
-            if squeeze_batch_dimension and x.shape[0] == 1:
-                return x.item()
-            return x.reshape(-1, 1)
-        raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+            array = x
+        else:
+            raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        # shift values from [0, n) to [start, start + n)
+        if space.start:
+            array = array + space.start
+        if squeeze_batch_dimension and array.shape[0] == 1:
+            return array.item()
+        return array.reshape(-1, 1)
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, jax.Array):
             array = np.asarray(jax.device_get(x), dtype=space.dtype)
-            if squeeze_batch_dimension and array.shape[0] == 1:
-                return array.reshape(space.nvec.shape)
-            return array.reshape(-1, *space.nvec.shape)
         elif isinstance(x, np.ndarray):
-            if squeeze_batch_dimension and x.shape[0] == 1:
-                return x.reshape(space.nvec.shape)
-            return x.reshape(-1, *space.nvec.shape)
-        raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+            array = x
+        else:
+            raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        array = array.reshape(-1, *space.nvec.shape)
+        # shift values from [0, nvec) to [start, start + nvec)
+        if space.start.any():
+            array = array + space.start
+        if squeeze_batch_dimension and array.shape[0] == 1:
+            return array.reshape(space.nvec.shape)
+        return array
     # composite spaces
     # - Tuple
     elif isinstance(space, spaces.Tuple):
@@ -396,7 +407,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + n) to [0, n), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, -1)
         elif backend == "native":
@@ -405,7 +417,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + nvec) to [0, nvec), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.nvec.shape)
         elif backend == "native":

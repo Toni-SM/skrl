@@ -83,23 +83,29 @@ def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | torch.d
     # - Discrete
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, torch.Tensor):
-            return x.reshape(-1, 1)
+            x = x.reshape(-1, 1)
         elif isinstance(x, np.ndarray):
-            return torch.tensor(x, device=device, dtype=torch.int32).reshape(-1, 1)
+            x = torch.tensor(x, device=device, dtype=torch.int32).reshape(-1, 1)
         elif isinstance(x, np.number) or type(x) in [int, float]:
-            return torch.tensor([x], device=device, dtype=torch.int32).reshape(-1, 1)
+            x = torch.tensor([x], device=device, dtype=torch.int32).reshape(-1, 1)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        # shift values from [start, start + n) to [0, n)
+        return x - int(space.start) if space.start else x
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, torch.Tensor):
-            return x.reshape(-1, *space.shape)
+            x = x.reshape(-1, *space.shape)
         elif isinstance(x, np.ndarray):
-            return torch.tensor(x, device=device, dtype=torch.int32).reshape(-1, *space.shape)
+            x = torch.tensor(x, device=device, dtype=torch.int32).reshape(-1, *space.shape)
         elif type(x) in [list, tuple]:
-            return torch.tensor([x], device=device, dtype=torch.int32).reshape(-1, *space.shape)
+            x = torch.tensor([x], device=device, dtype=torch.int32).reshape(-1, *space.shape)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
+        # shift values from [start, start + nvec) to [0, nvec)
+        if space.start.any():
+            return x - torch.tensor(space.start, device=x.device, dtype=x.dtype)
+        return x
     # composite spaces
     # - Tuple
     elif isinstance(space, spaces.Tuple):
@@ -146,6 +152,9 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
                 array = np.array(x.to(dtype=torch.float32).cpu().numpy(), dtype=space.dtype)
             else:
                 array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            # shift values from [0, n) to [start, start + n)
+            if space.start:
+                array += space.start
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.item()
             return array.reshape(-1, 1)
@@ -158,9 +167,13 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
                 array = np.array(x.to(dtype=torch.float32).cpu().numpy(), dtype=space.dtype)
             else:
                 array = np.array(x.cpu().numpy(), dtype=space.dtype)
+            array = array.reshape(-1, *space.nvec.shape)
+            # shift values from [0, nvec) to [start, start + nvec)
+            if space.start.any():
+                array += space.start
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.nvec.shape)
-            return array.reshape(-1, *space.nvec.shape)
+            return array
         raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
     # - Tuple
@@ -395,7 +408,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + n) to [0, n), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, -1)
         elif backend == "native":
@@ -404,7 +418,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + nvec) to [0, nvec), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.nvec.shape)
         elif backend == "native":

@@ -446,7 +446,11 @@ class HAD3QN(MultiAgent):
                     uid: self.cfg.rewards_shaper(rewards[uid], timestep, timesteps) for uid in self.possible_agents
                 }
 
-            # storage transition in memories
+            # storage transition in memories (with the observations/states with which the transitions ended,
+            # that differ from the next ones if the environment is auto-reset at the same step)
+            next_observations, next_states = self._get_final_observations_and_states(
+                next_observations, next_states, infos
+            )
             for uid in self.possible_agents:
                 self.memories[uid].add_samples(
                     observations=observations[uid],

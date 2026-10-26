@@ -277,6 +277,8 @@ class HATRPO(MultiAgent):
                     "gae_lambda",
                     "value_clip",
                     "value_loss_scale",
+                    "value_loss_type",
+                    "huber_delta",
                     "time_limit_bootstrap",
                     "learning_epochs",
                     "mini_batches",
@@ -490,10 +492,15 @@ class HATRPO(MultiAgent):
             next_values = {}
             for uid, team in self._value_agents.items():
                 if self.cfg.time_limit_bootstrap[uid] and any(truncated[team_uid].any() for team_uid in team):
+                    # bootstrap from the observations/states with which the transitions ended
+                    # (they differ from the next ones if the environment is auto-reset at the same step)
+                    final_observations, final_states = self._get_final_observations_and_states(
+                        next_observations, next_states, infos
+                    )
                     with torch.no_grad():
                         inputs = {
-                            "observations": self._observation_preprocessor[uid](next_observations[uid]),
-                            "states": self._state_preprocessor[uid](next_states[uid]),
+                            "observations": self._observation_preprocessor[uid](final_observations[uid]),
+                            "states": self._state_preprocessor[uid](final_states[uid]),
                         }
                         values, _ = self.values[uid].act(inputs, role="value")
                         values = self._value_preprocessor[uid](values, inverse=True)
@@ -711,7 +718,10 @@ class HATRPO(MultiAgent):
         expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
 
         with torch.no_grad():
-            for alpha in [self.cfg.step_fraction[uid] * 0.5**i for i in range(self.cfg.max_backtrack_steps[uid])]:
+            for alpha in [
+                self.cfg.step_fraction[uid] * self.cfg.backtrack_ratio[uid] ** i
+                for i in range(self.cfg.max_backtrack_steps[uid])
+            ]:
                 new_params = params + alpha * full_step
                 vector_to_parameters(new_params, policy.parameters())
 
@@ -732,9 +742,10 @@ class HATRPO(MultiAgent):
                 )
 
                 # accept the step if it satisfies the KL divergence constraint and if the surrogate objective
-                # improvement is at least a fraction of the improvement expected (first-order) for the step
+                # improves by at least a fraction of the improvement expected (first-order) for the step
                 if (
                     kl < self.cfg.max_kl_divergence[uid]
+                    and loss - policy_loss > 0
                     and (loss - policy_loss) / (alpha * expected_improvement) > self.cfg.accept_ratio[uid]
                 ):
                     restore_policy_flag = False
@@ -784,7 +795,11 @@ class HATRPO(MultiAgent):
                         min=-self.cfg.value_clip[uid],
                         max=self.cfg.value_clip[uid],
                     )
-                value_loss = self.cfg.value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
+                value_loss = self.cfg.value_loss_scale[uid] * (
+                    F.huber_loss(predicted_values, sampled_returns, delta=self.cfg.huber_delta[uid])
+                    if self.cfg.value_loss_type[uid] == "huber"
+                    else F.mse_loss(sampled_returns, predicted_values)
+                )
 
                 # optimization step
                 self.value_optimizers[uid].zero_grad()

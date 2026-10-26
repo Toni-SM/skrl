@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Literal
 
 import dataclasses
 
@@ -124,6 +124,21 @@ class HAA2C_CFG(MultiAgentCfg):
     value_loss_scale: float | dict[str, float] = 1.0
     """Value loss scaling factor."""
 
+    value_loss_type: Literal["mse", "huber"] | dict[str, Literal["mse", "huber"]] = "mse"
+    """Loss function used to compute the value loss.
+
+    * ``"mse"``: Mean squared error (:py:func:`torch.nn.functional.mse_loss`).
+    * ``"huber"``: Huber loss (:py:func:`torch.nn.functional.huber_loss`): ``0.5 * error**2`` for absolute errors
+      less than or equal to ``huber_delta``, and ``huber_delta * (|error| - 0.5 * huber_delta)`` otherwise.
+      Note that, in its quadratic region, it is half the mean squared error.
+    """
+
+    huber_delta: float | dict[str, float] = 1.0
+    """Threshold at which the Huber loss changes from quadratic to linear.
+
+    It is only used if ``value_loss_type`` is ``"huber"``, and it must be greater than 0.
+    """
+
     time_limit_bootstrap: bool | dict[str, bool] = False
     """Whether to bootstrap at timeout termination (episode truncation)."""
 
@@ -147,6 +162,13 @@ class HAA2C_CFG(MultiAgentCfg):
             immutable=["mixed_precision", "rewards_shaper", "rollouts", "fixed_order"],
         )
         for uid in possible_agents:
+            # value loss type
+            if self.value_loss_type[uid] not in ("mse", "huber"):
+                raise ValueError(f"Unknown value loss type ({self.value_loss_type[uid]}) for agent '{uid}'")
+            if self.value_loss_type[uid] == "huber" and self.huber_delta[uid] <= 0:
+                raise ValueError(
+                    f"The Huber delta must be greater than 0, got {self.huber_delta[uid]} for agent '{uid}'"
+                )
             # learning rate
             if not isinstance(self.learning_rate[uid], (tuple, list)):
                 self.learning_rate[uid] = (self.learning_rate[uid], self.learning_rate[uid])

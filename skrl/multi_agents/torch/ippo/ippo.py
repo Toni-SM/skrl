@@ -311,10 +311,15 @@ class IPPO(MultiAgent):
 
                 # time-limit (truncation) bootstrapping
                 if self.cfg.time_limit_bootstrap[uid] and truncated[uid].any():
+                    # bootstrap from the observations/states with which the transitions ended
+                    # (they differ from the next ones if the environment is auto-reset at the same step)
+                    final_observations, final_states = self._get_final_observations_and_states(
+                        next_observations, next_states, infos
+                    )
                     with torch.no_grad():
                         inputs = {
-                            "observations": self._observation_preprocessor[uid](next_observations[uid]),
-                            "states": self._state_preprocessor[uid](next_states[uid]),
+                            "observations": self._observation_preprocessor[uid](final_observations[uid]),
+                            "states": self._state_preprocessor[uid](final_states[uid]),
                         }
                         next_values, _ = self.values[uid].act(inputs, role="value")
                         next_values = self._value_preprocessor[uid](next_values, inverse=True)
@@ -462,7 +467,11 @@ class IPPO(MultiAgent):
                             min=-self.cfg.value_clip[uid],
                             max=self.cfg.value_clip[uid],
                         )
-                    value_loss = self.cfg.value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
+                    value_loss = self.cfg.value_loss_scale[uid] * (
+                        F.huber_loss(predicted_values, sampled_returns, delta=self.cfg.huber_delta[uid])
+                        if self.cfg.value_loss_type[uid] == "huber"
+                        else F.mse_loss(sampled_returns, predicted_values)
+                    )
 
                 # optimization step
                 self.optimizers[uid].zero_grad()

@@ -17,6 +17,7 @@ import torch
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -452,6 +453,51 @@ class MultiAgent(ABC):
             The second component is a dictionary containing extra output values according to the model.
         """
         pass
+
+    def _get_final_observations_and_states(
+        self,
+        next_observations: dict[str, torch.Tensor],
+        next_states: dict[str, torch.Tensor | None],
+        infos: Any,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+        """Get the next observations and states with which the transitions ended (e.g.: to bootstrap from them).
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. If the environment provides the
+        next observations/states with which the transitions ended under the ``"final_observations"`` (a dictionary
+        mapping each agent to its batched observations) and ``"final_states"`` (the batched environment states)
+        keys of the infos, they are returned instead (converted to tensors and flattened). The observations of the
+        agents not listed in ``"final_observations"`` are not replaced.
+
+        :param next_observations: Next environment observations.
+        :param next_states: Next environment states.
+        :param infos: Additional information about the environment.
+
+        :return: Next observations and states with which the transitions ended.
+        """
+        if not isinstance(infos, collections.abc.Mapping):
+            return next_observations, next_states
+        final_observations = infos.get("final_observations")
+        if final_observations is not None and self.observation_spaces is not None:
+            next_observations = {
+                uid: (
+                    flatten_tensorized_space(
+                        tensorize_space(self.observation_spaces[uid], final_observations[uid], device=self.device)
+                    ).to(self.device)
+                    if uid in final_observations
+                    else next_observations[uid]
+                )
+                for uid in self.possible_agents
+            }
+        final_states = infos.get("final_states")
+        if final_states is not None and self.state_spaces is not None:
+            next_states = {
+                uid: flatten_tensorized_space(
+                    tensorize_space(self.state_spaces[uid], final_states, device=self.device)
+                ).to(self.device)
+                for uid in self.possible_agents
+            }
+        return next_observations, next_states
 
     def record_transition(
         self,

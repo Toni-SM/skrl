@@ -83,22 +83,31 @@ def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | wp.Devi
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
+        # shift values from [start, start + n) to [0, n)
+        start = int(space.start)
         if isinstance(x, wp.array):
+            if start:
+                x = wp.array(x.numpy() - start, device=x.device, dtype=x.dtype)
             return x.reshape((-1, 1))
         elif isinstance(x, np.ndarray):
-            return wp.array(x, device=device, dtype=wp.int32).reshape((-1, 1))
+            return wp.array(x - start, device=device, dtype=wp.int32).reshape((-1, 1))
         elif isinstance(x, np.number) or type(x) in [int, float]:
-            return wp.array([x], device=device, dtype=wp.int32).reshape((-1, 1))
+            return wp.array([x - start], device=device, dtype=wp.int32).reshape((-1, 1))
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
+        # shift values from [start, start + nvec) to [0, nvec)
+        start = space.start
         if isinstance(x, wp.array):
-            return x.reshape((-1, *space.shape))
+            x = x.reshape((-1, *space.shape))
+            if start.any():
+                x = wp.array(x.numpy() - start, device=x.device, dtype=x.dtype)
+            return x
         elif isinstance(x, np.ndarray):
-            return wp.array(x, device=device, dtype=wp.int32).reshape((-1, *space.shape))
+            return wp.array(x.reshape((-1, *space.shape)) - start, device=device, dtype=wp.int32)
         elif type(x) in [list, tuple]:
-            return wp.array([x], device=device, dtype=wp.int32).reshape((-1, *space.shape))
+            return wp.array(np.array([x]).reshape((-1, *space.shape)) - start, device=device, dtype=wp.int32)
         else:
             raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
@@ -139,6 +148,9 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     elif isinstance(space, spaces.Discrete):
         if isinstance(x, wp.array):
             array = np.array(x.numpy(), dtype=space.dtype)
+            # shift values from [0, n) to [start, start + n)
+            if space.start:
+                array += space.start
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.item()
             return array.reshape((-1, 1))
@@ -146,10 +158,13 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
         if isinstance(x, wp.array):
-            array = np.array(x.numpy(), dtype=space.dtype)
+            array = np.array(x.numpy(), dtype=space.dtype).reshape((-1, *space.nvec.shape))
+            # shift values from [0, nvec) to [start, start + nvec)
+            if space.start.any():
+                array += space.start
             if squeeze_batch_dimension and array.shape[0] == 1:
                 return array.reshape(space.nvec.shape)
-            return array.reshape((-1, *space.nvec.shape))
+            return array
         raise ValueError(f"Unsupported type ({type(x)}) for the given space ({space})")
     # composite spaces
     # - Tuple
@@ -385,7 +400,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + n) to [0, n), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape((batch_size, -1))
         elif backend == "native":
@@ -394,7 +410,8 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        # shift values from [start, start + nvec) to [0, nvec), as tensorized spaces
+        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample() - space.start
         if backend == "numpy":
             return np.array(sample).reshape((batch_size, *space.nvec.shape))
         elif backend == "native":

@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Fixed
+- Fix `Discrete` and `MultiDiscrete` spaces with non-zero `start` producing out-of-range actions/indices by handling `start` as an offset in the space utilities (tensorized values are now zero-based)
+
 ## [2.1.1] - 2026-10-20
 ### Changed (breaking changes)
 - Update the Isaac Lab environment loader to Isaac Lab 3. Older versions of Isaac Lab are not supported

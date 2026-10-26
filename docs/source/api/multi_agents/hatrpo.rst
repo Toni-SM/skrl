@@ -139,12 +139,12 @@ Learning algorithm
 |     :math:`\pi_{\theta_{k, backup}} \leftarrow \pi_{\theta_k}`
 |     :math:`\theta \leftarrow \text{get_parameters}(\pi_{\theta_k})`
 |     :math:`I_{expected} \leftarrow g_{_{flat}} \; \beta`
-|     **FOR** :math:`\alpha \leftarrow` :guilabel:`step_fraction` :math:`(0.5)^i \;` with :math:`i = 0, 1, 2, ...` up to :guilabel:`max_backtrack_steps` **DO**
+|     **FOR** :math:`\alpha \leftarrow` :guilabel:`step_fraction` :math:`\cdot` :guilabel:`backtrack_ratio` :math:`^i \;` with :math:`i = 0, 1, 2, ...` up to :guilabel:`max_backtrack_steps` **DO**
 |         :math:`\theta_{new} \leftarrow \theta + \alpha \; \beta`
 |         :math:`\pi_{\theta_k} \leftarrow \text{set_parameters}(\theta_{new})`
 |         :math:`kl \leftarrow f_{KL}(\pi_{\theta_{k, backup}}, \pi_{\theta_k}, o)`
 |         :math:`L \leftarrow f_{Loss}(\pi_{\theta_k}, o, a, logp, A, M)`
-|         **IF** :math:`kl < \delta` **AND** :math:`\dfrac{L - L_{\pi_{\theta_k}}}{\alpha \; I_{expected}} >` :guilabel:`accept_ratio` **THEN**
+|         **IF** :math:`kl < \delta` **AND** :math:`L - L_{\pi_{\theta_k}} > 0` **AND** :math:`\dfrac{L - L_{\pi_{\theta_k}}}{\alpha \; I_{expected}} >` :guilabel:`accept_ratio` **THEN**
 |             :math:`flag_{restore} \leftarrow \text{False}`
 |             **BREAK LOOP**
 |     **IF** :math:`flag_{restore}` **THEN**
@@ -162,7 +162,10 @@ Learning algorithm
 |         :math:`V_{_{predicted}} \leftarrow V_\phi(s_{_{shared}})`
 |         **IF** :guilabel:`value_clip` :math:`> 0` **THEN**
 |             :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
-|         :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
+|         **IF** :guilabel:`value_loss_type` is ``"huber"`` **THEN**
+|             :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N \text{Huber}_\delta(R - V_{_{predicted}}) \qquad` with :math:`\delta` as :guilabel:`huber_delta`
+|         **ELSE**
+|             :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
 |         :green:`# optimization step`
 |         reset :math:`\text{optimizer}_\phi`
 |         :math:`\nabla_\phi L_{V_\phi}`

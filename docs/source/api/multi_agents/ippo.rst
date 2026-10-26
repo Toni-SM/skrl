@@ -91,7 +91,10 @@ Learning algorithm
 |             :math:`V_{_{predicted}} \leftarrow V_\phi(s)`
 |             **IF** :guilabel:`value_clip` :math:`> 0` **THEN**
 |                 :math:`V_{_{predicted}} \leftarrow V + \text{clip}(V_{_{predicted}} - V, -c, c) \qquad` with :math:`c` as :guilabel:`value_clip`
-|             :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
+|             **IF** :guilabel:`value_loss_type` is ``"huber"`` **THEN**
+|                 :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N \text{Huber}_\delta(R - V_{_{predicted}}) \qquad` with :math:`\delta` as :guilabel:`huber_delta`
+|             **ELSE**
+|                 :math:`L_{V_\phi} \leftarrow` :guilabel:`value_loss_scale` :math:`\frac{1}{N} \sum_{i=1}^N (R - V_{_{predicted}})^2`
 |             :green:`# optimization step`
 |             reset :math:`\text{optimizer}_{\theta, \phi}`
 |             :math:`\nabla_{\theta, \, \phi} (L^{clip}_{\pi_\theta} + {L}_{entropy} + L_{V_\phi})`

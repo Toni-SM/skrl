@@ -72,6 +72,23 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
+    def final(self) -> tuple[wp.array, wp.array | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. This method returns, instead, the
+        observations/states reached before the reset (e.g.: to bootstrap from them) for the environments whose
+        episodes ended, and the ones returned by :py:meth:`step`/:py:meth:`state` for the rest of the environments.
+
+        If no episode ended in the last step, or the environment does not provide the final observations/states
+        (e.g.: it is not auto-reset or the values are not available), the returned values are the same as those
+        returned by :py:meth:`step`/:py:meth:`state`.
+
+        :return: Final observation, state.
+        """
+        pass
+
+    @abstractmethod
     def render(self, *args, **kwargs) -> Any:
         """Render the environment.
 

@@ -44,6 +44,9 @@ class GaussianMixin:
         self._g_min_actions, self._g_max_actions = compute_space_limits(
             self.action_space, device=self.device, none_if_unbounded="any"
         )
+        if self._g_min_actions is None and self._g_max_actions is None:
+            self._g_clip_actions = False
+            self._g_clip_mean_actions = False
 
         self._g_clip_log_std = clip_log_std
         self._g_min_log_std = min_log_std

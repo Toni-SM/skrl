@@ -141,14 +141,9 @@ class Model(torch.nn.Module, ABC):
             >>> model.init_weights(method_name="normal_", mean=0.0, std=0.25)
         """
 
-        def _update_weights(module, method_name, args, kwargs):
-            for layer in module:
-                if isinstance(layer, torch.nn.Sequential):
-                    _update_weights(layer, method_name, args, kwargs)
-                elif isinstance(layer, torch.nn.Linear):
-                    exec(f"torch.nn.init.{method_name}(layer.weight, *args, **kwargs)")
-
-        _update_weights(self.children(), method_name, args, kwargs)
+        for layer in self.modules():
+            if isinstance(layer, torch.nn.Linear):
+                exec(f"torch.nn.init.{method_name}(layer.weight, *args, **kwargs)")
 
     def init_biases(self, method_name: str = "constant_", *args, **kwargs) -> None:
         """Initialize the model biases according to the specified method name.
@@ -173,14 +168,9 @@ class Model(torch.nn.Module, ABC):
             >>> model.init_biases(method_name="normal_", mean=0.0, std=0.25)
         """
 
-        def _update_biases(module, method_name, args, kwargs):
-            for layer in module:
-                if isinstance(layer, torch.nn.Sequential):
-                    _update_biases(layer, method_name, args, kwargs)
-                elif isinstance(layer, torch.nn.Linear):
-                    exec(f"torch.nn.init.{method_name}(layer.bias, *args, **kwargs)")
-
-        _update_biases(self.children(), method_name, args, kwargs)
+        for layer in self.modules():
+            if isinstance(layer, torch.nn.Linear) and layer.bias is not None:
+                exec(f"torch.nn.init.{method_name}(layer.bias, *args, **kwargs)")
 
     def get_specification(self) -> dict[str, Any]:
         """Returns the specification of the model.

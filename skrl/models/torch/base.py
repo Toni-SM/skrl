@@ -404,7 +404,7 @@ class Model(torch.nn.Module, ABC):
         gradients = []
         for parameters in self.parameters():
             if parameters.grad is not None:
-                gradients.append(parameters.grad.view(-1))
+                gradients.append(parameters.grad.reshape(-1))
         gradients = torch.cat(gradients)
 
         torch.distributed.all_reduce(gradients, op=torch.distributed.ReduceOp.SUM)

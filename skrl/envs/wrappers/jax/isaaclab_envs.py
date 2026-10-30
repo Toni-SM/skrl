@@ -13,7 +13,10 @@ import torch.utils.dlpack as torch_dlpack
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+
+# Isaac Lab runs on PyTorch: reuse its PyTorch wrappers and only convert inputs/outputs (avoid duplicate logic)
+from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper as _TorchIsaacLabMultiAgentWrapper
+from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabWrapper as _TorchIsaacLabWrapper
 
 
 # ML frameworks conversion utilities
@@ -30,6 +33,8 @@ def _jax2torch(array, device):
 
 
 def _torch2jax(tensor):
+    if tensor is None:
+        return None
     if version.parse(jax.__version__) >= version.parse("0.7.0"):
         return jax_dlpack.from_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
     return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
@@ -43,42 +48,53 @@ class IsaacLabWrapper(Wrapper):
         """
         super().__init__(env)
 
-        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
-        self._reset_once = True
+        self._wrapper = _TorchIsaacLabWrapper(env)
+        self._wrapper._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._observations = None
         self._states = None
-        self._info = {}
-
-        if self._unwrapped:
-            self._env_device = torch.device(self._unwrapped.device)
+        self._final_observations = None
+        self._final_states = None
 
     @property
     def state_space(self) -> gymnasium.Space | None:
         """State space."""
-        try:
-            return self._unwrapped.single_observation_space["critic"]
-        except KeyError:
-            pass
-        try:
-            return self._unwrapped.state_space
-        except AttributeError:
-            return None
+        return self._wrapper.state_space
 
     @property
     def observation_space(self) -> gymnasium.Space:
         """Observation space."""
-        try:
-            return self._unwrapped.single_observation_space["policy"]
-        except:
-            return self._unwrapped.observation_space
+        return self._wrapper.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
         """Action space."""
-        try:
-            return self._unwrapped.single_action_space
-        except:
-            return self._unwrapped.action_space
+        return self._wrapper.action_space
+
+    def _convert(
+        self,
+        observations: torch.Tensor,
+        states: torch.Tensor | None,
+        final_observations: torch.Tensor,
+        final_states: torch.Tensor | None,
+    ) -> tuple[jax.Array, jax.Array | None, jax.Array, jax.Array | None]:
+        """Convert the PyTorch wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
+        :param states: States returned by the PyTorch wrapper's :py:meth:`state`.
+        :param final_observations: Final observations returned by the PyTorch wrapper's :py:meth:`final`.
+        :param final_states: Final states returned by the PyTorch wrapper's :py:meth:`final`.
+
+        :return: Observation, state, final observation, final state.
+        """
+        converted_observations = _torch2jax(observations)
+        converted_states = _torch2jax(states)
+        # avoid converting the same tensor twice when no episode ended
+        return (
+            converted_observations,
+            converted_states,
+            converted_observations if final_observations is observations else _torch2jax(final_observations),
+            converted_states if final_states is states else _torch2jax(final_states),
+        )
 
     def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
         """Perform a step in the environment.
@@ -87,26 +103,18 @@ class IsaacLabWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = unflatten_tensorized_space(self.action_space, _jax2torch(actions, self._env_device))
-
-        with torch.no_grad():
-            observations, reward, terminated, truncated, self._info = self._env.step(actions)
-
-        self._observations = _torch2jax(
-            flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
+        observations, reward, terminated, truncated, info = self._wrapper.step(
+            _jax2torch(actions, self._wrapper.device)
         )
-        terminated = terminated.to(dtype=torch.int8)
-        truncated = truncated.to(dtype=torch.int8)
-        states = observations.get("critic", None)
-        if states is not None:
-            self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
-
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
         return (
             self._observations,
-            _torch2jax(reward.view(-1, 1)),
-            _torch2jax(terminated.view(-1, 1)),
-            _torch2jax(truncated.view(-1, 1)),
-            self._info,
+            _torch2jax(reward),
+            _torch2jax(terminated.to(dtype=torch.int8)),
+            _torch2jax(truncated.to(dtype=torch.int8)),
+            info,
         )
 
     def state(self) -> jax.Array | None:
@@ -121,25 +129,31 @@ class IsaacLabWrapper(Wrapper):
 
         :return: Observation, info.
         """
-        if self._reset_once:
-            observations, self._info = self._env.reset(seed=self._seed)
-            self._observations = _torch2jax(
-                flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
-            )
-            states = observations.get("critic", None)
-            if states is not None:
-                self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
-            self._reset_once = False
-            self._seed = None
-        return self._observations, self._info
+        observations, info = self._wrapper.reset()
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
+        return self._observations, info
+
+    def final(self) -> tuple[jax.Array, jax.Array | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        The final observations/states are read from the info (``"final_obs"`` key) when the environment
+        computes them (i.e.: ``compute_final_obs=True`` in the environment configuration).
+
+        See :py:meth:`~skrl.envs.wrappers.jax.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""
-        return None
+        return self._wrapper.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment."""
-        self._env.close()
+        self._wrapper.close()
 
 
 class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
@@ -150,13 +164,47 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         super().__init__(env)
 
-        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
-        self._reset_once = True
+        self._wrapper = _TorchIsaacLabMultiAgentWrapper(env)
+        self._wrapper._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._observations = None
-        self._info = {}
+        self._states = None
+        self._final_observations = None
+        self._final_states = None
 
-        if self._unwrapped:
-            self._env_device = torch.device(self._unwrapped.device)
+    def _convert(
+        self,
+        observations: dict[str, torch.Tensor],
+        states: dict[str, torch.Tensor | None],
+        final_observations: dict[str, torch.Tensor],
+        final_states: dict[str, torch.Tensor | None],
+    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array | None], dict[str, jax.Array], dict[str, jax.Array | None]]:
+        """Convert the PyTorch wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
+        :param states: States returned by the PyTorch wrapper's :py:meth:`state`.
+        :param final_observations: Final observations returned by the PyTorch wrapper's :py:meth:`final`.
+        :param final_states: Final states returned by the PyTorch wrapper's :py:meth:`final`.
+
+        :return: Observation, state, final observation, final state.
+        """
+        converted_observations = {uid: _torch2jax(value) for uid, value in observations.items()}
+        # the same state is shared by all agents: convert it once
+        converted_state = _torch2jax(next(iter(states.values()), None))
+        converted_states = {uid: converted_state for uid in states}
+        # avoid converting the same tensor twice when no episode ended
+        return (
+            converted_observations,
+            converted_states,
+            {
+                uid: converted_observations[uid] if value is observations[uid] else _torch2jax(value)
+                for uid, value in final_observations.items()
+            },
+            (
+                converted_states
+                if final_states is states
+                else {uid: _torch2jax(value) for uid, value in final_states.items()}
+            ),
+        )
 
     def step(
         self, actions: dict[str, jax.Array]
@@ -167,22 +215,18 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = {uid: _jax2torch(value, self._env_device) for uid, value in actions.items()}
-        actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
-
-        with torch.no_grad():
-            observations, rewards, terminated, truncated, self._info = self._env.step(actions)
-        observations = {
-            k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
-        }
-
-        self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
+        observations, rewards, terminated, truncated, info = self._wrapper.step(
+            {uid: _jax2torch(value, self._wrapper.device) for uid, value in actions.items()}
+        )
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
         return (
             self._observations,
-            {uid: _torch2jax(value.view(-1, 1)) for uid, value in rewards.items()},
-            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1)) for uid, value in terminated.items()},
-            {uid: _torch2jax(value.to(dtype=torch.int8).view(-1, 1)) for uid, value in truncated.items()},
-            self._info,
+            {uid: _torch2jax(value) for uid, value in rewards.items()},
+            {uid: _torch2jax(value.to(dtype=torch.int8)) for uid, value in terminated.items()},
+            {uid: _torch2jax(value.to(dtype=torch.int8)) for uid, value in truncated.items()},
+            info,
         )
 
     def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
@@ -190,34 +234,36 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
 
         :return: Observation, info.
         """
-        if self._reset_once:
-            observations, self._info = self._env.reset(seed=self._seed)
-            observations = {
-                k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
-                for k, v in observations.items()
-            }
-            self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
-            self._reset_once = False
-            self._seed = None
-        return self._observations, self._info
+        observations, info = self._wrapper.reset()
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
+        return self._observations, info
 
-    def state(self) -> dict[jax.Array | None]:
+    def state(self) -> dict[str, jax.Array | None]:
         """Get the environment state.
 
         :return: State.
         """
-        try:
-            state = self._env.state()
-        except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
-            state = self._unwrapped.state()
-        if state is not None:
-            state = _torch2jax(flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state)))
-        return {uid: state for uid in self.possible_agents}
+        return self._states
+
+    def final(self) -> tuple[dict[str, jax.Array], dict[str, jax.Array | None]]:
+        """Get the observations and states with which the last transitions ended.
+
+        The final observations are read from each agent's info (``"final_obs"`` key) when the environment
+        computes them (i.e.: ``compute_final_obs=True`` in the environment configuration). The final state is
+        not provided by the environment, so it is the same as the one returned by :py:meth:`state`.
+
+        See :py:meth:`~skrl.envs.wrappers.jax.base.MultiAgentEnvWrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""
-        return None
+        return self._wrapper.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment."""
-        self._env.close()
+        self._wrapper.close()

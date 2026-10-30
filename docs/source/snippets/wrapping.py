@@ -62,6 +62,19 @@ env = load_isaaclab_env(task_name="Isaac-Pendulum-MARL-Direct")
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
 # [jax-end-isaaclab-multi-agent]
 
+
+# [warp-start-isaaclab-multi-agent]
+# import the environment wrapper and loader
+from skrl.envs.wrappers.warp import wrap_env
+from skrl.envs.loaders.warp import load_isaaclab_env
+
+# load the environment
+env = load_isaaclab_env(task_name="Isaac-Pendulum-MARL-Direct")
+
+# wrap the environment
+env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="isaaclab-multi-agent")'
+# [warp-end-isaaclab-multi-agent]
+
 # =============================================================================
 
 # [pytorch-start-mani-skill]

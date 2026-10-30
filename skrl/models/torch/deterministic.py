@@ -18,6 +18,8 @@ class DeterministicMixin:
         self._d_min_actions, self._d_max_actions = compute_space_limits(
             self.action_space, device=self.device, none_if_unbounded="any"
         )
+        if self._d_min_actions is None and self._d_max_actions is None:
+            self._d_clip_actions = False
 
     def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
         """Act deterministically in response to the observations/states of the environment.

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Literal
 
-import jax
 import numpy as np
 
 from skrl.memories.jax import Memory
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -15,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

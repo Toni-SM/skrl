@@ -15,7 +15,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_size
 
 
@@ -42,7 +42,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

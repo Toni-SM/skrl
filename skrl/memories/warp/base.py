@@ -14,7 +14,7 @@ import numpy as np
 import warp as wp
 
 from skrl import config
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.spaces.warp import compute_space_size
 
 
@@ -24,7 +24,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | wp.Device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

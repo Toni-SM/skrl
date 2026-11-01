@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 from skrl import config
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_size
 
 
@@ -24,7 +24,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

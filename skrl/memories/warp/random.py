@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import Literal
 
 import numpy as np
-import warp as wp
 
 from skrl.memories.warp import Memory
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -15,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | wp.Device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

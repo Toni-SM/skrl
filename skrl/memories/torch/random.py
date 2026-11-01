@@ -5,7 +5,7 @@ from typing import Literal
 import torch
 
 from skrl.memories.torch import Memory
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -14,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",

@@ -42,7 +42,7 @@ class Model(flax.linen.Module, ABC):
     observation_space: gymnasium.Space | None = None
     state_space: gymnasium.Space | None = None
     action_space: gymnasium.Space | None = None
-    device: str | jax.Device | None = None
+    device: str | jax.Device | None = None  # `Device` alias is rendered as an attribute in docs
 
     def __init__(
         self,

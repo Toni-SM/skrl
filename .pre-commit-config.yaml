@@ -5,7 +5,7 @@ repos:
     - id: check-ast
     - id: check-case-conflict
     - id: check-docstring-first
-      exclude: ^skrl/utils/framework/(torch|jax|warp)/types.py
+      exclude: ^skrl/utils/framework/(torch|jax|warp)/types\.py$
     - id: check-json
     - id: check-merge-conflict
     - id: check-toml

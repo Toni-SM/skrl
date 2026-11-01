@@ -4,8 +4,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Changed
-- Annotate tensors/arrays with a per-framework `Tensor` type alias (`skrl.utils.framework.<framework>.types`)
-  to keep the source code of the framework implementations aligned
+- Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
+  (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned
 
 ## [2.1.1] - 2026-10-20
 ### Changed (breaking changes)

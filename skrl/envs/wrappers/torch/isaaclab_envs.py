@@ -68,6 +68,32 @@ class IsaacLabWrapper(Wrapper):
             states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return observations, states
 
+    def _parse_final_group(
+        self, info: dict[str, Any], terminated: torch.Tensor, truncated: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        """Parse the final observations and states from the environment's info.
+
+        The final observation group (``"final_obs"`` key) is used for the environments whose episodes ended.
+        The current observations/states are used for the rest of the environments, or for all of them
+        if no episode ended or the environment does not provide the final observation group.
+
+        :param info: Info returned by the environment.
+        :param terminated: Terminated flags returned by the environment.
+        :param truncated: Truncated flags returned by the environment.
+
+        :return: Final observation, state.
+        """
+        final_observations, final_states = self._observations, self._states
+        final_group = info.get("final_obs")
+        if final_group is not None:
+            dones = (terminated | truncated).view(-1, 1)
+            if dones.any():
+                observations, states = self._parse_group(final_group)
+                final_observations = torch.where(dones, observations, final_observations)
+                if states is not None:
+                    final_states = torch.where(dones, states, final_states)
+        return final_observations, final_states
+
     def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
         """Perform a step in the environment.
 
@@ -79,17 +105,7 @@ class IsaacLabWrapper(Wrapper):
         with torch.no_grad():
             group, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations, self._states = self._parse_group(group)
-        # final observations/states (info is not cleared between steps)
-        self._final_observations = self._observations
-        self._final_states = self._states
-        final_group = self._info.get("final_obs")
-        if final_group is not None:
-            dones = (terminated | truncated).view(-1, 1)
-            if dones.any():
-                final_observations, final_states = self._parse_group(final_group)
-                self._final_observations = torch.where(dones, final_observations, self._observations)
-                if final_states is not None:
-                    self._final_states = torch.where(dones, final_states, self._states)
+        self._final_observations, self._final_states = self._parse_final_group(self._info, terminated, truncated)
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def state(self) -> torch.Tensor | None:
@@ -150,18 +166,64 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._final_states = None
         self._info = {}
 
-    def _get_states(self) -> dict[str, torch.Tensor | None]:
-        """Get the environment state (shared by all agents) from the wrapped environment.
+    def _parse_group(
+        self, observations: dict[str, torch.Tensor]
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+        """Parse the observations and states from the environment's output.
 
-        :return: State.
+        The state (shared by all agents) is read from the wrapped environment.
+
+        :param observations: Observations returned by the environment.
+
+        :return: Observation, state.
         """
+        observations = {
+            k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
+        }
         try:
             state = self._env.state()
         except AttributeError:  # 'OrderEnforcing' object has no attribute 'state'
             state = self._unwrapped.state()
         if state is not None:
             state = flatten_tensorized_space(tensorize_space(next(iter(self.state_spaces.values())), state))
-        return {uid: state for uid in self.possible_agents}
+        return observations, {uid: state for uid in self.possible_agents}
+
+    def _parse_final_group(
+        self, info: dict[str, Any], terminated: dict[str, torch.Tensor], truncated: dict[str, torch.Tensor]
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+        """Parse the final observations and states from the environment's info.
+
+        The final observation of each agent (``"final_obs"`` key in the agent's info) is used for the environments
+        whose episodes ended (an environment is reset when all its agents are terminated or truncated).
+        The current observations are used for the rest of the environments, or for all of them if no episode ended
+        or the environment does not provide the final observations. The final states are not provided by the
+        environment, so the current states are used.
+
+        :param info: Info returned by the environment.
+        :param terminated: Terminated flags returned by the environment.
+        :param truncated: Truncated flags returned by the environment.
+
+        :return: Final observation, state.
+        """
+        final_observations, final_states = self._observations, self._states
+        # check for ended episodes (the info is not cleared between steps)
+        if any("final_obs" in info.get(k, {}) for k in final_observations):
+            dones = (
+                torch.stack([v.view(-1) for v in terminated.values()]).all(dim=0)
+                | torch.stack([v.view(-1) for v in truncated.values()]).all(dim=0)
+            ).view(-1, 1)
+            if dones.any():
+                final_observations = {
+                    k: (
+                        torch.where(
+                            dones, flatten_tensorized_space(tensorize_space(self.observation_spaces[k], value)), v
+                        )
+                        if (value := info.get(k, {}).get("final_obs")) is not None
+                        else v
+                    )
+                    for k, v in final_observations.items()
+                }
+        return final_observations, final_states
 
     def step(self, actions: dict[str, torch.Tensor]) -> tuple[
         dict[str, torch.Tensor],
@@ -179,35 +241,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         actions = {k: unflatten_tensorized_space(self.action_spaces[k], v) for k, v in actions.items()}
         with torch.no_grad():
             observations, rewards, terminated, truncated, self._info = self._env.step(actions)
-        self._observations = {
-            k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v)) for k, v in observations.items()
-        }
-        self._states = self._get_states()
-        # final observations/states (info is not cleared between steps)
-        # - an environment is reset when all its agents are terminated or truncated
-        # - the final states are not provided by the environment
-        self._final_observations = self._observations
-        self._final_states = self._states
-        if any("final_obs" in self._info.get(k, {}) for k in self._observations):
-            dones = (
-                torch.stack([v.view(-1) for v in terminated.values()]).all(dim=0)
-                | torch.stack([v.view(-1) for v in truncated.values()]).all(dim=0)
-            ).view(-1, 1)
-            if dones.any():
-                self._final_observations = {
-                    k: (
-                        torch.where(
-                            dones,
-                            flatten_tensorized_space(
-                                tensorize_space(self.observation_spaces[k], self._info[k]["final_obs"])
-                            ),
-                            v,
-                        )
-                        if "final_obs" in self._info.get(k, {})
-                        else v
-                    )
-                    for k, v in self._observations.items()
-                }
+        self._observations, self._states = self._parse_group(observations)
+        self._final_observations, self._final_states = self._parse_final_group(self._info, terminated, truncated)
         return (
             self._observations,
             {k: v.view(-1, 1) for k, v in rewards.items()},
@@ -223,11 +258,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         """
         if self._reset_once:
             observations, self._info = self._env.reset(seed=self._seed)
-            self._observations = {
-                k: flatten_tensorized_space(tensorize_space(self.observation_spaces[k], v))
-                for k, v in observations.items()
-            }
-            self._states = self._get_states()
+            self._observations, self._states = self._parse_group(observations)
             self._reset_once = False
             self._seed = None
         self._final_observations = self._observations

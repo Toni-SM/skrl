@@ -36,7 +36,7 @@ class GaussianNoise(Noise):
         self._i = 0
         self._key = config.jax.key
 
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int] | tuple[int, ...]) -> jax.Array:
         """Sample a Gaussian noise.
 
         :param size: Noise shape.
@@ -57,4 +57,4 @@ class GaussianNoise(Noise):
                    [ 0.23410667, -0.11247082]], dtype=float32)
         """
         self._i += 1
-        return _sample(self.mean, self.std, self._key, self._i, size)
+        return _sample(self.mean, self.std, self._key, self._i, tuple(size))

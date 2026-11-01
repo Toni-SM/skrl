@@ -52,7 +52,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self._i = 0
         self._key = config.jax.key
 
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int] | tuple[int, ...]) -> jax.Array:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.
@@ -72,6 +72,7 @@ class OrnsteinUhlenbeckNoise(Noise):
                    [ 0.6218886 ,  1.1961104 ],
                    [ 0.23410667, -0.11247082]], dtype=float32)
         """
+        size = tuple(size)
         if hasattr(self.state, "shape") and self.state.shape != size:
             self.state = 0
         self._i += 1

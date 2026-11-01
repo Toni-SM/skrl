@@ -6,6 +6,7 @@ import textwrap
 import gymnasium
 
 import flax.linen as nn  # noqa
+import jax  # noqa
 import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import DeterministicMixin  # noqa

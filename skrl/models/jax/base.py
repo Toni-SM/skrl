@@ -11,7 +11,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config, logger
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_size, flatten_tensorized_space, sample_space
 
 
@@ -50,7 +50,7 @@ class Model(flax.linen.Module, ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         parent: Any | None = None,
         name: str | None = None,
     ) -> None:

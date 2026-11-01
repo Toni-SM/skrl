@@ -9,7 +9,7 @@ from packaging import version
 import torch
 
 from skrl import config, logger
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_size, flatten_tensorized_space, sample_space
 
 
@@ -20,7 +20,7 @@ class Model(torch.nn.Module, ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Base model class for implementing custom models.
 

@@ -10,7 +10,7 @@ import warp_nn.nn as nn
 
 from skrl import config, logger
 from skrl.utils.framework.warp import type_cast
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space, sample_space
 
 
@@ -31,7 +31,7 @@ class Model(nn.Module, ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base model class for implementing custom models.
 

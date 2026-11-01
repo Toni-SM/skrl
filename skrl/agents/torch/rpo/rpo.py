@@ -16,7 +16,7 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .rpo_cfg import RPO_CFG
 
@@ -74,7 +74,7 @@ class RPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: RPO_CFG | dict = {},
     ) -> None:
         """Robust Policy Optimization (RPO).

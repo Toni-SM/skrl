@@ -12,13 +12,12 @@ from abc import ABC, abstractmethod
 import gymnasium
 
 import numpy as np
-import warp as wp
 
 from skrl import config, logger
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.utils.framework.warp import convert_to_numpy_in_place
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -92,7 +91,7 @@ class Agent(ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL agent/algorithm.
 

@@ -16,7 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .rpo_cfg import RPO_CFG
 
@@ -125,7 +125,7 @@ class RPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: RPO_CFG | dict = {},
     ) -> None:
         """Robust Policy Optimization (RPO).

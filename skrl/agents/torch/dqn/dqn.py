@@ -13,7 +13,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .dqn_cfg import DQN_CFG
 
@@ -27,7 +27,7 @@ class DQN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: DQN_CFG | dict = {},
     ) -> None:
         """Deep Q-Network (DQN).

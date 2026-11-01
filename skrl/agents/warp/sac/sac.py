@@ -12,7 +12,7 @@ from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 
 from .sac_cfg import SAC_CFG
 
@@ -93,7 +93,7 @@ class SAC(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
         cfg: SAC_CFG | dict = {},
     ) -> None:
         """Soft Actor-Critic (SAC).

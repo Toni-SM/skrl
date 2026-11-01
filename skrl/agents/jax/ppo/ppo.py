@@ -16,7 +16,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .ppo_cfg import PPO_CFG
 
@@ -125,7 +125,7 @@ class PPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: PPO_CFG | dict = {},
     ) -> None:
         """Proximal Policy Optimization (PPO).

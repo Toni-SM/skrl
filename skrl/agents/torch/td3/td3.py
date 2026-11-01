@@ -15,7 +15,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_limits
 
 from .td3_cfg import TD3_CFG
@@ -30,7 +30,7 @@ class TD3(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: TD3_CFG | dict = {},
     ) -> None:
         """Twin Delayed DDPG (TD3).

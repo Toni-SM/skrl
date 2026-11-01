@@ -10,7 +10,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .q_learning_cfg import Q_LEARNING_CFG
 
@@ -24,7 +24,7 @@ class Q_LEARNING(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: Q_LEARNING_CFG | dict = {},
     ) -> None:
         """Q-learning.

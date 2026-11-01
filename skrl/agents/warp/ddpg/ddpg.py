@@ -13,7 +13,7 @@ from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.spaces.warp import compute_space_limits
 
 from .ddpg_cfg import DDPG_CFG
@@ -82,7 +82,7 @@ class DDPG(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
         cfg: DDPG_CFG | dict = {},
     ) -> None:
         """Deep Deterministic Policy Gradient (DDPG).

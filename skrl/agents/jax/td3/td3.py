@@ -15,7 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_limits
 
 from .td3_cfg import TD3_CFG
@@ -106,7 +106,7 @@ class TD3(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: TD3_CFG | dict = {},
     ) -> None:
         """Twin Delayed DDPG (TD3).

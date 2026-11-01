@@ -16,7 +16,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .cem_cfg import CEM_CFG
 
@@ -47,7 +47,7 @@ class CEM(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: CEM_CFG | dict = {},
     ) -> None:
         """Cross-Entropy Method (CEM).

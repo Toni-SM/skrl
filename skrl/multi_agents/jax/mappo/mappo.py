@@ -16,7 +16,7 @@ from skrl.multi_agents.jax import MultiAgent
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .mappo_cfg import MAPPO_CFG
 
@@ -126,7 +126,7 @@ class MAPPO(MultiAgent):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: MAPPO_CFG | dict = {},
     ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO).

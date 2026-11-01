@@ -17,7 +17,7 @@ import torch
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -104,7 +104,7 @@ class MultiAgent(ABC):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL multi-agent/algorithm.
 

@@ -16,7 +16,7 @@ from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .mappo_cfg import MAPPO_CFG
 
@@ -75,7 +75,7 @@ class MAPPO(MultiAgent):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: MAPPO_CFG | dict = {},
     ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO).

@@ -18,7 +18,7 @@ import numpy as np
 from skrl import config, logger
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -108,7 +108,7 @@ class MultiAgent(ABC):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL multi-agent/algorithm.
 

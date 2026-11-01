@@ -14,6 +14,7 @@ from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Tensor
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -62,7 +63,7 @@ class StepTrainer(Trainer):
 
     def train(
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute a training iteration.
 
         This method executes the following steps once:
@@ -188,7 +189,7 @@ class StepTrainer(Trainer):
 
     def eval(
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute an evaluation iteration.
 
         This method executes the following steps in loop:

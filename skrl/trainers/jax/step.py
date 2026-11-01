@@ -8,7 +8,6 @@ import dataclasses
 import sys
 import tqdm
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -17,6 +16,7 @@ from skrl.envs.wrappers.jax import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.jax import MultiAgent
 from skrl.trainers.jax import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Tensor
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -65,7 +65,7 @@ class StepTrainer(Trainer):
 
     def train(
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute a training iteration.
 
         This method executes the following steps once:
@@ -184,7 +184,7 @@ class StepTrainer(Trainer):
 
     def eval(
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute an evaluation iteration.
 
         This method executes the following steps in loop:

@@ -4,11 +4,11 @@ from typing import Any, Literal
 
 import gymnasium
 
-import torch
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import TabularMixin  # noqa
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device
 
 
 def tabular_model(
@@ -16,7 +16,7 @@ def tabular_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | torch.device | None = None,
+    device: Device = None,
     variant: Literal["epsilon-greedy"] = "epsilon-greedy",
     variant_kwargs: dict[str, Any] = {},
     return_source: bool = False,

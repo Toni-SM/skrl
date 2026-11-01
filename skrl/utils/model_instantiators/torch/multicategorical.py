@@ -5,11 +5,11 @@ from typing import Any, Literal
 import textwrap
 import gymnasium
 
-import torch
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import MultiCategoricalMixin  # noqa
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device
 from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.torch.common import generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
@@ -20,7 +20,7 @@ def multicategorical_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | torch.device | None = None,
+    device: Device = None,
     unnormalized_log_prob: bool = True,
     reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     network: list[dict[str, Any]] = [],

@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from skrl import config
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
@@ -56,7 +56,7 @@ def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: boo
     raise ValueError(f"Unsupported space ({space})")
 
 
-def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | torch.device | None = None) -> Any:
+def tensorize_space(space: spaces.Space | None, x: Any, *, device: Device = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
 
     :param space: Gymnasium space.
@@ -286,7 +286,7 @@ def compute_space_limits(
     space: spaces.Space | None,
     *,
     occupied_size: bool = False,
-    device: str | torch.device | None = None,
+    device: Device = None,
     none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
 ) -> tuple[Tensor | None, Tensor | None]:
     """Get the low and high limits of a space.
@@ -367,7 +367,7 @@ def sample_space(
     *,
     batch_size: int = 1,
     backend: Literal["numpy", "native"] = "numpy",
-    device: str | torch.device | None = None,
+    device: Device = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 

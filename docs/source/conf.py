@@ -150,26 +150,30 @@ autoclass_content = "init"
 autosummary_generate = True
 autosummary_generate_overwrite = False
 
-# framework-specific type that the `Tensor` alias (from `skrl.utils.framework.<framework>.types`) stands for
-_TENSOR_ALIAS_TARGETS = {"torch": "torch.Tensor", "jax": "jax.Array", "warp": "warp.array"}
-_TENSOR_ALIAS_PATTERN = re.compile(r"(?<![\w.])Tensor(?!\w)")
+# framework-specific types that the aliases (from `skrl.utils.framework.<framework>.types`) stand for
+_TYPE_ALIAS_TARGETS = {
+    "torch": {"Tensor": "torch.Tensor", "Device": "str | torch.device | None"},
+    "jax": {"Tensor": "jax.Array", "Device": "str | jax.Device | None"},
+    "warp": {"Tensor": "warp.array", "Device": "str | warp.Device | None"},
+}
+_TYPE_ALIAS_PATTERN = re.compile(r"(?<![\w.])(Tensor|Device)(?!\w)")
 
 
-def expand_tensor_alias(app, what, name, obj, options, signature, return_annotation):
-    """Render the `Tensor` alias in signatures as the type of the framework the documented object belongs to"""
-    framework = next((part for part in name.split(".") if part in _TENSOR_ALIAS_TARGETS), None)
+def expand_type_aliases(app, what, name, obj, options, signature, return_annotation):
+    """Render the type aliases in signatures as the types of the framework the documented object belongs to"""
+    framework = next((part for part in name.split(".") if part in _TYPE_ALIAS_TARGETS), None)
     if framework is None:
         return None
-    target = _TENSOR_ALIAS_TARGETS[framework]
+    targets = _TYPE_ALIAS_TARGETS[framework]
 
     def expand(text):
-        return _TENSOR_ALIAS_PATTERN.sub(target, text) if text else text
+        return _TYPE_ALIAS_PATTERN.sub(lambda match: targets[match.group(1)], text) if text else text
 
     return expand(signature), expand(return_annotation)
 
 
 def setup(app):
-    app.connect("autodoc-process-signature", expand_tensor_alias)
+    app.connect("autodoc-process-signature", expand_type_aliases)
 
 
 # copybutton ext

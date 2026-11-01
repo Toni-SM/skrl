@@ -181,6 +181,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:warp-minimum-utils-spaces-coverage.html \
           tests/utils/spaces/warp
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-utils-framework-coverage.html \
+          tests/utils/framework/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -334,6 +343,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:warp-latest-utils-spaces-coverage.html \
           tests/utils/spaces/warp
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-utils-framework-coverage.html \
+          tests/utils/framework/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

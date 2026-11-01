@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 from skrl.utils.framework.torch.types import Tensor
 
 
 # hack to fix: module 'numpy' has no attribute 'bool8'
 try:
-    import numpy as np
-
     np.bool8
 except AttributeError:
     np.bool8 = np.bool
@@ -120,7 +120,7 @@ class GymnasiumWrapper(Wrapper):
                 )
                 self._reset_once = False
                 self._seed = None
-            return self._observation, self._info
+            return self._observation, self._info  # pyright: ignore[reportReturnType]
 
         observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))

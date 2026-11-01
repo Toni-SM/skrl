@@ -186,7 +186,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> dict[Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.

@@ -200,9 +200,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._observations = {uid: _torch2jax(value) for uid, value in observations.items()}
             self._reset_once = False
             self._seed = None
-        return self._observations, self._info
+        return self._observations, self._info  # pyright: ignore[reportReturnType]
 
-    def state(self) -> dict[Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.

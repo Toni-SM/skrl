@@ -108,7 +108,7 @@ def wrap_env(
         return base_classes
 
     if wrapper == "auto":
-        wrapper = _get_wrapper_name(env, verbose)
+        wrapper = _get_wrapper_name(env, verbose)  # pyright: ignore[reportAssignmentType]
 
     if wrapper == "gym":
         if verbose:

@@ -8,7 +8,7 @@ from skrl.utils.framework.warp.types import Device, Tensor
 
 
 @wp.kernel
-def _sample(dst: wp.array2d(dtype=float), mean: float, std: float, key: int):
+def _sample(dst: wp.array2d[float], mean: float, std: float, key: int):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
     dst[i, j] = wp.randn(subkey) * std + mean

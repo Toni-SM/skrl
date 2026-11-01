@@ -15,6 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_limits
 
 from .td3_cfg import TD3_CFG
@@ -23,20 +24,20 @@ from .td3_cfg import TD3_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _apply_exploration_noise(
-    actions: jax.Array, noises: jax.Array, min_actions: jax.Array, max_actions: jax.Array, scale: float
-) -> jax.Array:
+    actions: Tensor, noises: Tensor, min_actions: Tensor, max_actions: Tensor, scale: float
+) -> Tensor:
     noises = noises.at[:].multiply(scale)
     return jnp.clip(actions + noises, min=min_actions, max=max_actions), noises
 
 
 @jax.jit
 def _apply_smooth_regularization_noise(
-    actions: jax.Array,
-    noises: jax.Array,
-    min_actions: jax.Array,
-    max_actions: jax.Array,
+    actions: Tensor,
+    noises: Tensor,
+    min_actions: Tensor,
+    max_actions: Tensor,
     smooth_regularization_clip: float,
-) -> jax.Array:
+) -> Tensor:
     noises = jnp.clip(noises, min=-smooth_regularization_clip, max=smooth_regularization_clip)
     return jnp.clip(actions + noises, min=min_actions, max=max_actions)
 
@@ -47,11 +48,11 @@ def _update_critic(
     critic_1_state_dict,
     critic_2_act,
     critic_2_state_dict,
-    target_q1_values: jax.Array,
-    target_q2_values: jax.Array,
-    inputs: dict[str, jax.Array],
-    sampled_rewards: jax.Array,
-    sampled_terminated: jax.Array,
+    target_q1_values: Tensor,
+    target_q2_values: Tensor,
+    inputs: dict[str, Tensor],
+    sampled_rewards: Tensor,
+    sampled_terminated: Tensor,
     discount_factor: float,
 ):
     # compute target values
@@ -105,7 +106,7 @@ class TD3(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: TD3_CFG | dict = {},
     ) -> None:
         """Twin Delayed DDPG (TD3).
@@ -288,8 +289,8 @@ class TD3(Agent):
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -326,14 +327,14 @@ class TD3(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

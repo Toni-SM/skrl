@@ -6,11 +6,12 @@ import textwrap
 import gymnasium
 
 import flax.linen as nn  # noqa
-import jax
+import jax  # noqa
 import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import MultiCategoricalMixin  # noqa
 from skrl.models.jax import Model
+from skrl.utils.framework.jax.types import Device
 from skrl.utils.model_instantiators.jax.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.jax.common import generate_containers
 from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
@@ -21,7 +22,7 @@ def multicategorical_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | jax.Device | None = None,
+    device: Device = None,
     unnormalized_log_prob: bool = True,
     reduction: Literal["mean", "sum", "prod", "none"] = "sum",
     network: list[dict[str, Any]] = [],

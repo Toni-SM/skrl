@@ -16,19 +16,20 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .ppo_cfg import PPO_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    values: torch.Tensor,
-    next_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    values: Tensor,
+    next_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -71,7 +72,7 @@ class PPO_RNN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: PPO_CFG | dict = {},
     ) -> None:
         """Proximal Policy Optimization (PPO) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.).
@@ -236,8 +237,8 @@ class PPO_RNN(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -267,14 +268,14 @@ class PPO_RNN(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

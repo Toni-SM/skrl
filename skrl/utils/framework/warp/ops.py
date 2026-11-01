@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import warp as wp
 
+from skrl.utils.framework.warp.types import Tensor
+
 
 __all__ = ["clamp", "concatenate", "convert_to_numpy_in_place", "type_cast"]
 
@@ -33,13 +35,13 @@ def _clamp_4d(src: wp.array(ndim=4), min: wp.array(ndim=1), max: wp.array(ndim=1
 _clamp = [None, _clamp_1d, _clamp_2d, _clamp_3d, _clamp_4d]
 
 
-def clamp(array: wp.array, *, min: wp.array, max: wp.array, inplace: bool = False) -> wp.array:
+def clamp(array: Tensor, *, min: Tensor, max: Tensor, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty_like(array)
     wp.launch(_clamp[array.ndim], dim=array.shape, inputs=[array, min, max], outputs=[output], device=array.device)
     return output
 
 
-def concatenate(arrays: list[wp.array], *, axis: int = -1, dtype: type | None = None) -> wp.array:
+def concatenate(arrays: list[Tensor], *, axis: int = -1, dtype: type | None = None) -> Tensor:
     reference = arrays[0]
     dtype = reference.dtype if dtype is None else dtype
     shape = (reference.shape[0], sum([array.shape[1] for array in arrays]))
@@ -64,7 +66,7 @@ def convert_to_numpy_in_place(src):
     return src
 
 
-def type_cast(array: wp.array, dtype: type) -> wp.array:
+def type_cast(array: Tensor, dtype: type) -> Tensor:
     if array.dtype == dtype:
         return array
     output = wp.empty(array.shape, dtype=dtype, device=array.device, requires_grad=array.requires_grad)

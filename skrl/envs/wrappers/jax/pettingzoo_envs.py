@@ -9,6 +9,7 @@ import numpy as np
 
 from skrl import config
 from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper
+from skrl.utils.framework.jax.types import Tensor
 from skrl.utils.spaces.jax import (
     flatten_tensorized_space,
     tensorize_space,
@@ -28,8 +29,8 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
 
     def step(
-        self, actions: dict[str, jax.Array]
-    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
+        self, actions: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -62,7 +63,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> dict[jax.Array | None]:
+    def state(self) -> dict[Tensor | None]:
         """Get the environment state.
 
         In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
@@ -74,7 +75,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         )
         return {uid: state for uid in self.possible_agents}
 
-    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

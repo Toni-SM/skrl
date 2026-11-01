@@ -17,6 +17,7 @@ import torch
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -103,7 +104,7 @@ class MultiAgent(ABC):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL multi-agent/algorithm.
 
@@ -339,12 +340,12 @@ class MultiAgent(ABC):
     @abstractmethod
     def act(
         self,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
         *,
         timestep: int,
         timesteps: int,
-    ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -360,14 +361,14 @@ class MultiAgent(ABC):
     def record_transition(
         self,
         *,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
-        actions: dict[str, torch.Tensor],
-        rewards: dict[str, torch.Tensor],
-        next_observations: dict[str, torch.Tensor],
-        next_states: dict[str, torch.Tensor],
-        terminated: dict[str, torch.Tensor],
-        truncated: dict[str, torch.Tensor],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
+        actions: dict[str, Tensor],
+        rewards: dict[str, Tensor],
+        next_observations: dict[str, Tensor],
+        next_states: dict[str, Tensor],
+        terminated: dict[str, Tensor],
+        truncated: dict[str, Tensor],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,

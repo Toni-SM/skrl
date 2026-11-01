@@ -13,6 +13,7 @@ import torch.utils.dlpack as torch_dlpack
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
+from skrl.utils.framework.jax.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -80,7 +81,7 @@ class ManiSkillWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -109,14 +110,14 @@ class ManiSkillWrapper(Wrapper):
             self._info,
         )
 
-    def state(self) -> jax.Array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

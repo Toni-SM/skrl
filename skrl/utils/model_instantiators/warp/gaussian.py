@@ -5,12 +5,13 @@ from typing import Any, Literal
 import textwrap
 import gymnasium
 
-import warp as wp
+import warp as wp  # noqa
 import warp_nn.nn as nn  # noqa
 
 import skrl.utils.framework.warp as warp_utils  # noqa
 from skrl.models.warp import GaussianMixin  # noqa
 from skrl.models.warp import Model
+from skrl.utils.framework.warp.types import Device
 from skrl.utils.model_instantiators.warp.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.warp.common import generate_containers
 from skrl.utils.spaces.warp import unflatten_tensorized_space  # noqa
@@ -21,7 +22,7 @@ def gaussian_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | wp.Device | None = None,
+    device: Device = None,
     clip_actions: bool = False,
     clip_mean_actions: bool = False,
     clip_log_std: bool = True,

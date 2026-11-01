@@ -5,11 +5,12 @@ from typing import Any
 import textwrap
 import gymnasium
 
-import torch
+import torch  # noqa
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import DeterministicMixin  # noqa
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device
 from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.torch.common import generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
@@ -20,7 +21,7 @@ def deterministic_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | torch.device | None = None,
+    device: Device = None,
     clip_actions: bool = False,
     network: list[dict[str, Any]] = [],
     output: str | list[str] = "",

@@ -9,6 +9,7 @@ import warp as wp
 
 from skrl import config, logger
 from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import (
     flatten_tensorized_space,
     tensorize_space,
@@ -54,7 +55,7 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -84,7 +85,7 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> wp.array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -96,7 +97,7 @@ class GymnasiumWrapper(Wrapper):
         except:
             return None
 
-    def reset(self) -> tuple[wp.array, Any]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.

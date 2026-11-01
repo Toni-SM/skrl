@@ -18,6 +18,7 @@ import numpy as np
 from skrl import config, logger
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -107,7 +108,7 @@ class MultiAgent(ABC):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL multi-agent/algorithm.
 
@@ -351,8 +352,8 @@ class MultiAgent(ABC):
 
     @abstractmethod
     def act(
-        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
-    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+        self, observations: dict[str, Tensor], states: dict[str, Tensor | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -368,14 +369,14 @@ class MultiAgent(ABC):
     def record_transition(
         self,
         *,
-        observations: dict[str, jax.Array],
-        states: dict[str, jax.Array | None],
-        actions: dict[str, jax.Array],
-        rewards: dict[str, jax.Array],
-        next_observations: dict[str, jax.Array],
-        next_states: dict[str, jax.Array],
-        terminated: dict[str, jax.Array],
-        truncated: dict[str, jax.Array],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
+        actions: dict[str, Tensor],
+        rewards: dict[str, Tensor],
+        next_observations: dict[str, Tensor],
+        next_states: dict[str, Tensor],
+        terminated: dict[str, Tensor],
+        truncated: dict[str, Tensor],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,

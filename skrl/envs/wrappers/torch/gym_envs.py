@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from skrl.utils.framework.torch.types import Tensor
+
 
 # hack to fix: module 'numpy' has no attribute 'bool8'
 try:
@@ -66,7 +68,7 @@ class GymWrapper(Wrapper):
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -108,7 +110,7 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -120,7 +122,7 @@ class GymWrapper(Wrapper):
         except:
             return None
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

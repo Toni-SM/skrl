@@ -7,6 +7,7 @@ import math
 import warp as wp
 
 from skrl import config
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import compute_space_limits
 
 
@@ -145,7 +146,7 @@ class GaussianMixin:
 
         self._g_key = config.warp.key
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -202,7 +203,7 @@ class GaussianMixin:
         outputs["stddev"] = scale
         return actions, outputs
 
-    def get_entropy(self, stddev: wp.array, *, role: str = "") -> wp.array:
+    def get_entropy(self, stddev: Tensor, *, role: str = "") -> Tensor:
         """Compute and return the entropy of the model.
 
         :param stddev: Model standard deviation.

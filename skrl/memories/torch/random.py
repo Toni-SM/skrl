@@ -5,6 +5,7 @@ from typing import Literal
 import torch
 
 from skrl.memories.torch import Memory
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -13,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -50,7 +51,7 @@ class RandomMemory(Memory):
 
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[torch.Tensor]]:
+    ) -> list[list[Tensor]]:
         """Sample a batch from memory randomly.
 
         :param names: Tensors names from which to obtain the samples.

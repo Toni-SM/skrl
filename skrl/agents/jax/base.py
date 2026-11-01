@@ -18,6 +18,7 @@ import numpy as np
 from skrl import config, logger
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -91,7 +92,7 @@ class Agent(ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL agent/algorithm.
 
@@ -308,8 +309,8 @@ class Agent(ABC):
 
     @abstractmethod
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -325,14 +326,14 @@ class Agent(ABC):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

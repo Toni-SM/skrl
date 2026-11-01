@@ -5,6 +5,7 @@ from typing import Any
 import torch
 from torch.distributions import MultivariateNormal
 
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import compute_space_limits
 
 
@@ -45,7 +46,7 @@ class MultivariateGaussianMixin:
 
         self._mg_distribution = None
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -95,7 +96,7 @@ class MultivariateGaussianMixin:
         outputs["mean_actions"] = mean_actions
         return actions, outputs
 
-    def get_entropy(self, *, role: str = "") -> torch.Tensor:
+    def get_entropy(self, *, role: str = "") -> Tensor:
         """Compute and return the entropy of the model.
 
         :param role: Role played by the model.

@@ -8,6 +8,7 @@ import numpy as np
 
 from skrl import config
 from skrl.resources.noises.jax import Noise
+from skrl.utils.framework.jax.types import Device, Tensor
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -18,7 +19,7 @@ def _sample(mean, std, key, iterator, shape):
 
 
 class GaussianNoise(Noise):
-    def __init__(self, *, mean: float, std: float, device: str | jax.Device | None = None) -> None:
+    def __init__(self, *, mean: float, std: float, device: Device = None) -> None:
         """Gaussian noise.
 
         :param mean: Mean of the normal distribution.
@@ -36,7 +37,7 @@ class GaussianNoise(Noise):
         self._i = 0
         self._key = config.jax.key
 
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample a Gaussian noise.
 
         :param size: Noise shape.

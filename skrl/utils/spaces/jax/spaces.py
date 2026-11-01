@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Tensor
 
 
 def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
@@ -177,7 +178,7 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any) -> jax.Array | np.ndarray | None:
+def flatten_tensorized_space(x: Any) -> Tensor | np.ndarray | None:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
@@ -202,7 +203,7 @@ def flatten_tensorized_space(x: Any) -> jax.Array | np.ndarray | None:
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 
-def unflatten_tensorized_space(space: spaces.Space | None, x: jax.Array | np.ndarray | None) -> Any:
+def unflatten_tensorized_space(space: spaces.Space | None, x: Tensor | np.ndarray | None) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
     :param space: Gymnasium space.
@@ -288,7 +289,7 @@ def compute_space_limits(
     occupied_size: bool = False,
     device: str | jax.Device | None = None,
     none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
-) -> tuple[jax.Array | None, jax.Array | None]:
+) -> tuple[Tensor | None, Tensor | None]:
     """Get the low and high limits of a space.
 
     .. note::

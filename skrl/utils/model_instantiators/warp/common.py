@@ -5,13 +5,13 @@ from typing import Any
 import ast
 from gymnasium import spaces
 
-import warp as wp
 import warp_nn.nn as nn  # noqa
 
 from skrl.utils.framework.warp import concatenate
+from skrl.utils.framework.warp.types import Tensor
 
 
-def one_hot_encoding(space: spaces.Space, x: wp.array) -> wp.array:
+def one_hot_encoding(space: spaces.Space, x: Tensor) -> Tensor:
     """One-hot encode a tensorized Discrete or MultiDiscrete space.
 
     :param space: Gymnasium space.

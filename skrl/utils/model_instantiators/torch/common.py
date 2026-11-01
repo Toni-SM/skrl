@@ -8,8 +8,10 @@ from gymnasium import spaces
 import torch
 import torch.nn as nn
 
+from skrl.utils.framework.torch.types import Tensor
 
-def one_hot_encoding(space: spaces.Space, x: torch.Tensor) -> torch.Tensor:
+
+def one_hot_encoding(space: spaces.Space, x: Tensor) -> Tensor:
     """One-hot encode a tensorized Discrete or MultiDiscrete space.
 
     :param space: Gymnasium space.

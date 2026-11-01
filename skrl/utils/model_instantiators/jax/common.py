@@ -5,12 +5,13 @@ from typing import Any
 import ast
 from gymnasium import spaces
 
-import jax
 import jax.nn as jnn
 import jax.numpy as jnp
 
+from skrl.utils.framework.jax.types import Tensor
 
-def one_hot_encoding(space: spaces.Space, x: jax.Array) -> jax.Array:
+
+def one_hot_encoding(space: spaces.Space, x: Tensor) -> Tensor:
     """One-hot encode a tensorized Discrete or MultiDiscrete space.
 
     :param space: Gymnasium space.

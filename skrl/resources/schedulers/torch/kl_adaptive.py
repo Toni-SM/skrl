@@ -5,6 +5,8 @@ from packaging import version
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
+from skrl.utils.framework.torch.types import Tensor
+
 
 class KLAdaptiveLR(_LRScheduler):
     def __init__(
@@ -60,7 +62,7 @@ class KLAdaptiveLR(_LRScheduler):
 
         self._last_lr = [group["lr"] for group in self.optimizer.param_groups]
 
-    def step(self, kl: torch.Tensor | float | None = None, *, epoch: int | None = None) -> None:
+    def step(self, kl: Tensor | float | None = None, *, epoch: int | None = None) -> None:
         """
         Step scheduler.
 

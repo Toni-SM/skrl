@@ -4,6 +4,7 @@ import warp as wp
 
 from skrl import config
 from skrl.resources.noises.warp import Noise
+from skrl.utils.framework.warp.types import Tensor
 
 
 @wp.kernel
@@ -31,7 +32,7 @@ class GaussianNoise(Noise):
         self.mean = mean
         self.std = std
 
-    def sample(self, size: list[int]) -> wp.array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample a Gaussian noise.
 
         :param size: Noise shape.

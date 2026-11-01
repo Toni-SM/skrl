@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import torch
 
 from skrl import config
+from skrl.utils.framework.torch.types import Tensor
 
 
 class Noise(ABC):
@@ -15,7 +16,7 @@ class Noise(ABC):
         """
         self.device = config.torch.parse_device(device)
 
-    def sample_like(self, tensor: torch.Tensor) -> torch.Tensor:
+    def sample_like(self, tensor: Tensor) -> Tensor:
         """Sample noise with the same size (shape) as the input tensor.
 
         This method will call the sampling method as follows ``.sample(tensor.shape)``.
@@ -35,7 +36,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: list[int] | torch.Size) -> torch.Tensor:
+    def sample(self, size: list[int] | torch.Size) -> Tensor:
         """Sample noise.
 
         :param size: Noise shape.

@@ -6,6 +6,7 @@ import numpy as np
 import warp as wp
 
 from skrl import config
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import compute_space_size
 
 
@@ -151,7 +152,7 @@ class RunningStandardScaler:
         self._cached_mean = wp.empty(size, dtype=wp.float32, device=self.device)
         self._cached_variance = wp.empty(size, dtype=wp.float32, device=self.device)
 
-    def state_dict(self) -> dict[str, wp.array]:
+    def state_dict(self) -> dict[str, Tensor]:
         """Dictionary containing references to the whole state of the module."""
         return {
             "running_mean": self.running_mean,
@@ -159,7 +160,7 @@ class RunningStandardScaler:
             "current_count": self.current_count,
         }
 
-    def load_state_dict(self, state_dict: dict[str, wp.array]) -> None:
+    def load_state_dict(self, state_dict: dict[str, Tensor]) -> None:
         def _load_from_array(dst, src):
             if isinstance(src, wp.array):
                 wp.copy(dst, src.to(dst.device))
@@ -173,8 +174,8 @@ class RunningStandardScaler:
         self.current_count = float(state_dict["current_count"])
 
     def __call__(
-        self, x: wp.array | None, *, train: bool = False, inverse: bool = False, inplace: bool = False
-    ) -> wp.array | None:
+        self, x: Tensor | None, *, train: bool = False, inverse: bool = False, inplace: bool = False
+    ) -> Tensor | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

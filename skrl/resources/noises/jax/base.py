@@ -6,6 +6,7 @@ import jax
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Tensor
 
 
 class Noise(ABC):
@@ -16,7 +17,7 @@ class Noise(ABC):
         """
         self.device = config.jax.parse_device(device)
 
-    def sample_like(self, tensor: jax.Array) -> jax.Array:
+    def sample_like(self, tensor: Tensor) -> Tensor:
         """Sample noise with the same size (shape) as the input tensor.
 
         This method will call the sampling method as follows ``.sample(tensor.shape)``.
@@ -36,7 +37,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample noise.
 
         :param size: Noise shape.

@@ -16,8 +16,8 @@ from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space,
 
 @wp.kernel
 def _polyak_averaging(
-    parameters: wp.array2d(dtype=float),
-    model_parameters: wp.array2d(dtype=float),
+    parameters: wp.array2d[float],
+    model_parameters: wp.array2d[float],
     polyak: float,
 ):
     i, j = wp.tid()

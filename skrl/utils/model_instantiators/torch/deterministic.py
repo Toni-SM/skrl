@@ -5,6 +5,7 @@ from typing import Any
 import textwrap
 import gymnasium
 
+import torch  # noqa
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import DeterministicMixin  # noqa

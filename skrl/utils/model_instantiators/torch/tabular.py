@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 import gymnasium
 
+import torch  # noqa
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import TabularMixin  # noqa

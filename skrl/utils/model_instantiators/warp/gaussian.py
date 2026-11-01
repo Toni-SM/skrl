@@ -5,6 +5,7 @@ from typing import Any, Literal
 import textwrap
 import gymnasium
 
+import warp as wp  # noqa
 import warp_nn.nn as nn  # noqa
 
 import skrl.utils.framework.warp as warp_utils  # noqa

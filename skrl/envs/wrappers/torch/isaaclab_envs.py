@@ -83,7 +83,8 @@ class IsaacLabWrapper(Wrapper):
 
         :return: Final observation, state.
         """
-        final_observations, final_states = self._observations, self._states
+        final_observations = self._observations
+        final_states = self._states
         final_group = info.get("final_obs")
         if final_group is not None:
             dones = (terminated | truncated).view(-1, 1)
@@ -205,8 +206,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
 
         :return: Final observation, state.
         """
-        final_observations, final_states = self._observations, self._states
-        # check for ended episodes (the info is not cleared between steps)
+        final_observations = self._observations
+        final_states = self._states
         if any("final_obs" in info.get(k, {}) for k in final_observations):
             dones = (
                 torch.stack([v.view(-1) for v in terminated.values()]).all(dim=0)

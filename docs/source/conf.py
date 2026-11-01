@@ -3,6 +3,7 @@ import sys
 import inspect
 import logging
 import operator
+import re
 
 
 # skrl library
@@ -148,6 +149,28 @@ autodoc_mock_imports = [
 autoclass_content = "init"
 autosummary_generate = True
 autosummary_generate_overwrite = False
+
+# framework-specific type that the `Tensor` alias (from `skrl.utils.framework.<framework>.types`) stands for
+_TENSOR_ALIAS_TARGETS = {"torch": "torch.Tensor", "jax": "jax.Array", "warp": "warp.array"}
+_TENSOR_ALIAS_PATTERN = re.compile(r"(?<![\w.])Tensor(?!\w)")
+
+
+def expand_tensor_alias(app, what, name, obj, options, signature, return_annotation):
+    """Render the `Tensor` alias in signatures as the type of the framework the documented object belongs to"""
+    framework = next((part for part in name.split(".") if part in _TENSOR_ALIAS_TARGETS), None)
+    if framework is None:
+        return None
+    target = _TENSOR_ALIAS_TARGETS[framework]
+
+    def expand(text):
+        return _TENSOR_ALIAS_PATTERN.sub(target, text) if text else text
+
+    return expand(signature), expand(return_annotation)
+
+
+def setup(app):
+    app.connect("autodoc-process-signature", expand_tensor_alias)
+
 
 # copybutton ext
 copybutton_prompt_text = r">>> |\.\.\. "

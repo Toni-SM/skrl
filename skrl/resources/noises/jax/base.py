@@ -36,7 +36,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int] | tuple[int, ...]) -> jax.Array:
         """Sample noise.
 
         :param size: Noise shape.

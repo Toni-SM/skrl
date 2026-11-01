@@ -74,3 +74,17 @@ def test_sample_statistics(capsys, device):
     following = np.array(noise.sample((16384, 1))).astype(np.float64) - sigma * mean
     slope = np.sum(previous * following) / np.sum(previous * previous)
     assert np.isclose(slope, 1 - theta, atol=0.05)
+
+
+def test_list_shape_preserves_noise_state():
+    noise = OrnsteinUhlenbeckNoise(theta=0.25, sigma=0, base_scale=2, device="cpu")
+    noise.state = jnp.full((3, 2), 4.0)
+    for step in range(1, 4):
+        sample = noise.sample([3, 2])
+        np.testing.assert_allclose(np.array(sample), 8 * 0.75**step)
+        np.testing.assert_allclose(np.array(noise.state), 4 * 0.75**step)
+
+    # A real shape change still starts a new zero-state process.
+    sample = noise.sample([2, 3])
+    assert sample.shape == (2, 3)
+    np.testing.assert_array_equal(np.array(sample), 0)

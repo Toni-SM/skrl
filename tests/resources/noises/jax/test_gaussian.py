@@ -47,3 +47,14 @@ def test_sample_statistics(capsys, device, mean, std):
     sample = np.array(noise.sample((16384, 1))).astype(np.float64)
     assert np.isclose(sample.mean(), mean, atol=0.05 * std)
     assert np.isclose(sample.std(), std, rtol=0.05)
+
+
+def test_list_shape_matches_tuple_samples():
+    list_noise = GaussianNoise(mean=0.5, std=2, device="cpu")
+    tuple_noise = GaussianNoise(mean=0.5, std=2, device="cpu")
+    samples = []
+    for _ in range(2):
+        sample = np.array(list_noise.sample([3, 2]))
+        np.testing.assert_array_equal(sample, np.array(tuple_noise.sample((3, 2))))
+        samples.append(sample)
+    assert not np.array_equal(samples[0], samples[1])

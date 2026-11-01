@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Tensor
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -60,8 +61,8 @@ class CategoricalMixin:
         flax.linen.Module.__post_init__(self)
 
     def act(
-        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, inputs: dict[str, Any], *, role: str = "", params: Tensor | None = None
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -96,7 +97,7 @@ class CategoricalMixin:
         outputs["stddev"] = jnp.full_like(log_prob, jnp.nan)
         return actions, outputs
 
-    def get_entropy(self, stddev: jax.Array, *, role: str = "") -> jax.Array:
+    def get_entropy(self, stddev: Tensor, *, role: str = "") -> Tensor:
         """Compute and return the entropy of the model.
 
         :param stddev: Model standard deviation.

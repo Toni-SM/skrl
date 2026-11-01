@@ -4,6 +4,7 @@ from typing import Any
 
 import torch
 
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import compute_space_limits
 
 
@@ -19,7 +20,7 @@ class DeterministicMixin:
             self.action_space, device=self.device, none_if_unbounded="any"
         )
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act deterministically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

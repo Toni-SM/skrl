@@ -11,16 +11,17 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config, logger
+from skrl.utils.framework.jax.types import Tensor
 from skrl.utils.spaces.jax import compute_space_size, flatten_tensorized_space, sample_space
 
 
 @jax.jit
-def _vectorize_leaves(leaves: list[jax.Array]) -> jax.Array:
+def _vectorize_leaves(leaves: list[Tensor]) -> Tensor:
     return jnp.expand_dims(jnp.concatenate(list(map(jnp.ravel, leaves)), axis=-1), 0)
 
 
 @jax.jit
-def _unvectorize_leaves(leaves: list[jax.Array], vector: jax.Array) -> list[jax.Array]:
+def _unvectorize_leaves(leaves: list[Tensor], vector: Tensor) -> list[Tensor]:
     offset = 0
     for i, leaf in enumerate(leaves):
         leaves[i] = leaves[i].at[:].set(vector.at[0, offset : offset + leaf.size].get().reshape(leaf.shape))
@@ -83,7 +84,7 @@ class Model(flax.linen.Module, ABC):
         inputs: dict[str, Any] = {},
         *,
         role: str = "",
-        key: jax.Array | None = None,
+        key: Tensor | None = None,
     ) -> None:
         """Initialize state dictionary.
 
@@ -116,8 +117,8 @@ class Model(flax.linen.Module, ABC):
             self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
 
     def random_act(
-        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, inputs: dict[str, Any], *, role: str = "", params: Tensor | None = None
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -250,8 +251,8 @@ class Model(flax.linen.Module, ABC):
 
     @abstractmethod
     def act(
-        self, inputs: dict[str, Any], *, role: str = "", params: jax.Array | None = None
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, inputs: dict[str, Any], *, role: str = "", params: Tensor | None = None
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Act according to the specified behavior.
 
         Agents will call this method to get the expected action/value based on the observations/states.

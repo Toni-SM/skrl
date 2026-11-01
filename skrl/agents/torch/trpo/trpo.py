@@ -15,21 +15,22 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Tensor
 
 from .trpo_cfg import TRPO_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    truncated: torch.Tensor,
-    values: torch.Tensor,
-    last_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -66,12 +67,12 @@ def compute_gae(
 def surrogate_loss(
     *,
     policy: Model,
-    observations: torch.Tensor,
-    states: torch.Tensor,
-    actions: torch.Tensor,
-    log_prob: torch.Tensor,
-    advantages: torch.Tensor,
-) -> torch.Tensor:
+    observations: Tensor,
+    states: Tensor,
+    actions: Tensor,
+    log_prob: Tensor,
+    advantages: Tensor,
+) -> Tensor:
     """Compute the surrogate objective (policy loss).
 
     :param policy: Policy.
@@ -91,13 +92,13 @@ def surrogate_loss(
 def conjugate_gradient(
     *,
     policy: Model,
-    observations: torch.Tensor,
-    states: torch.Tensor,
-    b: torch.Tensor,
+    observations: Tensor,
+    states: Tensor,
+    b: Tensor,
     damping: float = 0.1,
     num_iterations: float = 10,
     residual_tolerance: float = 1e-10,
-) -> torch.Tensor:
+) -> Tensor:
     """Conjugate gradient algorithm to solve Ax = b using the iterative method.
 
     https://en.wikipedia.org/wiki/Conjugate_gradient_method#As_an_iterative_method
@@ -130,8 +131,8 @@ def conjugate_gradient(
 
 
 def fisher_vector_product(
-    *, policy: Model, observations: torch.Tensor, states: torch.Tensor, vector: torch.Tensor, damping: float = 0.1
-) -> torch.Tensor:
+    *, policy: Model, observations: Tensor, states: Tensor, vector: Tensor, damping: float = 0.1
+) -> Tensor:
     """Compute the Fisher vector product (direct method).
 
     https://www.telesens.co/2018/06/09/efficiently-computing-the-fisher-vector-product-in-trpo/
@@ -152,9 +153,7 @@ def fisher_vector_product(
     return flat_hessian_vector_gradient + damping * vector
 
 
-def kl_divergence(
-    *, policy_1: Model, policy_2: Model, observations: torch.Tensor, states: torch.Tensor
-) -> torch.Tensor:
+def kl_divergence(*, policy_1: Model, policy_2: Model, observations: Tensor, states: Tensor) -> Tensor:
     """Compute the KL divergence between two distributions.
 
     https://en.wikipedia.org/wiki/Normal_distribution#Other_properties
@@ -304,8 +303,8 @@ class TRPO(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -334,14 +333,14 @@ class TRPO(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

@@ -12,6 +12,7 @@ from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.warp.types import Tensor
 
 from .sac_cfg import SAC_CFG
 
@@ -240,8 +241,8 @@ class SAC(Agent):
             ]
 
     def act(
-        self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
-    ) -> tuple[wp.array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -268,14 +269,14 @@ class SAC(Agent):
     def record_transition(
         self,
         *,
-        observations: wp.array,
-        states: wp.array,
-        actions: wp.array,
-        rewards: wp.array,
-        next_observations: wp.array,
-        next_states: wp.array,
-        terminated: wp.array,
-        truncated: wp.array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

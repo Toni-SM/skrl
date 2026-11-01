@@ -5,6 +5,8 @@ from typing import Any
 import numpy as np
 import warp as wp
 
+from skrl.utils.framework.warp.types import Tensor
+
 
 __all__ = [
     "scalar_mul",
@@ -22,7 +24,7 @@ __all__ = [
 ]
 
 
-def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> wp.array:
+def scalar_mul(array: Tensor, scalar: int | float, inplace: bool = False) -> Tensor:
     output = (
         array
         if inplace
@@ -32,7 +34,7 @@ def scalar_mul(array: wp.array, scalar: int | float, inplace: bool = False) -> w
     return output
 
 
-def mean(array: wp.array, *, dtype: type = wp.float32) -> wp.array:
+def mean(array: Tensor, *, dtype: type = wp.float32) -> Tensor:
     output = wp.zeros((1,), dtype=dtype, device=array.device, requires_grad=array.requires_grad)
     wp.launch(
         _MEAN[array.ndim],
@@ -44,7 +46,7 @@ def mean(array: wp.array, *, dtype: type = wp.float32) -> wp.array:
     return output
 
 
-def var(array: wp.array, *, dtype: type = wp.float32, correction: int = 1) -> wp.array:
+def var(array: Tensor, *, dtype: type = wp.float32, correction: int = 1) -> Tensor:
     output = wp.zeros((1,), dtype=dtype, device=array.device, requires_grad=array.requires_grad)
     wp.launch(
         _VAR[array.ndim],
@@ -56,20 +58,20 @@ def var(array: wp.array, *, dtype: type = wp.float32, correction: int = 1) -> wp
     return output
 
 
-def std(array: wp.array, *, dtype: type = wp.float32, correction: int = 1) -> wp.array:
+def std(array: Tensor, *, dtype: type = wp.float32, correction: int = 1) -> Tensor:
     _var = var(array, dtype=dtype, correction=correction)
     output = wp.zeros((1,), dtype=dtype, device=array.device, requires_grad=True) if array.requires_grad else _var
     wp.launch(_std, dim=1, inputs=[_var], outputs=[output], device=array.device)
     return output
 
 
-def elu(array: wp.array, *, alpha: float = 1.0, inplace: bool = False) -> wp.array:
+def elu(array: Tensor, *, alpha: float = 1.0, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_ELU[array.ndim], dim=array.shape, inputs=[array, alpha], outputs=[output], device=array.device)
     return output
 
 
-def leaky_relu(array: wp.array, *, negative_slope: float = 0.01, inplace: bool = False) -> wp.array:
+def leaky_relu(array: Tensor, *, negative_slope: float = 0.01, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(
         _LEAKY_RELU[array.ndim], dim=array.shape, inputs=[array, negative_slope], outputs=[output], device=array.device
@@ -77,37 +79,37 @@ def leaky_relu(array: wp.array, *, negative_slope: float = 0.01, inplace: bool =
     return output
 
 
-def relu(array: wp.array, *, inplace: bool = False) -> wp.array:
+def relu(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_RELU[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output
 
 
-def selu(array: wp.array, *, inplace: bool = False) -> wp.array:
+def selu(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_SELU[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output
 
 
-def sigmoid(array: wp.array, *, inplace: bool = False) -> wp.array:
+def sigmoid(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_SIGMOID[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output
 
 
-def softplus(array: wp.array, *, inplace: bool = False) -> wp.array:
+def softplus(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_SOFTPLUS[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output
 
 
-def softsign(array: wp.array, *, inplace: bool = False) -> wp.array:
+def softsign(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_SOFTSIGN[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output
 
 
-def tanh(array: wp.array, *, inplace: bool = False) -> wp.array:
+def tanh(array: Tensor, *, inplace: bool = False) -> Tensor:
     output = array if inplace else wp.empty(array.shape, dtype=array.dtype, requires_grad=array.requires_grad)
     wp.launch(_TANH[array.ndim], dim=array.shape, inputs=[array], outputs=[output], device=array.device)
     return output

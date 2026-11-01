@@ -10,11 +10,11 @@ import jax
 import jax.dlpack as jax_dlpack
 import jax.numpy as jnp
 import numpy as np
-import torch
 import torch.utils.dlpack as torch_dlpack
 
 from skrl import config, logger
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -84,7 +84,7 @@ class PlaygroundWrapper(Wrapper):
         """State space."""
         return self._state_space
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -115,14 +115,14 @@ class PlaygroundWrapper(Wrapper):
 
         return self._observations, reward.reshape(-1, 1), terminated.reshape(-1, 1), truncated.reshape(-1, 1), info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

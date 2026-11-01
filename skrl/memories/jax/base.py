@@ -15,6 +15,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Tensor
 from skrl.utils.spaces.jax import compute_space_size
 
 
@@ -102,7 +103,7 @@ class Memory(ABC):
         """
         return self.memory_size * self.num_envs if self.filled else self.memory_index * self.num_envs + self.env_index
 
-    def _tensors_view(self, name: str) -> jax.Array:
+    def _tensors_view(self, name: str) -> Tensor:
         return self.tensors_view[name] if self._views else self.tensors[name].reshape(-1, *self.tensors[name].shape[2:])
 
     def share_memory(self) -> None:
@@ -117,7 +118,7 @@ class Memory(ABC):
         """
         return sorted(self.tensors.keys())
 
-    def get_tensor_by_name(self, name: str) -> jax.Array:
+    def get_tensor_by_name(self, name: str) -> Tensor:
         """Get a tensor by its name.
 
         :param name: Name of the tensor to get.
@@ -128,7 +129,7 @@ class Memory(ABC):
         """
         return self.tensors[name]
 
-    def set_tensor_by_name(self, name: str, tensor: jax.Array) -> None:
+    def set_tensor_by_name(self, name: str, tensor: Tensor) -> None:
         """Set a tensor by its name.
 
         :param name: Name of the tensor to set.
@@ -210,7 +211,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: dict[str, jax.Array]) -> None:
+    def add_samples(self, **tensors: dict[str, Tensor]) -> None:
         """Add/store samples in memory.
 
         .. important::
@@ -280,7 +281,7 @@ class Memory(ABC):
     @abstractmethod
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[jax.Array]]:
+    ) -> list[list[Tensor]]:
         """Data sampling method to be implemented by the inheriting classes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -293,9 +294,7 @@ class Memory(ABC):
         """
         pass
 
-    def sample_by_index(
-        self, names: list[str], *, indexes: list | jax.Array, mini_batches: int = 1
-    ) -> list[list[jax.Array]]:
+    def sample_by_index(self, names: list[str], *, indexes: list | Tensor, mini_batches: int = 1) -> list[list[Tensor]]:
         """Sample data from memory according to their indexes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -311,7 +310,7 @@ class Memory(ABC):
             return [[None if view is None else view[batch] for view in views] for batch in batches]
         return [[self._tensors_view(name)[indexes] if name in self.tensors else None for name in names]]
 
-    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[jax.Array]]:
+    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[Tensor]]:
         """Sample all data from memory.
 
         :param names: Tensors names from which to obtain the samples.
@@ -341,7 +340,7 @@ class Memory(ABC):
             return [[None if view is None else view[batch[0] : batch[1]] for view in views] for batch in batches]
         return [[self._tensors_view(name) if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> list | jax.Array:
+    def get_sampling_indexes(self) -> list | Tensor:
         """Get the last indexes used for sampling.
 
         :return: Last sampling indexes.

@@ -6,6 +6,7 @@ import numpy as np
 import warp as wp
 
 from skrl.memories.warp import Memory
+from skrl.utils.framework.warp.types import Tensor
 
 
 class RandomMemory(Memory):
@@ -51,7 +52,7 @@ class RandomMemory(Memory):
 
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[wp.array]]:
+    ) -> list[list[Tensor]]:
         """Sample a batch from memory randomly.
 
         :param names: Tensors names from which to obtain the samples.

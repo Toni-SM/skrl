@@ -8,7 +8,7 @@ import numpy as np
 
 from skrl import config
 from skrl.resources.noises.jax import Noise
-from skrl.utils.framework.jax.types import Tensor
+from skrl.utils.framework.jax.types import Device, Tensor
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -27,7 +27,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 

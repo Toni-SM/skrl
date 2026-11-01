@@ -5,11 +5,11 @@ from abc import ABC, abstractmethod
 import torch
 
 from skrl import config
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 class Noise(ABC):
-    def __init__(self, *, device: str | torch.device | None = None) -> None:
+    def __init__(self, *, device: Device = None) -> None:
         """Base noise class for implementing custom noises.
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.

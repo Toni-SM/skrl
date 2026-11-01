@@ -6,7 +6,7 @@ import numpy as np
 import warp as wp
 
 from skrl import config
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.spaces.warp import compute_space_size
 
 
@@ -119,7 +119,7 @@ class RunningStandardScaler:
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 

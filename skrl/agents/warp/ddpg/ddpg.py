@@ -33,10 +33,10 @@ def enable_grad(obj, *, enabled: bool):
 
 @wp.kernel(enable_backward=False)
 def _apply_exploration_noise(
-    actions: wp.array2d(dtype=float),
-    noises: wp.array2d(dtype=float),
-    min_actions: wp.array1d(dtype=float),
-    max_actions: wp.array1d(dtype=float),
+    actions: wp.array2d[float],
+    noises: wp.array2d[float],
+    min_actions: wp.array1d[float],
+    max_actions: wp.array1d[float],
     scale: float,
 ):
     i, j = wp.tid()
@@ -46,13 +46,13 @@ def _apply_exploration_noise(
 
 @wp.kernel
 def _critic_loss(
-    values: wp.array2d(dtype=float),
-    target_values: wp.array2d(dtype=float),
-    sampled_rewards: wp.array2d(dtype=float),
-    sampled_terminated: wp.array2d(dtype=wp.int8),
+    values: wp.array2d[float],
+    target_values: wp.array2d[float],
+    sampled_rewards: wp.array2d[float],
+    sampled_terminated: wp.array2d[wp.int8],
     discount_factor: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     # compute target values
@@ -65,9 +65,9 @@ def _critic_loss(
 
 @wp.kernel
 def _policy_loss(
-    values: wp.array2d(dtype=float),
+    values: wp.array2d[float],
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     wp.atomic_add(loss, 0, -values[i, j] / n)

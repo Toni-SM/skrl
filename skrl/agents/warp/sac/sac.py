@@ -31,17 +31,17 @@ def enable_grad(obj, *, enabled: bool):
 
 @wp.kernel
 def _critic_loss(
-    values_1: wp.array2d(dtype=float),
-    values_2: wp.array2d(dtype=float),
-    target_values_1: wp.array2d(dtype=float),
-    target_values_2: wp.array2d(dtype=float),
-    next_log_prob: wp.array2d(dtype=float),
+    values_1: wp.array2d[float],
+    values_2: wp.array2d[float],
+    target_values_1: wp.array2d[float],
+    target_values_2: wp.array2d[float],
+    next_log_prob: wp.array2d[float],
     entropy_coefficient: float,
-    sampled_rewards: wp.array2d(dtype=float),
-    sampled_terminated: wp.array2d(dtype=wp.int8),
+    sampled_rewards: wp.array2d[float],
+    sampled_terminated: wp.array2d[wp.int8],
     discount_factor: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     # compute target values
@@ -62,12 +62,12 @@ def _critic_loss(
 
 @wp.kernel
 def _policy_loss(
-    values_1: wp.array2d(dtype=float),
-    values_2: wp.array2d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
+    values_1: wp.array2d[float],
+    values_2: wp.array2d[float],
+    log_prob: wp.array2d[float],
     entropy_coefficient: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     wp.atomic_add(loss, 0, (entropy_coefficient * log_prob[i, 0] - wp.min(values_1[i, j], values_2[i, j])) / n)
@@ -75,11 +75,11 @@ def _policy_loss(
 
 @wp.kernel
 def _entropy_loss(
-    log_entropy_coefficient: wp.array1d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
+    log_entropy_coefficient: wp.array1d[float],
+    log_prob: wp.array2d[float],
     target_entropy: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     wp.atomic_add(loss, 0, -log_entropy_coefficient[0] * (log_prob[wp.tid(), 0] + target_entropy) / n)
 

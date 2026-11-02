@@ -487,7 +487,7 @@ class MultiAgent(ABC):
                     logger.warning(f"Skipping modules for '{uid}'. The agent doesn't have such an instance")
                     continue
                 for name, data in modules[uid].items():
-                    module = self.checkpoint_modules[uid].get(name, None)
+                    module = self.checkpoint_modules[uid].get(name)
                     if module is not None:
                         if hasattr(module, "load_state_dict"):
                             module.load_state_dict(data)

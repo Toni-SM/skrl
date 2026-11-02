@@ -65,7 +65,7 @@ class IsaacLabWrapper(Wrapper):
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
-        states = observations.get("critic", None)
+        states = observations.get("critic")
         if states is not None:
             self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
@@ -87,7 +87,7 @@ class IsaacLabWrapper(Wrapper):
             self._observations = flatten_tensorized_space(
                 tensorize_space(self.observation_space, observations["policy"])
             )
-            states = observations.get("critic", None)
+            states = observations.get("critic")
             if states is not None:
                 self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
             self._reset_once = False

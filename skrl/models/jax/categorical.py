@@ -87,9 +87,7 @@ class CategoricalMixin:
         # map from observations/states to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)
 
-        actions, log_prob = _categorical(
-            net_output, self._c_unnormalized_log_prob, inputs.get("taken_actions", None), subkey
-        )
+        actions, log_prob = _categorical(net_output, self._c_unnormalized_log_prob, inputs.get("taken_actions"), subkey)
 
         outputs["log_prob"] = log_prob
         outputs["net_output"] = net_output

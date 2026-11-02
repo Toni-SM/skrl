@@ -157,7 +157,7 @@ class GaussianMixin:
             self._g_max_actions,
             self._g_min_mean_actions,
             self._g_max_mean_actions,
-            inputs.get("taken_actions", None),
+            inputs.get("taken_actions"),
             subkey,
             self._g_reduction,
         )

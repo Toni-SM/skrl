@@ -35,7 +35,7 @@ class Runner:
         self._cfg = self._check_cfg_compatibility(copy.deepcopy(cfg))
 
         # set random seed
-        set_seed(self._cfg.get("seed", None))
+        set_seed(self._cfg.get("seed"))
 
         self._models = self._generate_models(self._env, copy.deepcopy(self._cfg))
         self._agent = self._generate_agent(self._env, copy.deepcopy(self._cfg), self._models)

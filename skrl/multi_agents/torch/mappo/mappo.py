@@ -106,8 +106,8 @@ class MAPPO(MultiAgent):
         )
 
         # models
-        self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
-        self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
+        self.policies = {uid: self.models[uid].get("policy") for uid in self.possible_agents}
+        self.values = {uid: self.models[uid].get("value") for uid in self.possible_agents}
 
         # checkpoint models
         for uid in self.possible_agents:

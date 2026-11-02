@@ -61,7 +61,7 @@ def _get_activation_function(activation: str | None, as_module: bool = True) -> 
         "softsign": "nn.Softsign()" if as_module else "functional.softsign",
         "tanh": "nn.Tanh()" if as_module else "functional.tanh",
     }
-    return activations.get(activation.lower(), None) if type(activation) is str else None
+    return activations.get(activation.lower()) if type(activation) is str else None
 
 
 def _parse_input(source: str) -> str:

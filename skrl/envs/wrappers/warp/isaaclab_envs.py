@@ -70,7 +70,7 @@ class IsaacLabWrapper(Wrapper):
         self._observations = wp.from_torch(
             flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
         )
-        states = observations.get("critic", None)
+        states = observations.get("critic")
         if states is not None:
             self._states = wp.from_torch(flatten_tensorized_space(tensorize_space(self.state_space, states)))
 
@@ -99,7 +99,7 @@ class IsaacLabWrapper(Wrapper):
             self._observations = wp.from_torch(
                 flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
             )
-            states = observations.get("critic", None)
+            states = observations.get("critic")
             if states is not None:
                 self._states = wp.from_torch(flatten_tensorized_space(tensorize_space(self.state_space, states)))
             self._reset_once = False

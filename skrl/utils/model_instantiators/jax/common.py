@@ -60,7 +60,7 @@ def _get_activation_function(activation: str | None) -> str | None:
         "softsign": "nn.soft_sign",
         "tanh": "nn.tanh",
     }
-    return activations.get(activation.lower(), None) if type(activation) is str else None
+    return activations.get(activation.lower()) if type(activation) is str else None
 
 
 def _parse_input(source: str) -> str:

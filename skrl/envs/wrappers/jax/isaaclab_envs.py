@@ -98,7 +98,7 @@ class IsaacLabWrapper(Wrapper):
         )
         terminated = terminated.to(dtype=torch.int8)
         truncated = truncated.to(dtype=torch.int8)
-        states = observations.get("critic", None)
+        states = observations.get("critic")
         if states is not None:
             self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
 
@@ -127,7 +127,7 @@ class IsaacLabWrapper(Wrapper):
             self._observations = _torch2jax(
                 flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
             )
-            states = observations.get("critic", None)
+            states = observations.get("critic")
             if states is not None:
                 self._states = _torch2jax(flatten_tensorized_space(tensorize_space(self.state_space, states)))
             self._reset_once = False

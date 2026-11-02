@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 import itertools
 import math
@@ -123,9 +123,9 @@ class AMP(Agent):
         self.collect_reference_motions = collect_reference_motions
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
-        self.discriminator = self.models.get("discriminator", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
+        self.discriminator = self.models.get("discriminator")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy

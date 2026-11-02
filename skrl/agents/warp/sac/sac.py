@@ -124,11 +124,11 @@ class SAC(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.critic_1 = self.models.get("critic_1", None)
-        self.critic_2 = self.models.get("critic_2", None)
-        self.target_critic_1 = self.models.get("target_critic_1", None)
-        self.target_critic_2 = self.models.get("target_critic_2", None)
+        self.policy = self.models.get("policy")
+        self.critic_1 = self.models.get("critic_1")
+        self.critic_2 = self.models.get("critic_2")
+        self.target_critic_1 = self.models.get("target_critic_1")
+        self.target_critic_2 = self.models.get("target_critic_2")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy

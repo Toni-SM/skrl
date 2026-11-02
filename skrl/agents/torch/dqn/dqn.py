@@ -56,8 +56,8 @@ class DQN(Agent):
         )
 
         # models
-        self.q_network = self.models.get("q_network", None)
-        self.target_q_network = self.models.get("target_q_network", None)
+        self.q_network = self.models.get("q_network")
+        self.target_q_network = self.models.get("target_q_network")
 
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network

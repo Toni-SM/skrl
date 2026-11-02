@@ -113,10 +113,10 @@ class DDPG(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.target_policy = self.models.get("target_policy", None)
-        self.critic = self.models.get("critic", None)
-        self.target_critic = self.models.get("target_critic", None)
+        self.policy = self.models.get("policy")
+        self.target_policy = self.models.get("target_policy")
+        self.critic = self.models.get("critic")
+        self.target_critic = self.models.get("target_critic")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy

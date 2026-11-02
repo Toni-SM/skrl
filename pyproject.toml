@@ -134,4 +134,5 @@ exclude = [
 
 reportAttributeAccessIssue = "none"
 reportMissingImports = "none"
+reportOptionalMemberAccess = "none"
 reportUndefinedVariable = "none"

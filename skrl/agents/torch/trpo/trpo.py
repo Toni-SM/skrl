@@ -220,8 +220,8 @@ class TRPO(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         self.backup_policy = copy.deepcopy(self.policy)
 

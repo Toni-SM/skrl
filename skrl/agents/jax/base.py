@@ -363,7 +363,7 @@ class Agent(ABC):
         """
         if self.write_interval > 0:
             # compute the cumulative sum of the rewards and timesteps
-            if self._cumulative_rewards is None:
+            if self._cumulative_rewards is None or self._cumulative_timesteps is None:
                 self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
                 self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
 
@@ -448,7 +448,7 @@ class Agent(ABC):
             modules = pickle.load(file)
         if type(modules) is dict:
             for name, data in modules.items():
-                module = self.checkpoint_modules.get(name, None)
+                module = self.checkpoint_modules.get(name)
                 if module is not None:
                     if hasattr(module, "state_dict"):
                         params = flax.serialization.from_bytes(module.state_dict.params, data)

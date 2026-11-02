@@ -360,7 +360,7 @@ class Agent(ABC):
         """
         if self.write_interval > 0:
             # compute the cumulative sum of the rewards and timesteps
-            if self._cumulative_rewards is None:
+            if self._cumulative_rewards is None or self._cumulative_timesteps is None:
                 self._cumulative_rewards = torch.zeros_like(rewards, dtype=torch.float32)
                 self._cumulative_timesteps = torch.zeros_like(rewards, dtype=torch.int32)
 
@@ -440,7 +440,7 @@ class Agent(ABC):
             modules = torch.load(path, map_location=self.device)
         if type(modules) is dict:
             for name, data in modules.items():
-                module = self.checkpoint_modules.get(name, None)
+                module = self.checkpoint_modules.get(name)
                 if module is not None:
                     if hasattr(module, "load_state_dict"):
                         module.load_state_dict(data)

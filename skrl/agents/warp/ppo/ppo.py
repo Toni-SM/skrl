@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -240,7 +242,7 @@ class PPO(Agent):
             if self.scheduler is not None:
                 if "kladaptive" in self.scheduler.__qualname__.lower().replace("_", ""):
                     self.scheduler_type = KLAdaptiveLR
-                self.scheduler = self.cfg.learning_rate_scheduler[0](**self.cfg.learning_rate_scheduler_kwargs[0])
+                self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
 
             # training variables
             self._loss = wp.zeros((1,), dtype=wp.float32, device=self.device, requires_grad=True)

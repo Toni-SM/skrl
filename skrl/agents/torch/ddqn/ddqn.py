@@ -84,9 +84,7 @@ class DDQN(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs)
 
         # set up target networks
         if self.target_q_network is not None:

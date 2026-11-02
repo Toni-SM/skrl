@@ -245,7 +245,7 @@ class TRPO(Agent):
             # - learning rate scheduler
             self.value_scheduler = self.cfg.learning_rate_scheduler
             if self.value_scheduler is not None:
-                self.value_scheduler = self.cfg.learning_rate_scheduler(
+                self.value_scheduler = self.value_scheduler(
                     self.value_optimizer, **self.cfg.learning_rate_scheduler_kwargs
                 )
 

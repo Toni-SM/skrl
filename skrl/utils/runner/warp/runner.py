@@ -413,6 +413,8 @@ class Runner:
         # multi-agent configuration and instantiation
         elif agent_class in ["ippo", "mappo"]:
             raise NotImplementedError
+        else:
+            raise ValueError(f"Agent class '{agent_class}' is not supported in the runner cfg")
         return self._component(agent_class)(cfg=agent_cfg, device=device, **agent_kwargs)
 
     def _generate_trainer(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], agent: Agent) -> Trainer:

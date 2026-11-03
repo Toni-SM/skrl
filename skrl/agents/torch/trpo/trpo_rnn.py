@@ -476,6 +476,9 @@ class TRPO_RNN(Agent):
                 values=values,
                 **rnn_states,
             )
+        else:
+            # value outputs are only computed when training: keep the current value RNN states
+            outputs = {"rnn": self._rnn_initial_states["value"]}
 
         # update RNN states
         if self._rnn:

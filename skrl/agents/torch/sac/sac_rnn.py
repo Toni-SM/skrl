@@ -349,6 +349,7 @@ class SAC_RNN(Agent):
         """
 
         # gradient steps
+        entropy_loss = None
         for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory

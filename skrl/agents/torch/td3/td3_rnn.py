@@ -369,6 +369,7 @@ class TD3_RNN(Agent):
         """
 
         # gradient steps
+        policy_loss = None
         for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory

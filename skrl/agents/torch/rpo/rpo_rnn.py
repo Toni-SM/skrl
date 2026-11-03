@@ -355,6 +355,9 @@ class RPO_RNN(Agent):
                 values=values,
                 **rnn_states,
             )
+        else:
+            # value outputs are only computed when training: keep the current value RNN states
+            outputs = {"rnn": self._rnn_initial_states["value"]}
 
         # update RNN states
         if self._rnn:
@@ -438,6 +441,7 @@ class RPO_RNN(Agent):
         )
 
         rnn_policy, rnn_value = {}, {}
+        sampled_rnn_batches = []
         if self._rnn:
             sampled_rnn_batches = self.memory.sample_all(
                 names=self._rnn_tensors_names,

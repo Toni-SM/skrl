@@ -410,6 +410,7 @@ class A2C(Agent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         kl_divergences = []
 
@@ -468,6 +469,7 @@ class A2C(Agent):
 
         # update learning rate
         # - compute KL for KL adaptive learning rate scheduler
+        kl = 0.0
         if self.policy_scheduler_type is KLAdaptiveLR or self.value_scheduler_type is KLAdaptiveLR:
             kl = np.mean(kl_divergences)
             # reduce (collect from all workers/processes) KL in distributed runs

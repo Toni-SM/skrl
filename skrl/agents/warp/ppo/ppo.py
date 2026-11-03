@@ -492,6 +492,7 @@ class PPO(Agent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         # learning epochs
         for epoch in range(self.cfg.learning_epochs):

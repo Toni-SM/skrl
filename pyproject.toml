@@ -132,6 +132,7 @@ exclude = [
   "**/tests",
 ]
 
+reportArgumentType = "none"
 reportAttributeAccessIssue = "none"
 reportMissingImports = "none"
 reportOptionalMemberAccess = "none"

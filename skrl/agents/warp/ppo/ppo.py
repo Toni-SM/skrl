@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,6 +16,7 @@ from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.resources.schedulers.warp import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.warp.types import Device, Tensor
 
 from .ppo_cfg import PPO_CFG
 
@@ -32,9 +35,9 @@ def enable_grad(obj, *, enabled: bool):
 
 @wp.kernel(enable_backward=False)
 def _time_limit_bootstrap(
-    rewards: wp.array2d(dtype=float),
-    next_values: wp.array2d(dtype=float),
-    truncated: wp.array2d(dtype=wp.int8),
+    rewards: wp.array2d[float],
+    next_values: wp.array2d[float],
+    truncated: wp.array2d[wp.int8],
     discount_factor: float,
 ):
     i = wp.tid()
@@ -43,13 +46,13 @@ def _time_limit_bootstrap(
 
 @wp.kernel(enable_backward=False)
 def _compute_gae(
-    rewards: wp.array3d(dtype=float),
-    terminated: wp.array3d(dtype=wp.int8),
-    truncated: wp.array3d(dtype=wp.int8),
-    values: wp.array3d(dtype=float),
-    returns: wp.array3d(dtype=float),
-    advantages: wp.array3d(dtype=float),
-    last_values: wp.array2d(dtype=float),
+    rewards: wp.array3d[float],
+    terminated: wp.array3d[wp.int8],
+    truncated: wp.array3d[wp.int8],
+    values: wp.array3d[float],
+    returns: wp.array3d[float],
+    advantages: wp.array3d[float],
+    last_values: wp.array2d[float],
     discount_factor: float,
     lambda_coefficient: float,
     time_limit_bootstrap: int,
@@ -82,9 +85,9 @@ def _compute_gae(
 
 @wp.kernel(enable_backward=False)
 def _normalize_advantages(
-    advantages: wp.array3d(dtype=float),
-    advantages_mean: wp.array1d(dtype=float),
-    advantages_var: wp.array1d(dtype=float),
+    advantages: wp.array3d[float],
+    advantages_mean: wp.array1d[float],
+    advantages_var: wp.array1d[float],
 ):
     i, j = wp.tid()
     advantages[i, j, 0] = (advantages[i, j, 0] - advantages_mean[0]) / (wp.sqrt(advantages_var[0]) + 1e-8)
@@ -92,29 +95,29 @@ def _normalize_advantages(
 
 @wp.kernel
 def _entropy_loss(
-    entropy: wp.array1d(dtype=float),
+    entropy: wp.array1d[float],
     entropy_loss_scale: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     wp.atomic_add(loss, 0, -entropy_loss_scale * entropy[wp.tid()] / n)
 
 
 @wp.kernel
 def _policy_value_loss(
-    sampled_log_prob: wp.array2d(dtype=float),
-    sampled_values: wp.array2d(dtype=float),
-    sampled_returns: wp.array2d(dtype=float),
-    sampled_advantages: wp.array2d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
-    predicted_values: wp.array2d(dtype=float),
+    sampled_log_prob: wp.array2d[float],
+    sampled_values: wp.array2d[float],
+    sampled_returns: wp.array2d[float],
+    sampled_advantages: wp.array2d[float],
+    log_prob: wp.array2d[float],
+    predicted_values: wp.array2d[float],
     ratio_clip: float,
     value_clip: float,
     value_loss_scale: float,
     n: float,
-    policy_loss: wp.array1d(dtype=float),
-    value_loss: wp.array1d(dtype=float),
-    kl_divergence: wp.array1d(dtype=float),
+    policy_loss: wp.array1d[float],
+    value_loss: wp.array1d[float],
+    kl_divergence: wp.array1d[float],
 ):
     i = wp.tid()
     # compute approximate KL divergence
@@ -158,10 +161,10 @@ def _policy_value_loss(
 
 @wp.kernel
 def _loss(
-    policy_loss: wp.array1d(dtype=float),
-    value_loss: wp.array1d(dtype=float),
-    entropy_loss: wp.array1d(dtype=float),
-    loss: wp.array(dtype=float),
+    policy_loss: wp.array1d[float],
+    value_loss: wp.array1d[float],
+    entropy_loss: wp.array1d[float],
+    loss: wp.array1d[float],
 ):
     if entropy_loss:
         loss[0] = policy_loss[0] + value_loss[0] + entropy_loss[0]
@@ -178,7 +181,7 @@ class PPO(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
         cfg: PPO_CFG | dict = {},
     ) -> None:
         """Proximal Policy Optimization (PPO).
@@ -207,8 +210,8 @@ class PPO(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -239,7 +242,7 @@ class PPO(Agent):
             if self.scheduler is not None:
                 if "kladaptive" in self.scheduler.__qualname__.lower().replace("_", ""):
                     self.scheduler_type = KLAdaptiveLR
-                self.scheduler = self.cfg.learning_rate_scheduler[0](**self.cfg.learning_rate_scheduler_kwargs[0])
+                self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
 
             # training variables
             self._loss = wp.zeros((1,), dtype=wp.float32, device=self.device, requires_grad=True)
@@ -301,8 +304,8 @@ class PPO(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
-    ) -> tuple[wp.array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -331,14 +334,14 @@ class PPO(Agent):
     def record_transition(
         self,
         *,
-        observations: wp.array,
-        states: wp.array,
-        actions: wp.array,
-        rewards: wp.array,
-        next_observations: wp.array,
-        next_states: wp.array,
-        terminated: wp.array,
-        truncated: wp.array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -489,6 +492,7 @@ class PPO(Agent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         # learning epochs
         for epoch in range(self.cfg.learning_epochs):

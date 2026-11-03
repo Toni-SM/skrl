@@ -17,6 +17,7 @@ from skrl.envs.wrappers.jax.base import MultiAgentEnvWrapper, Wrapper
 # Isaac Lab runs on PyTorch: reuse its PyTorch wrappers and only convert inputs/outputs (avoid duplicate logic)
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper as _TorchIsaacLabMultiAgentWrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabWrapper as _TorchIsaacLabWrapper
+from skrl.utils.framework.jax.types import Tensor
 
 
 # ML frameworks conversion utilities
@@ -76,7 +77,7 @@ class IsaacLabWrapper(Wrapper):
         states: torch.Tensor | None,
         final_observations: torch.Tensor,
         final_states: torch.Tensor | None,
-    ) -> tuple[jax.Array, jax.Array | None, jax.Array, jax.Array | None]:
+    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
         """Convert the PyTorch wrapper's observations/states and final observations/states.
 
         :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
@@ -96,7 +97,7 @@ class IsaacLabWrapper(Wrapper):
             converted_states if final_states is states else _torch2jax(final_states),
         )
 
-    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -117,14 +118,14 @@ class IsaacLabWrapper(Wrapper):
             info,
         )
 
-    def state(self) -> jax.Array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -135,7 +136,7 @@ class IsaacLabWrapper(Wrapper):
         )
         return self._observations, info
 
-    def final(self) -> tuple[jax.Array, jax.Array | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations/states are read from the info (``"final_obs"`` key) when the environment
@@ -177,7 +178,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         states: dict[str, torch.Tensor | None],
         final_observations: dict[str, torch.Tensor],
         final_states: dict[str, torch.Tensor | None],
-    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array | None], dict[str, jax.Array], dict[str, jax.Array | None]]:
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor | None], dict[str, Tensor], dict[str, Tensor | None]]:
         """Convert the PyTorch wrapper's observations/states and final observations/states.
 
         :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
@@ -207,8 +208,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
 
     def step(
-        self, actions: dict[str, jax.Array]
-    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
+        self, actions: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -229,7 +230,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             info,
         )
 
-    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -240,14 +241,14 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
         return self._observations, info
 
-    def state(self) -> dict[str, jax.Array | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def final(self) -> tuple[dict[str, jax.Array], dict[str, jax.Array | None]]:
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations are read from each agent's info (``"final_obs"`` key) when the environment

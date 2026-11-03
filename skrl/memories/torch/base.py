@@ -14,6 +14,7 @@ import numpy as np
 import torch
 
 from skrl import config
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_size
 
 
@@ -23,7 +24,7 @@ class Memory(ABC):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -66,7 +67,7 @@ class Memory(ABC):
 
         # exporting data
         self.export = export
-        self.export_format = export_format
+        self.export_format: Literal["pt", "npz", "csv"] = export_format
         self.export_directory = export_directory
         if self.export_format not in ["pt", "npz", "csv"]:
             raise ValueError(f"Unsupported export format: '{self.export_format}'")
@@ -96,7 +97,7 @@ class Memory(ABC):
         """
         return sorted(self.tensors.keys())
 
-    def get_tensor_by_name(self, name: str) -> torch.Tensor:
+    def get_tensor_by_name(self, name: str) -> Tensor:
         """Get a tensor by its name.
 
         :param name: Name of the tensor to get.
@@ -107,7 +108,7 @@ class Memory(ABC):
         """
         return self.tensors[name]
 
-    def set_tensor_by_name(self, name: str, tensor: torch.Tensor) -> None:
+    def set_tensor_by_name(self, name: str, tensor: Tensor) -> None:
         """Set a tensor by its name.
 
         :param name: Name of the tensor to set.
@@ -159,7 +160,7 @@ class Memory(ABC):
                 raise ValueError(f"Tensor dtype ({dtype}) doesn't match the existing one ({tensor.dtype}): '{name}'")
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
-        shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
+        shape = (self.memory_size, self.num_envs, *(size if isinstance(size, (tuple, list)) else [size]))
         setattr(self, f"_tensor_{name}", torch.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
@@ -187,7 +188,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: dict[str, torch.Tensor]) -> None:
+    def add_samples(self, **tensors: Tensor) -> None:
         """Add/store samples in memory.
 
         .. important::
@@ -273,7 +274,7 @@ class Memory(ABC):
     @abstractmethod
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[torch.Tensor]]:
+    ) -> list[list[Tensor]]:
         """Data sampling method to be implemented by the inheriting classes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -287,8 +288,8 @@ class Memory(ABC):
         pass
 
     def sample_by_index(
-        self, names: list[str], *, indexes: list | np.ndarray | torch.Tensor, mini_batches: int = 1
-    ) -> list[list[torch.Tensor]]:
+        self, names: list[str], *, indexes: list | np.ndarray | Tensor, mini_batches: int = 1
+    ) -> list[list[Tensor]]:
         """Sample data from memory according to their indexes.
 
         :param names: Tensors names from which to obtain the samples.
@@ -306,9 +307,7 @@ class Memory(ABC):
             ]
         return [[self.tensors_view[name][indexes] if name in self.tensors else None for name in names]]
 
-    def sample_all(
-        self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[torch.Tensor]]:
+    def sample_all(self, names: list[str], *, mini_batches: int = 1, sequence_length: int = 1) -> list[list[Tensor]]:
         """Sample all data from memory.
 
         :param names: Tensors names from which to obtain the samples.
@@ -339,7 +338,7 @@ class Memory(ABC):
             ]
         return [[self.tensors_view[name] if name in self.tensors else None for name in names]]
 
-    def get_sampling_indexes(self) -> list | np.ndarray | torch.Tensor:
+    def get_sampling_indexes(self) -> list | np.ndarray | Tensor:
         """Get the last indexes used for sampling.
 
         :return: Last sampling indexes.

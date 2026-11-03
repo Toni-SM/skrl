@@ -6,11 +6,12 @@ import textwrap
 import gymnasium
 
 import flax.linen as nn  # noqa
-import jax
+import jax  # noqa
 import jax.numpy as jnp  # noqa
 
 from skrl.models.jax import GaussianMixin  # noqa
 from skrl.models.jax import Model  # noqa
+from skrl.utils.framework.jax.types import Device
 from skrl.utils.model_instantiators.jax.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.jax.common import generate_containers
 from skrl.utils.spaces.jax import unflatten_tensorized_space  # noqa
@@ -21,7 +22,7 @@ def gaussian_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | jax.Device | None = None,
+    device: Device = None,
     clip_actions: bool = False,
     clip_mean_actions: bool = False,
     clip_log_std: bool = True,
@@ -60,30 +61,30 @@ def gaussian_model(
     :return: Gaussian model instance or definition source (if ``return_source`` is True).
     """
     # parse model definition
-    containers, output = generate_containers(network, output, embed_output=True, indent=1)
+    containers, parsed_output = generate_containers(network, output, embed_output=True, indent=1)
 
     # network definitions
     networks = []
-    forward: list[str] = []
+    forward = []
     for container in containers:
         networks.append(f'self.{container["name"]}_container = {container["sequential"]}')
         forward.append(f'{container["name"]} = self.{container["name"]}_container({container["input"]})')
     # process output
-    if output["modules"]:
-        networks.append(f'self.output_layer = {output["modules"][0]}')
-        forward.append(f'output = self.output_layer({container["name"]})')
-    if output["output"]:
-        forward.append(f'output = {output["output"]}')
+    if parsed_output["modules"]:
+        networks.append(f'self.output_layer = {parsed_output["modules"][0]}')
+        forward.append(f'output = self.output_layer({containers[-1]["name"]})')
+    if parsed_output["output"]:
+        forward.append(f'output = {parsed_output["output"]}')
     else:
-        forward[-1] = forward[-1].replace(f'{container["name"]} =', "output =", 1)
+        forward[-1] = forward[-1].replace(f'{containers[-1]["name"]} =', "output =", 1)
 
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
     forward = textwrap.indent("\n".join(forward), prefix=" " * 8)[8:]
     if fixed_log_std:
-        log_std_parameter = f'jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)})'
+        log_std_parameter = f'jnp.full(shape={parsed_output["size"]}, fill_value={float(initial_log_std)})'
     else:
-        log_std_parameter = f'self.param("log_std_parameter", lambda _: jnp.full(shape={output["size"]}, fill_value={float(initial_log_std)}))'
+        log_std_parameter = f'self.param("log_std_parameter", lambda _: jnp.full(shape={parsed_output["size"]}, fill_value={float(initial_log_std)}))'
 
     template = f"""class GaussianModel(GaussianMixin, Model):
     def __init__(

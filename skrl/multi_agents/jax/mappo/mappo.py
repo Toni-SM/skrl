@@ -1,3 +1,4 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false, reportCallIssue=false, reportOptionalCall=false
 from __future__ import annotations
 
 from typing import Any
@@ -16,6 +17,7 @@ from skrl.multi_agents.jax import MultiAgent
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .mappo_cfg import MAPPO_CFG
 
@@ -23,15 +25,15 @@ from .mappo_cfg import MAPPO_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @functools.partial(jax.jit, static_argnames=("time_limit_bootstrap",))
 def _compute_gae(
-    rewards: jax.Array,
-    terminated: jax.Array,
-    truncated: jax.Array,
-    values: jax.Array,
-    last_values: jax.Array,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> jax.Array:
+) -> Tensor:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
     not_done = jnp.logical_not(jnp.logical_or(terminated, truncated) if time_limit_bootstrap else terminated)
@@ -125,7 +127,7 @@ class MAPPO(MultiAgent):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: MAPPO_CFG | dict = {},
     ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO).
@@ -157,8 +159,8 @@ class MAPPO(MultiAgent):
         )
 
         # models
-        self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
-        self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
+        self.policies = {uid: self.models[uid].get("policy") for uid in self.possible_agents}
+        self.values = {uid: self.models[uid].get("value") for uid in self.possible_agents}
 
         # checkpoint models
         for uid in self.possible_agents:
@@ -286,8 +288,8 @@ class MAPPO(MultiAgent):
                 self.values[uid].apply = jax.jit(self.values[uid].apply, static_argnums=2)
 
     def act(
-        self, observations: dict[str, jax.Array], states: dict[str, jax.Array | None], *, timestep: int, timesteps: int
-    ) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+        self, observations: dict[str, Tensor], states: dict[str, Tensor | None], *, timestep: int, timesteps: int
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -324,14 +326,14 @@ class MAPPO(MultiAgent):
     def record_transition(
         self,
         *,
-        observations: dict[str, jax.Array],
-        states: dict[str, jax.Array | None],
-        actions: dict[str, jax.Array],
-        rewards: dict[str, jax.Array],
-        next_observations: dict[str, jax.Array],
-        next_states: dict[str, jax.Array],
-        terminated: dict[str, jax.Array],
-        truncated: dict[str, jax.Array],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
+        actions: dict[str, Tensor],
+        rewards: dict[str, Tensor],
+        next_observations: dict[str, Tensor],
+        next_states: dict[str, Tensor],
+        terminated: dict[str, Tensor],
+        truncated: dict[str, Tensor],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -463,6 +465,7 @@ class MAPPO(MultiAgent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         # learning epochs
         for epoch in range(self.cfg.learning_epochs[uid]):
@@ -542,6 +545,7 @@ class MAPPO(MultiAgent):
 
             # update learning rate
             # - compute KL for KL adaptive learning rate scheduler
+            kl = 0.0
             if self.policy_scheduler_type[uid] is KLAdaptiveLR or self.value_scheduler_type[uid] is KLAdaptiveLR:
                 kl = np.mean(kl_divergences)
                 # reduce (collect from all workers/processes) KL in distributed runs

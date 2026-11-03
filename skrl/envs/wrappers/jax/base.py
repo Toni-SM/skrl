@@ -9,6 +9,7 @@ import jax
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Tensor
 
 
 class Wrapper(ABC):
@@ -47,7 +48,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -55,7 +56,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -65,7 +66,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> jax.Array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -73,7 +74,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def final(self) -> tuple[jax.Array, jax.Array | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
@@ -182,7 +183,7 @@ class MultiAgentEnvWrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[dict[str, jax.Array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -191,8 +192,8 @@ class MultiAgentEnvWrapper(ABC):
 
     @abstractmethod
     def step(
-        self, actions: dict[str, jax.Array]
-    ) -> tuple[dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, jax.Array], dict[str, Any]]:
+        self, actions: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -202,7 +203,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> dict[jax.Array | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.
@@ -210,7 +211,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def final(self) -> tuple[dict[str, jax.Array], dict[str, jax.Array | None]]:
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Get the observations and states with which the last transitions ended.
 
         Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)

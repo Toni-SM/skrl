@@ -8,6 +8,7 @@ import gymnasium
 import torch
 
 from skrl import config
+from skrl.utils.framework.torch.types import Tensor
 
 
 class Wrapper(ABC):
@@ -46,7 +47,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -54,7 +55,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -64,7 +65,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -72,7 +73,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def final(self) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
@@ -181,7 +182,7 @@ class MultiAgentEnvWrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -189,11 +190,11 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
+    def step(self, actions: dict[str, Tensor]) -> tuple[
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
         dict[str, Any],
     ]:
         """Perform a step in the environment.
@@ -205,7 +206,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> dict[str, torch.Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.
@@ -213,7 +214,7 @@ class MultiAgentEnvWrapper(ABC):
         pass
 
     @abstractmethod
-    def final(self) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Get the observations and states with which the last transitions ended.
 
         Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)

@@ -8,6 +8,7 @@ import torch
 
 from skrl import config
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -55,7 +56,7 @@ class IsaacLabWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def _parse_group(self, group: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def _parse_group(self, group: dict[str, Tensor]) -> tuple[Tensor, Tensor | None]:
         """Parse the observations and states from the environment's observation groups.
 
         :param group: Observation group (keys: ``"policy"`` and, optionally, ``"critic"``).
@@ -69,8 +70,8 @@ class IsaacLabWrapper(Wrapper):
         return observations, states
 
     def _parse_final_group(
-        self, info: dict[str, Any], terminated: torch.Tensor, truncated: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        self, info: dict[str, Any], terminated: Tensor, truncated: Tensor
+    ) -> tuple[Tensor, Tensor | None]:
         """Parse the final observations and states from the environment's info.
 
         The final observation group (``"final_obs"`` key) is used for the environments whose episodes ended.
@@ -95,7 +96,7 @@ class IsaacLabWrapper(Wrapper):
                     final_states = torch.where(dones, states, final_states)
         return final_observations, final_states
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -109,14 +110,14 @@ class IsaacLabWrapper(Wrapper):
         self._final_observations, self._final_states = self._parse_final_group(self._info, terminated, truncated)
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -130,7 +131,7 @@ class IsaacLabWrapper(Wrapper):
         self._final_states = self._states
         return self._observations, self._info
 
-    def final(self) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations/states are read from the info (``"final_obs"`` key) when the environment
@@ -167,9 +168,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._final_states = None
         self._info = {}
 
-    def _parse_group(
-        self, observations: dict[str, torch.Tensor]
-    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+    def _parse_group(self, observations: dict[str, Tensor]) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Parse the observations and states from the environment's output.
 
         The state (shared by all agents) is read from the wrapped environment.
@@ -190,8 +189,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         return observations, {uid: state for uid in self.possible_agents}
 
     def _parse_final_group(
-        self, info: dict[str, Any], terminated: dict[str, torch.Tensor], truncated: dict[str, torch.Tensor]
-    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+        self, info: dict[str, Any], terminated: dict[str, Tensor], truncated: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Parse the final observations and states from the environment's info.
 
         The final observation of each agent (``"final_obs"`` key in the agent's info) is used for the environments
@@ -226,11 +225,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
                 }
         return final_observations, final_states
 
-    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
+    def step(self, actions: dict[str, Tensor]) -> tuple[
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
         dict[str, Any],
     ]:
         """Perform a step in the environment.
@@ -252,7 +251,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._info,
         )
 
-    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -266,14 +265,14 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._final_states = self._states
         return self._observations, self._info
 
-    def state(self) -> dict[str, torch.Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def final(self) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor | None]]:
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations are read from each agent's info (``"final_obs"`` key) when the environment

@@ -8,6 +8,7 @@ import torch
 
 from skrl import config
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import (
     flatten_tensorized_space,
     tensorize_space,
@@ -26,11 +27,11 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
 
         self._seed = config.torch.key
 
-    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
+    def step(self, actions: dict[str, Tensor]) -> tuple[
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
         dict[str, Any],
     ]:
         """Perform a step in the environment.
@@ -64,7 +65,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> dict[str, torch.Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         In PettingZoo, the state is a global view of the environment, so it is the same for all agents.
@@ -76,7 +77,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         )
         return {uid: state for uid in self.possible_agents}
 
-    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

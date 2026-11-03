@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
+from skrl.utils.framework.jax.types import Tensor
+
 
 # hack to fix: module 'numpy' has no attribute 'bool8'
 try:
-    import numpy as np
-
     np.bool8
 except AttributeError:
     np.bool8 = np.bool
@@ -16,7 +18,6 @@ import gymnasium
 from packaging import version
 
 import jax
-import numpy as np
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
@@ -136,7 +137,7 @@ class GymWrapper(Wrapper):
             space, items, gymnasium.vector.utils.create_empty_array(space, num_envs)
         )
 
-    def _parse_group(self, observation: Any) -> tuple[jax.Array, jax.Array | None]:
+    def _parse_group(self, observation: Any) -> tuple[Tensor, Tensor | None]:
         """Parse the observations and states from the environment's output.
 
         :param observation: Observation returned by the environment.
@@ -160,7 +161,7 @@ class GymWrapper(Wrapper):
                 states = flatten_tensorized_space(tensorize_space(space, state, device=self.device))
         return observations, states
 
-    def _parse_final_group(self, observation: Any, info: Any) -> tuple[jax.Array, jax.Array | None]:
+    def _parse_final_group(self, observation: Any, info: Any) -> tuple[Tensor, Tensor | None]:
         """Parse the final observations and states from the environment's output.
 
         The final observation of the (same-step) auto-reset environments is read from the info
@@ -181,7 +182,7 @@ class GymWrapper(Wrapper):
         )
         return final_observations, self._states
 
-    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -220,7 +221,7 @@ class GymWrapper(Wrapper):
         truncated = jax.device_put(np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
         return self._observations, reward, terminated, truncated, self._info
 
-    def state(self) -> jax.Array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         The state is computed at the last :py:meth:`reset`/:py:meth:`step` call.
@@ -229,7 +230,7 @@ class GymWrapper(Wrapper):
         """
         return self._states
 
-    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -263,7 +264,7 @@ class GymWrapper(Wrapper):
         self._info = info
         return self._observations, self._info
 
-    def final(self) -> tuple[jax.Array, jax.Array | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         The final observation of (same-step) auto-reset environments is read from the info.

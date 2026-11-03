@@ -13,13 +13,14 @@ from skrl import config
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabMultiAgentWrapper as _TorchIsaacLabMultiAgentWrapper
 from skrl.envs.wrappers.torch.isaaclab_envs import IsaacLabWrapper as _TorchIsaacLabWrapper
 from skrl.envs.wrappers.warp.base import MultiAgentEnvWrapper, Wrapper
+from skrl.utils.framework.warp.types import Tensor
 
 
-def _torch2warp(tensor: torch.Tensor | None) -> wp.array | None:
+def _torch2warp(tensor: torch.Tensor | None) -> Tensor | None:
     return None if tensor is None else wp.from_torch(tensor)
 
 
-def _warp2torch(array: wp.array | None) -> torch.Tensor | None:
+def _warp2torch(array: Tensor | None) -> torch.Tensor | None:
     return None if array is None else wp.to_torch(array)
 
 
@@ -59,7 +60,7 @@ class IsaacLabWrapper(Wrapper):
         states: torch.Tensor | None,
         final_observations: torch.Tensor,
         final_states: torch.Tensor | None,
-    ) -> tuple[wp.array, wp.array | None, wp.array, wp.array | None]:
+    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
         """Convert the PyTorch wrapper's observations/states and final observations/states.
 
         :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
@@ -79,7 +80,7 @@ class IsaacLabWrapper(Wrapper):
             converted_states if final_states is states else _torch2warp(final_states),
         )
 
-    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -92,14 +93,14 @@ class IsaacLabWrapper(Wrapper):
         )
         return self._observations, _torch2warp(reward), _torch2warp(terminated), _torch2warp(truncated), info
 
-    def state(self) -> wp.array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[wp.array, Any]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -110,7 +111,7 @@ class IsaacLabWrapper(Wrapper):
         )
         return self._observations, info
 
-    def final(self) -> tuple[wp.array, wp.array | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations/states are read from the info (``"final_obs"`` key) when the environment
@@ -152,7 +153,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         states: dict[str, torch.Tensor | None],
         final_observations: dict[str, torch.Tensor],
         final_states: dict[str, torch.Tensor | None],
-    ) -> tuple[dict[str, wp.array], dict[str, wp.array | None], dict[str, wp.array], dict[str, wp.array | None]]:
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor | None], dict[str, Tensor], dict[str, Tensor | None]]:
         """Convert the PyTorch wrapper's observations/states and final observations/states.
 
         :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
@@ -182,8 +183,8 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
 
     def step(
-        self, actions: dict[str, wp.array]
-    ) -> tuple[dict[str, wp.array], dict[str, wp.array], dict[str, wp.array], dict[str, wp.array], dict[str, Any]]:
+        self, actions: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Any]]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -204,7 +205,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             info,
         )
 
-    def reset(self) -> tuple[dict[str, wp.array], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -215,14 +216,14 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         )
         return self._observations, info
 
-    def state(self) -> dict[str, wp.array | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def final(self) -> tuple[dict[str, wp.array], dict[str, wp.array | None]]:
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
         """Get the observations and states with which the last transitions ended.
 
         The final observations are read from each agent's info (``"final_obs"`` key) when the environment

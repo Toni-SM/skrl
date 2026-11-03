@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,19 +18,20 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .rpo_cfg import RPO_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    values: torch.Tensor,
-    next_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    values: Tensor,
+    next_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -71,7 +74,7 @@ class RPO_RNN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: RPO_CFG | dict = {},
     ) -> None:
         """Robust Policy Optimization (RPO) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.).
@@ -100,8 +103,8 @@ class RPO_RNN(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -135,9 +138,7 @@ class RPO_RNN(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler[0](
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0])
 
         # set up preprocessors
         # - observations
@@ -236,8 +237,8 @@ class RPO_RNN(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -268,14 +269,14 @@ class RPO_RNN(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -354,6 +355,9 @@ class RPO_RNN(Agent):
                 values=values,
                 **rnn_states,
             )
+        else:
+            # value outputs are only computed when training: keep the current value RNN states
+            outputs = {"rnn": self._rnn_initial_states["value"]}
 
         # update RNN states
         if self._rnn:
@@ -370,7 +374,7 @@ class RPO_RNN(Agent):
                     for rnn_state in self._rnn_final_states["value"]:
                         rnn_state[:, finished_episodes[:, 0]] = 0
 
-            self._rnn_initial_states = self._rnn_final_states
+            self._rnn_initial_states = self._rnn_final_states.copy()  # copy to avoid aliasing
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -437,6 +441,7 @@ class RPO_RNN(Agent):
         )
 
         rnn_policy, rnn_value = {}, {}
+        sampled_rnn_batches = []
         if self._rnn:
             sampled_rnn_batches = self.memory.sample_all(
                 names=self._rnn_tensors_names,

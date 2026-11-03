@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import gymnasium
 
 import jax
@@ -7,6 +9,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from skrl import config
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_size
 
 
@@ -19,8 +22,8 @@ def _copyto(dst, src):
 
 @jax.jit
 def _parallel_variance(
-    running_mean: jax.Array, running_variance: jax.Array, current_count: jax.Array, array: jax.Array
-) -> tuple[jax.Array, jax.Array, jax.Array]:
+    running_mean: Tensor, running_variance: Tensor, current_count: Tensor, array: Tensor
+) -> tuple[Tensor, Tensor, Tensor]:
     # ddof = 1: https://github.com/pytorch/pytorch/issues/50010
     if array.ndim == 3:
         input_mean = jnp.mean(array, axis=(0, 1))
@@ -43,16 +46,14 @@ def _parallel_variance(
 
 
 @jax.jit
-def _inverse(
-    running_mean: jax.Array, running_variance: jax.Array, clip_threshold: float, array: jax.Array
-) -> jax.Array:
+def _inverse(running_mean: Tensor, running_variance: Tensor, clip_threshold: float, array: Tensor) -> Tensor:
     return jnp.sqrt(running_variance) * jnp.clip(array, -clip_threshold, clip_threshold) + running_mean
 
 
 @jax.jit
 def _standardization(
-    running_mean: jax.Array, running_variance: jax.Array, clip_threshold: float, epsilon: float, array: jax.Array
-) -> jax.Array:
+    running_mean: Tensor, running_variance: Tensor, clip_threshold: float, epsilon: float, array: Tensor
+) -> Tensor:
     return jnp.clip((array - running_mean) / (jnp.sqrt(running_variance) + epsilon), -clip_threshold, clip_threshold)
 
 
@@ -63,7 +64,7 @@ class RunningStandardScaler:
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 
@@ -92,7 +93,7 @@ class RunningStandardScaler:
         self.current_count = jnp.ones((1,), dtype=jnp.float32, device=self.device)
 
     @property
-    def state_dict(self) -> dict[str, jax.Array]:
+    def state_dict(self) -> Any:
         """Dictionary containing references to the whole state of the module."""
 
         class _StateDict:
@@ -111,12 +112,12 @@ class RunningStandardScaler:
         )
 
     @state_dict.setter
-    def state_dict(self, value: dict[str, jax.Array]) -> None:
+    def state_dict(self, value: dict[str, Tensor]) -> None:
         self.running_mean = _copyto(self.running_mean, value["running_mean"])
         self.running_variance = _copyto(self.running_variance, value["running_variance"])
         self.current_count = _copyto(self.current_count, value["current_count"])
 
-    def _parallel_variance(self, input_mean: jax.Array, input_var: jax.Array, input_count: int) -> None:
+    def _parallel_variance(self, input_mean: Tensor, input_var: Tensor, input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance.
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
@@ -138,7 +139,7 @@ class RunningStandardScaler:
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def __call__(self, x: jax.Array | None, *, train: bool = False, inverse: bool = False) -> jax.Array | None:
+    def __call__(self, x: Tensor | None, *, train: bool = False, inverse: bool = False) -> Tensor | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

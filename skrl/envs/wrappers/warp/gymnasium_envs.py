@@ -9,6 +9,7 @@ import warp as wp
 
 from skrl import config, logger
 from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import (
     flatten_tensorized_space,
     tensorize_space,
@@ -115,7 +116,7 @@ class GymnasiumWrapper(Wrapper):
             space, items, gymnasium.vector.utils.create_empty_array(space, num_envs)
         )
 
-    def _parse_group(self, observation: Any) -> tuple[wp.array, wp.array | None]:
+    def _parse_group(self, observation: Any) -> tuple[Tensor, Tensor | None]:
         """Parse the observations and states from the environment's output.
 
         :param observation: Observation returned by the environment.
@@ -139,7 +140,7 @@ class GymnasiumWrapper(Wrapper):
                 states = flatten_tensorized_space(tensorize_space(space, state, device=self.device))
         return observations, states
 
-    def _parse_final_group(self, observation: Any, info: Any) -> tuple[wp.array, wp.array | None]:
+    def _parse_final_group(self, observation: Any, info: Any) -> tuple[Tensor, Tensor | None]:
         """Parse the final observations and states from the environment's output.
 
         The final observation of the (same-step) auto-reset environments is read from the info
@@ -160,7 +161,7 @@ class GymnasiumWrapper(Wrapper):
         )
         return final_observations, self._states
 
-    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -188,7 +189,7 @@ class GymnasiumWrapper(Wrapper):
 
         return self._observations, reward, terminated, truncated, self._info
 
-    def state(self) -> wp.array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         The state is computed at the last :py:meth:`reset`/:py:meth:`step` call.
@@ -197,7 +198,7 @@ class GymnasiumWrapper(Wrapper):
         """
         return self._states
 
-    def reset(self) -> tuple[wp.array, Any]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -221,7 +222,7 @@ class GymnasiumWrapper(Wrapper):
         self._info = info
         return self._observations, self._info
 
-    def final(self) -> tuple[wp.array, wp.array | None]:
+    def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
         The final observation of (same-step) auto-reset environments is read from the info.

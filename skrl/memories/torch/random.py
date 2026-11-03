@@ -5,6 +5,7 @@ from typing import Literal
 import torch
 
 from skrl.memories.torch import Memory
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -13,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -50,7 +51,7 @@ class RandomMemory(Memory):
 
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[torch.Tensor]]:
+    ) -> list[list[Tensor]]:
         """Sample a batch from memory randomly.
 
         :param names: Tensors names from which to obtain the samples.
@@ -64,8 +65,7 @@ class RandomMemory(Memory):
         # compute valid memory sizes
         size = len(self)
         if sequence_length > 1:
-            sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
-            size -= sequence_indexes[-1].item()
+            size -= (sequence_length - 1) * self.num_envs
         # generate random indexes
         if self._replacement:
             indexes = torch.randint(0, size, (batch_size,))
@@ -75,6 +75,7 @@ class RandomMemory(Memory):
             indexes = torch.randperm(size, dtype=torch.long)[:batch_size]
         # generate sequence indexes
         if sequence_length > 1:
+            sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.view(-1, 1)).view(-1)
         # sample by indexes
         self.sampling_indexes = indexes

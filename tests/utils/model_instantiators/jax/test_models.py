@@ -201,3 +201,32 @@ def test_gaussian_model(capsys, device):
             assert output[0].shape == (10, 2)
             entropy = model.get_entropy(output[1]["stddev"])
             assert entropy.shape == (1,)  # TODO: should be (10, 1)
+
+
+@pytest.mark.parametrize("factory", ["categorical", "multicategorical", "deterministic", "gaussian"])
+def test_jax_namespace_in_expressions(capsys, factory):
+    # generated `__call__` resolves names from the instantiator module's globals: `jax` must be available
+    observation_space = spaces.Box(low=-1, high=1, shape=(4,))
+    network = [{"name": "net", "input": "jax.lax.stop_gradient(OBSERVATIONS)", "layers": [8], "activations": "elu"}]
+    if factory == "categorical":
+        action_space = spaces.Discrete(2)
+        model = categorical_model(observation_space=observation_space, action_space=action_space, network=network)
+    elif factory == "multicategorical":
+        action_space = spaces.MultiDiscrete([3, 4])
+        model = multicategorical_model(
+            observation_space=observation_space, action_space=action_space, network=network, output="ACTIONS"
+        )
+    elif factory == "deterministic":
+        action_space = spaces.Box(low=-1, high=1, shape=(2,))
+        model = deterministic_model(
+            observation_space=observation_space, action_space=action_space, network=network, output="ACTIONS"
+        )
+    else:
+        action_space = spaces.Box(low=-1, high=1, shape=(2,))
+        model = gaussian_model(
+            observation_space=observation_space, action_space=action_space, network=network, output="ACTIONS"
+        )
+    model.init_state_dict()
+
+    output = model.act(_sample_inputs("OBSERVATIONS", observation_space, None))
+    assert output[0].shape[0] == 10

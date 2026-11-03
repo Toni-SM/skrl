@@ -311,7 +311,7 @@ class DDPG_RNN(Agent):
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
 
-            self._rnn_initial_states = self._rnn_final_states
+            self._rnn_initial_states = self._rnn_final_states.copy()  # copy to avoid aliasing
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.

@@ -147,7 +147,7 @@ class MultiAgent(ABC):
 
         # data tracking
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.experiment.write_interval
+        self.write_interval = 0  # resolved from the experiment configuration in `init()`
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -156,7 +156,7 @@ class MultiAgent(ABC):
 
         # checkpoint
         self.checkpoint_modules = {uid: {} for uid in self.possible_agents}
-        self.checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        self.checkpoint_interval = 0  # resolved from the experiment configuration in `init()`
         self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
 
         # experiment directory
@@ -219,6 +219,13 @@ class MultiAgent(ABC):
         """
         trainer_cfg = {} if trainer_cfg is None else dataclasses.asdict(trainer_cfg)
 
+        # resolve the data tracking and checkpointing intervals
+        write_interval = self.cfg.experiment.write_interval
+        checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        timesteps = trainer_cfg.get("timesteps", 0)
+        self.write_interval = int(timesteps / 100) if write_interval == "auto" else write_interval
+        self.checkpoint_interval = int(timesteps / 10) if checkpoint_interval == "auto" else checkpoint_interval
+
         # update agent configuration to avoid duplicated logging/checking in distributed runs
         if config.jax.is_distributed and config.jax.rank:
             self.write_interval = 0
@@ -249,14 +256,10 @@ class MultiAgent(ABC):
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
-        if self.write_interval == "auto":
-            self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
             self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
         # checkpoint directory creation
-        if self.checkpoint_interval == "auto":
-            self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
@@ -407,7 +410,7 @@ class MultiAgent(ABC):
             _truncated = next(iter(truncated.values()))
 
             # compute the cumulative sum of the rewards and timesteps
-            if self._cumulative_rewards is None:
+            if self._cumulative_rewards is None or self._cumulative_timesteps is None:
                 self._cumulative_rewards = np.zeros_like(_rewards, dtype=np.float32)
                 self._cumulative_timesteps = np.zeros_like(_rewards, dtype=np.int32)
 

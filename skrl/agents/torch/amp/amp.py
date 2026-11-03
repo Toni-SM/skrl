@@ -232,7 +232,11 @@ class AMP(Agent):
 
             # initialize motion dataset
             for _ in range(math.ceil(self.motion_dataset.memory_size / self.cfg.amp_batch_size)):
-                self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+                self.motion_dataset.add_samples(
+                    observations=self.collect_reference_motions(
+                        self.cfg.amp_batch_size
+                    )  # pyright: ignore[reportOptionalCall]
+                )
 
         # create temporary variables needed for storage and computation
         self._current_next_observations = None
@@ -380,7 +384,9 @@ class AMP(Agent):
         :param timesteps: Number of timesteps.
         """
         # update dataset of reference motions
-        self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+        self.motion_dataset.add_samples(
+            observations=self.collect_reference_motions(self.cfg.amp_batch_size)  # pyright: ignore[reportOptionalCall]
+        )
 
         # compute combined rewards
         rewards = self.memory.get_tensor_by_name("rewards")

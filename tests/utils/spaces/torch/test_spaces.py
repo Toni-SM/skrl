@@ -1,5 +1,6 @@
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 
 import gym
 import gymnasium
@@ -7,6 +8,8 @@ import gymnasium
 import numpy as np
 import torch
 
+from skrl.models.torch import Model
+from skrl.utils.model_instantiators.torch.common import one_hot_encoding
 from skrl.utils.spaces.torch import (
     compute_space_limits,
     compute_space_size,
@@ -310,3 +313,71 @@ def test_convert_gym_space(capsys, space: gym.spaces.Space):
 
     assert convert_gym_space(None) is None
     check_converted_space(space, convert_gym_space(space))
+
+
+@pytest.mark.parametrize(
+    "space",
+    [
+        gymnasium.spaces.Discrete(3, start=1),
+        gymnasium.spaces.Discrete(4, start=-2),
+        gymnasium.spaces.MultiDiscrete([3, 2], start=[1, 5]),
+        convert_gym_space(gym.spaces.Discrete(3, start=1)),
+    ],
+)
+def test_discrete_spaces_with_start(capsys, space: gymnasium.spaces.Space):
+    nvec = torch.tensor(
+        np.array(space.nvec if isinstance(space, gymnasium.spaces.MultiDiscrete) else space.n).reshape(-1)
+    )
+
+    def in_range(x):
+        x = torch.as_tensor(x)
+        return bool(((x >= 0) & (x < nvec)).all())
+
+    # environment values are in [start, start + n): tensorized values must be in [0, n)
+    values = np.array([space.sample() for _ in range(64)])
+    tensorized_space = tensorize_space(space, values)
+    assert in_range(tensorized_space)
+    # untensorizing must recover the original environment values
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
+    assert np.array_equal(untensorized_space.reshape(values.shape), values)
+    # single (non-batched) value round trip
+    value = space.sample()
+    tensorized_space = tensorize_space(space, value.tolist() if isinstance(value, np.ndarray) else int(value))
+    assert in_range(tensorized_space)
+    assert np.array_equal(untensorize_space(space, tensorized_space, squeeze_batch_dimension=True), value)
+
+    # sampled values (e.g.: random actions) are in [0, n), as the tensorized ones
+    for backend in ["numpy", "native"]:
+        assert in_range(sample_space(space, batch_size=64, backend=backend))
+
+
+def test_discrete_space_with_start_random_act_one_hot_encoding(capsys):
+    class _Model(Model):
+        def compute(self, inputs, *, role=""):
+            return inputs["observations"], {}
+
+        def act(self, inputs, *, role=""):
+            return self.random_act(inputs, role=role)
+
+    action_space = convert_gym_space(gym.spaces.Discrete(3, start=1))
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(2,))
+    model = _Model(observation_space=observation_space, action_space=action_space, device="cpu")
+
+    actions = model.random_act({"observations": torch.zeros((256, 2))})[0]
+    assert ((actions >= 0) & (actions < action_space.n)).all()
+    # random actions can be one-hot encoded and used to index (e.g.: DQN's Q-values)
+    one_hot = one_hot_encoding(action_space, actions)
+    assert one_hot.shape == (256, action_space.n) and (one_hot.sum(dim=1) == 1).all()
+    torch.gather(torch.zeros((256, action_space.n)), dim=1, index=actions.long())
+    # random actions are valid environment actions once untensorized
+    env_actions = untensorize_space(action_space, actions, squeeze_batch_dimension=False)
+    assert all(action_space.contains(int(a)) for a in env_actions.reshape(-1))
+
+
+@pytest.mark.parametrize("space", [gymnasium.spaces.Discrete(3), gymnasium.spaces.MultiDiscrete([3, 2])])
+def test_discrete_spaces_without_start_are_unchanged(capsys, space: gymnasium.spaces.Space):
+    values = np.array([space.sample() for _ in range(16)])
+    tensorized_space = tensorize_space(space, values)
+    assert np.array_equal(tensorized_space.numpy().reshape(values.shape), values)
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
+    assert np.array_equal(untensorized_space.reshape(values.shape), values)

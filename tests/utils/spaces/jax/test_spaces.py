@@ -8,6 +8,7 @@ import gymnasium
 import jax
 import numpy as np
 
+from skrl.utils.model_instantiators.jax.common import one_hot_encoding
 from skrl.utils.spaces.jax import (
     compute_space_limits,
     compute_space_size,
@@ -313,3 +314,49 @@ def test_convert_gym_space(capsys, space: gym.spaces.Space):
 
     assert convert_gym_space(None) is None
     check_converted_space(space, convert_gym_space(space))
+
+
+@pytest.mark.parametrize(
+    "space",
+    [
+        gymnasium.spaces.Discrete(3, start=1),
+        gymnasium.spaces.Discrete(4, start=-2),
+        gymnasium.spaces.MultiDiscrete([3, 2], start=[1, 5]),
+        convert_gym_space(gym.spaces.Discrete(3, start=1)),
+    ],
+)
+def test_discrete_spaces_with_start(capsys, space: gymnasium.spaces.Space):
+    nvec = np.array(space.nvec if isinstance(space, gymnasium.spaces.MultiDiscrete) else space.n).reshape(-1)
+
+    def in_range(x):
+        x = np.asarray(x)
+        return bool(((x >= 0) & (x < nvec)).all())
+
+    # environment values are in [start, start + n): tensorized values must be in [0, n)
+    values = np.array([space.sample() for _ in range(64)])
+    tensorized_space = tensorize_space(space, values)
+    assert in_range(tensorized_space)
+    # untensorizing must recover the original environment values
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
+    assert np.array_equal(untensorized_space.reshape(values.shape), values)
+    # single (non-batched) value round trip
+    value = space.sample()
+    tensorized_space = tensorize_space(space, value.tolist() if isinstance(value, np.ndarray) else int(value))
+    assert in_range(tensorized_space)
+    assert np.array_equal(untensorize_space(space, tensorized_space, squeeze_batch_dimension=True), value)
+
+    # sampled values (e.g.: random actions) are in [0, n), as the tensorized ones
+    for backend in ["numpy", "native"]:
+        assert in_range(sample_space(space, batch_size=64, backend=backend))
+    # sampled values can be one-hot encoded (out-of-range indices would silently produce all-zero rows)
+    one_hot = one_hot_encoding(space, sample_space(space, batch_size=64, backend="native"))
+    assert np.array_equal(np.asarray(one_hot).sum(axis=1), np.full((64,), nvec.shape[0]))
+
+
+@pytest.mark.parametrize("space", [gymnasium.spaces.Discrete(3), gymnasium.spaces.MultiDiscrete([3, 2])])
+def test_discrete_spaces_without_start_are_unchanged(capsys, space: gymnasium.spaces.Space):
+    values = np.array([space.sample() for _ in range(16)])
+    tensorized_space = tensorize_space(space, values)
+    assert np.array_equal(np.asarray(tensorized_space).reshape(values.shape), values)
+    untensorized_space = untensorize_space(space, tensorized_space, squeeze_batch_dimension=False)
+    assert np.array_equal(untensorized_space.reshape(values.shape), values)

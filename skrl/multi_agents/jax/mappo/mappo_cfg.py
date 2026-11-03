@@ -130,11 +130,11 @@ class MAPPO_CFG(MultiAgentCfg):
     rewards_shaper: Callable | None = None
     """Rewards shaping function."""
 
-    def expand(self, *, possible_agents: list[str]) -> None:
+    def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
         """Expand the configuration."""
         super().expand(
             possible_agents=possible_agents,
-            immutable=["mixed_precision", "rewards_shaper", "rollouts"],
+            immutable=["mixed_precision", "rewards_shaper", "rollouts", *immutable],
         )
         for uid in possible_agents:
             # learning rate

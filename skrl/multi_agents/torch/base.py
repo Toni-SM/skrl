@@ -77,8 +77,19 @@ class MultiAgentCfg(ABC):
         return True
 
     def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
-        """Expand the configuration."""
-        immutable += ["experiment"]
+        """Expand the configuration.
+
+        Each field (except the immutable ones) is converted to a dictionary mapping each possible agent to its value.
+        A dictionary whose keys include all the possible agents is considered to be already expanded,
+        while a dictionary whose keys do not include any possible agent (e.g.: empty or keyword arguments)
+        is considered to be a single value to be shared by all the agents.
+
+        :param possible_agents: Name of all possible agents the environment could generate.
+        :param immutable: Name of the fields that must not be expanded.
+
+        :raises ValueError: If a dictionary specifies values for only some of the possible agents.
+        """
+        immutable = [*immutable, "experiment"]
         for field in dataclasses.fields(self):
             if field.name in immutable:
                 continue
@@ -86,7 +97,7 @@ class MultiAgentCfg(ABC):
             if isinstance(value, dict):
                 if set(value) >= set(possible_agents):
                     continue
-                elif set(value) < set(possible_agents):
+                elif set(value) & set(possible_agents):
                     raise ValueError(
                         f"Specified keys ({set(value)}) do not match possible agents ({set(possible_agents)})"
                     )

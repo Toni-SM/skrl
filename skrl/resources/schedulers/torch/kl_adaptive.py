@@ -5,6 +5,8 @@ from packaging import version
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
+from skrl.utils.framework.torch.types import Tensor
+
 
 class KLAdaptiveLR(_LRScheduler):
     def __init__(
@@ -49,8 +51,9 @@ class KLAdaptiveLR(_LRScheduler):
             super().__init__(optimizer, last_epoch)
         else:
             if version.parse(torch.__version__) >= version.parse("2.2"):
-                verbose = "deprecated"
-            super().__init__(optimizer, last_epoch, verbose)
+                super().__init__(optimizer, last_epoch, "deprecated")
+            else:
+                super().__init__(optimizer, last_epoch, verbose)
 
         self.kl_threshold = kl_threshold
         self.min_lr = min_lr
@@ -60,7 +63,7 @@ class KLAdaptiveLR(_LRScheduler):
 
         self._last_lr = [group["lr"] for group in self.optimizer.param_groups]
 
-    def step(self, kl: torch.Tensor | float | None = None, *, epoch: int | None = None) -> None:
+    def step(self, kl: Tensor | float | None = None, *, epoch: int | None = None) -> None:
         """
         Step scheduler.
 

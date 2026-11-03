@@ -3,7 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+### Changed
+- Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
+  (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned
+
 ### Fixed
+- Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
 - Fix `Discrete` and `MultiDiscrete` spaces with non-zero `start` producing out-of-range actions/indices by handling `start` as an offset in the space utilities (tensorized values are now zero-based)
 
 ## [2.1.1] - 2026-10-20

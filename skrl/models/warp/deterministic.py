@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-import warp as wp
-
 from skrl.utils.framework.warp import clamp
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import compute_space_limits
 
 
@@ -18,7 +17,7 @@ class DeterministicMixin:
         self._d_clip_actions = clip_actions
         self._d_min_actions, self._d_max_actions = compute_space_limits(self.action_space, device=self.device)
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act deterministically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:

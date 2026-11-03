@@ -2,20 +2,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-import warp as wp
-
 from skrl import config
+from skrl.utils.framework.warp.types import Device, Tensor
 
 
 class Noise(ABC):
-    def __init__(self, *, device: str | wp.Device | None = None) -> None:
+    def __init__(self, *, device: Device = None) -> None:
         """Base noise class for implementing custom noises.
 
         :param device: Data allocation and computation device. If not specified, the default device will be used.
         """
         self.device = config.warp.parse_device(device)
 
-    def sample_like(self, tensor: wp.array) -> wp.array:
+    def sample_like(self, tensor: Tensor) -> Tensor:
         """Sample noise with the same size (shape) as the input tensor.
 
         This method will call the sampling method as follows ``.sample(tensor.shape)``.
@@ -35,7 +34,7 @@ class Noise(ABC):
         return self.sample(tensor.shape)
 
     @abstractmethod
-    def sample(self, size: list[int]) -> wp.array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample noise.
 
         :param size: Noise shape.

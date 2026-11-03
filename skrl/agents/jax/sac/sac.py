@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,6 +18,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .sac_cfg import SAC_CFG
 
@@ -27,13 +30,13 @@ def _update_critic(
     critic_1_state_dict,
     critic_2_act,
     critic_2_state_dict,
-    target_q1_values: jax.Array,
-    target_q2_values: jax.Array,
+    target_q1_values: Tensor,
+    target_q2_values: Tensor,
     entropy_coefficient,
     next_log_prob,
-    inputs: dict[str, jax.Array],
-    sampled_rewards: jax.Array,
-    sampled_terminated: jax.Array,
+    inputs: dict[str, Tensor],
+    sampled_rewards: Tensor,
+    sampled_terminated: Tensor,
     discount_factor: float,
 ):
     # compute target values
@@ -109,7 +112,7 @@ class SAC(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: SAC_CFG | dict = {},
     ) -> None:
         """Soft Actor-Critic (SAC).
@@ -138,11 +141,11 @@ class SAC(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.critic_1 = self.models.get("critic_1", None)
-        self.critic_2 = self.models.get("critic_2", None)
-        self.target_critic_1 = self.models.get("target_critic_1", None)
-        self.target_critic_2 = self.models.get("target_critic_2", None)
+        self.policy = self.models.get("policy")
+        self.critic_1 = self.models.get("critic_1")
+        self.critic_2 = self.models.get("critic_2")
+        self.target_critic_1 = self.models.get("target_critic_1")
+        self.target_critic_2 = self.models.get("target_critic_2")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -223,13 +226,9 @@ class SAC(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
-                    **self.cfg.learning_rate_scheduler_kwargs[1]
-                )
+                self.critic_scheduler = self.critic_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up target networks
         if self.target_critic_1 is not None and self.target_critic_2 is not None:
@@ -294,8 +293,8 @@ class SAC(Agent):
             self.target_critic_2.apply = jax.jit(self.target_critic_2.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -322,14 +321,14 @@ class SAC(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -411,6 +410,7 @@ class SAC(Agent):
         """
 
         # gradient steps
+        entropy_loss = None
         for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory

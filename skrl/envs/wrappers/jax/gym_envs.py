@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
+from skrl.utils.framework.jax.types import Tensor
+
 
 # hack to fix: module 'numpy' has no attribute 'bool8'
 try:
-    import numpy as np
-
     np.bool8
 except AttributeError:
     np.bool8 = np.bool
@@ -16,7 +18,6 @@ import gymnasium
 from packaging import version
 
 import jax
-import numpy as np
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
@@ -66,7 +67,7 @@ class GymWrapper(Wrapper):
             return convert_gym_space(self._env.single_action_space)
         return convert_gym_space(self._env.action_space)
 
-    def step(self, actions: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -107,7 +108,7 @@ class GymWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> jax.Array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -119,7 +120,7 @@ class GymWrapper(Wrapper):
         except:
             return None
 
-    def reset(self) -> tuple[jax.Array, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -138,7 +139,7 @@ class GymWrapper(Wrapper):
                 )
                 self._reset_once = False
                 self._seed = None
-            return self._observation, self._info
+            return self._observation, self._info  # pyright: ignore[reportReturnType]
 
         if self._deprecated_api:
             self._env.seed(self._seed)

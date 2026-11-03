@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -59,12 +61,12 @@ class TD3_RNN(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.target_policy = self.models.get("target_policy", None)
-        self.critic_1 = self.models.get("critic_1", None)
-        self.critic_2 = self.models.get("critic_2", None)
-        self.target_critic_1 = self.models.get("target_critic_1", None)
-        self.target_critic_2 = self.models.get("target_critic_2", None)
+        self.policy = self.models.get("policy")
+        self.target_policy = self.models.get("target_policy")
+        self.critic_1 = self.models.get("critic_1")
+        self.critic_2 = self.models.get("critic_2")
+        self.target_critic_1 = self.models.get("target_critic_1")
+        self.target_critic_2 = self.models.get("target_critic_2")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -120,11 +122,11 @@ class TD3_RNN(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                self.policy_scheduler = self.policy_scheduler(
                     self.policy_optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
                 )
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                self.critic_scheduler = self.critic_scheduler(
                     self.critic_optimizer, **self.cfg.learning_rate_scheduler_kwargs[1]
                 )
 
@@ -332,7 +334,7 @@ class TD3_RNN(Agent):
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
 
-            self._rnn_initial_states = self._rnn_final_states
+            self._rnn_initial_states = self._rnn_final_states.copy()  # copy to avoid aliasing
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -367,6 +369,7 @@ class TD3_RNN(Agent):
         """
 
         # gradient steps
+        policy_loss = None
         for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory

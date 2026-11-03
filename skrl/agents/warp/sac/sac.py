@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -31,17 +33,17 @@ def enable_grad(obj, *, enabled: bool):
 
 @wp.kernel
 def _critic_loss(
-    values_1: wp.array2d(dtype=float),
-    values_2: wp.array2d(dtype=float),
-    target_values_1: wp.array2d(dtype=float),
-    target_values_2: wp.array2d(dtype=float),
-    next_log_prob: wp.array2d(dtype=float),
+    values_1: wp.array2d[float],
+    values_2: wp.array2d[float],
+    target_values_1: wp.array2d[float],
+    target_values_2: wp.array2d[float],
+    next_log_prob: wp.array2d[float],
     entropy_coefficient: float,
-    sampled_rewards: wp.array2d(dtype=float),
-    sampled_terminated: wp.array2d(dtype=wp.int8),
+    sampled_rewards: wp.array2d[float],
+    sampled_terminated: wp.array2d[wp.int8],
     discount_factor: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     # compute target values
@@ -62,12 +64,12 @@ def _critic_loss(
 
 @wp.kernel
 def _policy_loss(
-    values_1: wp.array2d(dtype=float),
-    values_2: wp.array2d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
+    values_1: wp.array2d[float],
+    values_2: wp.array2d[float],
+    log_prob: wp.array2d[float],
     entropy_coefficient: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     i, j = wp.tid()
     wp.atomic_add(loss, 0, (entropy_coefficient * log_prob[i, 0] - wp.min(values_1[i, j], values_2[i, j])) / n)
@@ -75,11 +77,11 @@ def _policy_loss(
 
 @wp.kernel
 def _entropy_loss(
-    log_entropy_coefficient: wp.array1d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
+    log_entropy_coefficient: wp.array1d[float],
+    log_prob: wp.array2d[float],
     target_entropy: float,
     n: float,
-    loss: wp.array(dtype=float),
+    loss: wp.array1d[float],
 ):
     wp.atomic_add(loss, 0, -log_entropy_coefficient[0] * (log_prob[wp.tid(), 0] + target_entropy) / n)
 
@@ -122,11 +124,11 @@ class SAC(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.critic_1 = self.models.get("critic_1", None)
-        self.critic_2 = self.models.get("critic_2", None)
-        self.target_critic_1 = self.models.get("target_critic_1", None)
-        self.target_critic_2 = self.models.get("target_critic_2", None)
+        self.policy = self.models.get("policy")
+        self.critic_1 = self.models.get("critic_1")
+        self.critic_2 = self.models.get("critic_2")
+        self.target_critic_1 = self.models.get("target_critic_1")
+        self.target_critic_2 = self.models.get("target_critic_2")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -173,13 +175,9 @@ class SAC(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
-                    **self.cfg.learning_rate_scheduler_kwargs[1]
-                )
+                self.critic_scheduler = self.critic_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up target networks
         if self.target_critic_1 is not None and self.target_critic_2 is not None:

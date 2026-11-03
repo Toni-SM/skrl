@@ -51,7 +51,7 @@ class SARSA(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
+        self.policy = self.models.get("policy")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy

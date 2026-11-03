@@ -237,8 +237,8 @@ class TRPO_RNN(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         self.backup_policy = copy.deepcopy(self.policy)
 
@@ -262,7 +262,7 @@ class TRPO_RNN(Agent):
             # - learning rate scheduler
             self.value_scheduler = self.cfg.learning_rate_scheduler
             if self.value_scheduler is not None:
-                self.value_scheduler = self.cfg.learning_rate_scheduler(
+                self.value_scheduler = self.value_scheduler(
                     self.value_optimizer, **self.cfg.learning_rate_scheduler_kwargs
                 )
 
@@ -476,6 +476,9 @@ class TRPO_RNN(Agent):
                 values=values,
                 **rnn_states,
             )
+        else:
+            # value outputs are only computed when training: keep the current value RNN states
+            outputs = {"rnn": self._rnn_initial_states["value"]}
 
         # update RNN states
         if self._rnn:
@@ -492,7 +495,7 @@ class TRPO_RNN(Agent):
                     for rnn_state in self._rnn_final_states["value"]:
                         rnn_state[:, finished_episodes[:, 0]] = 0
 
-            self._rnn_initial_states = self._rnn_final_states
+            self._rnn_initial_states = self._rnn_final_states.copy()  # copy to avoid aliasing
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.

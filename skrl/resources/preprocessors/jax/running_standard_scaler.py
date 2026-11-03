@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import gymnasium
 
 import jax
@@ -91,7 +93,7 @@ class RunningStandardScaler:
         self.current_count = jnp.ones((1,), dtype=jnp.float32, device=self.device)
 
     @property
-    def state_dict(self) -> dict[str, Tensor]:
+    def state_dict(self) -> Any:
         """Dictionary containing references to the whole state of the module."""
 
         class _StateDict:

@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -107,10 +109,10 @@ class DDPG(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.target_policy = self.models.get("target_policy", None)
-        self.critic = self.models.get("critic", None)
-        self.target_critic = self.models.get("target_critic", None)
+        self.policy = self.models.get("policy")
+        self.target_policy = self.models.get("target_policy")
+        self.critic = self.models.get("critic")
+        self.target_critic = self.models.get("target_critic")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -157,13 +159,9 @@ class DDPG(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
-                    **self.cfg.learning_rate_scheduler_kwargs[1]
-                )
+                self.critic_scheduler = self.critic_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up target networks
         if self.target_policy is not None and self.target_critic is not None:

@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import logging
 import os
 import sys
 
 import numpy as np
+
+
+if TYPE_CHECKING:
+    import jax
+    import torch
+    import warp
 
 
 __all__ = ["__version__", "logger", "config"]
@@ -71,7 +79,7 @@ class _Config(object):
                     torch.cuda.set_device(self._local_rank)
 
             @staticmethod
-            def parse_device(device: str | "torch.device" | None, validate: bool = True) -> "torch.device":
+            def parse_device(device: str | torch.device | None, validate: bool = True) -> torch.device:
                 """Parse the input device and return a :py:class:`~torch.device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
@@ -105,7 +113,7 @@ class _Config(object):
                 return _device
 
             @property
-            def device(self) -> "torch.device":
+            def device(self) -> torch.device:
                 """Default device.
 
                 The default device, unless specified, is ``cuda:0`` (or ``cuda:LOCAL_RANK`` in a distributed environment)
@@ -115,7 +123,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: str | "torch.device") -> None:
+            def device(self, device: str | torch.device) -> None:
                 self._device = device
 
             @property
@@ -170,7 +178,7 @@ class _Config(object):
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration."""
-                self._key = np.array([0, 0], dtype=np.uint32)
+                self._key: np.ndarray | jax.Array = np.array([0, 0], dtype=np.uint32)
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
                 # JAX doesn't automatically start multiple processes from a single program invocation
                 # https://jax.readthedocs.io/en/latest/multi_process.html#launching-jax-processes
@@ -205,7 +213,7 @@ class _Config(object):
                         logger.warning(f"Failed to get the device local to process with index/rank {self._rank}: {e}")
 
             @staticmethod
-            def parse_device(device: str | "jax.Device" | None) -> "jax.Device":
+            def parse_device(device: str | jax.Device | None) -> jax.Device:
                 """Parse the input device and return a :py:class:`~jax.Device` instance.
 
                 .. hint::
@@ -243,7 +251,7 @@ class _Config(object):
                 return jax.devices()[0]
 
             @property
-            def device(self) -> "jax.Device":
+            def device(self) -> jax.Device:
                 """Default device.
 
                 The default device, unless specified, is ``cuda:0`` if CUDA is available, ``cpu`` otherwise.
@@ -253,7 +261,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: str | "jax.Device") -> None:
+            def device(self, device: str | jax.Device) -> None:
                 self._device = device
                 if not isinstance(self._key, np.ndarray):
                     import jax
@@ -261,7 +269,7 @@ class _Config(object):
                     self._key = np.asarray(jax.device_get(self._key))
 
             @property
-            def key(self) -> "jax.Array":
+            def key(self) -> jax.Array:
                 """Pseudo-random number generator (PRNG) key.
 
                 Key is formatted as 32-bit unsigned integer and the default device is used.
@@ -277,7 +285,7 @@ class _Config(object):
                 return self._key
 
             @key.setter
-            def key(self, value: int | np.ndarray | "jax.Array") -> None:
+            def key(self, value: int | float | np.ndarray | jax.Array) -> None:
                 if isinstance(value, (int, float)):
                     value = np.array([0, value], dtype=np.uint32)
                 self._key = value
@@ -313,7 +321,7 @@ class _Config(object):
                 return self._world_size
 
             @property
-            def coordinator_address(self) -> int:
+            def coordinator_address(self) -> str:
                 """IP address and port where process 0 will start a JAX service.
 
                 This property reads from the ``JAX_COORDINATOR_ADDR:JAX_COORDINATOR_PORT`` environment variables
@@ -353,7 +361,7 @@ class _Config(object):
                     wp.init()
 
             @staticmethod
-            def parse_device(device: str | "warp.Device" | None) -> "warp.Device":
+            def parse_device(device: str | warp.Device | None) -> warp.Device:
                 """Parse the input device and return a :py:class:`~warp.Device` instance.
 
                 :param device: Device specification. If the specified device is ``None`` or it cannot be resolved,
@@ -373,7 +381,7 @@ class _Config(object):
                 return wp.get_device()
 
             @property
-            def device(self) -> "warp.Device":
+            def device(self) -> warp.Device:
                 """Default device.
 
                 The default device, unless specified, is ``cuda`` if CUDA is available, ``cpu`` otherwise.
@@ -382,7 +390,7 @@ class _Config(object):
                 return self._device
 
             @device.setter
-            def device(self, device: str | "warp.Device") -> None:
+            def device(self, device: str | warp.Device) -> None:
                 self._device = device
 
             @property

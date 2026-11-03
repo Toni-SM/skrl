@@ -1,3 +1,4 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false, reportCallIssue=false, reportOptionalCall=false
 from __future__ import annotations
 
 from typing import Any
@@ -157,8 +158,8 @@ class IPPO(MultiAgent):
         )
 
         # models
-        self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
-        self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
+        self.policies = {uid: self.models[uid].get("policy") for uid in self.possible_agents}
+        self.values = {uid: self.models[uid].get("value") for uid in self.possible_agents}
 
         # checkpoint models
         for uid in self.possible_agents:
@@ -463,6 +464,7 @@ class IPPO(MultiAgent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         # learning epochs
         for epoch in range(self.cfg.learning_epochs[uid]):
@@ -542,6 +544,7 @@ class IPPO(MultiAgent):
 
             # update learning rate
             # - compute KL for KL adaptive learning rate scheduler
+            kl = 0.0
             if self.policy_scheduler_type[uid] is KLAdaptiveLR or self.value_scheduler_type[uid] is KLAdaptiveLR:
                 kl = np.mean(kl_divergences)
                 # reduce (collect from all workers/processes) KL in distributed runs

@@ -48,22 +48,22 @@ def multicategorical_model(
     :return: MultiCategorical model instance or definition source (if ``return_source`` is True).
     """
     # parse model definition
-    containers, output = generate_containers(network, output, embed_output=True, indent=1)
+    containers, parsed_output = generate_containers(network, output, embed_output=True, indent=1)
 
     # network definitions
     networks = []
-    forward: list[str] = []
+    forward = []
     for container in containers:
         networks.append(f'self.{container["name"]}_container = {container["sequential"]}')
         forward.append(f'{container["name"]} = self.{container["name"]}_container({container["input"]})')
     # process output
-    if output["modules"]:
-        networks.append(f'self.output_layer = {output["modules"][0]}')
-        forward.append(f'output = self.output_layer({container["name"]})')
-    if output["output"]:
-        forward.append(f'output = {output["output"]}')
+    if parsed_output["modules"]:
+        networks.append(f'self.output_layer = {parsed_output["modules"][0]}')
+        forward.append(f'output = self.output_layer({containers[-1]["name"]})')
+    if parsed_output["output"]:
+        forward.append(f'output = {parsed_output["output"]}')
     else:
-        forward[-1] = forward[-1].replace(f'{container["name"]} =', "output =", 1)
+        forward[-1] = forward[-1].replace(f'{containers[-1]["name"]} =', "output =", 1)
 
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]

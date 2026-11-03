@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -103,8 +105,8 @@ class RPO(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -138,9 +140,7 @@ class RPO(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler[0](
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0])
 
         # set up preprocessors
         # - observations

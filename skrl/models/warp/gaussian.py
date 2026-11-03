@@ -27,23 +27,23 @@ def _log_prob(
 @wp.kernel
 def _gaussian(
     # inputs
-    loc: wp.array2d(dtype=float),
-    log_std: wp.array1d(dtype=float),
+    loc: wp.array2d[float],
+    log_std: wp.array1d[float],
     min_log_std: float,
     max_log_std: float,
-    min_actions: wp.array1d(dtype=float),
-    max_actions: wp.array1d(dtype=float),
-    min_mean_actions: wp.array1d(dtype=float),
-    max_mean_actions: wp.array1d(dtype=float),
-    taken_actions: wp.array2d(dtype=float),
+    min_actions: wp.array1d[float],
+    max_actions: wp.array1d[float],
+    min_mean_actions: wp.array1d[float],
+    max_mean_actions: wp.array1d[float],
+    taken_actions: wp.array2d[float],
     reduction: int,
     m: float,
     key: int,
     # outputs
-    loc_out: wp.array2d(dtype=float),
-    actions: wp.array2d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
-    scale: wp.array1d(dtype=float),
+    loc_out: wp.array2d[float],
+    actions: wp.array2d[float],
+    log_prob: wp.array2d[float],
+    scale: wp.array1d[float],
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
@@ -93,7 +93,7 @@ def _gaussian(
 
 
 @wp.kernel
-def _entropy(stddev: wp.array1d(dtype=float), entropy: wp.array1d(dtype=float)):
+def _entropy(stddev: wp.array1d[float], entropy: wp.array1d[float]):
     i = wp.tid()
     wp.atomic_add(entropy, 0, HALF_LOG_2_PI_PLUS + wp.log(stddev[i]))
 

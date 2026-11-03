@@ -51,8 +51,9 @@ class KLAdaptiveLR(_LRScheduler):
             super().__init__(optimizer, last_epoch)
         else:
             if version.parse(torch.__version__) >= version.parse("2.2"):
-                verbose = "deprecated"
-            super().__init__(optimizer, last_epoch, verbose)
+                super().__init__(optimizer, last_epoch, "deprecated")
+            else:
+                super().__init__(optimizer, last_epoch, verbose)
 
         self.kl_threshold = kl_threshold
         self.min_lr = min_lr

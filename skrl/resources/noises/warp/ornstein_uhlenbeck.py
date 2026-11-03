@@ -9,10 +9,10 @@ from skrl.utils.framework.warp.types import Device, Tensor
 
 @wp.kernel
 def _sample(
-    dst: wp.array2d(dtype=float),
+    dst: wp.array2d[float],
     theta: float,
     sigma: float,
-    state: wp.array2d(dtype=float),
+    state: wp.array2d[float],
     mean: float,
     std: float,
     base_scale: float,

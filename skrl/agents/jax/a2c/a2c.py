@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -139,8 +141,8 @@ class A2C(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -180,15 +182,13 @@ class A2C(Agent):
             if self.policy_scheduler is not None:
                 if "kladaptive" in self.policy_scheduler.__qualname__.lower().replace("_", ""):
                     self.policy_scheduler_type = KLAdaptiveLR
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             self.value_scheduler = self.cfg.learning_rate_scheduler[1]
             self.value_scheduler_type = None
             if self.value_scheduler is not None:
                 if "kladaptive" in self.value_scheduler.__qualname__.lower().replace("_", ""):
                     self.value_scheduler_type = KLAdaptiveLR
-                self.value_scheduler = self.cfg.learning_rate_scheduler[1](**self.cfg.learning_rate_scheduler_kwargs[1])
+                self.value_scheduler = self.value_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up preprocessors
         # - observations
@@ -410,6 +410,7 @@ class A2C(Agent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         kl_divergences = []
 
@@ -468,6 +469,7 @@ class A2C(Agent):
 
         # update learning rate
         # - compute KL for KL adaptive learning rate scheduler
+        kl = 0.0
         if self.policy_scheduler_type is KLAdaptiveLR or self.value_scheduler_type is KLAdaptiveLR:
             kl = np.mean(kl_divergences)
             # reduce (collect from all workers/processes) KL in distributed runs

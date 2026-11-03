@@ -63,7 +63,7 @@ class PettingZooWrapper(MultiAgentEnvWrapper):
         }
         return observations, rewards, terminated, truncated, infos
 
-    def state(self) -> dict[Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         In PettingZoo, the state is a global view of the environment, so it is the same for all agents.

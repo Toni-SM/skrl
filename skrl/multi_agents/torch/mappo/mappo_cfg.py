@@ -1,3 +1,4 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false, reportCallIssue=false, reportOptionalCall=false
 from __future__ import annotations
 
 from typing import Callable
@@ -132,11 +133,11 @@ class MAPPO_CFG(MultiAgentCfg):
     mixed_precision: bool = False
     """Whether to enable automatic mixed precision for higher performance."""
 
-    def expand(self, *, possible_agents: list[str]) -> None:
+    def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
         """Expand the configuration."""
         super().expand(
             possible_agents=possible_agents,
-            immutable=["mixed_precision", "rewards_shaper", "rollouts"],
+            immutable=["mixed_precision", "rewards_shaper", "rollouts", *immutable],
         )
         for uid in possible_agents:
             # learning rate

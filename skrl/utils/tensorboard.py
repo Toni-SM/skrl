@@ -23,7 +23,8 @@ class SummaryWriter:
         :param value: Value of the scalar.
         :param timestep: Global step value to record.
         """
-        event = Event(summary=Summary(value=[Summary.Value(tag=tag, simple_value=value)]))
+        summary = Summary(value=[Summary.Value(tag=tag, simple_value=value)])  # pyright: ignore[reportCallIssue]
+        event = Event(summary=summary)  # pyright: ignore[reportCallIssue]
         event.step = timestep
         event.wall_time = time.time()
         self._event_file_writer.add_event(event)

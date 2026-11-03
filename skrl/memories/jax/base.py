@@ -86,7 +86,7 @@ class Memory(ABC):
 
         # exporting data
         self.export = export
-        self.export_format = export_format
+        self.export_format: Literal["pt", "npz", "csv"] = export_format
         self.export_directory = export_directory
         if self.export_format not in ["pt", "npz", "csv"]:
             raise ValueError(f"Unsupported export format: '{self.export_format}'")
@@ -180,7 +180,7 @@ class Memory(ABC):
                 raise ValueError(f"Tensor dtype ({dtype}) doesn't match the existing one ({tensor.dtype}): '{name}'")
             return False
         # create tensor (_tensor_<name>) and add it to the internal storage
-        shape = (self.memory_size, self.num_envs, *(size if keep_dimensions else [size]))
+        shape = (self.memory_size, self.num_envs, *(size if isinstance(size, (tuple, list)) else [size]))
         setattr(self, f"_tensor_{name}", jnp.zeros(shape, device=self.device, dtype=dtype))
         # update internal variables
         self.tensors[name] = getattr(self, f"_tensor_{name}")
@@ -211,7 +211,7 @@ class Memory(ABC):
         self.env_index = 0
         self.memory_index = 0
 
-    def add_samples(self, **tensors: dict[str, Tensor]) -> None:
+    def add_samples(self, **tensors: Tensor) -> None:
         """Add/store samples in memory.
 
         .. important::

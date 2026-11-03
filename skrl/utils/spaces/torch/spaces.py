@@ -12,7 +12,7 @@ from skrl import config
 from skrl.utils.framework.torch.types import Device, Tensor
 
 
-def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
+def convert_gym_space(space: "gym.Space | None", *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
     """Converts a gym space to a gymnasium space.
 
     :param space: Gym space to convert to.
@@ -269,14 +269,14 @@ def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied
         # composite spaces
         # - Tuple
         elif isinstance(space, spaces.Tuple):
-            return sum([compute_space_size(s, occupied_size=occupied_size) for s in space])
+            return sum([compute_space_size(s, occupied_size=occupied_size) for s in space.spaces])
         # - Dict
         elif isinstance(space, spaces.Dict):
             return sum([compute_space_size(s, occupied_size=occupied_size) for s in space.values()])
     # non-gymnasium spaces
-    if type(space) in [int, float]:
-        return space
-    elif type(space) in [tuple, list]:
+    if type(space) is int or type(space) is float:
+        return space  # pyright: ignore[reportReturnType]
+    elif type(space) is tuple or type(space) is list:
         return int(np.prod(space))
     # gymnasium computation
     return gymnasium.spaces.flatdim(space)

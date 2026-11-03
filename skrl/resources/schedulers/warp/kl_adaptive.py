@@ -12,7 +12,7 @@ def KLAdaptiveLR(
     max_lr: float = 1e-2,
     kl_factor: float = 2,
     lr_factor: float = 1.5,
-) -> Callable[[int, float, float], float]:
+) -> Callable[..., float]:
     """Adaptive KL scheduler.
 
     Adjusts the learning rate according to the KL divergence.

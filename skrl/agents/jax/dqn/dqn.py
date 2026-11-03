@@ -85,8 +85,8 @@ class DQN(Agent):
         )
 
         # models
-        self.q_network = self.models.get("q_network", None)
-        self.target_q_network = self.models.get("target_q_network", None)
+        self.q_network = self.models.get("q_network")
+        self.target_q_network = self.models.get("target_q_network")
 
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network
@@ -112,7 +112,7 @@ class DQN(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(**self.cfg.learning_rate_scheduler_kwargs)
+                self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs)
 
         # set up target networks
         if self.target_q_network is not None:

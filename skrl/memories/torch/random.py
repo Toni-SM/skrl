@@ -65,8 +65,7 @@ class RandomMemory(Memory):
         # compute valid memory sizes
         size = len(self)
         if sequence_length > 1:
-            sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
-            size -= sequence_indexes[-1].item()
+            size -= (sequence_length - 1) * self.num_envs
         # generate random indexes
         if self._replacement:
             indexes = torch.randint(0, size, (batch_size,))
@@ -76,6 +75,7 @@ class RandomMemory(Memory):
             indexes = torch.randperm(size, dtype=torch.long)[:batch_size]
         # generate sequence indexes
         if sequence_length > 1:
+            sequence_indexes = torch.arange(0, self.num_envs * sequence_length, self.num_envs)
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.view(-1, 1)).view(-1)
         # sample by indexes
         self.sampling_indexes = indexes

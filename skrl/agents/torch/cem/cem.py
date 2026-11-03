@@ -56,7 +56,7 @@ class CEM(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
+        self.policy = self.models.get("policy")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -76,9 +76,7 @@ class CEM(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs)
 
         # set up preprocessors
         # - observations

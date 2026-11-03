@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import gymnasium
 
 import numpy as np
@@ -12,11 +14,11 @@ from skrl.utils.spaces.warp import compute_space_size
 
 @wp.kernel(enable_backward=False)
 def _inverse_2d(
-    src: wp.array(ndim=2),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
+    src: wp.array2d[Any],
+    running_mean: wp.array1d[Any],
+    running_variance: wp.array1d[Any],
     clip_threshold: float,
-    dst: wp.array(ndim=2),
+    dst: wp.array2d[Any],
 ):
     i, j = wp.tid()
     dst[i, j] = wp.sqrt(running_variance[j]) * wp.clamp(src[i, j], -clip_threshold, clip_threshold) + running_mean[j]
@@ -24,11 +26,11 @@ def _inverse_2d(
 
 @wp.kernel(enable_backward=False)
 def _inverse_3d(
-    src: wp.array(ndim=3),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
+    src: wp.array3d[Any],
+    running_mean: wp.array1d[Any],
+    running_variance: wp.array1d[Any],
     clip_threshold: float,
-    dst: wp.array(ndim=3),
+    dst: wp.array3d[Any],
 ):
     i, j, k = wp.tid()
     dst[i, j, k] = (
@@ -38,12 +40,12 @@ def _inverse_3d(
 
 @wp.kernel(enable_backward=False)
 def _standardization_2d(
-    src: wp.array(ndim=2),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
+    src: wp.array2d[Any],
+    running_mean: wp.array1d[Any],
+    running_variance: wp.array1d[Any],
     clip_threshold: float,
     epsilon: float,
-    dst: wp.array(ndim=2),
+    dst: wp.array2d[Any],
 ):
     i, j = wp.tid()
     dst[i, j] = wp.clamp(
@@ -53,12 +55,12 @@ def _standardization_2d(
 
 @wp.kernel(enable_backward=False)
 def _standardization_3d(
-    src: wp.array(ndim=3),
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
+    src: wp.array3d[Any],
+    running_mean: wp.array1d[Any],
+    running_variance: wp.array1d[Any],
     clip_threshold: float,
     epsilon: float,
-    dst: wp.array(ndim=3),
+    dst: wp.array3d[Any],
 ):
     i, j, k = wp.tid()
     dst[i, j, k] = wp.clamp(
@@ -67,36 +69,36 @@ def _standardization_3d(
 
 
 @wp.kernel(enable_backward=False)
-def _mean_2d_axis_0(src: wp.array(ndim=2), n: int, dst: wp.array(ndim=1)):
+def _mean_2d_axis_0(src: wp.array2d[Any], n: int, dst: wp.array1d[Any]):
     i, j = wp.tid()
     wp.atomic_add(dst, j, dst.dtype(src[i, j]) / dst.dtype(n))
 
 
 @wp.kernel(enable_backward=False)
-def _mean_3d_axis_0_1(src: wp.array(ndim=3), n: int, dst: wp.array(ndim=1)):
+def _mean_3d_axis_0_1(src: wp.array3d[Any], n: int, dst: wp.array1d[Any]):
     i, j, k = wp.tid()
     wp.atomic_add(dst, k, dst.dtype(src[i, j, k]) / dst.dtype(n))
 
 
 @wp.kernel(enable_backward=False)
-def _var_2d_axis_0(src: wp.array(ndim=2), mean: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
+def _var_2d_axis_0(src: wp.array2d[Any], mean: wp.array1d[Any], n: int, dst: wp.array1d[Any]):
     i, j = wp.tid()
     wp.atomic_add(dst, j, wp.pow(dst.dtype(src[i, j]) - mean[j], 2.0) / dst.dtype(n))
 
 
 @wp.kernel(enable_backward=False)
-def _var_3d_axis_0_1(src: wp.array(ndim=3), mean: wp.array(ndim=1), n: int, dst: wp.array(ndim=1)):
+def _var_3d_axis_0_1(src: wp.array3d[Any], mean: wp.array1d[Any], n: int, dst: wp.array1d[Any]):
     i, j, k = wp.tid()
     wp.atomic_add(dst, k, wp.pow(dst.dtype(src[i, j, k]) - mean[k], 2.0) / dst.dtype(n))
 
 
 @wp.kernel(enable_backward=False)
 def _parallel_variance(
-    running_mean: wp.array(ndim=1),
-    running_variance: wp.array(ndim=1),
+    running_mean: wp.array1d[Any],
+    running_variance: wp.array1d[Any],
     current_count: float,
-    input_mean: wp.array(ndim=1),
-    input_variance: wp.array(ndim=1),
+    input_mean: wp.array1d[Any],
+    input_variance: wp.array1d[Any],
     input_count: float,
 ):
     i = wp.tid()

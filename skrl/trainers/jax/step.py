@@ -1,3 +1,5 @@
+# pyright: reportArgumentType=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -63,7 +65,7 @@ class StepTrainer(Trainer):
         self.observations = None
         self.states = None
 
-    def train(
+    def train(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, timestep: int | None = None, timesteps: int | None = None
     ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute a training iteration.
@@ -182,7 +184,7 @@ class StepTrainer(Trainer):
 
         return next_observations, rewards, terminated, truncated, infos
 
-    def eval(
+    def eval(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, timestep: int | None = None, timesteps: int | None = None
     ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute an evaluation iteration.

@@ -39,3 +39,8 @@ repos:
     - id: rst-backticks
     - id: rst-directive-colons
     - id: rst-inline-touching-normal
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.414
+  hooks:
+    - id: pyright
+      files: ^skrl/

@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -121,9 +123,9 @@ class AMP(Agent):
         self.collect_reference_motions = collect_reference_motions
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
-        self.discriminator = self.models.get("discriminator", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
+        self.discriminator = self.models.get("discriminator")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -158,9 +160,7 @@ class AMP(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler[0](
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0])
 
         # set up preprocessors
         # - observations
@@ -232,7 +232,11 @@ class AMP(Agent):
 
             # initialize motion dataset
             for _ in range(math.ceil(self.motion_dataset.memory_size / self.cfg.amp_batch_size)):
-                self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+                self.motion_dataset.add_samples(
+                    observations=self.collect_reference_motions(
+                        self.cfg.amp_batch_size
+                    )  # pyright: ignore[reportOptionalCall]
+                )
 
         # create temporary variables needed for storage and computation
         self._current_next_observations = None
@@ -380,7 +384,9 @@ class AMP(Agent):
         :param timesteps: Number of timesteps.
         """
         # update dataset of reference motions
-        self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+        self.motion_dataset.add_samples(
+            observations=self.collect_reference_motions(self.cfg.amp_batch_size)  # pyright: ignore[reportOptionalCall]
+        )
 
         # compute combined rewards
         rewards = self.memory.get_tensor_by_name("rewards")

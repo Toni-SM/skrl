@@ -51,7 +51,7 @@ class Wrapper(ABC):
             f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
         )
 
-    def _get_final_info(self, info: Mapping[str, Any]) -> tuple[Tensor | None, Tensor | None]:
+    def _get_final_info(self, info: Mapping[str, Any]) -> tuple[Any | None, Any | None]:
         """Get the final observation and state provided by the environment in the info, if available.
 
         The info keys are checked in the following order, and the first available one is used:
@@ -211,7 +211,7 @@ class MultiAgentEnvWrapper(ABC):
             f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
         )
 
-    def _get_final_info(self, infos: Mapping[str, Any]) -> tuple[dict[str, Tensor | None], dict[str, Tensor | None]]:
+    def _get_final_info(self, infos: Mapping[str, Any]) -> tuple[dict[str, Any | None], dict[str, Any | None]]:
         """Get the final observations and states provided by the environment in each agent's info, if available.
 
         For each agent, the agent's info (``infos[agent]``) keys are checked in the following order,

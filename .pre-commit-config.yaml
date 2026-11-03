@@ -43,3 +43,4 @@ repos:
   rev: v1.1.414
   hooks:
     - id: pyright
+      files: ^skrl/

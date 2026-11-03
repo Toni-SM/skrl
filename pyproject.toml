@@ -135,5 +135,6 @@ exclude = [
 reportArgumentType = "none"
 reportAttributeAccessIssue = "none"
 reportMissingImports = "none"
+reportMissingModuleSource = "none"
 reportOptionalMemberAccess = "none"
 reportUndefinedVariable = "none"

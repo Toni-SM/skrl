@@ -8,13 +8,14 @@ import numpy as np
 
 from skrl import config
 from skrl.resources.noises.jax import Noise
+from skrl.utils.framework.jax.types import Device, Tensor
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @partial(jax.jit, static_argnames=("shape"))
 def _sample(theta, sigma, state, mean, std, key, iterator, shape):
     subkey = jax.random.fold_in(key, iterator)
-    return state * theta + sigma * (2.0 * jax.random.normal(subkey, shape) * std + mean)
+    return state * (1.0 - theta) + sigma * (jax.random.normal(subkey, shape) * std + mean)
 
 
 class OrnsteinUhlenbeckNoise(Noise):
@@ -26,11 +27,11 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | jax.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state.
+        :param theta: Mean-reversion rate. The internal state is scaled by ``1 - theta`` on each sample.
         :param sigma: Factor to apply to the normal distribution.
         :param base_scale: Factor to apply to returned noise.
         :param mean: Mean of the normal distribution.
@@ -52,7 +53,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self._i = 0
         self._key = config.jax.key
 
-    def sample(self, size: list[int]) -> jax.Array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

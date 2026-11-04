@@ -2,6 +2,8 @@ import hypothesis.strategies as st
 
 import gymnasium
 
+import numpy as np
+
 
 # Warp array's maximum number of dimensions is 4
 MAX_DIM = 3
@@ -54,10 +56,12 @@ def gym_space_stategy(draw, space_type: str = "", remaining_iterations: int = 5)
         return gym.spaces.Box(low=-1, high=1, shape=shape)
     elif space_type == "Discrete":
         n = draw(st.integers(min_value=1, max_value=5))
-        return gym.spaces.Discrete(n)
+        start = draw(st.integers(min_value=0, max_value=3))
+        return gym.spaces.Discrete(n, start=start)
     elif space_type == "MultiDiscrete":
         nvec = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=1, max_size=MAX_DIM))
-        return gym.spaces.MultiDiscrete(nvec)
+        dtype = draw(st.sampled_from([np.int32, np.int64]))
+        return gym.spaces.MultiDiscrete(nvec, dtype=dtype)
     elif space_type == "Dict":
         remaining_iterations -= 1
         keys = draw(st.lists(st.text(st.characters(codec="ascii"), min_size=1, max_size=5), min_size=1, max_size=3))

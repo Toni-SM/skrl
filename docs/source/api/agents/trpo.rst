@@ -95,7 +95,7 @@ Learning algorithm
 | :blue:`def` :math:`\;f_{KL} (\pi_{\theta 1}, \pi_{\theta 2}, s) \;\rightarrow\; kl:`
 |     :math:`\mu_1, \log\sigma_1 \leftarrow \pi_{\theta 1}(s)`
 |     :math:`\mu_2, \log\sigma_2 \leftarrow \pi_{\theta 2}(s)`
-|     :math:`kl \leftarrow \log\sigma_1 - \log\sigma_2 + \frac{1}{2} \dfrac{(e^{\log\sigma_1})^2 + (\mu_1 - \mu_2)^2}{(e^{\log\sigma_2})^2} - \frac{1}{2}`
+|     :math:`kl \leftarrow \log\sigma_2 - \log\sigma_1 + \frac{1}{2} \dfrac{(e^{\log\sigma_1})^2 + (\mu_1 - \mu_2)^2}{(e^{\log\sigma_2})^2} - \frac{1}{2}`
 |     :math:`kl \leftarrow \frac{1}{N} \sum_{i=1}^N \, (\sum_{dim} kl)`
 
 |

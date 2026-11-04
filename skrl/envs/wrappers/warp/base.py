@@ -8,6 +8,7 @@ import gymnasium
 import warp as wp
 
 from skrl import config
+from skrl.utils.framework.warp.types import Tensor
 
 
 class Wrapper(ABC):
@@ -46,7 +47,7 @@ class Wrapper(ABC):
         )
 
     @abstractmethod
-    def reset(self) -> tuple[wp.array, Any]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -54,7 +55,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -64,7 +65,7 @@ class Wrapper(ABC):
         pass
 
     @abstractmethod
-    def state(self) -> wp.array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.

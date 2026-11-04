@@ -1,5 +1,6 @@
 import os
 import random
+import gymnasium
 
 import numpy as np
 
@@ -221,11 +222,19 @@ class MultiAgentEnv:
         self.possible_agents = sorted(self.observation_spaces.keys())
         self.agents = self.possible_agents
         if self._ml_framework == "torch":
+            from skrl.envs.wrappers.torch import MultiAgentEnvWrapper
+
             self.device = config.torch.parse_device(device)
         elif self._ml_framework == "jax":
+            from skrl.envs.wrappers.jax import MultiAgentEnvWrapper
+
             self.device = config.jax.parse_device(device)
         elif self._ml_framework == "warp":
+            from skrl.envs.wrappers.warp import MultiAgentEnvWrapper
+
             self.device = config.warp.parse_device(device)
+        # register as a virtual subclass of the multi-agent wrapper (e.g.: for trainers' `isinstance` checks)
+        MultiAgentEnvWrapper.register(MultiAgentEnv)
 
     def _tensorize(self, x, dtype):
         if self._ml_framework == "torch":
@@ -502,3 +511,61 @@ class _MultiAgentMock:
 
 class MultiAgentMock(_MultiAgentMock):
     pass
+
+
+def check_multi_agent_episode_resets(
+    trainer_type: type, framework: str, mode: str, num_agents: int, remove_one: bool
+) -> None:
+    """Exercise episode completion with a changing number of live agents."""
+
+    class EndingEnv(MultiAgentEnv):
+        resets = 0
+        steps = 0
+
+        def reset(self) -> tuple[dict, dict]:
+            assert self.steps == 0 or not self.agents
+            self.resets += 1
+            self.agents = self.possible_agents.copy()
+            self.num_agents = len(self.agents)
+            return super().reset()
+
+        def step(self, actions: dict) -> tuple:
+            assert self.agents
+            result = super().step(actions)
+            self.steps += 1
+            self.agents = self.agents[1:] if remove_one else []
+            self.num_agents = len(self.agents)
+            return result
+
+    spaces = {f"agent_{i}": gymnasium.spaces.Box(low=-1, high=1, shape=(2,)) for i in range(num_agents)}
+    env = EndingEnv(
+        observation_spaces=spaces,
+        state_spaces=spaces,
+        action_spaces=spaces,
+        num_envs=1,
+        device="cpu",
+        ml_framework=framework,
+        probability=0,
+    )
+    agent = MultiAgentMock(
+        possible_agents=env.possible_agents,
+        observation_spaces=spaces,
+        state_spaces=spaces,
+        action_spaces=spaces,
+        num_envs=1,
+        device="cpu",
+        ml_framework=framework,
+    )
+    trainer = trainer_type(
+        env=env,
+        agents=agent,
+        cfg={
+            "timesteps": 6,
+            "headless": True,
+            "disable_progressbar": True,
+            "close_environment_at_exit": False,
+        },
+    )
+    getattr(trainer, mode)()
+    assert env.steps == 6
+    assert env.resets == 1 + 6 // (num_agents if remove_one else 1)

@@ -1,3 +1,4 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false, reportCallIssue=false, reportOptionalCall=false
 from __future__ import annotations
 
 from typing import Callable
@@ -99,12 +100,6 @@ class IPPO_CFG(MultiAgentCfg):
     See :ref:`preprocessors` for more details.
     """
 
-    random_timesteps: int = 0
-    """Number of random exploration (sampling random actions) steps to perform before sampling actions from the policy."""
-
-    learning_starts: int = 0
-    """Number of steps to perform before calling the algorithm update function."""
-
     grad_norm_clip: float | dict[str, float] = 0.5
     """Clipping coefficient for the gradients by their global norm.
 
@@ -138,11 +133,11 @@ class IPPO_CFG(MultiAgentCfg):
     mixed_precision: bool = False
     """Whether to enable automatic mixed precision for higher performance."""
 
-    def expand(self, *, possible_agents: list[str]) -> None:
+    def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
         """Expand the configuration."""
         super().expand(
             possible_agents=possible_agents,
-            immutable=["learning_starts", "mixed_precision", "random_timesteps", "rewards_shaper", "rollouts"],
+            immutable=["mixed_precision", "rewards_shaper", "rollouts", *immutable],
         )
         for uid in possible_agents:
             # learning rate

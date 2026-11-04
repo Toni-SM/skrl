@@ -199,6 +199,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-minimum-utils-spaces-coverage.html \
           tests/utils/spaces/torch
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-minimum-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-minimum-utils-framework-coverage.html \
+          tests/utils/framework/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -383,6 +392,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:torch-latest-utils-spaces-coverage.html \
           tests/utils/spaces/torch
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=torch-latest-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/torch \
+          --cov-report term:skip-covered \
+          --cov-report html:torch-latest-utils-framework-coverage.html \
+          tests/utils/framework/torch
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

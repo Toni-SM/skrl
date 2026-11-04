@@ -14,6 +14,7 @@ from ...utilities import (
     MultiAgentMock,
     SingleAgentEnv,
     check_config_keys,
+    check_multi_agent_episode_resets,
     is_device_available,
 )
 
@@ -371,3 +372,9 @@ def test_simultaneous_trainer_multi_agent(
     trainer.train()
     # - evaluation
     trainer.eval()
+
+
+@pytest.mark.parametrize("mode", ["train", "eval"])
+@pytest.mark.parametrize("num_agents, remove_one", [(3, False), (3, True), (1, True)])
+def test_reset_after_agents_finish(mode: str, num_agents: int, remove_one: bool) -> None:
+    check_multi_agent_episode_resets(SequentialTrainer, "torch", mode, num_agents, remove_one)

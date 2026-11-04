@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Literal
 
-import jax
 import numpy as np
 
 from skrl.memories.jax import Memory
+from skrl.utils.framework.jax.types import Device, Tensor
 
 
 class RandomMemory(Memory):
@@ -14,7 +14,7 @@ class RandomMemory(Memory):
         *,
         memory_size: int,
         num_envs: int = 1,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         export: bool = False,
         export_format: Literal["pt", "npz", "csv"] = "pt",
         export_directory: str = "",
@@ -51,7 +51,7 @@ class RandomMemory(Memory):
 
     def sample(
         self, names: list[str], *, batch_size: int, mini_batches: int = 1, sequence_length: int = 1
-    ) -> list[list[jax.Array]]:
+    ) -> list[list[Tensor]]:
         """Sample a batch from memory randomly.
 
         :param names: Tensors names from which to obtain the samples.
@@ -65,8 +65,7 @@ class RandomMemory(Memory):
         # compute valid memory sizes
         size = len(self)
         if sequence_length > 1:
-            sequence_indexes = np.arange(0, self.num_envs * sequence_length, self.num_envs)
-            size -= sequence_indexes[-1].item()
+            size -= (sequence_length - 1) * self.num_envs
         # generate random indexes
         if self._replacement:
             indexes = np.random.randint(0, size, (batch_size,))
@@ -74,6 +73,7 @@ class RandomMemory(Memory):
             indexes = np.random.permutation(size)[:batch_size]
         # generate sequence indexes
         if sequence_length > 1:
+            sequence_indexes = np.arange(0, self.num_envs * sequence_length, self.num_envs)
             indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.reshape(-1, 1)).reshape(-1)
         # sample by indexes
         self.sampling_indexes = indexes

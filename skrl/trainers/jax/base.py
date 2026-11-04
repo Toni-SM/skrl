@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import atexit
 import contextlib
 import dataclasses
@@ -85,8 +87,10 @@ class Trainer(ABC):
         :param scopes: Number of environments for each simultaneous agent to train/evaluate on.
         """
         self.env = env
-        self.agents = agents
-        self.scopes = scopes if scopes is not None else []
+        # single agent or list of simultaneous agents (see `num_simultaneous_agents`)
+        self.agents: Any = agents
+        # number of environments per agent, converted to (start, end) environment indexes by `_setup_agents`
+        self.scopes: list[Any] = scopes if scopes is not None else []
 
         self.cfg = cfg
         self.cfg.expand()
@@ -247,7 +251,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if self.env.num_agents > 1:
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:
@@ -335,7 +339,7 @@ class Trainer(ABC):
             else:
                 # check condition to reset
                 # - multi-agent
-                if self.env.num_agents > 1:
+                if isinstance(self.env, MultiAgentEnvWrapper):
                     should_reset = not self.env.agents
                 # - single-agent
                 else:

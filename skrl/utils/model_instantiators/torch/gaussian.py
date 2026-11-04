@@ -5,11 +5,12 @@ from typing import Any, Literal
 import textwrap
 import gymnasium
 
-import torch
+import torch  # noqa
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import GaussianMixin  # noqa
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device
 from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.torch.common import generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
@@ -20,7 +21,7 @@ def gaussian_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | torch.device | None = None,
+    device: Device = None,
     clip_actions: bool = False,
     clip_mean_actions: bool = False,
     clip_log_std: bool = True,
@@ -59,22 +60,22 @@ def gaussian_model(
     :return: Gaussian model instance or definition source (if ``return_source`` is True).
     """
     # parse model definition
-    containers, output = generate_containers(network, output, embed_output=True, indent=1)
+    containers, parsed_output = generate_containers(network, output, embed_output=True, indent=1)
 
     # network definitions
     networks = []
-    forward: list[str] = []
+    forward = []
     for container in containers:
         networks.append(f'self.{container["name"]}_container = {container["sequential"]}')
         forward.append(f'{container["name"]} = self.{container["name"]}_container({container["input"]})')
     # process output
-    if output["modules"]:
-        networks.append(f'self.output_layer = {output["modules"][0]}')
-        forward.append(f'output = self.output_layer({container["name"]})')
-    if output["output"]:
-        forward.append(f'output = {output["output"]}')
+    if parsed_output["modules"]:
+        networks.append(f'self.output_layer = {parsed_output["modules"][0]}')
+        forward.append(f'output = self.output_layer({containers[-1]["name"]})')
+    if parsed_output["output"]:
+        forward.append(f'output = {parsed_output["output"]}')
     else:
-        forward[-1] = forward[-1].replace(f'{container["name"]} =', "output =", 1)
+        forward[-1] = forward[-1].replace(f'{containers[-1]["name"]} =', "output =", 1)
 
     # build substitutions and indent content
     networks = textwrap.indent("\n".join(networks), prefix=" " * 8)[8:]
@@ -115,7 +116,7 @@ def gaussian_model(
 
         {networks}
         self.log_std_parameter = nn.Parameter(
-            torch.full(size=({output["size"]},), fill_value={float(initial_log_std)}, dtype=torch.float32), requires_grad={not fixed_log_std}
+            torch.full(size=({parsed_output["size"]},), fill_value={float(initial_log_std)}, dtype=torch.float32), requires_grad={not fixed_log_std}
         )
 
     def compute(self, inputs, role=""):

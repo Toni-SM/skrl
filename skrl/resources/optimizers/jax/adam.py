@@ -7,6 +7,7 @@ import jax
 import optax
 
 from skrl.models.jax import Model
+from skrl.utils.framework.jax.types import Tensor
 
 
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
@@ -75,7 +76,7 @@ class Adam:
             def _create(cls, *, transformation, state, **kwargs):
                 return cls(transformation=transformation, state=state, **kwargs)
 
-            def step(self, *, grad: jax.Array, model: Model, lr: float | None = None) -> "Optimizer":
+            def step(self, *, grad: Tensor, model: Model, lr: float | None = None) -> "Optimizer":
                 """Performs a single optimization step.
 
                 :param grad: Gradients.

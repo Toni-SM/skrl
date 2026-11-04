@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
+from skrl.utils.framework.torch.types import Tensor
+
 
 # hack to fix: module 'numpy' has no attribute 'bool8'
 try:
-    import numpy as np
-
     np.bool8
 except AttributeError:
     np.bool8 = np.bool
@@ -62,7 +64,7 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -92,7 +94,7 @@ class GymnasiumWrapper(Wrapper):
 
         return observation, reward, terminated, truncated, info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
@@ -104,7 +106,7 @@ class GymnasiumWrapper(Wrapper):
         except:
             return None
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -118,7 +120,7 @@ class GymnasiumWrapper(Wrapper):
                 )
                 self._reset_once = False
                 self._seed = None
-            return self._observation, self._info
+            return self._observation, self._info  # pyright: ignore[reportReturnType]
 
         observation, info = self._env.reset(seed=self._seed)
         observation = flatten_tensorized_space(tensorize_space(self.observation_space, observation, device=self.device))

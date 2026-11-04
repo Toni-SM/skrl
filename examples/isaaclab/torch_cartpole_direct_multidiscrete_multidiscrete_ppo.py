@@ -74,8 +74,8 @@ class Shared(MultiCategoricalMixin, DeterministicMixin, Model):
 
 
 # load the environment
-task_name = "Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0"
-env = load_isaaclab_env(task_name=task_name, parser=parser)
+task_name = "IsaacContrib-Cartpole-Showcase-Direct"
+env = load_isaaclab_env(task_name=task_name, presets="multidiscrete_multidiscrete", parser=parser)
 # wrap the environment
 env = wrap_env(env)
 
@@ -141,7 +141,7 @@ agent = PPO(
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 1600, "headless": args.headless}
+cfg_trainer = {"timesteps": 1600, "headless": not args.visualizer}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 if args.checkpoint:

@@ -1,3 +1,4 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false, reportCallIssue=false, reportOptionalCall=false
 from __future__ import annotations
 
 from typing import Any
@@ -16,21 +17,22 @@ from skrl.models.torch import Model
 from skrl.multi_agents.torch import MultiAgent
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .mappo_cfg import MAPPO_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    truncated: torch.Tensor,
-    values: torch.Tensor,
-    last_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -74,7 +76,7 @@ class MAPPO(MultiAgent):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: MAPPO_CFG | dict = {},
     ) -> None:
         """Multi-Agent Proximal Policy Optimization (MAPPO).
@@ -105,8 +107,8 @@ class MAPPO(MultiAgent):
         )
 
         # models
-        self.policies = {uid: self.models[uid].get("policy", None) for uid in self.possible_agents}
-        self.values = {uid: self.models[uid].get("value", None) for uid in self.possible_agents}
+        self.policies = {uid: self.models[uid].get("policy") for uid in self.possible_agents}
+        self.values = {uid: self.models[uid].get("value") for uid in self.possible_agents}
 
         # checkpoint models
         for uid in self.possible_agents:
@@ -217,12 +219,12 @@ class MAPPO(MultiAgent):
 
     def act(
         self,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
         *,
         timestep: int,
         timesteps: int,
-    ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -243,11 +245,6 @@ class MAPPO(MultiAgent):
                 "observations": self._observation_preprocessor[uid](observations[uid]),
                 "states": self._state_preprocessor[uid](states[uid]),
             }
-            # sample random actions
-            # TODO, check for stochasticity
-            if timestep < self.cfg.random_timesteps:
-                actions[uid], outputs[uid] = self.policies[uid].random_act(inputs, role="policy")
-
             # sample stochastic actions
             with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
                 actions[uid], outputs[uid] = self.policies[uid].act(inputs, role="policy")
@@ -265,14 +262,14 @@ class MAPPO(MultiAgent):
     def record_transition(
         self,
         *,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
-        actions: dict[str, torch.Tensor],
-        rewards: dict[str, torch.Tensor],
-        next_observations: dict[str, torch.Tensor],
-        next_states: dict[str, torch.Tensor],
-        terminated: dict[str, torch.Tensor],
-        truncated: dict[str, torch.Tensor],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
+        actions: dict[str, Tensor],
+        rewards: dict[str, Tensor],
+        next_observations: dict[str, Tensor],
+        next_states: dict[str, Tensor],
+        terminated: dict[str, Tensor],
+        truncated: dict[str, Tensor],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -354,7 +351,7 @@ class MAPPO(MultiAgent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     for uid in self.possible_agents:

@@ -12,12 +12,12 @@ from abc import ABC, abstractmethod
 import gymnasium
 
 import numpy as np
-import warp as wp
 
 from skrl import config, logger
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
 from skrl.utils.framework.warp import convert_to_numpy_in_place
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -91,7 +91,7 @@ class Agent(ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL agent/algorithm.
 
@@ -125,7 +125,7 @@ class Agent(ABC):
 
         # data tracking
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.experiment.write_interval
+        self.write_interval = 0  # resolved from the experiment configuration in `init()`
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -134,7 +134,7 @@ class Agent(ABC):
 
         # checkpoint
         self.checkpoint_modules = {}
-        self.checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        self.checkpoint_interval = 0  # resolved from the experiment configuration in `init()`
         self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
 
         # experiment directory
@@ -197,6 +197,13 @@ class Agent(ABC):
         """
         trainer_cfg = {} if trainer_cfg is None else dataclasses.asdict(trainer_cfg)
 
+        # resolve the data tracking and checkpointing intervals
+        write_interval = self.cfg.experiment.write_interval
+        checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        timesteps = trainer_cfg.get("timesteps", 0)
+        self.write_interval = int(timesteps / 100) if write_interval == "auto" else write_interval
+        self.checkpoint_interval = int(timesteps / 10) if checkpoint_interval == "auto" else checkpoint_interval
+
         # setup Weights & Biases
         if self.cfg.experiment.wandb:
             # save experiment configuration
@@ -217,14 +224,10 @@ class Agent(ABC):
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
-        if self.write_interval == "auto":
-            self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
             self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
         # checkpoint directory creation
-        if self.checkpoint_interval == "auto":
-            self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
@@ -286,8 +289,8 @@ class Agent(ABC):
 
     @abstractmethod
     def act(
-        self, observations: wp.array, states: wp.array | None, *, timestep: int, timesteps: int
-    ) -> tuple[wp.array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -303,14 +306,14 @@ class Agent(ABC):
     def record_transition(
         self,
         *,
-        observations: wp.array,
-        states: wp.array,
-        actions: wp.array,
-        rewards: wp.array,
-        next_observations: wp.array,
-        next_states: wp.array,
-        terminated: wp.array,
-        truncated: wp.array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -342,7 +345,7 @@ class Agent(ABC):
             truncated = truncated.numpy()
 
             # compute the cumulative sum of the rewards and timesteps
-            if self._cumulative_rewards is None:
+            if self._cumulative_rewards is None or self._cumulative_timesteps is None:
                 self._cumulative_rewards = np.zeros_like(rewards, dtype=np.float32)
                 self._cumulative_timesteps = np.zeros_like(rewards, dtype=np.int32)
 
@@ -424,7 +427,7 @@ class Agent(ABC):
             modules = pickle.load(file)
         if type(modules) is dict:
             for name, data in modules.items():
-                module = self.checkpoint_modules.get(name, None)
+                module = self.checkpoint_modules.get(name)
                 if module is not None:
                     if hasattr(module, "load_state_dict"):
                         module.load_state_dict(data)

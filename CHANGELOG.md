@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+### Added
+- Add the `final` method to environment wrappers to get the observations and states with which the last transitions
+  ended (before the auto-reset of environments, if any)
+
 ### Changed
 - Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
   (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned

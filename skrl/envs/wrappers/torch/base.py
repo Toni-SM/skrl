@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 import gymnasium
 
 import torch
@@ -12,6 +13,10 @@ from skrl.utils.framework.torch.types import Tensor
 
 
 class Wrapper(ABC):
+    # info keys (checked in order) under which the environment may provide the final observations/states
+    _final_observation_keys: tuple[str, ...] = ("final_obs", "final_observation", "final_observations")
+    _final_state_keys: tuple[str, ...] = ("final_state", "final_states")
+
     def __init__(self, env: Any) -> None:
         """Base wrapper class for RL environments.
 
@@ -46,6 +51,27 @@ class Wrapper(ABC):
             f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
         )
 
+    def _get_final_info(self, info: Mapping[str, Any]) -> tuple[Any | None, Any | None]:
+        """Get the final observation and state provided by the environment in the info, if available.
+
+        The info keys are checked in the following order, and the first available one is used:
+
+        - Final observation: ``"final_obs"``, ``"final_observation"`` and ``"final_observations"``
+          (see :py:attr:`_final_observation_keys`).
+        - Final state: ``"final_state"`` and ``"final_states"`` (see :py:attr:`_final_state_keys`).
+
+        The values are returned as provided by the environment (i.e.: they are neither converted nor validated).
+
+        :param info: Info returned by the environment.
+
+        :return: Final observation, state (``None`` if not available).
+        """
+        if not isinstance(info, Mapping):
+            return None, None
+        final_observation = next((info[key] for key in self._final_observation_keys if key in info), None)
+        final_state = next((info[key] for key in self._final_state_keys if key in info), None)
+        return final_observation, final_state
+
     @abstractmethod
     def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
@@ -69,6 +95,23 @@ class Wrapper(ABC):
         """Get the environment state.
 
         :return: State.
+        """
+        pass
+
+    @abstractmethod
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. This method returns, instead, the
+        observations/states reached before the reset (e.g.: to bootstrap from them) for the environments whose
+        episodes ended, and the ones returned by :py:meth:`step`/:py:meth:`state` for the rest of the environments.
+
+        If no episode ended in the last step, or the environment does not provide the final observations/states
+        (e.g.: it is not auto-reset or the values are not available), the returned values are the same as those
+        returned by :py:meth:`step`/:py:meth:`state`.
+
+        :return: Final observation, state.
         """
         pass
 
@@ -130,6 +173,10 @@ class Wrapper(ABC):
 
 
 class MultiAgentEnvWrapper(ABC):
+    # info keys (checked in order) under which the environment may provide the final observations/states
+    _final_observation_keys: tuple[str, ...] = ("final_obs", "final_observation", "final_observations")
+    _final_state_keys: tuple[str, ...] = ("final_state", "final_states")
+
     def __init__(self, env: Any) -> None:
         """Base wrapper class for multi-agent environments.
 
@@ -164,6 +211,31 @@ class MultiAgentEnvWrapper(ABC):
             f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
         )
 
+    def _get_final_info(self, infos: Mapping[str, Any]) -> tuple[dict[str, Any | None], dict[str, Any | None]]:
+        """Get the final observations and states provided by the environment in each agent's info, if available.
+
+        For each agent, the agent's info (``infos[agent]``) keys are checked in the following order,
+        and the first available one is used:
+
+        - Final observation: ``"final_obs"``, ``"final_observation"`` and ``"final_observations"``
+          (see :py:attr:`_final_observation_keys`).
+        - Final state: ``"final_state"`` and ``"final_states"`` (see :py:attr:`_final_state_keys`).
+
+        The values are returned as provided by the environment (i.e.: they are neither converted nor validated).
+
+        :param infos: Infos returned by the environment (per-agent info).
+
+        :return: Final observation, state (per agent, ``None`` if not available).
+        """
+        final_observations, final_states = {}, {}
+        for uid in self.possible_agents:
+            info = infos.get(uid) if isinstance(infos, Mapping) else None
+            if not isinstance(info, Mapping):
+                info = {}
+            final_observations[uid] = next((info[key] for key in self._final_observation_keys if key in info), None)
+            final_states[uid] = next((info[key] for key in self._final_state_keys if key in info), None)
+        return final_observations, final_states
+
     @abstractmethod
     def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
@@ -193,6 +265,23 @@ class MultiAgentEnvWrapper(ABC):
         """Get the environment state.
 
         :return: State.
+        """
+        pass
+
+    @abstractmethod
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
+        """Get the observations and states with which the last transitions ended.
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. This method returns, instead, the
+        observations/states reached before the reset (e.g.: to bootstrap from them) for the environments whose
+        episodes ended, and the ones returned by :py:meth:`step`/:py:meth:`state` for the rest of the environments.
+
+        If no episode ended in the last step, or the environment does not provide the final observations/states
+        (e.g.: it is not auto-reset or the values are not available), the returned values are the same as those
+        returned by :py:meth:`step`/:py:meth:`state`.
+
+        :return: Final observation, state.
         """
         pass
 

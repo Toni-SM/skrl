@@ -14,7 +14,7 @@ from skrl import logger
 # MuJoCo Playground runs on JAX: reuse its JAX wrapper and only convert inputs/outputs (avoid duplicate logic)
 from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper as _JaxPlaygroundWrapper
 from skrl.envs.wrappers.torch.base import Wrapper
-from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 # ML frameworks conversion utilities
@@ -24,7 +24,7 @@ if _CPU:
     logger.warning("There is no GPU backend for JAX. MuJoCo Playground (JAX) operations will run on CPU.")
 
 
-def _jax2torch(array, device):
+def _jax2torch(array: jax.Array | None, device: Device) -> Tensor | None:
     if array is None:
         return None
     if version.parse(jax.__version__) >= version.parse("0.7.0"):
@@ -32,7 +32,7 @@ def _jax2torch(array, device):
     return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
 
 
-def _torch2jax(tensor):
+def _torch2jax(tensor: Tensor) -> jax.Array:
     if version.parse(jax.__version__) >= version.parse("0.7.0"):
         return jax_dlpack.from_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
     return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))

@@ -164,7 +164,7 @@ class PlaygroundWrapper(Wrapper):
         """
         return self._final_observations, self._final_states
 
-    def render(self, *args, **kwargs) -> None:
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment."""
         if self.num_envs > 1:
             logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")

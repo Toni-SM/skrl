@@ -9,17 +9,26 @@ import jax.numpy as jnp
 import warp as wp
 
 # MuJoCo Playground runs on JAX: reuse its JAX wrapper and only convert inputs/outputs (avoid duplicate logic)
+from skrl import logger
 from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper as _JaxPlaygroundWrapper
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.types import Device, Tensor
 
 
-def _jax2warp(array: jax.Array | None, dtype: Any = None) -> Tensor | None:
-    return None if array is None else wp.from_jax(array, dtype=dtype)
+# ML frameworks conversion utilities
+_CPU = jax.devices()[0].device_kind.lower() == "cpu"
+if _CPU:
+    logger.warning("There is no GPU backend for JAX. MuJoCo Playground (JAX) operations will run on CPU.")
+
+
+def _jax2warp(array: jax.Array | None, device: Device, dtype: Any = None) -> Tensor | None:
+    return None if array is None else wp.from_jax(array, dtype=dtype).to(device)
 
 
 def _warp2jax(array: Tensor | None) -> jax.Array | None:
-    return None if array is None else wp.to_jax(array)
+    if array is None:
+        return None
+    return wp.to_jax(array.to("cpu") if _CPU else array)
 
 
 class PlaygroundWrapper(Wrapper):
@@ -67,14 +76,18 @@ class PlaygroundWrapper(Wrapper):
 
         :return: Observation, state, final observation, final state.
         """
-        converted_observations = _jax2warp(observations)
-        converted_states = _jax2warp(states)
+        converted_observations = _jax2warp(observations, self.device)
+        converted_states = _jax2warp(states, self.device)
         # avoid converting the same array twice when no episode ended
         return (
             converted_observations,
             converted_states,
-            converted_observations if final_observations is observations else _jax2warp(final_observations),
-            converted_states if final_states is states else _jax2warp(final_states),
+            (
+                converted_observations
+                if final_observations is observations
+                else _jax2warp(final_observations, self.device)
+            ),
+            converted_states if final_states is states else _jax2warp(final_states, self.device),
         )
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
@@ -90,9 +103,9 @@ class PlaygroundWrapper(Wrapper):
         )
         return (
             self._observations,
-            _jax2warp(reward.astype(jnp.float32), dtype=wp.float32),
-            _jax2warp(terminated.astype(jnp.int8), dtype=wp.int8),
-            _jax2warp(truncated.astype(jnp.int8), dtype=wp.int8),
+            _jax2warp(reward.astype(jnp.float32), self.device, dtype=wp.float32),
+            _jax2warp(terminated.astype(jnp.int8), self.device, dtype=wp.int8),
+            _jax2warp(truncated.astype(jnp.int8), self.device, dtype=wp.int8),
             info,
         )
 
@@ -103,7 +116,7 @@ class PlaygroundWrapper(Wrapper):
         """
         return self._states
 
-    def reset(self) -> tuple[Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.

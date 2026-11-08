@@ -2,14 +2,24 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
+from skrl.utils.framework.warp.types import Tensor
+
+
+# hack to fix: module 'numpy' has no attribute 'bool8'
+try:
+    np.bool8
+except AttributeError:
+    np.bool8 = np.bool
+
 import gymnasium
 
-import numpy as np
 import warp as wp
 
 from skrl import config, logger
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.framework.warp.types import Tensor
+from skrl.utils.framework.warp.ops import where
 from skrl.utils.spaces.warp import (
     flatten_tensorized_space,
     tensorize_space,
@@ -58,108 +68,68 @@ class GymnasiumWrapper(Wrapper):
             return self._env.single_action_space
         return self._env.action_space
 
-    def _get_final_observation(self, observation: Any, info: Any) -> Any | None:
-        """Get the observation with which the episodes of the (same-step) auto-reset environments ended.
+    def _get_state(self) -> Any | None:
+        """Get the (raw) state from the environment.
 
-        The info keys are checked in the following order: ``"final_obs"`` (Gymnasium >= 1.0) and
-        ``"final_observation"`` (Gymnasium < 1.0).
-
-        For vectorized environments, the observation of the environments whose episodes ended is read from the info
-        (or from each environment's info, if the info is a list) under the first available key, for the environments
-        flagged by the ``"_<key>"`` mask (or, if the mask is not provided, whose final observation is not ``None``).
-        The observation of the rest of the environments is kept. For non-vectorized environments, it is read from
-        the info under the first available key (e.g.: Gymnasium < 1.0 auto-reset wrapper).
-
-        Only NumPy-based vectorized infos are supported (e.g.: infos with tensors are ignored).
-
-        :param observation: Observation returned by the environment.
-        :param info: Info returned by the environment.
-
-        :return: Final observation, or ``None`` if no episode ended or the final observation is not available.
+        :return: State, or ``None`` if the environment does not provide it.
         """
-        keys = ("final_obs", "final_observation")
-        if not self._vectorized:
-            return next((info[key] for key in keys if key in info), None)
-        # list of per-environment info (e.g.: deprecated API or info-to-list wrappers)
-        if isinstance(info, (tuple, list)):
-            final_observations = [next((item[key] for key in keys if key in item), None) for item in info]
-            mask = None
-        else:
-            key = next((key for key in keys if key in info), None)
-            if key is None:
-                return None
-            final_observations = info[key]
-            mask = info.get(f"_{key}")
-        if mask is None and isinstance(final_observations, (np.ndarray, list, tuple)):
-            # mask not provided: infer it from the available final observations
-            mask = [item is not None for item in final_observations]
-        if isinstance(mask, (list, tuple)):
-            mask = np.asarray(mask)
-        if not isinstance(mask, np.ndarray):
+        state_fn = getattr(self._unwrapped, "state", None)
+        if self.state_space is None or not callable(state_fn):
             return None
-        indexes = np.flatnonzero(mask)
-        if not indexes.size:
+        try:
+            return state_fn()
+        except NotImplementedError:  # environment without state
             return None
-        # replace the observation of the environments whose episodes ended
-        # - fundamental spaces (e.g.: Box, Discrete): the observation is a batched array
-        if isinstance(observation, np.ndarray):
-            observation = observation.copy()
-            observation[indexes] = np.stack([final_observations[i] for i in indexes])
-            return observation
-        # - composite spaces (e.g.: Dict, Tuple)
-        space = self.observation_space
-        num_envs = len(final_observations)
-        items = list(gymnasium.vector.utils.iterate(gymnasium.vector.utils.batch_space(space, num_envs), observation))
-        for i in indexes:
-            items[i] = final_observations[i]
-        return gymnasium.vector.utils.concatenate(
-            space, items, gymnasium.vector.utils.create_empty_array(space, num_envs)
-        )
 
-    def _parse_group(self, observation: Any) -> tuple[Tensor, Tensor | None]:
+    def _parse_group(self, *, observations: Any, states: Any | None) -> tuple[Tensor, Tensor | None]:
         """Parse the observations and states from the environment's output.
 
-        :param observation: Observation returned by the environment.
+        :param observations: Observations returned by the environment.
+        :param states: States returned by the environment (see :py:meth:`_get_state`).
 
         :return: Observation, state (``None`` if the environment does not provide it).
         """
         observations = flatten_tensorized_space(
-            tensorize_space(self.observation_space, observation, device=self.device)
+            tensorize_space(self.observation_space, observations, device=self.device)
         )
-        # state (``None`` if the environment does not provide it)
-        states = None
-        space = self.state_space
-        state_fn = getattr(self._unwrapped, "state", None)
-        if space is not None and callable(state_fn):
-            state = None
-            try:
-                state = state_fn()
-            except NotImplementedError:  # environment without state
-                pass
-            if state is not None:
-                states = flatten_tensorized_space(tensorize_space(space, state, device=self.device))
+        if states is not None and self.state_space is not None:
+            states = flatten_tensorized_space(tensorize_space(self.state_space, states, device=self.device))
+        else:
+            states = None
         return observations, states
 
-    def _parse_final_group(self, observation: Any, info: Any) -> tuple[Tensor, Tensor | None]:
+    def _parse_final_group(
+        self, *, observations: Tensor, states: Tensor | None, terminated: Tensor, truncated: Tensor, info: Any
+    ) -> tuple[Tensor, Tensor | None]:
         """Parse the final observations and states from the environment's output.
 
-        The final observation of the (same-step) auto-reset environments is read from the info
-        (see :py:meth:`_get_final_observation`). The current observations are used if no episode ended
-        or the final observation is not available. The final state is not provided by the environment,
-        so the current state is used.
+        The final observation/state of the (same-step) auto-reset environments is read from the info (see
+        :py:meth:`_get_final_info`), and it is used for the (sub-)environments whose episodes ended,
+        while the current value of the rest of them is kept.
 
-        :param observation: Observation returned by the environment.
+        :param observations: Current observations (already parsed, see :py:meth:`_parse_group`).
+        :param states: Current states (already parsed, see :py:meth:`_parse_group`).
+        :param terminated: Terminated flags (already converted).
+        :param truncated: Truncated flags (already converted).
         :param info: Info returned by the environment.
 
         :return: Final observation, state.
         """
-        final_observation = self._get_final_observation(observation, info)
-        if final_observation is None:
-            return self._observations, self._states
-        final_observations = flatten_tensorized_space(
-            tensorize_space(self.observation_space, final_observation, device=self.device)
-        )
-        return final_observations, self._states
+        dones = np.logical_or(terminated.numpy(), truncated.numpy())
+        if not dones.any():
+            return observations, states
+        dones = wp.array(dones, dtype=wp.bool, device=self.device)
+        final_observation, final_state = self._get_final_info(info)
+        # tensorize and flatten the final values, and use them for the environments whose episodes ended
+        if final_observation is not None:
+            final_observation = flatten_tensorized_space(
+                tensorize_space(self.observation_space, final_observation, device=self.device)
+            )
+            observations = where(dones, final_observation, observations)
+        if final_state is not None and states is not None:
+            final_state = flatten_tensorized_space(tensorize_space(self.state_space, final_state, device=self.device))
+            states = where(dones, final_state, states)
+        return observations, states
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -178,14 +148,15 @@ class GymnasiumWrapper(Wrapper):
 
         observation, reward, terminated, truncated, info = self._env.step(actions)
 
-        self._observations, self._states = self._parse_group(observation)
-        self._final_observations, self._final_states = self._parse_final_group(observation, info)
-        self._info = info
+        reward = wp.array(np.array(reward, dtype=np.float32).reshape(self.num_envs, -1), device=self.device)
+        terminated = wp.array(np.array(terminated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
+        truncated = wp.array(np.array(truncated, dtype=np.int8).reshape(self.num_envs, -1), device=self.device)
 
-        # convert response to warp
-        reward = wp.array(np.array(reward), dtype=wp.float32).reshape((self.num_envs, -1))
-        terminated = wp.array(np.array(terminated), dtype=wp.int8).reshape((self.num_envs, -1))
-        truncated = wp.array(np.array(truncated), dtype=wp.int8).reshape((self.num_envs, -1))
+        self._observations, self._states = self._parse_group(observations=observation, states=self._get_state())
+        self._final_observations, self._final_states = self._parse_final_group(
+            observations=self._observations, states=self._states, terminated=terminated, truncated=truncated, info=info
+        )
+        self._info = info
 
         return self._observations, reward, terminated, truncated, self._info
 
@@ -198,7 +169,7 @@ class GymnasiumWrapper(Wrapper):
         """
         return self._states
 
-    def reset(self) -> tuple[Tensor, Any]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -207,26 +178,26 @@ class GymnasiumWrapper(Wrapper):
         if self._vectorized:
             if self._reset_once:
                 observation, self._info = self._env.reset(seed=self._seed)
-                self._observations, self._states = self._parse_group(observation)
+                self._observations, self._states = self._parse_group(observations=observation, states=self._get_state())
                 self._reset_once = False
                 self._seed = None
             self._final_observations = self._observations
             self._final_states = self._states
             return self._observations, self._info
 
-        observation, info = self._env.reset(seed=self._seed)
+        observation, self._info = self._env.reset(seed=self._seed)
+        self._observations, self._states = self._parse_group(observations=observation, states=self._get_state())
         self._seed = None
-        self._observations, self._states = self._parse_group(observation)
         self._final_observations = self._observations
         self._final_states = self._states
-        self._info = info
         return self._observations, self._info
 
     def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
-        The final observation of (same-step) auto-reset environments is read from the info.
-        The final state is not provided by the environment, so it is the same as the one returned by :py:meth:`state`.
+        The final observation/state of (same-step) auto-reset environments is read from the info under
+        the first available info key: ``"final_obs"``, ``"final_observation"`` or ``"final_observations"``
+        for observations, and ``"final_state"`` or ``"final_states"`` for states.
 
         See :py:meth:`~skrl.envs.wrappers.warp.base.Wrapper.final` for more details.
 

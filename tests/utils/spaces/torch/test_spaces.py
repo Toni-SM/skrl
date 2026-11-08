@@ -58,7 +58,7 @@ def test_compute_space_size(capsys, space: gymnasium.spaces.Space):
         if isinstance(s, gymnasium.spaces.Discrete):
             return 1
         elif isinstance(s, gymnasium.spaces.MultiDiscrete):
-            return s.nvec.shape[0]
+            return s.nvec.size
         elif isinstance(s, gymnasium.spaces.Dict):
             return sum([occupied_size(_s) for _s in s.values()])
         elif isinstance(s, gymnasium.spaces.Tuple):

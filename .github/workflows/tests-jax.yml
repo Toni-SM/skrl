@@ -204,6 +204,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-minimum-utils-framework-coverage.html \
           tests/utils/framework/jax
+    - name: Run tests (distributed)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-minimum-utils-distributed-pytest.html \
+          --cov=skrl/utils/distributed/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-minimum-utils-distributed-coverage.html \
+          tests/utils/distributed/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -387,6 +396,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:jax-latest-utils-framework-coverage.html \
           tests/utils/framework/jax
+    - name: Run tests (distributed)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=jax-latest-utils-distributed-pytest.html \
+          --cov=skrl/utils/distributed/jax \
+          --cov-report term:skip-covered \
+          --cov-report html:jax-latest-utils-distributed-coverage.html \
+          tests/utils/distributed/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

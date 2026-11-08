@@ -26,6 +26,8 @@ class PlaygroundWrapper(Wrapper):
         self._reset_once = True
         self._observations = None
         self._states = None
+        self._final_observations = None
+        self._final_states = None
         self._info = {}
 
         # build spaces
@@ -62,6 +64,45 @@ class PlaygroundWrapper(Wrapper):
         """State space."""
         return self._state_space
 
+    def _parse_group(self, group: Any) -> tuple[Tensor, Tensor | None]:
+        """Parse the observations and states from the environment's observation group.
+
+        :param group: Observation group. If the environment provides states, it is a dictionary with the
+            ``"state"`` (observation) and ``"privileged_state"`` (state) keys.
+
+        :return: Observation, state (``None`` if the environment does not provide it).
+        """
+        if self._state_space is None:
+            return flatten_tensorized_space(tensorize_space(self.observation_space, group)), None
+        observations = flatten_tensorized_space(tensorize_space(self.observation_space, group["state"]))
+        states = flatten_tensorized_space(tensorize_space(self.state_space, group["privileged_state"]))
+        return observations, states
+
+    def _parse_final_group(self, info: Any, terminated: Tensor, truncated: Tensor) -> tuple[Tensor, Tensor | None]:
+        """Parse the final observations and states from the environment's info.
+
+        The final observation group (see :py:meth:`_get_final_info`) is used for the environments whose episodes
+        ended. The current observations/states are used for the rest of the environments, or for all of them
+        if no episode ended or the environment does not provide the final observation group.
+
+        :param info: Info returned by the environment.
+        :param terminated: Terminated flags (already converted).
+        :param truncated: Truncated flags (already converted).
+
+        :return: Final observation, state.
+        """
+        final_observations = self._observations
+        final_states = self._states
+        final_group = self._get_final_info(info)[0]
+        if final_group is not None:
+            dones = jnp.logical_or(terminated, truncated)
+            if dones.any():
+                observations, states = self._parse_group(final_group)
+                final_observations = jnp.where(dones, observations, final_observations)
+                if states is not None:
+                    final_states = jnp.where(dones, states, final_states)
+        return final_observations, final_states
+
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
@@ -71,24 +112,17 @@ class PlaygroundWrapper(Wrapper):
         """
         actions = unflatten_tensorized_space(self.action_space, actions)
         self._env_state = self._env_step(self._env_state, actions)
+        self._info = self._env_state.info
+        self._observations, self._states = self._parse_group(self._env_state.obs)
 
-        if self._state_space is None:
-            self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, self._env_state.obs))
-        else:
-            self._observations = flatten_tensorized_space(
-                tensorize_space(self.observation_space, self._env_state.obs["state"])
-            )
-            self._states = flatten_tensorized_space(
-                tensorize_space(self.state_space, self._env_state.obs["privileged_state"])
-            )
-        reward = self._env_state.reward
-        terminated = self._env_state.done
-        truncated = self._env_state.info.get("truncation")
+        reward = self._env_state.reward.reshape(-1, 1)
+        terminated = self._env_state.done.reshape(-1, 1)
+        truncated = self._info.get("truncation")
         if truncated is None:
-            truncated = jnp.zeros_like(terminated)
-        info = self._env_state.info
-
-        return self._observations, reward.reshape(-1, 1), terminated.reshape(-1, 1), truncated.reshape(-1, 1), info
+            truncated = jnp.zeros_like(self._env_state.done)
+        truncated = truncated.reshape(-1, 1)
+        self._final_observations, self._final_states = self._parse_final_group(self._info, terminated, truncated)
+        return self._observations, reward, terminated, truncated, self._info
 
     def state(self) -> Tensor | None:
         """Get the environment state.
@@ -104,22 +138,33 @@ class PlaygroundWrapper(Wrapper):
         """
         if self._reset_once:
             self._env_state = self._env_reset(self._env_reset_key)
-            if self._state_space is None:
-                self._observations = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, self._env_state.obs)
-                )
-            else:
-                self._observations = flatten_tensorized_space(
-                    tensorize_space(self.observation_space, self._env_state.obs["state"])
-                )
-                self._states = flatten_tensorized_space(
-                    tensorize_space(self.state_space, self._env_state.obs["privileged_state"])
-                )
+            self._observations, self._states = self._parse_group(self._env_state.obs)
             self._info = self._env_state.info
             self._reset_once = False
+        self._final_observations, self._final_states = self._observations, self._states
         return self._observations, self._info
 
-    def render(self, *args, **kwargs) -> None:
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        The final observations/states of the auto-reset environments are read from the final observation group,
+        provided in the info under the first available key: ``"final_obs"``, ``"final_observation"`` or
+        ``"final_observations"``. The final observation group must have the same structure as the environment's
+        observation group (i.e.: including the ``"privileged_state"`` key, if the environment provides states).
+
+        .. note::
+
+            MuJoCo Playground's auto-reset wrapper (``wrap_for_brax_training``) does not provide the final
+            observation group. In that case, the final observations/states are the ones returned by
+            :py:meth:`step`/:py:meth:`state` (i.e.: the initial ones of the new episodes for the reset environments).
+
+        See :py:meth:`~skrl.envs.wrappers.jax.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
+
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment."""
         if self.num_envs > 1:
             logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")

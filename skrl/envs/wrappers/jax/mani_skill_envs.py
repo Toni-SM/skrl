@@ -13,8 +13,10 @@ import torch.utils.dlpack as torch_dlpack
 
 from skrl import config, logger
 from skrl.envs.wrappers.jax.base import Wrapper
+
+# ManiSkill runs on PyTorch: reuse its PyTorch wrapper and only convert inputs/outputs (avoid duplicate logic)
+from skrl.envs.wrappers.torch.mani_skill_envs import ManiSkillWrapper as _TorchManiSkillWrapper
 from skrl.utils.framework.jax.types import Tensor
-from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
 # ML frameworks conversion utilities
@@ -31,6 +33,8 @@ def _jax2torch(array, device):
 
 
 def _torch2jax(tensor):
+    if tensor is None:
+        return None
     if version.parse(jax.__version__) >= version.parse("0.7.0"):
         return jax_dlpack.from_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
     return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
@@ -44,42 +48,53 @@ class ManiSkillWrapper(Wrapper):
         """
         super().__init__(env)
 
-        self._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
-        self._reset_once = True
+        self._wrapper = _TorchManiSkillWrapper(env)
+        self._wrapper._seed = np.asarray(jax.device_get(config.jax.key)).sum().item()
         self._observations = None
         self._states = None
-        self._info = {}
-
-        if self._unwrapped:
-            self._env_device = torch.device(self._unwrapped.device)
+        self._final_observations = None
+        self._final_states = None
 
     @property
     def state_space(self) -> gymnasium.Space | None:
         """State space."""
-        try:
-            return self._unwrapped.single_state_space
-        except AttributeError:
-            pass
-        try:
-            return self._unwrapped.state_space
-        except AttributeError:
-            return None
+        return self._wrapper.state_space
 
     @property
     def observation_space(self) -> gymnasium.Space:
         """Observation space."""
-        try:
-            return self._unwrapped.single_observation_space
-        except:
-            return self._unwrapped.observation_space
+        return self._wrapper.observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
         """Action space."""
-        try:
-            return self._unwrapped.single_action_space
-        except:
-            return self._unwrapped.action_space
+        return self._wrapper.action_space
+
+    def _convert(
+        self,
+        observations: torch.Tensor,
+        states: torch.Tensor | None,
+        final_observations: torch.Tensor,
+        final_states: torch.Tensor | None,
+    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
+        """Convert the PyTorch wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
+        :param states: States returned by the PyTorch wrapper's :py:meth:`state`.
+        :param final_observations: Final observations returned by the PyTorch wrapper's :py:meth:`final`.
+        :param final_states: Final states returned by the PyTorch wrapper's :py:meth:`final`.
+
+        :return: Observation, state, final observation, final state.
+        """
+        converted_observations = _torch2jax(observations)
+        converted_states = _torch2jax(states)
+        # avoid converting the same tensor twice when no episode ended
+        return (
+            converted_observations,
+            converted_states,
+            converted_observations if final_observations is observations else _torch2jax(final_observations),
+            converted_states if final_states is states else _torch2jax(final_states),
+        )
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -88,26 +103,18 @@ class ManiSkillWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = unflatten_tensorized_space(self.action_space, _jax2torch(actions, self._env_device))
-
-        with torch.no_grad():
-            observations, reward, terminated, truncated, self._info = self._env.step(actions)
-            # auto-reset environments
-            dones = (terminated | truncated).flatten()
-            if dones.any():
-                env_idx = torch.arange(self.num_envs, device=dones.device)[dones]
-                observations, self._info = self._env.reset(options={"env_idx": env_idx})
-
-        self._observations = _torch2jax(flatten_tensorized_space(tensorize_space(self.observation_space, observations)))
-        terminated = terminated.to(dtype=torch.int8)
-        truncated = truncated.to(dtype=torch.int8)
-
+        observations, reward, terminated, truncated, info = self._wrapper.step(
+            _jax2torch(actions, self._wrapper.device)
+        )
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
         return (
             self._observations,
-            _torch2jax(reward.view(-1, 1)),
-            _torch2jax(terminated.view(-1, 1)),
-            _torch2jax(truncated.view(-1, 1)),
-            self._info,
+            _torch2jax(reward),
+            _torch2jax(terminated.to(dtype=torch.int8)),
+            _torch2jax(truncated.to(dtype=torch.int8)),
+            info,
         )
 
     def state(self) -> Tensor | None:
@@ -122,19 +129,31 @@ class ManiSkillWrapper(Wrapper):
 
         :return: Observation, info.
         """
-        if self._reset_once:
-            observations, self._info = self._env.reset(seed=self._seed)
-            self._observations = _torch2jax(
-                flatten_tensorized_space(tensorize_space(self.observation_space, observations))
-            )
-            self._reset_once = False
-            self._seed = None
-        return self._observations, self._info
+        observations, info = self._wrapper.reset()
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
+        return self._observations, info
+
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        The final observation is read from the info under the first available key (``"final_obs"``,
+        ``"final_observation"`` or ``"final_observations"``) when the environment is auto-reset (e.g.:
+        ``ManiSkillVectorEnv(auto_reset=True)``). Otherwise, it is the observation reached before the wrapper resets
+        the environments whose episodes ended. The wrapper does not provide states, so the final state is the same as
+        the one returned by :py:meth:`state`.
+
+        See :py:meth:`~skrl.envs.wrappers.jax.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""
-        return self._env.render(*args, **kwargs)
+        return self._wrapper.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment."""
-        self._env.close()
+        self._wrapper.close()

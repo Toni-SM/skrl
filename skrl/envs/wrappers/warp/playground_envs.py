@@ -3,17 +3,32 @@ from __future__ import annotations
 from typing import Any
 
 import gymnasium
-import mujoco
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 import warp as wp
 
-from skrl import config, logger
+# MuJoCo Playground runs on JAX: reuse its JAX wrapper and only convert inputs/outputs (avoid duplicate logic)
+from skrl import logger
+from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper as _JaxPlaygroundWrapper
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.framework.warp.types import Tensor
-from skrl.utils.spaces.jax import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
+from skrl.utils.framework.warp.types import Device, Tensor
+
+
+# ML frameworks conversion utilities
+_CPU = jax.devices()[0].device_kind.lower() == "cpu"
+if _CPU:
+    logger.warning("There is no GPU backend for JAX. MuJoCo Playground (JAX) operations will run on CPU.")
+
+
+def _jax2warp(array: jax.Array | None, device: Device, dtype: Any = None) -> Tensor | None:
+    return None if array is None else wp.from_jax(array, dtype=dtype).to(device)
+
+
+def _warp2jax(array: Tensor | None) -> jax.Array | None:
+    if array is None:
+        return None
+    return wp.to_jax(array.to("cpu") if _CPU else array)
 
 
 class PlaygroundWrapper(Wrapper):
@@ -24,44 +39,56 @@ class PlaygroundWrapper(Wrapper):
         """
         super().__init__(env)
 
-        self._reset_once = True
+        self._wrapper = _JaxPlaygroundWrapper(env)
         self._observations = None
         self._states = None
-        self._info = {}
-
-        # build spaces
-        observation_size = self._unwrapped.observation_size
-        action_size = self._unwrapped.action_size
-        if isinstance(observation_size, dict):
-            self._observation_space = gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=observation_size["state"])
-            self._state_space = gymnasium.spaces.Box(
-                low=-np.inf, high=np.inf, shape=observation_size["privileged_state"]
-            )
-        else:
-            self._observation_space = gymnasium.spaces.Box(low=-np.inf, high=np.inf, shape=(observation_size,))
-            self._state_space = None
-        self._action_space = gymnasium.spaces.Box(low=-1.0, high=1.0, shape=(action_size,))
-
-        # set wrapped environment for just-in-time compilation with XLA
-        self._env_state = None
-        self._env_step = jax.jit(env.step)
-        self._env_reset = jax.jit(env.reset)
-        self._env_reset_key = jax.random.split(config.jax.key, self.num_envs)
-
-    @property
-    def observation_space(self) -> gymnasium.Space:
-        """Observation space."""
-        return self._observation_space
-
-    @property
-    def action_space(self) -> gymnasium.Space:
-        """Action space."""
-        return self._action_space
+        self._final_observations = None
+        self._final_states = None
 
     @property
     def state_space(self) -> gymnasium.Space | None:
         """State space."""
-        return self._state_space
+        return self._wrapper.state_space
+
+    @property
+    def observation_space(self) -> gymnasium.Space:
+        """Observation space."""
+        return self._wrapper.observation_space
+
+    @property
+    def action_space(self) -> gymnasium.Space:
+        """Action space."""
+        return self._wrapper.action_space
+
+    def _convert(
+        self,
+        observations: jax.Array,
+        states: jax.Array | None,
+        final_observations: jax.Array,
+        final_states: jax.Array | None,
+    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
+        """Convert the JAX wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the JAX wrapper's :py:meth:`step`/:py:meth:`reset`.
+        :param states: States returned by the JAX wrapper's :py:meth:`state`.
+        :param final_observations: Final observations returned by the JAX wrapper's :py:meth:`final`.
+        :param final_states: Final states returned by the JAX wrapper's :py:meth:`final`.
+
+        :return: Observation, state, final observation, final state.
+        """
+        converted_observations = _jax2warp(observations, self.device)
+        converted_states = _jax2warp(states, self.device)
+        # avoid converting the same array twice when no episode ended
+        return (
+            converted_observations,
+            converted_states,
+            (
+                converted_observations
+                if final_observations is observations
+                else _jax2warp(final_observations, self.device)
+            ),
+            converted_states if final_states is states else _jax2warp(final_states, self.device),
+        )
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -70,33 +97,15 @@ class PlaygroundWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        actions = unflatten_tensorized_space(self.action_space, wp.to_jax(actions))
-        self._env_state = self._env_step(self._env_state, actions)
-
-        if self._state_space is None:
-            self._observations = wp.from_jax(
-                flatten_tensorized_space(tensorize_space(self.observation_space, self._env_state.obs))
-            )
-        else:
-            self._observations = wp.from_jax(
-                flatten_tensorized_space(tensorize_space(self.observation_space, self._env_state.obs["state"]))
-            )
-            self._states = wp.from_jax(
-                flatten_tensorized_space(tensorize_space(self.state_space, self._env_state.obs["privileged_state"]))
-            )
-        reward = wp.from_jax(self._env_state.reward, dtype=wp.float32)
-        terminated = wp.from_jax(self._env_state.done.astype(jnp.int8), dtype=wp.int8)
-        truncated = self._env_state.info.get("truncation")
-        truncated = (
-            wp.zeros_like(terminated) if truncated is None else wp.from_jax(truncated.astype(jnp.int8), dtype=wp.int8)
+        observations, reward, terminated, truncated, info = self._wrapper.step(_warp2jax(actions))
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
         )
-        info = self._env_state.info
-
         return (
             self._observations,
-            reward.reshape((-1, 1)),
-            terminated.reshape((-1, 1)),
-            truncated.reshape((-1, 1)),
+            _jax2warp(reward.astype(jnp.float32), self.device, dtype=wp.float32),
+            _jax2warp(terminated.astype(jnp.int8), self.device, dtype=wp.int8),
+            _jax2warp(truncated.astype(jnp.int8), self.device, dtype=wp.int8),
             info,
         )
 
@@ -107,50 +116,41 @@ class PlaygroundWrapper(Wrapper):
         """
         return self._states
 
-    def reset(self) -> tuple[Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.
         """
-        if self._reset_once:
-            self._env_state = self._env_reset(self._env_reset_key)
-            if self._state_space is None:
-                self._observations = wp.from_jax(
-                    flatten_tensorized_space(tensorize_space(self.observation_space, self._env_state.obs))
-                )
-            else:
-                self._observations = wp.from_jax(
-                    flatten_tensorized_space(tensorize_space(self.observation_space, self._env_state.obs["state"]))
-                )
-                self._states = wp.from_jax(
-                    flatten_tensorized_space(tensorize_space(self.state_space, self._env_state.obs["privileged_state"]))
-                )
-            self._info = self._env_state.info
-            self._reset_once = False
-        return self._observations, self._info
+        observations, info = self._wrapper.reset()
+        self._observations, self._states, self._final_observations, self._final_states = self._convert(
+            observations, self._wrapper.state(), *self._wrapper.final()
+        )
+        return self._observations, info
 
-    def render(self, *args, **kwargs) -> None:
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        The final observations/states of the auto-reset environments are read from the final observation group,
+        provided in the info under the first available key: ``"final_obs"``, ``"final_observation"`` or
+        ``"final_observations"``. The final observation group must have the same structure as the environment's
+        observation group (i.e.: including the ``"privileged_state"`` key, if the environment provides states).
+
+        .. note::
+
+            MuJoCo Playground's auto-reset wrapper (``wrap_for_brax_training``) does not provide the final
+            observation group. In that case, the final observations/states are the ones returned by
+            :py:meth:`step`/:py:meth:`state` (i.e.: the initial ones of the new episodes for the reset environments).
+
+        See :py:meth:`~skrl.envs.wrappers.warp.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
+
+    def render(self, *args, **kwargs) -> Any:
         """Render the environment."""
-        if self.num_envs > 1:
-            logger.warning("Rendering is not supported for parallel environments. Rendering will be skipped")
-            return
-
-        # render frame
-        scene_option = mujoco.MjvOption()
-        scene_option.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = True
-        scene_option.flags[mujoco.mjtVisFlag.mjVIS_PERTFORCE] = True
-        scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = False
-        frame = self._unwrapped.render(self._env_state, width=640, height=480, scene_option=scene_option)
-        # show rendered frame using OpenCV
-        try:
-            import cv2
-
-            cv2.imshow("env", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            cv2.waitKey(1)
-        except ImportError as e:
-            logger.warning(f"Unable to import opencv-python: {e}. Frame will not be rendered.")
-        return frame
+        return self._wrapper.render(*args, **kwargs)
 
     def close(self) -> None:
         """Close the environment."""
-        pass
+        self._wrapper.close()

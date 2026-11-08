@@ -103,8 +103,9 @@ class GymnasiumWrapper(Wrapper):
         """Parse the final observations and states from the environment's output.
 
         The final observation/state of the (same-step) auto-reset environments is read from the info (see
-        :py:meth:`_get_final_info`), and it is used for the (sub-)environments whose episodes ended,
-        while the current value of the rest of them is kept.
+        :py:meth:`_get_final_info`), or from each item of the per-environment info list for vectorized environments,
+        and it is used for the (sub-)environments whose episodes ended, while the current value of the rest of them
+        is kept (see :py:meth:`_parse_final_value`).
 
         :param observations: Current observations (already parsed, see :py:meth:`_parse_group`).
         :param states: Current states (already parsed, see :py:meth:`_parse_group`).
@@ -117,17 +118,49 @@ class GymnasiumWrapper(Wrapper):
         dones = terminated | truncated
         if not dones.any():
             return observations, states
-        final_observation, final_state = self._get_final_info(info)
+        if self._vectorized and isinstance(info, (tuple, list)):
+            # list of per-environment info (e.g.: deprecated API or info-to-list wrapper)
+            final_observation, final_state = map(list, zip(*(self._get_final_info(item) for item in info)))
+        else:
+            final_observation, final_state = self._get_final_info(info)
         # tensorize and flatten the final values, and use them for the environments whose episodes ended
-        if final_observation is not None:
-            final_observation = flatten_tensorized_space(
-                tensorize_space(self.observation_space, final_observation, device=self.device)
-            )
-            observations = torch.where(dones, final_observation, observations)
-        if final_state is not None and states is not None:
-            final_state = flatten_tensorized_space(tensorize_space(self.state_space, final_state, device=self.device))
-            states = torch.where(dones, final_state, states)
+        observations = self._parse_final_value(self.observation_space, final_observation, observations, dones)
+        if states is not None:
+            states = self._parse_final_value(self.state_space, final_state, states, dones)
         return observations, states
+
+    def _parse_final_value(self, space: gymnasium.Space, final_value: Any, value: Tensor, dones: Tensor) -> Tensor:
+        """Use the final value (observation or state) for the (sub-)environments whose episodes ended.
+
+        Vectorized environments may provide per-environment final values (list or object array) with ``None``
+        for the sub-environments whose final value is not available (e.g.: their episodes did not end).
+        Such values are batched, and the current value is kept for the unavailable ones.
+
+        :param space: Single (non-batched) space of the value.
+        :param final_value: Final value provided by the environment (``None`` if not available).
+        :param value: Current value (already parsed).
+        :param dones: Episode termination or truncation flags.
+
+        :return: Value, with the final value used for the (sub-)environments whose episodes ended (if available).
+        """
+        if final_value is None:
+            return value
+        if self._vectorized and (
+            isinstance(final_value, list) or (isinstance(final_value, np.ndarray) and final_value.dtype == object)
+        ):
+            available = [item is not None for item in final_value]
+            if not any(available):
+                return value
+            # fill in the unavailable values (discarded below) with an available one, to batch them
+            filler = final_value[available.index(True)]
+            final_value = gymnasium.vector.utils.concatenate(
+                space,
+                [filler if item is None else item for item in final_value],
+                gymnasium.vector.utils.create_empty_array(space, self.num_envs),
+            )
+            dones = dones & torch.tensor(available, device=self.device).view(-1, 1)
+        final_value = flatten_tensorized_space(tensorize_space(space, final_value, device=self.device))
+        return torch.where(dones, final_value, value)
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.

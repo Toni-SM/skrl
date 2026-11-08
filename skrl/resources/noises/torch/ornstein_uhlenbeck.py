@@ -4,6 +4,7 @@ import torch
 from torch.distributions import Normal
 
 from skrl.resources.noises.torch import Noise
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
 # speed up distribution construction by disabling checking
@@ -19,7 +20,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
@@ -46,7 +47,7 @@ class OrnsteinUhlenbeckNoise(Noise):
             scale=torch.tensor(std, device=self.device, dtype=torch.float32),
         )
 
-    def sample(self, size: list[int] | torch.Size) -> torch.Tensor:
+    def sample(self, size: list[int] | torch.Size) -> Tensor:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

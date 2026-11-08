@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import torch
+from skrl.utils.framework.torch.types import Tensor
 
 
 class TabularMixin:
@@ -28,7 +28,7 @@ class TabularMixin:
         string += ")"
         return string
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -44,7 +44,7 @@ class TabularMixin:
         actions, outputs = self.compute(inputs, role)
         return actions, outputs
 
-    def tables(self, *, role: str = "") -> dict[str, torch.Tensor]:
+    def tables(self, *, role: str = "") -> dict[str, Tensor]:
         """Return the *tables* defined by the model.
 
         :param role: Role played by the model.

@@ -10,13 +10,14 @@ import warp_nn.nn as nn
 
 from skrl import config, logger
 from skrl.utils.framework.warp import type_cast
+from skrl.utils.framework.warp.types import Device, Tensor
 from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space, sample_space
 
 
 @wp.kernel
 def _polyak_averaging(
-    parameters: wp.array2d(dtype=float),
-    model_parameters: wp.array2d(dtype=float),
+    parameters: wp.array2d[float],
+    model_parameters: wp.array2d[float],
     polyak: float,
 ):
     i, j = wp.tid()
@@ -30,7 +31,7 @@ class Model(nn.Module, ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Base model class for implementing custom models.
 
@@ -88,7 +89,7 @@ class Model(nn.Module, ABC):
         self.to(device=self.device)
         self.compute(inputs=inputs, role=role)
 
-    def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -205,7 +206,7 @@ class Model(nn.Module, ABC):
         """
         return {}
 
-    def forward(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def forward(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Forward pass of the model.
 
         .. note::
@@ -226,7 +227,7 @@ class Model(nn.Module, ABC):
         return self.act(inputs, role=role)
 
     @abstractmethod
-    def compute(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def compute(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Define the computation performed by the model.
 
         .. warning::
@@ -247,7 +248,7 @@ class Model(nn.Module, ABC):
         raise NotImplementedError("The computation performed by the model (.compute()) is not implemented")
 
     @abstractmethod
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act according to the specified behavior.
 
         Agents will call this method to get the expected action/value based on the observations/states.

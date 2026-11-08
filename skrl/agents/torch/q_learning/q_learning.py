@@ -10,6 +10,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .q_learning_cfg import Q_LEARNING_CFG
 
@@ -23,7 +24,7 @@ class Q_LEARNING(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: Q_LEARNING_CFG | dict = {},
     ) -> None:
         """Q-learning.
@@ -52,7 +53,7 @@ class Q_LEARNING(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
+        self.policy = self.models.get("policy")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -73,8 +74,8 @@ class Q_LEARNING(Agent):
         self.enable_models_training_mode(False)
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -96,14 +97,14 @@ class Q_LEARNING(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

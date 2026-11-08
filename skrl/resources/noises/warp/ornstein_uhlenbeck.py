@@ -4,14 +4,15 @@ import warp as wp
 
 from skrl import config
 from skrl.resources.noises.warp import Noise
+from skrl.utils.framework.warp.types import Device, Tensor
 
 
 @wp.kernel
 def _sample(
-    dst: wp.array2d(dtype=float),
+    dst: wp.array2d[float],
     theta: float,
     sigma: float,
-    state: wp.array2d(dtype=float),
+    state: wp.array2d[float],
     mean: float,
     std: float,
     base_scale: float,
@@ -32,7 +33,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
@@ -58,7 +59,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self.mean = mean
         self.std = std
 
-    def sample(self, size: list[int]) -> wp.array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

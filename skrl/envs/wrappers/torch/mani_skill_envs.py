@@ -8,6 +8,7 @@ import torch
 
 from skrl import config
 from skrl.envs.wrappers.torch.base import Wrapper
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -53,7 +54,7 @@ class ManiSkillWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -73,14 +74,14 @@ class ManiSkillWrapper(Wrapper):
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.

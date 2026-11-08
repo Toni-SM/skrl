@@ -1,3 +1,5 @@
+# pyright: reportArgumentType=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,6 +16,7 @@ from skrl.envs.wrappers.torch import MultiAgentEnvWrapper, Wrapper
 from skrl.multi_agents.torch import MultiAgent
 from skrl.trainers.torch import Trainer, TrainerCfg
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Tensor
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -60,9 +63,9 @@ class StepTrainer(Trainer):
         self.observations = None
         self.states = None
 
-    def train(
+    def train(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute a training iteration.
 
         This method executes the following steps once:
@@ -186,9 +189,9 @@ class StepTrainer(Trainer):
 
         return next_observations, rewards, terminated, truncated, infos
 
-    def eval(
+    def eval(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, timestep: int | None = None, timesteps: int | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Execute an evaluation iteration.
 
         This method executes the following steps in loop:

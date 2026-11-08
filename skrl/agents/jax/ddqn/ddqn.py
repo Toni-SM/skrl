@@ -15,6 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .ddqn_cfg import DDQN_CFG
 
@@ -58,7 +59,7 @@ class DDQN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: DDQN_CFG | dict = {},
     ) -> None:
         """Double Deep Q-Network (DDQN).
@@ -87,8 +88,8 @@ class DDQN(Agent):
         )
 
         # models
-        self.q_network = self.models.get("q_network", None)
-        self.target_q_network = self.models.get("target_q_network", None)
+        self.q_network = self.models.get("q_network")
+        self.target_q_network = self.models.get("target_q_network")
 
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network
@@ -114,7 +115,7 @@ class DDQN(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(**self.cfg.learning_rate_scheduler_kwargs)
+                self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs)
 
         # set up target networks
         if self.target_q_network is not None:
@@ -176,8 +177,8 @@ class DDQN(Agent):
             self.target_q_network.apply = jax.jit(self.target_q_network.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -222,14 +223,14 @@ class DDQN(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

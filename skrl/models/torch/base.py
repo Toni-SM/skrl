@@ -9,6 +9,7 @@ from packaging import version
 import torch
 
 from skrl import config, logger
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_size, flatten_tensorized_space, sample_space
 
 
@@ -19,7 +20,7 @@ class Model(torch.nn.Module, ABC):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Base model class for implementing custom models.
 
@@ -72,7 +73,7 @@ class Model(torch.nn.Module, ABC):
         self.to(device=self.device)
         self.compute(inputs=inputs, role=role)
 
-    def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def random_act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act randomly according to the action space.
 
         .. warning::
@@ -206,7 +207,7 @@ class Model(torch.nn.Module, ABC):
         """
         return {}
 
-    def forward(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def forward(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Forward pass of the model.
 
         .. note::
@@ -227,7 +228,7 @@ class Model(torch.nn.Module, ABC):
         return self.act(inputs, role=role)
 
     @abstractmethod
-    def compute(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def compute(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Define the computation performed by the model.
 
         .. warning::
@@ -248,7 +249,7 @@ class Model(torch.nn.Module, ABC):
         raise NotImplementedError("The computation performed by the model (.compute()) is not implemented")
 
     @abstractmethod
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[torch.Tensor, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act according to the specified behavior.
 
         Agents will call this method to get the expected action/value based on the observations/states.

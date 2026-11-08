@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -15,6 +17,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 from skrl.utils.spaces.jax import compute_space_limits
 
 from .ddpg_cfg import DDPG_CFG
@@ -23,8 +26,8 @@ from .ddpg_cfg import DDPG_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @jax.jit
 def _apply_exploration_noise(
-    actions: jax.Array, noises: jax.Array, min_actions: jax.Array, max_actions: jax.Array, scale: float
-) -> jax.Array:
+    actions: Tensor, noises: Tensor, min_actions: Tensor, max_actions: Tensor, scale: float
+) -> Tensor:
     noises = noises.at[:].multiply(scale)
     return jnp.clip(actions + noises, min=min_actions, max=max_actions), noises
 
@@ -33,10 +36,10 @@ def _apply_exploration_noise(
 def _update_critic(
     critic_act,
     critic_state_dict,
-    target_q_values: jax.Array,
-    inputs: dict[str, jax.Array],
-    sampled_rewards: jax.Array,
-    sampled_terminated: jax.Array,
+    target_q_values: Tensor,
+    inputs: dict[str, Tensor],
+    sampled_rewards: Tensor,
+    sampled_terminated: Tensor,
     discount_factor: float,
 ):
     # compute target values
@@ -77,7 +80,7 @@ class DDPG(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: DDPG_CFG | dict = {},
     ) -> None:
         """Deep Deterministic Policy Gradient (DDPG).
@@ -106,10 +109,10 @@ class DDPG(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.target_policy = self.models.get("target_policy", None)
-        self.critic = self.models.get("critic", None)
-        self.target_critic = self.models.get("target_critic", None)
+        self.policy = self.models.get("policy")
+        self.target_policy = self.models.get("target_policy")
+        self.critic = self.models.get("critic")
+        self.target_critic = self.models.get("target_critic")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -156,13 +159,9 @@ class DDPG(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
-                    **self.cfg.learning_rate_scheduler_kwargs[1]
-                )
+                self.critic_scheduler = self.critic_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up target networks
         if self.target_policy is not None and self.target_critic is not None:
@@ -231,8 +230,8 @@ class DDPG(Agent):
             self.target_critic.apply = jax.jit(self.target_critic.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -269,14 +268,14 @@ class DDPG(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

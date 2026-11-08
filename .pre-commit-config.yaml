@@ -5,6 +5,7 @@ repos:
     - id: check-ast
     - id: check-case-conflict
     - id: check-docstring-first
+      exclude: ^skrl/utils/framework/(torch|jax|warp)/types\.py$
     - id: check-json
     - id: check-merge-conflict
     - id: check-toml
@@ -38,3 +39,8 @@ repos:
     - id: rst-backticks
     - id: rst-directive-colons
     - id: rst-inline-touching-normal
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.414
+  hooks:
+    - id: pyright
+      files: ^skrl/

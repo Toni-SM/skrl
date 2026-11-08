@@ -2,6 +2,15 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Changed
+- Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
+  (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned
+
+### Fixed
+- Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
+- Fix JAX distributed launcher not propagating worker failures and not validating the launch configuration
+
 ## [2.1.1] - 2026-10-20
 ### Changed (breaking changes)
 - Update the Isaac Lab environment loader to Isaac Lab 3. Older versions of Isaac Lab are not supported

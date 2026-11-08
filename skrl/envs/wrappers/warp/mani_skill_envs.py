@@ -9,6 +9,7 @@ import warp as wp
 
 from skrl import config
 from skrl.envs.wrappers.warp.base import Wrapper
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -54,7 +55,7 @@ class ManiSkillWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: wp.array) -> tuple[wp.array, wp.array, wp.array, wp.array, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -83,14 +84,14 @@ class ManiSkillWrapper(Wrapper):
             self._info,
         )
 
-    def state(self) -> wp.array | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[wp.array, Any]:
+    def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
 
         :return: Observation, info.

@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
 - Fix JAX distributed launcher not propagating worker failures and not validating the launch configuration
 - Fix PyTorch distributed gradient reduction for non-contiguous gradients
+- Fix `sample_space` returning the same batch on consecutive calls (e.g., models' random actions)
 
 ## [2.1.1] - 2026-10-20
 ### Changed (breaking changes)

@@ -234,6 +234,27 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
     check_sampled_space(space, sampled_space, batch_size, backend="native")
 
 
+def test_sample_space_advances_random_state():
+    def sample(space: gymnasium.spaces.Space, backend: str) -> np.ndarray:
+        x = sample_space(space, batch_size=8, backend=backend)
+        return np.asarray(x)
+
+    for space in [
+        gymnasium.spaces.Box(low=-1, high=1, shape=(3,)),
+        gymnasium.spaces.Discrete(100),
+        gymnasium.spaces.MultiDiscrete([100, 100]),
+    ]:
+        for backend in ["numpy", "native"]:
+            space.seed(0)
+            first = sample(space, backend)
+            second = sample(space, backend)
+            assert not np.array_equal(first, second)
+            # reseeding the space replays the same sequence of batches
+            space.seed(0)
+            assert np.array_equal(sample(space, backend), first)
+            assert np.array_equal(sample(space, backend), second)
+
+
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],

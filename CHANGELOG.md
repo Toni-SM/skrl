@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
   (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned
+- Update the MuJoCo Playground environment loader and wrappers to MuJoCo Playground 1.0.0 (PyTorch and MuJoCo Warp based).
+  Older (JAX/MJX based) versions of MuJoCo Playground are not supported
 
 ### Fixed
 - Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one

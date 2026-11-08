@@ -95,7 +95,7 @@ def wrap_env(
 
         if _in(["omni.isaac.lab.*", "isaaclab.*"], base_classes):
             return "isaaclab-*"
-        elif _in("mujoco_playground..*", base_classes):
+        elif _in(r"reaf\.core\.environment\..*", base_classes):  # MuJoCo Playground (reaf-sim) environments
             return "playground"
         elif _in("mani_skill.envs..*", base_classes):
             return "mani-skill"

@@ -58,7 +58,7 @@ env = load_isaaclab_env()
 from skrl.envs.loaders.torch import load_playground_env
 
 # load environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 # [end-playground-envs-parameters-torch]
 
 
@@ -67,7 +67,7 @@ env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_le
 from skrl.envs.loaders.jax import load_playground_env
 
 # load environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 # [end-playground-envs-parameters-jax]
 
 
@@ -76,7 +76,7 @@ env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_le
 from skrl.envs.loaders.warp import load_playground_env
 
 # load environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 # [end-playground-envs-parameters-warp]
 
 

@@ -162,10 +162,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
 
         self._seed = config.torch.key
         self._reset_once = True
-        self._observations = None
-        self._states = None
-        self._final_observations = None
-        self._final_states = None
+        self._observations = {}
+        self._states = {}
+        self._final_observations = {}
+        self._final_states = {}
         self._info = {}
 
     def _parse_group(self, observations: dict[str, Tensor]) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:

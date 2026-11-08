@@ -142,10 +142,10 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
 
         self._wrapper = _TorchIsaacLabMultiAgentWrapper(env)
         self._wrapper._seed = config.warp.key
-        self._observations = None
-        self._states = None
-        self._final_observations = None
-        self._final_states = None
+        self._observations = {}
+        self._states = {}
+        self._final_observations = {}
+        self._final_states = {}
 
     def _convert(
         self,

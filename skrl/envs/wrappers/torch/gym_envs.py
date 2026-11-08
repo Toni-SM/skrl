@@ -54,7 +54,7 @@ class GymWrapper(Wrapper):
         self._states = None
         self._final_observations = None
         self._final_states = None
-        self._info = {}
+        self._info: dict[str, Any] = {}
 
         self._deprecated_api = version.parse(gym.__version__) < version.parse("0.25.0")
         if self._deprecated_api:

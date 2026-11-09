@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import collections
 import csv
 import glob
 import os
@@ -66,7 +65,8 @@ class MemoryFileIterator:
         :return: Tuple of file name and data.
         """
         filename = os.path.basename(self.file_paths[self.n])
-        data = np.load(self.file_paths[self.n])
+        with np.load(self.file_paths[self.n]) as archive:
+            data = dict(archive)
 
         self.n += 1
         return filename, data
@@ -97,26 +97,20 @@ class MemoryFileIterator:
             # parse header
             try:
                 header = next(reader)
-                data = collections.defaultdict(int)
-                for h in header:
-                    h.split(".")[1]  # check header format
-                    data[h.split(".")[0]] += 1
-                names = sorted(list(data.keys()))
-                sizes = [data[name] for name in names]
-                indexes = [(low, high) for low, high in zip(np.cumsum(sizes) - np.array(sizes), np.cumsum(sizes))]
-            except:
+                columns = {}
+                for column, field in enumerate(header):
+                    name, component = field.rsplit(".", 1)
+                    columns.setdefault(name, []).append((int(component), column))
+            except (StopIteration, ValueError):
                 self.n += 1
                 return filename, {}
 
-            # parse data
-            data = {name: [] for name in names}
+            indexes = {name: [i for _, i in sorted(fields)] for name, fields in columns.items()}
+            data = {name: [] for name in indexes}
             for row in reader:
-                for name, index in zip(names, indexes):
+                for name, fields in indexes.items():
                     data[name].append(
-                        [
-                            float(item) if item not in ["True", "False"] else bool(item)
-                            for item in row[index[0] : index[1]]
-                        ]
+                        [row[i] == "True" if row[i] in ("True", "False") else float(row[i]) for i in fields]
                     )
 
         self.n += 1

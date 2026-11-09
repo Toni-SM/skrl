@@ -4,14 +4,15 @@ import warp as wp
 
 from skrl import config
 from skrl.resources.noises.warp import Noise
+from skrl.utils.framework.warp.types import Device, Tensor
 
 
 @wp.kernel
 def _sample(
-    dst: wp.array2d(dtype=float),
+    dst: wp.array2d[float],
     theta: float,
     sigma: float,
-    state: wp.array2d(dtype=float),
+    state: wp.array2d[float],
     mean: float,
     std: float,
     base_scale: float,
@@ -19,7 +20,7 @@ def _sample(
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
-    state[i, j] = state[i, j] * theta + sigma * (2.0 * wp.randn(subkey) * std + mean)
+    state[i, j] = state[i, j] * (1.0 - theta) + sigma * (wp.randn(subkey) * std + mean)
     dst[i, j] = base_scale * state[i, j]
 
 
@@ -32,11 +33,11 @@ class OrnsteinUhlenbeckNoise(Noise):
         base_scale: float,
         mean: float = 0,
         std: float = 1,
-        device: str | wp.Device | None = None,
+        device: Device = None,
     ) -> None:
         """Ornstein-Uhlenbeck noise.
 
-        :param theta: Factor to apply to current internal state.
+        :param theta: Mean-reversion rate. The internal state is scaled by ``1 - theta`` on each sample.
         :param sigma: Factor to apply to the normal distribution.
         :param base_scale: Factor to apply to returned noise.
         :param mean: Mean of the normal distribution.
@@ -58,7 +59,7 @@ class OrnsteinUhlenbeckNoise(Noise):
         self.mean = mean
         self.std = std
 
-    def sample(self, size: list[int]) -> wp.array:
+    def sample(self, size: list[int]) -> Tensor:
         """Sample an Ornstein-Uhlenbeck noise.
 
         :param size: Noise shape.

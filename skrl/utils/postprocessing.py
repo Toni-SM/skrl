@@ -96,7 +96,7 @@ class MemoryFileIterator:
 
             # parse header
             try:
-                header = next(reader, None)
+                header = next(reader)
                 data = collections.defaultdict(int)
                 for h in header:
                     h.split(".")[1]  # check header format

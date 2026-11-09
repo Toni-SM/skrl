@@ -16,6 +16,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .cem_cfg import CEM_CFG
 
@@ -46,7 +47,7 @@ class CEM(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: CEM_CFG | dict = {},
     ) -> None:
         """Cross-Entropy Method (CEM).
@@ -75,7 +76,7 @@ class CEM(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
+        self.policy = self.models.get("policy")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -92,7 +93,7 @@ class CEM(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(**self.cfg.learning_rate_scheduler_kwargs)
+                self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs)
 
         # set up preprocessors
         # - observations
@@ -135,8 +136,8 @@ class CEM(Agent):
         self.policy.apply = jax.jit(self.policy.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -163,14 +164,14 @@ class CEM(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

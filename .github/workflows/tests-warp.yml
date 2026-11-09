@@ -60,7 +60,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4
+        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4.1
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -111,7 +111,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4
+        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4.1
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -131,11 +131,6 @@ jobs:
         python -m pip install --quiet mani-skill==3.0.0b22
         python -m pip list
         pytest tests/envs/wrappers/warp/test_mani_skill_envs.py
-    - name: Run tests (Playground)
-      run: |
-        python -m pip install --quiet brax==0.12.5 mujoco==3.3.6 git+https://github.com/google-deepmind/mujoco_playground.git@1bd244f
-        python -m pip list
-        pytest tests/envs/wrappers/warp/test_playground_envs.py
 
   warp-minimum-utils:
     name: Minimum requirements (utils)
@@ -157,7 +152,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --quiet --upgrade pip
-        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4
+        python -m pip install --quiet "numpy<2.0" warp-lang==1.15 warp-nn==0.4.1
         python -m pip install --quiet -e .[warp]
         python -m pip install --quiet -e .[tests]
         python -m pip list
@@ -181,6 +176,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:warp-minimum-utils-spaces-coverage.html \
           tests/utils/spaces/warp
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-minimum-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-minimum-utils-framework-coverage.html \
+          tests/utils/framework/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -285,6 +289,7 @@ jobs:
         python -m pip list
         pytest tests/envs/wrappers/warp/test_mani_skill_envs.py
     - name: Run tests (Playground)
+      # MuJoCo Playground >= 1.0.0 requires Python >= 3.12 (not tested with the minimum requirements)
       run: |
         python -m pip install --quiet git+https://github.com/google-deepmind/mujoco_playground.git
         python -m pip list
@@ -334,6 +339,15 @@ jobs:
           --cov-report term:skip-covered \
           --cov-report html:warp-latest-utils-spaces-coverage.html \
           tests/utils/spaces/warp
+    - name: Run tests (framework)
+      run: |
+        pytest \
+          --self-contained-html \
+          --html=warp-latest-utils-framework-pytest.html \
+          --cov=skrl/utils/framework/warp \
+          --cov-report term:skip-covered \
+          --cov-report html:warp-latest-utils-framework-coverage.html \
+          tests/utils/framework/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

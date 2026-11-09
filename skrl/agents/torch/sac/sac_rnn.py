@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,6 +18,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .sac_cfg import SAC_CFG
 
@@ -29,7 +32,7 @@ class SAC_RNN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: SAC_CFG | dict = {},
     ) -> None:
         """Soft Actor-Critic (SAC) with support for Recurrent Neural Networks (RNN, GRU, LSTM, etc.).
@@ -58,11 +61,11 @@ class SAC_RNN(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.critic_1 = self.models.get("critic_1", None)
-        self.critic_2 = self.models.get("critic_2", None)
-        self.target_critic_1 = self.models.get("target_critic_1", None)
-        self.target_critic_2 = self.models.get("target_critic_2", None)
+        self.policy = self.models.get("policy")
+        self.critic_1 = self.models.get("critic_1")
+        self.critic_2 = self.models.get("critic_2")
+        self.target_critic_1 = self.models.get("target_critic_1")
+        self.target_critic_2 = self.models.get("target_critic_2")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -122,11 +125,11 @@ class SAC_RNN(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.critic_scheduler = self.cfg.learning_rate_scheduler[1]
             if self.policy_scheduler is not None:
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
+                self.policy_scheduler = self.policy_scheduler(
                     self.policy_optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
                 )
             if self.critic_scheduler is not None:
-                self.critic_scheduler = self.cfg.learning_rate_scheduler[1](
+                self.critic_scheduler = self.critic_scheduler(
                     self.critic_optimizer, **self.cfg.learning_rate_scheduler_kwargs[1]
                 )
 
@@ -214,8 +217,8 @@ class SAC_RNN(Agent):
             self._rnn_initial_states["policy"].append(torch.zeros(size, dtype=torch.float32, device=self.device))
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -249,14 +252,14 @@ class SAC_RNN(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -322,7 +325,7 @@ class SAC_RNN(Agent):
                 for rnn_state in self._rnn_final_states["policy"]:
                     rnn_state[:, finished_episodes[:, 0]] = 0
 
-            self._rnn_initial_states = self._rnn_final_states
+            self._rnn_initial_states = self._rnn_final_states.copy()  # copy to avoid aliasing
 
     def pre_interaction(self, *, timestep: int, timesteps: int) -> None:
         """Method called before the interaction with the environment.
@@ -357,6 +360,7 @@ class SAC_RNN(Agent):
         """
 
         # gradient steps
+        entropy_loss = None
         for gradient_step in range(self.cfg.gradient_steps):
 
             # sample a batch from memory

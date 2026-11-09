@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,21 +18,22 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .a2c_cfg import A2C_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    truncated: torch.Tensor,
-    values: torch.Tensor,
-    last_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -73,7 +76,7 @@ class A2C(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: A2C_CFG | dict = {},
     ) -> None:
         """Advantage Actor Critic (A2C).
@@ -102,8 +105,8 @@ class A2C(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -137,9 +140,7 @@ class A2C(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler[0](
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0])
 
         # set up preprocessors
         # - observations
@@ -194,8 +195,8 @@ class A2C(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -210,11 +211,6 @@ class A2C(Agent):
             "observations": self._observation_preprocessor(observations),
             "states": self._state_preprocessor(states),
         }
-        # sample random actions
-        # TODO, check for stochasticity
-        if timestep < self.cfg.random_timesteps:
-            return self.policy.random_act(inputs, role="policy")
-
         # sample stochastic actions
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
             actions, outputs = self.policy.act(inputs, role="policy")
@@ -230,14 +226,14 @@ class A2C(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -318,7 +314,7 @@ class A2C(Agent):
         """
         if self.training:
             self._rollout += 1
-            if not self._rollout % self.cfg.rollouts and timestep >= self.cfg.learning_starts:
+            if not self._rollout % self.cfg.rollouts:
                 with ScopedTimer() as timer:
                     self.enable_models_training_mode(True)
                     self.update(timestep=timestep, timesteps=timesteps)

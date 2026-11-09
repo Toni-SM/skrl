@@ -13,6 +13,7 @@ from skrl.agents.torch import Agent
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .ddqn_cfg import DDQN_CFG
 
@@ -26,7 +27,7 @@ class DDQN(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: DDQN_CFG | dict = {},
     ) -> None:
         """Double Deep Q-Network (DDQN).
@@ -55,8 +56,8 @@ class DDQN(Agent):
         )
 
         # models
-        self.q_network = self.models.get("q_network", None)
-        self.target_q_network = self.models.get("target_q_network", None)
+        self.q_network = self.models.get("q_network")
+        self.target_q_network = self.models.get("target_q_network")
 
         # checkpoint models
         self.checkpoint_modules["q_network"] = self.q_network
@@ -83,9 +84,7 @@ class DDQN(Agent):
             # - learning rate scheduler
             self.scheduler = self.cfg.learning_rate_scheduler
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler(
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs)
 
         # set up target networks
         if self.target_q_network is not None:
@@ -142,8 +141,8 @@ class DDQN(Agent):
         self._update_counter = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -184,14 +183,14 @@ class DDQN(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,

@@ -74,7 +74,7 @@ class Critic(DeterministicMixin, Model):
 
 
 # load the environment
-task_name = "Isaac-Ant-Direct-v0"
+task_name = "Isaac-Ant-Direct"
 env = load_isaaclab_env(task_name=task_name, parser=parser, num_envs=64)
 # wrap the environment
 env = wrap_env(env)
@@ -136,7 +136,7 @@ agent = DDPG(
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 160000, "headless": args.headless}
+cfg_trainer = {"timesteps": 160000, "headless": not args.visualizer}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
 if args.checkpoint:

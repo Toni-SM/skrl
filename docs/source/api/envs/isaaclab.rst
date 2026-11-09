@@ -23,10 +23,41 @@ Such function also makes it possible to configure the environment from the comma
 
 .. note::
 
-    Isaac Lab environments implement a functionality to get their configuration from the command line.
-    Setting the :literal:`headless` option from the trainer configuration will not work.
-    In this case, it is necessary to set the load function's :literal:`headless` argument to True
-    or to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
+    Isaac Lab environments run headless by default.
+    To open a viewer, set the load function's :literal:`visualizer` argument (e.g.: :literal:`"kit"`, :literal:`"newton_gl"`)
+    or invoke the scripts as follows: :literal:`python script.py --viz newton_gl`.
+
+Physics and rendering backends
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Isaac Lab supports multiple physics and rendering backends. They can be selected via the load function's
+:literal:`physics`, :literal:`renderer` and :literal:`presets` arguments, or via Hydra-style command line selectors.
+Available backends depend on the task. Isaac Sim (Kit) is only launched if the selected configuration requires it.
+See `Isaac Lab documentation <https://isaac-sim.github.io/IsaacLab>`_ for more details.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Command line selector
+      - Function parameter
+      - Values
+    * - :literal:`physics=NAME`
+      - :literal:`physics`
+      - * :literal:`newton_mjwarp`: Newton with the MuJoCo-Warp solver
+        * :literal:`newton_kamino`: Newton with the Kamino solver
+        * :literal:`ovphysx`: OV PhysX
+        * :literal:`isaacsim_physx`: Isaac Sim PhysX (requires Isaac Sim)
+    * - :literal:`renderer=NAME`
+      - :literal:`renderer`
+      - * :literal:`newton_renderer`: Newton Warp renderer
+        * :literal:`ovrtx`: OV RTX renderer
+        * :literal:`isaacsim_rtx`: Isaac Sim RTX renderer (requires Isaac Sim)
+        * :literal:`rtx`: Automatic RTX renderer selection
+    * - :literal:`presets=NAME[,NAME,...]`
+      - :literal:`presets`
+      - Task-specific configuration preset(s)
+
+Run the main script with :literal:`--task <task_name> --help` to see the selectors supported by a given task.
 
 |
 
@@ -99,7 +130,7 @@ The following snippets show how to load Isaac Lab environments:
 
         .. code-block::
 
-            isaaclab -p main.py --task Isaac-Cartpole-v0
+            python main.py --task Isaac-Cartpole physics=newton_mjwarp
 
 |
 

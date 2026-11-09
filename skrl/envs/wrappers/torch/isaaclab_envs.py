@@ -8,6 +8,7 @@ import torch
 
 from skrl import config
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper, Wrapper
+from skrl.utils.framework.torch.types import Tensor
 from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space, unflatten_tensorized_space
 
 
@@ -53,7 +54,7 @@ class IsaacLabWrapper(Wrapper):
         except:
             return self._unwrapped.action_space
 
-    def step(self, actions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Any]:
+    def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
 
         :param actions: The actions to perform.
@@ -64,19 +65,19 @@ class IsaacLabWrapper(Wrapper):
         with torch.no_grad():
             observations, reward, terminated, truncated, self._info = self._env.step(actions)
         self._observations = flatten_tensorized_space(tensorize_space(self.observation_space, observations["policy"]))
-        states = observations.get("critic", None)
+        states = observations.get("critic")
         if states is not None:
             self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
         return self._observations, reward.view(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
-    def state(self) -> torch.Tensor | None:
+    def state(self) -> Tensor | None:
         """Get the environment state.
 
         :return: State.
         """
         return self._states
 
-    def reset(self) -> tuple[torch.Tensor, dict[str, Any]]:
+    def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -86,7 +87,7 @@ class IsaacLabWrapper(Wrapper):
             self._observations = flatten_tensorized_space(
                 tensorize_space(self.observation_space, observations["policy"])
             )
-            states = observations.get("critic", None)
+            states = observations.get("critic")
             if states is not None:
                 self._states = flatten_tensorized_space(tensorize_space(self.state_space, states))
             self._reset_once = False
@@ -115,11 +116,11 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
         self._observations = None
         self._info = {}
 
-    def step(self, actions: dict[str, torch.Tensor]) -> tuple[
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
-        dict[str, torch.Tensor],
+    def step(self, actions: dict[str, Tensor]) -> tuple[
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
+        dict[str, Tensor],
         dict[str, Any],
     ]:
         """Perform a step in the environment.
@@ -142,7 +143,7 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             self._info,
         )
 
-    def reset(self) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Reset the environment.
 
         :return: Observation, info.
@@ -155,9 +156,9 @@ class IsaacLabMultiAgentWrapper(MultiAgentEnvWrapper):
             }
             self._reset_once = False
             self._seed = None
-        return self._observations, self._info
+        return self._observations, self._info  # pyright: ignore[reportReturnType]
 
-    def state(self) -> dict[str, torch.Tensor | None]:
+    def state(self) -> dict[str, Tensor | None]:
         """Get the environment state.
 
         :return: State.

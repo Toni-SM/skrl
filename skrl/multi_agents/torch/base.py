@@ -17,6 +17,7 @@ import torch
 from skrl import config, logger
 from skrl.memories.torch import Memory
 from skrl.models.torch import Model
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.tensorboard import SummaryWriter
 
 
@@ -76,8 +77,19 @@ class MultiAgentCfg(ABC):
         return True
 
     def expand(self, *, possible_agents: list[str], immutable: list[str] = []) -> None:
-        """Expand the configuration."""
-        immutable += ["experiment"]
+        """Expand the configuration.
+
+        Each field (except the immutable ones) is converted to a dictionary mapping each possible agent to its value.
+        A dictionary whose keys include all the possible agents is considered to be already expanded,
+        while a dictionary whose keys do not include any possible agent (e.g.: empty or keyword arguments)
+        is considered to be a single value to be shared by all the agents.
+
+        :param possible_agents: Name of all possible agents the environment could generate.
+        :param immutable: Name of the fields that must not be expanded.
+
+        :raises ValueError: If a dictionary specifies values for only some of the possible agents.
+        """
+        immutable = [*immutable, "experiment"]
         for field in dataclasses.fields(self):
             if field.name in immutable:
                 continue
@@ -85,7 +97,7 @@ class MultiAgentCfg(ABC):
             if isinstance(value, dict):
                 if set(value) >= set(possible_agents):
                     continue
-                elif set(value) < set(possible_agents):
+                elif set(value) & set(possible_agents):
                     raise ValueError(
                         f"Specified keys ({set(value)}) do not match possible agents ({set(possible_agents)})"
                     )
@@ -103,7 +115,7 @@ class MultiAgent(ABC):
         observation_spaces: dict[str, gymnasium.Space] | None = None,
         state_spaces: dict[str, gymnasium.Space] | None = None,
         action_spaces: dict[str, gymnasium.Space] | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Base class that represent a RL multi-agent/algorithm.
 
@@ -142,7 +154,7 @@ class MultiAgent(ABC):
 
         # data tracking
         self.tracking_data = collections.defaultdict(list)
-        self.write_interval = self.cfg.experiment.write_interval
+        self.write_interval = 0  # resolved from the experiment configuration in `init()`
 
         self._track_rewards = collections.deque(maxlen=100)
         self._track_timesteps = collections.deque(maxlen=100)
@@ -151,7 +163,7 @@ class MultiAgent(ABC):
 
         # checkpoint
         self.checkpoint_modules = {uid: {} for uid in self.possible_agents}
-        self.checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        self.checkpoint_interval = 0  # resolved from the experiment configuration in `init()`
         self.checkpoint_best_modules = {"timestep": 0, "reward": -(2**31), "saved": False, "modules": {}}
 
         # experiment directory
@@ -214,6 +226,13 @@ class MultiAgent(ABC):
         """
         trainer_cfg = {} if trainer_cfg is None else dataclasses.asdict(trainer_cfg)
 
+        # resolve the data tracking and checkpointing intervals
+        write_interval = self.cfg.experiment.write_interval
+        checkpoint_interval = self.cfg.experiment.checkpoint_interval
+        timesteps = trainer_cfg.get("timesteps", 0)
+        self.write_interval = int(timesteps / 100) if write_interval == "auto" else write_interval
+        self.checkpoint_interval = int(timesteps / 10) if checkpoint_interval == "auto" else checkpoint_interval
+
         # update agent configuration to avoid duplicated logging/checking in distributed runs
         if config.torch.is_distributed and config.torch.rank:
             self.write_interval = 0
@@ -244,14 +263,10 @@ class MultiAgent(ABC):
             wandb.init(**wandb_kwargs)
 
         # main entry to log data for consumption and visualization by TensorBoard
-        if self.write_interval == "auto":
-            self.write_interval = int(trainer_cfg.get("timesteps", 0) / 100)
         if self.write_interval > 0:
             self.writer = SummaryWriter(log_dir=self.experiment_dir)
 
         # checkpoint directory creation
-        if self.checkpoint_interval == "auto":
-            self.checkpoint_interval = int(trainer_cfg.get("timesteps", 0) / 10)
         if self.checkpoint_interval > 0:
             os.makedirs(os.path.join(self.experiment_dir, "checkpoints"), exist_ok=True)
 
@@ -339,12 +354,12 @@ class MultiAgent(ABC):
     @abstractmethod
     def act(
         self,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
         *,
         timestep: int,
         timesteps: int,
-    ) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -360,14 +375,14 @@ class MultiAgent(ABC):
     def record_transition(
         self,
         *,
-        observations: dict[str, torch.Tensor],
-        states: dict[str, torch.Tensor | None],
-        actions: dict[str, torch.Tensor],
-        rewards: dict[str, torch.Tensor],
-        next_observations: dict[str, torch.Tensor],
-        next_states: dict[str, torch.Tensor],
-        terminated: dict[str, torch.Tensor],
-        truncated: dict[str, torch.Tensor],
+        observations: dict[str, Tensor],
+        states: dict[str, Tensor | None],
+        actions: dict[str, Tensor],
+        rewards: dict[str, Tensor],
+        next_observations: dict[str, Tensor],
+        next_states: dict[str, Tensor],
+        terminated: dict[str, Tensor],
+        truncated: dict[str, Tensor],
         infos: dict[str, Any],
         timestep: int,
         timesteps: int,
@@ -396,7 +411,7 @@ class MultiAgent(ABC):
             _rewards = sum(rewards.values())
 
             # compute the cumulative sum of the rewards and timesteps
-            if self._cumulative_rewards is None:
+            if self._cumulative_rewards is None or self._cumulative_timesteps is None:
                 self._cumulative_rewards = torch.zeros_like(_rewards, dtype=torch.float32)
                 self._cumulative_timesteps = torch.zeros_like(_rewards, dtype=torch.int32)
 
@@ -486,7 +501,7 @@ class MultiAgent(ABC):
                     logger.warning(f"Skipping modules for '{uid}'. The agent doesn't have such an instance")
                     continue
                 for name, data in modules[uid].items():
-                    module = self.checkpoint_modules[uid].get(name, None)
+                    module = self.checkpoint_modules[uid].get(name)
                     if module is not None:
                         if hasattr(module, "load_state_dict"):
                             module.load_state_dict(data)

@@ -294,9 +294,11 @@ def test_convert_gym_space(capsys, space: gym.spaces.Space):
         elif isinstance(gym_space, gym.spaces.Discrete):
             assert isinstance(gymnasium_space, gymnasium.spaces.Discrete)
             assert gym_space.n == gymnasium_space.n
+            assert gym_space.start == gymnasium_space.start
         elif isinstance(gym_space, gym.spaces.MultiDiscrete):
             assert isinstance(gymnasium_space, gymnasium.spaces.MultiDiscrete)
             assert np.all(gym_space.nvec) == np.all(gymnasium_space.nvec)
+            assert gym_space.dtype == gymnasium_space.dtype
         elif isinstance(gym_space, gym.spaces.Tuple):
             assert isinstance(gymnasium_space, gymnasium.spaces.Tuple)
             assert len(gym_space) == len(gymnasium_space)

@@ -427,17 +427,12 @@ MuJoCo Playground
 
 Training/evaluation of agents in `MuJoCo Playground <https://playground.mujoco.org>`_ environments.
 
-The :py:func:`~skrl.envs.loaders.jax.load_playground_env` loader function defines the following command line arguments:
+The :py:func:`~skrl.envs.loaders.torch.load_playground_env` loader function defines the following command line arguments:
 
 * ``--task``: Name of the task.
 * ``--num_envs``: Number of environments to simulate.
+* ``--device``: Device used to simulate the environments.
 * ``--seed``: Random seed.
-* ``--episode_length``: Length of the episode.
-* ``--action_repeat``: Number of times to repeat the given action per step.
-* ``--full_reset``: Whether to perform a full reset of the environment on each step,
-  rather than resetting to an initial cached state. Default: False.
-* ``--randomization``: Whether to use randomization. Default: False.
-* ``--vision``: Whether to use vision-based environment. Default: False.
 
 While the scripts add additional command line arguments to the parser, such as:
 
@@ -517,6 +512,8 @@ The :py:func:`~skrl.envs.loaders.torch.load_isaaclab_env` loader function define
 * ``--seed``: Random seed.
 * ``--disable_fabric``: Disable fabric and use USD I/O operations. Default: False.
 * ``--distributed``: Run training with multiple GPUs or nodes. Default: False.
+* Isaac Lab simulation launcher arguments, such as ``--device`` or ``--visualizer``/``--viz``.
+* Isaac Lab backend and preset selectors (``physics=NAME``, ``renderer=NAME``, ``presets=NAME[,NAME,...]``).
 
 While the scripts add additional command line arguments to the parser, such as:
 
@@ -525,9 +522,9 @@ While the scripts add additional command line arguments to the parser, such as:
 
 .. note::
 
-    Isaac Lab environments implement a functionality to get their configuration from the command line.
-    Because of this feature, setting the :literal:`headless` option from the trainer configuration will not work.
-    In this case, it is necessary to invoke the scripts as follows: :literal:`isaaclab -p script.py --headless`.
+    Isaac Lab environments run headless by default.
+    To open a viewer, invoke the scripts as follows: :literal:`python script.py --viz newton_gl`.
+    To select a physics backend, invoke the scripts as follows: :literal:`python script.py physics=newton_kamino`.
 
 |
 
@@ -544,27 +541,28 @@ While the scripts add additional command line arguments to the parser, such as:
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Isaac-Ant-Direct-v0
+            * - Isaac-Ant-Direct
               - :download:`torch_ant_direct_ddpg.py <../../../examples/isaaclab/torch_ant_direct_ddpg.py>`
                 |br| :download:`torch_ant_direct_td3.py <../../../examples/isaaclab/torch_ant_direct_td3.py>`
                 |br| :download:`torch_ant_direct_sac.py <../../../examples/isaaclab/torch_ant_direct_sac.py>`
               -
-            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
-              - :download:`torch_cartpole_direct_box_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_box_ppo.py>`
+            * - IsaacContrib-Cartpole-Showcase-Direct
+                |br| |_2| ``presets=box_box``
+                |br| |_2| ``presets=box_discrete``
+                |br| |_2| ``presets=box_multidiscrete``
+                |br| |_2| ``presets=dict_box``
+                |br| |_2| ``presets=dict_discrete``
+                |br| |_2| ``presets=dict_multidiscrete``
+                |br| |_2| ``presets=discrete_box``
+                |br| |_2| ``presets=discrete_discrete``
+                |br| |_2| ``presets=discrete_multidiscrete``
+                |br| |_2| ``presets=multidiscrete_box``
+                |br| |_2| ``presets=multidiscrete_discrete``
+                |br| |_2| ``presets=multidiscrete_multidiscrete``
+                |br| |_2| ``presets=tuple_box``
+                |br| |_2| ``presets=tuple_discrete``
+                |br| |_2| ``presets=tuple_multidiscrete``
+              - |br| :download:`torch_cartpole_direct_box_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_box_ppo.py>`
                 |br| :download:`torch_cartpole_direct_box_discrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_discrete_ppo.py>`
                 |br| :download:`torch_cartpole_direct_box_multidiscrete_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_box_multidiscrete_ppo.py>`
                 |br| :download:`torch_cartpole_direct_dict_box_ppo.py <../../../examples/isaaclab/torch_cartpole_direct_dict_box_ppo.py>`
@@ -592,26 +590,27 @@ While the scripts add additional command line arguments to the parser, such as:
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Isaac-Ant-Direct-v0
+            * - Isaac-Ant-Direct
               - :download:`jax_ant_direct_ddpg.py <../../../examples/isaaclab/jax_ant_direct_ddpg.py>`
                 |br| :download:`jax_ant_direct_td3.py <../../../examples/isaaclab/jax_ant_direct_td3.py>`
                 |br| :download:`jax_ant_direct_sac.py <../../../examples/isaaclab/jax_ant_direct_sac.py>`
               -
-            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
+            * - IsaacContrib-Cartpole-Showcase-Direct
+                |br| |_2| ``presets=box_box``
+                |br| |_2| ``presets=box_discrete``
+                |br| |_2| ``presets=box_multidiscrete``
+                |br| |_2| ``presets=dict_box``
+                |br| |_2| ``presets=dict_discrete``
+                |br| |_2| ``presets=dict_multidiscrete``
+                |br| |_2| ``presets=discrete_box``
+                |br| |_2| ``presets=discrete_discrete``
+                |br| |_2| ``presets=discrete_multidiscrete``
+                |br| |_2| ``presets=multidiscrete_box``
+                |br| |_2| ``presets=multidiscrete_discrete``
+                |br| |_2| ``presets=multidiscrete_multidiscrete``
+                |br| |_2| ``presets=tuple_box``
+                |br| |_2| ``presets=tuple_discrete``
+                |br| |_2| ``presets=tuple_multidiscrete``
               -
               -
 
@@ -626,26 +625,27 @@ While the scripts add additional command line arguments to the parser, such as:
             * - Environment
               - Script
               - Checkpoint (Hugging Face)
-            * - Isaac-Ant-Direct-v0
+            * - Isaac-Ant-Direct
               - :download:`warp_ant_direct_ddpg.py <../../../examples/isaaclab/warp_ant_direct_ddpg.py>`
                 |br|
                 |br| :download:`warp_ant_direct_sac.py <../../../examples/isaaclab/warp_ant_direct_sac.py>`
               -
-            * - Isaac-Cartpole-Showcase-Box-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Box-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Dict-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Discrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-MultiDiscrete-MultiDiscrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Box-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-Discrete-Direct-v0
-                |br| Isaac-Cartpole-Showcase-Tuple-MultiDiscrete-Direct-v0
+            * - IsaacContrib-Cartpole-Showcase-Direct
+                |br| |_2| ``presets=box_box``
+                |br| |_2| ``presets=box_discrete``
+                |br| |_2| ``presets=box_multidiscrete``
+                |br| |_2| ``presets=dict_box``
+                |br| |_2| ``presets=dict_discrete``
+                |br| |_2| ``presets=dict_multidiscrete``
+                |br| |_2| ``presets=discrete_box``
+                |br| |_2| ``presets=discrete_discrete``
+                |br| |_2| ``presets=discrete_multidiscrete``
+                |br| |_2| ``presets=multidiscrete_box``
+                |br| |_2| ``presets=multidiscrete_discrete``
+                |br| |_2| ``presets=multidiscrete_multidiscrete``
+                |br| |_2| ``presets=tuple_box``
+                |br| |_2| ``presets=tuple_discrete``
+                |br| |_2| ``presets=tuple_multidiscrete``
               -
               -
 

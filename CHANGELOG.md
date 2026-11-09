@@ -3,11 +3,33 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+### Changed
+- Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases
+  (`skrl.utils.framework.<framework>.types`) to keep the source code of the framework implementations aligned
+- Update the MuJoCo Playground environment loader and wrappers to MuJoCo Playground 1.0.0 (PyTorch and MuJoCo Warp based).
+  Older (JAX/MJX based) versions of MuJoCo Playground are not supported
+
+### Fixed
+- Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
+- Fix JAX distributed launcher not propagating worker failures and not validating the launch configuration
+- Fix PyTorch distributed gradient reduction for non-contiguous gradients
+
+## [2.1.1] - 2026-10-20
+### Changed (breaking changes)
+- Update the Isaac Lab environment loader to Isaac Lab 3. Older versions of Isaac Lab are not supported
+
 ### Fixed
 - Fix Warp PPO agent's update not preprocessing sampled observations/states after the first learning epoch
-- Fix Warp Gaussian model sampling actions with twice the standard deviation
-- Fix Warp Gaussian model's wrong (and non-deterministic) log standard deviation gradients
-- Fix Warp Gaussian model's log-probability shape when `reduction="none"`
+- Fix Warp Gaussian model sampling and log standard deviation gradients
+- Fix sequential trainer's single-environment multi-agent reset when agents finish/leave the episode
+- Fix JAX and Warp Ornstein-Uhlenbeck noise's mean reversion and innovations sampled with twice the standard deviation
+- Fix JAX and Warp Gaussian noise sampling with twice the standard deviation
+- Fix PyTorch multivariate Gaussian model using the variance instead of the standard deviation as covariance factor
+- Fix PyTorch TRPO agent's KL divergence using the wrong sign for the log standard deviation term
+- Fix Gym space conversion dropping the `start` of `Discrete` spaces and the `dtype` of `MultiDiscrete` spaces
+
+### Removed (breaking changes)
+- Remove the `random_timesteps` and `learning_starts` configuration fields from on-policy agents/multi-agents
 
 ## [2.1.0] - 2026-05-10
 ### Changed

@@ -7,6 +7,7 @@ import math
 import warp as wp
 
 from skrl import config
+from skrl.utils.framework.warp.types import Tensor
 from skrl.utils.spaces.warp import compute_space_limits
 
 
@@ -26,23 +27,23 @@ def _log_prob(
 @wp.kernel
 def _gaussian(
     # inputs
-    loc: wp.array2d(dtype=float),
-    log_std: wp.array1d(dtype=float),
+    loc: wp.array2d[float],
+    log_std: wp.array1d[float],
     min_log_std: float,
     max_log_std: float,
-    min_actions: wp.array1d(dtype=float),
-    max_actions: wp.array1d(dtype=float),
-    min_mean_actions: wp.array1d(dtype=float),
-    max_mean_actions: wp.array1d(dtype=float),
-    taken_actions: wp.array2d(dtype=float),
+    min_actions: wp.array1d[float],
+    max_actions: wp.array1d[float],
+    min_mean_actions: wp.array1d[float],
+    max_mean_actions: wp.array1d[float],
+    taken_actions: wp.array2d[float],
     reduction: int,
     m: float,
     key: int,
     # outputs
-    loc_out: wp.array2d(dtype=float),
-    actions: wp.array2d(dtype=float),
-    log_prob: wp.array2d(dtype=float),
-    scale: wp.array1d(dtype=float),
+    loc_out: wp.array2d[float],
+    actions: wp.array2d[float],
+    log_prob: wp.array2d[float],
+    scale: wp.array1d[float],
 ):
     i, j = wp.tid()
     subkey = wp.rand_init(key + i, j)
@@ -92,7 +93,7 @@ def _gaussian(
 
 
 @wp.kernel
-def _entropy(stddev: wp.array1d(dtype=float), entropy: wp.array1d(dtype=float)):
+def _entropy(stddev: wp.array1d[float], entropy: wp.array1d[float]):
     i = wp.tid()
     wp.atomic_add(entropy, 0, HALF_LOG_2_PI_PLUS + wp.log(stddev[i]))
 
@@ -145,7 +146,7 @@ class GaussianMixin:
 
         self._g_key = config.warp.key
 
-    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[wp.array, dict[str, Any]]:
+    def act(self, inputs: dict[str, Any], *, role: str = "") -> tuple[Tensor, dict[str, Any]]:
         """Act stochastically in response to the observations/states of the environment.
 
         :param inputs: Model inputs. The most common keys are:
@@ -202,7 +203,7 @@ class GaussianMixin:
         outputs["stddev"] = scale
         return actions, outputs
 
-    def get_entropy(self, stddev: wp.array, *, role: str = "") -> wp.array:
+    def get_entropy(self, stddev: Tensor, *, role: str = "") -> Tensor:
         """Compute and return the entropy of the model.
 
         :param stddev: Model standard deviation.

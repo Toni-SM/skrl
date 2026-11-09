@@ -109,10 +109,9 @@ class MemoryFileIterator:
             data = {name: [] for name in indexes}
             for row in reader:
                 for name, fields in indexes.items():
-                    data[name].append([
-                        row[i] == "True" if row[i] in ("True", "False") else float(row[i])
-                        for i in fields
-                    ])
+                    data[name].append(
+                        [row[i] == "True" if row[i] in ("True", "False") else float(row[i]) for i in fields]
+                    )
 
         self.n += 1
         return filename, data

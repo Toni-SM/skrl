@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
 - Fix JAX distributed launcher not propagating worker failures and not validating the launch configuration
 - Fix PyTorch distributed gradient reduction for non-contiguous gradients
+- Fix `Discrete` and `MultiDiscrete` spaces with non-zero `start` producing out-of-range actions/indices by handling `start` as an offset in the space utilities (tensorized values are now zero-based)
 
 ## [2.1.1] - 2026-10-20
 ### Changed (breaking changes)

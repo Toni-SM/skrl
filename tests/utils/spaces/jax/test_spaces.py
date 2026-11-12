@@ -234,6 +234,31 @@ def test_sample_space(capsys, space: gymnasium.spaces.Space, batch_size: int):
     check_sampled_space(space, sampled_space, batch_size, backend="native")
 
 
+@pytest.mark.parametrize("backend", ["numpy", "native"])
+@pytest.mark.parametrize(
+    "space",
+    [
+        gymnasium.spaces.Box(low=-1, high=1, shape=(3,)),
+        gymnasium.spaces.Discrete(100),
+        gymnasium.spaces.MultiDiscrete([100, 100]),
+    ],
+    ids=["Box", "Discrete", "MultiDiscrete"],
+)
+def test_sample_space_advances_random_state(space: gymnasium.spaces.Space, backend: str):
+    def sample() -> np.ndarray:
+        x = sample_space(space, batch_size=8, backend=backend)
+        return np.asarray(x)
+
+    space.seed(0)
+    first = sample()
+    second = sample()
+    assert not np.array_equal(first, second)
+    # reseeding the space replays the same sequence of batches
+    space.seed(0)
+    assert np.array_equal(sample(), first)
+    assert np.array_equal(sample(), second)
+
+
 @hypothesis.given(space=gymnasium_space_stategy())
 @hypothesis.settings(
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],

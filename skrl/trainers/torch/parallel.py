@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import copy
 import dataclasses
 import sys
@@ -24,7 +26,7 @@ def fn_processor(process_index, *args):
     scope = args[3][process_index]
     trainer_cfg = args[4]
 
-    agent = None
+    agent: Any = None
     _observations = None
     _states = None
     _actions = None

@@ -88,7 +88,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
 # load the environment
 task_name = "CartpoleBalance"
-env = load_playground_env(task_name=task_name, num_envs=1024, episode_length=300, parser=parser)
+env = load_playground_env(task_name=task_name, num_envs=1024, cfg_overrides={"episode_length_secs": 3.0}, parser=parser)
 # wrap the environment
 env = wrap_env(env)
 

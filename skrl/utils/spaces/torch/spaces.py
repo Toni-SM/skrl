@@ -9,9 +9,10 @@ import numpy as np
 import torch
 
 from skrl import config
+from skrl.utils.framework.torch.types import Device, Tensor
 
 
-def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
+def convert_gym_space(space: "gym.Space | None", *, squeeze_batch_dimension: bool = False) -> gymnasium.Space | None:
     """Converts a gym space to a gymnasium space.
 
     :param space: Gym space to convert to.
@@ -55,7 +56,7 @@ def convert_gym_space(space: "gym.Space" | None, *, squeeze_batch_dimension: boo
     raise ValueError(f"Unsupported space ({space})")
 
 
-def tensorize_space(space: spaces.Space | None, x: Any, *, device: str | torch.device | None = None) -> Any:
+def tensorize_space(space: spaces.Space | None, x: Any, *, device: Device = None) -> Any:
     """Convert the sample/value items of a given gymnasium space to PyTorch tensors.
 
     :param space: Gymnasium space.
@@ -176,7 +177,7 @@ def untensorize_space(space: spaces.Space | None, x: Any, *, squeeze_batch_dimen
     raise ValueError(f"Unsupported space ({space})")
 
 
-def flatten_tensorized_space(x: Any) -> torch.Tensor | None:
+def flatten_tensorized_space(x: Any) -> Tensor | None:
     """Flatten a tensorized space.
 
     :param x: Tensorized space sample/value.
@@ -201,7 +202,7 @@ def flatten_tensorized_space(x: Any) -> torch.Tensor | None:
     raise ValueError(f"Unsupported sample/value type ({type(x)})")
 
 
-def unflatten_tensorized_space(space: spaces.Space | None, x: torch.Tensor | None) -> Any:
+def unflatten_tensorized_space(space: spaces.Space | None, x: Tensor | None) -> Any:
     """Unflatten a tensor to create a tensorized space.
 
     :param space: Gymnasium space.
@@ -268,14 +269,14 @@ def compute_space_size(space: spaces.Space | list[int] | int | None, *, occupied
         # composite spaces
         # - Tuple
         elif isinstance(space, spaces.Tuple):
-            return sum([compute_space_size(s, occupied_size=occupied_size) for s in space])
+            return sum([compute_space_size(s, occupied_size=occupied_size) for s in space.spaces])
         # - Dict
         elif isinstance(space, spaces.Dict):
             return sum([compute_space_size(s, occupied_size=occupied_size) for s in space.values()])
     # non-gymnasium spaces
-    if type(space) in [int, float]:
-        return space
-    elif type(space) in [tuple, list]:
+    if type(space) is int or type(space) is float:
+        return space  # pyright: ignore[reportReturnType]
+    elif type(space) is tuple or type(space) is list:
         return int(np.prod(space))
     # gymnasium computation
     return gymnasium.spaces.flatdim(space)
@@ -285,9 +286,9 @@ def compute_space_limits(
     space: spaces.Space | None,
     *,
     occupied_size: bool = False,
-    device: str | torch.device | None = None,
+    device: Device = None,
     none_if_unbounded: Literal["both", "below", "above", "any"] | None = None,
-) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+) -> tuple[Tensor | None, Tensor | None]:
     """Get the low and high limits of a space.
 
     .. note::
@@ -361,12 +362,29 @@ def compute_space_limits(
     return low, high
 
 
+def _sample_batch(space: spaces.Space, batch_size: int) -> Any:
+    """Sample a batch from a fundamental space and advance the space's random number generator.
+
+    Gymnasium's ``batch_space`` seeds the batched space with a copy of the space's generator.
+    The advanced state is copied back so that consecutive calls return different samples.
+
+    :param space: Fundamental Gymnasium space.
+    :param batch_size: Size of the sampled batch.
+
+    :return: Sample of the batched space.
+    """
+    batched_space = gymnasium.vector.utils.batch_space(space, batch_size)
+    sample = batched_space.sample()
+    space.np_random.bit_generator.state = batched_space.np_random.bit_generator.state
+    return sample
+
+
 def sample_space(
     space: spaces.Space | None,
     *,
     batch_size: int = 1,
     backend: Literal["numpy", "native"] = "numpy",
-    device: str | torch.device | None = None,
+    device: Device = None,
 ) -> Any:
     """Generates a random sample from the specified space.
 
@@ -386,7 +404,7 @@ def sample_space(
     # fundamental spaces
     # - Box
     if isinstance(space, spaces.Box):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_batch(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.shape)
         elif backend == "native":
@@ -395,7 +413,7 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - Discrete
     elif isinstance(space, spaces.Discrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_batch(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, -1)
         elif backend == "native":
@@ -404,7 +422,7 @@ def sample_space(
             raise ValueError(f"Unsupported backend type ({backend})")
     # - MultiDiscrete
     elif isinstance(space, spaces.MultiDiscrete):
-        sample = gymnasium.vector.utils.batch_space(space, batch_size).sample()
+        sample = _sample_batch(space, batch_size)
         if backend == "numpy":
             return np.array(sample).reshape(batch_size, *space.nvec.shape)
         elif backend == "native":

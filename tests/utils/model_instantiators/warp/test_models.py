@@ -199,3 +199,28 @@ def test_shared_gaussian_deterministic_model(capsys, device, single_forward_pass
             output = model.act(_sample_inputs(token, input_space, device), role="role_1")
             assert len(output) == 2
             assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("factory", ["deterministic", "gaussian", "shared"])
+def test_warp_namespace_in_expressions(capsys, factory):
+    # generated `compute` resolves names from the instantiator module's globals: `wp` must be available
+    observation_space = spaces.Box(low=-1, high=1, shape=(4,))
+    action_space = spaces.Box(low=-1, high=1, shape=(2,))
+    network = [{"name": "net", "input": "wp.clone(OBSERVATIONS)", "layers": [8], "activations": "elu"}]
+    kwargs = {"observation_space": observation_space, "action_space": action_space, "device": "cpu"}
+    if factory == "deterministic":
+        model = deterministic_model(**kwargs, network=network, output="ACTIONS")
+    elif factory == "gaussian":
+        model = gaussian_model(**kwargs, network=network, output="ACTIONS")
+    else:
+        model = shared_model(
+            **kwargs,
+            structure=["GaussianMixin", "DeterministicMixin"],
+            roles=["role_0", "role_1"],
+            parameters=[{"network": network, "output": "ACTIONS"}, {"network": network, "output": "ONE"}],
+        )
+    model.init_state_dict()
+
+    role = {"shared": "role_0"}.get(factory, "")
+    output = model.act(_sample_inputs("OBSERVATIONS", observation_space, "cpu"), role=role)
+    assert output[0].shape == (10, 2)

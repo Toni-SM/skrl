@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,6 +18,7 @@ from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.jax.types import Device, Tensor
 
 from .a2c_cfg import A2C_CFG
 
@@ -23,15 +26,15 @@ from .a2c_cfg import A2C_CFG
 # https://jax.readthedocs.io/en/latest/faq.html#strategy-1-jit-compiled-helper-function
 @functools.partial(jax.jit, static_argnames=("time_limit_bootstrap",))
 def _compute_gae(
-    rewards: jax.Array,
-    terminated: jax.Array,
-    truncated: jax.Array,
-    values: jax.Array,
-    last_values: jax.Array,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> jax.Array:
+) -> Tensor:
     advantage = 0
     advantages = jnp.zeros_like(rewards)
     not_done = jnp.logical_not(jnp.logical_or(terminated, truncated) if time_limit_bootstrap else terminated)
@@ -109,7 +112,7 @@ class A2C(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | jax.Device | None = None,
+        device: Device = None,
         cfg: A2C_CFG | dict = {},
     ) -> None:
         """Advantage Actor Critic (A2C).
@@ -138,8 +141,8 @@ class A2C(Agent):
         )
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -179,15 +182,13 @@ class A2C(Agent):
             if self.policy_scheduler is not None:
                 if "kladaptive" in self.policy_scheduler.__qualname__.lower().replace("_", ""):
                     self.policy_scheduler_type = KLAdaptiveLR
-                self.policy_scheduler = self.cfg.learning_rate_scheduler[0](
-                    **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
             self.value_scheduler = self.cfg.learning_rate_scheduler[1]
             self.value_scheduler_type = None
             if self.value_scheduler is not None:
                 if "kladaptive" in self.value_scheduler.__qualname__.lower().replace("_", ""):
                     self.value_scheduler_type = KLAdaptiveLR
-                self.value_scheduler = self.cfg.learning_rate_scheduler[1](**self.cfg.learning_rate_scheduler_kwargs[1])
+                self.value_scheduler = self.value_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
 
         # set up preprocessors
         # - observations
@@ -247,8 +248,8 @@ class A2C(Agent):
             self.value.apply = jax.jit(self.value.apply, static_argnums=2)
 
     def act(
-        self, observations: jax.Array, states: jax.Array | None, *, timestep: int, timesteps: int
-    ) -> tuple[jax.Array, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -277,14 +278,14 @@ class A2C(Agent):
     def record_transition(
         self,
         *,
-        observations: jax.Array,
-        states: jax.Array,
-        actions: jax.Array,
-        rewards: jax.Array,
-        next_observations: jax.Array,
-        next_states: jax.Array,
-        terminated: jax.Array,
-        truncated: jax.Array,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -409,6 +410,7 @@ class A2C(Agent):
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
+        stddev = None
 
         kl_divergences = []
 
@@ -467,6 +469,7 @@ class A2C(Agent):
 
         # update learning rate
         # - compute KL for KL adaptive learning rate scheduler
+        kl = 0.0
         if self.policy_scheduler_type is KLAdaptiveLR or self.value_scheduler_type is KLAdaptiveLR:
             kl = np.mean(kl_divergences)
             # reduce (collect from all workers/processes) KL in distributed runs

@@ -116,7 +116,7 @@ from skrl.envs.wrappers.torch import wrap_env
 from skrl.envs.loaders.torch import load_playground_env
 
 # load the environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'
@@ -129,7 +129,7 @@ from skrl.envs.wrappers.jax import wrap_env
 from skrl.envs.loaders.jax import load_playground_env
 
 # load the environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'
@@ -142,7 +142,7 @@ from skrl.envs.wrappers.warp import wrap_env
 from skrl.envs.loaders.warp import load_playground_env
 
 # load the environment
-env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, episode_length=300)
+env = load_playground_env(task_name="CartpoleBalance", num_envs=1024, cfg_overrides={"episode_length_secs": 3.0})
 
 # wrap the environment
 env = wrap_env(env)  # or 'env = wrap_env(env, wrapper="playground")'

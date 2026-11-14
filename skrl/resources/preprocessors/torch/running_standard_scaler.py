@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from skrl import config
+from skrl.utils.framework.torch.types import Device, Tensor
 from skrl.utils.spaces.torch import compute_space_size
 
 
@@ -16,7 +17,7 @@ class RunningStandardScaler(nn.Module):
         *,
         epsilon: float = 1e-8,
         clip_threshold: float = 5.0,
-        device: str | torch.device | None = None,
+        device: Device = None,
     ) -> None:
         """Standardize the input data by removing the mean and scaling by the standard deviation.
 
@@ -47,7 +48,7 @@ class RunningStandardScaler(nn.Module):
         self.register_buffer("running_variance", torch.ones(size, dtype=torch.float64, device=self.device))
         self.register_buffer("current_count", torch.ones((), dtype=torch.float64, device=self.device))
 
-    def _parallel_variance(self, input_mean: torch.Tensor, input_var: torch.Tensor, input_count: int) -> None:
+    def _parallel_variance(self, input_mean: Tensor, input_var: Tensor, input_count: int) -> None:
         """Update internal variables using the parallel algorithm for computing variance.
 
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
@@ -69,7 +70,7 @@ class RunningStandardScaler(nn.Module):
         self.running_variance = M2 / total_count
         self.current_count = total_count
 
-    def _compute(self, x: torch.Tensor, *, train: bool = False, inverse: bool = False) -> torch.Tensor:
+    def _compute(self, x: Tensor, *, train: bool = False, inverse: bool = False) -> Tensor:
         """Compute the standardization of the input data.
 
         :param x: Input tensor.
@@ -99,8 +100,8 @@ class RunningStandardScaler(nn.Module):
         )
 
     def forward(
-        self, x: torch.Tensor | None, *, train: bool = False, inverse: bool = False, no_grad: bool = True
-    ) -> torch.Tensor | None:
+        self, x: Tensor | None, *, train: bool = False, inverse: bool = False, no_grad: bool = True
+    ) -> Tensor | None:
         """Forward pass of the standardizer.
 
         :param x: Input tensor.

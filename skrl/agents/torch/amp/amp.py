@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false, reportOptionalSubscript=false
+
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -17,21 +19,22 @@ from skrl.memories.torch import Memory
 from skrl.models.torch import Model
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.utils import ScopedTimer
+from skrl.utils.framework.torch.types import Device, Tensor
 
 from .amp_cfg import AMP_CFG
 
 
 def compute_gae(
     *,
-    rewards: torch.Tensor,
-    terminated: torch.Tensor,
-    truncated: torch.Tensor,
-    values: torch.Tensor,
-    last_values: torch.Tensor,
+    rewards: Tensor,
+    terminated: Tensor,
+    truncated: Tensor,
+    values: Tensor,
+    last_values: Tensor,
     discount_factor: float = 0.99,
     lambda_coefficient: float = 0.95,
     time_limit_bootstrap: bool = False,
-) -> torch.Tensor:
+) -> Tensor:
     """Compute the Generalized Advantage Estimator (GAE).
 
     :param rewards: Rewards obtained by the agent.
@@ -74,12 +77,12 @@ class AMP(Agent):
         observation_space: gymnasium.Space | None = None,
         state_space: gymnasium.Space | None = None,
         action_space: gymnasium.Space | None = None,
-        device: str | torch.device | None = None,
+        device: Device = None,
         cfg: AMP_CFG | dict = {},
         amp_observation_space: gymnasium.Space | None = None,
         motion_dataset: Memory | None = None,
         reply_buffer: Memory | None = None,
-        collect_reference_motions: Callable[[int], torch.Tensor] | None = None,
+        collect_reference_motions: Callable[[int], Tensor] | None = None,
     ) -> None:
         """Adversarial Motion Priors (AMP).
 
@@ -120,9 +123,9 @@ class AMP(Agent):
         self.collect_reference_motions = collect_reference_motions
 
         # models
-        self.policy = self.models.get("policy", None)
-        self.value = self.models.get("value", None)
-        self.discriminator = self.models.get("discriminator", None)
+        self.policy = self.models.get("policy")
+        self.value = self.models.get("value")
+        self.discriminator = self.models.get("discriminator")
 
         # checkpoint models
         self.checkpoint_modules["policy"] = self.policy
@@ -157,9 +160,7 @@ class AMP(Agent):
             # - learning rate schedulers
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             if self.scheduler is not None:
-                self.scheduler = self.cfg.learning_rate_scheduler[0](
-                    self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0]
-                )
+                self.scheduler = self.scheduler(self.optimizer, **self.cfg.learning_rate_scheduler_kwargs[0])
 
         # set up preprocessors
         # - observations
@@ -231,7 +232,11 @@ class AMP(Agent):
 
             # initialize motion dataset
             for _ in range(math.ceil(self.motion_dataset.memory_size / self.cfg.amp_batch_size)):
-                self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+                self.motion_dataset.add_samples(
+                    observations=self.collect_reference_motions(
+                        self.cfg.amp_batch_size
+                    )  # pyright: ignore[reportOptionalCall]
+                )
 
         # create temporary variables needed for storage and computation
         self._current_next_observations = None
@@ -241,8 +246,8 @@ class AMP(Agent):
         self._rollout = 0
 
     def act(
-        self, observations: torch.Tensor, states: torch.Tensor | None, *, timestep: int, timesteps: int
-    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        self, observations: Tensor, states: Tensor | None, *, timestep: int, timesteps: int
+    ) -> tuple[Tensor, dict[str, Any]]:
         """Process the environment's observations/states to make a decision (actions) using the main policy.
 
         :param observations: Environment observations.
@@ -272,14 +277,14 @@ class AMP(Agent):
     def record_transition(
         self,
         *,
-        observations: torch.Tensor,
-        states: torch.Tensor,
-        actions: torch.Tensor,
-        rewards: torch.Tensor,
-        next_observations: torch.Tensor,
-        next_states: torch.Tensor,
-        terminated: torch.Tensor,
-        truncated: torch.Tensor,
+        observations: Tensor,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        next_observations: Tensor,
+        next_states: Tensor,
+        terminated: Tensor,
+        truncated: Tensor,
         infos: Any,
         timestep: int,
         timesteps: int,
@@ -379,7 +384,9 @@ class AMP(Agent):
         :param timesteps: Number of timesteps.
         """
         # update dataset of reference motions
-        self.motion_dataset.add_samples(observations=self.collect_reference_motions(self.cfg.amp_batch_size))
+        self.motion_dataset.add_samples(
+            observations=self.collect_reference_motions(self.cfg.amp_batch_size)  # pyright: ignore[reportOptionalCall]
+        )
 
         # compute combined rewards
         rewards = self.memory.get_tensor_by_name("rewards")

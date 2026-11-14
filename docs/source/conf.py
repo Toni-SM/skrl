@@ -3,6 +3,7 @@ import sys
 import inspect
 import logging
 import operator
+import re
 
 
 # skrl library
@@ -20,7 +21,7 @@ author = "Toni-SM"
 if skrl.__version__ != "unknown":
     release = version = skrl.__version__
 else:
-    release = version = "2.1.1"
+    release = version = "2.1.2"
 
 master_doc = "index"
 
@@ -148,6 +149,32 @@ autodoc_mock_imports = [
 autoclass_content = "init"
 autosummary_generate = True
 autosummary_generate_overwrite = False
+
+# framework-specific types that the aliases (from `skrl.utils.framework.<framework>.types`) stand for
+_TYPE_ALIAS_TARGETS = {
+    "torch": {"Tensor": "torch.Tensor", "Device": "str | torch.device | None"},
+    "jax": {"Tensor": "jax.Array", "Device": "str | jax.Device | None"},
+    "warp": {"Tensor": "warp.array", "Device": "str | warp.Device | None"},
+}
+_TYPE_ALIAS_PATTERN = re.compile(r"(?<![\w.])(Tensor|Device)(?!\w)")
+
+
+def expand_type_aliases(app, what, name, obj, options, signature, return_annotation):
+    """Render the type aliases in signatures as the types of the framework the documented object belongs to"""
+    framework = next((part for part in name.split(".") if part in _TYPE_ALIAS_TARGETS), None)
+    if framework is None:
+        return None
+    targets = _TYPE_ALIAS_TARGETS[framework]
+
+    def expand(text):
+        return _TYPE_ALIAS_PATTERN.sub(lambda match: targets[match.group(1)], text) if text else text
+
+    return expand(signature), expand(return_annotation)
+
+
+def setup(app):
+    app.connect("autodoc-process-signature", expand_type_aliases)
+
 
 # copybutton ext
 copybutton_prompt_text = r">>> |\.\.\. "

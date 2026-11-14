@@ -5,12 +5,13 @@ from typing import Any
 import ast
 from gymnasium import spaces
 
-import jax
 import jax.nn as jnn
 import jax.numpy as jnp
 
+from skrl.utils.framework.jax.types import Tensor
 
-def one_hot_encoding(space: spaces.Space, x: jax.Array) -> jax.Array:
+
+def one_hot_encoding(space: spaces.Space, x: Tensor) -> Tensor:
     """One-hot encode a tensorized Discrete or MultiDiscrete space.
 
     :param space: Gymnasium space.
@@ -59,7 +60,7 @@ def _get_activation_function(activation: str | None) -> str | None:
         "softsign": "nn.soft_sign",
         "tanh": "nn.tanh",
     }
-    return activations.get(activation.lower() if type(activation) is str else activation, None)
+    return activations.get(activation.lower()) if type(activation) is str else None
 
 
 def _parse_input(source: str) -> str:
@@ -96,7 +97,7 @@ def _parse_input(source: str) -> str:
     return source
 
 
-def _parse_output(source: str | list[str]) -> tuple[str | list[str], list[str], int]:
+def _parse_output(source: str | list[str]) -> tuple[str, list[str], Any]:
     """Parse the network output expression by replacing substitutions and applying operations.
 
     :param source: Output expression.
@@ -139,7 +140,7 @@ def _parse_output(source: str | list[str]) -> tuple[str | list[str], list[str], 
     return source, modules, size
 
 
-def _generate_modules(layers: list[str], activations: list[str] | str) -> list[str]:
+def _generate_modules(layers: list[Any], activations: list[str] | str) -> list[str]:
     """Generate network modules.
 
     :param layers: Layer definitions.
@@ -179,7 +180,7 @@ def _generate_modules(layers: list[str], activations: list[str] | str) -> list[s
             if layer_type == "linear":
                 cls = "nn.Dense"
                 kwargs = layer[layer_type]
-                if type(kwargs) in [int, float]:
+                if type(kwargs) is int or type(kwargs) is float:
                     kwargs = {"features": int(kwargs)}
                 elif type(kwargs) is list:
                     kwargs = {k: v for k, v in zip(["features", "use_bias"][: len(kwargs)], kwargs)}
@@ -296,12 +297,11 @@ def generate_containers(
             container["sequential"] += f"\n{' ' * 4 * (indent - 1)}])"
         containers.append(container)
     # compose output
-    if type(output) is str:
-        # avoid 'output = placeholder'
-        if output == "PLACEHOLDER" or output == container["name"]:
-            output = None
-        # substitute placeholder in output expression
-        else:
-            output = output.replace("PLACEHOLDER", container["name"] if embed_output else "output")
-    output = {"output": output, "modules": output_modules, "size": output_size}
-    return containers, output
+    name = containers[-1]["name"]
+    # avoid 'output = placeholder'
+    if output == "PLACEHOLDER" or output == name:
+        expression = None
+    # substitute placeholder in output expression
+    else:
+        expression = output.replace("PLACEHOLDER", name if embed_output else "output")
+    return containers, {"output": expression, "modules": output_modules, "size": output_size}

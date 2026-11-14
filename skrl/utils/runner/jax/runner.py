@@ -34,7 +34,7 @@ class Runner:
         self._cfg = self._check_cfg_compatibility(copy.deepcopy(cfg))
 
         # set random seed
-        set_seed(self._cfg.get("seed", None))
+        set_seed(self._cfg.get("seed"))
 
         self._models = self._generate_models(self._env, copy.deepcopy(self._cfg))
         self._agent = self._generate_agent(self._env, copy.deepcopy(self._cfg), self._models)
@@ -415,6 +415,8 @@ class Runner:
                 "action_spaces": action_spaces,
                 "possible_agents": possible_agents,
             }
+        else:
+            raise ValueError(f"Agent class '{agent_class}' is not supported in the runner cfg")
         return self._component(agent_class)(cfg=agent_cfg, device=device, **agent_kwargs)
 
     def _generate_trainer(self, env: Wrapper | MultiAgentEnvWrapper, cfg: dict[str, Any], agent: Agent) -> Trainer:

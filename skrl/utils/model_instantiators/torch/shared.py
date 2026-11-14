@@ -5,7 +5,7 @@ from typing import Any
 import textwrap
 import gymnasium
 
-import torch
+import torch  # noqa
 import torch.nn as nn  # noqa
 
 from skrl.models.torch import Model  # noqa
@@ -16,6 +16,7 @@ from skrl.models.torch import (  # noqa
     MultiCategoricalMixin,
     MultivariateGaussianMixin,
 )
+from skrl.utils.framework.torch.types import Device
 from skrl.utils.model_instantiators.torch.common import one_hot_encoding  # noqa
 from skrl.utils.model_instantiators.torch.common import generate_containers
 from skrl.utils.spaces.torch import unflatten_tensorized_space  # noqa
@@ -26,7 +27,7 @@ def shared_model(
     observation_space: gymnasium.Space | None = None,
     state_space: gymnasium.Space | None = None,
     action_space: gymnasium.Space | None = None,
-    device: str | torch.device | None = None,
+    device: Device = None,
     structure: list[str] = ["GaussianMixin", "DeterministicMixin"],
     roles: list[str] = [],
     parameters: list[dict[str, Any]] = [],
@@ -121,7 +122,7 @@ def shared_model(
         len(structure) == len(roles) == len(parameters)
     ), f"Invalid configuration: structures ({len(structure)}), roles ({len(roles)}) and parameters ({len(parameters)}) have different lengths"
 
-    models = [{"class": item} for item in structure]
+    models: list[dict[str, Any]] = [{"class": item} for item in structure]
 
     # parse model definitions
     for i, model in enumerate(models):
@@ -145,24 +146,26 @@ def shared_model(
         0, 'observations = unflatten_tensorized_space(self.observation_space, inputs.get("observations"))'
     )
 
+    container_name = models[0]["containers"][-1]["name"]
+
     # process output
     if models[0]["output"]["modules"]:
         models[0]["networks"].append(f'self.{roles[0]}_layer = {models[0]["output"]["modules"][0]}')
-        models[0]["forward"].append(f'output = self.{roles[0]}_layer({container["name"]})')
+        models[0]["forward"].append(f"output = self.{roles[0]}_layer({container_name})")
     if models[0]["output"]["output"]:
         models[0]["forward"].append(f'output = {models[0]["output"]["output"]}')
     else:
-        models[0]["forward"][-1] = models[0]["forward"][-1].replace(f'{container["name"]} =', "output =", 1)
+        models[0]["forward"][-1] = models[0]["forward"][-1].replace(f"{container_name} =", "output =", 1)
 
     if models[1]["output"]["modules"]:
         models[1]["networks"].append(f'self.{roles[1]}_layer = {models[1]["output"]["modules"][0]}')
         models[1]["forward"].append(
-            f'output = self.{roles[1]}_layer({"shared_output" if single_forward_pass else container["name"]})'
+            f'output = self.{roles[1]}_layer({"shared_output" if single_forward_pass else container_name})'
         )
     if models[1]["output"]["output"]:
         models[1]["forward"].append(f'output = {models[1]["output"]["output"]}')
     else:
-        models[1]["forward"][-1] = models[1]["forward"][-1].replace(f'{container["name"]} =', "output =", 1)
+        models[1]["forward"][-1] = models[1]["forward"][-1].replace(f"{container_name} =", "output =", 1)
 
     # build substitutions and indent content
     networks_common = textwrap.indent("\n".join(networks_common), prefix=" " * 8)[8:]
@@ -182,14 +185,14 @@ def shared_model(
             ]
             + ["    " + item for item in forward_common]
             + [
-                f'    shared_output = {container["name"]}',
+                f"    shared_output = {container_name}",
                 "else:",
                 "    shared_output = self._shared_output",
                 "self._shared_output = None",
             ]
             + models[1]["forward"]
         )
-        forward_common.append(f'self._shared_output = {container["name"]}')
+        forward_common.append(f"self._shared_output = {container_name}")
         forward_common = textwrap.indent("\n".join(forward_common), prefix=" " * 12)[12:]
     else:
         forward_common = textwrap.indent("\n".join(forward_common), prefix=" " * 8)[8:]

@@ -78,25 +78,25 @@ def type_cast(array: Tensor, dtype: type) -> Tensor:
     return output
 
 
-@wp.kernel(enable_backward=False)
+@wp.kernel
 def _type_cast_1d(src: wp.array1d[Any], dst: wp.array1d[Any]):
     i = wp.tid()
     dst[i] = dst.dtype(src[i])
 
 
-@wp.kernel(enable_backward=False)
+@wp.kernel
 def _type_cast_2d(src: wp.array2d[Any], dst: wp.array2d[Any]):
     i, j = wp.tid()
     dst[i, j] = dst.dtype(src[i, j])
 
 
-@wp.kernel(enable_backward=False)
+@wp.kernel
 def _type_cast_3d(src: wp.array3d[Any], dst: wp.array3d[Any]):
     i, j, k = wp.tid()
     dst[i, j, k] = dst.dtype(src[i, j, k])
 
 
-@wp.kernel(enable_backward=False)
+@wp.kernel
 def _type_cast_4d(src: wp.array4d[Any], dst: wp.array4d[Any]):
     i, j, k, l = wp.tid()
     dst[i, j, k, l] = dst.dtype(src[i, j, k, l])

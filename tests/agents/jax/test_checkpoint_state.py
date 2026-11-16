@@ -213,11 +213,20 @@ def test_ippo_checkpoint_restores_models_preprocessors_and_moments(tmp_path: Pat
             original._observation_preprocessor[uid].state_dict.params,
         )
         # Supply the same collected rollout; replay memory is not part of the agent checkpoint.
-        for name in original.memories[uid].get_tensor_names():
-            restored.memories[uid].set_tensor_by_name(name, original.memories[uid].get_tensor_by_name(name))
+        # Use add_samples to restore both data and the valid memory size.
+        for index in range(original.memories[uid].memory_size):
+            restored.memories[uid].add_samples(
+                **{
+                    name: original.memories[uid].get_tensor_by_name(name)[index]
+                    for name in original.memories[uid].get_tensor_names()
+                }
+            )
+        assert len(restored.memories[uid]) == len(original.memories[uid])
     restored._current_next_observations = original._current_next_observations.copy()
     restored._current_next_states = original._current_next_states.copy()
+    sampling_state = np.random.get_state()
     for agent in [original, restored]:
+        np.random.set_state(sampling_state)
         for uid in agent.possible_agents:
             agent.update(timestep=4, timesteps=6, uid=uid)
     for uid in original.possible_agents:

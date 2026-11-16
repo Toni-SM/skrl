@@ -140,6 +140,8 @@ class SAC(Agent):
             cfg=SAC_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
+        self._policy_update_key = jax.device_put(config.jax.key, self.device)
+
         # models
         self.policy = self.models.get("policy")
         self.critic_1 = self.models.get("critic_1")
@@ -472,6 +474,7 @@ class SAC(Agent):
             )
 
             # compute policy (actor) loss
+            self._policy_update_key, key = jax.random.split(self._policy_update_key)
             policy_grad, policy_loss, log_prob = _update_policy(
                 self.policy.act,
                 self.critic_1.act,
@@ -480,7 +483,7 @@ class SAC(Agent):
                 self.critic_1.state_dict,
                 self.critic_2.state_dict,
                 self._entropy_coefficient,
-                inputs,
+                {**inputs, "key": key},
             )
 
             # optimization step (policy)

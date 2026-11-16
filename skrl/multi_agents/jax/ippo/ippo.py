@@ -157,6 +157,8 @@ class IPPO(MultiAgent):
             cfg=IPPO_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
+        self._policy_update_key = jax.device_put(config.jax.key, self.device)
+
         # models
         self.policies = {uid: self.models[uid].get("policy") for uid in self.possible_agents}
         self.values = {uid: self.models[uid].get("value") for uid in self.possible_agents}
@@ -489,10 +491,11 @@ class IPPO(MultiAgent):
                 }
 
                 # compute policy loss
+                self._policy_update_key, key = jax.random.split(self._policy_update_key)
                 grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
                     policy.act,
                     policy.state_dict,
-                    {**inputs, "taken_actions": sampled_actions},
+                    {**inputs, "taken_actions": sampled_actions, "key": key},
                     sampled_log_prob,
                     sampled_advantages,
                     self.cfg.ratio_clip[uid],

@@ -1,10 +1,16 @@
+from typing import Any
+
 import hypothesis
 import hypothesis.strategies as st
 import pytest
 
 import dataclasses
+import importlib
 import gymnasium
 
+import jax
+import jax.numpy as jnp
+import numpy as np
 import optax
 
 from skrl.agents.jax.sac import SAC as Agent
@@ -217,3 +223,71 @@ def test_agent(
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     trainer.train()
+
+
+def test_policy_updates_use_fresh_random_samples(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resample the policy distribution on each compiled SAC gradient update."""
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(2,))
+    action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,))
+    models = {
+        "policy": gaussian_model(
+            observation_space=observation_space,
+            action_space=action_space,
+            device="cpu",
+            network=[{"name": "net", "input": "OBSERVATIONS", "layers": []}],
+            output="ACTIONS",
+        )
+    }
+    for role in ["critic_1", "critic_2", "target_critic_1", "target_critic_2"]:
+        models[role] = deterministic_model(
+            observation_space=observation_space,
+            action_space=action_space,
+            device="cpu",
+            network=[{"name": "net", "input": "concatenate([OBSERVATIONS, ACTIONS])", "layers": []}],
+            output="ONE",
+        )
+    for role, model in models.items():
+        model.init_state_dict(role=role)
+    before = jax.tree_util.tree_leaves(models["policy"].state_dict.params)
+    memory = RandomMemory(memory_size=1, num_envs=8, device="cpu")
+    agent = Agent(
+        models=models,
+        memory=memory,
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        cfg={
+            "gradient_steps": 3,
+            "batch_size": 8,
+            "learning_rate": 0.0,
+            "learn_entropy": False,
+            "experiment": {"write_interval": 0, "checkpoint_interval": 0},
+        },
+    )
+    agent.init()
+    observations = jnp.zeros((8, 2))
+    memory.add_samples(
+        observations=observations,
+        actions=jnp.zeros((8, 1)),
+        rewards=jnp.zeros((8, 1)),
+        next_observations=observations,
+        terminated=jnp.ones((8, 1), dtype=jnp.bool_),
+    )
+    module = importlib.import_module("skrl.agents.jax.sac.sac")
+    update_policy = module._update_policy
+    log_probabilities = []
+
+    def observe_policy_update(*args: Any, **kwargs: Any) -> Any:
+        result = update_policy(*args, **kwargs)
+        log_probabilities.append(np.asarray(result[2]))
+        return result
+
+    monkeypatch.setattr(module, "_update_policy", observe_policy_update)
+    agent.update(timestep=0, timesteps=1)
+
+    after = jax.tree_util.tree_leaves(models["policy"].state_dict.params)
+    assert all(np.array_equal(old, new) for old, new in zip(before, after))
+    assert len(log_probabilities) == 3
+    assert all(np.isfinite(values).all() for values in log_probabilities)
+    assert not np.array_equal(log_probabilities[0], log_probabilities[1])
+    assert not np.array_equal(log_probabilities[1], log_probabilities[2])

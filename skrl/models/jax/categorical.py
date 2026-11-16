@@ -70,6 +70,7 @@ class CategoricalMixin:
             - ``"observations"``: observation of the environment used to make the decision.
             - ``"states"``: state of the environment used to make the decision.
             - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+            - ``"key"``: optional PRNG key for sampling, including calls inside JAX transformations.
         :param role: Role played by the model.
         :param params: Parameters used to compute the output. If not provided, internal parameters will be used.
 
@@ -79,10 +80,12 @@ class CategoricalMixin:
             - ``"log_prob"``: log of the probability density function.
             - ``"net_output"``: network output.
         """
-        with jax.default_device(self.device):
-            self._c_i += 1
-            subkey = jax.random.fold_in(self._c_key, self._c_i)
-            inputs["key"] = subkey
+        subkey = inputs.get("key")
+        if subkey is None:
+            with jax.default_device(self.device):
+                self._c_i += 1
+                subkey = jax.random.fold_in(self._c_key, self._c_i)
+            inputs = {**inputs, "key": subkey}
 
         # map from observations/states to normalized probabilities or unnormalized log probabilities
         net_output, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)

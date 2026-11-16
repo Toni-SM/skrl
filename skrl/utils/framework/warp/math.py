@@ -148,12 +148,19 @@ def _f_selu(x: Any):
 
 @wp.func
 def _f_sigmoid(x: Any):
-    return type(x)(1.0) / (type(x)(1.0) + wp.exp(-x))
+    if x >= type(x)(0.0):
+        return type(x)(1.0) / (type(x)(1.0) + wp.exp(-x))
+    else:
+        exponential = wp.exp(x)
+        return exponential / (type(x)(1.0) + exponential)
 
 
 @wp.func
 def _f_softplus(x: Any):
-    return wp.log(type(x)(1.0) + wp.exp(x))
+    if x > type(x)(0.0):
+        return x + wp.log(type(x)(1.0) + wp.exp(-x))
+    else:
+        return wp.log(type(x)(1.0) + wp.exp(x))
 
 
 @wp.func

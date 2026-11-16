@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Fixed
+- Update and clip partially shared policy/value parameters once in PyTorch A2C, PPO, RPO and their recurrent variants,
+  preserving optimizer state when loading checkpoints with duplicate parameter references
+
 ## [2.1.2] - 2026-11-14
 ### Changed
 - Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases

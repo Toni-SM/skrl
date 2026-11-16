@@ -443,6 +443,11 @@ class Agent(ABC):
                 module = self.checkpoint_modules.get(name)
                 if module is not None:
                     if hasattr(module, "load_state_dict"):
+                        if isinstance(module, torch.optim.Optimizer):
+                            for saved_group, current_group in zip(data["param_groups"], module.param_groups):
+                                unique_parameters = list(dict.fromkeys(saved_group["params"]))
+                                if len(unique_parameters) == len(current_group["params"]):
+                                    saved_group["params"] = unique_parameters
                         module.load_state_dict(data)
                         if hasattr(module, "eval"):
                             module.eval()

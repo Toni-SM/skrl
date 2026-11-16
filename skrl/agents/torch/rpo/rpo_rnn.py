@@ -132,7 +132,8 @@ class RPO_RNN(Agent):
                 self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.cfg.learning_rate[0])
             else:
                 self.optimizer = torch.optim.Adam(
-                    itertools.chain(self.policy.parameters(), self.value.parameters()), lr=self.cfg.learning_rate[0]
+                    list(dict.fromkeys(itertools.chain(self.policy.parameters(), self.value.parameters()))),
+                    lr=self.cfg.learning_rate[0],
                 )
             self.checkpoint_modules["optimizer"] = self.optimizer
             # - learning rate schedulers
@@ -559,7 +560,8 @@ class RPO_RNN(Agent):
                         nn.utils.clip_grad_norm_(self.policy.parameters(), self.cfg.grad_norm_clip)
                     else:
                         nn.utils.clip_grad_norm_(
-                            itertools.chain(self.policy.parameters(), self.value.parameters()), self.cfg.grad_norm_clip
+                            list(dict.fromkeys(itertools.chain(self.policy.parameters(), self.value.parameters()))),
+                            self.cfg.grad_norm_clip,
                         )
 
                 self.scaler.step(self.optimizer)

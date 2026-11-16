@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Older (JAX/MJX based) versions of MuJoCo Playground are not supported
 
 ### Fixed
+- Fix PyTorch memory batch insertion advancing the write position separately for each tensor and losing the filled flag
 - Fix PyTorch RNN agents storing in memory the policy/value RNN states of the next step instead of the current one
 - Fix JAX distributed launcher not propagating worker failures and not validating the launch configuration
 - Fix PyTorch distributed gradient reduction for non-contiguous gradients

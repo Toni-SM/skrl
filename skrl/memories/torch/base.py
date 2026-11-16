@@ -234,20 +234,18 @@ class Memory(ABC):
             self.env_index += shape[0]
         # single environment - multi sample (num_envs = 1, current_num_envs > 1)
         elif dim == 2 and self.num_envs == 1:
+            num_samples = min(shape[0], self.memory_size - self.memory_index)
+            remaining_samples = shape[0] - num_samples
             for name, tensor in tensors.items():
                 if name in self.tensors and tensor is not None:
-                    num_samples = min(shape[0], self.memory_size - self.memory_index)
                     # store the first n samples
                     self.tensors[name][self.memory_index : self.memory_index + num_samples].copy_(
                         tensor[:num_samples].unsqueeze(dim=1)
                     )
                     # store remaining samples
-                    remaining_samples = shape[0] - num_samples
                     if remaining_samples > 0:
                         self.tensors[name][:remaining_samples].copy_(tensor[num_samples:].unsqueeze(dim=1))
-                        self.memory_index = remaining_samples
-                    else:
-                        self.memory_index += num_samples
+            self.memory_index += shape[0]
         # single environment (current_num_envs = 1, implicit)
         elif dim == 1:
             for name, tensor in tensors.items():
@@ -264,7 +262,7 @@ class Memory(ABC):
             self.env_index = 0
             self.memory_index += 1
         if self.memory_index >= self.memory_size:
-            self.memory_index = 0
+            self.memory_index %= self.memory_size
             self.filled = True
 
             # export tensors to file

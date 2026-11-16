@@ -74,7 +74,9 @@ class RandomMemory(Memory):
         # generate sequence indexes
         if sequence_length > 1:
             sequence_indexes = np.arange(0, self.num_envs * sequence_length, self.num_envs)
-            indexes = (sequence_indexes.repeat(indexes.shape[0], 1) + indexes.reshape(-1, 1)).reshape(-1)
+            indexes = (sequence_indexes + indexes.reshape(-1, 1)).reshape(-1)
+            if self.filled:
+                indexes = (indexes + self.memory_index * self.num_envs + self.env_index) % len(self)
         # sample by indexes
         self.sampling_indexes = indexes
         return self.sample_by_index(names=names, indexes=indexes, mini_batches=mini_batches)

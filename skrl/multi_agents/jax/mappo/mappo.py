@@ -204,19 +204,19 @@ class MAPPO(MultiAgent):
                 self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0]
                 self.policy_scheduler_type[uid] = None
                 if self.policy_scheduler[uid] is not None:
-                    if "kladaptive" in self.policy_scheduler[uid].__qualname__.lower().replace("_", ""):
-                        self.policy_scheduler_type[uid] = KLAdaptiveLR
                     self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][0]
                     )
+                    if "kladaptive" in getattr(self.policy_scheduler[uid], "__qualname__", "").lower().replace("_", ""):
+                        self.policy_scheduler_type[uid] = KLAdaptiveLR
                 self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1]
                 self.value_scheduler_type[uid] = None
                 if self.value_scheduler[uid] is not None:
-                    if "kladaptive" in self.value_scheduler[uid].__qualname__.lower().replace("_", ""):
-                        self.value_scheduler_type[uid] = KLAdaptiveLR
                     self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][1]
                     )
+                    if "kladaptive" in getattr(self.value_scheduler[uid], "__qualname__", "").lower().replace("_", ""):
+                        self.value_scheduler_type[uid] = KLAdaptiveLR
 
         # set up preprocessors
         self._observation_preprocessor = {}

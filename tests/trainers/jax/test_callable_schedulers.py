@@ -4,7 +4,6 @@ import functools
 import gymnasium
 
 import jax
-
 import numpy as np
 
 from skrl.resources.schedulers.jax import KLAdaptiveLR

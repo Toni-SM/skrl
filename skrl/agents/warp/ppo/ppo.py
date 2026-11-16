@@ -240,9 +240,9 @@ class PPO(Agent):
             self.scheduler = self.cfg.learning_rate_scheduler[0]
             self.scheduler_type = None
             if self.scheduler is not None:
-                if "kladaptive" in self.scheduler.__qualname__.lower().replace("_", ""):
-                    self.scheduler_type = KLAdaptiveLR
                 self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
+                if "kladaptive" in getattr(self.scheduler, "__qualname__", "").lower().replace("_", ""):
+                    self.scheduler_type = KLAdaptiveLR
 
             # training variables
             self._loss = wp.zeros((1,), dtype=wp.float32, device=self.device, requires_grad=True)

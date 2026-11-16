@@ -5,6 +5,8 @@ import pytest
 import dataclasses
 import gymnasium
 
+import jax
+import numpy as np
 import optax
 
 from skrl.agents.jax.td3 import TD3 as Agent
@@ -167,6 +169,10 @@ def test_agent(
     # instantiate models' state dict
     for role, model in models.items():
         model.init_state_dict(role=role)
+
+    first_critic = jax.tree_util.tree_leaves(models["critic_1"].state_dict.params)
+    second_critic = jax.tree_util.tree_leaves(models["critic_2"].state_dict.params)
+    assert any(not np.array_equal(first, second) for first, second in zip(first_critic, second_critic))
 
     # memory
     memory = RandomMemory(memory_size=50, num_envs=env.num_envs, device=env.device)

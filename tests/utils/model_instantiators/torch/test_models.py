@@ -152,6 +152,39 @@ def test_multicategorical_model(capsys, device):
             assert entropy.shape == (10, 1)
 
 
+@pytest.mark.parametrize("unnormalized_log_prob", [True, False])
+def test_multicategorical_model_multidimensional_actions(unnormalized_log_prob: bool) -> None:
+    """Check sampling and policy gradients for a multidimensional MultiDiscrete space."""
+    action_space = spaces.MultiDiscrete([[2, 3], [4, 5]])
+    model = multicategorical_model(
+        observation_space=spaces.Box(low=-1, high=1, shape=(2,)),
+        action_space=action_space,
+        device="cpu",
+        unnormalized_log_prob=unnormalized_log_prob,
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": [4], "activations": "tanh"}],
+        output="ACTIONS" if unnormalized_log_prob else "torch.softmax(ACTIONS, dim=-1)",
+    )
+    observations = torch.zeros((3, 2))
+    model.init_state_dict({"observations": observations})
+    with torch.no_grad():
+        for parameter in model.parameters():
+            parameter.zero_()
+
+    actions, outputs = model.act({"observations": observations, "taken_actions": torch.zeros((3, 4))})
+
+    assert actions.shape == (3, 4)
+    assert torch.all(actions >= 0)
+    assert torch.all(actions < torch.tensor([2, 3, 4, 5]))
+    expected_entropy = torch.tensor(120.0).log().expand(3, 1)
+    torch.testing.assert_close(outputs["log_prob"], -expected_entropy)
+    torch.testing.assert_close(model.get_entropy(), expected_entropy)
+
+    outputs["log_prob"].sum().backward()
+    gradients = [parameter.grad for parameter in model.parameters()]
+    assert all(gradient is not None and torch.isfinite(gradient).all() for gradient in gradients)
+    assert any(torch.count_nonzero(gradient) for gradient in gradients)
+
+
 @pytest.mark.parametrize("device", [None, "cpu", "cuda:0"])
 def test_deterministic_model(capsys, device):
     action_space = spaces.Box(low=-1, high=1, shape=(2,))

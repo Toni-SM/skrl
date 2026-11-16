@@ -481,13 +481,13 @@ class A2C(Agent):
             if self.policy_scheduler_type is KLAdaptiveLR:
                 self.policy_learning_rate = self.policy_scheduler(timestep, lr=self.policy_learning_rate, kl=kl)
             else:
-                self.policy_learning_rate *= self.policy_scheduler(timestep)
+                self.policy_learning_rate = self.policy_scheduler(timestep)
         # - value learning rate
         if self.value_scheduler:
             if self.value_scheduler_type is KLAdaptiveLR:
                 self.value_learning_rate = self.value_scheduler(timestep, lr=self.value_learning_rate, kl=kl)
             else:
-                self.value_learning_rate *= self.value_scheduler(timestep)
+                self.value_learning_rate = self.value_scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", cumulative_policy_loss / self.cfg.mini_batches)

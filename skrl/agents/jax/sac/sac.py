@@ -17,6 +17,7 @@ from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
+from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 from skrl.utils.framework.jax.types import Device, Tensor
 
@@ -511,9 +512,15 @@ class SAC(Agent):
 
             # update learning rate
             if self.policy_scheduler:
-                self.policy_learning_rate *= self.policy_scheduler(timestep)
+                if self.cfg.learning_rate_scheduler[0] is KLAdaptiveLR:
+                    self.policy_learning_rate = self.policy_scheduler(timestep, lr=self.policy_learning_rate)
+                else:
+                    self.policy_learning_rate = self.policy_scheduler(timestep)
             if self.critic_scheduler:
-                self.critic_learning_rate *= self.critic_scheduler(timestep)
+                if self.cfg.learning_rate_scheduler[1] is KLAdaptiveLR:
+                    self.critic_learning_rate = self.critic_scheduler(timestep, lr=self.critic_learning_rate)
+                else:
+                    self.critic_learning_rate = self.critic_scheduler(timestep)
 
             # record data
             if self.write_interval > 0:

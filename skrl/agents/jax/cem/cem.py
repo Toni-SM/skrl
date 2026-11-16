@@ -15,6 +15,7 @@ from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
+from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.utils import ScopedTimer
 from skrl.utils.framework.jax.types import Device, Tensor
 
@@ -325,7 +326,10 @@ class CEM(Agent):
 
         # update learning rate
         if self.scheduler:
-            self.learning_rate *= self.scheduler(timestep)
+            if self.cfg.learning_rate_scheduler is KLAdaptiveLR:
+                self.learning_rate = self.scheduler(timestep, lr=self.learning_rate)
+            else:
+                self.learning_rate = self.scheduler(timestep)
 
         # record data
         self.track_data("Loss / Policy loss", policy_loss.item())

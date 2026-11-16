@@ -3,8 +3,12 @@ import hypothesis.strategies as st
 import pytest
 
 import dataclasses
+import math
 import gymnasium
 
+import jax
+import jax.numpy as jnp
+import numpy as np
 import optax
 
 from skrl.agents.jax.cem import CEM as Agent
@@ -13,7 +17,7 @@ from skrl.memories.jax import RandomMemory
 from skrl.resources.preprocessors.jax import RunningStandardScaler
 from skrl.resources.schedulers.jax import KLAdaptiveLR
 from skrl.trainers.jax import SequentialTrainer
-from skrl.utils.model_instantiators.jax import categorical_model
+from skrl.utils.model_instantiators.jax import categorical_model, multicategorical_model
 
 from ...utilities import SingleAgentEnv, check_config_keys, is_device_available
 
@@ -155,3 +159,68 @@ def test_agent(
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     trainer.train()
+
+
+@pytest.mark.parametrize("multicategorical", [False, True])
+@pytest.mark.parametrize("unnormalized_log_prob", [False, True])
+def test_elite_action_likelihood(multicategorical: bool, unnormalized_log_prob: bool) -> None:
+    """Train on elite actions using their categorical or joint categorical likelihood."""
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,))
+    action_space = gymnasium.spaces.MultiDiscrete([2, 3]) if multicategorical else gymnasium.spaces.Discrete(2)
+    factory = multicategorical_model if multicategorical else categorical_model
+    policy = factory(
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        unnormalized_log_prob=unnormalized_log_prob,
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": []}],
+        output="ACTIONS" if unnormalized_log_prob else "jax.nn.softmax(ACTIONS, axis=-1)",
+    )
+    observations = jnp.zeros((1, 1))
+    policy.init_state_dict({"observations": observations})
+    weights = [2.0, 1.0, 3.0, 2.0, 1.0] if multicategorical else [2.0, 1.0]
+    initial_bias = jnp.log(jnp.array(weights))
+    params = jax.tree_util.tree_map_with_path(
+        lambda path, value: initial_bias if path[-1].key == "bias" else jnp.zeros_like(value),
+        policy.state_dict.params,
+    )
+    policy.state_dict = policy.state_dict.replace(params=params)
+    before = jax.tree_util.tree_leaves(params)
+
+    agent = Agent(
+        models={"policy": policy},
+        memory=RandomMemory(memory_size=2, num_envs=1, device="cpu"),
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        cfg={
+            "rollouts": 2,
+            "discount_factor": 1.0,
+            "percentile": 0.0,
+            "experiment": {"write_interval": 0, "checkpoint_interval": 0},
+        },
+    )
+    agent.init()
+    agent.enable_training_mode()
+    for timestep in range(2):
+        agent.pre_interaction(timestep=timestep, timesteps=2)
+        agent.record_transition(
+            observations=observations,
+            states=None,
+            actions=jnp.zeros((1, 2 if multicategorical else 1), dtype=jnp.int32),
+            rewards=jnp.ones((1, 1)),
+            next_observations=observations,
+            next_states=None,
+            terminated=jnp.array([[timestep == 1]]),
+            truncated=jnp.zeros((1, 1), dtype=jnp.bool_),
+            infos={},
+            timestep=timestep,
+            timesteps=2,
+        )
+        agent.post_interaction(timestep=timestep, timesteps=2)
+
+    expected_loss = math.log(3.0 if multicategorical else 1.5)
+    assert agent.tracking_data["Loss / Policy loss"] == pytest.approx([expected_loss], rel=1e-6)
+    after = jax.tree_util.tree_leaves(policy.state_dict.params)
+    assert all(np.isfinite(value).all() for value in after)
+    assert any(not np.array_equal(old, new) for old, new in zip(before, after))

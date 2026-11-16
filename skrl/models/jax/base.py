@@ -29,6 +29,11 @@ def _unvectorize_leaves(leaves: list[Tensor], vector: Tensor) -> list[Tensor]:
     return leaves
 
 
+def _initialize_parameter(initializer: Callable, parameter: Tensor) -> Tensor:
+    config.jax.key, key = jax.random.split(config.jax.key)
+    return initializer(key, parameter.shape)
+
+
 class StateDict(flax.struct.PyTreeNode):
     apply_fn: Callable = flax.struct.field(pytree_node=False)
     params: flax.core.FrozenDict[str, Any] = flax.struct.field(pytree_node=True)
@@ -96,7 +101,8 @@ class Model(flax.linen.Module, ABC):
 
             If not specified, ``inputs`` will have random samples from the observation, state and action spaces.
         :param role: Role played by the model.
-        :param key: Pseudo-random number generator (PRNG) key. If not provided, ``config.jax.key`` will be used.
+        :param key: Pseudo-random number generator (PRNG) key. If not provided, a subkey is generated
+            from ``config.jax.key``, advancing the global key.
         """
         if not inputs:
             inputs = {
@@ -111,7 +117,7 @@ class Model(flax.linen.Module, ABC):
                 ),
             }
         if key is None:
-            key = config.jax.key
+            config.jax.key, key = jax.random.split(config.jax.key)
         # init internal state dict
         with jax.default_device(self.device):
             self.state_dict = StateDict.create(apply_fn=self.apply, params=self.init(key, inputs, role))
@@ -166,7 +172,7 @@ class Model(flax.linen.Module, ABC):
             method = eval(f"flax.linen.initializers.{method_name}")
         else:
             method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
-        params = jax.tree_util.tree_map(lambda param: method(config.jax.key, param.shape), self.state_dict.params)
+        params = jax.tree_util.tree_map(lambda param: _initialize_parameter(method, param), self.state_dict.params)
         self.state_dict = self.state_dict.replace(params=params)
 
     def init_weights(self, method_name: str = "normal", *args, **kwargs) -> None:
@@ -192,7 +198,7 @@ class Model(flax.linen.Module, ABC):
         else:
             method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
         params = jax.tree_util.tree_map_with_path(
-            lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "kernel" else param,
+            lambda path, param: _initialize_parameter(method, param) if path[-1].key == "kernel" else param,
             self.state_dict.params,
         )
         self.state_dict = self.state_dict.replace(params=params)
@@ -220,7 +226,7 @@ class Model(flax.linen.Module, ABC):
         else:
             method = eval(f"flax.linen.initializers.{method_name}(*args, **kwargs)")
         params = jax.tree_util.tree_map_with_path(
-            lambda path, param: method(config.jax.key, param.shape) if path[-1].key == "bias" else param,
+            lambda path, param: _initialize_parameter(method, param) if path[-1].key == "bias" else param,
             self.state_dict.params,
         )
         self.state_dict = self.state_dict.replace(params=params)

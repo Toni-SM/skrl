@@ -246,3 +246,7 @@ def test_agent(
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     trainer.train()
+
+    if learning_rate_scheduler is optax.schedules.constant_schedule:
+        assert agent.policy_learning_rate == pytest.approx(learning_rate_scheduler_kwargs_value)
+        assert agent.critic_learning_rate == pytest.approx(learning_rate_scheduler_kwargs_value)

@@ -5,6 +5,9 @@ import pytest
 import dataclasses
 import gymnasium
 
+import jax
+import jax.numpy as jnp
+import numpy as np
 import optax
 
 from skrl.agents.jax.cem import CEM as Agent
@@ -155,3 +158,73 @@ def test_agent(
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     trainer.train()
+
+
+@pytest.mark.parametrize("schedule_kind", ["constant", "linear", "none", "kl"])
+def test_scheduled_learning_rate_values(schedule_kind: str) -> None:
+    """Keep schedule values independent of the previous learning rate."""
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,))
+    action_space = gymnasium.spaces.Discrete(2)
+    policy = categorical_model(
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": []}],
+        output="ACTIONS",
+    )
+    observations = jnp.zeros((1, 1))
+    policy.init_state_dict({"observations": observations})
+    before = jax.tree_util.tree_leaves(policy.state_dict.params)
+    scheduler, kwargs = {
+        "constant": (optax.schedules.constant_schedule, {"value": 1e-4}),
+        "linear": (optax.schedules.linear_schedule, {"init_value": 1e-3, "end_value": 1e-4, "transition_steps": 10}),
+        "none": (None, {}),
+        "kl": (KLAdaptiveLR, {}),
+    }[schedule_kind]
+    schedule = None if scheduler is None else scheduler(**kwargs)
+    initial_rate = 2e-3
+    agent = Agent(
+        models={"policy": policy},
+        memory=RandomMemory(memory_size=2, num_envs=1, device="cpu"),
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        cfg={
+            "rollouts": 2,
+            "discount_factor": 1.0,
+            "percentile": 0.0,
+            "learning_rate": initial_rate,
+            "learning_rate_scheduler": scheduler,
+            "learning_rate_scheduler_kwargs": kwargs,
+            "experiment": {"write_interval": 0, "checkpoint_interval": 0},
+        },
+    )
+    agent.init()
+    agent.enable_training_mode()
+    expected_rates = []
+    for timestep in range(6):
+        agent.pre_interaction(timestep=timestep, timesteps=6)
+        agent.record_transition(
+            observations=observations,
+            states=None,
+            actions=jnp.zeros((1, 1), dtype=jnp.int32),
+            rewards=jnp.ones((1, 1)),
+            next_observations=observations,
+            next_states=None,
+            terminated=jnp.array([[timestep % 2 == 1]]),
+            truncated=jnp.zeros((1, 1), dtype=jnp.bool_),
+            infos={},
+            timestep=timestep,
+            timesteps=6,
+        )
+        agent.post_interaction(timestep=timestep, timesteps=6)
+        if timestep % 2:
+            expected = initial_rate if schedule_kind in ["none", "kl"] else float(schedule(timestep))
+            expected_rates.append(expected)
+            assert agent.learning_rate == pytest.approx(expected)
+
+    if scheduler is not None:
+        assert agent.tracking_data["Learning / Learning rate"] == pytest.approx(expected_rates)
+    after = jax.tree_util.tree_leaves(policy.state_dict.params)
+    assert all(np.isfinite(value).all() for value in after)
+    assert any(not np.array_equal(old, new) for old, new in zip(before, after))

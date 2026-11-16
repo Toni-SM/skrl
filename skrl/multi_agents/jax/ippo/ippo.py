@@ -558,7 +558,7 @@ class IPPO(MultiAgent):
                         timestep, lr=self.policy_learning_rate[uid], kl=kl
                     )
                 else:
-                    self.policy_learning_rate[uid] *= self.policy_scheduler[uid](timestep)
+                    self.policy_learning_rate[uid] = self.policy_scheduler[uid](timestep)
             # - value learning rate
             if self.value_scheduler[uid]:
                 if self.value_scheduler_type[uid] is KLAdaptiveLR:
@@ -566,7 +566,7 @@ class IPPO(MultiAgent):
                         timestep, lr=self.value_learning_rate[uid], kl=kl
                     )
                 else:
-                    self.value_learning_rate[uid] *= self.value_scheduler[uid](timestep)
+                    self.value_learning_rate[uid] = self.value_scheduler[uid](timestep)
 
         # record data
         self.track_data(

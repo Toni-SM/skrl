@@ -49,7 +49,9 @@ def concatenate(arrays: list[Tensor], *, axis: int = -1, dtype: type | None = No
     reference = arrays[0]
     dtype = reference.dtype if dtype is None else dtype
     shape = (reference.shape[0], sum([array.shape[1] for array in arrays]))
-    output = wp.empty(shape, dtype=dtype, device=reference.device, requires_grad=reference.requires_grad)
+    output = wp.empty(
+        shape, dtype=dtype, device=reference.device, requires_grad=any(array.requires_grad for array in arrays)
+    )
     index = 0
     for array in arrays:
         next_index = index + array.shape[1]

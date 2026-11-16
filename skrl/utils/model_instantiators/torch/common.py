@@ -74,6 +74,7 @@ def _parse_input(source: str) -> str:
 
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
+            self.generic_visit(node)
             if isinstance(node.func, ast.Name):
                 # operation: concatenate
                 if node.func.id == "concatenate":
@@ -108,6 +109,7 @@ def _parse_output(source: str | list[str]) -> tuple[str, list[str], Any]:
 
     class NodeTransformer(ast.NodeTransformer):
         def visit_Call(self, node: ast.Call):
+            self.generic_visit(node)
             if isinstance(node.func, ast.Name):
                 # operation: concatenate
                 if node.func.id == "concatenate":

@@ -441,3 +441,28 @@ def test_tabular_model(capsys, device):
     output = model.act(inputs)
     assert len(output) == 2
     assert output[0].shape == (10, 1)
+
+
+@pytest.mark.parametrize("expression", ["input", "output"])
+def test_nested_model_expressions(expression: str) -> None:
+    """Evaluate composed input and output operations through a generated model."""
+    input_expression = (
+        "concatenate([OBSERVATIONS, concatenate([OBSERVATIONS, OBSERVATIONS])])"
+        if expression == "input"
+        else "OBSERVATIONS"
+    )
+    output_expression = "net" if expression == "input" else "tanh(concatenate([net, net]))"
+    repeats = 3 if expression == "input" else 2
+    model = deterministic_model(
+        observation_space=spaces.Box(low=-1, high=1, shape=(2,)),
+        action_space=spaces.Box(low=-1, high=1, shape=(2 * repeats,)),
+        device="cpu",
+        network=[{"name": "net", "input": input_expression, "layers": ["flatten"]}],
+        output=output_expression,
+    )
+    observations = torch.tensor([[0.25, -0.5], [0.75, -1.0]])
+    actions, _ = model.act({"observations": observations})
+    expected = observations.repeat(1, repeats)
+    if expression == "output":
+        expected = expected.tanh()
+    torch.testing.assert_close(actions, expected)

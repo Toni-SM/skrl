@@ -3,6 +3,9 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+import jax.numpy as jnp
+import numpy as np
+
 from skrl.utils.model_instantiators.jax import (
     categorical_model,
     deterministic_model,
@@ -230,3 +233,29 @@ def test_jax_namespace_in_expressions(capsys, factory):
 
     output = model.act(_sample_inputs("OBSERVATIONS", observation_space, None))
     assert output[0].shape[0] == 10
+
+
+@pytest.mark.parametrize("expression", ["input", "output"])
+def test_nested_model_expressions(expression: str) -> None:
+    """Evaluate composed input and output operations through a generated model."""
+    input_expression = (
+        "concatenate([OBSERVATIONS, concatenate([OBSERVATIONS, OBSERVATIONS])])"
+        if expression == "input"
+        else "OBSERVATIONS"
+    )
+    output_expression = "net" if expression == "input" else "tanh(concatenate([net, net]))"
+    repeats = 3 if expression == "input" else 2
+    model = deterministic_model(
+        observation_space=spaces.Box(low=-1, high=1, shape=(2,)),
+        action_space=spaces.Box(low=-1, high=1, shape=(2 * repeats,)),
+        device="cpu",
+        network=[{"name": "net", "input": input_expression, "layers": ["flatten"]}],
+        output=output_expression,
+    )
+    observations = jnp.array([[0.25, -0.5], [0.75, -1.0]])
+    model.init_state_dict({"observations": observations})
+    actions, _ = model.act({"observations": observations})
+    expected = np.tile(np.asarray(observations), (1, repeats))
+    if expression == "output":
+        expected = np.tanh(expected)
+    np.testing.assert_allclose(actions, expected, rtol=1e-6, atol=1e-6)

@@ -3,6 +3,7 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+import numpy as np
 import warp as wp
 
 from skrl import config
@@ -224,3 +225,27 @@ def test_warp_namespace_in_expressions(capsys, factory):
     role = {"shared": "role_0"}.get(factory, "")
     output = model.act(_sample_inputs("OBSERVATIONS", observation_space, "cpu"), role=role)
     assert output[0].shape == (10, 2)
+
+
+@pytest.mark.parametrize("expression", ["input", "output"])
+def test_nested_model_expressions(expression: str) -> None:
+    """Evaluate composed input and output operations through a generated model."""
+    input_expression = (
+        "concatenate([OBSERVATIONS, concatenate([OBSERVATIONS, OBSERVATIONS])])"
+        if expression == "input"
+        else "OBSERVATIONS"
+    )
+    output_expression = "net" if expression == "input" else "concatenate([net, concatenate([net, net])])"
+    repeats = 3
+    model = deterministic_model(
+        observation_space=spaces.Box(low=-1, high=1, shape=(2,)),
+        action_space=spaces.Box(low=-1, high=1, shape=(2 * repeats,)),
+        device="cpu",
+        network=[{"name": "net", "input": input_expression, "layers": ["flatten"]}],
+        output=output_expression,
+    )
+    observations = wp.array([[0.25, -0.5], [0.75, -1.0]], dtype=wp.float32, device="cpu")
+    model.init_state_dict({"observations": observations})
+    actions, _ = model.act({"observations": observations})
+    expected = np.tile(observations.numpy(), (1, repeats))
+    np.testing.assert_allclose(actions.numpy(), expected, rtol=1e-6, atol=1e-6)

@@ -147,7 +147,7 @@ def _f_selu(x: Any):
 
 
 @wp.func
-def _f_sigmoid(x: Any):
+def _f_sigmoid(x: Any):  # pyright: ignore[reportRedeclaration]
     if x >= type(x)(0.0):
         return type(x)(1.0) / (type(x)(1.0) + wp.exp(-x))
     else:
@@ -156,11 +156,28 @@ def _f_sigmoid(x: Any):
 
 
 @wp.func
-def _f_softplus(x: Any):
+def _f_sigmoid(x: wp.float16):
+    value = wp.float32(x)
+    if value >= 0.0:
+        return wp.float16(1.0 / (1.0 + wp.exp(-value)))
+    exponential = wp.exp(value)
+    return wp.float16(exponential / (1.0 + exponential))
+
+
+@wp.func
+def _f_softplus(x: Any):  # pyright: ignore[reportRedeclaration]
     if x > type(x)(0.0):
         return x + wp.log(type(x)(1.0) + wp.exp(-x))
     else:
         return wp.log(type(x)(1.0) + wp.exp(x))
+
+
+@wp.func
+def _f_softplus(x: wp.float16):
+    value = wp.float32(x)
+    if value > 0.0:
+        return wp.float16(value + wp.log(1.0 + wp.exp(-value)))
+    return wp.float16(wp.log(1.0 + wp.exp(value)))
 
 
 @wp.func

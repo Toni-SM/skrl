@@ -161,7 +161,7 @@ def test_selu(capsys, ndim, dtype, inplace, shape):
 @pytest.mark.parametrize("inplace", [True, False])
 def test_sigmoid(capsys, ndim, dtype, inplace, shape):
     def sigmoid(x):
-        return 1.0 / (1.0 + np.exp(-x))
+        return 1.0 / (1.0 + np.exp(-x.astype(np.float64)))
 
     sample = (10 * (2 * np.random.rand(*shape[:ndim]) - 1)).astype(dtype)
     input = wp.array(sample)
@@ -181,7 +181,7 @@ def test_sigmoid(capsys, ndim, dtype, inplace, shape):
 @pytest.mark.parametrize("inplace", [True, False])
 def test_softplus(capsys, ndim, dtype, inplace, shape):
     def softplus(x):
-        return np.log(1.0 + np.exp(x))
+        return np.logaddexp(0.0, x.astype(np.float64))
 
     sample = (10 * (2 * np.random.rand(*shape[:ndim]) - 1)).astype(dtype)
     input = wp.array(sample)

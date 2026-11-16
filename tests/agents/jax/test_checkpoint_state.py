@@ -155,6 +155,7 @@ def make_ippo(directory: Path) -> IPPO:
         models=models,
         memories={uid: RandomMemory(memory_size=2, num_envs=2, device="cpu") for uid in possible_agents},
         observation_spaces=observation_spaces,
+        state_spaces={uid: None for uid in possible_agents},
         action_spaces=action_spaces,
         device="cpu",
         cfg={
@@ -180,9 +181,7 @@ def make_ippo(directory: Path) -> IPPO:
 def test_ippo_checkpoint_restores_models_preprocessors_and_moments(tmp_path: Path) -> None:
     original = make_ippo(tmp_path / "original")
     for timestep in range(4):
-        observations = {
-            uid: jnp.array([[1.0, 2.0], [2.0, -1.0]]) + 0.1 * timestep for uid in original.possible_agents
-        }
+        observations = {uid: jnp.array([[1.0, 2.0], [2.0, -1.0]]) + 0.1 * timestep for uid in original.possible_agents}
         states = {uid: None for uid in original.possible_agents}
         actions, _ = original.act(observations, states, timestep=timestep, timesteps=6)
         original.record_transition(

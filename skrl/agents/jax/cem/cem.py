@@ -10,7 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
-from skrl import logger
+from skrl import config, logger
 from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
@@ -74,6 +74,8 @@ class CEM(Agent):
             device=device,
             cfg=CEM_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
+
+        self._policy_update_key = jax.device_put(config.jax.key, self.device)
 
         # models
         self.policy = self.models.get("policy")
@@ -310,10 +312,11 @@ class CEM(Agent):
         )
 
         # compute policy loss
+        self._policy_update_key, key = jax.random.split(self._policy_update_key)
         grad, policy_loss = _update_policy(
             self.policy.act,
             self.policy.state_dict,
-            {"observations": elite_observations, "states": elite_states},
+            {"observations": elite_observations, "states": elite_states, "key": key},
             elite_actions,
             self.action_space.n,
         )

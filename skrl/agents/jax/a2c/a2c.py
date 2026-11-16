@@ -140,6 +140,8 @@ class A2C(Agent):
             cfg=A2C_CFG(**cfg) if isinstance(cfg, dict) else cfg,
         )
 
+        self._policy_update_key = jax.device_put(config.jax.key, self.device)
+
         # models
         self.policy = self.models.get("policy")
         self.value = self.models.get("value")
@@ -432,10 +434,11 @@ class A2C(Agent):
             }
 
             # compute policy loss
+            self._policy_update_key, key = jax.random.split(self._policy_update_key)
             grad, policy_loss, entropy_loss, kl_divergence, stddev = _update_policy(
                 self.policy.act,
                 self.policy.state_dict,
-                {**inputs, "taken_actions": sampled_actions},
+                {**inputs, "taken_actions": sampled_actions, "key": key},
                 sampled_log_prob,
                 sampled_advantages,
                 self.policy.get_entropy,

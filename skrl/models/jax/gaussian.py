@@ -130,6 +130,7 @@ class GaussianMixin:
             - ``"observations"``: observation of the environment used to make the decision.
             - ``"states"``: state of the environment used to make the decision.
             - ``"taken_actions"``: actions taken by the policy for the given observations/states.
+            - ``"key"``: optional PRNG key for sampling, including calls inside JAX transformations.
         :param role: Role played by the model.
         :param params: Parameters used to compute the output. If not provided, internal parameters will be used.
 
@@ -140,10 +141,12 @@ class GaussianMixin:
             - ``"log_prob"``: log of the probability density function.
             - ``"mean_actions"``: mean actions (network output after optional clipping).
         """
-        with jax.default_device(self.device):
-            self._g_i += 1
-            subkey = jax.random.fold_in(self._g_key, self._g_i)
-            inputs["key"] = subkey
+        subkey = inputs.get("key")
+        if subkey is None:
+            with jax.default_device(self.device):
+                self._g_i += 1
+                subkey = jax.random.fold_in(self._g_key, self._g_i)
+            inputs = {**inputs, "key": subkey}
 
         # map from observations/states to mean actions and log standard deviations
         mean_actions, outputs = self.apply(self.state_dict.params if params is None else params, inputs, role)

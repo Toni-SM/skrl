@@ -3,6 +3,10 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+import jax
+import jax.numpy as jnp
+import numpy as np
+
 from skrl.utils.model_instantiators.jax import (
     categorical_model,
     deterministic_model,
@@ -230,3 +234,39 @@ def test_jax_namespace_in_expressions(capsys, factory):
 
     output = model.act(_sample_inputs("OBSERVATIONS", observation_space, None))
     assert output[0].shape[0] == 10
+
+
+@pytest.mark.parametrize("model_kind", ["gaussian", "categorical", "multicategorical"])
+def test_explicit_random_keys_under_jit(model_kind: str) -> None:
+    """Replay a supplied key and use different samples for a different key."""
+    factory, action_space = {
+        "gaussian": (gaussian_model, spaces.Box(low=-1, high=1, shape=(2,))),
+        "categorical": (categorical_model, spaces.Discrete(5)),
+        "multicategorical": (multicategorical_model, spaces.MultiDiscrete([3, 5])),
+    }[model_kind]
+    model = factory(
+        observation_space=spaces.Box(low=-1, high=1, shape=(1,)),
+        action_space=action_space,
+        device="cpu",
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": []}],
+        output="ACTIONS",
+    )
+    observations = jnp.zeros((64, 1))
+    model.init_state_dict({"observations": observations})
+
+    @jax.jit
+    def sample(key):
+        actions, _ = model.act({"observations": observations, "key": key})
+        return actions
+
+    first_key, second_key = jax.random.split(jax.random.PRNGKey(17))
+    first = np.asarray(sample(first_key))
+    replay = np.asarray(sample(first_key))
+    second = np.asarray(sample(second_key))
+    np.testing.assert_array_equal(first, replay)
+    assert not np.array_equal(first, second)
+
+    inputs = {"observations": observations}
+    implicit_first, _ = model.act(inputs)
+    implicit_second, _ = model.act(inputs)
+    assert not np.array_equal(implicit_first, implicit_second)

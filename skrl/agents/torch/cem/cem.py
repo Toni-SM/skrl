@@ -6,7 +6,6 @@ import gymnasium
 from packaging import version
 
 import torch
-import torch.nn.functional as F
 
 from skrl import logger
 from skrl.agents.torch import Agent
@@ -285,12 +284,14 @@ class CEM(Agent):
 
         with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
 
-            # compute scores for the elite observations/states
-            _, outputs = self.policy.act({"observations": elite_observations, "states": elite_states}, role="policy")
-            scores = outputs["net_output"]
+            # compute log probabilities for the elite actions
+            _, outputs = self.policy.act(
+                {"observations": elite_observations, "states": elite_states, "taken_actions": elite_actions},
+                role="policy",
+            )
 
             # compute policy loss
-            policy_loss = F.cross_entropy(scores, elite_actions.view(-1))
+            policy_loss = -outputs["log_prob"].mean()
 
         # optimization step
         self.optimizer.zero_grad()

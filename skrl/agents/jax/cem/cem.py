@@ -8,7 +8,6 @@ import gymnasium
 import jax
 import jax.numpy as jnp
 import numpy as np
-import optax
 
 from skrl import logger
 from skrl.agents.jax import Agent
@@ -21,17 +20,13 @@ from skrl.utils.framework.jax.types import Device, Tensor
 from .cem_cfg import CEM_CFG
 
 
-@functools.partial(jax.jit, static_argnames=("policy_act", "n"))
-def _update_policy(policy_act, policy_state_dict, inputs, elite_actions, n):
+@functools.partial(jax.jit, static_argnames=("policy_act",))
+def _update_policy(policy_act, policy_state_dict, inputs, elite_actions):
     # compute policy loss
     def _policy_loss(params):
-        # compute scores for the elite observations/states
-        _, outputs = policy_act(inputs, role="policy", params=params)
-        scores = outputs["net_output"]
-
-        # HACK: return optax.softmax_cross_entropy_with_integer_labels(scores, elite_actions).mean()
-        labels = jax.nn.one_hot(elite_actions, n)
-        return optax.softmax_cross_entropy(scores, labels).mean()
+        # compute log probabilities for the elite actions
+        _, outputs = policy_act({**inputs, "taken_actions": elite_actions}, role="policy", params=params)
+        return -outputs["log_prob"].mean()
 
     policy_loss, grad = jax.value_and_grad(_policy_loss, has_aux=False)(policy_state_dict.params)
 
@@ -305,9 +300,7 @@ class CEM(Agent):
             elite_states = np.concatenate([sampled_states[limits[i][0] : limits[i][1]] for i in indexes], axis=0)
         except TypeError:
             elite_states = None
-        elite_actions = np.concatenate([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes], axis=0).reshape(
-            -1
-        )
+        elite_actions = np.concatenate([sampled_actions[limits[i][0] : limits[i][1]] for i in indexes], axis=0)
 
         # compute policy loss
         grad, policy_loss = _update_policy(
@@ -315,7 +308,6 @@ class CEM(Agent):
             self.policy.state_dict,
             {"observations": elite_observations, "states": elite_states},
             elite_actions,
-            self.action_space.n,
         )
 
         # optimization step (policy)

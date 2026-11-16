@@ -71,10 +71,7 @@ def _gaussian(
         # sum
         elif reduction == 1:
             wp.atomic_add(log_prob[i], 0, _log_prob(taken_actions[i, j], loc_ij, scale_j))
-        # prod
-        elif reduction == 2:
-            pass  # TODO: implement prod
-        # none
+        # prod or none
         else:
             log_prob[i, j] = _log_prob(taken_actions[i, j], loc_ij, scale_j)
     else:
@@ -84,12 +81,18 @@ def _gaussian(
         # sum
         elif reduction == 1:
             wp.atomic_add(log_prob[i], 0, _log_prob(actions[i, j], loc_ij, scale_j))
-        # prod
-        elif reduction == 2:
-            pass  # TODO: implement prod
-        # none
+        # prod or none
         else:
             log_prob[i, j] = _log_prob(actions[i, j], loc_ij, scale_j)
+
+
+@wp.kernel
+def _pairwise_product(src: wp.array2d[float], dst: wp.array2d[float]):
+    i, j = wp.tid()
+    if 2 * j + 1 < src.shape[1]:
+        dst[i, j] = src[i, 2 * j] * src[i, 2 * j + 1]
+    else:
+        dst[i, j] = src[i, 2 * j]
 
 
 @wp.kernel
@@ -171,7 +174,7 @@ class GaussianMixin:
         shape = mean_actions.shape
         mean_actions_clipped = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
         actions = wp.empty(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
-        if self._g_reduction == 3:  # none
+        if self._g_reduction in (2, 3):  # prod or none
             log_prob = wp.zeros(shape=shape, dtype=wp.float32, device=self.device, requires_grad=True)
         else:
             log_prob = wp.zeros(shape=(shape[0], 1), dtype=wp.float32, device=self.device, requires_grad=True)
@@ -197,6 +200,19 @@ class GaussianMixin:
             outputs=[mean_actions_clipped, actions, log_prob, scale],
             device=self.device,
         )
+
+        if self._g_reduction == 2:
+            while log_prob.shape[1] > 1:
+                reduced = wp.empty(
+                    shape=(shape[0], (log_prob.shape[1] + 1) // 2),
+                    dtype=wp.float32,
+                    device=self.device,
+                    requires_grad=True,
+                )
+                wp.launch(
+                    _pairwise_product, dim=reduced.shape, inputs=[log_prob], outputs=[reduced], device=self.device
+                )
+                log_prob = reduced
 
         outputs["log_prob"] = log_prob
         outputs["mean_actions"] = mean_actions_clipped

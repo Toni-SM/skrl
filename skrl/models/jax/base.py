@@ -24,7 +24,7 @@ def _vectorize_leaves(leaves: list[Tensor]) -> Tensor:
 def _unvectorize_leaves(leaves: list[Tensor], vector: Tensor) -> list[Tensor]:
     offset = 0
     for i, leaf in enumerate(leaves):
-        leaves[i] = leaves[i].at[:].set(vector.at[0, offset : offset + leaf.size].get().reshape(leaf.shape))
+        leaves[i] = leaves[i].at[...].set(vector.at[0, offset : offset + leaf.size].get().reshape(leaf.shape))
         offset += leaf.size
     return leaves
 

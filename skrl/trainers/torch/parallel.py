@@ -5,6 +5,9 @@ from typing import Any
 import copy
 import dataclasses
 import sys
+import traceback
+from contextlib import contextmanager
+from threading import BrokenBarrierError
 import tqdm
 
 import torch
@@ -18,6 +21,48 @@ from skrl.utils import ScopedTimer
 
 
 def fn_processor(process_index, *args):
+    try:
+        _fn_processor(process_index, *args)
+    except BrokenBarrierError:
+        raise
+    except BaseException:
+        try:
+            args[0][process_index].send({"error": traceback.format_exc()[-8000:], "process_index": process_index})
+        finally:
+            args[2].abort()
+        raise
+
+
+@contextmanager
+def _manage_workers(processes, producer_pipes, consumer_pipes, queues):
+    try:
+        yield
+    except BrokenBarrierError as error:
+        failures = []
+        for pipe in producer_pipes:
+            try:
+                if pipe.poll():
+                    message = pipe.recv()
+                    failures.append(f"Worker {message['process_index']}:\n{message['error']}")
+            except (EOFError, OSError):
+                pass
+        detail = "\n".join(failures) if failures else "A worker failed before completing its current task"
+        raise RuntimeError(f"Parallel trainer worker failure:\n{detail}") from error
+    finally:
+        for process in processes:
+            if process.pid is not None and process.is_alive():
+                process.terminate()
+        for process in processes:
+            if process.pid is not None:
+                process.join()
+        for pipe in producer_pipes + consumer_pipes:
+            pipe.close()
+        for queue in queues:
+            queue.cancel_join_thread()
+            queue.close()
+
+
+def _fn_processor(process_index, *args):
     print(f"[INFO] Processor {process_index}: started")
 
     pipe = args[0][process_index]
@@ -201,7 +246,7 @@ class ParallelTrainer(Trainer):
         processes = []
 
         for i in range(self.num_simultaneous_agents):
-            pipe_read, pipe_write = mp.Pipe(duplex=False)
+            pipe_read, pipe_write = mp.Pipe(duplex=True)
             producer_pipes.append(pipe_write)
             consumer_pipes.append(pipe_read)
             queues.append(mp.Queue())
@@ -216,112 +261,113 @@ class ParallelTrainer(Trainer):
                 except RuntimeError:
                     pass
 
-        # spawn and wait for all processes to start
-        for i in range(self.num_simultaneous_agents):
-            process = mp.Process(
-                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
-            )
-            processes.append(process)
-            process.start()
-        barrier.wait()
-
-        # initialize agents
-        for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
-            pipe.send({"task": "init"})
-            queue.put(agent)
-        barrier.wait()
-
-        # reset the environments
-        observations, infos = self.env.reset()
-        states = self.env.state()
-        if not observations.is_cuda:
-            observations.share_memory_()
-        if states is not None and not states.is_cuda:
-            states.share_memory_()
-
-        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
-
-            # pre-interaction
-            for pipe in producer_pipes:
-                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+        with _manage_workers(processes, producer_pipes, consumer_pipes, queues):
+            # spawn and wait for all processes to start
+            for i in range(self.num_simultaneous_agents):
+                process = mp.Process(
+                    target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
+                )
+                processes.append(process)
+                process.start()
             barrier.wait()
 
-            # compute actions
-            with torch.no_grad():
-                for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send(
-                        {
-                            "task": "act",
-                            "timestep": timestep,
-                            "timesteps": self.cfg.timesteps,
-                        }
-                    )
-                    queue.put(observations)
-                    queue.put(states)
-
-                barrier.wait()
-                actions = torch.vstack([queue.get() for queue in queues])
-
-                # step the environments
-                with ScopedTimer() as timer:
-                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                    next_states = self.env.state()
-
-                # render the environments
-                if not self.cfg.headless and not timestep % self.cfg.render_interval:
-                    self.env.render()
-
-                # record the environments' transitions
-                if not rewards.is_cuda:
-                    rewards.share_memory_()
-                if not next_observations.is_cuda:
-                    next_observations.share_memory_()
-                if next_states is not None and not next_states.is_cuda:
-                    next_states.share_memory_()
-                if not terminated.is_cuda:
-                    terminated.share_memory_()
-                if not truncated.is_cuda:
-                    truncated.share_memory_()
-
-                for pipe, queue in zip(producer_pipes, queues):
-                    pipe.send(
-                        {
-                            "task": "record_transition",
-                            "timestep": timestep,
-                            "timesteps": self.cfg.timesteps,
-                            "env_stepping_time_ms": timer.elapsed_time_ms,
-                        }
-                    )
-                    queue.put(rewards)
-                    queue.put(next_observations)
-                    queue.put(next_states)
-                    queue.put(terminated)
-                    queue.put(truncated)
-                    queue.put(infos)
-                barrier.wait()
-
-            # post-interaction
-            for pipe in producer_pipes:
-                pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+            # initialize agents
+            for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
+                pipe.send({"task": "init"})
+                queue.put(agent)
             barrier.wait()
 
-            # reset environments
-            # - parallel/vectorized environments (single or multi-agent)
-            if self.env.num_envs > 1:
-                observations.copy_(next_observations)
-                if states is not None:
-                    states.copy_(next_states)
-            # - single environment
-            else:
-                raise RuntimeError("Parallel trainer is not supported for single environment")
+            # reset the environments
+            observations, infos = self.env.reset()
+            states = self.env.state()
+            if not observations.is_cuda:
+                observations.share_memory_()
+            if states is not None and not states.is_cuda:
+                states.share_memory_()
 
-        # terminate processes
-        for pipe in producer_pipes:
-            pipe.send({"task": "terminate"})
+            for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
 
-        # join processes
-        for process in processes:
-            process.join()
+                # pre-interaction
+                for pipe in producer_pipes:
+                    pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+                barrier.wait()
+
+                # compute actions
+                with torch.no_grad():
+                    for pipe, queue in zip(producer_pipes, queues):
+                        pipe.send(
+                            {
+                                "task": "act",
+                                "timestep": timestep,
+                                "timesteps": self.cfg.timesteps,
+                            }
+                        )
+                        queue.put(observations)
+                        queue.put(states)
+
+                    barrier.wait()
+                    actions = torch.vstack([queue.get() for queue in queues])
+
+                    # step the environments
+                    with ScopedTimer() as timer:
+                        next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                        next_states = self.env.state()
+
+                    # render the environments
+                    if not self.cfg.headless and not timestep % self.cfg.render_interval:
+                        self.env.render()
+
+                    # record the environments' transitions
+                    if not rewards.is_cuda:
+                        rewards.share_memory_()
+                    if not next_observations.is_cuda:
+                        next_observations.share_memory_()
+                    if next_states is not None and not next_states.is_cuda:
+                        next_states.share_memory_()
+                    if not terminated.is_cuda:
+                        terminated.share_memory_()
+                    if not truncated.is_cuda:
+                        truncated.share_memory_()
+
+                    for pipe, queue in zip(producer_pipes, queues):
+                        pipe.send(
+                            {
+                                "task": "record_transition",
+                                "timestep": timestep,
+                                "timesteps": self.cfg.timesteps,
+                                "env_stepping_time_ms": timer.elapsed_time_ms,
+                            }
+                        )
+                        queue.put(rewards)
+                        queue.put(next_observations)
+                        queue.put(next_states)
+                        queue.put(terminated)
+                        queue.put(truncated)
+                        queue.put(infos)
+                    barrier.wait()
+
+                # post-interaction
+                for pipe in producer_pipes:
+                    pipe.send({"task": "post_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+                barrier.wait()
+
+                # reset environments
+                # - parallel/vectorized environments (single or multi-agent)
+                if self.env.num_envs > 1:
+                    observations.copy_(next_observations)
+                    if states is not None:
+                        states.copy_(next_states)
+                # - single environment
+                else:
+                    raise RuntimeError("Parallel trainer is not supported for single environment")
+
+            # terminate processes
+            for pipe in producer_pipes:
+                pipe.send({"task": "terminate"})
+
+            # join processes
+            for process in processes:
+                process.join()
 
     def eval(self) -> None:
         """Evaluate agents sequentially.
@@ -356,7 +402,7 @@ class ParallelTrainer(Trainer):
         processes = []
 
         for i in range(self.num_simultaneous_agents):
-            pipe_read, pipe_write = mp.Pipe(duplex=False)
+            pipe_read, pipe_write = mp.Pipe(duplex=True)
             producer_pipes.append(pipe_write)
             consumer_pipes.append(pipe_read)
             queues.append(mp.Queue())
@@ -372,106 +418,107 @@ class ParallelTrainer(Trainer):
                     except RuntimeError:
                         pass
 
-        # spawn and wait for all processes to start
-        for i in range(self.num_simultaneous_agents):
-            process = mp.Process(
-                target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
-            )
-            processes.append(process)
-            process.start()
-        barrier.wait()
-
-        # initialize agents
-        for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
-            pipe.send({"task": "init"})
-            queue.put(agent)
-        barrier.wait()
-
-        # reset the environments
-        observations, infos = self.env.reset()
-        states = self.env.state()
-        if not observations.is_cuda:
-            observations.share_memory_()
-        if states is not None and not states.is_cuda:
-            states.share_memory_()
-
-        for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
-
-            # pre-interaction
-            for pipe in producer_pipes:
-                pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+        with _manage_workers(processes, producer_pipes, consumer_pipes, queues):
+            # spawn and wait for all processes to start
+            for i in range(self.num_simultaneous_agents):
+                process = mp.Process(
+                    target=fn_processor, args=(i, consumer_pipes, queues, barrier, self.scopes, self.cfg), daemon=True
+                )
+                processes.append(process)
+                process.start()
             barrier.wait()
 
-            # compute actions
-            with torch.no_grad():
+            # initialize agents
+            for pipe, queue, agent in zip(producer_pipes, queues, self.agents):
+                pipe.send({"task": "init"})
+                queue.put(agent)
+            barrier.wait()
+
+            # reset the environments
+            observations, infos = self.env.reset()
+            states = self.env.state()
+            if not observations.is_cuda:
+                observations.share_memory_()
+            if states is not None and not states.is_cuda:
+                states.share_memory_()
+
+            for timestep in tqdm.tqdm(range(self.cfg.timesteps), disable=self.cfg.disable_progressbar, file=sys.stdout):
+
+                # pre-interaction
+                for pipe in producer_pipes:
+                    pipe.send({"task": "pre_interaction", "timestep": timestep, "timesteps": self.cfg.timesteps})
+                barrier.wait()
+
+                # compute actions
+                with torch.no_grad():
+                    for pipe, queue in zip(producer_pipes, queues):
+                        pipe.send(
+                            {
+                                "task": "act",
+                                "timestep": timestep,
+                                "timesteps": self.cfg.timesteps,
+                                "stochastic_evaluation": self.cfg.stochastic_evaluation,
+                            }
+                        )
+                        queue.put(observations)
+                        queue.put(states)
+
+                    barrier.wait()
+                    actions = torch.vstack([queue.get() for queue in queues])
+
+                    # step the environments
+                    with ScopedTimer() as timer:
+                        next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
+                        next_states = self.env.state()
+
+                    # render the environments
+                    if not self.cfg.headless and not timestep % self.cfg.render_interval:
+                        self.env.render()
+
+                    # write data to TensorBoard
+                    if not rewards.is_cuda:
+                        rewards.share_memory_()
+                    if not next_observations.is_cuda:
+                        next_observations.share_memory_()
+                    if next_states is not None and not next_states.is_cuda:
+                        next_states.share_memory_()
+                    if not terminated.is_cuda:
+                        terminated.share_memory_()
+                    if not truncated.is_cuda:
+                        truncated.share_memory_()
+
+                # post-interaction
                 for pipe, queue in zip(producer_pipes, queues):
                     pipe.send(
                         {
-                            "task": "act",
+                            "task": "eval-record_transition-post_interaction",
                             "timestep": timestep,
                             "timesteps": self.cfg.timesteps,
-                            "stochastic_evaluation": self.cfg.stochastic_evaluation,
+                            "env_stepping_time_ms": timer.elapsed_time_ms,
                         }
                     )
-                    queue.put(observations)
-                    queue.put(states)
-
+                    queue.put(rewards)
+                    queue.put(next_observations)
+                    queue.put(next_states)
+                    queue.put(terminated)
+                    queue.put(truncated)
+                    queue.put(infos)
                 barrier.wait()
-                actions = torch.vstack([queue.get() for queue in queues])
 
-                # step the environments
-                with ScopedTimer() as timer:
-                    next_observations, rewards, terminated, truncated, infos = self.env.step(actions)
-                    next_states = self.env.state()
+                # reset environments
+                # - parallel/vectorized environments (single or multi-agent)
+                if self.env.num_envs > 1:
+                    observations.copy_(next_observations)
+                    if states is not None:
+                        states.copy_(next_states)
+                # - single environment
+                else:
+                    raise RuntimeError("Parallel trainer is not supported for single environment")
 
-                # render the environments
-                if not self.cfg.headless and not timestep % self.cfg.render_interval:
-                    self.env.render()
+            # terminate processes
+            for pipe in producer_pipes:
+                pipe.send({"task": "terminate"})
 
-                # write data to TensorBoard
-                if not rewards.is_cuda:
-                    rewards.share_memory_()
-                if not next_observations.is_cuda:
-                    next_observations.share_memory_()
-                if next_states is not None and not next_states.is_cuda:
-                    next_states.share_memory_()
-                if not terminated.is_cuda:
-                    terminated.share_memory_()
-                if not truncated.is_cuda:
-                    truncated.share_memory_()
-
-            # post-interaction
-            for pipe, queue in zip(producer_pipes, queues):
-                pipe.send(
-                    {
-                        "task": "eval-record_transition-post_interaction",
-                        "timestep": timestep,
-                        "timesteps": self.cfg.timesteps,
-                        "env_stepping_time_ms": timer.elapsed_time_ms,
-                    }
-                )
-                queue.put(rewards)
-                queue.put(next_observations)
-                queue.put(next_states)
-                queue.put(terminated)
-                queue.put(truncated)
-                queue.put(infos)
-            barrier.wait()
-
-            # reset environments
-            # - parallel/vectorized environments (single or multi-agent)
-            if self.env.num_envs > 1:
-                observations.copy_(next_observations)
-                if states is not None:
-                    states.copy_(next_states)
-            # - single environment
-            else:
-                raise RuntimeError("Parallel trainer is not supported for single environment")
-
-        # terminate processes
-        for pipe in producer_pipes:
-            pipe.send({"task": "terminate"})
-
-        # join processes
-        for process in processes:
-            process.join()
+            # join processes
+            for process in processes:
+                process.join()

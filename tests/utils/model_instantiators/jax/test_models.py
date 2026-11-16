@@ -247,10 +247,7 @@ def test_zero_probability_actions_are_never_sampled(
     probabilities = [1.0] + [0.0] * 7
     if multicategorical:
         probabilities += [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-    output = (
-        f"jnp.broadcast_to(jnp.array({probabilities}, dtype=jnp.bfloat16), "
-        f"(net.shape[0], {len(probabilities)}))"
-    )
+    output = f"jnp.broadcast_to(jnp.array({probabilities}, dtype=jnp.bfloat16), (net.shape[0], {len(probabilities)}))"
     if unnormalized_log_prob:
         output = f"jnp.log({output})"
     factory = multicategorical_model if multicategorical else categorical_model

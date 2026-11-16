@@ -384,9 +384,11 @@ class Runner:
         if "class" not in cfg["memory"]:
             raise ValueError(f"The 'memory.class' field is not defined in the specified configuration")
         memory_class = self._component(cfg["memory"]["class"])
+        # resolve agent defaults before deriving the memory size
+        agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
         # instantiate memory
         if cfg["memory"]["memory_size"] < 0:
-            cfg["memory"]["memory_size"] = cfg["agent"]["rollouts"]  # memory_size is the agent's number of rollouts
+            cfg["memory"]["memory_size"] = agent_cfg["rollouts"]  # memory_size is the agent's number of rollouts
         memories = {
             agent_id: memory_class(num_envs=num_envs, device=device, **self._process_cfg(cfg["memory"]))
             for agent_id in possible_agents
@@ -395,7 +397,6 @@ class Runner:
         # single-agent configuration and instantiation
         if agent_class in ["ddpg", "ppo", "sac"]:
             agent_id = possible_agents[0]
-            agent_cfg = dataclasses.asdict(self._component(f"{agent_class}_CFG")(**self._process_cfg(cfg["agent"])))
             agent_cfg.get("observation_preprocessor_kwargs", {}).update(
                 {"size": observation_spaces[agent_id], "device": device}
             )

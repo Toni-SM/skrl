@@ -3,6 +3,11 @@ import pytest
 import yaml
 from gymnasium import spaces
 
+import jax
+import jax.numpy as jnp
+import numpy as np
+
+from skrl import config
 from skrl.utils.model_instantiators.jax import (
     categorical_model,
     deterministic_model,
@@ -230,3 +235,34 @@ def test_jax_namespace_in_expressions(capsys, factory):
 
     output = model.act(_sample_inputs("OBSERVATIONS", observation_space, None))
     assert output[0].shape[0] == 10
+
+
+@pytest.mark.parametrize("multicategorical", [False, True])
+@pytest.mark.parametrize("unnormalized_log_prob", [False, True])
+def test_zero_probability_actions_are_never_sampled(
+    monkeypatch: pytest.MonkeyPatch, multicategorical: bool, unnormalized_log_prob: bool
+) -> None:
+    """Keep excluded actions outside the sampling support for low-precision policies."""
+    monkeypatch.setattr(config.jax, "key", jax.random.PRNGKey(0))
+    probabilities = [1.0] + [0.0] * 7
+    if multicategorical:
+        probabilities += [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+    output = f"jnp.broadcast_to(jnp.array({probabilities}, dtype=jnp.bfloat16), (net.shape[0], {len(probabilities)}))"
+    if unnormalized_log_prob:
+        output = f"jnp.log({output})"
+    factory = multicategorical_model if multicategorical else categorical_model
+    model = factory(
+        observation_space=spaces.Box(low=-1, high=1, shape=(1,)),
+        action_space=spaces.MultiDiscrete([8, 8]) if multicategorical else spaces.Discrete(8),
+        device="cpu",
+        unnormalized_log_prob=unnormalized_log_prob,
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": ["flatten"]}],
+        output=output,
+    )
+    observations = jnp.zeros((1024, 1))
+    model.init_state_dict({"observations": observations})
+    actions, outputs = model.act({"observations": observations})
+
+    expected = np.tile([0, 3] if multicategorical else [0], (1024, 1))
+    np.testing.assert_array_equal(actions, expected)
+    assert np.isfinite(outputs["log_prob"]).all()

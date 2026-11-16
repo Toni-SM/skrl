@@ -19,14 +19,16 @@ def _categorical(net_output, unnormalized_log_prob, taken_actions, key):
     # normalize
     if unnormalized_log_prob:
         logits = net_output - jax.scipy.special.logsumexp(net_output, axis=-1, keepdims=True)
+        sampling_logits = logits
         # probs = jax.nn.softmax(logits)
     else:
         probs = net_output / net_output.sum(-1, keepdims=True)
+        sampling_logits = jnp.log(probs)
         eps = jnp.finfo(probs.dtype).eps
         logits = jnp.log(probs.clip(min=eps, max=1 - eps))
 
     # sample actions
-    actions = jax.random.categorical(key, logits, axis=-1, shape=None)
+    actions = jax.random.categorical(key, sampling_logits, axis=-1, shape=None)
 
     # log of the probability density function
     taken_actions = actions if taken_actions is None else taken_actions.astype(jnp.int32).reshape(-1)

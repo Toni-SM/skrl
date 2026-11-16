@@ -15,13 +15,48 @@ from skrl.utils.spaces.warp import compute_space_size, flatten_tensorized_space,
 
 
 @wp.kernel
-def _polyak_averaging(
-    parameters: wp.array2d[float],
-    model_parameters: wp.array2d[float],
-    polyak: float,
+def _polyak_averaging_1d(
+    parameters: wp.array1d[Any],
+    model_parameters: wp.array1d[Any],
+    polyak: Any,
+):
+    i = wp.tid()
+    parameters[i] = (parameters.dtype(1.0) - polyak) * parameters[i] + polyak * model_parameters[i]
+
+
+@wp.kernel
+def _polyak_averaging_2d(
+    parameters: wp.array2d[Any],
+    model_parameters: wp.array2d[Any],
+    polyak: Any,
 ):
     i, j = wp.tid()
-    parameters[i, j] = (1.0 - polyak) * parameters[i, j] + polyak * model_parameters[i, j]
+    parameters[i, j] = (parameters.dtype(1.0) - polyak) * parameters[i, j] + polyak * model_parameters[i, j]
+
+
+@wp.kernel
+def _polyak_averaging_3d(
+    parameters: wp.array3d[Any],
+    model_parameters: wp.array3d[Any],
+    polyak: Any,
+):
+    i, j, k = wp.tid()
+    parameters[i, j, k] = (parameters.dtype(1.0) - polyak) * parameters[i, j, k] + polyak * model_parameters[i, j, k]
+
+
+@wp.kernel
+def _polyak_averaging_4d(
+    parameters: wp.array4d[Any],
+    model_parameters: wp.array4d[Any],
+    polyak: Any,
+):
+    i, j, k, l = wp.tid()
+    parameters[i, j, k, l] = (parameters.dtype(1.0) - polyak) * parameters[i, j, k, l] + polyak * model_parameters[
+        i, j, k, l
+    ]
+
+
+_POLYAK_AVERAGING = [None, _polyak_averaging_1d, _polyak_averaging_2d, _polyak_averaging_3d, _polyak_averaging_4d]
 
 
 class Model(nn.Module, ABC):
@@ -364,9 +399,9 @@ class Model(nn.Module, ABC):
         else:
             for parameters, model_parameters in zip(self.parameters(), model.parameters()):
                 wp.launch(
-                    _polyak_averaging,
+                    _POLYAK_AVERAGING[parameters.ndim],
                     dim=parameters.shape,
-                    inputs=[parameters, model_parameters, polyak],
+                    inputs=[parameters, model_parameters, parameters.dtype(polyak)],
                     device=self.device,
                 )
 

@@ -173,13 +173,16 @@ class Agent(ABC):
         """
         return _input
 
-    def _get_internal_value(self, _module: Any) -> Any:
+    def _get_internal_value(self, _module: Any, *, name: str | None = None) -> Any:
         """Get internal module/variable state/value.
 
         :param _module: Module or variable.
+        :param name: Registered module name used to resolve an updated immutable optimizer.
 
         :return: Module/variable state/value.
         """
+        if isinstance(_module, flax.struct.PyTreeNode) and name is not None:
+            _module = getattr(self, name, _module)
         return _module.state_dict.params if hasattr(_module, "state_dict") else _module
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
@@ -281,11 +284,13 @@ class Agent(ABC):
         if self.cfg.experiment.store_separately:
             for name, module in self.checkpoint_modules.items():
                 with open(os.path.join(self.experiment_dir, "checkpoints", f"{name}_{tag}.pickle"), "wb") as file:
-                    pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
+                    pickle.dump(
+                        flax.serialization.to_bytes(self._get_internal_value(module, name=name)), file, protocol=4
+                    )
         # whole agent
         else:
             modules = {
-                name: flax.serialization.to_bytes(self._get_internal_value(module))
+                name: flax.serialization.to_bytes(self._get_internal_value(module, name=name))
                 for name, module in self.checkpoint_modules.items()
             }
             with open(os.path.join(self.experiment_dir, "checkpoints", f"agent_{tag}.pickle"), "wb") as file:
@@ -432,7 +437,7 @@ class Agent(ABC):
         """
         modules = {}
         for name, module in self.checkpoint_modules.items():
-            modules[name] = flax.serialization.to_bytes(self._get_internal_value(module))
+            modules[name] = flax.serialization.to_bytes(self._get_internal_value(module, name=name))
 
         # HACK: Does it make sense to use https://github.com/google/orbax
         # file.write(flax.serialization.to_bytes(modules))
@@ -452,7 +457,12 @@ class Agent(ABC):
                 if module is not None:
                     if hasattr(module, "state_dict"):
                         params = flax.serialization.from_bytes(module.state_dict.params, data)
-                        module.state_dict = module.state_dict.replace(params=params)
+                        module.state_dict = module.state_dict.replace(params=jax.device_put(params, self.device))
+                    elif isinstance(module, flax.struct.PyTreeNode):
+                        module = jax.device_put(flax.serialization.from_bytes(module, data), self.device)
+                        self.checkpoint_modules[name] = module
+                        if hasattr(self, name):
+                            setattr(self, name, module)
                     else:
                         pass  # TODO: raise NotImplementedError
                 else:
@@ -486,7 +496,8 @@ class Agent(ABC):
                 self.checkpoint_best_modules["saved"] = False
                 with jax.default_device(self.device):
                     self.checkpoint_best_modules["modules"] = {
-                        k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules.items()
+                        k: copy.deepcopy(self._get_internal_value(v, name=k))
+                        for k, v in self.checkpoint_modules.items()
                     }
             # write checkpoints
             self.write_checkpoint(timestep=timestep, timesteps=timesteps)

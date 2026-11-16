@@ -209,13 +209,19 @@ class MultiAgent(ABC):
         """
         return _input
 
-    def _get_internal_value(self, _module: Any) -> Any:
+    def _get_internal_value(self, _module: Any, *, name: str | None = None, uid: str | None = None) -> Any:
         """Get internal module/variable state/value.
 
         :param _module: Module or variable.
+        :param name: Registered module name used to resolve an updated immutable optimizer.
+        :param uid: Agent ID.
 
         :return: Module/variable state/value.
         """
+        if isinstance(_module, flax.struct.PyTreeNode) and name is not None:
+            modules = getattr(self, name, None)
+            if isinstance(modules, dict):
+                _module = modules.get(uid, _module)
         return _module.state_dict.params if hasattr(_module, "state_dict") else _module
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
@@ -324,12 +330,16 @@ class MultiAgent(ABC):
                     with open(
                         os.path.join(self.experiment_dir, "checkpoints", f"{uid}_{name}_{tag}.pickle"), "wb"
                     ) as file:
-                        pickle.dump(flax.serialization.to_bytes(self._get_internal_value(module)), file, protocol=4)
+                        pickle.dump(
+                            flax.serialization.to_bytes(self._get_internal_value(module, name=name, uid=uid)),
+                            file,
+                            protocol=4,
+                        )
         # whole agent
         else:
             modules = {
                 uid: {
-                    name: flax.serialization.to_bytes(self._get_internal_value(module))
+                    name: flax.serialization.to_bytes(self._get_internal_value(module, name=name, uid=uid))
                     for name, module in self.checkpoint_modules[uid].items()
                 }
                 for uid in self.possible_agents
@@ -488,7 +498,7 @@ class MultiAgent(ABC):
         """
         modules = {
             uid: {
-                name: flax.serialization.to_bytes(self._get_internal_value(module))
+                name: flax.serialization.to_bytes(self._get_internal_value(module, name=name, uid=uid))
                 for name, module in self.checkpoint_modules[uid].items()
             }
             for uid in self.possible_agents
@@ -518,9 +528,15 @@ class MultiAgent(ABC):
                 for name, data in modules[uid].items():
                     module = self.checkpoint_modules[uid].get(name)
                     if module is not None:
-                        if hasattr(module, "load_state_dict"):
+                        if hasattr(module, "state_dict"):
                             params = flax.serialization.from_bytes(module.state_dict.params, data)
-                            module.state_dict = module.state_dict.replace(params=params)
+                            module.state_dict = module.state_dict.replace(params=jax.device_put(params, self.device))
+                        elif isinstance(module, flax.struct.PyTreeNode):
+                            module = jax.device_put(flax.serialization.from_bytes(module, data), self.device)
+                            self.checkpoint_modules[uid][name] = module
+                            modules_by_agent = getattr(self, name, None)
+                            if isinstance(modules_by_agent, dict):
+                                modules_by_agent[uid] = module
                         else:
                             raise NotImplementedError
                     else:
@@ -554,7 +570,8 @@ class MultiAgent(ABC):
                 self.checkpoint_best_modules["saved"] = False
                 self.checkpoint_best_modules["modules"] = {
                     uid: {
-                        k: copy.deepcopy(self._get_internal_value(v)) for k, v in self.checkpoint_modules[uid].items()
+                        k: copy.deepcopy(self._get_internal_value(v, name=k, uid=uid))
+                        for k, v in self.checkpoint_modules[uid].items()
                     }
                     for uid in self.possible_agents
                 }

@@ -3,6 +3,7 @@ import hypothesis.strategies as st
 import pytest
 
 import dataclasses
+import math
 import gymnasium
 
 import torch
@@ -13,7 +14,7 @@ from skrl.memories.torch import RandomMemory
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from skrl.trainers.torch import SequentialTrainer
-from skrl.utils.model_instantiators.torch import categorical_model
+from skrl.utils.model_instantiators.torch import categorical_model, multicategorical_model
 
 from ...utilities import SingleAgentEnv, check_config_keys, get_test_mixed_precision, is_device_available
 
@@ -163,3 +164,67 @@ def test_agent(
         ]
         if not any(message in str(e) for message in error_messages):
             raise e
+
+
+@pytest.mark.parametrize("multicategorical", [False, True])
+@pytest.mark.parametrize("unnormalized_log_prob", [False, True])
+def test_elite_action_likelihood(multicategorical: bool, unnormalized_log_prob: bool) -> None:
+    """Train on elite actions using their categorical or joint categorical likelihood."""
+    observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,))
+    action_space = gymnasium.spaces.MultiDiscrete([2, 3]) if multicategorical else gymnasium.spaces.Discrete(2)
+    factory = multicategorical_model if multicategorical else categorical_model
+    policy = factory(
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        unnormalized_log_prob=unnormalized_log_prob,
+        network=[{"name": "net", "input": "OBSERVATIONS", "layers": []}],
+        output="ACTIONS" if unnormalized_log_prob else "torch.softmax(ACTIONS, dim=-1)",
+    )
+    observations = torch.zeros((1, 1))
+    policy.init_state_dict({"observations": observations})
+    linear = next(module for module in policy.modules() if isinstance(module, torch.nn.Linear))
+    weights = [2.0, 1.0, 3.0, 2.0, 1.0] if multicategorical else [2.0, 1.0]
+    initial_bias = torch.tensor(weights).log()
+    with torch.no_grad():
+        linear.weight.zero_()
+        linear.bias.copy_(initial_bias)
+
+    agent = Agent(
+        models={"policy": policy},
+        memory=RandomMemory(memory_size=2, num_envs=1, device="cpu"),
+        observation_space=observation_space,
+        action_space=action_space,
+        device="cpu",
+        cfg={
+            "rollouts": 2,
+            "discount_factor": 1.0,
+            "percentile": 0.0,
+            "experiment": {"write_interval": 0, "checkpoint_interval": 0},
+        },
+    )
+    agent.init()
+    agent.enable_training_mode()
+    for timestep in range(2):
+        agent.pre_interaction(timestep=timestep, timesteps=2)
+        agent.record_transition(
+            observations=observations,
+            states=None,
+            actions=torch.zeros((1, 2 if multicategorical else 1), dtype=torch.int64),
+            rewards=torch.ones((1, 1)),
+            next_observations=observations,
+            next_states=None,
+            terminated=torch.tensor([[timestep == 1]]),
+            truncated=torch.zeros((1, 1), dtype=torch.bool),
+            infos={},
+            timestep=timestep,
+            timesteps=2,
+        )
+        agent.post_interaction(timestep=timestep, timesteps=2)
+
+    expected_loss = math.log(3.0 if multicategorical else 1.5)
+    assert agent.tracking_data["Loss / Policy loss"] == pytest.approx([expected_loss], rel=1e-6)
+    expected_gradient = [-1 / 3, 1 / 3, -1 / 2, 1 / 3, 1 / 6] if multicategorical else [-1 / 3, 1 / 3]
+    torch.testing.assert_close(linear.bias.grad, torch.tensor(expected_gradient))
+    assert torch.isfinite(linear.bias).all()
+    assert not torch.equal(linear.bias.detach(), initial_bias)

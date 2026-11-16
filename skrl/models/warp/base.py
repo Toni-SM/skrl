@@ -51,9 +51,9 @@ def _polyak_averaging_4d(
     polyak: Any,
 ):
     i, j, k, l = wp.tid()
-    parameters[i, j, k, l] = (
-        (parameters.dtype(1.0) - polyak) * parameters[i, j, k, l] + polyak * model_parameters[i, j, k, l]
-    )
+    parameters[i, j, k, l] = (parameters.dtype(1.0) - polyak) * parameters[i, j, k, l] + polyak * model_parameters[
+        i, j, k, l
+    ]
 
 
 _POLYAK_AVERAGING = [None, _polyak_averaging_1d, _polyak_averaging_2d, _polyak_averaging_3d, _polyak_averaging_4d]

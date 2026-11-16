@@ -134,4 +134,9 @@ class RunningStandardScaler(nn.Module):
         if no_grad:
             with torch.no_grad():
                 return self._compute(x, train=train, inverse=inverse)
-        return self._compute(x, train=train, inverse=inverse)
+        output = self._compute(x, train=train, inverse=inverse)
+        if train:
+            # Preserve current-batch derivatives without retaining the graph in persistent statistics.
+            self.running_mean = self.running_mean.detach()
+            self.running_variance = self.running_variance.detach()
+        return output

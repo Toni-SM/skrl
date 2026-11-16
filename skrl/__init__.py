@@ -178,7 +178,7 @@ class _Config(object):
         class JAX(object):
             def __init__(self) -> None:
                 """JAX configuration."""
-                self._key: np.ndarray | jax.Array = np.array([0, 0], dtype=np.uint32)
+                self._key: int | np.ndarray | jax.Array = 0
                 # distributed config (based on torch.distributed, since JAX doesn't implement it)
                 # JAX doesn't automatically start multiple processes from a single program invocation
                 # https://jax.readthedocs.io/en/latest/multi_process.html#launching-jax-processes
@@ -263,23 +263,27 @@ class _Config(object):
             @device.setter
             def device(self, device: str | jax.Device) -> None:
                 self._device = device
-                if not isinstance(self._key, np.ndarray):
+                if not isinstance(self._key, (int, np.ndarray)):
                     import jax
 
-                    self._key = np.asarray(jax.device_get(self._key))
+                    self._key = jax.device_put(self._key, self.device)
 
             @property
             def key(self) -> jax.Array:
                 """Pseudo-random number generator (PRNG) key.
 
-                Key is formatted as 32-bit unsigned integer and the default device is used.
+                Numeric values are seeds; array values preserve the complete key state.
+                NumPy keys are placed on the default device without reseeding.
                 """
-                if isinstance(self._key, np.ndarray):
+                if isinstance(self._key, (int, np.ndarray)):
                     try:
                         import jax
 
-                        with jax.default_device(self.device):
-                            self._key = jax.random.PRNGKey(self._key[1])
+                        if isinstance(self._key, int):
+                            with jax.default_device(self.device):
+                                self._key = jax.random.PRNGKey(self._key)
+                        else:
+                            self._key = jax.device_put(self._key, self.device)
                     except ImportError:
                         pass
                 return self._key
@@ -287,7 +291,7 @@ class _Config(object):
             @key.setter
             def key(self, value: int | float | np.ndarray | jax.Array) -> None:
                 if isinstance(value, (int, float)):
-                    value = np.array([0, value], dtype=np.uint32)
+                    value = np.asarray(value, dtype=np.uint32).item()
                 self._key = value
 
             @property

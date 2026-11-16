@@ -1,9 +1,9 @@
 import pytest
 
-import numpy as np
 import yaml
 from gymnasium import spaces
 
+import numpy as np
 import warp as wp
 
 from skrl import config
@@ -235,8 +235,8 @@ def test_nested_model_expressions(expression: str) -> None:
         if expression == "input"
         else "OBSERVATIONS"
     )
-    output_expression = "net" if expression == "input" else "tanh(concatenate([net, net]))"
-    repeats = 3 if expression == "input" else 2
+    output_expression = "net" if expression == "input" else "concatenate([net, concatenate([net, net])])"
+    repeats = 3
     model = deterministic_model(
         observation_space=spaces.Box(low=-1, high=1, shape=(2,)),
         action_space=spaces.Box(low=-1, high=1, shape=(2 * repeats,)),
@@ -248,6 +248,4 @@ def test_nested_model_expressions(expression: str) -> None:
     model.init_state_dict({"observations": observations})
     actions, _ = model.act({"observations": observations})
     expected = np.tile(observations.numpy(), (1, repeats))
-    if expression == "output":
-        expected = np.tanh(expected)
     np.testing.assert_allclose(actions.numpy(), expected, rtol=1e-6, atol=1e-6)

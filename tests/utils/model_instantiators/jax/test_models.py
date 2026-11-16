@@ -1,10 +1,10 @@
 import pytest
 
-import numpy as np
 import yaml
 from gymnasium import spaces
 
 import jax.numpy as jnp
+import numpy as np
 
 from skrl.utils.model_instantiators.jax import (
     categorical_model,

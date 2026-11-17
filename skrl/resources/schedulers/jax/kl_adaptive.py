@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 import optax
 
@@ -50,7 +52,22 @@ def KLAdaptiveLR(
                 lr = min(lr * lr_factor, max_lr)
         return lr
 
+    schedule.kl_adaptive = True  # pyright: ignore[reportFunctionMemberAccess]
     return schedule
+
+
+def is_kl_adaptive(schedule: Callable[..., float]) -> bool:
+    """Check whether a schedule is KL-adaptive.
+
+    A schedule is KL-adaptive if it has a ``kl_adaptive`` attribute set to exactly ``True``
+    (e.g.: schedules returned by :py:func:`KLAdaptiveLR`).
+    Custom KL-adaptive schedules can opt in by defining such an attribute.
+
+    :param schedule: Schedule to check.
+
+    :return: Whether the schedule is KL-adaptive.
+    """
+    return getattr(schedule, "kl_adaptive", False) is True
 
 
 # Alias to maintain naming compatibility with Optax schedulers

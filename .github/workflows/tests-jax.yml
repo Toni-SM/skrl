@@ -91,7 +91,7 @@ jobs:
           --cov=skrl/trainers/jax \
           --cov-report term:skip-covered \
           --cov-report html:jax-minimum-components-trainers-coverage.html \
-          tests/trainers/jax
+          tests/trainers/jax tests/resources/schedulers/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -276,7 +276,7 @@ jobs:
           --cov=skrl/trainers/jax \
           --cov-report term:skip-covered \
           --cov-report html:jax-latest-components-trainers-coverage.html \
-          tests/trainers/jax
+          tests/trainers/jax tests/resources/schedulers/jax
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

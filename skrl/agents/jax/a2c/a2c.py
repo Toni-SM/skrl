@@ -16,7 +16,7 @@ from skrl.agents.jax import Agent
 from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.resources.optimizers.jax import Adam
-from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.resources.schedulers.jax import KLAdaptiveLR, is_kl_adaptive
 from skrl.utils import ScopedTimer
 from skrl.utils.framework.jax.types import Device, Tensor
 
@@ -180,15 +180,15 @@ class A2C(Agent):
             self.policy_scheduler = self.cfg.learning_rate_scheduler[0]
             self.policy_scheduler_type = None
             if self.policy_scheduler is not None:
-                if "kladaptive" in self.policy_scheduler.__qualname__.lower().replace("_", ""):
-                    self.policy_scheduler_type = KLAdaptiveLR
                 self.policy_scheduler = self.policy_scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
+                if is_kl_adaptive(self.policy_scheduler):
+                    self.policy_scheduler_type = KLAdaptiveLR
             self.value_scheduler = self.cfg.learning_rate_scheduler[1]
             self.value_scheduler_type = None
             if self.value_scheduler is not None:
-                if "kladaptive" in self.value_scheduler.__qualname__.lower().replace("_", ""):
-                    self.value_scheduler_type = KLAdaptiveLR
                 self.value_scheduler = self.value_scheduler(**self.cfg.learning_rate_scheduler_kwargs[1])
+                if is_kl_adaptive(self.value_scheduler):
+                    self.value_scheduler_type = KLAdaptiveLR
 
         # set up preprocessors
         # - observations

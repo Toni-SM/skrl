@@ -14,7 +14,7 @@ import skrl.utils.framework.warp as warp_utils
 from skrl.agents.warp import Agent
 from skrl.memories.warp import Memory
 from skrl.models.warp import Model
-from skrl.resources.schedulers.warp import KLAdaptiveLR
+from skrl.resources.schedulers.warp import KLAdaptiveLR, is_kl_adaptive
 from skrl.utils import ScopedTimer
 from skrl.utils.framework.warp.types import Device, Tensor
 
@@ -241,7 +241,7 @@ class PPO(Agent):
             self.scheduler_type = None
             if self.scheduler is not None:
                 self.scheduler = self.scheduler(**self.cfg.learning_rate_scheduler_kwargs[0])
-                if "kladaptive" in getattr(self.scheduler, "__qualname__", "").lower().replace("_", ""):
+                if is_kl_adaptive(self.scheduler):
                     self.scheduler_type = KLAdaptiveLR
 
             # training variables

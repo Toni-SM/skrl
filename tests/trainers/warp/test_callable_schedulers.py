@@ -16,6 +16,17 @@ class Schedule:
         return 0.001
 
 
+class MarkedSchedule:
+    kl_adaptive = True
+
+    def __call__(self, count, *, lr=None, kl=None):
+        return 1.0 if lr is None else 0.0005
+
+
+def kl_adaptive_name_only_schedule(count):
+    return 0.001
+
+
 class SchedulerFactory:
     def __init__(self, adaptive):
         self.adaptive = adaptive
@@ -34,13 +45,29 @@ def scheduler_config(kind):
         return SchedulerFactory(adaptive=True), kwargs
     if kind == "wrapper":
         return lambda **kw: KLAdaptiveLR(**kw), kwargs
+    if kind == "marked_callable":
+        return lambda **kw: MarkedSchedule(), {}
+    if kind == "ordinary_misleading_name":
+        return lambda **kw: kl_adaptive_name_only_schedule, {}
     if kind == "ordinary_partial":
         return functools.partial(SchedulerFactory(adaptive=False)), {}
     return SchedulerFactory(adaptive=False), {}
 
 
 @pytest.mark.parametrize("algorithm", ["PPO"])
-@pytest.mark.parametrize("kind", ["direct", "partial", "callable", "wrapper", "ordinary_partial", "ordinary_callable"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "direct",
+        "partial",
+        "callable",
+        "wrapper",
+        "ordinary_partial",
+        "ordinary_callable",
+        "marked_callable",
+        "ordinary_misleading_name",
+    ],
+)
 def test_callable_scheduler_factory_trains(algorithm, kind):
     observation_space = gymnasium.spaces.Box(low=-1, high=1, shape=(2,))
     action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,))

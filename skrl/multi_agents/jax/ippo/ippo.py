@@ -15,7 +15,7 @@ from skrl.memories.jax import Memory
 from skrl.models.jax import Model
 from skrl.multi_agents.jax import MultiAgent
 from skrl.resources.optimizers.jax import Adam
-from skrl.resources.schedulers.jax import KLAdaptiveLR
+from skrl.resources.schedulers.jax import KLAdaptiveLR, is_kl_adaptive
 from skrl.utils import ScopedTimer
 from skrl.utils.framework.jax.types import Device, Tensor
 
@@ -206,7 +206,7 @@ class IPPO(MultiAgent):
                     self.policy_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][0](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][0]
                     )
-                    if "kladaptive" in getattr(self.policy_scheduler[uid], "__qualname__", "").lower().replace("_", ""):
+                    if is_kl_adaptive(self.policy_scheduler[uid]):
                         self.policy_scheduler_type[uid] = KLAdaptiveLR
                 self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1]
                 self.value_scheduler_type[uid] = None
@@ -214,7 +214,7 @@ class IPPO(MultiAgent):
                     self.value_scheduler[uid] = self.cfg.learning_rate_scheduler[uid][1](
                         **self.cfg.learning_rate_scheduler_kwargs[uid][1]
                     )
-                    if "kladaptive" in getattr(self.value_scheduler[uid], "__qualname__", "").lower().replace("_", ""):
+                    if is_kl_adaptive(self.value_scheduler[uid]):
                         self.value_scheduler_type[uid] = KLAdaptiveLR
 
         # set up preprocessors

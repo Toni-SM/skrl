@@ -89,8 +89,11 @@ JAX
     :nosignatures:
 
     KLAdaptiveLR
+    is_kl_adaptive
 
 .. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.KLAdaptiveLR
+
+.. autofunction:: skrl.resources.schedulers.jax.kl_adaptive.is_kl_adaptive
 
 |
 
@@ -102,5 +105,8 @@ Warp
     :nosignatures:
 
     KLAdaptiveLR
+    is_kl_adaptive
 
 .. autofunction:: skrl.resources.schedulers.warp.kl_adaptive.KLAdaptiveLR
+
+.. autofunction:: skrl.resources.schedulers.warp.kl_adaptive.is_kl_adaptive

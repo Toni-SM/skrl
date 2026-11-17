@@ -82,7 +82,7 @@ jobs:
           --cov=skrl/trainers/warp \
           --cov-report term:skip-covered \
           --cov-report html:warp-minimum-components-trainers-coverage.html \
-          tests/trainers/warp
+          tests/trainers/warp tests/resources/schedulers/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4
@@ -239,7 +239,7 @@ jobs:
           --cov=skrl/trainers/warp \
           --cov-report term:skip-covered \
           --cov-report html:warp-latest-components-trainers-coverage.html \
-          tests/trainers/warp
+          tests/trainers/warp tests/resources/schedulers/warp
     # report
     - name: Save reports
       uses: actions/upload-artifact@v4

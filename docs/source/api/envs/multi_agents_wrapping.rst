@@ -56,6 +56,13 @@ The following snippets show how to wrap multi-agent environments from the differ
                     :start-after: [jax-start-isaaclab-multi-agent]
                     :end-before: [jax-end-isaaclab-multi-agent]
 
+            .. group-tab:: |_4| |warp| |_4|
+
+                .. literalinclude:: ../../snippets/wrapping.py
+                    :language: python
+                    :start-after: [warp-start-isaaclab-multi-agent]
+                    :end-before: [warp-end-isaaclab-multi-agent]
+
     .. tab:: PettingZoo
 
         .. tabs::
@@ -110,6 +117,13 @@ JAX
 ^^^
 
 .. autofunction:: skrl.envs.wrappers.jax.wrap_env
+
+|
+
+Warp
+^^^^
+
+.. autofunction:: skrl.envs.wrappers.warp.wrap_env
 
 |
 
@@ -173,6 +187,30 @@ JAX
     :members:
 
 .. autoclass:: skrl.envs.wrappers.jax.pettingzoo_envs.PettingZooWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+|
+
+Warp
+^^^^
+
+.. automodule:: skrl.envs.wrappers.warp
+.. autosummary::
+    :nosignatures:
+
+    MultiAgentEnvWrapper
+    ~isaaclab_envs.IsaacLabMultiAgentWrapper
+
+.. autoclass:: skrl.envs.wrappers.warp.MultiAgentEnvWrapper
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+    :members:
+
+.. autoclass:: skrl.envs.wrappers.warp.isaaclab_envs.IsaacLabMultiAgentWrapper
     :undoc-members:
     :show-inheritance:
     :inherited-members:

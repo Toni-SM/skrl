@@ -43,7 +43,8 @@ class PlaygroundWrapper(Wrapper):
 
             The environment's auto-reset is disabled. Instead, the wrapper resets the environments
             whose episode ended right after stepping, so that the returned observations/states are
-            the initial ones of the new episodes (Gym/VecEnv style auto-reset).
+            the initial ones of the new episodes (Gym/VecEnv style auto-reset). The observations/states
+            reached before the reset are available through :py:meth:`final`.
 
         :param env: The environment instance to wrap.
         """
@@ -60,6 +61,8 @@ class PlaygroundWrapper(Wrapper):
         self._reset_once = True
         self._observations = None
         self._states = None
+        self._final_observations = None
+        self._final_states = None
         self._info = {}
 
         # observation/state spaces
@@ -108,16 +111,20 @@ class PlaygroundWrapper(Wrapper):
         """Number of environments."""
         return self._unwrapped.nworld
 
-    def _parse_observations(self, observations: Any) -> None:
-        """Parse the environment's observation groups into the wrapper's observations and states.
+    def _parse_observations(self, observations: Any) -> tuple[Tensor, Tensor | None]:
+        """Parse the environment's observation groups into observations and states.
 
         :param observations: Environment's observations (mapping of observation groups or a single tensor).
+
+        :return: Observation, state (``None`` if the environment does not provide it).
         """
         if not isinstance(observations, Mapping):
             observations = {"policy": observations}
-        self._observations = flatten_tensorized_space(tensorize_space(self._observation_space, observations["policy"]))
+        parsed_observations = flatten_tensorized_space(tensorize_space(self._observation_space, observations["policy"]))
+        parsed_states = None
         if self._state_space is not None:
-            self._states = flatten_tensorized_space(tensorize_space(self._state_space, observations["critic"]))
+            parsed_states = flatten_tensorized_space(tensorize_space(self._state_space, observations["critic"]))
+        return parsed_observations, parsed_states
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -141,8 +148,13 @@ class PlaygroundWrapper(Wrapper):
         truncated = last & (timestep.discount > 0)
 
         self._info = {"reward_terms": reward_terms}
+        self._observations, self._states = self._parse_observations(timestep.observation)
+        self._final_observations, self._final_states = self._observations, self._states
         # reset the environments whose episode ended
         if last.any():
+            # keep the observations/states reached before the reset (copied, in case the environment reuses buffers)
+            self._final_observations = self._observations.clone()
+            self._final_states = None if self._states is None else self._states.clone()
             # get the (mean-reduced) episode metrics before resetting
             # (logged by the trainers under the default 'environment_info' key: "episode")
             self._info["episode"] = {
@@ -151,7 +163,7 @@ class PlaygroundWrapper(Wrapper):
             timestep = self._unwrapped.reset_with_options(
                 options=self._unwrapped.default_reset_options(), env_mask=last
             )
-        self._parse_observations(timestep.observation)
+            self._observations, self._states = self._parse_observations(timestep.observation)
 
         return self._observations, reward.reshape(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
@@ -174,10 +186,24 @@ class PlaygroundWrapper(Wrapper):
         """
         if self._reset_once:
             timestep = self._unwrapped.reset()
-            self._parse_observations(timestep.observation)
+            self._observations, self._states = self._parse_observations(timestep.observation)
             self._info = {}
             self._reset_once = False
+        self._final_observations, self._final_states = self._observations, self._states
         return self._observations, self._info
+
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        For the environments whose episode ended in the last step, the returned values are the observations/states
+        reached before the wrapper resets them. For the rest of the environments, they are the same as those returned
+        by :py:meth:`step`/:py:meth:`state`.
+
+        See :py:meth:`~skrl.envs.wrappers.torch.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
 
     def render(self, *args, **kwargs) -> None:
         """Render the environment."""

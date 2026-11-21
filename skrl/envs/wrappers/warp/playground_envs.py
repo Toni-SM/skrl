@@ -31,6 +31,8 @@ class PlaygroundWrapper(Wrapper):
         self._device = wp.device_from_torch(self._wrapper.device)
         self._observations = None
         self._states = None
+        self._final_observations = None
+        self._final_states = None
 
     @property
     def state_space(self) -> gymnasium.Space | None:
@@ -62,8 +64,7 @@ class PlaygroundWrapper(Wrapper):
         observations, reward, terminated, truncated, info = self._wrapper.step(
             wp.to_torch(actions).to(self._wrapper.device)
         )
-        self._observations = _torch2warp(observations)
-        self._states = _torch2warp(self._wrapper.state())
+        self._convert(observations)
         return (
             self._observations,
             _torch2warp(reward),
@@ -71,6 +72,21 @@ class PlaygroundWrapper(Wrapper):
             _torch2warp(truncated.to(dtype=torch.int8)),
             info,
         )
+
+    def _convert(self, observations: torch.Tensor) -> None:
+        """Convert the PyTorch wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
+        """
+        states = self._wrapper.state()
+        final_observations, final_states = self._wrapper.final()
+        self._observations = _torch2warp(observations)
+        self._states = _torch2warp(states)
+        # avoid converting the same tensor twice when no episode ended
+        self._final_observations = (
+            self._observations if final_observations is observations else _torch2warp(final_observations)
+        )
+        self._final_states = self._states if final_states is states else _torch2warp(final_states)
 
     def state(self) -> Tensor | None:
         """Get the environment state.
@@ -85,9 +101,18 @@ class PlaygroundWrapper(Wrapper):
         :return: Observation, info.
         """
         observations, info = self._wrapper.reset()
-        self._observations = _torch2warp(observations)
-        self._states = _torch2warp(self._wrapper.state())
+        self._convert(observations)
         return self._observations, info
+
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        See :py:meth:`~skrl.envs.wrappers.torch.playground_envs.PlaygroundWrapper.final` and
+        :py:meth:`~skrl.envs.wrappers.warp.base.Wrapper.final` for more details.
+
+        :return: Final observation, state.
+        """
+        return self._final_observations, self._final_states
 
     def render(self, *args, **kwargs) -> Any:
         """Render the environment."""

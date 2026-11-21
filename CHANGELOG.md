@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Added
+- Add the `final` method to environment wrappers to get the observations and states with which the last transitions
+  ended (before the auto-reset of environments, if any)
+
 ## [2.1.2] - 2026-11-14
 ### Changed
 - Annotate tensors/arrays and devices with per-framework `Tensor` and `Device` type aliases

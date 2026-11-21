@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 import gymnasium
 
 import warp as wp
@@ -12,6 +13,10 @@ from skrl.utils.framework.warp.types import Tensor
 
 
 class Wrapper(ABC):
+    # info keys (checked in order) under which the environment may provide the final observations/states
+    _final_observation_keys: tuple[str, ...] = ("final_obs", "final_observation", "final_observations")
+    _final_state_keys: tuple[str, ...] = ("final_state", "final_states")
+
     def __init__(self, env: Any) -> None:
         """Base wrapper class for RL environments.
 
@@ -46,6 +51,27 @@ class Wrapper(ABC):
             f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
         )
 
+    def _get_final_info(self, info: Mapping[str, Any]) -> tuple[Any | None, Any | None]:
+        """Get the final observation and state provided by the environment in the info, if available.
+
+        The info keys are checked in the following order, and the first available one is used:
+
+        - Final observation: ``"final_obs"``, ``"final_observation"`` and ``"final_observations"``
+          (see :py:attr:`_final_observation_keys`).
+        - Final state: ``"final_state"`` and ``"final_states"`` (see :py:attr:`_final_state_keys`).
+
+        The values are returned as provided by the environment (i.e.: they are neither converted nor validated).
+
+        :param info: Info returned by the environment.
+
+        :return: Final observation, state (``None`` if not available).
+        """
+        if not isinstance(info, Mapping):
+            return None, None
+        final_observation = next((info[key] for key in self._final_observation_keys if key in info), None)
+        final_state = next((info[key] for key in self._final_state_keys if key in info), None)
+        return final_observation, final_state
+
     @abstractmethod
     def reset(self) -> tuple[Tensor, Any]:
         """Reset the environment.
@@ -69,6 +95,23 @@ class Wrapper(ABC):
         """Get the environment state.
 
         :return: State.
+        """
+        pass
+
+    @abstractmethod
+    def final(self) -> tuple[Tensor, Tensor | None]:
+        """Get the observations and states with which the last transitions ended.
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. This method returns, instead, the
+        observations/states reached before the reset (e.g.: to bootstrap from them) for the environments whose
+        episodes ended, and the ones returned by :py:meth:`step`/:py:meth:`state` for the rest of the environments.
+
+        If no episode ended in the last step, or the environment does not provide the final observations/states
+        (e.g.: it is not auto-reset or the values are not available), the returned values are the same as those
+        returned by :py:meth:`step`/:py:meth:`state`.
+
+        :return: Final observation, state.
         """
         pass
 
@@ -130,4 +173,237 @@ class Wrapper(ABC):
 
 
 class MultiAgentEnvWrapper(ABC):
-    pass
+    # info keys (checked in order) under which the environment may provide the final observations/states
+    _final_observation_keys: tuple[str, ...] = ("final_obs", "final_observation", "final_observations")
+    _final_state_keys: tuple[str, ...] = ("final_state", "final_states")
+
+    def __init__(self, env: Any) -> None:
+        """Base wrapper class for multi-agent environments.
+
+        :param env: The multi-agent environment instance to wrap.
+        """
+        self._env = env
+        try:
+            self._unwrapped = self._env.unwrapped
+        except:
+            self._unwrapped = env
+
+        # device
+        if hasattr(self._unwrapped, "device"):
+            self._device = config.warp.parse_device(self._unwrapped.device)
+        else:
+            self._device = config.warp.parse_device(None)
+
+    def __getattr__(self, key: str) -> Any:
+        """Get an attribute from the wrapped environment.
+
+        :param key: The attribute name.
+
+        :return: The attribute value.
+
+        :raises AttributeError: If the attribute does not exist.
+        """
+        if hasattr(self._env, key):
+            return getattr(self._env, key)
+        if hasattr(self._unwrapped, key):
+            return getattr(self._unwrapped, key)
+        raise AttributeError(
+            f"Wrapped environment ({self._unwrapped.__class__.__name__}) does not have attribute '{key}'"
+        )
+
+    def _get_final_info(self, infos: Mapping[str, Any]) -> tuple[dict[str, Any | None], dict[str, Any | None]]:
+        """Get the final observations and states provided by the environment in each agent's info, if available.
+
+        For each agent, the agent's info (``infos[agent]``) keys are checked in the following order,
+        and the first available one is used:
+
+        - Final observation: ``"final_obs"``, ``"final_observation"`` and ``"final_observations"``
+          (see :py:attr:`_final_observation_keys`).
+        - Final state: ``"final_state"`` and ``"final_states"`` (see :py:attr:`_final_state_keys`).
+
+        The values are returned as provided by the environment (i.e.: they are neither converted nor validated).
+
+        :param infos: Infos returned by the environment (per-agent info).
+
+        :return: Final observation, state (per agent, ``None`` if not available).
+        """
+        final_observations, final_states = {}, {}
+        for uid in self.possible_agents:
+            info = infos.get(uid) if isinstance(infos, Mapping) else None
+            if not isinstance(info, Mapping):
+                info = {}
+            final_observations[uid] = next((info[key] for key in self._final_observation_keys if key in info), None)
+            final_states[uid] = next((info[key] for key in self._final_state_keys if key in info), None)
+        return final_observations, final_states
+
+    @abstractmethod
+    def reset(self) -> tuple[dict[str, Tensor], dict[str, Any]]:
+        """Reset the environment.
+
+        :return: Observation, info.
+        """
+        pass
+
+    @abstractmethod
+    def step(
+        self, actions: dict[str, Tensor]
+    ) -> tuple[dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Tensor], dict[str, Any]]:
+        """Perform a step in the environment.
+
+        :param actions: The actions to perform.
+
+        :return: Observation, reward, terminated, truncated, info.
+        """
+        pass
+
+    @abstractmethod
+    def state(self) -> dict[str, Tensor | None]:
+        """Get the environment state.
+
+        :return: State.
+        """
+        pass
+
+    @abstractmethod
+    def final(self) -> tuple[dict[str, Tensor], dict[str, Tensor | None]]:
+        """Get the observations and states with which the last transitions ended.
+
+        Environments that are auto-reset at the same step in which their episodes end (e.g.: vectorized environments)
+        return, as next observations/states, the initial ones of the new episodes. This method returns, instead, the
+        observations/states reached before the reset (e.g.: to bootstrap from them) for the environments whose
+        episodes ended, and the ones returned by :py:meth:`step`/:py:meth:`state` for the rest of the environments.
+
+        If no episode ended in the last step, or the environment does not provide the final observations/states
+        (e.g.: it is not auto-reset or the values are not available), the returned values are the same as those
+        returned by :py:meth:`step`/:py:meth:`state`.
+
+        :return: Final observation, state.
+        """
+        pass
+
+    @abstractmethod
+    def render(self, *args, **kwargs) -> Any:
+        """Render the environment.
+
+        :return: Any value from the wrapped environment.
+        """
+        pass
+
+    @abstractmethod
+    def close(self) -> None:
+        """Close the environment."""
+        pass
+
+    @property
+    def device(self) -> wp.Device:
+        """The device used by the environment.
+
+        If the wrapped environment does not have the ``device`` property, the value of this property
+        will be ``"cuda"`` or ``"cpu"`` depending on the device availability.
+        """
+        return self._device
+
+    @property
+    def num_envs(self) -> int:
+        """Number of environments.
+
+        If the wrapped environment does not have the ``num_envs`` property, it will be set to 1.
+        """
+        return self._unwrapped.num_envs if hasattr(self._unwrapped, "num_envs") else 1
+
+    @property
+    def num_agents(self) -> int:
+        """Number of current agents.
+
+        Read from the length of the ``agents`` property if the wrapped environment doesn't define it.
+        """
+        try:
+            return self._unwrapped.num_agents
+        except:
+            return len(self.agents)
+
+    @property
+    def max_num_agents(self) -> int:
+        """Number of possible agents the environment could generate.
+
+        Read from the length of the ``possible_agents`` property if the wrapped environment doesn't define it.
+        """
+        try:
+            return self._unwrapped.max_num_agents
+        except:
+            return len(self.possible_agents)
+
+    @property
+    def agents(self) -> list[str]:
+        """Names of all current agents.
+
+        These may be changed as an environment progresses (i.e. agents can be added or removed).
+        """
+        return self._unwrapped.agents
+
+    @property
+    def possible_agents(self) -> list[str]:
+        """Names of all possible agents the environment could generate.
+
+        These can not be changed as an environment progresses.
+        """
+        return self._unwrapped.possible_agents
+
+    @property
+    def state_spaces(self) -> dict[str, gymnasium.Space | None]:
+        """State spaces.
+
+        Although this property returns a dictionary, the space for each agent adheres to the next rules:
+
+        * The wrapped environment has the ``state_space`` attribute (homogeneous state).
+          The state is a global view of the environment, so the space is the same for all agents.
+        * The wrapped environment has the ``state_spaces`` attribute (heterogeneous state).
+          The state may differ for each agent, so the agent spaces may also differ.
+        * The wrapped environment does not have the previous attributes. The space is ``None`` for all agents.
+        """
+        if hasattr(self._unwrapped, "state_space"):
+            space = self._unwrapped.state_space
+            return {agent: space for agent in self.possible_agents}
+        elif hasattr(self._unwrapped, "state_spaces"):
+            return self._unwrapped.state_spaces
+        else:
+            return {agent: None for agent in self.possible_agents}
+
+    @property
+    def observation_spaces(self) -> dict[str, gymnasium.Space]:
+        """Observation spaces."""
+        return self._unwrapped.observation_spaces
+
+    @property
+    def action_spaces(self) -> dict[str, gymnasium.Space]:
+        """Action spaces."""
+        return self._unwrapped.action_spaces
+
+    def state_space(self, agent: str) -> gymnasium.Space | None:
+        """State space.
+
+        See :py:attr:`state_spaces` for more details.
+
+        :param agent: Name of the agent.
+
+        :return: The state space for the specified agent.
+        """
+        return self.state_spaces[agent]
+
+    def observation_space(self, agent: str) -> gymnasium.Space:
+        """Observation space.
+
+        :param agent: Name of the agent.
+
+        :return: The observation space for the specified agent.
+        """
+        return self.observation_spaces[agent]
+
+    def action_space(self, agent: str) -> gymnasium.Space:
+        """Action space.
+
+        :param agent: Name of the agent.
+
+        :return: The action space for the specified agent.
+        """
+        return self.action_spaces[agent]

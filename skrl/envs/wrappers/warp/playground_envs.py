@@ -4,42 +4,31 @@ from typing import Any
 
 import gymnasium
 
-import jax
-import jax.numpy as jnp
+import torch
 import warp as wp
 
-# MuJoCo Playground runs on JAX: reuse its JAX wrapper and only convert inputs/outputs (avoid duplicate logic)
-from skrl import logger
-from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper as _JaxPlaygroundWrapper
+# MuJoCo Playground runs on PyTorch: reuse its PyTorch wrapper and only convert inputs/outputs (avoid duplicate logic)
+from skrl.envs.wrappers.torch.playground_envs import PlaygroundWrapper as _TorchPlaygroundWrapper
 from skrl.envs.wrappers.warp.base import Wrapper
-from skrl.utils.framework.warp.types import Device, Tensor
+from skrl.utils.framework.warp.types import Tensor
 
 
-# ML frameworks conversion utilities
-_CPU = jax.devices()[0].device_kind.lower() == "cpu"
-if _CPU:
-    logger.warning("There is no GPU backend for JAX. MuJoCo Playground (JAX) operations will run on CPU.")
-
-
-def _jax2warp(array: jax.Array | None, device: Device, dtype: Any = None) -> Tensor | None:
-    return None if array is None else wp.from_jax(array, dtype=dtype).to(device)
-
-
-def _warp2jax(array: Tensor | None) -> jax.Array | None:
-    if array is None:
-        return None
-    return wp.to_jax(array.to("cpu") if _CPU else array)
+def _torch2warp(tensor: torch.Tensor | None) -> Tensor | None:
+    return None if tensor is None else wp.from_torch(tensor.contiguous())
 
 
 class PlaygroundWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
         """MuJoCo Playground environment wrapper.
 
+        See :py:class:`~skrl.envs.wrappers.torch.playground_envs.PlaygroundWrapper` for more details.
+
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
 
-        self._wrapper = _JaxPlaygroundWrapper(env)
+        self._wrapper = _TorchPlaygroundWrapper(env)
+        self._device = wp.device_from_torch(self._wrapper.device)
         self._observations = None
         self._states = None
         self._final_observations = None
@@ -60,35 +49,10 @@ class PlaygroundWrapper(Wrapper):
         """Action space."""
         return self._wrapper.action_space
 
-    def _convert(
-        self,
-        observations: jax.Array,
-        states: jax.Array | None,
-        final_observations: jax.Array,
-        final_states: jax.Array | None,
-    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
-        """Convert the JAX wrapper's observations/states and final observations/states.
-
-        :param observations: Observations returned by the JAX wrapper's :py:meth:`step`/:py:meth:`reset`.
-        :param states: States returned by the JAX wrapper's :py:meth:`state`.
-        :param final_observations: Final observations returned by the JAX wrapper's :py:meth:`final`.
-        :param final_states: Final states returned by the JAX wrapper's :py:meth:`final`.
-
-        :return: Observation, state, final observation, final state.
-        """
-        converted_observations = _jax2warp(observations, self.device)
-        converted_states = _jax2warp(states, self.device)
-        # avoid converting the same array twice when no episode ended
-        return (
-            converted_observations,
-            converted_states,
-            (
-                converted_observations
-                if final_observations is observations
-                else _jax2warp(final_observations, self.device)
-            ),
-            converted_states if final_states is states else _jax2warp(final_states, self.device),
-        )
+    @property
+    def num_envs(self) -> int:
+        """Number of environments."""
+        return self._wrapper.num_envs
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -97,17 +61,32 @@ class PlaygroundWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        observations, reward, terminated, truncated, info = self._wrapper.step(_warp2jax(actions))
-        self._observations, self._states, self._final_observations, self._final_states = self._convert(
-            observations, self._wrapper.state(), *self._wrapper.final()
+        observations, reward, terminated, truncated, info = self._wrapper.step(
+            wp.to_torch(actions).to(self._wrapper.device)
         )
+        self._convert(observations)
         return (
             self._observations,
-            _jax2warp(reward.astype(jnp.float32), self.device, dtype=wp.float32),
-            _jax2warp(terminated.astype(jnp.int8), self.device, dtype=wp.int8),
-            _jax2warp(truncated.astype(jnp.int8), self.device, dtype=wp.int8),
+            _torch2warp(reward),
+            _torch2warp(terminated.to(dtype=torch.int8)),
+            _torch2warp(truncated.to(dtype=torch.int8)),
             info,
         )
+
+    def _convert(self, observations: torch.Tensor) -> None:
+        """Convert the PyTorch wrapper's observations/states and final observations/states.
+
+        :param observations: Observations returned by the PyTorch wrapper's :py:meth:`step`/:py:meth:`reset`.
+        """
+        states = self._wrapper.state()
+        final_observations, final_states = self._wrapper.final()
+        self._observations = _torch2warp(observations)
+        self._states = _torch2warp(states)
+        # avoid converting the same tensor twice when no episode ended
+        self._final_observations = (
+            self._observations if final_observations is observations else _torch2warp(final_observations)
+        )
+        self._final_states = self._states if final_states is states else _torch2warp(final_states)
 
     def state(self) -> Tensor | None:
         """Get the environment state.
@@ -122,26 +101,14 @@ class PlaygroundWrapper(Wrapper):
         :return: Observation, info.
         """
         observations, info = self._wrapper.reset()
-        self._observations, self._states, self._final_observations, self._final_states = self._convert(
-            observations, self._wrapper.state(), *self._wrapper.final()
-        )
+        self._convert(observations)
         return self._observations, info
 
     def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
-        The final observations/states of the auto-reset environments are read from the final observation group,
-        provided in the info under the first available key: ``"final_obs"``, ``"final_observation"`` or
-        ``"final_observations"``. The final observation group must have the same structure as the environment's
-        observation group (i.e.: including the ``"privileged_state"`` key, if the environment provides states).
-
-        .. note::
-
-            MuJoCo Playground's auto-reset wrapper (``wrap_for_brax_training``) does not provide the final
-            observation group. In that case, the final observations/states are the ones returned by
-            :py:meth:`step`/:py:meth:`state` (i.e.: the initial ones of the new episodes for the reset environments).
-
-        See :py:meth:`~skrl.envs.wrappers.warp.base.Wrapper.final` for more details.
+        See :py:meth:`~skrl.envs.wrappers.torch.playground_envs.PlaygroundWrapper.final` and
+        :py:meth:`~skrl.envs.wrappers.warp.base.Wrapper.final` for more details.
 
         :return: Final observation, state.
         """

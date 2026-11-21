@@ -2,100 +2,129 @@ from __future__ import annotations
 
 from typing import Any
 
+import math
+from collections.abc import Mapping
 import gymnasium
-from packaging import version
 
-import jax
-import jax.dlpack as jax_dlpack
-import torch.utils.dlpack as torch_dlpack
+import numpy as np
+import torch
 
-from skrl import logger
-
-# MuJoCo Playground runs on JAX: reuse its JAX wrapper and only convert inputs/outputs (avoid duplicate logic)
-from skrl.envs.wrappers.jax.playground_envs import PlaygroundWrapper as _JaxPlaygroundWrapper
+from skrl import config, logger
 from skrl.envs.wrappers.torch.base import Wrapper
-from skrl.utils.framework.torch.types import Device, Tensor
+from skrl.utils.framework.torch.types import Tensor
+from skrl.utils.spaces.torch import flatten_tensorized_space, tensorize_space
 
 
-# ML frameworks conversion utilities
-# jaxlib.xla_extension.XlaRuntimeError: INVALID_ARGUMENT: DLPack tensor is on GPU, but no GPU backend was provided.
-_CPU = jax.devices()[0].device_kind.lower() == "cpu"
-if _CPU:
-    logger.warning("There is no GPU backend for JAX. MuJoCo Playground (JAX) operations will run on CPU.")
+def _spec_to_space(spec: Any) -> gymnasium.spaces.Box:
+    """Convert a batched (first dimension is the number of environments) ``dm_env`` spec to a Gymnasium space.
 
+    :param spec: Batched ``dm_env`` array spec (e.g.: ``Array`` or ``BoundedArray``).
 
-def _jax2torch(array: jax.Array | None, device: Device) -> Tensor | None:
-    if array is None:
-        return None
-    if version.parse(jax.__version__) >= version.parse("0.7.0"):
-        return torch_dlpack.from_dlpack(array).to(device=device)
-    return torch_dlpack.from_dlpack(jax_dlpack.to_dlpack(array)).to(device=device)
-
-
-def _torch2jax(tensor: Tensor) -> jax.Array:
-    if version.parse(jax.__version__) >= version.parse("0.7.0"):
-        return jax_dlpack.from_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous())
-    return jax_dlpack.from_dlpack(torch_dlpack.to_dlpack(tensor.contiguous().cpu() if _CPU else tensor.contiguous()))
+    :return: Gymnasium Box space (without the batch dimension).
+    """
+    dtype = np.dtype(spec.dtype)
+    limits = np.finfo(dtype) if np.issubdtype(dtype, np.floating) else np.iinfo(dtype)
+    default_low, default_high = (-np.inf, np.inf) if np.issubdtype(dtype, np.floating) else (limits.min, limits.max)
+    low = np.broadcast_to(getattr(spec, "minimum", default_low), spec.shape)[0].astype(dtype)
+    high = np.broadcast_to(getattr(spec, "maximum", default_high), spec.shape)[0].astype(dtype)
+    return gymnasium.spaces.Box(low=low, high=high, shape=spec.shape[1:], dtype=spec.dtype)
 
 
 class PlaygroundWrapper(Wrapper):
     def __init__(self, env: Any) -> None:
         """MuJoCo Playground environment wrapper.
 
+        The observation and state spaces are defined by the environment's ``"policy"`` and ``"critic"``
+        observation groups, respectively (other observation groups, e.g. ``"camera"``, are ignored).
+        If the environment's action spec has more than one entry, the action space is the concatenation
+        of the (flattened) entries, in the spec's order.
+
+        .. note::
+
+            The environment's auto-reset is disabled. Instead, the wrapper resets the environments
+            whose episode ended right after stepping, so that the returned observations/states are
+            the initial ones of the new episodes (Gym/VecEnv style auto-reset). The observations/states
+            reached before the reset are available through :py:meth:`final`.
+
         :param env: The environment instance to wrap.
         """
         super().__init__(env)
+        self._device = config.torch.parse_device(self._unwrapped.xpu_device)
 
-        self._wrapper = _JaxPlaygroundWrapper(env)
+        # MuJoCo Playground dependencies (imported here to not require them when importing this module)
+        import dm_env
+        from reaf.simulation.torch import environment as reaf_environment
+
+        self._last_step_type = dm_env.StepType.LAST
+        self._unwrapped.auto_reset_mode = reaf_environment.AutoResetMode.DISABLED
+
+        self._reset_once = True
         self._observations = None
         self._states = None
         self._final_observations = None
         self._final_states = None
+        self._info = {}
+
+        # observation/state spaces
+        observation_specs = self._unwrapped.timestep_spec().observation
+        if not isinstance(observation_specs, Mapping):
+            observation_specs = {"policy": observation_specs}
+        self._observation_space = _spec_to_space(observation_specs["policy"])
+        self._state_space = _spec_to_space(observation_specs["critic"]) if "critic" in observation_specs else None
+        ignored_groups = [k for k in observation_specs if k not in ("policy", "critic")]
+        if ignored_groups:
+            logger.warning(
+                f"MuJoCo Playground observation groups other than 'policy' (observations) and 'critic' (states) "
+                f"are not supported. The following groups will be ignored: {', '.join(ignored_groups)}"
+            )
+        # action space
+        action_specs = self._unwrapped.action_spec()
+        self._action_spaces = {k: _spec_to_space(v) for k, v in action_specs.items()}
+        if len(self._action_spaces) == 1:
+            self._action_space = next(iter(self._action_spaces.values()))
+        else:
+            spaces = list(self._action_spaces.values())
+            self._action_space = gymnasium.spaces.Box(
+                low=np.concatenate([space.low.reshape(-1) for space in spaces]),
+                high=np.concatenate([space.high.reshape(-1) for space in spaces]),
+                dtype=np.result_type(*[space.dtype for space in spaces]),
+            )
+        self._action_sizes = [math.prod(space.shape) for space in self._action_spaces.values()]
 
     @property
     def state_space(self) -> gymnasium.Space | None:
         """State space."""
-        return self._wrapper.state_space
+        return self._state_space
 
     @property
     def observation_space(self) -> gymnasium.Space:
         """Observation space."""
-        return self._wrapper.observation_space
+        return self._observation_space
 
     @property
     def action_space(self) -> gymnasium.Space:
         """Action space."""
-        return self._wrapper.action_space
+        return self._action_space
 
-    def _convert(
-        self,
-        observations: jax.Array,
-        states: jax.Array | None,
-        final_observations: jax.Array,
-        final_states: jax.Array | None,
-    ) -> tuple[Tensor, Tensor | None, Tensor, Tensor | None]:
-        """Convert the JAX wrapper's observations/states and final observations/states.
+    @property
+    def num_envs(self) -> int:
+        """Number of environments."""
+        return self._unwrapped.nworld
 
-        :param observations: Observations returned by the JAX wrapper's :py:meth:`step`/:py:meth:`reset`.
-        :param states: States returned by the JAX wrapper's :py:meth:`state`.
-        :param final_observations: Final observations returned by the JAX wrapper's :py:meth:`final`.
-        :param final_states: Final states returned by the JAX wrapper's :py:meth:`final`.
+    def _parse_observations(self, observations: Any) -> tuple[Tensor, Tensor | None]:
+        """Parse the environment's observation groups into observations and states.
 
-        :return: Observation, state, final observation, final state.
+        :param observations: Environment's observations (mapping of observation groups or a single tensor).
+
+        :return: Observation, state (``None`` if the environment does not provide it).
         """
-        converted_observations = _jax2torch(observations, self.device)
-        converted_states = _jax2torch(states, self.device)
-        # avoid converting the same array twice when no episode ended
-        return (
-            converted_observations,
-            converted_states,
-            (
-                converted_observations
-                if final_observations is observations
-                else _jax2torch(final_observations, self.device)
-            ),
-            converted_states if final_states is states else _jax2torch(final_states, self.device),
-        )
+        if not isinstance(observations, Mapping):
+            observations = {"policy": observations}
+        parsed_observations = flatten_tensorized_space(tensorize_space(self._observation_space, observations["policy"]))
+        parsed_states = None
+        if self._state_space is not None:
+            parsed_states = flatten_tensorized_space(tensorize_space(self._state_space, observations["critic"]))
+        return parsed_observations, parsed_states
 
     def step(self, actions: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor, Any]:
         """Perform a step in the environment.
@@ -104,17 +133,39 @@ class PlaygroundWrapper(Wrapper):
 
         :return: Observation, reward, terminated, truncated, info.
         """
-        observations, reward, terminated, truncated, info = self._wrapper.step(_torch2jax(actions))
-        self._observations, self._states, self._final_observations, self._final_states = self._convert(
-            observations, self._wrapper.state(), *self._wrapper.final()
+        split_actions = torch.split(actions, self._action_sizes, dim=-1)
+        timestep = self._unwrapped.step(
+            {k: v.reshape(-1, *space.shape) for (k, space), v in zip(self._action_spaces.items(), split_actions)}
         )
-        return (
-            self._observations,
-            _jax2torch(reward, self.device),
-            _jax2torch(terminated, self.device).bool(),
-            _jax2torch(truncated, self.device).bool(),
-            info,
-        )
+
+        reward = timestep.reward
+        reward_terms = {}
+        if isinstance(reward, Mapping):
+            reward_terms = reward.get("terms", {})
+            reward = reward["reward"]
+        last = timestep.step_type == self._last_step_type
+        terminated = last & (timestep.discount == 0)
+        truncated = last & (timestep.discount > 0)
+
+        self._info = {"reward_terms": reward_terms}
+        self._observations, self._states = self._parse_observations(timestep.observation)
+        self._final_observations, self._final_states = self._observations, self._states
+        # reset the environments whose episode ended
+        if last.any():
+            # keep the observations/states reached before the reset (copied, in case the environment reuses buffers)
+            self._final_observations = self._observations.clone()
+            self._final_states = None if self._states is None else self._states.clone()
+            # get the (mean-reduced) episode metrics before resetting
+            # (logged by the trainers under the default 'environment_info' key: "episode")
+            self._info["episode"] = {
+                f"Episode / {k}": v for k, v in self._unwrapped.task_layer.get_episode_metrics(last).items()
+            }
+            timestep = self._unwrapped.reset_with_options(
+                options=self._unwrapped.default_reset_options(), env_mask=last
+            )
+            self._observations, self._states = self._parse_observations(timestep.observation)
+
+        return self._observations, reward.reshape(-1, 1), terminated.view(-1, 1), truncated.view(-1, 1), self._info
 
     def state(self) -> Tensor | None:
         """Get the environment state.
@@ -126,27 +177,27 @@ class PlaygroundWrapper(Wrapper):
     def reset(self) -> tuple[Tensor, dict[str, Any]]:
         """Reset the environment.
 
+        .. note::
+
+            Since the wrapper resets the environments whose episode ended right after stepping,
+            the environment is reset only on the first call.
+
         :return: Observation, info.
         """
-        observations, info = self._wrapper.reset()
-        self._observations, self._states, self._final_observations, self._final_states = self._convert(
-            observations, self._wrapper.state(), *self._wrapper.final()
-        )
-        return self._observations, info
+        if self._reset_once:
+            timestep = self._unwrapped.reset()
+            self._observations, self._states = self._parse_observations(timestep.observation)
+            self._info = {}
+            self._reset_once = False
+        self._final_observations, self._final_states = self._observations, self._states
+        return self._observations, self._info
 
     def final(self) -> tuple[Tensor, Tensor | None]:
         """Get the observations and states with which the last transitions ended.
 
-        The final observations/states of the auto-reset environments are read from the final observation group,
-        provided in the info under the first available key: ``"final_obs"``, ``"final_observation"`` or
-        ``"final_observations"``. The final observation group must have the same structure as the environment's
-        observation group (i.e.: including the ``"privileged_state"`` key, if the environment provides states).
-
-        .. note::
-
-            MuJoCo Playground's auto-reset wrapper (``wrap_for_brax_training``) does not provide the final
-            observation group. In that case, the final observations/states are the ones returned by
-            :py:meth:`step`/:py:meth:`state` (i.e.: the initial ones of the new episodes for the reset environments).
+        For the environments whose episode ended in the last step, the returned values are the observations/states
+        reached before the wrapper resets them. For the rest of the environments, they are the same as those returned
+        by :py:meth:`step`/:py:meth:`state`.
 
         See :py:meth:`~skrl.envs.wrappers.torch.base.Wrapper.final` for more details.
 
@@ -154,10 +205,10 @@ class PlaygroundWrapper(Wrapper):
         """
         return self._final_observations, self._final_states
 
-    def render(self, *args, **kwargs) -> Any:
+    def render(self, *args, **kwargs) -> None:
         """Render the environment."""
-        return self._wrapper.render(*args, **kwargs)
+        return None
 
     def close(self) -> None:
         """Close the environment."""
-        self._wrapper.close()
+        self._unwrapped.close()

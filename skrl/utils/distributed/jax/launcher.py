@@ -52,16 +52,19 @@ def _start_processes(
     :param daemon: Whether the child processes are daemonic. See Python multiprocessing module for more details.
     :param start_method: Method used to start child processes. See Python multiprocessing module for more details.
     """
-    mp.set_start_method(method=start_method, force=True)
+    context = mp.get_context(start_method)
 
     processes = []
     for i in range(nprocs):
-        process = mp.Process(target=_process, args=(cmd, envs[i]), daemon=daemon)
+        process = context.Process(target=_process, args=(cmd, envs[i]), daemon=daemon)
         processes.append(process)
         process.start()
 
     for process in processes:
         process.join()
+    for process in processes:
+        if process.exitcode:
+            raise SystemExit(process.exitcode if process.exitcode > 0 else 128 - process.exitcode)
 
 
 def _process(cmd: list[str], env: dict[str, str]) -> None:
@@ -70,20 +73,24 @@ def _process(cmd: list[str], env: dict[str, str]) -> None:
     :param cmd: Command to run.
     :param env: Environment variables for the current process.
     """
-    subprocess.run(cmd, env=env)
+    result = subprocess.run(cmd, env=env)
+    if result.returncode:
+        raise SystemExit(result.returncode if result.returncode > 0 else 128 - result.returncode)
 
 
 def launch():
     """Main entry point for launching distributed runs."""
-    args = _get_args_parser().parse_args()
+    parser = _get_args_parser()
+    args = parser.parse_args()
 
     # validate distributed config
-    if args.nnodes < 1:
-        print(f"[ERROR] Number of nodes ({args.nnodes}) must be greater than 0")
-        exit()
-    if args.node_rank >= args.nnodes:
-        print(f"[ERROR] Node rank ({args.node_rank}) is out of range for the available number of nodes ({args.nnodes})")
-        exit()
+    if args.nnodes < 1 or args.nproc_per_node < 1:
+        parser.error("nnodes and nproc-per-node must both be positive")
+    if not 0 <= args.node_rank < args.nnodes:
+        parser.error("node-rank must be between zero and nnodes - 1")
+    address, _, port = args.coordinator_address.rpartition(":")
+    if not address or not port.isascii() or not port.isdecimal() or not 0 < int(port) <= 65535:
+        parser.error("coordinator-address must include a host and a port in the range 1..65535")
 
     # define custom environment variables (see skrl.config.jax for more details)
     envs = []
@@ -94,8 +101,8 @@ def launch():
                 env["JAX_LOCAL_RANK"] = str(j)
                 env["JAX_RANK"] = str(i * args.nproc_per_node + j)
                 env["JAX_WORLD_SIZE"] = str(args.nnodes * args.nproc_per_node)
-                env["JAX_COORDINATOR_ADDR"] = args.coordinator_address.split(":")[0]
-                env["JAX_COORDINATOR_PORT"] = args.coordinator_address.split(":")[1]
+                env["JAX_COORDINATOR_ADDR"] = address
+                env["JAX_COORDINATOR_PORT"] = port
                 envs.append(env)
 
     # spawn processes

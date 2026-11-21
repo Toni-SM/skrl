@@ -427,17 +427,12 @@ MuJoCo Playground
 
 Training/evaluation of agents in `MuJoCo Playground <https://playground.mujoco.org>`_ environments.
 
-The :py:func:`~skrl.envs.loaders.jax.load_playground_env` loader function defines the following command line arguments:
+The :py:func:`~skrl.envs.loaders.torch.load_playground_env` loader function defines the following command line arguments:
 
 * ``--task``: Name of the task.
 * ``--num_envs``: Number of environments to simulate.
+* ``--device``: Device used to simulate the environments.
 * ``--seed``: Random seed.
-* ``--episode_length``: Length of the episode.
-* ``--action_repeat``: Number of times to repeat the given action per step.
-* ``--full_reset``: Whether to perform a full reset of the environment on each step,
-  rather than resetting to an initial cached state. Default: False.
-* ``--randomization``: Whether to use randomization. Default: False.
-* ``--vision``: Whether to use vision-based environment. Default: False.
 
 While the scripts add additional command line arguments to the parser, such as:
 
